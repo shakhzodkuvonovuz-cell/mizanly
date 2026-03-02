@@ -1,0 +1,42 @@
+{
+  "expo": {
+    "name": "Mizanly",
+    "slug": "mizanly",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "mizanly",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/images/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0D1117"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.mizanly.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Mizanly needs camera access to create posts, stories, and reels",
+        "NSMicrophoneUsageDescription": "Mizanly needs microphone access for voice notes and video recording",
+        "NSPhotoLibraryUsageDescription": "Mizanly needs photo library access to share images and videos"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#0D1117"
+      },
+      "package": "app.mizanly.mobile"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image-picker",
+      "expo-camera",
+      ["expo-av", { "microphonePermission": "Allow Mizanly to access your microphone for voice notes and video." }]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

@@ -1,0 +1,40 @@
+version: '3.9'
+
+# Local development only — production uses Neon + Upstash + Meilisearch Cloud
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mizanly-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mizanly
+      POSTGRES_PASSWORD: mizanly_dev
+      POSTGRES_DB: mizanly
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: mizanly-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: mizanly-meilisearch
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: mizanly_dev_master_key
+      MEILI_ENV: development
+    ports:
+      - '7700:7700'
+    volumes:
+      - meilisearch_data:/meili_data
+
+volumes:
+  postgres_data:
+  meilisearch_data:

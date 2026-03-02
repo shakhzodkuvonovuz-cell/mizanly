@@ -1,0 +1,1102 @@
+// ============================================================
+// MIZANLY (ميزانلي) — Social Media Platform
+// Prisma Schema v2.0 — 5-Space Architecture
+// Stack: NestJS + Neon PostgreSQL + Prisma
+// Spaces: Saf | Bakra | Majlis | Risalah | Minbar
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum UserRole {
+  USER
+  CREATOR
+  MODERATOR
+  ADMIN
+}
+
+enum ContentSpace {
+  SAF        // Feed posts (Instagram-style)
+  BAKRA      // Short videos (TikTok-style)
+  MAJLIS     // Threads/microblog (X-style)
+  MINBAR     // Long videos (YouTube-style)
+}
+
+enum PostType {
+  TEXT
+  IMAGE
+  VIDEO
+  CAROUSEL
+}
+
+enum PostVisibility {
+  PUBLIC
+  FOLLOWERS
+  CIRCLE
+}
+
+enum ReelStatus {
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum ThreadVisibility {
+  PUBLIC
+  FOLLOWERS
+  CIRCLE
+}
+
+enum VideoStatus {
+  DRAFT
+  PROCESSING
+  PUBLISHED
+  UNLISTED
+  PRIVATE
+}
+
+enum VideoCategory {
+  EDUCATION
+  QURAN
+  LECTURE
+  VLOG
+  NEWS
+  DOCUMENTARY
+  ENTERTAINMENT
+  SPORTS
+  COOKING
+  TECH
+  OTHER
+}
+
+enum ChannelType {
+  BROADCAST
+  DISCUSSION
+}
+
+enum ChannelRole {
+  OWNER
+  ADMIN
+  MEMBER
+  SUBSCRIBER
+}
+
+enum LiveType {
+  VIDEO_STREAM
+  AUDIO_SPACE
+}
+
+enum LiveStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum ReactionType {
+  LIKE
+  LOVE
+  SUPPORT
+  INSIGHTFUL
+}
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  HATE_SPEECH
+  HARASSMENT
+  VIOLENCE
+  SPAM
+  MISINFORMATION
+  NUDITY
+  SELF_HARM
+  TERRORISM
+  DOXXING
+  COPYRIGHT
+  OTHER
+}
+
+enum ModerationAction {
+  WARNING
+  CONTENT_REMOVED
+  TEMP_MUTE
+  TEMP_BAN
+  PERMANENT_BAN
+  NONE
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  FOLLOW
+  MENTION
+  REPLY
+  CIRCLE_INVITE
+  CIRCLE_JOIN
+  MESSAGE
+  THREAD_REPLY
+  REPOST
+  QUOTE_POST
+  CHANNEL_POST
+  LIVE_STARTED
+  VIDEO_PUBLISHED
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  VOICE
+  VIDEO
+  STICKER
+  FILE
+  SYSTEM
+}
+
+enum CircleRole {
+  OWNER
+  ADMIN
+  MODERATOR
+  MEMBER
+}
+
+enum CirclePrivacy {
+  PUBLIC
+  PRIVATE
+  INVITE_ONLY
+}
+
+// ============================================================
+// USER & PROFILE
+// ============================================================
+
+model User {
+  id           String   @id @default(cuid())
+  clerkId      String   @unique
+  email        String   @unique
+  username     String   @unique
+  displayName  String
+  bio          String   @default("") @db.VarChar(500)
+  avatarUrl    String?
+  coverUrl     String?
+  website      String?
+  location     String?
+
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+  postsCount     Int @default(0)
+
+  role             UserRole @default(USER)
+  isVerified       Boolean  @default(false)
+  isPrivate        Boolean  @default(false)
+  language         String   @default("en")
+  theme            String   @default("system")
+  expoPushToken    String?
+  notificationsOn  Boolean  @default(true)
+
+  isBanned      Boolean   @default(false)
+  banReason     String?
+  banExpiresAt  DateTime?
+  warningsCount Int       @default(0)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  lastSeenAt DateTime @default(now())
+
+  // Saf
+  posts              Post[]
+  stories            Story[]
+  comments           Comment[]
+  postReactions      PostReaction[]
+  commentReactions   CommentReaction[]
+  savedPosts         SavedPost[]
+
+  // Bakra
+  reels              Reel[]
+  reelReactions      ReelReaction[]
+  reelComments       ReelComment[]
+
+  // Majlis
+  threads            Thread[]
+  threadReactions    ThreadReaction[]
+  threadReplies      ThreadReply[]
+
+  // Minbar
+  channel            Channel?
+  videos             Video[]
+  videoComments      VideoComment[]
+  videoReactions     VideoReaction[]
+  subscriptions      Subscription[]
+
+  // Risalah
+  sentMessages            Message[]
+  conversationMemberships ConversationMember[]
+  channelMemberships      ChannelMember[]
+  broadcastMessages       BroadcastMessage[]
+
+  // Live
+  hostedLives        LiveSession[]       @relation("LiveHost")
+  liveParticipations LiveParticipant[]
+
+  // Shared
+  notifications        Notification[]     @relation("NotificationRecipient")
+  actedNotifications   Notification[]     @relation("NotificationActor")
+  ownedCircles         Circle[]
+  circleMemberships    CircleMember[]
+  circleInvitesCreated CircleInvite[]
+  reports              Report[]           @relation("Reporter")
+  reportedReports      Report[]           @relation("ReportedUser")
+  moderationActions    ModerationLog[]    @relation("Moderator")
+  moderationTargets    ModerationLog[]    @relation("ModTarget")
+  feedInteractions     FeedInteraction[]
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Follower")
+  blockedUsers  Block[] @relation("Blocker")
+  blockedBy     Block[] @relation("Blocked")
+  mutedUsers    Mute[]  @relation("Muter")
+  mutedBy       Mute[]  @relation("Muted")
+  removedPosts Post[] @relation("PostRemover")
+  createdConversations Conversation[] @relation("ConversationCreator")
+
+  @@index([username])
+  @@index([clerkId])
+  @@index([createdAt(sort: Desc)])
+  @@map("users")
+}
+
+// ============================================================
+// FOLLOWS
+// ============================================================
+
+model Follow {
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+  follower  User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  @@id([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([createdAt(sort: Desc)])
+  @@map("follows")
+}
+
+// ============================================================
+// SAF (الصف) — THE FEED
+// Instagram/Facebook-style posts + Stories
+// ============================================================
+
+model Post {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content    String?  @db.VarChar(2000)
+  postType   PostType @default(TEXT)
+  visibility PostVisibility @default(PUBLIC)
+  space      ContentSpace @default(SAF)
+  mediaUrls    String[] @default([])
+  mediaTypes   String[] @default([])
+  thumbnailUrl String?
+  mediaWidth   Int?
+  mediaHeight  Int?
+  videoDuration Float?
+  hashtags     String[] @default([])
+  mentions     String[] @default([])
+  locationName String?
+  locationLat  Float?
+  locationLng  Float?
+  language     String   @default("en")
+  likesCount    Int @default(0)
+  commentsCount Int @default(0)
+  sharesCount   Int @default(0)
+  savesCount    Int @default(0)
+  viewsCount    Int @default(0)
+  sharedPostId String?
+  sharedPost   Post?   @relation("PostShares", fields: [sharedPostId], references: [id], onDelete: SetNull)
+  shares       Post[]  @relation("PostShares")
+  circleId String?
+  circle   Circle? @relation(fields: [circleId], references: [id], onDelete: SetNull)
+  isRemoved     Boolean   @default(false)
+  removedReason String?
+  removedAt     DateTime?
+  removedById   String?
+  removedBy     User?     @relation("PostRemover", fields: [removedById], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  comments         Comment[]
+  reactions        PostReaction[]
+  savedBy          SavedPost[]
+  notifications    Notification[]
+  feedInteractions FeedInteraction[]
+  moderationLogs   ModerationLog[]    @relation("ModPostTarget")
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([circleId, createdAt(sort: Desc)])
+  @@index([space, createdAt(sort: Desc)])
+  @@index([hashtags])
+  @@map("posts")
+}
+
+model Story {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mediaUrl    String
+  mediaType   String
+  thumbnailUrl String?
+  duration    Float?
+  textOverlay String?
+  textColor   String?
+  bgColor     String?
+  musicId     String?
+  viewsCount   Int @default(0)
+  repliesCount Int @default(0)
+  expiresAt DateTime
+  isHighlight Boolean @default(false)
+  highlightName String?
+  createdAt DateTime @default(now())
+  views StoryView[]
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("stories")
+}
+
+model StoryView {
+  storyId   String
+  viewerId  String
+  createdAt DateTime @default(now())
+  story Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  @@id([storyId, viewerId])
+  @@map("story_views")
+}
+
+// ============================================================
+// BAKRA (بكرة) — SHORT VIDEO
+// TikTok-style vertical swipe, 15s-3min
+// ============================================================
+
+model Reel {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  videoUrl     String
+  streamId     String?
+  thumbnailUrl String?
+  duration     Float
+  width        Int        @default(1080)
+  height       Int        @default(1920)
+  status       ReelStatus @default(PROCESSING)
+  caption    String? @db.VarChar(500)
+  hashtags   String[] @default([])
+  mentions   String[] @default([])
+  language   String   @default("en")
+  audioId    String?
+  audioTitle String?
+  audioArtist String?
+  likesCount    Int @default(0)
+  commentsCount Int @default(0)
+  sharesCount   Int @default(0)
+  savesCount    Int @default(0)
+  viewsCount    Int @default(0)
+  loopsCount    Int @default(0)
+  isFeatureWorthy Boolean @default(false)
+  isSensitive     Boolean @default(false)
+  isRemoved     Boolean   @default(false)
+  removedReason String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reactions  ReelReaction[]
+  comments   ReelComment[]
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([viewsCount(sort: Desc)])
+  @@index([hashtags])
+  @@map("reels")
+}
+
+model ReelReaction {
+  userId   String
+  reelId   String
+  reaction ReactionType @default(LIKE)
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reel Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  @@id([userId, reelId])
+  @@index([reelId])
+  @@map("reel_reactions")
+}
+
+model ReelComment {
+  id     String @id @default(cuid())
+  reelId String
+  userId String
+  reel   Reel @relation(fields: [reelId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   ReelComment?  @relation("ReelCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  ReelComment[] @relation("ReelCommentThread")
+  content    String @db.VarChar(500)
+  likesCount Int    @default(0)
+  createdAt DateTime @default(now())
+  @@index([reelId, createdAt])
+  @@index([parentId])
+  @@map("reel_comments")
+}
+
+// ============================================================
+// MAJLIS (المجلس) — TEXT & DISCUSSION
+// X/Twitter-style threads + microblogging
+// ============================================================
+
+model Thread {
+  id       String @id @default(cuid())
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content    String  @db.VarChar(500)
+  mediaUrls  String[] @default([])
+  mediaTypes String[] @default([])
+  isChainHead   Boolean  @default(true)
+  chainId       String?
+  chainPosition Int      @default(0)
+  repostOfId  String?
+  repostOf    Thread?  @relation("ThreadReposts", fields: [repostOfId], references: [id], onDelete: SetNull)
+  reposts     Thread[] @relation("ThreadReposts")
+  isQuotePost Boolean  @default(false)
+  quoteText   String?  @db.VarChar(500)
+  hashtags   String[] @default([])
+  mentions   String[] @default([])
+  language   String   @default("en")
+  visibility ThreadVisibility @default(PUBLIC)
+  circleId String?
+  circle   Circle? @relation(fields: [circleId], references: [id], onDelete: SetNull)
+  likesCount    Int @default(0)
+  repliesCount  Int @default(0)
+  repostsCount  Int @default(0)
+  quotesCount   Int @default(0)
+  viewsCount    Int @default(0)
+  bookmarksCount Int @default(0)
+  isRemoved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reactions ThreadReaction[]
+  replies   ThreadReply[]
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([createdAt(sort: Desc)])
+  @@index([chainId])
+  @@index([circleId, createdAt(sort: Desc)])
+  @@index([hashtags])
+  @@map("threads")
+}
+
+model ThreadReaction {
+  userId   String
+  threadId String
+  reaction ReactionType @default(LIKE)
+  createdAt DateTime @default(now())
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  thread Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  @@id([userId, threadId])
+  @@index([threadId])
+  @@map("thread_reactions")
+}
+
+model ThreadReply {
+  id       String @id @default(cuid())
+  threadId String
+  userId   String
+  thread   Thread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   ThreadReply?  @relation("ThreadReplyChain", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  ThreadReply[] @relation("ThreadReplyChain")
+  content    String   @db.VarChar(500)
+  mediaUrls  String[] @default([])
+  likesCount Int      @default(0)
+  createdAt DateTime @default(now())
+  @@index([threadId, createdAt])
+  @@index([parentId])
+  @@map("thread_replies")
+}
+
+// ============================================================
+// MINBAR (المنبر) — LONG VIDEO
+// YouTube-style horizontal video, channels, playlists
+// ============================================================
+
+model Channel {
+  id          String @id @default(cuid())
+  userId      String @unique
+  user        User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  handle      String @unique
+  name        String @db.VarChar(100)
+  description String? @db.VarChar(5000)
+  avatarUrl   String?
+  bannerUrl   String?
+  subscribersCount Int @default(0)
+  videosCount      Int @default(0)
+  totalViews       Int @default(0)
+  isMonetized Boolean @default(false)
+  isVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  videos    Video[]
+  playlists Playlist[]
+  subscribers Subscription[]
+  @@index([handle])
+  @@index([subscribersCount(sort: Desc)])
+  @@map("channels")
+}
+
+model Video {
+  id        String @id @default(cuid())
+  userId    String
+  channelId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  title        String  @db.VarChar(200)
+  description  String? @db.VarChar(10000)
+  videoUrl     String
+  streamId     String?
+  thumbnailUrl String?
+  duration     Float
+  width        Int?
+  height       Int?
+  status       VideoStatus @default(DRAFT)
+  category     VideoCategory @default(OTHER)
+  tags       String[] @default([])
+  language   String   @default("en")
+  chapters Json?
+  viewsCount    Int @default(0)
+  likesCount    Int @default(0)
+  dislikesCount Int @default(0)
+  commentsCount Int @default(0)
+  sharesCount   Int @default(0)
+  savesCount    Int @default(0)
+  avgWatchDuration Float?
+  completionRate   Float?
+  isRemoved       Boolean @default(false)
+  isAgeRestricted Boolean @default(false)
+  scheduledAt DateTime?
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  comments       VideoComment[]
+  reactions      VideoReaction[]
+  playlistItems  PlaylistItem[]
+  @@index([channelId, publishedAt(sort: Desc)])
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([category, viewsCount(sort: Desc)])
+  @@index([tags])
+  @@map("videos")
+}
+
+model VideoComment {
+  id      String @id @default(cuid())
+  videoId String
+  userId  String
+  video   Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   VideoComment?  @relation("VideoCommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  VideoComment[] @relation("VideoCommentThread")
+  content    String @db.VarChar(2000)
+  likesCount Int    @default(0)
+  timestamp  Float?
+  isPinned Boolean @default(false)
+  createdAt DateTime @default(now())
+  @@index([videoId, createdAt])
+  @@index([parentId])
+  @@map("video_comments")
+}
+
+model VideoReaction {
+  userId   String
+  videoId  String
+  isLike   Boolean
+  createdAt DateTime @default(now())
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  @@id([userId, videoId])
+  @@map("video_reactions")
+}
+
+model Subscription {
+  userId    String
+  channelId String
+  notificationsOn Boolean @default(true)
+  createdAt DateTime @default(now())
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  @@id([userId, channelId])
+  @@index([channelId])
+  @@map("subscriptions")
+}
+
+model Playlist {
+  id        String @id @default(cuid())
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  title       String @db.VarChar(200)
+  description String? @db.VarChar(1000)
+  thumbnailUrl String?
+  isPublic    Boolean @default(true)
+  videosCount Int     @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items PlaylistItem[]
+  @@index([channelId])
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id         String @id @default(cuid())
+  playlistId String
+  videoId    String
+  position   Int
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  video    Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([playlistId, videoId])
+  @@index([playlistId, position])
+  @@map("playlist_items")
+}
+
+// ============================================================
+// SAF COMMENTS
+// ============================================================
+
+model Comment {
+  id       String @id @default(cuid())
+  postId   String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentId String?
+  parent   Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  Comment[] @relation("CommentThread")
+  content  String @db.VarChar(1000)
+  mentions String[] @default([])
+  likesCount   Int @default(0)
+  repliesCount Int @default(0)
+  isRemoved Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reactions      CommentReaction[]
+  notifications  Notification[]
+  moderationLogs ModerationLog[] @relation("ModCommentTarget")
+  @@index([postId, createdAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([parentId])
+  @@map("comments")
+}
+
+model PostReaction {
+  userId   String
+  postId   String
+  reaction ReactionType @default(LIKE)
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("post_reactions")
+}
+
+model CommentReaction {
+  userId    String
+  commentId String
+  reaction  ReactionType @default(LIKE)
+  createdAt DateTime @default(now())
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  @@id([userId, commentId])
+  @@map("comment_reactions")
+}
+
+model SavedPost {
+  userId         String
+  postId         String
+  collectionName String @default("default")
+  createdAt      DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([userId, postId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("saved_posts")
+}
+
+// ============================================================
+// RISALAH (رسالة) — MESSAGING
+// ============================================================
+
+model Conversation {
+  id             String  @id @default(cuid())
+  isGroup        Boolean @default(false)
+  groupName      String?
+  groupAvatarUrl String?
+  createdById    String?
+  createdBy      User?   @relation("ConversationCreator", fields: [createdById], references: [id])
+  lastMessageText String?
+  lastMessageAt   DateTime?
+  lastMessageById String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members  ConversationMember[]
+  messages Message[]
+  notifications Notification[]
+  @@map("conversations")
+}
+
+model ConversationMember {
+  conversationId String
+  userId         String
+  lastReadAt  DateTime @default(now())
+  unreadCount Int      @default(0)
+  isMuted     Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  joinedAt    DateTime @default(now())
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String @id @default(cuid())
+  conversationId String
+  senderId       String
+  content       String?      @db.VarChar(5000)
+  messageType   MessageType  @default(TEXT)
+  mediaUrl      String?
+  mediaType     String?
+  voiceDuration Float?
+  fileName      String?
+  fileSize      Int?
+  replyToId String?
+  replyTo   Message?  @relation("MessageReply", fields: [replyToId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("MessageReply")
+  expiresAt DateTime?
+  isDeleted Boolean   @default(false)
+  editedAt  DateTime?
+  createdAt DateTime @default(now())
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  moderationLogs ModerationLog[] @relation("ModMessageTarget")
+  @@index([conversationId, createdAt(sort: Desc)])
+  @@index([senderId])
+  @@index([expiresAt])
+  @@map("messages")
+}
+
+model BroadcastChannel {
+  id          String @id @default(cuid())
+  name        String @db.VarChar(100)
+  slug        String @unique
+  description String? @db.VarChar(1000)
+  avatarUrl   String?
+  channelType ChannelType @default(BROADCAST)
+  subscribersCount Int @default(0)
+  postsCount       Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  members  ChannelMember[]
+  messages BroadcastMessage[]
+  @@index([slug])
+  @@map("broadcast_channels")
+}
+
+model ChannelMember {
+  channelId String
+  userId    String
+  role      ChannelRole @default(SUBSCRIBER)
+  isMuted   Boolean     @default(false)
+  joinedAt  DateTime    @default(now())
+  channel BroadcastChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([channelId, userId])
+  @@index([userId])
+  @@map("channel_members")
+}
+
+model BroadcastMessage {
+  id        String @id @default(cuid())
+  channelId String
+  senderId  String
+  content     String?     @db.VarChar(5000)
+  messageType MessageType @default(TEXT)
+  mediaUrl    String?
+  mediaType   String?
+  viewsCount     Int @default(0)
+  reactionsCount Int @default(0)
+  isPinned Boolean @default(false)
+  createdAt DateTime @default(now())
+  channel BroadcastChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  sender  User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  @@index([channelId, createdAt(sort: Desc)])
+  @@map("broadcast_messages")
+}
+
+// ============================================================
+// LIVE SESSIONS (Video Streams + Audio Spaces)
+// ============================================================
+
+model LiveSession {
+  id      String @id @default(cuid())
+  hostId  String
+  host    User   @relation("LiveHost", fields: [hostId], references: [id], onDelete: Cascade)
+  title       String @db.VarChar(200)
+  description String? @db.VarChar(1000)
+  thumbnailUrl String?
+  liveType LiveType
+  status   LiveStatus @default(SCHEDULED)
+  streamKey    String?  @unique
+  playbackUrl  String?
+  streamId     String?
+  peakViewers    Int @default(0)
+  currentViewers Int @default(0)
+  totalViews     Int @default(0)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  recordingUrl String?
+  isRecorded   Boolean @default(true)
+  createdAt DateTime @default(now())
+  participants LiveParticipant[]
+  @@index([hostId, createdAt(sort: Desc)])
+  @@index([status])
+  @@index([liveType, status])
+  @@map("live_sessions")
+}
+
+model LiveParticipant {
+  sessionId String
+  userId    String
+  role      String  @default("viewer")
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+  session LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([sessionId, userId])
+  @@map("live_participants")
+}
+
+// ============================================================
+// SAF CIRCLES (Communities)
+// ============================================================
+
+model Circle {
+  id          String @id @default(cuid())
+  name        String @db.VarChar(100)
+  slug        String @unique
+  description String? @db.VarChar(1000)
+  avatarUrl   String?
+  coverUrl    String?
+  privacy  CirclePrivacy @default(PUBLIC)
+  ownerId  String
+  owner    User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  membersCount Int @default(1)
+  postsCount   Int @default(0)
+  rules    String?
+  isBanned Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  posts         Post[]
+  threads       Thread[]
+  members       CircleMember[]
+  invites       CircleInvite[]
+  notifications Notification[]
+  @@index([slug])
+  @@index([ownerId])
+  @@index([privacy, membersCount(sort: Desc)])
+  @@map("circles")
+}
+
+model CircleMember {
+  circleId String
+  userId   String
+  role     CircleRole @default(MEMBER)
+  joinedAt DateTime   @default(now())
+  circle Circle @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([circleId, userId])
+  @@index([userId])
+  @@map("circle_members")
+}
+
+model CircleInvite {
+  id        String @id @default(cuid())
+  circleId  String
+  code      String @unique @default(cuid())
+  createdById String
+  maxUses   Int       @default(0)
+  useCount  Int       @default(0)
+  expiresAt DateTime?
+  createdAt DateTime @default(now())
+  circle    Circle @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
+  @@map("circle_invites")
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id      String @id @default(cuid())
+  userId  String
+  actorId String?
+  type NotificationType
+  postId         String?
+  commentId      String?
+  circleId       String?
+  conversationId String?
+  title String?
+  body  String?
+  isRead Boolean   @default(false)
+  readAt DateTime?
+  createdAt DateTime @default(now())
+  user         User          @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor        User?         @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  post         Post?         @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment      Comment?      @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  circle       Circle?       @relation(fields: [circleId], references: [id], onDelete: Cascade)
+  conversation Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+// ============================================================
+// REPORTS & MODERATION
+// ============================================================
+
+model Report {
+  id         String @id @default(cuid())
+  reporterId String
+  reportedUserId    String?
+  reportedPostId    String?
+  reportedCommentId String?
+  reportedMessageId String?
+  reason      ReportReason
+  description String?       @db.VarChar(1000)
+  status         ReportStatus     @default(PENDING)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  actionTaken    ModerationAction @default(NONE)
+  moderatorNotes String?
+  explanationToReporter String?
+  explanationToReported String?
+  createdAt DateTime @default(now())
+  reporter     User  @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User? @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+  moderationLogs ModerationLog[]
+  @@index([status, createdAt])
+  @@index([reportedUserId])
+  @@map("reports")
+}
+
+model ModerationLog {
+  id          String @id @default(cuid())
+  moderatorId String
+  targetUserId    String?
+  targetPostId    String?
+  targetCommentId String?
+  targetMessageId String?
+  action      ModerationAction
+  reason      String
+  explanation String
+  reportId    String?
+  isAppealed    Boolean  @default(false)
+  appealText    String?
+  appealResolved Boolean?
+  appealResult  String?
+  createdAt DateTime @default(now())
+  moderator     User     @relation("Moderator", fields: [moderatorId], references: [id])
+  targetUser    User?    @relation("ModTarget", fields: [targetUserId], references: [id])
+  targetPost    Post?    @relation("ModPostTarget", fields: [targetPostId], references: [id])
+  targetComment Comment? @relation("ModCommentTarget", fields: [targetCommentId], references: [id])
+  targetMessage Message? @relation("ModMessageTarget", fields: [targetMessageId], references: [id])
+  report        Report?  @relation(fields: [reportId], references: [id])
+  @@index([targetUserId, createdAt(sort: Desc)])
+  @@map("moderation_log")
+}
+
+// ============================================================
+// BLOCKS & MUTES
+// ============================================================
+
+model Block {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  blocker User @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+  @@id([blockerId, blockedId])
+  @@map("blocks")
+}
+
+model Mute {
+  userId  String
+  mutedId String
+  createdAt DateTime @default(now())
+  user  User @relation("Muter", fields: [userId], references: [id], onDelete: Cascade)
+  muted User @relation("Muted", fields: [mutedId], references: [id], onDelete: Cascade)
+  @@id([userId, mutedId])
+  @@map("mutes")
+}
+
+// ============================================================
+// HASHTAGS
+// ============================================================
+
+model Hashtag {
+  id         String @id @default(cuid())
+  name       String @unique
+  postsCount Int    @default(0)
+  createdAt  DateTime @default(now())
+  @@index([name])
+  @@index([postsCount(sort: Desc)])
+  @@map("hashtags")
+}
+
+// ============================================================
+// FEED ALGORITHM SIGNALS
+// ============================================================
+
+model FeedInteraction {
+  id     String @id @default(cuid())
+  userId String
+  postId String
+  space           ContentSpace @default(SAF)
+  viewed          Boolean @default(false)
+  viewDurationMs  Int     @default(0)
+  liked           Boolean @default(false)
+  commented       Boolean @default(false)
+  shared          Boolean @default(false)
+  saved           Boolean @default(false)
+  completionRate  Float?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([postId])
+  @@index([space, userId])
+  @@map("feed_interactions")
+}
