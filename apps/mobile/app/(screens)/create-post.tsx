@@ -88,7 +88,8 @@ export default function CreatePostScreen() {
         // Fetch file and upload to presigned URL
         const fileRes = await fetch(item.uri);
         const blob = await fileRes.blob();
-        await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+        const uploadRes = await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': contentType } });
+        if (!uploadRes.ok) throw new Error(`Upload failed (${uploadRes.status})`);
 
         mediaUrls.push(publicUrl);
         mediaTypes.push(item.type);

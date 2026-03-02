@@ -14,6 +14,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Users')
@@ -117,11 +118,13 @@ export class UsersController {
     return this.usersService.getAnalytics(userId);
   }
 
+  // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Public profile (respects blocks)' })
   getProfile(
     @Param('username') username: string,
-    @Query('currentUserId') currentUserId?: string,
+    @CurrentUser('id') currentUserId?: string,
   ) {
     return this.usersService.getProfile(username, currentUserId);
   }

@@ -17,6 +17,7 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class ReactDto {
@@ -70,8 +71,13 @@ export class PostsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get post by ID' })
-  getById(@Param('id') id: string, @Query('viewerId') viewerId?: string) {
+  getById(
+    @Param('id') id: string,
+    // viewerId is taken from the verified auth context, not from query params
+    @CurrentUser('id') viewerId?: string,
+  ) {
     return this.postsService.getById(id, viewerId);
   }
 

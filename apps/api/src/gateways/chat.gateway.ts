@@ -60,11 +60,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleDisconnect(_client: Socket) {}
 
   @SubscribeMessage('join_conversation')
-  handleJoin(
+  async handleJoin(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { conversationId: string },
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    try {
+      await this.messagesService.requireMembership(data.conversationId, client.data.userId);
+    } catch {
+      throw new WsException('Not a member of this conversation');
+    }
     client.join(`conversation:${data.conversationId}`);
   }
 

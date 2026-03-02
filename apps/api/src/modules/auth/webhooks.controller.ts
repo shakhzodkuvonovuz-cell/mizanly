@@ -9,6 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { Webhook } from 'svix';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +17,7 @@ import { AuthService } from './auth.service';
 
 @ApiTags('Webhooks')
 @Controller('webhooks')
+@SkipThrottle()
 export class WebhooksController {
   private readonly logger = new Logger(WebhooksController.name);
 

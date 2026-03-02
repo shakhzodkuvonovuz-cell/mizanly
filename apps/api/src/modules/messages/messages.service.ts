@@ -240,7 +240,7 @@ export class MessagesService {
   async addGroupMembers(conversationId: string, userId: string, memberIds: string[]) {
     const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
     if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
-    await this.requireMembership(conversationId, userId);
+    if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can add members');
 
     await this.prisma.conversationMember.createMany({
       data: memberIds.map((id) => ({ conversationId, userId: id })),
@@ -304,7 +304,7 @@ export class MessagesService {
     return { removed: true };
   }
 
-  private async requireMembership(conversationId: string, userId: string) {
+  async requireMembership(conversationId: string, userId: string) {
     const member = await this.prisma.conversationMember.findUnique({
       where: { conversationId_userId: { conversationId, userId } },
     });

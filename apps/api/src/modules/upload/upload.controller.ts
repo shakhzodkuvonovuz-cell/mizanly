@@ -5,6 +5,7 @@ import {
   Body,
   Param,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IsString, IsIn } from 'class-validator';
@@ -37,8 +38,17 @@ export class UploadController {
   }
 
   @Delete(':key(*)')
-  @ApiOperation({ summary: 'Delete a file from R2 by key' })
-  deleteFile(@Param('key') key: string) {
+  @ApiOperation({ summary: 'Delete a file from R2 by key (must own the file)' })
+  deleteFile(
+    @Param('key') key: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    // Keys are structured as "{folder}/{userId}/{uuid}.{ext}" — enforce ownership
+    const segments = key.split('/');
+    const keyOwnerId = segments.length >= 2 ? segments[1] : null;
+    if (keyOwnerId !== userId) {
+      throw new ForbiddenException('You do not own this file');
+    }
     return this.uploadService.deleteFile(key);
   }
 }
