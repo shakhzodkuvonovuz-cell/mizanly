@@ -1,2 +1,11 @@
+import { useEffect } from 'react';
 import { View } from 'react-native';
-export default function CreateScreen() { return <View />; }
+import { useRouter } from 'expo-router';
+
+// This screen is never shown — the tab button is overridden with a custom CreateButton
+// that opens a bottom sheet. If the route is somehow navigated to directly, redirect back.
+export default function CreateScreen() {
+  const router = useRouter();
+  useEffect(() => { router.back(); }, []);
+  return <View />;
+}

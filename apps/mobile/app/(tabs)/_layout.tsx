@@ -1,16 +1,16 @@
-import { Tabs } from 'expo-router';
-import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useState } from 'react';
+import { Tabs, useRouter } from 'expo-router';
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal, Pressable } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { colors, tabBar } from '@/theme';
+import { colors, tabBar, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
 
-// Placeholder icons (replace with actual SVG icons)
 function TabIcon({ name, focused, badge }: { name: string; focused: boolean; badge?: number }) {
   const iconMap: Record<string, string> = { saf: '🏠', bakra: '▶️', majlis: '💬', risalah: '✉️' };
   return (
     <View style={styles.iconWrap}>
       <View style={[styles.iconCircle, focused && styles.iconCircleFocused]}>
-        <View><Text style={{ fontSize: 20 }}>{iconMap[name] || '•'}</Text></View>
+        <Text style={{ fontSize: 20 }}>{iconMap[name] || '•'}</Text>
       </View>
       {badge ? (
         <View style={styles.badge}>
@@ -21,14 +21,47 @@ function TabIcon({ name, focused, badge }: { name: string; focused: boolean; bad
   );
 }
 
-import { Text } from 'react-native';
-
 function CreateButton() {
-  const setCreateSheetOpen = useStore(s => s.setCreateSheetOpen);
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
   return (
-    <TouchableOpacity style={styles.createButton} onPress={() => setCreateSheetOpen(true)} activeOpacity={0.8}>
-      <Text style={styles.createButtonText}>+</Text>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity style={styles.createButton} onPress={() => setOpen(true)} activeOpacity={0.8}>
+        <Text style={styles.createButtonText}>+</Text>
+      </TouchableOpacity>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <Pressable style={styles.modalOverlay} onPress={() => setOpen(false)}>
+          <View style={styles.createSheet}>
+            <Text style={styles.createSheetTitle}>Create</Text>
+            <TouchableOpacity
+              style={styles.createOption}
+              onPress={() => { setOpen(false); router.push('/(screens)/create-post'); }}
+            >
+              <Text style={styles.createOptionIcon}>🖼️</Text>
+              <View>
+                <Text style={styles.createOptionLabel}>Post</Text>
+                <Text style={styles.createOptionSub}>Photo, video, or text in Saf</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.createOption}
+              onPress={() => { setOpen(false); router.push('/(screens)/create-thread'); }}
+            >
+              <Text style={styles.createOptionIcon}>💬</Text>
+              <View>
+                <Text style={styles.createOptionLabel}>Thread</Text>
+                <Text style={styles.createOptionSub}>Share your thoughts in Majlis</Text>
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelOption} onPress={() => setOpen(false)}>
+              <Text style={styles.cancelOptionText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
+    </>
   );
 }
 
@@ -122,4 +155,34 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
   createButtonText: { color: '#FFF', fontSize: 24, fontWeight: '300', marginTop: -2 },
+
+  // Create sheet modal
+  modalOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  createSheet: {
+    backgroundColor: colors.dark.bgSheet,
+    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingTop: spacing.md,
+    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
+  },
+  createSheetTitle: {
+    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '700',
+    textAlign: 'center', marginBottom: spacing.md,
+  },
+  createOption: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
+  },
+  createOptionIcon: { fontSize: 28 },
+  createOptionLabel: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  createOptionSub: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
+  cancelOption: {
+    margin: spacing.md, borderRadius: 14,
+    backgroundColor: colors.dark.surface,
+    paddingVertical: spacing.md, alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  cancelOptionText: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
 });

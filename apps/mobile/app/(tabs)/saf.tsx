@@ -4,6 +4,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
 import { postsApi, storiesApi } from '@/services/api';
@@ -13,6 +14,7 @@ import type { Post, StoryGroup } from '@/types';
 
 export default function SafScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,10 +53,10 @@ export default function SafScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>Mizanly</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity hitSlop={8}>
+          <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/search')}>
             <Text style={styles.headerIcon}>🔍</Text>
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={8}>
+          <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/notifications')}>
             <Text style={styles.headerIcon}>🔔</Text>
           </TouchableOpacity>
         </View>
