@@ -1,5 +1,15 @@
-import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  Controller,
+  Get,
+  Post,
+  Delete,
+  Param,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { NotificationsService } from './notifications.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -12,16 +22,37 @@ export class NotificationsController {
   constructor(private notificationsService: NotificationsService) {}
 
   @Get()
-  getNotifications(@CurrentUser('id') userId: string, @Query('filter') filter?: string, @Query('cursor') cursor?: string) {
-    return this.notificationsService.getNotifications(userId, filter as any, cursor);
+  @ApiOperation({ summary: 'Get notifications (all | mentions | verified)' })
+  getNotifications(
+    @CurrentUser('id') userId: string,
+    @Query('filter') filter?: 'all' | 'mentions' | 'verified',
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.notificationsService.getNotifications(userId, filter, cursor);
   }
 
   @Get('unread')
-  getUnreadCount(@CurrentUser('id') userId: string) { return this.notificationsService.getUnreadCount(userId); }
+  @ApiOperation({ summary: 'Get unread notification count' })
+  getUnreadCount(@CurrentUser('id') userId: string) {
+    return this.notificationsService.getUnreadCount(userId);
+  }
 
   @Post(':id/read')
-  markRead(@Param('id') id: string, @CurrentUser('id') userId: string) { return this.notificationsService.markRead(id, userId); }
+  @ApiOperation({ summary: 'Mark a notification as read' })
+  markRead(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.notificationsService.markRead(id, userId);
+  }
 
   @Post('read-all')
-  markAllRead(@CurrentUser('id') userId: string) { return this.notificationsService.markAllRead(userId); }
+  @ApiOperation({ summary: 'Mark all notifications as read' })
+  markAllRead(@CurrentUser('id') userId: string) {
+    return this.notificationsService.markAllRead(userId);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete a notification' })
+  delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.notificationsService.deleteNotification(id, userId);
+  }
 }

@@ -1,24 +1,77 @@
-import { IsString, IsOptional, IsEnum, IsArray, ValidateNested, MaxLength } from 'class-validator';
-import { Type } from 'class-transformer';
-
-class MediaDto {
-  @IsString() url: string;
-  @IsOptional() @IsString() type?: string;
-  @IsOptional() width?: number;
-  @IsOptional() height?: number;
-}
+import {
+  IsString, IsOptional, IsEnum, IsArray,
+  MaxLength, IsBoolean, IsUrl, ArrayMaxSize,
+} from 'class-validator';
 
 export class CreatePostDto {
-  @IsEnum(['IMAGE', 'CAROUSEL', 'TEXT', 'SHARED_THREAD', 'SHARED_REEL'])
-  type: string;
+  @IsEnum(['TEXT', 'IMAGE', 'VIDEO', 'CAROUSEL'])
+  postType: string;
 
-  @IsOptional() @IsString() @MaxLength(2200) caption?: string;
-  @IsOptional() @IsString() circleId?: string;
-  @IsOptional() @IsEnum(['PUBLIC', 'FOLLOWERS', 'CIRCLE']) visibility?: string;
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  content?: string;
+
+  @IsOptional()
+  @IsEnum(['PUBLIC', 'FOLLOWERS', 'CIRCLE'])
+  visibility?: string;
+
+  @IsOptional()
+  @IsString()
+  circleId?: string;
 
   @IsOptional()
   @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => MediaDto)
-  media?: MediaDto[];
+  @IsUrl({}, { each: true })
+  @ArrayMaxSize(10)
+  mediaUrls?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMaxSize(10)
+  mediaTypes?: string[];
+
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @IsOptional()
+  mediaWidth?: number;
+
+  @IsOptional()
+  mediaHeight?: number;
+
+  @IsOptional()
+  videoDuration?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  hashtags?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  mentions?: string[];
+
+  @IsOptional()
+  @IsString()
+  locationName?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isSensitive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  altText?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  hideLikesCount?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  commentsDisabled?: boolean;
 }

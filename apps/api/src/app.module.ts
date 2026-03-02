@@ -11,6 +11,13 @@ import { MessagesModule } from './modules/messages/messages.module';
 import { CirclesModule } from './modules/circles/circles.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SearchModule } from './modules/search/search.module';
+import { FollowsModule } from './modules/follows/follows.module';
+import { BlocksModule } from './modules/blocks/blocks.module';
+import { MutesModule } from './modules/mutes/mutes.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { ProfileLinksModule } from './modules/profile-links/profile-links.module';
+import { HealthModule } from './modules/health/health.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -26,6 +33,13 @@ import { SearchModule } from './modules/search/search.module';
     CirclesModule,
     NotificationsModule,
     SearchModule,
+    FollowsModule,
+    BlocksModule,
+    MutesModule,
+    SettingsModule,
+    ProfileLinksModule,
+    HealthModule,
+    UploadModule,
   ],
 })
 export class AppModule {}

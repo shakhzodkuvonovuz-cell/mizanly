@@ -2,9 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    rawBody: true,
+  });
 
   // Global prefix
   app.setGlobalPrefix('api/v1');
@@ -14,6 +18,10 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:8081'],
     credentials: true,
   });
+
+  // Global filter + interceptor
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   // Validation
   app.useGlobalPipes(

@@ -1,108 +1,423 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
+
+const THREAD_SELECT = {
+  id: true,
+  content: true,
+  mediaUrls: true,
+  mediaTypes: true,
+  visibility: true,
+  isChainHead: true,
+  chainId: true,
+  chainPosition: true,
+  isQuotePost: true,
+  quoteText: true,
+  repostOfId: true,
+  hashtags: true,
+  mentions: true,
+  likesCount: true,
+  repliesCount: true,
+  repostsCount: true,
+  quotesCount: true,
+  viewsCount: true,
+  bookmarksCount: true,
+  hideLikesCount: true,
+  isPinned: true,
+  isSensitive: true,
+  isRemoved: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+  circle: { select: { id: true, name: true, slug: true } },
+  poll: {
+    include: {
+      options: {
+        orderBy: { position: 'asc' as const },
+        include: { _count: { select: { votes: true } } },
+      },
+    },
+  },
+  repostOf: {
+    select: {
+      id: true,
+      content: true,
+      user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+    },
+  },
+};
+
+const REPLY_SELECT = {
+  id: true,
+  content: true,
+  mediaUrls: true,
+  likesCount: true,
+  createdAt: true,
+  parentId: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+  _count: { select: { replies: true } },
+};
 
 @Injectable()
 export class ThreadsService {
   constructor(private prisma: PrismaService) {}
 
-  private readonly threadSelect = {
-    id: true, content: true, visibility: true, likeCount: true,
-    repostCount: true, replyCount: true, viewCount: true, isPinned: true, createdAt: true,
-    author: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
-    media: { select: { id: true, url: true, type: true, order: true }, orderBy: { order: 'asc' as const } },
-    poll: { include: { options: { orderBy: { order: 'asc' as const } } } },
-    circle: { select: { id: true, name: true, emoji: true } },
-    replyTo: { select: { id: true, content: true, author: { select: { username: true } } } },
-  };
-
-  async getFeed(userId: string, type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string, limit = 20) {
-    let where: any = { replyToId: null, visibility: 'PUBLIC' };
+  async getFeed(
+    userId: string,
+    type: 'foryou' | 'following' | 'trending' = 'foryou',
+    cursor?: string,
+    limit = 20,
+  ) {
+    let where: any = { isRemoved: false, isChainHead: true };
 
     if (type === 'following') {
-      const followingIds = await this.prisma.follow.findMany({
-        where: { followerId: userId }, select: { followingId: true },
+      const follows = await this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
       });
-      where.authorId = { in: [...followingIds.map(f => f.followingId), userId] };
+      where.userId = { in: [userId, ...follows.map((f) => f.followingId)] };
+    } else {
+      where.visibility = 'PUBLIC';
     }
 
-    return this.prisma.thread.findMany({
+    const threads = await this.prisma.thread.findMany({
       where,
-      select: this.threadSelect,
-      take: limit,
+      select: THREAD_SELECT,
+      take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: type === 'trending' ? { likeCount: 'desc' } : { createdAt: 'desc' },
+      orderBy:
+        type === 'trending'
+          ? { likesCount: 'desc' }
+          : { createdAt: 'desc' },
     });
+
+    const hasMore = threads.length > limit;
+    const items = hasMore ? threads.slice(0, limit) : threads;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
   }
 
   async create(userId: string, dto: CreateThreadDto) {
     return this.prisma.thread.create({
       data: {
-        authorId: userId,
+        userId,
         content: dto.content,
-        visibility: dto.visibility || 'PUBLIC',
+        visibility: (dto.visibility as any) ?? 'PUBLIC',
         circleId: dto.circleId,
-        replyToId: dto.replyToId,
-        rootThreadId: dto.rootThreadId,
-        media: dto.media ? {
-          create: dto.media.map((m, i) => ({ url: m.url, type: m.type || 'IMAGE', order: i })),
-        } : undefined,
-        poll: dto.poll ? {
-          create: {
-            question: dto.poll.question,
-            expiresAt: new Date(dto.poll.expiresAt),
-            options: { create: dto.poll.options.map((o, i) => ({ text: o, order: i })) },
-          },
-        } : undefined,
+        mediaUrls: dto.mediaUrls ?? [],
+        mediaTypes: dto.mediaTypes ?? [],
+        hashtags: dto.hashtags ?? [],
+        mentions: dto.mentions ?? [],
+        isQuotePost: dto.isQuotePost ?? false,
+        quoteText: dto.quoteText,
+        repostOfId: dto.repostOfId,
+        poll: dto.poll
+          ? {
+              create: {
+                question: dto.poll.question,
+                endsAt: dto.poll.endsAt ? new Date(dto.poll.endsAt) : undefined,
+                allowMultiple: dto.poll.allowMultiple ?? false,
+                options: {
+                  create: dto.poll.options.map((o, i) => ({
+                    text: o.text,
+                    position: i,
+                  })),
+                },
+              },
+            }
+          : undefined,
       },
-      select: this.threadSelect,
+      select: THREAD_SELECT,
     });
   }
 
-  async getById(threadId: string) {
-    const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: this.threadSelect });
-    if (!thread) throw new NotFoundException('Thread not found');
-    return thread;
-  }
-
-  async getReplies(threadId: string, cursor?: string, limit = 20) {
-    return this.prisma.thread.findMany({
-      where: { replyToId: threadId },
-      select: this.threadSelect,
-      take: limit,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { createdAt: 'asc' },
+  async getById(threadId: string, viewerId?: string) {
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: THREAD_SELECT,
     });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    let userReaction: string | null = null;
+    let isBookmarked = false;
+
+    if (viewerId) {
+      const [reaction, bookmark] = await Promise.all([
+        this.prisma.threadReaction.findUnique({
+          where: { userId_threadId: { userId: viewerId, threadId } },
+        }),
+        this.prisma.threadBookmark.findUnique({
+          where: { userId_threadId: { userId: viewerId, threadId } },
+        }),
+      ]);
+      userReaction = reaction?.reaction ?? null;
+      isBookmarked = !!bookmark;
+    }
+
+    return { ...thread, userReaction, isBookmarked };
   }
 
   async delete(threadId: string, userId: string) {
     const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
-    if (!thread) throw new NotFoundException();
-    if (thread.authorId !== userId) throw new ForbiddenException();
-    return this.prisma.thread.delete({ where: { id: threadId } });
+    if (!thread) throw new NotFoundException('Thread not found');
+    if (thread.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.thread.update({
+      where: { id: threadId },
+      data: { isRemoved: true },
+    });
+    return { deleted: true };
   }
 
   async like(threadId: string, userId: string) {
-    await this.prisma.like.create({ data: { userId, threadId } });
-    await this.prisma.thread.update({ where: { id: threadId }, data: { likeCount: { increment: 1 } } });
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    const existing = await this.prisma.threadReaction.findUnique({
+      where: { userId_threadId: { userId, threadId } },
+    });
+    if (existing) throw new ConflictException('Already reacted');
+
+    await this.prisma.$transaction([
+      this.prisma.threadReaction.create({
+        data: { userId, threadId, reaction: 'LIKE' },
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { likesCount: { increment: 1 } },
+      }),
+    ]);
     return { liked: true };
   }
 
   async unlike(threadId: string, userId: string) {
-    await this.prisma.like.delete({ where: { userId_threadId: { userId, threadId } } });
-    await this.prisma.thread.update({ where: { id: threadId }, data: { likeCount: { decrement: 1 } } });
+    const existing = await this.prisma.threadReaction.findUnique({
+      where: { userId_threadId: { userId, threadId } },
+    });
+    if (!existing) throw new NotFoundException('Reaction not found');
+
+    await this.prisma.$transaction([
+      this.prisma.threadReaction.delete({
+        where: { userId_threadId: { userId, threadId } },
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { likesCount: { decrement: 1 } },
+      }),
+    ]);
     return { liked: false };
   }
 
   async repost(threadId: string, userId: string) {
-    await this.prisma.repost.create({ data: { userId, threadId } });
-    await this.prisma.thread.update({ where: { id: threadId }, data: { repostCount: { increment: 1 } } });
-    return { reposted: true };
+    const original = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!original || original.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Check if user already reposted
+    const existingRepost = await this.prisma.thread.findFirst({
+      where: { userId, repostOfId: threadId, isRemoved: false },
+    });
+    if (existingRepost) throw new ConflictException('Already reposted');
+
+    const [repost] = await this.prisma.$transaction([
+      this.prisma.thread.create({
+        data: {
+          userId,
+          content: '',
+          repostOfId: threadId,
+          mediaUrls: [],
+          mediaTypes: [],
+          visibility: 'PUBLIC',
+        },
+        select: THREAD_SELECT,
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { repostsCount: { increment: 1 } },
+      }),
+    ]);
+    return repost;
+  }
+
+  async unrepost(threadId: string, userId: string) {
+    const repost = await this.prisma.thread.findFirst({
+      where: { userId, repostOfId: threadId, isRemoved: false },
+    });
+    if (!repost) throw new NotFoundException('Repost not found');
+
+    await this.prisma.$transaction([
+      this.prisma.thread.update({
+        where: { id: repost.id },
+        data: { isRemoved: true },
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { repostsCount: { decrement: 1 } },
+      }),
+    ]);
+    return { reposted: false };
+  }
+
+  async bookmark(threadId: string, userId: string) {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    try {
+      await this.prisma.$transaction([
+        this.prisma.threadBookmark.create({ data: { userId, threadId } }),
+        this.prisma.thread.update({
+          where: { id: threadId },
+          data: { bookmarksCount: { increment: 1 } },
+        }),
+      ]);
+    } catch {
+      throw new ConflictException('Already bookmarked');
+    }
+    return { bookmarked: true };
+  }
+
+  async unbookmark(threadId: string, userId: string) {
+    const existing = await this.prisma.threadBookmark.findUnique({
+      where: { userId_threadId: { userId, threadId } },
+    });
+    if (!existing) throw new NotFoundException('Bookmark not found');
+
+    await this.prisma.$transaction([
+      this.prisma.threadBookmark.delete({
+        where: { userId_threadId: { userId, threadId } },
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { bookmarksCount: { decrement: 1 } },
+      }),
+    ]);
+    return { bookmarked: false };
+  }
+
+  async getReplies(threadId: string, cursor?: string, limit = 20) {
+    const replies = await this.prisma.threadReply.findMany({
+      where: { threadId, parentId: null },
+      select: REPLY_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const hasMore = replies.length > limit;
+    const items = hasMore ? replies.slice(0, limit) : replies;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  async addReply(threadId: string, userId: string, content: string, parentId?: string) {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    if (parentId) {
+      const parent = await this.prisma.threadReply.findUnique({ where: { id: parentId } });
+      if (!parent || parent.threadId !== threadId) throw new NotFoundException('Parent reply not found');
+    }
+
+    const [reply] = await this.prisma.$transaction([
+      this.prisma.threadReply.create({
+        data: { threadId, userId, content, parentId },
+        select: REPLY_SELECT,
+      }),
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { repliesCount: { increment: 1 } },
+      }),
+    ]);
+    return reply;
+  }
+
+  async deleteReply(replyId: string, userId: string) {
+    const reply = await this.prisma.threadReply.findUnique({ where: { id: replyId } });
+    if (!reply) throw new NotFoundException('Reply not found');
+    if (reply.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.$transaction([
+      this.prisma.threadReply.delete({ where: { id: replyId } }),
+      this.prisma.thread.update({
+        where: { id: reply.threadId },
+        data: { repliesCount: { decrement: 1 } },
+      }),
+    ]);
+    return { deleted: true };
   }
 
   async votePoll(optionId: string, userId: string) {
-    await this.prisma.pollVote.create({ data: { optionId, voterId: userId } });
-    await this.prisma.pollOption.update({ where: { id: optionId }, data: { voteCount: { increment: 1 } } });
+    const option = await this.prisma.pollOption.findUnique({
+      where: { id: optionId },
+      include: { poll: true },
+    });
+    if (!option) throw new NotFoundException('Poll option not found');
+
+    if (option.poll.endsAt && option.poll.endsAt < new Date()) {
+      throw new BadRequestException('Poll has ended');
+    }
+
+    const existing = await this.prisma.pollVote.findUnique({
+      where: { userId_optionId: { userId, optionId } },
+    });
+    if (existing) throw new ConflictException('Already voted');
+
+    await this.prisma.$transaction([
+      this.prisma.pollVote.create({ data: { userId, optionId } }),
+      this.prisma.pollOption.update({
+        where: { id: optionId },
+        data: { votesCount: { increment: 1 } },
+      }),
+      this.prisma.poll.update({
+        where: { id: option.pollId },
+        data: { totalVotes: { increment: 1 } },
+      }),
+    ]);
     return { voted: true };
+  }
+
+  async getUserThreads(username: string, cursor?: string, limit = 20) {
+    const user = await this.prisma.user.findUnique({ where: { username } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const threads = await this.prisma.thread.findMany({
+      where: { userId: user.id, isRemoved: false, isChainHead: true },
+      select: THREAD_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = threads.length > limit;
+    const items = hasMore ? threads.slice(0, limit) : threads;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
   }
 }

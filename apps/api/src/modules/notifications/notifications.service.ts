@@ -1,49 +1,118 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
 
-  async getNotifications(userId: string, filter?: 'all' | 'mentions' | 'verified', cursor?: string, limit = 30) {
-    let where: any = { recipientId: userId };
-    if (filter === 'mentions') where.type = { in: ['MENTION'] };
-    if (filter === 'verified') where.actor = { isVerified: true };
+  async getNotifications(
+    userId: string,
+    filter?: 'all' | 'mentions' | 'verified',
+    cursor?: string,
+    limit = 30,
+  ) {
+    const where: any = { userId };
 
-    return this.prisma.notification.findMany({
+    if (filter === 'mentions') {
+      where.type = { in: ['MENTION', 'THREAD_REPLY', 'REPLY'] };
+    } else if (filter === 'verified') {
+      where.actor = { isVerified: true };
+    }
+
+    const notifications = await this.prisma.notification.findMany({
       where,
       include: {
-        actor: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+        actor: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            isVerified: true,
+          },
+        },
       },
-      take: limit,
+      take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
     });
+
+    const hasMore = notifications.length > limit;
+    const items = hasMore ? notifications.slice(0, limit) : notifications;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
   }
 
   async markRead(notificationId: string, userId: string) {
-    return this.prisma.notification.updateMany({
-      where: { id: notificationId, recipientId: userId },
-      data: { read: true },
+    const notification = await this.prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+    if (!notification) throw new NotFoundException('Notification not found');
+    if (notification.userId !== userId) throw new ForbiddenException();
+
+    return this.prisma.notification.update({
+      where: { id: notificationId },
+      data: { isRead: true, readAt: new Date() },
     });
   }
 
   async markAllRead(userId: string) {
-    return this.prisma.notification.updateMany({
-      where: { recipientId: userId, read: false },
-      data: { read: true },
+    await this.prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true, readAt: new Date() },
     });
+    return { updated: true };
   }
 
   async getUnreadCount(userId: string) {
-    const count = await this.prisma.notification.count({ where: { recipientId: userId, read: false } });
+    const count = await this.prisma.notification.count({
+      where: { userId, isRead: false },
+    });
     return { unread: count };
   }
 
-  async create(recipientId: string, actorId: string, type: string, targetType?: string, targetId?: string) {
-    if (recipientId === actorId) return null; // Don't self-notify
+  async deleteNotification(notificationId: string, userId: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id: notificationId },
+    });
+    if (!notification) throw new NotFoundException('Notification not found');
+    if (notification.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.notification.delete({ where: { id: notificationId } });
+    return { deleted: true };
+  }
+
+  // Internal helper — used by other services to create notifications
+  async create(params: {
+    userId: string;
+    actorId: string;
+    type: string;
+    postId?: string;
+    threadId?: string;
+    commentId?: string;
+    reelId?: string;
+    videoId?: string;
+    followRequestId?: string;
+    title?: string;
+    body?: string;
+  }) {
+    if (params.userId === params.actorId) return null; // No self-notifications
     return this.prisma.notification.create({
-      data: { recipientId, actorId, type: type as any, targetType, targetId },
+      data: {
+        userId: params.userId,
+        actorId: params.actorId,
+        type: params.type as any,
+        postId: params.postId,
+        threadId: params.threadId,
+        commentId: params.commentId,
+        reelId: params.reelId,
+        videoId: params.videoId,
+        followRequestId: params.followRequestId,
+        title: params.title,
+        body: params.body,
+      },
     });
   }
 }
