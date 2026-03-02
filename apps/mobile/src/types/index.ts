@@ -5,141 +5,213 @@ export interface User {
   displayName: string;
   bio?: string;
   avatarUrl?: string;
-  coverPhotoUrl?: string;
-  websiteUrl?: string;
+  coverUrl?: string;
+  website?: string;
   isVerified: boolean;
   isPrivate: boolean;
+  isDeactivated?: boolean;
   createdAt: string;
   _count?: { followers: number; following: number; posts: number; threads: number };
   isFollowing?: boolean;
+  isFollowedBy?: boolean;
 }
 
 // ── Saf: Posts ──
-export type PostType = 'IMAGE' | 'CAROUSEL' | 'TEXT' | 'SHARED_THREAD' | 'SHARED_REEL';
-export type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE' | 'MENTIONED';
-export type MediaType = 'IMAGE' | 'VIDEO' | 'GIF';
-
-export interface PostMedia {
-  id: string;
-  url: string;
-  type: MediaType;
-  width?: number;
-  height?: number;
-  order: number;
-}
+export type PostType = 'IMAGE' | 'CAROUSEL' | 'VIDEO' | 'TEXT' | 'LINK';
+export type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
+export type ReactionType = 'LIKE' | 'LOVE' | 'SUPPORT' | 'INSIGHTFUL';
 
 export interface Post {
   id: string;
-  type: PostType;
-  caption?: string;
+  postType: PostType;
+  content?: string;
   visibility: Visibility;
-  likeCount: number;
-  commentCount: number;
-  shareCount: number;
+  mediaUrls: string[];
+  mediaTypes: string[];
+  thumbnailUrl?: string;
+  mediaWidth?: number;
+  mediaHeight?: number;
+  hashtags: string[];
+  mentions: string[];
+  locationName?: string;
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  savesCount: number;
+  viewsCount: number;
+  hideLikesCount: boolean;
+  commentsDisabled: boolean;
+  isSensitive: boolean;
+  isRemoved: boolean;
   createdAt: string;
-  author: User;
-  media: PostMedia[];
+  updatedAt: string;
+  user: User;
   circle?: Circle;
-  isLiked?: boolean;
-  isBookmarked?: boolean;
+  sharedPost?: { id: string; content?: string; user: { username: string } };
+  userReaction?: ReactionType | null;
+  isSaved?: boolean;
 }
 
 // ── Saf: Stories ──
 export interface Story {
   id: string;
   mediaUrl: string;
-  type: MediaType;
-  duration: number;
-  viewCount: number;
+  mediaType: string;
+  thumbnailUrl?: string;
+  duration?: number;
+  textOverlay?: string;
+  textColor?: string;
+  bgColor?: string;
+  viewsCount: number;
+  repliesCount: number;
+  isHighlight: boolean;
+  highlightAlbumId?: string;
+  stickerData?: object;
+  closeFriendsOnly: boolean;
+  isArchived: boolean;
   expiresAt: string;
   createdAt: string;
+  user: User;
 }
 
 export interface StoryGroup {
   user: User;
   stories: Story[];
-  hasUnseen?: boolean;
+  hasUnread: boolean;
+}
+
+export interface StoryHighlightAlbum {
+  id: string;
+  title: string;
+  coverUrl?: string;
+  position: number;
+  stories?: Pick<Story, 'id' | 'mediaUrl' | 'mediaType' | 'thumbnailUrl'>[];
 }
 
 // ── Majlis: Threads ──
-export interface ThreadMedia {
-  id: string;
-  url: string;
-  type: MediaType;
-  order: number;
-}
-
 export interface PollOption {
   id: string;
   text: string;
-  voteCount: number;
-  order: number;
+  votesCount: number;
+  position: number;
+  _count?: { votes: number };
 }
 
 export interface Poll {
   id: string;
   question: string;
   options: PollOption[];
-  expiresAt: string;
-  hasVoted?: boolean;
-  votedOptionId?: string;
+  endsAt?: string;
+  totalVotes: number;
+  allowMultiple: boolean;
 }
 
 export interface Thread {
   id: string;
   content: string;
+  mediaUrls: string[];
+  mediaTypes: string[];
   visibility: Visibility;
-  likeCount: number;
-  repostCount: number;
-  replyCount: number;
-  viewCount: number;
+  isChainHead: boolean;
+  chainId?: string;
+  chainPosition: number;
+  isQuotePost: boolean;
+  quoteText?: string;
+  repostOfId?: string;
+  hashtags: string[];
+  mentions: string[];
+  likesCount: number;
+  repliesCount: number;
+  repostsCount: number;
+  quotesCount: number;
+  viewsCount: number;
+  bookmarksCount: number;
+  hideLikesCount: boolean;
   isPinned: boolean;
+  isSensitive: boolean;
+  isRemoved: boolean;
   createdAt: string;
-  author: User;
-  media: ThreadMedia[];
-  poll?: Poll;
+  updatedAt: string;
+  user: User;
   circle?: Circle;
-  replyTo?: { id: string; content: string; author: { username: string } };
-  isLiked?: boolean;
-  isReposted?: boolean;
+  poll?: Poll;
+  repostOf?: { id: string; content: string; user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'> };
+  userReaction?: ReactionType | null;
   isBookmarked?: boolean;
 }
 
+export interface ThreadReply {
+  id: string;
+  content: string;
+  mediaUrls: string[];
+  likesCount: number;
+  createdAt: string;
+  parentId?: string;
+  user: User;
+  _count?: { replies: number };
+}
+
 // ── Risalah: Messages ──
-export type ConversationType = 'DM' | 'GROUP' | 'CHANNEL';
-export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' | 'DOCUMENT' | 'LOCATION' | 'CONTACT' | 'POLL' | 'SHARED_POST' | 'SHARED_THREAD' | 'SHARED_REEL' | 'SYSTEM';
+export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'VOICE' | 'FILE' | 'GIF' | 'STICKER' | 'LOCATION';
+
+export interface MessageReaction {
+  id: string;
+  emoji: string;
+  userId: string;
+}
 
 export interface Message {
   id: string;
-  type: MessageType;
   content?: string;
+  messageType: MessageType;
   mediaUrl?: string;
+  mediaType?: string;
+  voiceDuration?: number;
+  fileName?: string;
+  fileSize?: number;
+  replyToId?: string;
   isForwarded: boolean;
+  isDeleted: boolean;
+  editedAt?: string;
   createdAt: string;
-  sender: User;
-  replyTo?: { id: string; content: string; senderId: string };
-  reactions?: { emoji: string; userId: string }[];
+  sender: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'>;
+  replyTo?: { id: string; content?: string; senderId: string; sender: { username: string } };
+  reactions?: MessageReaction[];
+}
+
+export interface ConversationMember {
+  user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
+  lastReadAt: string;
+  unreadCount: number;
+  isMuted: boolean;
+  isArchived: boolean;
+  joinedAt: string;
 }
 
 export interface Conversation {
   id: string;
-  type: ConversationType;
-  name?: string;
-  avatarUrl?: string;
+  isGroup: boolean;
+  groupName?: string;
+  groupAvatarUrl?: string;
+  lastMessageText?: string;
   lastMessageAt?: string;
-  members: { user: User; role: string }[];
-  messages?: Message[];
+  createdAt: string;
+  members: ConversationMember[];
+  // From membership row
   isMuted?: boolean;
-  isPinned?: boolean;
-  lastReadAt?: string;
+  isArchived?: boolean;
   unreadCount?: number;
+  lastReadAt?: string;
 }
 
 // ── Circles ──
 export interface Circle {
   id: string;
   name: string;
+  slug: string;
   emoji?: string;
+  description?: string;
+  avatarUrl?: string;
   _count?: { members: number };
 }
 
@@ -147,24 +219,34 @@ export interface Circle {
 export interface Comment {
   id: string;
   content: string;
-  likeCount: number;
+  likesCount: number;
   isPinned: boolean;
   createdAt: string;
-  author: User;
+  user: User;
   _count?: { replies: number };
 }
 
 // ── Notifications ──
-export type NotificationType = 'FOLLOW' | 'LIKE_POST' | 'LIKE_THREAD' | 'LIKE_REEL' | 'LIKE_COMMENT' | 'COMMENT' | 'MENTION' | 'REPOST' | 'QUOTE' | 'MESSAGE_REQUEST' | 'LIVE' | 'SPACE' | 'SYSTEM';
+export type NotificationType =
+  | 'LIKE' | 'COMMENT' | 'FOLLOW' | 'FOLLOW_REQUEST' | 'FOLLOW_REQUEST_ACCEPTED'
+  | 'MENTION' | 'REPLY' | 'CIRCLE_INVITE' | 'CIRCLE_JOIN' | 'MESSAGE'
+  | 'THREAD_REPLY' | 'REPOST' | 'QUOTE_POST' | 'CHANNEL_POST' | 'LIVE_STARTED';
 
 export interface Notification {
   id: string;
   type: NotificationType;
-  targetType?: string;
-  targetId?: string;
-  read: boolean;
+  postId?: string;
+  threadId?: string;
+  commentId?: string;
+  reelId?: string;
+  videoId?: string;
+  followRequestId?: string;
+  title?: string;
+  body?: string;
+  isRead: boolean;
+  readAt?: string;
   createdAt: string;
-  actor: User;
+  actor?: User;
 }
 
 // ── Search ──
@@ -172,5 +254,11 @@ export interface SearchResults {
   people?: User[];
   threads?: Thread[];
   posts?: Post[];
-  hashtags?: { id: string; name: string; postCount: number }[];
+  hashtags?: { id: string; name: string; postsCount: number }[];
+}
+
+// ── Pagination ──
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { cursor: string | null; hasMore: boolean };
 }

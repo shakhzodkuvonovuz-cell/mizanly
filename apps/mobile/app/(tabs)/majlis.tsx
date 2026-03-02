@@ -1,75 +1,93 @@
-import { View, Text, FlatList, StyleSheet, RefreshControl } from 'react-native';
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
 import { colors, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
 import { threadsApi } from '@/services/api';
+import { ThreadCard } from '@/components/majlis/ThreadCard';
+import type { Thread } from '@/types';
+
+const TABS = [
+  { key: 'foryou', label: 'For You' },
+  { key: 'following', label: 'Following' },
+  { key: 'trending', label: 'Trending' },
+] as const;
 
 export default function MajlisScreen() {
+  const { user } = useUser();
+  const feedType = useStore((s) => s.majlisFeedType);
+  const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
-  const feedType = useStore(s => s.majlisFeedType);
-  const setFeedType = useStore(s => s.setMajlisFeedType);
 
-  const { data: threads, refetch } = useQuery({
+  const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
-    queryFn: () => threadsApi.getFeed(feedType),
+    queryFn: ({ pageParam }) => threadsApi.getFeed(feedType, pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
+
+  const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await refetch();
+    await feedQuery.refetch();
     setRefreshing(false);
-  }, [refetch]);
+  }, [feedQuery]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>Majlis</Text>
-        <Text style={styles.headerIcon}>🔍</Text>
+        <TouchableOpacity hitSlop={8}>
+          <Text style={styles.headerIcon}>🔍</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Feed Tabs */}
-      <View style={styles.feedTabs}>
-        {(['foryou', 'following', 'trending'] as const).map(t => (
-          <Text key={t} style={[styles.feedTab, feedType === t && styles.feedTabActive]}
-            onPress={() => setFeedType(t)}>
-            {t === 'foryou' ? 'For You' : t === 'following' ? 'Following' : 'Trending'}
-          </Text>
+      {/* Feed tabs */}
+      <View style={styles.tabs}>
+        {TABS.map((t) => (
+          <TouchableOpacity
+            key={t.key}
+            style={styles.tabBtn}
+            onPress={() => setFeedType(t.key)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tab, feedType === t.key && styles.tabActive]}>{t.label}</Text>
+            {feedType === t.key && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
         ))}
       </View>
 
-      <FlatList
-        data={(threads as any[]) || []}
+      <FlashList
+        data={threads}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.threadCard}>
-            <View style={styles.threadHeader}>
-              <View style={styles.threadAvatar} />
-              <View style={{ flex: 1 }}>
-                <View style={styles.threadNameRow}>
-                  <Text style={styles.threadName}>{item.author?.displayName}</Text>
-                  <Text style={styles.threadHandle}>@{item.author?.username}</Text>
-                </View>
-                <Text style={styles.threadContent}>{item.content}</Text>
-                <View style={styles.threadActions}>
-                  <Text style={styles.actionBtn}>💬 {item.replyCount}</Text>
-                  <Text style={styles.actionBtn}>🔄 {item.repostCount}</Text>
-                  <Text style={styles.actionBtn}>❤️ {item.likeCount}</Text>
-                  <Text style={styles.actionBtn}>🔖</Text>
-                  <Text style={styles.actionBtn}>📤</Text>
-                </View>
-              </View>
+        estimatedItemSize={120}
+        onEndReached={() => {
+          if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
+        }}
+        onEndReachedThreshold={0.4}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
+        renderItem={({ item }) => <ThreadCard thread={item} viewerId={user?.id} />}
+        ListEmptyComponent={() =>
+          !feedQuery.isLoading ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>No threads yet</Text>
+              <Text style={styles.emptyText}>Start a conversation</Text>
             </View>
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No threads yet</Text>
-            <Text style={styles.emptyText}>Start a conversation</Text>
-          </View>
-        )}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
+          ) : (
+            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+          )
+        }
+        ListFooterComponent={() =>
+          feedQuery.isFetchingNextPage ? (
+            <ActivityIndicator color={colors.emerald} style={styles.footer} />
+          ) : null
+        }
       />
     </SafeAreaView>
   );
@@ -79,20 +97,15 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm },
   logo: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
-  headerIcon: { fontSize: 20 },
-  feedTabs: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  feedTab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
-  feedTabActive: { color: colors.emerald, borderBottomWidth: 2, borderBottomColor: colors.emerald },
-  threadCard: { borderBottomWidth: 0.5, borderBottomColor: colors.dark.border, padding: spacing.base },
-  threadHeader: { flexDirection: 'row', gap: spacing.sm },
-  threadAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.dark.surface },
-  threadNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: 4 },
-  threadName: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
-  threadHandle: { color: colors.text.secondary, fontSize: fontSize.sm },
-  threadContent: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22, marginBottom: spacing.sm },
-  threadActions: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: spacing.xs },
-  actionBtn: { color: colors.text.secondary, fontSize: fontSize.sm },
-  empty: { alignItems: 'center', paddingTop: 80 },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600', marginBottom: spacing.sm },
+  headerIcon: { fontSize: 22 },
+  tabs: { flexDirection: 'row', justifyContent: 'center', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
+  tabBtn: { alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
+  tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingBottom: spacing.md },
+  tabActive: { color: colors.text.primary },
+  tabIndicator: { height: 2, width: '80%', backgroundColor: colors.emerald, borderRadius: 1, marginBottom: -0.5 },
+  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm },
+  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
   emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
+  loader: { marginTop: 60 },
+  footer: { paddingVertical: spacing.xl },
 });
