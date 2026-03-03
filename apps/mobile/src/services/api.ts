@@ -124,6 +124,8 @@ export const postsApi = {
     api.post<Comment>(`/posts/${id}/comments`, { content, parentId }),
   editComment: (postId: string, commentId: string, content: string) =>
     api.patch<Comment>(`/posts/${postId}/comments/${commentId}`, { content }),
+  report: (id: string, reason: string) => api.post(`/posts/${id}/report`, { reason }),
+  dismiss: (id: string) => api.post(`/posts/${id}/dismiss`),
   deleteComment: (postId: string, commentId: string) =>
     api.delete(`/posts/${postId}/comments/${commentId}`),
   likeComment: (postId: string, commentId: string) =>
@@ -160,6 +162,8 @@ export const threadsApi = {
   create: (data: any) => api.post<Thread>('/threads', data),
   getById: (id: string) => api.get<Thread>(`/threads/${id}`),
   delete: (id: string) => api.delete(`/threads/${id}`),
+  report: (id: string, reason: string) => api.post(`/threads/${id}/report`, { reason }),
+  dismiss: (id: string) => api.post(`/threads/${id}/dismiss`),
   like: (id: string) => api.post(`/threads/${id}/like`),
   unlike: (id: string) => api.delete(`/threads/${id}/like`),
   repost: (id: string) => api.post<Thread>(`/threads/${id}/repost`),
@@ -243,6 +247,23 @@ export const circlesApi = {
     api.post(`/circles/${id}/members`, { memberIds }),
   removeMembers: (id: string, memberIds: string[]) =>
     api.delete(`/circles/${id}/members`, { memberIds }),
+};
+
+// ── Devices (push notifications) ──
+export const devicesApi = {
+  register: (pushToken: string, platform: string, deviceId?: string) =>
+    api.post('/devices', { pushToken, platform, deviceId }),
+  unregister: (pushToken: string) => api.delete(`/devices/${encodeURIComponent(pushToken)}`),
+};
+
+// ── Profile Links ──
+export const profileLinksApi = {
+  getLinks: () => api.get<any[]>('/profile-links'),
+  create: (data: { title: string; url: string }) => api.post<any>('/profile-links', data),
+  update: (id: string, data: { title?: string; url?: string }) =>
+    api.patch<any>(`/profile-links/${id}`, data),
+  delete: (id: string) => api.delete(`/profile-links/${id}`),
+  reorder: (ids: string[]) => api.put('/profile-links/reorder', { ids }),
 };
 
 // ── Blocks ──

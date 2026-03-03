@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
@@ -13,14 +13,18 @@ import type { Thread } from '@/types';
 interface Props {
   thread: Thread;
   viewerId?: string;
+  isOwn?: boolean;
 }
 
-export function ThreadCard({ thread, viewerId }: Props) {
+export function ThreadCard({ thread, viewerId, isOwn }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [localLiked, setLocalLiked] = useState(thread.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(thread.likesCount);
   const [localBookmarked, setLocalBookmarked] = useState(thread.isBookmarked ?? false);
   const [localReposts, setLocalReposts] = useState(thread.repostsCount);
+  const [showMenu, setShowMenu] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const likeMutation = useMutation({
     mutationFn: () => localLiked ? threadsApi.unlike(thread.id) : threadsApi.like(thread.id),
@@ -41,7 +45,40 @@ export function ThreadCard({ thread, viewerId }: Props) {
     onError: () => setLocalBookmarked((p) => !p),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => threadsApi.delete(thread.id),
+    onSuccess: () => {
+      setShowMenu(false);
+      queryClient.invalidateQueries({ queryKey: ['majlis-feed'] });
+    },
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: () => threadsApi.dismiss(thread.id),
+    onSuccess: () => { setShowMenu(false); setDismissed(true); },
+  });
+
+  const handleDelete = () => {
+    setShowMenu(false);
+    Alert.alert('Delete thread?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
+  };
+
+  const handleReport = () => {
+    setShowMenu(false);
+    Alert.alert('Report thread', 'Why are you reporting this?', [
+      { text: 'Spam', onPress: () => threadsApi.report(thread.id, 'SPAM').catch(() => {}) },
+      { text: 'Inappropriate', onPress: () => threadsApi.report(thread.id, 'INAPPROPRIATE').catch(() => {}) },
+      { text: 'Misinformation', onPress: () => threadsApi.report(thread.id, 'MISINFORMATION').catch(() => {}) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const timeAgo = formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true });
+
+  if (dismissed) return null;
 
   return (
     <TouchableOpacity
@@ -74,7 +111,7 @@ export function ThreadCard({ thread, viewerId }: Props) {
             <Text style={styles.handle}>@{thread.user.username}</Text>
           </TouchableOpacity>
           <Text style={styles.time}>{timeAgo}</Text>
-          <TouchableOpacity hitSlop={8}>
+          <TouchableOpacity hitSlop={8} onPress={() => setShowMenu(true)}>
             <Text style={styles.more}>•••</Text>
           </TouchableOpacity>
         </View>
@@ -159,6 +196,33 @@ export function ThreadCard({ thread, viewerId }: Props) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* More menu */}
+      <Modal visible={showMenu} transparent animationType="fade">
+        <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
+          <Pressable style={styles.menuSheet}>
+            {isOwn ? (
+              <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
+                <Text style={styles.menuItemDestructive}>🗑️  Delete thread</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.menuItem} onPress={() => dismissMutation.mutate()}>
+                  <Text style={styles.menuItemText}>🙈  Not interested</Text>
+                </TouchableOpacity>
+                <View style={styles.menuDivider} />
+                <TouchableOpacity style={styles.menuItem} onPress={handleReport}>
+                  <Text style={styles.menuItemDestructive}>🚩  Report</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <View style={styles.menuDivider} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+              <Text style={styles.menuItemCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </TouchableOpacity>
   );
 }
@@ -190,4 +254,15 @@ const styles = StyleSheet.create({
   actionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
   likedCount: { color: colors.like },
   spacer: { flex: 1 },
+
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  menuSheet: {
+    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 18, borderTopRightRadius: 18,
+    paddingBottom: spacing.xl, overflow: 'hidden',
+  },
+  menuItem: { paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2 },
+  menuItemText: { color: colors.text.primary, fontSize: fontSize.base },
+  menuItemDestructive: { color: '#FF453A', fontSize: fontSize.base },
+  menuItemCancel: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
+  menuDivider: { height: 0.5, backgroundColor: colors.dark.border },
 });

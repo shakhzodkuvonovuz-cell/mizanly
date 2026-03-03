@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Alert, Switch, Platform,
+  ScrollView, ActivityIndicator, Alert, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +10,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { usersApi, uploadApi } from '@/services/api';
+import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -29,6 +29,34 @@ export default function EditProfileScreen() {
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [coverUri, setCoverUri] = useState<string | undefined>();
   const [uploading, setUploading] = useState(false);
+
+  // Profile links
+  const linksQuery = useQuery({
+    queryKey: ['profile-links'],
+    queryFn: () => profileLinksApi.getLinks(),
+  });
+  const links: any[] = (linksQuery.data as any[]) ?? [];
+
+  const [newLinkTitle, setNewLinkTitle] = useState('');
+  const [newLinkUrl, setNewLinkUrl] = useState('');
+  const [showAddLink, setShowAddLink] = useState(false);
+
+  const addLinkMutation = useMutation({
+    mutationFn: () => profileLinksApi.create({ title: newLinkTitle.trim(), url: newLinkUrl.trim() }),
+    onSuccess: () => {
+      setNewLinkTitle('');
+      setNewLinkUrl('');
+      setShowAddLink(false);
+      queryClient.invalidateQueries({ queryKey: ['profile-links'] });
+    },
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
+  const deleteLinkMutation = useMutation({
+    mutationFn: (id: string) => profileLinksApi.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile-links'] }),
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
 
   // Seed form from loaded profile
   useEffect(() => {
@@ -224,6 +252,85 @@ export default function EditProfileScreen() {
               thumbColor="#fff"
             />
           </View>
+
+          <View style={styles.divider} />
+
+          {/* Profile Links */}
+          <View style={styles.field}>
+            <View style={styles.linksSectionHeader}>
+              <Text style={styles.label}>Profile Links</Text>
+              <Text style={styles.linksCount}>{links.length}/5</Text>
+            </View>
+
+            {linksQuery.isLoading ? (
+              <ActivityIndicator color={colors.emerald} size="small" style={{ marginTop: spacing.sm }} />
+            ) : (
+              links.map((link) => (
+                <View key={link.id} style={styles.linkRow}>
+                  <View style={styles.linkIcon}>
+                    <Text style={styles.linkIconText}>🔗</Text>
+                  </View>
+                  <View style={styles.linkInfo}>
+                    <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
+                    <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
+                  </View>
+                  <TouchableOpacity
+                    hitSlop={8}
+                    onPress={() => deleteLinkMutation.mutate(link.id)}
+                    disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
+                  >
+                    <Text style={styles.linkDelete}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            {showAddLink ? (
+              <View style={styles.addLinkForm}>
+                <TextInput
+                  style={styles.addLinkInput}
+                  placeholder="Title (e.g. My Website)"
+                  placeholderTextColor={colors.text.tertiary}
+                  value={newLinkTitle}
+                  onChangeText={setNewLinkTitle}
+                  maxLength={40}
+                />
+                <TextInput
+                  style={[styles.addLinkInput, styles.addLinkInputBottom]}
+                  placeholder="URL (https://...)"
+                  placeholderTextColor={colors.text.tertiary}
+                  value={newLinkUrl}
+                  onChangeText={setNewLinkUrl}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  maxLength={200}
+                />
+                <View style={styles.addLinkActions}>
+                  <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
+                    <Text style={styles.addLinkCancel}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.addLinkSave,
+                      (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
+                    ]}
+                    onPress={() => addLinkMutation.mutate()}
+                    disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
+                  >
+                    {addLinkMutation.isPending ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.addLinkSaveText}>Add</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : links.length < 5 ? (
+              <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+                <Text style={styles.addLinkBtnText}>+ Add a link</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -283,4 +390,52 @@ const styles = StyleSheet.create({
   usernameText: { color: colors.text.secondary, fontSize: fontSize.base },
 
   divider: { height: 0.5, backgroundColor: colors.dark.border },
+
+  // Profile links
+  linksSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
+  linksCount: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  linkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  linkIcon: {
+    width: 36, height: 36, borderRadius: 8, backgroundColor: colors.dark.bgElevated,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  linkIconText: { fontSize: 18 },
+  linkInfo: { flex: 1 },
+  linkTitle: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
+  linkUrl: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
+  linkDelete: { color: colors.text.tertiary, fontSize: fontSize.base, padding: 4 },
+
+  addLinkBtn: {
+    marginTop: spacing.sm, paddingVertical: spacing.sm,
+    borderWidth: 1, borderStyle: 'dashed', borderColor: colors.dark.border,
+    borderRadius: 8, alignItems: 'center',
+  },
+  addLinkBtnText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+
+  addLinkForm: {
+    marginTop: spacing.sm, backgroundColor: colors.dark.bgElevated,
+    borderRadius: 10, overflow: 'hidden',
+  },
+  addLinkInput: {
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    color: colors.text.primary, fontSize: fontSize.base,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  addLinkInputBottom: { borderBottomWidth: 0 },
+  addLinkActions: {
+    flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
+    gap: spacing.md, padding: spacing.sm,
+  },
+  addLinkCancel: { color: colors.text.secondary, fontSize: fontSize.base },
+  addLinkSave: {
+    backgroundColor: colors.emerald, borderRadius: 8,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
+    minWidth: 60, alignItems: 'center',
+  },
+  addLinkSaveDisabled: { backgroundColor: colors.dark.surface },
+  addLinkSaveText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
 });

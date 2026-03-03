@@ -19,6 +19,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ProfileLinksModule } from './modules/profile-links/profile-links.module';
 import { HealthModule } from './modules/health/health.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { DevicesModule } from './modules/devices/devices.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { UploadModule } from './modules/upload/upload.module';
     ProfileLinksModule,
     HealthModule,
     UploadModule,
+    DevicesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

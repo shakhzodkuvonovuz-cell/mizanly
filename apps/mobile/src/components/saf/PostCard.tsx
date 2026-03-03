@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -13,14 +13,17 @@ import type { Post } from '@/types';
 interface Props {
   post: Post;
   viewerId?: string;
+  isOwn?: boolean;
 }
 
-export function PostCard({ post, viewerId }: Props) {
+export function PostCard({ post, viewerId, isOwn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [localLiked, setLocalLiked] = useState(post.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   const reactMutation = useMutation({
     mutationFn: () =>
@@ -41,7 +44,41 @@ export function PostCard({ post, viewerId }: Props) {
     onError: () => setLocalSaved((p) => !p),
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => postsApi.delete(post.id),
+    onSuccess: () => {
+      setShowMenu(false);
+      queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: () => postsApi.dismiss(post.id),
+    onSuccess: () => { setShowMenu(false); setDismissed(true); },
+  });
+
+  const handleDelete = () => {
+    setShowMenu(false);
+    Alert.alert('Delete post?', 'This cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
+  };
+
+  const handleReport = () => {
+    setShowMenu(false);
+    Alert.alert('Report post', 'Why are you reporting this?', [
+      { text: 'Spam', onPress: () => postsApi.report(post.id, 'SPAM').catch(() => {}) },
+      { text: 'Inappropriate', onPress: () => postsApi.report(post.id, 'INAPPROPRIATE').catch(() => {}) },
+      { text: 'Misinformation', onPress: () => postsApi.report(post.id, 'MISINFORMATION').catch(() => {}) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true });
+
+  if (dismissed) return null;
 
   return (
     <View style={styles.card}>
@@ -61,7 +98,7 @@ export function PostCard({ post, viewerId }: Props) {
             <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.moreBtn} hitSlop={8}>
+        <TouchableOpacity style={styles.moreBtn} hitSlop={8} onPress={() => setShowMenu(true)}>
           <Text style={styles.moreBtnText}>•••</Text>
         </TouchableOpacity>
       </View>
@@ -148,6 +185,35 @@ export function PostCard({ post, viewerId }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* More menu */}
+      <Modal visible={showMenu} transparent animationType="fade">
+        <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
+          <Pressable style={styles.menuSheet}>
+            {isOwn ? (
+              <>
+                <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
+                  <Text style={styles.menuItemDestructive}>🗑️  Delete post</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <TouchableOpacity style={styles.menuItem} onPress={() => dismissMutation.mutate()}>
+                  <Text style={styles.menuItemText}>🙈  Not interested</Text>
+                </TouchableOpacity>
+                <View style={styles.menuDivider} />
+                <TouchableOpacity style={styles.menuItem} onPress={handleReport}>
+                  <Text style={styles.menuItemDestructive}>🚩  Report</Text>
+                </TouchableOpacity>
+              </>
+            )}
+            <View style={styles.menuDivider} />
+            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+              <Text style={styles.menuItemCancel}>Cancel</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -171,4 +237,15 @@ const styles = StyleSheet.create({
   actionCountActive: { color: colors.like },
   bookmarkActive: { },
   spacer: { flex: 1 },
+
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  menuSheet: {
+    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 18, borderTopRightRadius: 18,
+    paddingBottom: spacing.xl, overflow: 'hidden',
+  },
+  menuItem: { paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2 },
+  menuItemText: { color: colors.text.primary, fontSize: fontSize.base },
+  menuItemDestructive: { color: '#FF453A', fontSize: fontSize.base },
+  menuItemCancel: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
+  menuDivider: { height: 0.5, backgroundColor: colors.dark.border },
 });
