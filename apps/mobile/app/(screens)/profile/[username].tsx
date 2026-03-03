@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, FlatList, Dimensions,
+  ActivityIndicator, FlatList, ScrollView, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,8 +10,8 @@ import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { usersApi, followsApi, postsApi, threadsApi } from '@/services/api';
-import type { Post, Thread } from '@/types';
+import { usersApi, followsApi, postsApi, threadsApi, storiesApi } from '@/services/api';
+import type { Post, Thread, StoryHighlightAlbum } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3; // 3-column grid with 1pt gaps
@@ -84,6 +84,14 @@ export default function ProfileScreen() {
     enabled: activeTab === 'threads',
   });
   const threads: Thread[] = threadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  // ── Story highlights ──
+  const highlightsQuery = useQuery({
+    queryKey: ['highlights', profile?.id],
+    queryFn: () => storiesApi.getHighlights(profile!.id),
+    enabled: !!profile,
+  });
+  const highlights: StoryHighlightAlbum[] = (highlightsQuery.data as StoryHighlightAlbum[]) ?? [];
 
   // ── Follow mutation ──
   const followMutation = useMutation({
@@ -186,7 +194,33 @@ export default function ProfileScreen() {
         </View>
         <Text style={styles.handle}>@{profile.username}</Text>
         {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+        {profile.website ? (
+          <Text style={styles.websiteLink}>{profile.website}</Text>
+        ) : null}
       </View>
+
+      {/* Story highlights */}
+      {highlights.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.highlightsRow}
+          contentContainerStyle={{ paddingHorizontal: spacing.base, gap: spacing.md }}
+        >
+          {highlights.map((album) => (
+            <TouchableOpacity key={album.id} style={styles.highlightItem} activeOpacity={0.8}>
+              <View style={styles.highlightCircle}>
+                {album.coverUrl ? (
+                  <Image source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
+                ) : (
+                  <Text style={styles.highlightEmoji}>📌</Text>
+                )}
+              </View>
+              <Text style={styles.highlightLabel} numberOfLines={1}>{album.title}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       {/* Stats */}
       <View style={styles.stats}>
@@ -388,6 +422,20 @@ const styles = StyleSheet.create({
   verified: { color: colors.emerald, fontSize: fontSize.sm },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.sm },
   bio: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
+  websiteLink: { color: colors.emerald, fontSize: fontSize.sm, marginTop: spacing.xs },
+
+  // Highlights
+  highlightsRow: { marginBottom: spacing.md },
+  highlightItem: { alignItems: 'center', width: 68 },
+  highlightCircle: {
+    width: 62, height: 62, borderRadius: 31,
+    borderWidth: 2, borderColor: colors.emerald,
+    overflow: 'hidden', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.dark.bgElevated, marginBottom: 4,
+  },
+  highlightImg: { width: '100%', height: '100%' },
+  highlightEmoji: { fontSize: 26 },
+  highlightLabel: { color: colors.text.secondary, fontSize: fontSize.xs, textAlign: 'center' },
 
   // Stats
   stats: {
