@@ -44,12 +44,12 @@ export default function HashtagScreen() {
   const postsQuery = useInfiniteQuery({
     queryKey: ['hashtag-posts', tag],
     queryFn: ({ pageParam }) =>
-      searchApi.search(`#${tag}`, 'posts', pageParam as string | undefined),
+      searchApi.hashtagPosts(tag, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
-  const posts: Post[] = postsQuery.data?.pages.flatMap((p: any) => p.posts ?? []) ?? [];
+  const posts: Post[] = postsQuery.data?.pages.flatMap((p: any) => p.data ?? []) ?? [];
   const totalCount = (postsQuery.data?.pages[0] as any)?.hashtag?.postsCount ?? posts.length;
 
   const onEndReached = useCallback(() => {

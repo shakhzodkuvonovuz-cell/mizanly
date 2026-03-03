@@ -187,8 +187,8 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           activeOpacity={0.7}
           disabled={!viewerId}
         >
-          <Text style={[styles.actionIcon, localSaved && styles.bookmarkActive]}>
-            {localSaved ? '🔖' : '🔖'}
+          <Text style={[styles.actionIcon, !localSaved && styles.actionIconDim]}>
+            🔖
           </Text>
         </TouchableOpacity>
       </View>
@@ -240,6 +240,7 @@ const styles = StyleSheet.create({
   action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   actionIcon: { fontSize: 22 },
   actionIconActive: { },
+  actionIconDim: { opacity: 0.4 },
   actionCount: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
   actionCountActive: { color: colors.like },
   bookmarkActive: { },

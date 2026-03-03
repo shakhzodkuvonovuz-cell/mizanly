@@ -25,7 +25,7 @@ export default function SafScreen() {
     queryKey: ['notifications-count'],
     queryFn: async () => {
       const data = await notificationsApi.getUnreadCount();
-      setUnreadNotifications((data as any).count ?? 0);
+      setUnreadNotifications((data as any).unread ?? 0);
       return data;
     },
     refetchInterval: 60_000,

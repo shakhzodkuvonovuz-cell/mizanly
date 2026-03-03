@@ -16,7 +16,7 @@ import { messagesApi, uploadApi } from '@/services/api';
 import type { Message, Conversation } from '@/types';
 import { io, Socket } from 'socket.io-client';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000';
+const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
 
 function messageTimestamp(dateStr: string): string {
   const d = new Date(dateStr);
@@ -153,7 +153,7 @@ export default function ConversationScreen() {
       const token = await getToken();
       if (!token || !mounted) return;
 
-      const socket = io(API_URL, {
+      const socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
       });
@@ -176,12 +176,8 @@ export default function ConversationScreen() {
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
       });
 
-      socket.on('typing', ({ userId }: { userId: string }) => {
-        if (userId !== user?.id) setOtherTyping(true);
-      });
-
-      socket.on('stop_typing', ({ userId }: { userId: string }) => {
-        if (userId !== user?.id) setOtherTyping(false);
+      socket.on('user_typing', ({ userId, isTyping }: { userId: string; isTyping: boolean }) => {
+        if (userId !== user?.id) setOtherTyping(isTyping);
       });
 
       socketRef.current = socket;
@@ -196,10 +192,12 @@ export default function ConversationScreen() {
     };
   }, [id, getToken, user?.id, queryClient]);
 
-  // Mark read on mount
+  // Mark read on mount and refresh conversation list to update badges
   useEffect(() => {
-    messagesApi.markRead(id).catch(() => {});
-  }, [id]);
+    messagesApi.markRead(id)
+      .then(() => queryClient.invalidateQueries({ queryKey: ['conversations'] }))
+      .catch(() => {});
+  }, [id, queryClient]);
 
   // ── Send ──
   const sendMutation = useMutation({
@@ -261,12 +259,12 @@ export default function ConversationScreen() {
     setText(val);
     if (!isTyping) {
       setIsTyping(true);
-      socketRef.current?.emit('typing', { conversationId: id });
+      socketRef.current?.emit('typing', { conversationId: id, isTyping: true });
     }
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       setIsTyping(false);
-      socketRef.current?.emit('stop_typing', { conversationId: id });
+      socketRef.current?.emit('typing', { conversationId: id, isTyping: false });
     }, 2000);
   };
 

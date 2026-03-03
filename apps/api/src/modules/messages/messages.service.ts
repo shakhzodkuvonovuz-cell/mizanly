@@ -150,14 +150,21 @@ export class MessagesService {
       select: MESSAGE_SELECT,
     });
 
-    await this.prisma.conversation.update({
-      where: { id: conversationId },
-      data: {
-        lastMessageAt: new Date(),
-        lastMessageText: data.content?.slice(0, 100) ?? null,
-        lastMessageById: senderId,
-      },
-    });
+    // Update conversation preview + increment unread for other members
+    await this.prisma.$transaction([
+      this.prisma.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessageAt: new Date(),
+          lastMessageText: data.content?.slice(0, 100) ?? null,
+          lastMessageById: senderId,
+        },
+      }),
+      this.prisma.conversationMember.updateMany({
+        where: { conversationId, userId: { not: senderId } },
+        data: { unreadCount: { increment: 1 } },
+      }),
+    ]);
 
     return message;
   }

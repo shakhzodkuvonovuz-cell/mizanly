@@ -1,4 +1,4 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { SearchService } from './search.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -16,6 +16,14 @@ export class SearchController {
 
   @Get('trending')
   trending() { return this.searchService.trending(); }
+
+  @Get('hashtag/:tag')
+  getHashtagPosts(
+    @Param('tag') tag: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.searchService.getHashtagPosts(tag, cursor);
+  }
 
   @Get('suggestions')
   @UseGuards(ClerkAuthGuard) @ApiBearerAuth()

@@ -132,6 +132,31 @@ export class SearchService {
     return { hashtags, threads };
   }
 
+  async getHashtagPosts(tag: string, cursor?: string, limit = 20) {
+    // Try exact hashtag record first for metadata
+    const hashtag = await this.prisma.hashtag.findUnique({ where: { name: tag.toLowerCase() } });
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        hashtags: { has: tag.toLowerCase() },
+        visibility: 'PUBLIC',
+        isRemoved: false,
+      },
+      select: POST_SEARCH_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = posts.length > limit;
+    const items = hasMore ? posts.slice(0, limit) : posts;
+    return {
+      hashtag,
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
   async suggestedUsers(userId: string) {
     const myFollowing = await this.prisma.follow.findMany({
       where: { followerId: userId },

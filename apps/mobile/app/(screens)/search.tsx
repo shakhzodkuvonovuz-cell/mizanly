@@ -123,7 +123,11 @@ export default function SearchScreen() {
               );
             }
             return (
-              <TouchableOpacity style={styles.hashtagRow}>
+              <TouchableOpacity
+                style={styles.hashtagRow}
+                onPress={() => router.push(`/(screens)/hashtag/${item.data.name}`)}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.hashtagName}>#{item.data.name}</Text>
                 <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
               </TouchableOpacity>

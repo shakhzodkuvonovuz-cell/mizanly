@@ -280,7 +280,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
             activeOpacity={0.7}
             disabled={!viewerId}
           >
-            <Text style={styles.actionIcon}>{localBookmarked ? '🔖' : '🔖'}</Text>
+            <Text style={[styles.actionIcon, !localBookmarked && styles.actionIconDim]}>🔖</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -355,6 +355,7 @@ const styles = StyleSheet.create({
   actionIcon: { fontSize: 20 },
   likedIcon: {},
   repostedIcon: {},
+  actionIconDim: { opacity: 0.4 },
   actionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
   likedCount: { color: colors.like },
   repostedCount: { color: colors.emerald },

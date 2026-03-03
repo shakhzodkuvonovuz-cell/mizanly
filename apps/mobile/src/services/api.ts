@@ -224,6 +224,8 @@ export const searchApi = {
     api.get<SearchResults>(`/search${qs({ q: query, type, cursor })}`),
   trending: () => api.get('/search/trending'),
   suggestions: () => api.get<User[]>('/search/suggestions'),
+  hashtagPosts: (tag: string, cursor?: string) =>
+    api.get(`/search/hashtag/${encodeURIComponent(tag)}${qs({ cursor })}`),
 };
 
 // ── Upload ──

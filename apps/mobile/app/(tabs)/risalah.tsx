@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
+import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
 
@@ -27,6 +28,7 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
 export default function RisalahScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
 
   const { data: conversations } = useQuery({
@@ -35,6 +37,12 @@ export default function RisalahScreen() {
   });
 
   const all: Conversation[] = (conversations as Conversation[]) ?? [];
+
+  // Keep the tab badge in sync with total unread across all conversations
+  useEffect(() => {
+    const total = all.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
+    setUnreadMessages(total);
+  }, [all, setUnreadMessages]);
   const filtered = all.filter((c) =>
     activeTab === 'groups' ? c.isGroup : !c.isGroup,
   );
