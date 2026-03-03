@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -74,6 +74,13 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
       { text: 'Misinformation', onPress: () => postsApi.report(post.id, 'MISINFORMATION').catch(() => {}) },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  const handleShare = () => {
+    Share.share({
+      message: `${post.content ?? ''}\n\nmizanly://post/${post.id}`,
+      url: `mizanly://post/${post.id}`,
+    });
   };
 
   const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true });
@@ -162,10 +169,10 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
         {/* Share */}
         <TouchableOpacity
           style={styles.action}
+          onPress={handleShare}
           activeOpacity={0.7}
-          disabled={!viewerId}
         >
-          <Text style={styles.actionIcon}>🔄</Text>
+          <Text style={styles.actionIcon}>↗️</Text>
           {post.sharesCount > 0 && (
             <Text style={styles.actionCount}>{post.sharesCount}</Text>
           )}

@@ -138,6 +138,7 @@ export interface Thread {
   repostOf?: { id: string; content: string; user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'> };
   userReaction?: ReactionType | null;
   isBookmarked?: boolean;
+  isReposted?: boolean;
 }
 
 export interface ThreadReply {

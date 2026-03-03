@@ -74,7 +74,9 @@ export default function MajlisScreen() {
         onEndReachedThreshold={0.4}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        renderItem={({ item }) => <ThreadCard thread={item} viewerId={user?.id} />}
+        renderItem={({ item }) => (
+          <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+        )}
         ListEmptyComponent={() =>
           !feedQuery.isLoading ? (
             <View style={styles.empty}>

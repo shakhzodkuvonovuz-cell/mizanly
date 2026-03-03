@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -23,6 +23,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
   const [localLikes, setLocalLikes] = useState(thread.likesCount);
   const [localBookmarked, setLocalBookmarked] = useState(thread.isBookmarked ?? false);
   const [localReposts, setLocalReposts] = useState(thread.repostsCount);
+  const [localReposted, setLocalReposted] = useState(thread.isReposted ?? false);
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -44,6 +45,26 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
     onMutate: () => setLocalBookmarked((p) => !p),
     onError: () => setLocalBookmarked((p) => !p),
   });
+
+  const repostMutation = useMutation({
+    mutationFn: () =>
+      localReposted ? threadsApi.unrepost(thread.id) : threadsApi.repost(thread.id),
+    onMutate: () => {
+      setLocalReposted((p) => !p);
+      setLocalReposts((p) => localReposted ? p - 1 : p + 1);
+    },
+    onError: () => {
+      setLocalReposted((p) => !p);
+      setLocalReposts((p) => localReposted ? p + 1 : p - 1);
+    },
+  });
+
+  const handleShare = () => {
+    Share.share({
+      message: `${thread.content ?? ''}\n\nmizanly://thread/${thread.id}`,
+      url: `mizanly://thread/${thread.id}`,
+    });
+  };
 
   const deleteMutation = useMutation({
     mutationFn: () => threadsApi.delete(thread.id),
@@ -163,11 +184,16 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
 
           <TouchableOpacity
             style={styles.action}
+            onPress={() => viewerId && repostMutation.mutate()}
             activeOpacity={0.7}
             disabled={!viewerId}
           >
-            <Text style={styles.actionIcon}>🔄</Text>
-            {localReposts > 0 && <Text style={styles.actionCount}>{localReposts}</Text>}
+            <Text style={[styles.actionIcon, localReposted && styles.repostedIcon]}>🔄</Text>
+            {localReposts > 0 && (
+              <Text style={[styles.actionCount, localReposted && styles.repostedCount]}>
+                {localReposts}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -185,6 +211,10 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
           </TouchableOpacity>
 
           <View style={styles.spacer} />
+
+          <TouchableOpacity style={styles.action} onPress={handleShare} activeOpacity={0.7}>
+            <Text style={styles.actionIcon}>↗️</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.action}
@@ -251,8 +281,10 @@ const styles = StyleSheet.create({
   action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   actionIcon: { fontSize: 20 },
   likedIcon: {},
+  repostedIcon: {},
   actionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
   likedCount: { color: colors.like },
+  repostedCount: { color: colors.emerald },
   spacer: { flex: 1 },
 
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },

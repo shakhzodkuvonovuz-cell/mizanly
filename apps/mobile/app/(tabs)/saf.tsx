@@ -70,7 +70,9 @@ export default function SafScreen() {
         onEndReachedThreshold={0.4}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        renderItem={({ item }) => <PostCard post={item} viewerId={user?.id} />}
+        renderItem={({ item }) => (
+          <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+        )}
         ListHeaderComponent={() => (
           <View>
             {/* Stories */}
