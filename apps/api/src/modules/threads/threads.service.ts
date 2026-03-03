@@ -420,4 +420,28 @@ export class ThreadsService {
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
   }
+
+  async report(threadId: string, userId: string, reason: string) {
+    const reasonMap: Record<string, string> = {
+      SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
+      INAPPROPRIATE: 'OTHER', HATE_SPEECH: 'HATE_SPEECH',
+    };
+    await this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        description: `thread:${threadId}`,
+        reason: (reasonMap[reason] ?? 'OTHER') as any,
+      },
+    });
+    return { reported: true };
+  }
+
+  async dismiss(threadId: string, userId: string) {
+    await this.prisma.feedDismissal.upsert({
+      where: { userId_contentId_contentType: { userId, contentId: threadId, contentType: 'THREAD' } },
+      create: { userId, contentId: threadId, contentType: 'THREAD' },
+      update: {},
+    });
+    return { dismissed: true };
+  }
 }

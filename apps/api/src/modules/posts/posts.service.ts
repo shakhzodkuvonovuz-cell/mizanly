@@ -432,4 +432,28 @@ export class PostsService {
     ]);
     return { liked: false };
   }
+
+  async report(postId: string, userId: string, reason: string) {
+    const reasonMap: Record<string, string> = {
+      SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
+      INAPPROPRIATE: 'OTHER', HATE_SPEECH: 'HATE_SPEECH',
+    };
+    await this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        reportedPostId: postId,
+        reason: (reasonMap[reason] ?? 'OTHER') as any,
+      },
+    });
+    return { reported: true };
+  }
+
+  async dismiss(postId: string, userId: string) {
+    await this.prisma.feedDismissal.upsert({
+      where: { userId_contentId_contentType: { userId, contentId: postId, contentType: 'POST' } },
+      create: { userId, contentId: postId, contentType: 'POST' },
+      update: {},
+    });
+    return { dismissed: true };
+  }
 }

@@ -167,4 +167,29 @@ export class ThreadsController {
   ) {
     return this.threadsService.getUserThreads(username, cursor);
   }
+
+  @Post(':id/report')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Report a thread' })
+  report(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.threadsService.report(id, userId, reason);
+  }
+
+  @Post(':id/dismiss')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Dismiss a thread from feed (not interested)' })
+  dismiss(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.dismiss(id, userId);
+  }
 }
