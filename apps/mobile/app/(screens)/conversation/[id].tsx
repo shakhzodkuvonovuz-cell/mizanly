@@ -291,7 +291,7 @@ export default function ConversationScreen() {
             )}
           </View>
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8}>
+        <TouchableOpacity hitSlop={8} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
           <Text style={styles.headerAction}>⋯</Text>
         </TouchableOpacity>
       </View>
