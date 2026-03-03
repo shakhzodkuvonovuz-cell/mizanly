@@ -109,8 +109,7 @@ export const postsApi = {
   getFeed: (type: 'following' | 'foryou' = 'following', cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/posts/feed${qs({ type, cursor })}`),
   create: (data: any) => api.post<Post>('/posts', data),
-  getById: (id: string, viewerId?: string) =>
-    api.get<Post>(`/posts/${id}${qs({ viewerId })}`),
+  getById: (id: string) => api.get<Post>(`/posts/${id}`),
   update: (id: string, data: any) => api.patch<Post>(`/posts/${id}`, data),
   delete: (id: string) => api.delete(`/posts/${id}`),
   react: (id: string, reaction: string) => api.post(`/posts/${id}/react`, { reaction }),
@@ -158,8 +157,7 @@ export const threadsApi = {
   getFeed: (type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/feed${qs({ type, cursor })}`),
   create: (data: any) => api.post<Thread>('/threads', data),
-  getById: (id: string, viewerId?: string) =>
-    api.get<Thread>(`/threads/${id}${qs({ viewerId })}`),
+  getById: (id: string) => api.get<Thread>(`/threads/${id}`),
   delete: (id: string) => api.delete(`/threads/${id}`),
   like: (id: string) => api.post(`/threads/${id}/like`),
   unlike: (id: string) => api.delete(`/threads/${id}/like`),
@@ -230,6 +228,20 @@ export const uploadApi = {
       '/upload/presign',
       { contentType, folder },
     ),
+};
+
+// ── Circles ──
+export const circlesApi = {
+  getMyCircles: () => api.get<any[]>('/circles'),
+  create: (name: string, emoji?: string) => api.post<any>('/circles', { name, emoji }),
+  update: (id: string, data: { name?: string; emoji?: string }) =>
+    api.patch<any>(`/circles/${id}`, data),
+  delete: (id: string) => api.delete(`/circles/${id}`),
+  getMembers: (id: string) => api.get<any[]>(`/circles/${id}/members`),
+  addMembers: (id: string, memberIds: string[]) =>
+    api.post(`/circles/${id}/members`, { memberIds }),
+  removeMembers: (id: string, memberIds: string[]) =>
+    api.delete(`/circles/${id}/members`, { memberIds }),
 };
 
 // ── Settings ──

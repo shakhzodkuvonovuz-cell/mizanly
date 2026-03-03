@@ -226,6 +226,16 @@ export default function SettingsScreen() {
           />
         </View>
 
+        {/* Circles */}
+        <SectionHeader title="Close Friends" />
+        <View style={styles.card}>
+          <Row
+            label="Circles"
+            hint="Manage your close friends groups"
+            onPress={() => router.push('/(screens)/circles')}
+          />
+        </View>
+
         {/* Account */}
         <SectionHeader title="Account" />
         <View style={styles.card}>
