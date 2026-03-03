@@ -104,6 +104,7 @@ export interface Poll {
   endsAt?: string;
   totalVotes: number;
   allowMultiple: boolean;
+  userVoteId?: string;
 }
 
 export interface Thread {

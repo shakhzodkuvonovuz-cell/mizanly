@@ -34,6 +34,8 @@ function ThreadPart({
   onChange,
   onAddMedia,
   onRemoveMedia,
+  onTogglePoll,
+  hasPoll,
   showLine,
   avatar,
   name,
@@ -44,6 +46,8 @@ function ThreadPart({
   onChange: (content: string) => void;
   onAddMedia: () => void;
   onRemoveMedia: (mi: number) => void;
+  onTogglePoll?: () => void;
+  hasPoll?: boolean;
   showLine: boolean;
   avatar?: string;
   name: string;
@@ -88,6 +92,11 @@ function ThreadPart({
           <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
             <Text style={[styles.partToolbarIcon, part.media.length >= 4 && styles.toolbarDisabled]}>🖼️</Text>
           </TouchableOpacity>
+          {onTogglePoll && (
+            <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
+              <Text style={[styles.partToolbarIcon, hasPoll && styles.toolbarActive]}>📊</Text>
+            </TouchableOpacity>
+          )}
           <Text style={[styles.partCharCount, part.content.length > CHAR_LIMIT * 0.8 && styles.charCountWarn]}>
             {CHAR_LIMIT - part.content.length}
           </Text>
@@ -107,6 +116,7 @@ export default function CreateThreadScreen() {
   const [showVisibility, setShowVisibility] = useState(false);
   const [circleId, setCircleId] = useState<string | undefined>();
   const [showCirclePicker, setShowCirclePicker] = useState(false);
+  const [poll, setPoll] = useState<{ question: string; options: string[]; allowMultiple: boolean } | null>(null);
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -182,8 +192,20 @@ export default function CreateThreadScreen() {
           ...part,
           isChainHead: !headId,
           chainId: headId,
-          // Visibility + circle only on the head
-          ...(!headId ? { visibility, circleId: visibility === 'CIRCLE' ? circleId : undefined } : {}),
+          // Visibility + circle + poll only on the head
+          ...(!headId ? {
+            visibility,
+            circleId: visibility === 'CIRCLE' ? circleId : undefined,
+            poll: poll && poll.question.trim() && poll.options.filter(Boolean).length >= 2
+              ? {
+                  question: poll.question.trim(),
+                  options: poll.options
+                    .filter((o) => o.trim())
+                    .map((text, position) => ({ text: text.trim(), position })),
+                  allowMultiple: poll.allowMultiple,
+                }
+              : undefined,
+          } : {}),
         });
         if (!headId) headId = thread.id;
       }
@@ -291,18 +313,82 @@ export default function CreateThreadScreen() {
 
       <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
         {parts.map((part, index) => (
-          <ThreadPart
-            key={index}
-            part={part}
-            index={index}
-            isLast={index === parts.length - 1}
-            showLine={index < parts.length - 1}
-            onChange={(content) => updateContent(index, content)}
-            onAddMedia={() => pickMedia(index)}
-            onRemoveMedia={(mi) => removeMedia(index, mi)}
-            avatar={user?.imageUrl}
-            name={user?.fullName ?? user?.username ?? 'Me'}
-          />
+          <View key={index}>
+            <ThreadPart
+              part={part}
+              index={index}
+              isLast={index === parts.length - 1}
+              showLine={index < parts.length - 1}
+              onChange={(content) => updateContent(index, content)}
+              onAddMedia={() => pickMedia(index)}
+              onRemoveMedia={(mi) => removeMedia(index, mi)}
+              onTogglePoll={index === 0 ? () => setPoll((p) => p ? null : { question: '', options: ['', ''], allowMultiple: false }) : undefined}
+              hasPoll={index === 0 && !!poll}
+              avatar={user?.imageUrl}
+              name={user?.fullName ?? user?.username ?? 'Me'}
+            />
+            {/* Poll form — only on first part */}
+            {index === 0 && poll && (
+              <View style={styles.pollForm}>
+                <View style={styles.pollFormHeader}>
+                  <Text style={styles.pollFormTitle}>📊 Poll</Text>
+                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8}>
+                    <Text style={styles.pollFormRemove}>✕ Remove</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.pollQuestion}
+                  placeholder="Ask a question…"
+                  placeholderTextColor={colors.text.tertiary}
+                  value={poll.question}
+                  onChangeText={(t) => setPoll((p) => p ? { ...p, question: t } : p)}
+                  maxLength={120}
+                />
+                {poll.options.map((opt, oi) => (
+                  <View key={oi} style={styles.pollOptionRow}>
+                    <TextInput
+                      style={styles.pollOptionInput}
+                      placeholder={`Option ${oi + 1}`}
+                      placeholderTextColor={colors.text.tertiary}
+                      value={opt}
+                      onChangeText={(t) => setPoll((p) => {
+                        if (!p) return p;
+                        const options = [...p.options];
+                        options[oi] = t;
+                        return { ...p, options };
+                      })}
+                      maxLength={80}
+                    />
+                    {poll.options.length > 2 && (
+                      <TouchableOpacity
+                        onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.pollOptionRemove}>✕</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+                {poll.options.length < 4 && (
+                  <TouchableOpacity
+                    style={styles.pollAddOption}
+                    onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
+                  >
+                    <Text style={styles.pollAddOptionText}>+ Add option</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={styles.pollAllowMultiple}
+                  onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
+                >
+                  <View style={[styles.pollCheckbox, poll.allowMultiple && styles.pollCheckboxOn]}>
+                    {poll.allowMultiple && <Text style={styles.pollCheckmark}>✓</Text>}
+                  </View>
+                  <Text style={styles.pollAllowMultipleText}>Allow multiple answers</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
         ))}
 
         {/* Add thread part */}
@@ -420,6 +506,41 @@ const styles = StyleSheet.create({
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
+
+  toolbarActive: { opacity: 1, tintColor: colors.emerald },
+
+  // Poll form
+  pollForm: {
+    marginHorizontal: spacing.base, marginBottom: spacing.md,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 12,
+    padding: spacing.md, backgroundColor: colors.dark.bgElevated,
+  },
+  pollFormHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
+  pollFormTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  pollFormRemove: { color: '#FF453A', fontSize: fontSize.sm },
+  pollQuestion: {
+    color: colors.text.primary, fontSize: fontSize.base,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    paddingVertical: spacing.sm, marginBottom: spacing.sm,
+  },
+  pollOptionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
+  pollOptionInput: {
+    flex: 1, color: colors.text.primary, fontSize: fontSize.sm,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 8,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
+  },
+  pollOptionRemove: { color: colors.text.tertiary, fontSize: fontSize.base },
+  pollAddOption: { paddingVertical: spacing.sm },
+  pollAddOptionText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+  pollAllowMultiple: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
+  pollCheckbox: {
+    width: 20, height: 20, borderRadius: 4,
+    borderWidth: 1.5, borderColor: colors.dark.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  pollCheckboxOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
+  pollCheckmark: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  pollAllowMultipleText: { color: colors.text.secondary, fontSize: fontSize.sm },
 
   // Add part
   addPartBtn: {

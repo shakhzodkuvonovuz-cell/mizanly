@@ -24,6 +24,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
   const [localBookmarked, setLocalBookmarked] = useState(thread.isBookmarked ?? false);
   const [localReposts, setLocalReposts] = useState(thread.repostsCount);
   const [localReposted, setLocalReposted] = useState(thread.isReposted ?? false);
+  const [localPoll, setLocalPoll] = useState(thread.poll ?? null);
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
@@ -57,6 +58,28 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
       setLocalReposted((p) => !p);
       setLocalReposts((p) => localReposted ? p + 1 : p - 1);
     },
+  });
+
+  const votePollMutation = useMutation({
+    mutationFn: (optionId: string) => threadsApi.votePoll(optionId),
+    onMutate: (optionId: string) => {
+      setLocalPoll((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          userVoteId: optionId,
+          totalVotes: prev.userVoteId ? prev.totalVotes : prev.totalVotes + 1,
+          options: prev.options.map((o) => ({
+            ...o,
+            votesCount:
+              o.id === optionId ? o.votesCount + 1
+              : o.id === prev.userVoteId ? o.votesCount - 1
+              : o.votesCount,
+          })),
+        };
+      });
+    },
+    onError: () => setLocalPoll(thread.poll ?? null),
   });
 
   const handleShare = () => {
@@ -161,12 +184,47 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
           </View>
         )}
 
-        {/* Poll summary */}
-        {thread.poll && (
+        {/* Poll */}
+        {localPoll && (
           <View style={styles.pollWrap}>
-            <Text style={styles.pollQuestion}>{thread.poll.question}</Text>
+            <Text style={styles.pollQuestion}>{localPoll.question}</Text>
+            {localPoll.options.map((opt) => {
+              const voted = !!localPoll.userVoteId;
+              const pct = localPoll.totalVotes > 0
+                ? Math.round((opt.votesCount / localPoll.totalVotes) * 100) : 0;
+              const isSelected = localPoll.userVoteId === opt.id;
+              if (voted) {
+                return (
+                  <View key={opt.id} style={styles.pollResultRow}>
+                    <View style={[styles.pollBar, { width: `${pct}%` }]} />
+                    <View style={styles.pollResultContent}>
+                      <Text style={[styles.pollOptionText, isSelected && styles.pollOptionSelected]}>
+                        {opt.text}
+                      </Text>
+                      <Text style={[styles.pollPct, isSelected && styles.pollOptionSelected]}>
+                        {pct}%{isSelected ? ' ✓' : ''}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              }
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={styles.pollOptionBtn}
+                  onPress={() => viewerId && votePollMutation.mutate(opt.id)}
+                  disabled={!viewerId || votePollMutation.isPending}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.pollOptionText}>{opt.text}</Text>
+                </TouchableOpacity>
+              );
+            })}
             <Text style={styles.pollMeta}>
-              {thread.poll.totalVotes} votes · {thread.poll.options.length} options
+              {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
+              {localPoll.endsAt
+                ? ` · ends ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
+                : ''}
             </Text>
           </View>
         )}
@@ -275,8 +333,23 @@ const styles = StyleSheet.create({
   repostOfHandle: { color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: 4 },
   repostOfContent: { color: colors.text.primary, fontSize: fontSize.sm },
   pollWrap: { borderWidth: 1, borderColor: colors.dark.border, borderRadius: 10, padding: spacing.md, marginBottom: spacing.sm },
-  pollQuestion: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: 4 },
-  pollMeta: { color: colors.text.secondary, fontSize: fontSize.xs },
+  pollQuestion: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm },
+  pollOptionBtn: {
+    borderWidth: 1, borderColor: colors.emerald, borderRadius: 8,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  pollOptionText: { color: colors.text.primary, fontSize: fontSize.sm },
+  pollOptionSelected: { color: colors.emerald, fontWeight: '600' },
+  pollResultRow: {
+    height: 34, borderRadius: 8, overflow: 'hidden',
+    backgroundColor: colors.dark.bgElevated,
+    marginBottom: spacing.xs, justifyContent: 'center',
+  },
+  pollBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(10,123,79,0.25)', borderRadius: 8 },
+  pollResultContent: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.sm },
+  pollPct: { color: colors.text.secondary, fontSize: fontSize.xs },
+  pollMeta: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: spacing.xs },
   actions: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.xl },
   action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   actionIcon: { fontSize: 20 },
