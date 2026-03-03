@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList,
 } from 'react-native';
@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { notificationsApi } from '@/services/api';
+import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
 
@@ -38,6 +38,53 @@ function notificationTarget(n: Notification): string | null {
   if (n.threadId) return `/(screens)/thread/${n.threadId}`;
   if (n.actor?.username) return `/(screens)/profile/${n.actor.username}`;
   return null;
+}
+
+function FollowRequestActions({
+  requestId,
+  onDone,
+}: {
+  requestId?: string;
+  onDone: () => void;
+}) {
+  const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
+
+  const acceptMutation = useMutation({
+    mutationFn: () => followsApi.acceptRequest(requestId!),
+    onSuccess: () => { setDone('accepted'); onDone(); },
+  });
+  const declineMutation = useMutation({
+    mutationFn: () => followsApi.declineRequest(requestId!),
+    onSuccess: () => { setDone('declined'); onDone(); },
+  });
+
+  if (!requestId) return null;
+  if (done) {
+    return (
+      <Text style={styles.requestDone}>
+        {done === 'accepted' ? 'Accepted' : 'Declined'}
+      </Text>
+    );
+  }
+
+  return (
+    <View style={styles.requestActions}>
+      <TouchableOpacity
+        style={[styles.acceptBtn, acceptMutation.isPending && { opacity: 0.6 }]}
+        onPress={() => acceptMutation.mutate()}
+        disabled={acceptMutation.isPending || declineMutation.isPending}
+      >
+        <Text style={styles.acceptBtnText}>Accept</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.declineBtn, declineMutation.isPending && { opacity: 0.6 }]}
+        onPress={() => declineMutation.mutate()}
+        disabled={acceptMutation.isPending || declineMutation.isPending}
+      >
+        <Text style={styles.declineBtnText}>Decline</Text>
+      </TouchableOpacity>
+    </View>
+  );
 }
 
 function NotificationRow({ notification }: { notification: Notification }) {
@@ -90,22 +137,13 @@ function NotificationRow({ notification }: { notification: Notification }) {
 
       {/* Follow request actions */}
       {notification.type === 'FOLLOW_REQUEST' && !notification.isRead && (
-        <View style={styles.requestActions}>
-          <TouchableOpacity
-            style={styles.acceptBtn}
-            onPress={() => {
-              if (notification.followRequestId) {
-                // Accept follow request
-                readMutation.mutate();
-              }
-            }}
-          >
-            <Text style={styles.acceptBtnText}>Accept</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.declineBtn}>
-            <Text style={styles.declineBtnText}>Decline</Text>
-          </TouchableOpacity>
-        </View>
+        <FollowRequestActions
+          requestId={notification.followRequestId}
+          onDone={() => {
+            readMutation.mutate();
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+          }}
+        />
       )}
     </TouchableOpacity>
   );
@@ -216,6 +254,7 @@ const styles = StyleSheet.create({
   rowBody: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
   rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 4 },
 
+  requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs },
   acceptBtn: {
     backgroundColor: colors.emerald, borderRadius: 8,

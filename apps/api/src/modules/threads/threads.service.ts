@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const THREAD_SELECT = {
   id: true,
@@ -82,7 +83,10 @@ const REPLY_SELECT = {
 
 @Injectable()
 export class ThreadsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async getFeed(
     userId: string,
@@ -211,6 +215,11 @@ export class ThreadsService {
         data: { likesCount: { increment: 1 } },
       }),
     ]);
+    // Notify thread owner
+    this.notifications.create({
+      userId: thread.userId, actorId: userId,
+      type: 'LIKE', threadId,
+    }).catch(() => {});
     return { liked: true };
   }
 
@@ -259,6 +268,11 @@ export class ThreadsService {
         data: { repostsCount: { increment: 1 } },
       }),
     ]);
+    // Notify thread owner
+    this.notifications.create({
+      userId: original.userId, actorId: userId,
+      type: 'REPOST', threadId,
+    }).catch(() => {});
     return repost;
   }
 
@@ -353,6 +367,12 @@ export class ThreadsService {
         data: { repliesCount: { increment: 1 } },
       }),
     ]);
+    // Notify thread owner
+    this.notifications.create({
+      userId: thread.userId, actorId: userId,
+      type: 'THREAD_REPLY', threadId,
+      body: content.substring(0, 100),
+    }).catch(() => {});
     return reply;
   }
 

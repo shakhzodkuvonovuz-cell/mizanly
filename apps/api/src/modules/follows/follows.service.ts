@@ -6,10 +6,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FollowsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async follow(currentUserId: string, targetUserId: string) {
     if (currentUserId === targetUserId) {
@@ -61,6 +65,11 @@ export class FollowsService {
       const request = await this.prisma.followRequest.create({
         data: { senderId: currentUserId, receiverId: targetUserId },
       });
+      // Notify target of incoming follow request
+      this.notifications.create({
+        userId: targetUserId, actorId: currentUserId,
+        type: 'FOLLOW_REQUEST', followRequestId: request.id,
+      }).catch(() => {});
       return { type: 'request', request };
     }
 
@@ -78,6 +87,11 @@ export class FollowsService {
         data: { followersCount: { increment: 1 } },
       }),
     ]);
+    // Notify target of new follower
+    this.notifications.create({
+      userId: targetUserId, actorId: currentUserId,
+      type: 'FOLLOW',
+    }).catch(() => {});
 
     return { type: 'follow', follow };
   }
@@ -244,6 +258,11 @@ export class FollowsService {
         data: { followersCount: { increment: 1 } },
       }),
     ]);
+    // Notify requester that their request was accepted
+    this.notifications.create({
+      userId: request.senderId, actorId: request.receiverId,
+      type: 'FOLLOW_REQUEST_ACCEPTED',
+    }).catch(() => {});
 
     return { message: 'Follow request accepted' };
   }

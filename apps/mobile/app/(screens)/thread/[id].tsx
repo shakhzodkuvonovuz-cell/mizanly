@@ -54,8 +54,8 @@ function ReplyRow({
             style={styles.replyAction}
           >
             <Text style={styles.replyActionIcon}>💬</Text>
-            {reply.likesCount > 0 && (
-              <Text style={styles.replyActionCount}>{reply.likesCount}</Text>
+            {(reply._count?.replies ?? 0) > 0 && (
+              <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.replyAction}>

@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const POST_SELECT = {
   id: true,
@@ -47,7 +48,10 @@ const POST_SELECT = {
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   async getFeed(
     userId: string,
@@ -199,6 +203,11 @@ export class PostsService {
           data: { likesCount: { increment: 1 } },
         }),
       ]);
+      // Notify post owner
+      this.notifications.create({
+        userId: post.userId, actorId: userId,
+        type: 'LIKE', postId,
+      }).catch(() => {});
     }
     return { reaction };
   }
@@ -358,6 +367,13 @@ export class PostsService {
         data: { commentsCount: { increment: 1 } },
       }),
     ]);
+    // Notify post owner
+    this.notifications.create({
+      userId: post.userId, actorId: userId,
+      type: dto.parentId ? 'REPLY' : 'COMMENT',
+      postId, commentId: comment.id,
+      body: dto.content.substring(0, 100),
+    }).catch(() => {});
     return comment;
   }
 
