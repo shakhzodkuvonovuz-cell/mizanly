@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   ActivityIndicator, FlatList, ScrollView, Dimensions,
+  Modal, Pressable, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -10,7 +11,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { usersApi, followsApi, postsApi, threadsApi, storiesApi } from '@/services/api';
+import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -51,6 +52,7 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('posts');
 
   const isOwnProfile = clerkUser?.username === username;
+  const [showMenu, setShowMenu] = useState(false);
 
   // ── Profile data ──
   const profileQuery = useQuery({
@@ -102,6 +104,41 @@ export default function ProfileScreen() {
     },
   });
 
+  const blockMutation = useMutation({
+    mutationFn: () => blocksApi.block(profile!.id),
+    onSuccess: () => {
+      setShowMenu(false);
+      Alert.alert('Blocked', `@${username} has been blocked.`);
+      router.back();
+    },
+  });
+
+  const muteMutation = useMutation({
+    mutationFn: () => mutesApi.mute(profile!.id),
+    onSuccess: () => {
+      setShowMenu(false);
+      Alert.alert('Muted', `@${username} has been muted.`);
+    },
+  });
+
+  const handleBlock = () => {
+    setShowMenu(false);
+    Alert.alert('Block user?', `Posts from @${username} will not appear in your feed.`, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Block', style: 'destructive', onPress: () => blockMutation.mutate() },
+    ]);
+  };
+
+  const handleReport = () => {
+    setShowMenu(false);
+    Alert.alert('Report account', 'Why are you reporting this account?', [
+      { text: 'Spam', onPress: () => {} },
+      { text: 'Impersonation', onPress: () => {} },
+      { text: 'Inappropriate', onPress: () => {} },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const handleEndReached = useCallback(() => {
     if (activeTab === 'posts' && postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
       postsQuery.fetchNextPage();
@@ -133,6 +170,30 @@ export default function ProfileScreen() {
       </SafeAreaView>
     );
   }
+
+  const ProfileMenu = !isOwnProfile ? (
+    <Modal visible={showMenu} transparent animationType="fade">
+      <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
+        <Pressable style={styles.menuSheet}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => muteMutation.mutate()}>
+            <Text style={styles.menuItemText}>🔇  Mute @{username}</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem} onPress={handleBlock}>
+            <Text style={styles.menuItemDestructive}>🚫  Block @{username}</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem} onPress={handleReport}>
+            <Text style={styles.menuItemDestructive}>🚩  Report</Text>
+          </TouchableOpacity>
+          <View style={styles.menuDivider} />
+          <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
+            <Text style={styles.menuItemCancel}>Cancel</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  ) : null;
 
   const ListHeader = (
     <View>
@@ -288,7 +349,9 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={{ width: 40 }} />
+            <TouchableOpacity hitSlop={8} onPress={() => setShowMenu(true)}>
+              <Text style={{ fontSize: 20, color: colors.text.secondary }}>•••</Text>
+            </TouchableOpacity>
           )}
         </View>
         <FlatList
@@ -321,6 +384,7 @@ export default function ProfileScreen() {
           }
           contentContainerStyle={styles.gridContainer}
         />
+        {ProfileMenu}
       </SafeAreaView>
     );
   }
@@ -333,18 +397,20 @@ export default function ProfileScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerUsername}>@{username}</Text>
-        {isOwnProfile ? (
-          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
-            <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
-              <Text style={{ fontSize: 20 }}>🔖</Text>
+          {isOwnProfile ? (
+            <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
+                <Text style={{ fontSize: 20 }}>🔖</Text>
+              </TouchableOpacity>
+              <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
+                <Text style={{ fontSize: 20 }}>⚙️</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity hitSlop={8} onPress={() => setShowMenu(true)}>
+              <Text style={{ fontSize: 20, color: colors.text.secondary }}>•••</Text>
             </TouchableOpacity>
-            <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
-              <Text style={{ fontSize: 20 }}>⚙️</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={{ width: 40 }} />
-        )}
+          )}
       </View>
       <FlatList
         data={threads}
@@ -381,6 +447,7 @@ export default function ProfileScreen() {
         }
         contentContainerStyle={{ paddingBottom: 100 }}
       />
+      {ProfileMenu}
     </SafeAreaView>
   );
 }
@@ -510,4 +577,15 @@ const styles = StyleSheet.create({
   emptyTab: { alignItems: 'center', paddingTop: 40 },
   emptyTabText: { color: colors.text.secondary, fontSize: fontSize.base },
   tabLoader: { marginTop: 40 },
+
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
+  menuSheet: {
+    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 18, borderTopRightRadius: 18,
+    paddingBottom: spacing.xl, overflow: 'hidden',
+  },
+  menuItem: { paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2 },
+  menuItemText: { color: colors.text.primary, fontSize: fontSize.base },
+  menuItemDestructive: { color: '#FF453A', fontSize: fontSize.base },
+  menuItemCancel: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
+  menuDivider: { height: 0.5, backgroundColor: colors.dark.border },
 });
