@@ -31,7 +31,7 @@ export default function RisalahScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.logo}>Risalah</Text>
-        <TouchableOpacity hitSlop={8}>
+        <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/new-conversation')}>
           <Text style={styles.headerIcon}>✏️</Text>
         </TouchableOpacity>
       </View>

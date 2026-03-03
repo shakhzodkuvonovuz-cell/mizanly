@@ -162,8 +162,14 @@ export default function ProfileScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.msgBtn}
-              onPress={() => {
-                /* Navigate to or create DM */
+              onPress={async () => {
+                try {
+                  const { messagesApi } = await import('@/services/api');
+                  const convo = await messagesApi.createDM(profile.id);
+                  router.push(`/(screens)/conversation/${convo.id}`);
+                } catch {
+                  router.push('/(screens)/new-conversation');
+                }
               }}
             >
               <Text style={styles.msgBtnText}>Message</Text>
@@ -238,7 +244,13 @@ export default function ProfileScreen() {
             <Text style={styles.backIcon}>←</Text>
           </TouchableOpacity>
           <Text style={styles.headerUsername}>@{username}</Text>
-          <View style={{ width: 40 }} />
+          {isOwnProfile ? (
+            <TouchableOpacity onPress={() => router.push('/(screens)/settings')} hitSlop={8} style={{ width: 40, alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 20 }}>⚙️</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
         </View>
         <FlatList
           data={posts}

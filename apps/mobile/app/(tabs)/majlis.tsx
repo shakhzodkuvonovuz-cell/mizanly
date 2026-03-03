@@ -4,6 +4,7 @@ import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
 import { threadsApi } from '@/services/api';
@@ -18,6 +19,7 @@ const TABS = [
 
 export default function MajlisScreen() {
   const { user } = useUser();
+  const router = useRouter();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,7 +44,7 @@ export default function MajlisScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>Majlis</Text>
-        <TouchableOpacity hitSlop={8}>
+        <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/search')}>
           <Text style={styles.headerIcon}>🔍</Text>
         </TouchableOpacity>
       </View>
