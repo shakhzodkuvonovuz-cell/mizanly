@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
+import { RichText } from '@/components/ui/RichText';
 import { PostMedia } from './PostMedia';
 import { colors, spacing, fontSize } from '@/theme';
 import { postsApi } from '@/services/api';
@@ -67,12 +68,12 @@ export function PostCard({ post, viewerId }: Props) {
 
       {/* Caption */}
       {post.content ? (
-        <TouchableOpacity
-          onPress={() => router.push(`/(screens)/post/${post.id}`)}
-          activeOpacity={0.9}
-        >
-          <Text style={styles.content} numberOfLines={5}>{post.content}</Text>
-        </TouchableOpacity>
+        <RichText
+          text={post.content}
+          style={styles.content}
+          numberOfLines={5}
+          onPostPress={() => router.push(`/(screens)/post/${post.id}`)}
+        />
       ) : null}
 
       {/* Media */}

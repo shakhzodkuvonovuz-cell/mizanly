@@ -5,6 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
+import { RichText } from '@/components/ui/RichText';
 import { colors, spacing, fontSize } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { Thread } from '@/types';
@@ -79,7 +80,11 @@ export function ThreadCard({ thread, viewerId }: Props) {
         </View>
 
         {/* Content */}
-        <Text style={styles.content}>{thread.content}</Text>
+        <RichText
+          text={thread.content ?? ''}
+          style={styles.content}
+          onPostPress={() => router.push(`/(screens)/thread/${thread.id}`)}
+        />
 
         {/* Media (first image only in feed) */}
         {thread.mediaUrls.length > 0 && (
