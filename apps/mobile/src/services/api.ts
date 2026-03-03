@@ -98,6 +98,7 @@ export const followsApi = {
     api.get<PaginatedResponse<User>>(`/follows/${userId}/followers${qs({ cursor })}`),
   getFollowing: (userId: string, cursor?: string) =>
     api.get<PaginatedResponse<User>>(`/follows/${userId}/following${qs({ cursor })}`),
+  getRequests: () => api.get<any>('/follows/requests'),
   acceptRequest: (id: string) => api.post(`/follows/requests/${id}/accept`),
   declineRequest: (id: string) => api.post(`/follows/requests/${id}/decline`),
   cancelRequest: (id: string) => api.delete(`/follows/requests/${id}`),
@@ -242,6 +243,20 @@ export const circlesApi = {
     api.post(`/circles/${id}/members`, { memberIds }),
   removeMembers: (id: string, memberIds: string[]) =>
     api.delete(`/circles/${id}/members`, { memberIds }),
+};
+
+// ── Blocks ──
+export const blocksApi = {
+  getBlocked: (cursor?: string) => api.get<any>(`/blocks${qs({ cursor })}`),
+  block: (userId: string) => api.post(`/blocks/${userId}`),
+  unblock: (userId: string) => api.delete(`/blocks/${userId}`),
+};
+
+// ── Mutes ──
+export const mutesApi = {
+  getMuted: (cursor?: string) => api.get<any>(`/mutes${qs({ cursor })}`),
+  mute: (userId: string) => api.post(`/mutes/${userId}`),
+  unmute: (userId: string) => api.delete(`/mutes/${userId}`),
 };
 
 // ── Settings ──

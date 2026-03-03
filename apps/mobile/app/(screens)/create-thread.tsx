@@ -1,17 +1,24 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Alert,
+  ScrollView, ActivityIndicator, Alert, Modal, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { threadsApi, uploadApi } from '@/services/api';
+import { threadsApi, uploadApi, circlesApi } from '@/services/api';
+
+type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
+const VISIBILITY_OPTIONS: { value: Visibility; label: string; icon: string }[] = [
+  { value: 'PUBLIC', label: 'Everyone', icon: '🌍' },
+  { value: 'FOLLOWERS', label: 'Followers', icon: '👥' },
+  { value: 'CIRCLE', label: 'Circle', icon: '⭕' },
+];
 
 const CHAR_LIMIT = 500;
 
@@ -96,6 +103,18 @@ export default function CreateThreadScreen() {
   const queryClient = useQueryClient();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
+  const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
+  const [showVisibility, setShowVisibility] = useState(false);
+  const [circleId, setCircleId] = useState<string | undefined>();
+  const [showCirclePicker, setShowCirclePicker] = useState(false);
+
+  const circlesQuery = useQuery({
+    queryKey: ['my-circles'],
+    queryFn: () => circlesApi.getMyCircles(),
+    enabled: visibility === 'CIRCLE',
+  });
+  const circles: any[] = (circlesQuery.data as any[]) ?? [];
+  const selectedCircle = circles.find((c) => c.id === circleId);
 
   const addPart = () => {
     if (parts.length >= 10) return;
@@ -163,6 +182,8 @@ export default function CreateThreadScreen() {
           ...part,
           isChainHead: !headId,
           chainId: headId,
+          // Visibility + circle only on the head
+          ...(!headId ? { visibility, circleId: visibility === 'CIRCLE' ? circleId : undefined } : {}),
         });
         if (!headId) headId = thread.id;
       }
@@ -198,6 +219,75 @@ export default function CreateThreadScreen() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Visibility bar */}
+      <View style={styles.visBar}>
+        <TouchableOpacity
+          style={styles.visPill}
+          onPress={() => setShowVisibility((v) => !v)}
+        >
+          <Text style={styles.visPillText}>
+            {visibility === 'CIRCLE' && selectedCircle
+              ? `${selectedCircle.emoji ?? '⭕'} ${selectedCircle.name}`
+              : `${VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.icon} ${VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.label}`}
+            {' ▾'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {showVisibility && (
+        <View style={styles.visMenu}>
+          {VISIBILITY_OPTIONS.map((opt) => (
+            <TouchableOpacity
+              key={opt.value}
+              style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
+              onPress={() => {
+                setVisibility(opt.value);
+                setShowVisibility(false);
+                if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+              }}
+            >
+              <Text style={styles.visOptionIcon}>{opt.icon}</Text>
+              <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{opt.label}</Text>
+              {visibility === opt.value && <Text style={styles.visCheck}>✓</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {/* Circle picker modal */}
+      <Modal visible={showCirclePicker} transparent animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCirclePicker(false)}>
+          <Pressable style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Choose a Circle</Text>
+            {circlesQuery.isLoading ? (
+              <ActivityIndicator color={colors.emerald} style={{ marginVertical: 24 }} />
+            ) : circles.length === 0 ? (
+              <View style={styles.emptyCircles}>
+                <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
+                <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+                  <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              circles.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.circleRow, circleId === c.id && styles.circleRowActive]}
+                  onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+                >
+                  <Text style={styles.circleEmoji}>{c.emoji ?? '⭕'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.circleName}>{c.name}</Text>
+                    <Text style={styles.circleMeta}>{c._count?.members ?? 0} members</Text>
+                  </View>
+                  {circleId === c.id && <Text style={styles.circleCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
         {parts.map((part, index) => (
@@ -279,6 +369,57 @@ const styles = StyleSheet.create({
   toolbarDisabled: { opacity: 0.3 },
   partCharCount: { color: colors.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
   charCountWarn: { color: colors.warning },
+
+  // Visibility
+  visBar: {
+    paddingHorizontal: spacing.base, paddingVertical: spacing.xs,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  visPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.dark.bgElevated, borderRadius: 20,
+    paddingHorizontal: spacing.sm, paddingVertical: 3,
+  },
+  visPillText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
+  visMenu: {
+    backgroundColor: colors.dark.bgSheet, borderRadius: 12,
+    borderWidth: 1, borderColor: colors.dark.border,
+    marginHorizontal: spacing.base, marginBottom: spacing.sm, overflow: 'hidden',
+  },
+  visOption: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+  },
+  visOptionActive: { backgroundColor: 'rgba(10,123,79,0.1)' },
+  visOptionIcon: { fontSize: 18 },
+  visOptionText: { flex: 1, color: colors.text.secondary, fontSize: fontSize.base },
+  visOptionTextActive: { color: colors.text.primary, fontWeight: '600' },
+  visCheck: { color: colors.emerald, fontSize: fontSize.base },
+
+  // Circle picker modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingHorizontal: spacing.base, paddingTop: spacing.lg, paddingBottom: spacing.xl,
+    maxHeight: '60%',
+  },
+  sheetTitle: {
+    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    textAlign: 'center', marginBottom: spacing.lg,
+  },
+  circleRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  circleRowActive: { backgroundColor: 'rgba(10,123,79,0.08)' },
+  circleEmoji: { fontSize: 22, width: 32, textAlign: 'center' },
+  circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  circleMeta: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
+  circleCheck: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
+  emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
 
   // Add part
   addPartBtn: {

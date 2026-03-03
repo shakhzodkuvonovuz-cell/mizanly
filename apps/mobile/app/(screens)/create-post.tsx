@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Platform, FlatList, Alert,
+  ScrollView, ActivityIndicator, Platform, FlatList, Alert, Modal, Pressable,
 } from 'react-native';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { postsApi, uploadApi } from '@/services/api';
+import { postsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -37,9 +38,18 @@ export default function CreatePostScreen() {
   const [media, setMedia] = useState<PickedMedia[]>([]);
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
   const [showVisibility, setShowVisibility] = useState(false);
+  const [circleId, setCircleId] = useState<string | undefined>();
+  const [showCirclePicker, setShowCirclePicker] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   const inputRef = useRef<TextInput>(null);
+
+  const circlesQuery = useQuery({
+    queryKey: ['my-circles'],
+    queryFn: () => circlesApi.getMyCircles(),
+    enabled: visibility === 'CIRCLE',
+  });
+  const circles: any[] = (circlesQuery.data as any[]) ?? [];
 
   // ── Media picker ──
   const pickMedia = async () => {
@@ -115,6 +125,7 @@ export default function CreatePostScreen() {
         mediaWidth,
         mediaHeight,
         visibility,
+        circleId: visibility === 'CIRCLE' ? circleId : undefined,
       });
     },
     onSuccess: () => {
@@ -131,6 +142,10 @@ export default function CreatePostScreen() {
     (content.trim().length > 0 || media.length > 0) && !createMutation.isPending;
 
   const visibilityLabel = VISIBILITY_OPTIONS.find((o) => o.value === visibility)!;
+  const selectedCircle = circles.find((c) => c.id === circleId);
+  const pillLabel = visibility === 'CIRCLE' && selectedCircle
+    ? `${selectedCircle.emoji ?? '⭕'} ${selectedCircle.name}`
+    : `${visibilityLabel.icon} ${visibilityLabel.label}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -168,9 +183,7 @@ export default function CreatePostScreen() {
               style={styles.visibilityPill}
               onPress={() => setShowVisibility((v) => !v)}
             >
-              <Text style={styles.visibilityPillText}>
-                {visibilityLabel.icon} {visibilityLabel.label} ▾
-              </Text>
+              <Text style={styles.visibilityPillText}>{pillLabel} ▾</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -181,7 +194,11 @@ export default function CreatePostScreen() {
               <TouchableOpacity
                 key={opt.value}
                 style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
-                onPress={() => { setVisibility(opt.value); setShowVisibility(false); }}
+                onPress={() => {
+                  setVisibility(opt.value);
+                  setShowVisibility(false);
+                  if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+                }}
               >
                 <Text style={styles.visOptionIcon}>{opt.icon}</Text>
                 <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
@@ -191,6 +208,21 @@ export default function CreatePostScreen() {
               </TouchableOpacity>
             ))}
           </View>
+        )}
+
+        {/* Circle picker — shown when CIRCLE visibility is active */}
+        {visibility === 'CIRCLE' && (
+          <TouchableOpacity
+            style={styles.circlePill}
+            onPress={() => setShowCirclePicker(true)}
+          >
+            <Text style={styles.circlePillText}>
+              {selectedCircle
+                ? `${selectedCircle.emoji ?? '⭕'} ${selectedCircle.name}`
+                : '⭕ Choose a circle…'}
+            </Text>
+            <Text style={styles.circlePillChevron}>›</Text>
+          </TouchableOpacity>
         )}
 
         {/* Caption input */}
@@ -241,6 +273,40 @@ export default function CreatePostScreen() {
           </ScrollView>
         )}
       </ScrollView>
+
+      {/* Circle picker modal */}
+      <Modal visible={showCirclePicker} transparent animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setShowCirclePicker(false)}>
+          <Pressable style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Choose a Circle</Text>
+            {circlesQuery.isLoading ? (
+              <ActivityIndicator color={colors.emerald} style={{ marginVertical: 24 }} />
+            ) : circles.length === 0 ? (
+              <View style={styles.emptyCircles}>
+                <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
+                <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+                  <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              circles.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  style={[styles.circleRow, circleId === c.id && styles.circleRowActive]}
+                  onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+                >
+                  <Text style={styles.circleEmoji}>{c.emoji ?? '⭕'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.circleName}>{c.name}</Text>
+                    <Text style={styles.circleMeta}>{c._count?.members ?? 0} members</Text>
+                  </View>
+                  {circleId === c.id && <Text style={styles.circleCheck}>✓</Text>}
+                </TouchableOpacity>
+              ))
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* Upload progress overlay */}
       {uploading && (
@@ -375,4 +441,39 @@ const styles = StyleSheet.create({
   toolbarIcon: { fontSize: 22 },
   toolbarSpacer: { flex: 1 },
   charCountInline: { color: colors.text.tertiary, fontSize: fontSize.xs },
+
+  // Circle inline pill
+  circlePill: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(10,123,79,0.1)', borderRadius: 10,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    marginBottom: spacing.md, borderWidth: 1, borderColor: colors.emerald,
+  },
+  circlePillText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+  circlePillChevron: { color: colors.emerald, fontSize: 18 },
+
+  // Circle picker modal
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet: {
+    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    paddingHorizontal: spacing.base, paddingTop: spacing.lg, paddingBottom: spacing.xl,
+    maxHeight: '60%',
+  },
+  sheetTitle: {
+    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    textAlign: 'center', marginBottom: spacing.lg,
+  },
+  circleRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  circleRowActive: { backgroundColor: 'rgba(10,123,79,0.08)' },
+  circleEmoji: { fontSize: 22, width: 32, textAlign: 'center' },
+  circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  circleMeta: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
+  circleCheck: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
+  emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
 });

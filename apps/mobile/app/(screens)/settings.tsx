@@ -163,10 +163,17 @@ export default function SettingsScreen() {
             onToggle={(v) => { setIsPrivate(v); privacyMutation.mutate({ isPrivate: v }); }}
           />
           <View style={styles.divider} />
+          <View style={styles.divider} />
+          <Row
+            label="Follow Requests"
+            hint="Approve or deny pending requests"
+            onPress={() => router.push('/(screens)/follow-requests')}
+          />
+          <View style={styles.divider} />
           <Row
             label="Blocked Keywords"
             hint="Filter comments with specific words"
-            onPress={() => {/* future screen */}}
+            onPress={() => {}}
           />
         </View>
 
@@ -223,6 +230,20 @@ export default function SettingsScreen() {
             hint="Minimize animations throughout the app"
             value={reducedMotion}
             onToggle={(v) => { setReducedMotion(v); accessibilityMutation.mutate({ reducedMotion: v }); }}
+          />
+        </View>
+
+        {/* Blocked & Muted */}
+        <SectionHeader title="Blocked & Muted" />
+        <View style={styles.card}>
+          <Row
+            label="Blocked Accounts"
+            onPress={() => router.push('/(screens)/blocked')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Muted Accounts"
+            onPress={() => router.push('/(screens)/muted')}
           />
         </View>
 
