@@ -55,6 +55,16 @@ function CreateButton() {
                 <Text style={styles.createOptionSub}>Share your thoughts in Majlis</Text>
               </View>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.createOption}
+              onPress={() => { setOpen(false); router.push('/(screens)/create-story'); }}
+            >
+              <Text style={styles.createOptionIcon}>📖</Text>
+              <View>
+                <Text style={styles.createOptionLabel}>Story</Text>
+                <Text style={styles.createOptionSub}>Share a moment that disappears in 24h</Text>
+              </View>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.cancelOption} onPress={() => setOpen(false)}>
               <Text style={styles.cancelOptionText}>Cancel</Text>
             </TouchableOpacity>

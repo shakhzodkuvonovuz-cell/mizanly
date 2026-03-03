@@ -7,7 +7,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
-import { postsApi, storiesApi } from '@/services/api';
+import { postsApi, storiesApi, notificationsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { StoryRow } from '@/components/saf/StoryRow';
 import type { Post, StoryGroup } from '@/types';
@@ -18,6 +18,19 @@ export default function SafScreen() {
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
   const [refreshing, setRefreshing] = useState(false);
+  const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
+  const unreadNotifications = useStore((s) => s.unreadNotifications);
+
+  useQuery({
+    queryKey: ['notifications-count'],
+    queryFn: async () => {
+      const data = await notificationsApi.getUnreadCount();
+      setUnreadNotifications((data as any).count ?? 0);
+      return data;
+    },
+    refetchInterval: 60_000,
+    enabled: !!user,
+  });
 
   const storiesQuery = useQuery({
     queryKey: ['stories-feed'],
@@ -56,8 +69,15 @@ export default function SafScreen() {
           <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/search')}>
             <Text style={styles.headerIcon}>🔍</Text>
           </TouchableOpacity>
-          <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/notifications')}>
-            <Text style={styles.headerIcon}>🔔</Text>
+          <TouchableOpacity hitSlop={8} onPress={() => { router.push('/(screens)/notifications'); setUnreadNotifications(0); }}>
+            <View>
+              <Text style={styles.headerIcon}>🔔</Text>
+              {unreadNotifications > 0 && (
+                <View style={styles.notifBadge}>
+                  <Text style={styles.notifBadgeText}>{unreadNotifications > 99 ? '99+' : unreadNotifications}</Text>
+                </View>
+              )}
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -130,6 +150,13 @@ const styles = StyleSheet.create({
   logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', letterSpacing: -0.5 },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   headerIcon: { fontSize: 22 },
+  notifBadge: {
+    position: 'absolute', top: -4, right: -6,
+    backgroundColor: colors.error, borderRadius: 8,
+    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
+    paddingHorizontal: 3,
+  },
+  notifBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
   tabs: { flexDirection: 'row', justifyContent: 'center', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
   tabBtn: { alignItems: 'center', paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: 0 },
   tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingBottom: spacing.md },
