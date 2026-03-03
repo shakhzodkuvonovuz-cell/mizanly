@@ -1,12 +1,16 @@
+import { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, spacing, fontSize, avatar as avatarSize } from '@/theme';
+import { colors, spacing, fontSize } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
+
+type TabKey = 'chats' | 'groups';
 
 function conversationName(convo: Conversation, myId?: string): string {
   if (convo.isGroup) return convo.groupName ?? 'Group';
@@ -22,10 +26,18 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
 
 export default function RisalahScreen() {
   const router = useRouter();
+  const { user } = useUser();
+  const [activeTab, setActiveTab] = useState<TabKey>('chats');
+
   const { data: conversations } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
+
+  const all: Conversation[] = (conversations as Conversation[]) ?? [];
+  const filtered = all.filter((c) =>
+    activeTab === 'groups' ? c.isGroup : !c.isGroup,
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -36,18 +48,29 @@ export default function RisalahScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Tabs */}
       <View style={styles.tabs}>
-        <Text style={[styles.tab, styles.tabActive]}>Chats</Text>
-        <Text style={styles.tab}>Groups</Text>
-        <Text style={styles.tab}>Channels</Text>
+        {(['chats', 'groups'] as TabKey[]).map((t) => (
+          <TouchableOpacity
+            key={t}
+            style={styles.tabBtn}
+            onPress={() => setActiveTab(t)}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.tab, activeTab === t && styles.tabActive]}>
+              {t === 'chats' ? 'Chats' : 'Groups'}
+            </Text>
+            {activeTab === t && <View style={styles.tabIndicator} />}
+          </TouchableOpacity>
+        ))}
       </View>
 
       <FlatList
-        data={(conversations as Conversation[]) || []}
+        data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => {
-          const name = conversationName(item);
-          const avi = conversationAvatar(item);
+          const name = conversationName(item, user?.id);
+          const avi = conversationAvatar(item, user?.id);
           const time = item.lastMessageAt
             ? formatDistanceToNowStrict(new Date(item.lastMessageAt), { addSuffix: false })
             : '';
@@ -83,8 +106,14 @@ export default function RisalahScreen() {
         }}
         ListEmptyComponent={() => (
           <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No conversations</Text>
-            <Text style={styles.emptyText}>Message someone to get started</Text>
+            <Text style={styles.emptyTitle}>
+              {activeTab === 'groups' ? 'No groups yet' : 'No conversations'}
+            </Text>
+            <Text style={styles.emptyText}>
+              {activeTab === 'groups'
+                ? 'Create a group to chat with multiple people'
+                : 'Message someone to get started'}
+            </Text>
           </View>
         )}
       />
@@ -97,9 +126,11 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm },
   logo: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
   headerIcon: { fontSize: 22 },
-  tabs: { flexDirection: 'row', justifyContent: 'center', gap: spacing.lg, paddingVertical: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingVertical: spacing.xs, paddingHorizontal: spacing.sm },
-  tabActive: { color: colors.emerald, borderBottomWidth: 2, borderBottomColor: colors.emerald },
+  tabs: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
+  tabBtn: { flex: 1, alignItems: 'center', paddingTop: spacing.sm, paddingBottom: 0 },
+  tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingBottom: spacing.sm },
+  tabActive: { color: colors.text.primary },
+  tabIndicator: { height: 2, width: '60%', backgroundColor: colors.emerald, borderRadius: 1, marginBottom: -0.5 },
   chatItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.md },
   avatarWrap: { position: 'relative' },
   unreadBadge: {
@@ -115,7 +146,7 @@ const styles = StyleSheet.create({
   chatTime: { color: colors.text.secondary, fontSize: fontSize.xs },
   chatPreview: { color: colors.text.secondary, fontSize: fontSize.sm },
   muted: { fontSize: 14 },
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm },
+  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm, paddingHorizontal: spacing.xl },
   emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
+  emptyText: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
 });
