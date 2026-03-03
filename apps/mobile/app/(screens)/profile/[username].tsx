@@ -279,9 +279,14 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <Text style={styles.headerUsername}>@{username}</Text>
           {isOwnProfile ? (
-            <TouchableOpacity onPress={() => router.push('/(screens)/settings')} hitSlop={8} style={{ width: 40, alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 20 }}>⚙️</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+              <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
+                <Text style={{ fontSize: 20 }}>🔖</Text>
+              </TouchableOpacity>
+              <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
+                <Text style={{ fontSize: 20 }}>⚙️</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <View style={{ width: 40 }} />
           )}
@@ -328,7 +333,18 @@ export default function ProfileScreen() {
           <Text style={styles.backIcon}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerUsername}>@{username}</Text>
-        <View style={{ width: 40 }} />
+        {isOwnProfile ? (
+          <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+            <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
+              <Text style={{ fontSize: 20 }}>🔖</Text>
+            </TouchableOpacity>
+            <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
+              <Text style={{ fontSize: 20 }}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={{ width: 40 }} />
+        )}
       </View>
       <FlatList
         data={threads}

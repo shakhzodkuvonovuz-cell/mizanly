@@ -153,6 +153,16 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+        {/* Content */}
+        <SectionHeader title="Content" />
+        <View style={styles.card}>
+          <Row
+            label="🔖  Saved"
+            hint="Your saved posts and threads"
+            onPress={() => router.push('/(screens)/saved')}
+          />
+        </View>
+
         {/* Privacy */}
         <SectionHeader title="Privacy" />
         <View style={styles.card}>
