@@ -76,8 +76,13 @@ export default function SafScreen() {
             {/* Stories */}
             <StoryRow
               groups={storyGroups}
-              onPressGroup={() => {}}
-              onPressOwn={() => {}}
+              onPressGroup={(group) =>
+                router.push({
+                  pathname: '/(screens)/story-viewer',
+                  params: { groupJson: JSON.stringify(group), startIndex: '0' },
+                })
+              }
+              onPressOwn={() => router.push('/(screens)/create-story')}
             />
             {/* Feed type tabs */}
             <View style={styles.tabs}>
