@@ -1,8 +1,10 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, ActivityIndicator,
+  KeyboardAvoidingView, Platform, FlatList, ActivityIndicator, Alert,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,7 +12,7 @@ import { useAuth, useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict, format, isToday, isYesterday } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, fontSize } from '@/theme';
-import { messagesApi } from '@/services/api';
+import { messagesApi, uploadApi } from '@/services/api';
 import type { Message, Conversation } from '@/types';
 import { io, Socket } from 'socket.io-client';
 
@@ -55,6 +57,14 @@ function MessageBubble({
             </Text>
           </View>
         )}
+        {/* Media */}
+        {message.mediaUrl ? (
+          <Image
+            source={{ uri: message.mediaUrl }}
+            style={styles.bubbleMedia}
+            contentFit="cover"
+          />
+        ) : null}
         {/* Content */}
         {message.content ? (
           <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
@@ -107,6 +117,7 @@ export default function ConversationScreen() {
   const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // ── Data ──
@@ -217,6 +228,34 @@ export default function ConversationScreen() {
     sendMutation.mutate();
   }, [text, replyTo, id, sendMutation]);
 
+  const pickAndSendMedia = useCallback(async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.85,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    const asset = result.assets[0];
+    const ext = asset.uri.split('.').pop() ?? 'jpg';
+    setUploadingMedia(true);
+    try {
+      const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl(`image/${ext}`, 'messages');
+      const blob = await (await fetch(asset.uri)).blob();
+      await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': `image/${ext}` } });
+      await messagesApi.sendMessage(id, {
+        messageType: 'IMAGE',
+        mediaUrl: publicUrl,
+        mediaType: 'image',
+        replyToId: replyTo?.id,
+      });
+      setReplyTo(null);
+      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+    } catch {
+      Alert.alert('Error', 'Failed to send image.');
+    } finally {
+      setUploadingMedia(false);
+    }
+  }, [id, replyTo, queryClient]);
+
   // ── Typing indicator ──
   const handleChangeText = (val: string) => {
     setText(val);
@@ -314,8 +353,11 @@ export default function ConversationScreen() {
             </View>
           )}
           <View style={styles.inputRow}>
-            <TouchableOpacity style={styles.attachBtn} hitSlop={8}>
-              <Text style={styles.attachIcon}>📎</Text>
+            <TouchableOpacity style={styles.attachBtn} hitSlop={8} onPress={pickAndSendMedia} disabled={uploadingMedia}>
+              {uploadingMedia
+                ? <ActivityIndicator color={colors.emerald} size="small" />
+                : <Text style={styles.attachIcon}>📎</Text>
+              }
             </TouchableOpacity>
             <TextInput
               ref={inputRef}
@@ -400,6 +442,7 @@ const styles = StyleSheet.create({
   },
   replyPreviewUser: { color: 'rgba(255,255,255,0.8)', fontSize: fontSize.xs, fontWeight: '700' },
   replyPreviewText: { color: 'rgba(255,255,255,0.6)', fontSize: fontSize.xs },
+  bubbleMedia: { width: 200, height: 200, borderRadius: 10, marginBottom: spacing.xs },
   bubbleText: { color: colors.text.inverse, fontSize: fontSize.base, lineHeight: 22 },
   bubbleTextOwn: { color: '#fff' },
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, justifyContent: 'flex-end' },
