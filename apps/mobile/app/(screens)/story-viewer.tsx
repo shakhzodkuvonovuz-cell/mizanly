@@ -2,10 +2,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Dimensions, ActivityIndicator, TextInput, Platform,
-  KeyboardAvoidingView, Alert,
+  KeyboardAvoidingView, Alert, Modal, FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -46,10 +46,13 @@ function ProgressBar({
 }
 
 export default function StoryViewerScreen() {
-  const { groupJson, startIndex: startIndexParam } = useLocalSearchParams<{
+  const { groupJson, startIndex: startIndexParam, isOwn } = useLocalSearchParams<{
     groupJson: string;
     startIndex?: string;
+    isOwn?: string;
   }>();
+
+  const ownStory = isOwn === 'true';
 
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -65,9 +68,16 @@ export default function StoryViewerScreen() {
   const [paused, setPaused] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
+  const [showViewers, setShowViewers] = useState(false);
 
   const story = group.stories[storyIndex];
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const viewersQuery = useQuery({
+    queryKey: ['story-viewers', story?.id],
+    queryFn: () => storiesApi.getViewers(story.id),
+    enabled: ownStory && showViewers && !!story?.id,
+  });
   const progressRef = useRef(0);
 
   const advance = useCallback(() => {
@@ -82,7 +92,7 @@ export default function StoryViewerScreen() {
 
   // Progress timer (for images; videos use their own duration)
   useEffect(() => {
-    if (paused || story?.mediaType?.startsWith('video')) return;
+    if (paused || showViewers || story?.mediaType?.startsWith('video')) return;
     progressRef.current = 0;
     setProgress(0);
     const interval = 50;
@@ -96,7 +106,7 @@ export default function StoryViewerScreen() {
       }
     }, interval);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [storyIndex, paused, story?.mediaType, advance]);
+  }, [storyIndex, paused, showViewers, story?.mediaType, advance]);
 
   // Mark viewed
   useEffect(() => {
@@ -206,53 +216,101 @@ export default function StoryViewerScreen() {
         </View>
       ) : null}
 
-      {/* Bottom reply bar */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.bottomBar}
-      >
-        <SafeAreaView edges={['bottom']}>
-          {showReply ? (
-            <View style={styles.replyRow}>
-              <TextInput
-                style={styles.replyInput}
-                value={replyText}
-                onChangeText={setReplyText}
-                placeholder={`Reply to ${group.user.displayName}…`}
-                placeholderTextColor="rgba(255,255,255,0.5)"
-                autoFocus
-                maxLength={200}
-                onBlur={() => setShowReply(false)}
-              />
-              <TouchableOpacity
-                onPress={() => replyMutation.mutate()}
-                disabled={!replyText.trim() || replyMutation.isPending}
-                hitSlop={8}
-              >
-                {replyMutation.isPending ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.sendIcon}>➤</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={styles.replyPlaceholder}
-              onPress={() => { setShowReply(true); setPaused(true); }}
-            >
-              <Text style={styles.replyPlaceholderText}>
-                Reply to {group.user.displayName}…
-              </Text>
-            </TouchableOpacity>
-          )}
+      {/* Bottom area: reply bar for others, views tap for own */}
+      {ownStory ? (
+        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+          <TouchableOpacity
+            style={styles.viewsBtn}
+            onPress={() => setShowViewers(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.viewsBtnText}>👁  {story.viewsCount} views</Text>
+          </TouchableOpacity>
         </SafeAreaView>
-      </KeyboardAvoidingView>
+      ) : (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.bottomBar}
+        >
+          <SafeAreaView edges={['bottom']}>
+            {showReply ? (
+              <View style={styles.replyRow}>
+                <TextInput
+                  style={styles.replyInput}
+                  value={replyText}
+                  onChangeText={setReplyText}
+                  placeholder={`Reply to ${group.user.displayName}…`}
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  autoFocus
+                  maxLength={200}
+                  onBlur={() => setShowReply(false)}
+                />
+                <TouchableOpacity
+                  onPress={() => replyMutation.mutate()}
+                  disabled={!replyText.trim() || replyMutation.isPending}
+                  hitSlop={8}
+                >
+                  {replyMutation.isPending ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.sendIcon}>➤</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                style={styles.replyPlaceholder}
+                onPress={() => { setShowReply(true); setPaused(true); }}
+              >
+                <Text style={styles.replyPlaceholderText}>
+                  Reply to {group.user.displayName}…
+                </Text>
+              </TouchableOpacity>
+            )}
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+      )}
 
-      {/* Views count (own stories) */}
-      <View style={styles.viewsRow} pointerEvents="none">
-        <Text style={styles.viewsText}>👁 {story.viewsCount}</Text>
-      </View>
+      {/* Viewers bottom sheet (own stories) */}
+      <Modal
+        visible={showViewers}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowViewers(false)}
+      >
+        <TouchableOpacity
+          style={styles.viewersOverlay}
+          activeOpacity={1}
+          onPress={() => setShowViewers(false)}
+        />
+        <View style={styles.viewersSheet}>
+          <View style={styles.viewersHandle} />
+          <Text style={styles.viewersTitle}>
+            {story.viewsCount} {story.viewsCount === 1 ? 'view' : 'views'}
+          </Text>
+          {viewersQuery.isLoading ? (
+            <ActivityIndicator color="#0A7B4F" style={{ marginTop: 24 }} />
+          ) : (
+            <FlatList
+              data={(viewersQuery.data as any)?.data ?? []}
+              keyExtractor={(item: any) => item.id}
+              renderItem={({ item }: { item: any }) => (
+                <View style={styles.viewerRow}>
+                  <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
+                  <View style={styles.viewerInfo}>
+                    <Text style={styles.viewerName}>{item.displayName}</Text>
+                    <Text style={styles.viewerUsername}>@{item.username}</Text>
+                  </View>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.viewersEmpty}>No views yet</Text>
+              }
+              contentContainerStyle={{ paddingBottom: 32 }}
+            />
+          )}
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -311,8 +369,47 @@ const styles = StyleSheet.create({
   replyInput: { flex: 1, color: '#fff', fontSize: fontSize.base, paddingVertical: spacing.sm },
   sendIcon: { color: '#fff', fontSize: 20 },
 
-  viewsRow: {
-    position: 'absolute', bottom: 80, left: spacing.base,
+  viewsBtn: {
+    alignSelf: 'flex-start',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  viewsText: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
+  viewsBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
+
+  viewersOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  viewersSheet: {
+    backgroundColor: '#1a1a1a',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '60%',
+    paddingTop: spacing.sm,
+  },
+  viewersHandle: {
+    width: 36, height: 4, borderRadius: 2,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    alignSelf: 'center', marginBottom: spacing.md,
+  },
+  viewersTitle: {
+    color: '#fff', fontSize: fontSize.base, fontWeight: '700',
+    paddingHorizontal: spacing.base, marginBottom: spacing.md,
+  },
+  viewerRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+  },
+  viewerInfo: { flex: 1 },
+  viewerName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
+  viewerUsername: { color: 'rgba(255,255,255,0.5)', fontSize: fontSize.xs },
+  viewersEmpty: {
+    color: 'rgba(255,255,255,0.4)', textAlign: 'center',
+    marginTop: spacing.xl, fontSize: fontSize.base,
+  },
 });

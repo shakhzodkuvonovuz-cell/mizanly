@@ -13,7 +13,8 @@ interface Props {
 export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
   const { user } = useUser();
 
-  // Inject own story slot at front
+  // Build own story slot — use API data if available so ring shows when they have stories
+  const apiOwnGroup = groups.find((g) => g.user.id === user?.id);
   const ownGroup: StoryGroup = {
     user: {
       id: user?.id ?? '',
@@ -24,8 +25,8 @@ export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
       isPrivate: false,
       createdAt: '',
     },
-    stories: [],
-    hasUnread: false,
+    stories: apiOwnGroup?.stories ?? [],
+    hasUnread: (apiOwnGroup?.stories.length ?? 0) > 0,
   };
 
   const items = [ownGroup, ...groups.filter((g) => g.user.id !== user?.id)];

@@ -104,7 +104,17 @@ export default function SafScreen() {
                   params: { groupJson: JSON.stringify(group), startIndex: '0' },
                 })
               }
-              onPressOwn={() => router.push('/(screens)/create-story')}
+              onPressOwn={() => {
+                const ownGroup = storyGroups.find((g) => g.user.id === user?.id);
+                if (ownGroup && ownGroup.stories.length > 0) {
+                  router.push({
+                    pathname: '/(screens)/story-viewer',
+                    params: { groupJson: JSON.stringify(ownGroup), startIndex: '0', isOwn: 'true' },
+                  });
+                } else {
+                  router.push('/(screens)/create-story');
+                }
+              }}
             />
             {/* Feed type tabs */}
             <View style={styles.tabs}>
