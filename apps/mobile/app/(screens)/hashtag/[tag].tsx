@@ -1,12 +1,15 @@
 import { useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, FlatList, Dimensions,
+  View, Text, StyleSheet, Pressable,
+  FlatList, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize } from '@/theme';
 import { searchApi } from '@/services/api';
 import type { Post } from '@/types';
@@ -16,7 +19,10 @@ const GRID_ITEM = (SCREEN_W - 2) / 3;
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.gridItem}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
+    >
       {post.mediaUrls.length > 0 ? (
         <Image
           source={{ uri: post.thumbnailUrl ?? post.mediaUrls[0] }}
@@ -30,10 +36,10 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
       )}
       {post.mediaUrls.length > 1 && (
         <View style={styles.carouselBadge}>
-          <Text style={styles.carouselBadgeText}>⊞</Text>
+          <Icon name="layers" size={12} color="#fff" />
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -59,9 +65,9 @@ export default function HashtagScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <View style={styles.headerInfo}>
           <Text style={styles.tagName}>#{tag}</Text>
           <Text style={styles.postCount}>{totalCount.toLocaleString()} posts</Text>
@@ -69,34 +75,45 @@ export default function HashtagScreen() {
         <View style={{ width: 36 }} />
       </View>
 
-      {postsQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
-      ) : (
-        <FlatList
-          data={posts}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={styles.gridRow}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
-          renderItem={({ item }) => (
-            <GridItem
-              post={item}
-              onPress={() => router.push(`/(screens)/post/${item.id}`)}
-            />
-          )}
-          ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No posts with #{tag} yet</Text>
+      <FlatList
+        data={posts}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        columnWrapperStyle={styles.gridRow}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        renderItem={({ item }) => (
+          <GridItem
+            post={item}
+            onPress={() => router.push(`/(screens)/post/${item.id}`)}
+          />
+        )}
+        ListEmptyComponent={() =>
+          postsQuery.isLoading ? (
+            <View style={styles.skeletonGrid}>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+              ))}
             </View>
-          )}
-          ListFooterComponent={() =>
-            postsQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={styles.footer} />
-            ) : null
-          }
-        />
-      )}
+          ) : (
+            <EmptyState
+              icon="hash"
+              title={`No posts with #${tag} yet`}
+              subtitle="Be the first to post with this hashtag"
+            />
+          )
+        }
+        ListFooterComponent={() =>
+          postsQuery.isFetchingNextPage ? (
+            <View style={styles.skeletonGrid}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+              ))}
+            </View>
+          ) : null
+        }
+        contentContainerStyle={{ paddingBottom: 40 }}
+      />
     </SafeAreaView>
   );
 }
@@ -109,12 +126,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 36 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerInfo: { alignItems: 'center' },
   tagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postCount: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
-  loader: { marginTop: 60 },
 
+  skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 1 },
   gridRow: { gap: 1 },
   gridItem: {
     width: GRID_ITEM, height: GRID_ITEM,
@@ -128,11 +144,6 @@ const styles = StyleSheet.create({
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: {
     position: 'absolute', top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 2,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 3,
   },
-  carouselBadgeText: { color: '#fff', fontSize: 10 },
-
-  empty: { alignItems: 'center', paddingTop: 80 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
-  footer: { paddingVertical: spacing.xl },
 });

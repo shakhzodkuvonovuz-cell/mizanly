@@ -1,14 +1,18 @@
 import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, FlatList,
+  FlatList, Pressable,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { User } from '@/types';
 
@@ -24,7 +28,7 @@ function UserRow({ user, isMe, onPress, onFollow }: {
       <View style={styles.info}>
         <View style={styles.nameRow}>
           <Text style={styles.name}>{user.displayName}</Text>
-          {user.isVerified && <Text style={styles.verified}>✓</Text>}
+          {user.isVerified && <VerifiedBadge size={13} />}
         </View>
         <Text style={styles.handle}>@{user.username}</Text>
       </View>
@@ -75,41 +79,57 @@ export default function FollowingScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Following</Text>
         <View style={{ width: 36 }} />
       </View>
 
-      {followingQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
-      ) : (
-        <FlatList
-          data={following}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <UserRow
-              user={item}
-              isMe={clerkUser?.id === item.id}
-              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-              onFollow={() => followMutation.mutate(item)}
-            />
-          )}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.4}
-          ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>Not following anyone yet</Text>
+      <FlatList
+        data={following}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <UserRow
+            user={item}
+            isMe={clerkUser?.id === item.id}
+            onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+            onFollow={() => followMutation.mutate(item)}
+          />
+        )}
+        onEndReached={onEndReached}
+        onEndReachedThreshold={0.4}
+        ListEmptyComponent={() =>
+          followingQuery.isLoading ? (
+            <View style={styles.skeletonList}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <View key={i} style={styles.skeletonRow}>
+                  <Skeleton.Circle size={40} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton.Rect width={130} height={14} />
+                    <Skeleton.Rect width={90} height={11} />
+                  </View>
+                </View>
+              ))}
             </View>
-          )}
-          ListFooterComponent={() =>
-            followingQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={styles.footer} />
-            ) : null
-          }
-        />
-      )}
+          ) : (
+            <EmptyState icon="users" title="Not following anyone yet" />
+          )
+        }
+        ListFooterComponent={() =>
+          followingQuery.isFetchingNextPage ? (
+            <View style={styles.skeletonList}>
+              <View style={styles.skeletonRow}>
+                <Skeleton.Circle size={40} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton.Rect width={130} height={14} />
+                  <Skeleton.Rect width={90} height={11} />
+                </View>
+              </View>
+            </View>
+          ) : null
+        }
+      />
     </SafeAreaView>
   );
 }
@@ -122,9 +142,10 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 36 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  loader: { marginTop: 60 },
+
+  skeletonList: { padding: spacing.base, gap: spacing.lg },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
@@ -134,18 +155,13 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  verified: { color: colors.emerald, fontSize: fontSize.xs },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 
   followBtn: {
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 20,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.full,
     paddingHorizontal: spacing.md, paddingVertical: 6,
   },
   followingBtn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   followBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
   followingBtnText: { color: '#fff' },
-
-  empty: { alignItems: 'center', paddingTop: 80 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
-  footer: { paddingVertical: spacing.xl },
 });
