@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Alert, Modal, Pressable,
+  ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -10,14 +10,18 @@ import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
-const VISIBILITY_OPTIONS: { value: Visibility; label: string; icon: string }[] = [
-  { value: 'PUBLIC', label: 'Everyone', icon: '🌍' },
-  { value: 'FOLLOWERS', label: 'Followers', icon: '👥' },
-  { value: 'CIRCLE', label: 'Circle', icon: '⭕' },
+type VisIconName = React.ComponentProps<typeof Icon>['name'];
+const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconName }[] = [
+  { value: 'PUBLIC', label: 'Everyone', iconName: 'globe' },
+  { value: 'FOLLOWERS', label: 'Followers', iconName: 'users' },
+  { value: 'CIRCLE', label: 'Circle', iconName: 'lock' },
 ];
 
 const CHAR_LIMIT = 500;
@@ -81,7 +85,7 @@ function ThreadPart({
               <View key={mi} style={styles.thumb}>
                 <Image source={{ uri: item.uri }} style={styles.thumbImg} contentFit="cover" />
                 <TouchableOpacity style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
-                  <Text style={styles.removeThumbText}>✕</Text>
+                  <Icon name="x" size={10} color="#fff" />
                 </TouchableOpacity>
               </View>
             ))}
@@ -89,12 +93,12 @@ function ThreadPart({
         )}
         {/* Part toolbar */}
         <View style={styles.partToolbar}>
-          <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
-            <Text style={[styles.partToolbarIcon, part.media.length >= 4 && styles.toolbarDisabled]}>🖼️</Text>
+          <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8} style={part.media.length >= 4 ? styles.toolbarDisabled : undefined}>
+            <Icon name="image" size="sm" color={colors.text.secondary} />
           </TouchableOpacity>
           {onTogglePoll && (
             <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
-              <Text style={[styles.partToolbarIcon, hasPoll && styles.toolbarActive]}>📊</Text>
+              <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
             </TouchableOpacity>
           )}
           <Text style={[styles.partCharCount, part.content.length > CHAR_LIMIT * 0.8 && styles.charCountWarn]}>
@@ -248,12 +252,16 @@ export default function CreateThreadScreen() {
           style={styles.visPill}
           onPress={() => setShowVisibility((v) => !v)}
         >
-          <Text style={styles.visPillText}>
-            {visibility === 'CIRCLE' && selectedCircle
-              ? `${selectedCircle.emoji ?? '⭕'} ${selectedCircle.name}`
-              : `${VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.icon} ${VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.label}`}
-            {' ▾'}
-          </Text>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Icon name={VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
+            <Text style={styles.visPillText}>
+              {visibility === 'CIRCLE' && selectedCircle
+                ? selectedCircle.name
+                : VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.label}
+            </Text>
+            <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
+          </View>
         </TouchableOpacity>
       </View>
 
@@ -269,47 +277,51 @@ export default function CreateThreadScreen() {
                 if (opt.value === 'CIRCLE') setShowCirclePicker(true);
               }}
             >
-              <Text style={styles.visOptionIcon}>{opt.icon}</Text>
+              <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
               <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{opt.label}</Text>
-              {visibility === opt.value && <Text style={styles.visCheck}>✓</Text>}
+              {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
             </TouchableOpacity>
           ))}
         </View>
       )}
 
-      {/* Circle picker modal */}
-      <Modal visible={showCirclePicker} transparent animationType="slide">
-        <Pressable style={styles.modalOverlay} onPress={() => setShowCirclePicker(false)}>
-          <Pressable style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Choose a Circle</Text>
-            {circlesQuery.isLoading ? (
-              <ActivityIndicator color={colors.emerald} style={{ marginVertical: 24 }} />
-            ) : circles.length === 0 ? (
-              <View style={styles.emptyCircles}>
-                <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
-                <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-                  <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
-                </TouchableOpacity>
+      {/* Circle picker */}
+      <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
+        <Text style={styles.sheetTitle}>Choose a Circle</Text>
+        {circlesQuery.isLoading ? (
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton.Circle size={36} />
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Skeleton.Rect width={120} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
+                </View>
               </View>
-            ) : (
-              circles.map((c) => (
-                <TouchableOpacity
-                  key={c.id}
-                  style={[styles.circleRow, circleId === c.id && styles.circleRowActive]}
-                  onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
-                >
-                  <Text style={styles.circleEmoji}>{c.emoji ?? '⭕'}</Text>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.circleName}>{c.name}</Text>
-                    <Text style={styles.circleMeta}>{c._count?.members ?? 0} members</Text>
-                  </View>
-                  {circleId === c.id && <Text style={styles.circleCheck}>✓</Text>}
-                </TouchableOpacity>
-              ))
-            )}
-          </Pressable>
-        </Pressable>
-      </Modal>
+            ))}
+          </View>
+        ) : circles.length === 0 ? (
+          <View style={styles.emptyCircles}>
+            <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
+            <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          circles.map((c) => (
+            <BottomSheetItem
+              key={c.id}
+              label={c.name}
+              icon={
+                <View style={styles.circleIconWrap}>
+                  <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
+                </View>
+              }
+              onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+            />
+          ))
+        )}
+      </BottomSheet>
 
       <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
         {parts.map((part, index) => (
@@ -331,9 +343,13 @@ export default function CreateThreadScreen() {
             {index === 0 && poll && (
               <View style={styles.pollForm}>
                 <View style={styles.pollFormHeader}>
-                  <Text style={styles.pollFormTitle}>📊 Poll</Text>
-                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8}>
-                    <Text style={styles.pollFormRemove}>✕ Remove</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Icon name="bar-chart-2" size="sm" color={colors.text.primary} />
+                    <Text style={styles.pollFormTitle}>Poll</Text>
+                  </View>
+                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Icon name="x" size={14} color="#FF453A" />
+                    <Text style={styles.pollFormRemove}>Remove</Text>
                   </TouchableOpacity>
                 </View>
                 <TextInput
@@ -364,7 +380,7 @@ export default function CreateThreadScreen() {
                         onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
                         hitSlop={8}
                       >
-                        <Text style={styles.pollOptionRemove}>✕</Text>
+                        <Icon name="x" size={14} color={colors.text.tertiary} />
                       </TouchableOpacity>
                     )}
                   </View>
@@ -382,7 +398,7 @@ export default function CreateThreadScreen() {
                   onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
                 >
                   <View style={[styles.pollCheckbox, poll.allowMultiple && styles.pollCheckboxOn]}>
-                    {poll.allowMultiple && <Text style={styles.pollCheckmark}>✓</Text>}
+                    {poll.allowMultiple && <Icon name="check" size={12} color="#fff" />}
                   </View>
                   <Text style={styles.pollAllowMultipleText}>Allow multiple answers</Text>
                 </TouchableOpacity>
@@ -447,11 +463,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 8,
     width: 18, height: 18, alignItems: 'center', justifyContent: 'center',
   },
-  removeThumbText: { color: '#fff', fontSize: 10 },
   partToolbar: {
     flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.md,
   },
-  partToolbarIcon: { fontSize: 20 },
   toolbarDisabled: { opacity: 0.3 },
   partCharCount: { color: colors.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
   charCountWarn: { color: colors.warning },
@@ -477,37 +491,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
   visOptionActive: { backgroundColor: 'rgba(10,123,79,0.1)' },
-  visOptionIcon: { fontSize: 18 },
   visOptionText: { flex: 1, color: colors.text.secondary, fontSize: fontSize.base },
   visOptionTextActive: { color: colors.text.primary, fontWeight: '600' },
-  visCheck: { color: colors.emerald, fontSize: fontSize.base },
 
-  // Circle picker modal
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: spacing.base, paddingTop: spacing.lg, paddingBottom: spacing.xl,
-    maxHeight: '60%',
-  },
+  // Circle picker sheet
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
-    textAlign: 'center', marginBottom: spacing.lg,
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    paddingHorizontal: spacing.xl, paddingBottom: spacing.sm,
   },
-  circleRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  circleRowActive: { backgroundColor: 'rgba(10,123,79,0.08)' },
-  circleEmoji: { fontSize: 22, width: 32, textAlign: 'center' },
-  circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  circleMeta: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  circleCheck: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
-  emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  skeletonList: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  circleIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
+  circleEmoji: { fontSize: 18 },
+  emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
-
-  toolbarActive: { opacity: 1, tintColor: colors.emerald },
 
   // Poll form
   pollForm: {
@@ -529,7 +527,6 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.dark.border, borderRadius: 8,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
   },
-  pollOptionRemove: { color: colors.text.tertiary, fontSize: fontSize.base },
   pollAddOption: { paddingVertical: spacing.sm },
   pollAddOptionText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
   pollAllowMultiple: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
@@ -539,7 +536,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   pollCheckboxOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
-  pollCheckmark: { color: '#fff', fontSize: 12, fontWeight: '700' },
   pollAllowMultipleText: { color: colors.text.secondary, fontSize: fontSize.sm },
 
   // Add part

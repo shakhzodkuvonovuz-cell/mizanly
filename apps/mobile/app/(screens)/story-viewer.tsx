@@ -1,17 +1,21 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  Dimensions, ActivityIndicator, TextInput, Platform,
-  KeyboardAvoidingView, Alert, Modal, FlatList,
+  Dimensions, TextInput, Platform,
+  KeyboardAvoidingView, Alert, FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Video, ResizeMode } from 'expo-av';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
-import { storiesApi } from '@/services/api';
+import { storiesApi, messagesApi } from '@/services/api';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -116,11 +120,10 @@ export default function StoryViewerScreen() {
   }, [story?.id]);
 
   const replyMutation = useMutation({
-    mutationFn: () => storiesApi.create({
-      mediaUrl: story.mediaUrl,
-      mediaType: story.mediaType,
-      content: replyText,
-    }),
+    mutationFn: async () => {
+      const convo = await messagesApi.createDM(group.user.id);
+      await messagesApi.sendMessage(convo.id, { content: replyText });
+    },
     onSuccess: () => {
       setReplyText('');
       setShowReply(false);
@@ -170,7 +173,11 @@ export default function StoryViewerScreen() {
       )}
 
       {/* Gradient overlay (top) */}
-      <View style={styles.topOverlay}>
+      <LinearGradient
+        colors={['rgba(0,0,0,0.6)', 'transparent']}
+        style={styles.topOverlay}
+        pointerEvents="box-none"
+      >
         <SafeAreaView edges={['top']}>
           <ProgressBar
             count={group.stories.length}
@@ -183,11 +190,11 @@ export default function StoryViewerScreen() {
             <Text style={styles.userName}>{group.user.displayName}</Text>
             <Text style={styles.timeAgo}>{timeAgo}</Text>
             <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={styles.closeBtn}>
-              <Text style={styles.closeIcon}>✕</Text>
+              <Icon name="x" size="sm" color="#fff" />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
-      </View>
+      </LinearGradient>
 
       {/* Tap zones */}
       <View style={styles.tapZones} pointerEvents="box-none">
@@ -249,12 +256,9 @@ export default function StoryViewerScreen() {
                   onPress={() => replyMutation.mutate()}
                   disabled={!replyText.trim() || replyMutation.isPending}
                   hitSlop={8}
+                  style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
                 >
-                  {replyMutation.isPending ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <Text style={styles.sendIcon}>➤</Text>
-                  )}
+                  <Icon name="send" size="sm" color="#fff" />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -272,45 +276,42 @@ export default function StoryViewerScreen() {
       )}
 
       {/* Viewers bottom sheet (own stories) */}
-      <Modal
-        visible={showViewers}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowViewers(false)}
-      >
-        <TouchableOpacity
-          style={styles.viewersOverlay}
-          activeOpacity={1}
-          onPress={() => setShowViewers(false)}
-        />
-        <View style={styles.viewersSheet}>
-          <View style={styles.viewersHandle} />
-          <Text style={styles.viewersTitle}>
-            {story.viewsCount} {story.viewsCount === 1 ? 'view' : 'views'}
-          </Text>
-          {viewersQuery.isLoading ? (
-            <ActivityIndicator color="#0A7B4F" style={{ marginTop: 24 }} />
-          ) : (
-            <FlatList
-              data={(viewersQuery.data as any)?.data ?? []}
-              keyExtractor={(item: any) => item.id}
-              renderItem={({ item }: { item: any }) => (
-                <View style={styles.viewerRow}>
-                  <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
-                  <View style={styles.viewerInfo}>
-                    <Text style={styles.viewerName}>{item.displayName}</Text>
-                    <Text style={styles.viewerUsername}>@{item.username}</Text>
-                  </View>
+      <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
+        <Text style={styles.viewersTitle}>
+          {story.viewsCount} {story.viewsCount === 1 ? 'view' : 'views'}
+        </Text>
+        {viewersQuery.isLoading ? (
+          <View style={styles.viewersSkeleton}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={styles.viewerSkeletonRow}>
+                <Skeleton.Circle size={32} />
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Skeleton.Rect width={120} height={13} />
+                  <Skeleton.Rect width={80} height={11} />
                 </View>
-              )}
-              ListEmptyComponent={
-                <Text style={styles.viewersEmpty}>No views yet</Text>
-              }
-              contentContainerStyle={{ paddingBottom: 32 }}
-            />
-          )}
-        </View>
-      </Modal>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            data={(viewersQuery.data as any)?.data ?? []}
+            keyExtractor={(item: any) => item.id}
+            renderItem={({ item }: { item: any }) => (
+              <View style={styles.viewerRow}>
+                <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
+                <View style={styles.viewerInfo}>
+                  <Text style={styles.viewerName}>{item.displayName}</Text>
+                  <Text style={styles.viewerUsername}>@{item.username}</Text>
+                </View>
+              </View>
+            )}
+            ListEmptyComponent={
+              <Text style={styles.viewersEmpty}>No views yet</Text>
+            }
+            contentContainerStyle={{ paddingBottom: 32 }}
+          />
+        )}
+      </BottomSheet>
     </View>
   );
 }
@@ -322,7 +323,7 @@ const styles = StyleSheet.create({
   topOverlay: {
     position: 'absolute', top: 0, left: 0, right: 0,
     paddingHorizontal: spacing.sm,
-    backgroundColor: 'linear-gradient(180deg, rgba(0,0,0,0.6) 0%, transparent 100%)' as any,
+    paddingBottom: spacing['2xl'],
   },
 
   progressRow: {
@@ -340,7 +341,6 @@ const styles = StyleSheet.create({
   userName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700', flex: 1 },
   timeAgo: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
   closeBtn: { padding: 4 },
-  closeIcon: { color: '#fff', fontSize: 18 },
 
   tapZones: { ...StyleSheet.absoluteFillObject, flexDirection: 'row' },
   tapLeft: { flex: 1 },
@@ -367,8 +367,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   replyInput: { flex: 1, color: '#fff', fontSize: fontSize.base, paddingVertical: spacing.sm },
-  sendIcon: { color: '#fff', fontSize: 20 },
-
   viewsBtn: {
     alignSelf: 'flex-start',
     marginHorizontal: spacing.base,
@@ -382,34 +380,25 @@ const styles = StyleSheet.create({
   },
   viewsBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
 
-  viewersOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  viewersSheet: {
-    backgroundColor: '#1a1a1a',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '60%',
-    paddingTop: spacing.sm,
-  },
-  viewersHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    alignSelf: 'center', marginBottom: spacing.md,
-  },
   viewersTitle: {
-    color: '#fff', fontSize: fontSize.base, fontWeight: '700',
-    paddingHorizontal: spacing.base, marginBottom: spacing.md,
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
+    paddingHorizontal: spacing.xl, paddingBottom: spacing.md,
+  },
+  viewersSkeleton: {
+    paddingHorizontal: spacing.xl, gap: spacing.md,
+  },
+  viewerSkeletonRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
   },
   viewerRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xl, paddingVertical: spacing.sm,
   },
   viewerInfo: { flex: 1 },
-  viewerName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
-  viewerUsername: { color: 'rgba(255,255,255,0.5)', fontSize: fontSize.xs },
+  viewerName: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
+  viewerUsername: { color: colors.text.secondary, fontSize: fontSize.xs },
   viewersEmpty: {
-    color: 'rgba(255,255,255,0.4)', textAlign: 'center',
+    color: colors.text.tertiary, textAlign: 'center',
     marginTop: spacing.xl, fontSize: fontSize.base,
   },
 });

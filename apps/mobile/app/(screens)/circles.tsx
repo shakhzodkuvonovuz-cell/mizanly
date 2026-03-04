@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ActivityIndicator, Alert, TextInput, Modal, Pressable,
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  FlatList, ActivityIndicator, Alert, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { circlesApi } from '@/services/api';
 
 const EMOJIS = ['⭕', '⭐', '🌙', '🤝', '💚', '🕌', '📿', '🏠', '💼', '🎓'];
@@ -18,7 +22,7 @@ interface Circle {
   _count?: { members: number };
 }
 
-function CreateModal({
+function CreateSheet({
   visible,
   onClose,
   onCreated,
@@ -42,49 +46,45 @@ function CreateModal({
   });
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.sheet}>
-          <Text style={styles.sheetTitle}>New Circle</Text>
+    <BottomSheet visible={visible} onClose={onClose}>
+      <Text style={styles.sheetTitle}>New Circle</Text>
 
-          {/* Emoji picker */}
-          <View style={styles.emojiRow}>
-            {EMOJIS.map((e) => (
-              <TouchableOpacity
-                key={e}
-                style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
-                onPress={() => setEmoji(e)}
-              >
-                <Text style={styles.emojiText}>{e}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Name input */}
-          <TextInput
-            style={styles.nameInput}
-            value={name}
-            onChangeText={setName}
-            placeholder="Circle name (e.g. Family, Close Friends)"
-            placeholderTextColor={colors.text.tertiary}
-            maxLength={40}
-            autoFocus
-          />
-
+      {/* Emoji picker */}
+      <View style={styles.emojiRow}>
+        {EMOJIS.map((e) => (
           <TouchableOpacity
-            style={[styles.createBtn, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
-            onPress={() => createMutation.mutate()}
-            disabled={!name.trim() || createMutation.isPending}
+            key={e}
+            style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
+            onPress={() => setEmoji(e)}
           >
-            {createMutation.isPending ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.createBtnText}>Create Circle</Text>
-            )}
+            <Text style={styles.emojiText}>{e}</Text>
           </TouchableOpacity>
-        </Pressable>
-      </Pressable>
-    </Modal>
+        ))}
+      </View>
+
+      {/* Name input */}
+      <TextInput
+        style={styles.nameInput}
+        value={name}
+        onChangeText={setName}
+        placeholder="Circle name (e.g. Family, Close Friends)"
+        placeholderTextColor={colors.text.tertiary}
+        maxLength={40}
+        autoFocus
+      />
+
+      <TouchableOpacity
+        style={[styles.createBtn, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
+        onPress={() => createMutation.mutate()}
+        disabled={!name.trim() || createMutation.isPending}
+      >
+        {createMutation.isPending ? (
+          <ActivityIndicator color="#fff" size="small" />
+        ) : (
+          <Text style={styles.createBtnText}>Create Circle</Text>
+        )}
+      </TouchableOpacity>
+    </BottomSheet>
   );
 }
 
@@ -123,13 +123,13 @@ export default function CirclesScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Circles</Text>
-        <TouchableOpacity onPress={() => setShowCreate(true)} hitSlop={8}>
-          <Text style={styles.addIcon}>＋</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => setShowCreate(true)} hitSlop={8}>
+          <Icon name="plus" size="md" color={colors.emerald} />
+        </Pressable>
       </View>
 
       <Text style={styles.subtitle}>
@@ -137,7 +137,17 @@ export default function CirclesScreen() {
       </Text>
 
       {circlesQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={48} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={130} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={circles}
@@ -159,29 +169,23 @@ export default function CirclesScreen() {
                 onPress={() => handleDelete(item)}
                 style={styles.deleteBtn}
               >
-                <Text style={styles.deleteBtnText}>🗑️</Text>
+                <Icon name="trash" size="sm" color={colors.text.tertiary} />
               </TouchableOpacity>
             </View>
           )}
           ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>⭕</Text>
-              <Text style={styles.emptyTitle}>No circles yet</Text>
-              <Text style={styles.emptyText}>
-                Create circles to share posts with specific groups
-              </Text>
-              <TouchableOpacity
-                style={styles.createFirstBtn}
-                onPress={() => setShowCreate(true)}
-              >
-                <Text style={styles.createFirstBtnText}>Create your first circle</Text>
-              </TouchableOpacity>
-            </View>
+            <EmptyState
+              icon="users"
+              title="No circles yet"
+              subtitle="Create circles to share posts with specific groups"
+              actionLabel="Create your first circle"
+              onAction={() => setShowCreate(true)}
+            />
           )}
         />
       )}
 
-      <CreateModal
+      <CreateSheet
         visible={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ['my-circles'] })}
@@ -198,16 +202,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 36 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  addIcon: { color: colors.emerald, fontSize: 24, fontWeight: '300', width: 36, textAlign: 'right' },
 
   subtitle: {
     color: colors.text.secondary, fontSize: fontSize.sm,
     paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
   },
 
-  loader: { marginTop: 60 },
+  skeletonList: { paddingHorizontal: spacing.base, paddingTop: spacing.lg, gap: spacing.lg },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   list: { paddingHorizontal: spacing.base, paddingBottom: 40 },
 
   circleRow: {
@@ -225,34 +228,18 @@ const styles = StyleSheet.create({
   circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   circleMemberCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
   deleteBtn: { padding: 4 },
-  deleteBtnText: { fontSize: 18 },
 
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.md, paddingHorizontal: spacing.xl },
-  emptyIcon: { fontSize: 48 },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
-  createFirstBtn: {
-    backgroundColor: colors.emerald, borderRadius: 24,
-    paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-    marginTop: spacing.md,
-  },
-  createFirstBtnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
 
-  // Modal
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingHorizontal: spacing.base, paddingTop: spacing.lg, paddingBottom: spacing.xl,
-  },
+  // Sheet content
   sheetTitle: {
-    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700',
     textAlign: 'center', marginBottom: spacing.lg,
+    paddingHorizontal: spacing.base,
   },
   emojiRow: {
     flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm,
     justifyContent: 'center', marginBottom: spacing.lg,
+    paddingHorizontal: spacing.base,
   },
   emojiBtn: {
     width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
@@ -261,14 +248,15 @@ const styles = StyleSheet.create({
   emojiBtnActive: { borderColor: colors.emerald, backgroundColor: 'rgba(10,123,79,0.1)' },
   emojiText: { fontSize: 24 },
   nameInput: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 12,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
     color: colors.text.primary, fontSize: fontSize.base,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.lg, marginHorizontal: spacing.base,
   },
   createBtn: {
-    backgroundColor: colors.emerald, borderRadius: 24,
+    backgroundColor: colors.emerald, borderRadius: radius.full,
     paddingVertical: spacing.md, alignItems: 'center',
+    marginHorizontal: spacing.base,
   },
   createBtnDisabled: { backgroundColor: colors.dark.surface },
   createBtnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
