@@ -1,16 +1,22 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList,
+  View, Text, StyleSheet, Pressable, FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useHaptic } from '@/hooks/useHaptic';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
+
+type NotifIconName = React.ComponentProps<typeof Icon>['name'];
 
 function notificationLabel(n: Notification): string {
   switch (n.type) {
@@ -33,6 +39,22 @@ function notificationLabel(n: Notification): string {
   }
 }
 
+function notificationIcon(type: string): { name: NotifIconName; color: string } {
+  switch (type) {
+    case 'LIKE':            return { name: 'heart-filled', color: colors.like };
+    case 'COMMENT':
+    case 'REPLY':
+    case 'THREAD_REPLY':    return { name: 'message-circle', color: colors.info };
+    case 'FOLLOW':
+    case 'FOLLOW_REQUEST':
+    case 'FOLLOW_REQUEST_ACCEPTED': return { name: 'user', color: colors.emerald };
+    case 'MENTION':         return { name: 'at-sign', color: colors.gold };
+    case 'REPOST':
+    case 'QUOTE_POST':      return { name: 'repeat', color: colors.emerald };
+    default:                return { name: 'bell', color: colors.text.secondary };
+  }
+}
+
 function notificationTarget(n: Notification): string | null {
   if (n.postId) return `/(screens)/post/${n.postId}`;
   if (n.threadId) return `/(screens)/thread/${n.threadId}`;
@@ -40,18 +62,13 @@ function notificationTarget(n: Notification): string | null {
   return null;
 }
 
-function FollowRequestActions({
-  requestId,
-  onDone,
-}: {
-  requestId?: string;
-  onDone: () => void;
-}) {
+function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
+  const haptic = useHaptic();
 
   const acceptMutation = useMutation({
     mutationFn: () => followsApi.acceptRequest(requestId!),
-    onSuccess: () => { setDone('accepted'); onDone(); },
+    onSuccess: () => { haptic.success(); setDone('accepted'); onDone(); },
   });
   const declineMutation = useMutation({
     mutationFn: () => followsApi.declineRequest(requestId!),
@@ -69,20 +86,20 @@ function FollowRequestActions({
 
   return (
     <View style={styles.requestActions}>
-      <TouchableOpacity
+      <Pressable
         style={[styles.acceptBtn, acceptMutation.isPending && { opacity: 0.6 }]}
         onPress={() => acceptMutation.mutate()}
         disabled={acceptMutation.isPending || declineMutation.isPending}
       >
         <Text style={styles.acceptBtnText}>Accept</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
+      </Pressable>
+      <Pressable
         style={[styles.declineBtn, declineMutation.isPending && { opacity: 0.6 }]}
         onPress={() => declineMutation.mutate()}
         disabled={acceptMutation.isPending || declineMutation.isPending}
       >
         <Text style={styles.declineBtnText}>Decline</Text>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -90,15 +107,16 @@ function FollowRequestActions({
 function NotificationRow({ notification }: { notification: Notification }) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const haptic = useHaptic();
+  const iconInfo = notificationIcon(notification.type);
 
   const readMutation = useMutation({
     mutationFn: () => notificationsApi.markRead(notification.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
-    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['notifications'] }),
   });
 
   const handlePress = () => {
+    haptic.light();
     if (!notification.isRead) readMutation.mutate();
     const target = notificationTarget(notification);
     if (target) router.push(target as any);
@@ -107,20 +125,24 @@ function NotificationRow({ notification }: { notification: Notification }) {
   const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true });
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.row, !notification.isRead && styles.rowUnread]}
       onPress={handlePress}
-      activeOpacity={0.7}
     >
-      {/* Unread dot */}
-      {!notification.isRead && <View style={styles.unreadDot} />}
+      {/* Unread accent bar */}
+      {!notification.isRead && <View style={styles.unreadBar} />}
 
-      {/* Actor avatar */}
-      <Avatar
-        uri={notification.actor?.avatarUrl}
-        name={notification.actor?.displayName ?? '?'}
-        size="md"
-      />
+      {/* Actor avatar with icon overlay */}
+      <View style={styles.avatarContainer}>
+        <Avatar
+          uri={notification.actor?.avatarUrl}
+          name={notification.actor?.displayName ?? '?'}
+          size="md"
+        />
+        <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }]}>
+          <Icon name={iconInfo.name} size={10} color="#FFF" fill={iconInfo.name === 'heart-filled' ? '#FFF' : undefined} />
+        </View>
+      </View>
 
       {/* Text */}
       <View style={styles.rowContent}>
@@ -135,7 +157,6 @@ function NotificationRow({ notification }: { notification: Notification }) {
         <Text style={styles.rowTime}>{timeAgo}</Text>
       </View>
 
-      {/* Follow request actions */}
       {notification.type === 'FOLLOW_REQUEST' && !notification.isRead && (
         <FollowRequestActions
           requestId={notification.followRequestId}
@@ -145,13 +166,14 @@ function NotificationRow({ notification }: { notification: Notification }) {
           }}
         />
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const haptic = useHaptic();
   const setUnread = useStore((s) => s.setUnreadNotifications);
 
   const query = useInfiniteQuery({
@@ -168,6 +190,7 @@ export default function NotificationsScreen() {
   const markAllMutation = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
     onSuccess: () => {
+      haptic.success();
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       setUnread(0);
     },
@@ -181,17 +204,17 @@ export default function NotificationsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity
+        <Pressable
           onPress={() => markAllMutation.mutate()}
           disabled={markAllMutation.isPending}
           hitSlop={8}
         >
           <Text style={styles.markAllText}>Mark all read</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <FlatList
@@ -205,19 +228,28 @@ export default function NotificationsScreen() {
         onRefresh={onRefresh}
         refreshing={query.isRefetching && !query.isFetchingNextPage}
         ListEmptyComponent={() =>
-          !query.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>No notifications yet</Text>
-              <Text style={styles.emptyText}>When people interact with your content, you'll see it here</Text>
+          query.isLoading ? (
+            <View style={styles.skeletonList}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <View key={i} style={styles.skeletonRow}>
+                  <Skeleton.Circle size={40} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton.Rect width="80%" height={14} />
+                    <Skeleton.Rect width="40%" height={11} />
+                  </View>
+                </View>
+              ))}
             </View>
           ) : (
-            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+            <EmptyState
+              icon="bell"
+              title="No notifications yet"
+              subtitle="When people interact with your content, you'll see it here"
+            />
           )
         }
         ListFooterComponent={() =>
-          query.isFetchingNextPage ? (
-            <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.lg }} />
-          ) : null
+          query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
         }
         contentContainerStyle={{ paddingBottom: 40 }}
       />
@@ -233,20 +265,41 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 40 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   markAllText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
-  loader: { marginTop: 60 },
+
+  skeletonList: { padding: spacing.base, gap: spacing.lg },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
   row: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     gap: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    position: 'relative',
   },
-  rowUnread: { backgroundColor: 'rgba(10, 123, 79, 0.06)' },
-  unreadDot: {
-    position: 'absolute', left: 5, top: '50%',
-    width: 6, height: 6, borderRadius: 3, backgroundColor: colors.emerald,
+  rowUnread: { backgroundColor: colors.active.emerald10 },
+  unreadBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: colors.emerald,
+    borderTopRightRadius: 2,
+    borderBottomRightRadius: 2,
+  },
+  avatarContainer: { position: 'relative' },
+  iconOverlay: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.dark.bg,
   },
   rowContent: { flex: 1 },
   rowText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
@@ -257,17 +310,13 @@ const styles = StyleSheet.create({
   requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs },
   acceptBtn: {
-    backgroundColor: colors.emerald, borderRadius: 8,
+    backgroundColor: colors.emerald, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
   },
   acceptBtnText: { color: '#fff', fontSize: fontSize.xs, fontWeight: '700' },
   declineBtn: {
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 8,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
   },
   declineBtnText: { color: colors.text.primary, fontSize: fontSize.xs, fontWeight: '600' },
-
-  empty: { alignItems: 'center', paddingTop: 80, paddingHorizontal: spacing.xl, gap: spacing.sm },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
 });

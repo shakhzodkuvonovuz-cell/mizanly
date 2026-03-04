@@ -1,0 +1,179 @@
+import { useEffect, useCallback } from 'react';
+import { View, StyleSheet, Pressable, Dimensions, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { BlurView } from 'expo-blur';
+import { colors, radius, spacing, animation } from '@/theme';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+interface BottomSheetProps {
+  visible: boolean;
+  onClose: () => void;
+  children: React.ReactNode;
+  snapPoint?: number; // percentage of screen height (0-1), defaults to auto
+}
+
+export function BottomSheet({ visible, onClose, children, snapPoint }: BottomSheetProps) {
+  const translateY = useSharedValue(SCREEN_HEIGHT);
+  const backdropOpacity = useSharedValue(0);
+  const context = useSharedValue({ y: 0 });
+
+  const maxHeight = snapPoint ? SCREEN_HEIGHT * snapPoint : undefined;
+
+  const open = useCallback(() => {
+    backdropOpacity.value = withTiming(1, { duration: animation.timing.normal });
+    translateY.value = withSpring(0, animation.spring.responsive);
+  }, [translateY, backdropOpacity]);
+
+  const close = useCallback(() => {
+    backdropOpacity.value = withTiming(0, { duration: animation.timing.fast });
+    translateY.value = withSpring(SCREEN_HEIGHT, animation.spring.responsive);
+    setTimeout(onClose, 250);
+  }, [translateY, backdropOpacity, onClose]);
+
+  useEffect(() => {
+    if (visible) open();
+    else {
+      translateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = 0;
+    }
+  }, [visible, open, translateY, backdropOpacity]);
+
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      context.value = { y: translateY.value };
+    })
+    .onUpdate((event) => {
+      const newY = context.value.y + event.translationY;
+      translateY.value = Math.max(0, newY);
+    })
+    .onEnd((event) => {
+      if (event.translationY > 80 || event.velocityY > 500) {
+        runOnJS(close)();
+      } else {
+        translateY.value = withSpring(0, animation.spring.responsive);
+      }
+    });
+
+  const sheetStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  const backdropStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+
+  if (!visible) return null;
+
+  return (
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+      <Animated.View style={[styles.backdrop, backdropStyle]}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+      </Animated.View>
+
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined]}>
+          {Platform.OS === 'ios' ? (
+            <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
+          ) : (
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.dark.bgSheet }]} />
+          )}
+          <View style={styles.handleContainer}>
+            <View style={styles.handle} />
+          </View>
+          <View style={styles.content}>{children}</View>
+        </Animated.View>
+      </GestureDetector>
+    </View>
+  );
+}
+
+// Convenience component for menu items inside BottomSheet
+export function BottomSheetItem({ label, icon, onPress, destructive, disabled }: {
+  label: string;
+  icon?: React.ReactNode;
+  onPress: () => void;
+  destructive?: boolean;
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.menuItem,
+        pressed && styles.menuItemPressed,
+        disabled && styles.menuItemDisabled,
+      ]}
+      onPress={onPress}
+      disabled={disabled}
+    >
+      {icon}
+      <Animated.Text
+        style={[
+          styles.menuItemText,
+          destructive && styles.menuItemDestructive,
+        ]}
+      >
+        {label}
+      </Animated.Text>
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  sheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    overflow: 'hidden',
+    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.dark.borderLight,
+  },
+  content: {
+    paddingTop: spacing.xs,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md + 2,
+  },
+  menuItemPressed: {
+    backgroundColor: colors.active.white5,
+  },
+  menuItemDisabled: {
+    opacity: 0.4,
+  },
+  menuItemText: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  menuItemDestructive: {
+    color: colors.error,
+  },
+});

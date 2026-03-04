@@ -1,36 +1,29 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  FlatList, ActivityIndicator,
+  View, Text, StyleSheet, Pressable, TextInput,
+  FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
-import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useHaptic } from '@/hooks/useHaptic';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
 import type { User } from '@/types';
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [d, setD] = useState(value);
-  const [timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const set = useCallback((v: T) => {
-    if (timer) clearTimeout(timer);
-    setTimer(setTimeout(() => setD(v), delay));
-  }, [delay]);
-  // synchronize
-  if (d !== value) set(value);
-  return d;
-}
-
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   return (
-    <TouchableOpacity style={styles.userRow} onPress={onPress} activeOpacity={0.7}>
-      <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
+    <Pressable style={styles.userRow} onPress={onPress}>
+      <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
       <View style={styles.userInfo}>
         <View style={styles.userNameRow}>
           <Text style={styles.userName}>{user.displayName}</Text>
-          {user.isVerified && <Text style={styles.verified}>✓</Text>}
+          {user.isVerified && <VerifiedBadge size={13} />}
         </View>
         <Text style={styles.userHandle}>@{user.username}</Text>
         {user._count && (
@@ -40,17 +33,17 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
       {user.isFollowing ? (
         <Text style={styles.followingLabel}>Following</Text>
       ) : null}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 export default function SearchScreen() {
   const router = useRouter();
+  const haptic = useHaptic();
   const [query, setQuery] = useState('');
-
-  // Simple debounce via useMemo pattern
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
@@ -73,46 +66,58 @@ export default function SearchScreen() {
 
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
-
+  const trending = (trendingQuery.data as any[]) ?? [];
   const isSearching = debouncedQuery.trim().length >= 2;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.searchBox}>
-          <Text style={styles.searchIcon}>🔍</Text>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
+        <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
+          <Icon name="search" size="xs" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search people, hashtags…"
             placeholderTextColor={colors.text.tertiary}
             value={query}
             onChangeText={handleQueryChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             autoFocus
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
           />
           {query.length > 0 && (
-            <TouchableOpacity onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
-              <Text style={styles.clearIcon}>✕</Text>
-            </TouchableOpacity>
+            <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+              <Icon name="x" size="xs" color={colors.text.secondary} />
+            </Pressable>
           )}
         </View>
       </View>
 
       {searchQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={40} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={120} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : isSearching ? (
         <FlatList
-          data={[...people.map((p) => ({ type: 'user' as const, data: p })),
-                 ...hashtags.map((h) => ({ type: 'hashtag' as const, data: h }))]}
-          keyExtractor={(item, i) =>
-            item.type === 'user' ? item.data.id : `ht-${i}`
-          }
+          data={[
+            ...people.map((p) => ({ type: 'user' as const, data: p })),
+            ...hashtags.map((h) => ({ type: 'hashtag' as const, data: h })),
+          ]}
+          keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
           renderItem={({ item }) => {
             if (item.type === 'user') {
               return (
@@ -123,27 +128,51 @@ export default function SearchScreen() {
               );
             }
             return (
-              <TouchableOpacity
+              <Pressable
                 style={styles.hashtagRow}
                 onPress={() => router.push(`/(screens)/hashtag/${item.data.name}`)}
-                activeOpacity={0.7}
               >
-                <Text style={styles.hashtagName}>#{item.data.name}</Text>
-                <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
-              </TouchableOpacity>
+                <View style={styles.hashtagIconWrap}>
+                  <Icon name="hash" size="sm" color={colors.emerald} />
+                </View>
+                <View>
+                  <Text style={styles.hashtagName}>#{item.data.name}</Text>
+                  <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
+                </View>
+              </Pressable>
             );
           }}
           ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No results for "{debouncedQuery}"</Text>
-            </View>
+            <EmptyState
+              icon="search"
+              title={`No results for "${debouncedQuery}"`}
+              subtitle="Try a different search term"
+            />
           )}
           contentContainerStyle={{ paddingBottom: 40 }}
         />
       ) : (
-        <View style={styles.discoverHint}>
-          <Text style={styles.discoverTitle}>Discover</Text>
-          <Text style={styles.discoverSub}>Search for people and topics</Text>
+        <View style={styles.discoverSection}>
+          <Text style={styles.discoverTitle}>Trending</Text>
+          {trending.length > 0 ? (
+            <View style={styles.trendingChips}>
+              {trending.map((item: any, i: number) => (
+                <Pressable
+                  key={i}
+                  style={styles.trendingChip}
+                  onPress={() => {
+                    haptic.light();
+                    if (item.name) router.push(`/(screens)/hashtag/${item.name}`);
+                  }}
+                >
+                  <Icon name="trending-up" size={14} color={colors.emerald} />
+                  <Text style={styles.trendingChipText}>#{item.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.discoverSub}>Search for people and topics</Text>
+          )}
         </View>
       )}
     </SafeAreaView>
@@ -158,21 +187,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 36 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   searchBox: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated, borderRadius: 12,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.sm, gap: spacing.xs,
+    borderWidth: 1, borderColor: 'transparent',
   },
-  searchIcon: { fontSize: 16 },
+  searchBoxFocused: {
+    borderColor: colors.emerald,
+    backgroundColor: colors.active.emerald10,
+  },
   searchInput: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     paddingVertical: spacing.sm,
   },
-  clearIcon: { color: colors.text.secondary, fontSize: fontSize.sm, padding: 4 },
-  loader: { marginTop: 60 },
 
-  // User row
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
@@ -181,23 +213,38 @@ const styles = StyleSheet.create({
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  verified: { color: colors.emerald, fontSize: fontSize.xs },
   userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   userFollowers: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   followingLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
 
-  // Hashtag row
   hashtagRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  hashtagIconWrap: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: colors.active.emerald10,
+    alignItems: 'center', justifyContent: 'center',
   },
   hashtagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   hashtagCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
 
-  // Empty + discover
-  empty: { alignItems: 'center', paddingTop: 60 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
-  discoverHint: { alignItems: 'center', paddingTop: 80 },
-  discoverTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700', marginBottom: spacing.sm },
+  discoverSection: { paddingHorizontal: spacing.base, paddingTop: spacing['2xl'] },
+  discoverTitle: {
+    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    marginBottom: spacing.md,
+  },
   discoverSub: { color: colors.text.secondary, fontSize: fontSize.base },
+  trendingChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  trendingChip: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+  },
+  trendingChipText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
 });

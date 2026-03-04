@@ -1,0 +1,213 @@
+import { useEffect } from 'react';
+import { View, StyleSheet } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, radius } from '@/theme';
+
+function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
+  width: number | string;
+  height: number;
+  borderRadius?: number;
+  style?: object;
+}) {
+  const shimmer = useSharedValue(0);
+
+  useEffect(() => {
+    shimmer.value = withRepeat(
+      withTiming(1, { duration: 1200, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [shimmer]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-200, 200]) }],
+  }));
+
+  return (
+    <View
+      style={[
+        {
+          width: width as any,
+          height,
+          borderRadius,
+          backgroundColor: colors.dark.bgElevated,
+          overflow: 'hidden',
+        },
+        style,
+      ]}
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
+        <LinearGradient
+          colors={['transparent', colors.dark.surface, 'transparent']}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+          style={[StyleSheet.absoluteFill, { width: 200 }]}
+        />
+      </Animated.View>
+    </View>
+  );
+}
+
+function Circle({ size = 40, style }: { size?: number; style?: object }) {
+  return <ShimmerBase width={size} height={size} borderRadius={size / 2} style={style} />;
+}
+
+function Rect({ width = '100%', height = 16, borderRadius: br = radius.sm, style }: {
+  width?: number | string;
+  height?: number;
+  borderRadius?: number;
+  style?: object;
+}) {
+  return <ShimmerBase width={width} height={height} borderRadius={br} style={style} />;
+}
+
+function TextLine({ width = '100%', style }: { width?: number | string; style?: object }) {
+  return <ShimmerBase width={width} height={14} borderRadius={4} style={style} />;
+}
+
+function PostCard() {
+  return (
+    <View style={skeletonStyles.postCard}>
+      <View style={skeletonStyles.postHeader}>
+        <Circle size={40} />
+        <View style={skeletonStyles.postHeaderText}>
+          <Rect width={120} height={14} />
+          <Rect width={80} height={11} style={{ marginTop: 6 }} />
+        </View>
+      </View>
+      <Rect width="90%" height={14} style={{ marginTop: spacing.md }} />
+      <Rect width="60%" height={14} style={{ marginTop: spacing.sm }} />
+      <Rect width="100%" height={280} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
+      <View style={skeletonStyles.postActions}>
+        <Rect width={60} height={20} />
+        <Rect width={60} height={20} />
+        <Rect width={60} height={20} />
+      </View>
+    </View>
+  );
+}
+
+function ThreadCard() {
+  return (
+    <View style={skeletonStyles.threadCard}>
+      <Circle size={40} />
+      <View style={skeletonStyles.threadContent}>
+        <View style={skeletonStyles.threadHeader}>
+          <Rect width={100} height={14} />
+          <Rect width={50} height={11} />
+        </View>
+        <Rect width="100%" height={14} style={{ marginTop: spacing.sm }} />
+        <Rect width="80%" height={14} style={{ marginTop: spacing.xs }} />
+        <View style={skeletonStyles.postActions}>
+          <Rect width={40} height={18} />
+          <Rect width={40} height={18} />
+          <Rect width={40} height={18} />
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function ConversationItem() {
+  return (
+    <View style={skeletonStyles.convoItem}>
+      <Circle size={52} />
+      <View style={skeletonStyles.convoContent}>
+        <View style={skeletonStyles.convoRow}>
+          <Rect width={120} height={14} />
+          <Rect width={30} height={11} />
+        </View>
+        <Rect width="70%" height={12} style={{ marginTop: spacing.xs }} />
+      </View>
+    </View>
+  );
+}
+
+function ProfileHeader() {
+  return (
+    <View style={skeletonStyles.profileHeader}>
+      <Rect width="100%" height={140} borderRadius={0} />
+      <View style={skeletonStyles.profileAvatarRow}>
+        <Circle size={96} />
+        <Rect width={90} height={34} borderRadius={radius.md} />
+      </View>
+      <View style={skeletonStyles.profileInfo}>
+        <Rect width={150} height={20} />
+        <Rect width={100} height={14} style={{ marginTop: spacing.sm }} />
+        <Rect width="80%" height={14} style={{ marginTop: spacing.md }} />
+      </View>
+    </View>
+  );
+}
+
+export const Skeleton = {
+  Circle,
+  Rect,
+  Text: TextLine,
+  PostCard,
+  ThreadCard,
+  ConversationItem,
+  ProfileHeader,
+};
+
+const skeletonStyles = StyleSheet.create({
+  postCard: {
+    padding: spacing.base,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  postHeaderText: { flex: 1 },
+  postActions: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+    marginTop: spacing.md,
+  },
+  threadCard: {
+    flexDirection: 'row',
+    padding: spacing.base,
+    gap: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  threadContent: { flex: 1 },
+  threadHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  convoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  convoContent: { flex: 1 },
+  convoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  profileHeader: {},
+  profileAvatarRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    marginTop: -36,
+  },
+  profileInfo: {
+    paddingHorizontal: spacing.base,
+    marginTop: spacing.md,
+  },
+});

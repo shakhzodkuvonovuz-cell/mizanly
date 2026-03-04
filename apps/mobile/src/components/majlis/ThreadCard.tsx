@@ -1,12 +1,24 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert, Share } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Image } from 'expo-image';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { RichText } from '@/components/ui/RichText';
-import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { useHaptic } from '@/hooks/useHaptic';
+import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { Thread } from '@/types';
 
@@ -19,6 +31,7 @@ interface Props {
 export function ThreadCard({ thread, viewerId, isOwn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const haptic = useHaptic();
   const [localLiked, setLocalLiked] = useState(thread.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(thread.likesCount);
   const [localBookmarked, setLocalBookmarked] = useState(thread.isBookmarked ?? false);
@@ -130,245 +143,340 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
       activeOpacity={0.95}
     >
-      {/* Avatar column */}
-      <View style={styles.left}>
-        <TouchableOpacity
-          onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
-          activeOpacity={0.8}
-        >
-          <Avatar uri={thread.user.avatarUrl} name={thread.user.displayName} size="md" />
-        </TouchableOpacity>
-        {thread.repliesCount > 0 && <View style={styles.replyLine} />}
-      </View>
+      {/* Repost header */}
+      {thread.repostOf && (
+        <View style={styles.repostHeader}>
+          <Icon name="repeat" size="xs" color={colors.text.tertiary} />
+          <Text style={styles.repostHeaderText}>Reposted</Text>
+        </View>
+      )}
 
-      {/* Content column */}
-      <View style={styles.right}>
-        {/* User + time */}
-        <View style={styles.topRow}>
+      <View style={styles.cardInner}>
+        {/* Avatar column */}
+        <View style={styles.left}>
           <TouchableOpacity
-            style={styles.userInfo}
             onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
             activeOpacity={0.8}
           >
-            <Text style={styles.name}>{thread.user.displayName}</Text>
-            {thread.user.isVerified && <Text style={styles.verified}>✓</Text>}
-            <Text style={styles.handle}>@{thread.user.username}</Text>
+            <Avatar uri={thread.user.avatarUrl} name={thread.user.displayName} size="md" />
           </TouchableOpacity>
-          <Text style={styles.time}>{timeAgo}</Text>
-          <TouchableOpacity hitSlop={8} onPress={() => setShowMenu(true)}>
-            <Text style={styles.more}>•••</Text>
-          </TouchableOpacity>
+          {thread.repliesCount > 0 && (
+            <LinearGradient
+              colors={[colors.dark.borderLight, 'transparent']}
+              style={styles.replyLine}
+            />
+          )}
         </View>
 
-        {/* Content */}
-        <RichText
-          text={thread.content ?? ''}
-          style={styles.content}
-          onPostPress={() => router.push(`/(screens)/thread/${thread.id}`)}
-        />
+        {/* Content column */}
+        <View style={styles.right}>
+          {/* User + time */}
+          <View style={styles.topRow}>
+            <TouchableOpacity
+              style={styles.userInfo}
+              onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.name}>{thread.user.displayName}</Text>
+              {thread.user.isVerified && <VerifiedBadge size={13} />}
+              <Text style={styles.handle}>@{thread.user.username}</Text>
+            </TouchableOpacity>
+            <Text style={styles.time}>{timeAgo}</Text>
+            <TouchableOpacity
+              hitSlop={8}
+              onPress={() => { haptic.light(); setShowMenu(true); }}
+            >
+              <Icon name="more-horizontal" size="xs" color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Media (first image only in feed) */}
-        {thread.mediaUrls.length > 0 && (
-          <Image
-            source={{ uri: thread.mediaUrls[0] }}
-            style={styles.media}
-            contentFit="cover"
+          {/* Content */}
+          <RichText
+            text={thread.content ?? ''}
+            style={styles.content}
+            onPostPress={() => router.push(`/(screens)/thread/${thread.id}`)}
           />
-        )}
 
-        {/* Repost of */}
-        {thread.repostOf && (
-          <View style={styles.repostOf}>
-            <Text style={styles.repostOfHandle}>@{thread.repostOf.user.username}</Text>
-            <Text style={styles.repostOfContent} numberOfLines={2}>{thread.repostOf.content}</Text>
-          </View>
-        )}
+          {/* Media */}
+          {thread.mediaUrls.length > 0 && (
+            <Image
+              source={{ uri: thread.mediaUrls[0] }}
+              style={styles.media}
+              contentFit="cover"
+            />
+          )}
 
-        {/* Poll */}
-        {localPoll && (
-          <View style={styles.pollWrap}>
-            <Text style={styles.pollQuestion}>{localPoll.question}</Text>
-            {localPoll.options.map((opt) => {
-              const voted = !!localPoll.userVoteId;
-              const pct = localPoll.totalVotes > 0
-                ? Math.round((opt.votesCount / localPoll.totalVotes) * 100) : 0;
-              const isSelected = localPoll.userVoteId === opt.id;
-              if (voted) {
+          {/* Repost of */}
+          {thread.repostOf && (
+            <View style={styles.repostOf}>
+              <Text style={styles.repostOfHandle}>@{thread.repostOf.user.username}</Text>
+              <Text style={styles.repostOfContent} numberOfLines={2}>{thread.repostOf.content}</Text>
+            </View>
+          )}
+
+          {/* Poll */}
+          {localPoll && (
+            <View style={styles.pollWrap}>
+              <Text style={styles.pollQuestion}>{localPoll.question}</Text>
+              {localPoll.options.map((opt) => {
+                const voted = !!localPoll.userVoteId;
+                const pct = localPoll.totalVotes > 0
+                  ? Math.round((opt.votesCount / localPoll.totalVotes) * 100) : 0;
+                const isSelected = localPoll.userVoteId === opt.id;
+                if (voted) {
+                  return (
+                    <PollResultBar
+                      key={opt.id}
+                      text={opt.text}
+                      pct={pct}
+                      isSelected={isSelected}
+                    />
+                  );
+                }
                 return (
-                  <View key={opt.id} style={styles.pollResultRow}>
-                    <View style={[styles.pollBar, { width: `${pct}%` }]} />
-                    <View style={styles.pollResultContent}>
-                      <Text style={[styles.pollOptionText, isSelected && styles.pollOptionSelected]}>
-                        {opt.text}
-                      </Text>
-                      <Text style={[styles.pollPct, isSelected && styles.pollOptionSelected]}>
-                        {pct}%{isSelected ? ' ✓' : ''}
-                      </Text>
-                    </View>
-                  </View>
+                  <TouchableOpacity
+                    key={opt.id}
+                    style={styles.pollOptionBtn}
+                    onPress={() => {
+                      if (viewerId) {
+                        haptic.medium();
+                        votePollMutation.mutate(opt.id);
+                      }
+                    }}
+                    disabled={!viewerId || votePollMutation.isPending}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.pollOptionText}>{opt.text}</Text>
+                  </TouchableOpacity>
                 );
-              }
-              return (
-                <TouchableOpacity
-                  key={opt.id}
-                  style={styles.pollOptionBtn}
-                  onPress={() => viewerId && votePollMutation.mutate(opt.id)}
-                  disabled={!viewerId || votePollMutation.isPending}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.pollOptionText}>{opt.text}</Text>
-                </TouchableOpacity>
-              );
-            })}
-            <Text style={styles.pollMeta}>
-              {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
-              {localPoll.endsAt
-                ? ` · ends ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
-                : ''}
-            </Text>
-          </View>
-        )}
-
-        {/* Actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.action}
-            onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.actionIcon}>💬</Text>
-            {thread.repliesCount > 0 && <Text style={styles.actionCount}>{thread.repliesCount}</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.action}
-            onPress={() => viewerId && repostMutation.mutate()}
-            activeOpacity={0.7}
-            disabled={!viewerId}
-          >
-            <Text style={[styles.actionIcon, localReposted && styles.repostedIcon]}>🔄</Text>
-            {localReposts > 0 && (
-              <Text style={[styles.actionCount, localReposted && styles.repostedCount]}>
-                {localReposts}
+              })}
+              <Text style={styles.pollMeta}>
+                {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
+                {localPoll.endsAt
+                  ? ` · ends ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
+                  : ''}
               </Text>
-            )}
-          </TouchableOpacity>
+            </View>
+          )}
 
-          <TouchableOpacity
-            style={styles.action}
-            onPress={() => likeMutation.mutate()}
-            activeOpacity={0.7}
-            disabled={!viewerId}
-          >
-            <Text style={[styles.actionIcon, localLiked && styles.likedIcon]}>
-              {localLiked ? '❤️' : '🤍'}
-            </Text>
-            {!thread.hideLikesCount && localLikes > 0 && (
-              <Text style={[styles.actionCount, localLiked && styles.likedCount]}>{localLikes}</Text>
-            )}
-          </TouchableOpacity>
+          {/* Actions */}
+          <View style={styles.actions}>
+            <ActionButton
+              icon={<Icon name="message-circle" size="xs" color={colors.text.secondary} />}
+              count={thread.repliesCount > 0 ? thread.repliesCount : undefined}
+              onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
+              hapticType="light"
+            />
 
-          <View style={styles.spacer} />
+            <ActionButton
+              icon={<Icon name="repeat" size="xs" color={localReposted ? colors.emerald : colors.text.secondary} />}
+              count={localReposts > 0 ? localReposts : undefined}
+              isActive={localReposted}
+              onPress={() => viewerId && repostMutation.mutate()}
+              disabled={!viewerId}
+              activeColor={colors.emerald}
+            />
 
-          <TouchableOpacity style={styles.action} onPress={handleShare} activeOpacity={0.7}>
-            <Text style={styles.actionIcon}>↗️</Text>
-          </TouchableOpacity>
+            <ActionButton
+              icon={<Icon name="heart" size="xs" color={colors.text.secondary} />}
+              activeIcon={<Icon name="heart-filled" size="xs" color={colors.like} fill={colors.like} />}
+              isActive={localLiked}
+              count={!thread.hideLikesCount && localLikes > 0 ? localLikes : undefined}
+              onPress={() => likeMutation.mutate()}
+              disabled={!viewerId}
+              activeColor={colors.like}
+            />
 
-          <TouchableOpacity
-            style={styles.action}
-            onPress={() => bookmarkMutation.mutate()}
-            activeOpacity={0.7}
-            disabled={!viewerId}
-          >
-            <Text style={[styles.actionIcon, !localBookmarked && styles.actionIconDim]}>🔖</Text>
-          </TouchableOpacity>
+            <View style={styles.spacer} />
+
+            <ActionButton
+              icon={<Icon name="share" size="xs" color={colors.text.secondary} />}
+              onPress={handleShare}
+              hapticType="light"
+            />
+
+            <ActionButton
+              icon={<Icon name="bookmark" size="xs" color={localBookmarked ? colors.bookmark : colors.text.tertiary} />}
+              activeIcon={<Icon name="bookmark-filled" size="xs" color={colors.bookmark} fill={colors.bookmark} />}
+              isActive={localBookmarked}
+              onPress={() => bookmarkMutation.mutate()}
+              disabled={!viewerId}
+              activeColor={colors.bookmark}
+            />
+          </View>
         </View>
       </View>
 
       {/* More menu */}
-      <Modal visible={showMenu} transparent animationType="fade">
-        <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
-          <Pressable style={styles.menuSheet}>
-            {isOwn ? (
-              <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-                <Text style={styles.menuItemDestructive}>🗑️  Delete thread</Text>
-              </TouchableOpacity>
-            ) : (
-              <>
-                <TouchableOpacity style={styles.menuItem} onPress={() => dismissMutation.mutate()}>
-                  <Text style={styles.menuItemText}>🙈  Not interested</Text>
-                </TouchableOpacity>
-                <View style={styles.menuDivider} />
-                <TouchableOpacity style={styles.menuItem} onPress={handleReport}>
-                  <Text style={styles.menuItemDestructive}>🚩  Report</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            <View style={styles.menuDivider} />
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
-              <Text style={styles.menuItemCancel}>Cancel</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+        {isOwn ? (
+          <BottomSheetItem
+            label="Delete thread"
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            onPress={handleDelete}
+            destructive
+          />
+        ) : (
+          <>
+            <BottomSheetItem
+              label="Not interested"
+              icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+              onPress={() => dismissMutation.mutate()}
+            />
+            <BottomSheetItem
+              label="Report"
+              icon={<Icon name="flag" size="sm" color={colors.error} />}
+              onPress={handleReport}
+              destructive
+            />
+          </>
+        )}
+      </BottomSheet>
     </TouchableOpacity>
   );
 }
 
+function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; isSelected: boolean }) {
+  const width = useSharedValue(0);
+
+  // Animate the bar width on mount
+  useState(() => {
+    setTimeout(() => {
+      width.value = withSpring(pct, animation.spring.gentle);
+    }, 100);
+  });
+
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${width.value}%`,
+  }));
+
+  return (
+    <View style={styles.pollResultRow}>
+      <Animated.View style={[styles.pollBar, barStyle]} />
+      <View style={styles.pollResultContent}>
+        <Text style={[styles.pollOptionText, isSelected && styles.pollOptionSelected]}>
+          {text}
+        </Text>
+        <View style={styles.pollPctRow}>
+          <Text style={[styles.pollPct, isSelected && styles.pollOptionSelected]}>
+            {pct}%
+          </Text>
+          {isSelected && <Icon name="check" size={12} color={colors.emerald} />}
+        </View>
+      </View>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
+  card: {
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  repostHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingLeft: spacing.base + spacing.md + 40,
+    paddingTop: spacing.sm,
+  },
+  repostHeaderText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontWeight: '500',
+  },
+  cardInner: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   left: { alignItems: 'center', marginRight: spacing.md, paddingTop: 2 },
-  replyLine: { width: 1.5, flex: 1, backgroundColor: colors.dark.border, marginTop: spacing.sm, borderRadius: 1 },
+  replyLine: {
+    width: 2,
+    flex: 1,
+    marginTop: spacing.sm,
+    borderRadius: 1,
+  },
   right: { flex: 1 },
-  topRow: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs, gap: spacing.xs },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
+  },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
   name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
-  verified: { color: colors.emerald, fontSize: fontSize.xs },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm },
   time: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  more: { color: colors.text.tertiary, fontSize: fontSize.sm, letterSpacing: 1 },
-  content: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22, marginBottom: spacing.sm },
-  media: { width: '100%', height: 220, borderRadius: 12, marginBottom: spacing.sm },
-  repostOf: { borderWidth: 1, borderColor: colors.dark.border, borderRadius: 10, padding: spacing.md, marginBottom: spacing.sm },
+  content: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    lineHeight: 22,
+    marginBottom: spacing.sm,
+  },
+  media: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.sm },
+  repostOf: {
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
   repostOfHandle: { color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: 4 },
   repostOfContent: { color: colors.text.primary, fontSize: fontSize.sm },
-  pollWrap: { borderWidth: 1, borderColor: colors.dark.border, borderRadius: 10, padding: spacing.md, marginBottom: spacing.sm },
-  pollQuestion: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600', marginBottom: spacing.sm },
+  pollWrap: {
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  pollQuestion: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+  },
   pollOptionBtn: {
-    borderWidth: 1, borderColor: colors.emerald, borderRadius: 8,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.xs,
   },
   pollOptionText: { color: colors.text.primary, fontSize: fontSize.sm },
   pollOptionSelected: { color: colors.emerald, fontWeight: '600' },
   pollResultRow: {
-    height: 34, borderRadius: 8, overflow: 'hidden',
+    height: 36,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
     backgroundColor: colors.dark.bgElevated,
-    marginBottom: spacing.xs, justifyContent: 'center',
+    marginBottom: spacing.xs,
+    justifyContent: 'center',
   },
-  pollBar: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: 'rgba(10,123,79,0.25)', borderRadius: 8 },
-  pollResultContent: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: spacing.sm },
+  pollBar: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: colors.active.emerald20,
+    borderRadius: radius.sm,
+  },
+  pollResultContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+  },
+  pollPctRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   pollPct: { color: colors.text.secondary, fontSize: fontSize.xs },
   pollMeta: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: spacing.xs },
-  actions: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.xs, gap: spacing.xl },
-  action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  actionIcon: { fontSize: 20 },
-  likedIcon: {},
-  repostedIcon: {},
-  actionIconDim: { opacity: 0.4 },
-  actionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
-  likedCount: { color: colors.like },
-  repostedCount: { color: colors.emerald },
-  spacer: { flex: 1 },
-
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  menuSheet: {
-    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 18, borderTopRightRadius: 18,
-    paddingBottom: spacing.xl, overflow: 'hidden',
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    gap: spacing.xl,
   },
-  menuItem: { paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2 },
-  menuItemText: { color: colors.text.primary, fontSize: fontSize.base },
-  menuItemDestructive: { color: '#FF453A', fontSize: fontSize.base },
-  menuItemCancel: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
-  menuDivider: { height: 0.5, backgroundColor: colors.dark.border },
+  spacer: { flex: 1 },
 });

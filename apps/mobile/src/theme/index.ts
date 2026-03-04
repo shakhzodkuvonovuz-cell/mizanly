@@ -1,5 +1,5 @@
 // Mizanly Design System
-// Brand colors, typography, spacing, shadows
+// Brand colors, typography, spacing, shadows, animations, glassmorphism
 
 export const colors = {
   // Brand
@@ -51,6 +51,23 @@ export const colors = {
   like: '#F85149',
   bookmark: '#C8963E',
   online: '#0A7B4F',
+
+  // Glass overlay tints
+  glass: {
+    dark: 'rgba(13, 17, 23, 0.7)',
+    light: 'rgba(255, 255, 255, 0.08)',
+    border: 'rgba(255, 255, 255, 0.12)',
+  },
+
+  // Active states with opacity
+  active: {
+    emerald10: 'rgba(10, 123, 79, 0.1)',
+    emerald20: 'rgba(10, 123, 79, 0.2)',
+    error10: 'rgba(248, 81, 73, 0.1)',
+    gold10: 'rgba(200, 150, 62, 0.1)',
+    white5: 'rgba(255, 255, 255, 0.05)',
+    white10: 'rgba(255, 255, 255, 0.1)',
+  },
 } as const;
 
 export const fonts = {
@@ -64,6 +81,13 @@ export const fonts = {
   arabicBold: 'NotoNaskhArabic-Bold',
   mono: 'JetBrainsMono',
 } as const;
+
+export const fontWeight = {
+  regular: '400' as const,
+  medium: '500' as const,
+  semibold: '600' as const,
+  bold: '700' as const,
+};
 
 export const fontSize = {
   xs: 11,
@@ -121,11 +145,48 @@ export const shadow = {
   },
 } as const;
 
+// 5-level elevation system
+export const elevation = {
+  surface: {
+    ...shadow.sm,
+    backgroundColor: colors.dark.bg,
+  },
+  raised: {
+    ...shadow.sm,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  overlay: {
+    ...shadow.md,
+    backgroundColor: colors.dark.bgCard,
+  },
+  modal: {
+    ...shadow.lg,
+    backgroundColor: colors.dark.bgSheet,
+  },
+  toast: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 24,
+    elevation: 12,
+    backgroundColor: colors.dark.bgSheet,
+  },
+} as const;
+
 // Tab bar config
 export const tabBar = {
   height: 83, // 49pt bar + 34pt safe area
   barHeight: 49,
   iconSize: 24,
+} as const;
+
+// Icon sizes
+export const iconSize = {
+  xs: 16,
+  sm: 20,
+  md: 24,
+  lg: 28,
+  xl: 32,
 } as const;
 
 // Avatar sizes
@@ -137,4 +198,41 @@ export const avatar = {
   xl: 64,
   '2xl': 96,
   '3xl': 128,
+} as const;
+
+// Animation presets
+export const animation = {
+  spring: {
+    responsive: { damping: 15, stiffness: 150, mass: 0.5 },
+    bouncy: { damping: 10, stiffness: 400, mass: 0.5 },
+    gentle: { damping: 20, stiffness: 100, mass: 0.8 },
+    snappy: { damping: 12, stiffness: 300, mass: 0.4 },
+  },
+  timing: {
+    fast: 150,
+    normal: 250,
+    slow: 400,
+  },
+} as const;
+
+// Glassmorphism presets
+export const glass = {
+  light: {
+    blurIntensity: 40,
+    overlayColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderWidth: 0.5,
+  },
+  medium: {
+    blurIntensity: 60,
+    overlayColor: 'rgba(255, 255, 255, 0.12)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderWidth: 0.5,
+  },
+  heavy: {
+    blurIntensity: 80,
+    overlayColor: 'rgba(13, 17, 23, 0.7)',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 0.5,
+  },
 } as const;

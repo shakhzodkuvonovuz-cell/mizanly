@@ -1,76 +1,118 @@
-import { useState } from 'react';
 import { Tabs, useRouter } from 'expo-router';
-import { View, Text, TouchableOpacity, StyleSheet, Platform, Modal, Pressable } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
-import { colors, tabBar, spacing, fontSize } from '@/theme';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
+import { Badge } from '@/components/ui/Badge';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { useHaptic } from '@/hooks/useHaptic';
+import { colors, tabBar, spacing, fontSize, animation, radius, glass } from '@/theme';
 import { useStore } from '@/store';
+import { useState } from 'react';
 
-function TabIcon({ name, focused, badge }: { name: string; focused: boolean; badge?: number }) {
-  const iconMap: Record<string, string> = { saf: '🏠', bakra: '▶️', majlis: '💬', risalah: '✉️' };
+type TabName = 'saf' | 'bakra' | 'majlis' | 'risalah';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; badge?: number }) {
+  const iconMap: Record<TabName, { icon: React.ComponentProps<typeof Icon>['name']; label: string }> = {
+    saf: { icon: 'home', label: 'Saf' },
+    bakra: { icon: 'play', label: 'Bakra' },
+    majlis: { icon: 'message-circle', label: 'Majlis' },
+    risalah: { icon: 'mail', label: 'Risalah' },
+  };
+
+  const { icon } = iconMap[name];
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <View style={styles.iconWrap}>
-      <View style={[styles.iconCircle, focused && styles.iconCircleFocused]}>
-        <Text style={{ fontSize: 20 }}>{iconMap[name] || '•'}</Text>
-      </View>
-      {badge ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{badge > 99 ? '99+' : badge}</Text>
-        </View>
-      ) : null}
-    </View>
+    <Animated.View style={[styles.iconWrap, animatedStyle]}>
+      <Icon
+        name={icon}
+        size="md"
+        color={focused ? colors.emerald : colors.text.secondary}
+        strokeWidth={focused ? 2 : 1.75}
+      />
+      {focused && <View style={styles.activeDot} />}
+      {badge !== undefined && badge > 0 && (
+        <Badge
+          count={badge}
+          size="sm"
+          style={styles.badge}
+        />
+      )}
+    </Animated.View>
   );
 }
 
 function CreateButton() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const haptic = useHaptic();
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    haptic.medium();
+    scale.value = withSequence(
+      withSpring(0.85, animation.spring.bouncy),
+      withSpring(1, animation.spring.bouncy),
+    );
+    setOpen(true);
+  };
+
+  const navigate = (path: string) => {
+    haptic.light();
+    setOpen(false);
+    router.push(path as any);
+  };
 
   return (
     <>
-      <TouchableOpacity style={styles.createButton} onPress={() => setOpen(true)} activeOpacity={0.8}>
-        <Text style={styles.createButtonText}>+</Text>
-      </TouchableOpacity>
+      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress}>
+        <LinearGradient
+          colors={[colors.emeraldLight, colors.emerald]}
+          style={styles.createGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Icon name="plus" size="md" color="#FFF" strokeWidth={2.5} />
+        </LinearGradient>
+      </AnimatedPressable>
 
-      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-        <Pressable style={styles.modalOverlay} onPress={() => setOpen(false)}>
-          <View style={styles.createSheet}>
-            <Text style={styles.createSheetTitle}>Create</Text>
-            <TouchableOpacity
-              style={styles.createOption}
-              onPress={() => { setOpen(false); router.push('/(screens)/create-post'); }}
-            >
-              <Text style={styles.createOptionIcon}>🖼️</Text>
-              <View>
-                <Text style={styles.createOptionLabel}>Post</Text>
-                <Text style={styles.createOptionSub}>Photo, video, or text in Saf</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.createOption}
-              onPress={() => { setOpen(false); router.push('/(screens)/create-thread'); }}
-            >
-              <Text style={styles.createOptionIcon}>💬</Text>
-              <View>
-                <Text style={styles.createOptionLabel}>Thread</Text>
-                <Text style={styles.createOptionSub}>Share your thoughts in Majlis</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.createOption}
-              onPress={() => { setOpen(false); router.push('/(screens)/create-story'); }}
-            >
-              <Text style={styles.createOptionIcon}>📖</Text>
-              <View>
-                <Text style={styles.createOptionLabel}>Story</Text>
-                <Text style={styles.createOptionSub}>Share a moment that disappears in 24h</Text>
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.cancelOption} onPress={() => setOpen(false)}>
-              <Text style={styles.cancelOptionText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </Pressable>
-      </Modal>
+      <BottomSheet visible={open} onClose={() => setOpen(false)}>
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>Create</Text>
+        </View>
+        <BottomSheetItem
+          label="Post"
+          icon={<Icon name="image" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/create-post')}
+        />
+        <BottomSheetItem
+          label="Thread"
+          icon={<Icon name="message-circle" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/create-thread')}
+        />
+        <BottomSheetItem
+          label="Story"
+          icon={<Icon name="circle-plus" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/create-story')}
+        />
+      </BottomSheet>
     </>
   );
 }
@@ -89,9 +131,13 @@ export default function TabLayout() {
         tabBarLabelStyle: styles.tabLabel,
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
-            <BlurView intensity={80} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView
+              intensity={glass.heavy.blurIntensity}
+              tint="dark"
+              style={[StyleSheet.absoluteFill, styles.tabBarBg]}
+            />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(13,17,23,0.95)' }]} />
+            <View style={[StyleSheet.absoluteFill, styles.tabBarBgAndroid]} />
           )
         ),
       }}
@@ -139,60 +185,62 @@ const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
+    borderTopColor: colors.glass.border,
     height: tabBar.height,
     paddingTop: 6,
     backgroundColor: 'transparent',
     elevation: 0,
   },
+  tabBarBg: {
+    borderTopWidth: 0.5,
+    borderTopColor: colors.glass.border,
+  },
+  tabBarBgAndroid: {
+    backgroundColor: 'rgba(13,17,23,0.97)',
+    borderTopWidth: 0.5,
+    borderTopColor: colors.dark.border,
+  },
   tabLabel: { fontSize: 10, fontWeight: '600', marginTop: -2 },
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  iconCircle: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
-  iconCircleFocused: { transform: [{ scale: 1.1 }] },
-  badge: {
-    position: 'absolute', top: -4, right: -10,
-    backgroundColor: colors.error, borderRadius: 10,
-    minWidth: 18, height: 18, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 4,
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 32,
+    height: 32,
   },
-  badgeText: { color: '#FFF', fontSize: 10, fontWeight: '700' },
-  createButton: {
-    width: 48, height: 36, borderRadius: 18,
+  activeDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: colors.emerald,
-    alignItems: 'center', justifyContent: 'center',
+    marginTop: 2,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+  },
+  createButton: {
     marginTop: 4,
-    shadowColor: colors.emerald, shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4, shadowRadius: 8, elevation: 6,
   },
-  createButtonText: { color: '#FFF', fontSize: 24, fontWeight: '300', marginTop: -2 },
-
-  // Create sheet modal
-  modalOverlay: {
-    flex: 1, backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'flex-end',
+  createGradient: {
+    width: 48,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  createSheet: {
-    backgroundColor: colors.dark.bgSheet,
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
-    paddingTop: spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
+  sheetHeader: {
+    alignItems: 'center',
+    paddingBottom: spacing.sm,
   },
-  createSheetTitle: {
-    color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '700',
-    textAlign: 'center', marginBottom: spacing.md,
+  sheetTitle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
   },
-  createOption: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
-  },
-  createOptionIcon: { fontSize: 28 },
-  createOptionLabel: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  createOptionSub: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  cancelOption: {
-    margin: spacing.md, borderRadius: 14,
-    backgroundColor: colors.dark.surface,
-    paddingVertical: spacing.md, alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  cancelOptionText: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
 });

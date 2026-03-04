@@ -44,6 +44,7 @@
     "zustand": "^5.0.0",
     "socket.io-client": "^4.8.0",
     "date-fns": "^4.1.0",
+    "lucide-react-native": "^0.468.0",
     "react-native-flash-list": "~2.0.0"
   },
   "devDependencies": {

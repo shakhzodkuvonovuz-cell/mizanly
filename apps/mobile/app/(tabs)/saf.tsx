@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,16 +10,36 @@ import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { StoryRow } from '@/components/saf/StoryRow';
+import { Icon } from '@/components/ui/Icon';
+import { Badge } from '@/components/ui/Badge';
+import { TabSelector } from '@/components/ui/TabSelector';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import Animated from 'react-native-reanimated';
+import { Pressable } from 'react-native';
 import type { Post, StoryGroup } from '@/types';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+const FEED_TABS = [
+  { key: 'following', label: 'Following' },
+  { key: 'foryou', label: 'For You' },
+];
 
 export default function SafScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const haptic = useHaptic();
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
   const [refreshing, setRefreshing] = useState(false);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
+
+  const searchPress = useAnimatedPress();
+  const bellPress = useAnimatedPress();
 
   useQuery({
     queryKey: ['notifications-count'],
@@ -66,19 +86,37 @@ export default function SafScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>Mizanly</Text>
         <View style={styles.headerRight}>
-          <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/search')}>
-            <Text style={styles.headerIcon}>🔍</Text>
-          </TouchableOpacity>
-          <TouchableOpacity hitSlop={8} onPress={() => { router.push('/(screens)/notifications'); setUnreadNotifications(0); }}>
+          <AnimatedPressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            onPressIn={searchPress.onPressIn}
+            onPressOut={searchPress.onPressOut}
+            style={searchPress.animatedStyle}
+          >
+            <Icon name="search" size="sm" color={colors.text.primary} />
+          </AnimatedPressable>
+          <AnimatedPressable
+            hitSlop={8}
+            onPress={() => {
+              haptic.light();
+              router.push('/(screens)/notifications');
+              setUnreadNotifications(0);
+            }}
+            onPressIn={bellPress.onPressIn}
+            onPressOut={bellPress.onPressOut}
+            style={bellPress.animatedStyle}
+          >
             <View>
-              <Text style={styles.headerIcon}>🔔</Text>
+              <Icon name="bell" size="sm" color={colors.text.primary} />
               {unreadNotifications > 0 && (
-                <View style={styles.notifBadge}>
-                  <Text style={styles.notifBadgeText}>{unreadNotifications > 99 ? '99+' : unreadNotifications}</Text>
-                </View>
+                <Badge
+                  count={unreadNotifications}
+                  size="sm"
+                  style={styles.notifBadge}
+                />
               )}
             </View>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
       </View>
 
@@ -117,36 +155,34 @@ export default function SafScreen() {
               }}
             />
             {/* Feed type tabs */}
-            <View style={styles.tabs}>
-              {(['following', 'foryou'] as const).map((t) => (
-                <TouchableOpacity
-                  key={t}
-                  style={styles.tabBtn}
-                  onPress={() => setFeedType(t)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.tab, feedType === t && styles.tabActive]}>
-                    {t === 'following' ? 'Following' : 'For You'}
-                  </Text>
-                  {feedType === t && <View style={styles.tabIndicator} />}
-                </TouchableOpacity>
-              ))}
-            </View>
+            <TabSelector
+              tabs={FEED_TABS}
+              activeKey={feedType}
+              onTabChange={(key) => setFeedType(key as any)}
+              variant="pill"
+            />
           </View>
         )}
         ListEmptyComponent={() => (
-          !feedQuery.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>No posts yet</Text>
-              <Text style={styles.emptyText}>Follow people to fill your feed</Text>
+          feedQuery.isLoading ? (
+            <View>
+              <Skeleton.PostCard />
+              <Skeleton.PostCard />
+              <Skeleton.PostCard />
             </View>
           ) : (
-            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+            <EmptyState
+              icon="users"
+              title="No posts yet"
+              subtitle="Follow people to fill your feed"
+            />
           )
         )}
         ListFooterComponent={() =>
           feedQuery.isFetchingNextPage ? (
-            <ActivityIndicator color={colors.emerald} style={styles.footer} />
+            <View style={styles.footer}>
+              <Skeleton.PostCard />
+            </View>
           ) : null
         }
       />
@@ -156,25 +192,24 @@ export default function SafScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm },
-  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', letterSpacing: -0.5 },
-  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  headerIcon: { fontSize: 22 },
-  notifBadge: {
-    position: 'absolute', top: -4, right: -6,
-    backgroundColor: colors.error, borderRadius: 8,
-    minWidth: 16, height: 16, alignItems: 'center', justifyContent: 'center',
-    paddingHorizontal: 3,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
   },
-  notifBadgeText: { color: '#fff', fontSize: 9, fontWeight: '700' },
-  tabs: { flexDirection: 'row', justifyContent: 'center', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  tabBtn: { alignItems: 'center', paddingHorizontal: spacing.xl, paddingTop: spacing.md, paddingBottom: 0 },
-  tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingBottom: spacing.md },
-  tabActive: { color: colors.text.primary },
-  tabIndicator: { height: 2, width: '80%', backgroundColor: colors.emerald, borderRadius: 1, marginBottom: -0.5 },
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
-  loader: { marginTop: 60 },
-  footer: { paddingVertical: spacing.xl },
+  logo: {
+    color: colors.emerald,
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
+  notifBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -8,
+  },
+  footer: { paddingVertical: spacing.sm },
 });

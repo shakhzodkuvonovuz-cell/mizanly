@@ -1,28 +1,49 @@
 import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize } from '@/theme';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { useStore } from '@/store';
 import { threadsApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
+import { Icon } from '@/components/ui/Icon';
+import { TabSelector } from '@/components/ui/TabSelector';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { useHaptic } from '@/hooks/useHaptic';
 import type { Thread } from '@/types';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const TABS = [
   { key: 'foryou', label: 'For You' },
   { key: 'following', label: 'Following' },
   { key: 'trending', label: 'Trending' },
-] as const;
+];
 
 export default function MajlisScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const haptic = useHaptic();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Floating compose button
+  const fabScale = useSharedValue(1);
+  const fabStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: fabScale.value }],
+  }));
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
@@ -44,25 +65,20 @@ export default function MajlisScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.logo}>Majlis</Text>
-        <TouchableOpacity hitSlop={8} onPress={() => router.push('/(screens)/search')}>
-          <Text style={styles.headerIcon}>🔍</Text>
-        </TouchableOpacity>
+        <Pressable
+          hitSlop={8}
+          onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+        >
+          <Icon name="search" size="sm" color={colors.text.primary} />
+        </Pressable>
       </View>
 
       {/* Feed tabs */}
-      <View style={styles.tabs}>
-        {TABS.map((t) => (
-          <TouchableOpacity
-            key={t.key}
-            style={styles.tabBtn}
-            onPress={() => setFeedType(t.key)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.tab, feedType === t.key && styles.tabActive]}>{t.label}</Text>
-            {feedType === t.key && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TabSelector
+        tabs={TABS}
+        activeKey={feedType}
+        onTabChange={(key) => setFeedType(key as any)}
+      />
 
       <FlashList
         data={threads}
@@ -78,38 +94,81 @@ export default function MajlisScreen() {
           <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
         )}
         ListEmptyComponent={() =>
-          !feedQuery.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>No threads yet</Text>
-              <Text style={styles.emptyText}>Start a conversation</Text>
+          feedQuery.isLoading ? (
+            <View>
+              <Skeleton.ThreadCard />
+              <Skeleton.ThreadCard />
+              <Skeleton.ThreadCard />
+              <Skeleton.ThreadCard />
             </View>
           ) : (
-            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+            <EmptyState
+              icon="message-circle"
+              title="No threads yet"
+              subtitle="Start a conversation"
+            />
           )
         }
         ListFooterComponent={() =>
           feedQuery.isFetchingNextPage ? (
-            <ActivityIndicator color={colors.emerald} style={styles.footer} />
+            <View style={styles.footer}>
+              <Skeleton.ThreadCard />
+            </View>
           ) : null
         }
       />
+
+      {/* Floating compose button */}
+      <AnimatedPressable
+        style={[styles.fab, fabStyle]}
+        onPress={() => {
+          haptic.medium();
+          fabScale.value = withSequence(
+            withSpring(0.85, animation.spring.bouncy),
+            withSpring(1, animation.spring.bouncy),
+          );
+          router.push('/(screens)/create-thread');
+        }}
+      >
+        <LinearGradient
+          colors={[colors.emeraldLight, colors.emerald]}
+          style={styles.fabGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Icon name="pencil" size="md" color="#FFF" strokeWidth={2} />
+        </LinearGradient>
+      </AnimatedPressable>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
   logo: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
-  headerIcon: { fontSize: 22 },
-  tabs: { flexDirection: 'row', justifyContent: 'center', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  tabBtn: { alignItems: 'center', paddingHorizontal: spacing.lg, paddingTop: spacing.md },
-  tab: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600', paddingBottom: spacing.md },
-  tabActive: { color: colors.text.primary },
-  tabIndicator: { height: 2, width: '80%', backgroundColor: colors.emerald, borderRadius: 1, marginBottom: -0.5 },
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.sm },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
-  loader: { marginTop: 60 },
-  footer: { paddingVertical: spacing.xl },
+  footer: { paddingVertical: spacing.sm },
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: spacing.lg,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  fabGradient: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

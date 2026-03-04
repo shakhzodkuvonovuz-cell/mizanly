@@ -1,12 +1,26 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Pressable, Alert, Share } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Share, Pressable } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+  withTiming,
+  withDelay,
+  runOnJS,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { RichText } from '@/components/ui/RichText';
+import { Icon } from '@/components/ui/Icon';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { useHaptic } from '@/hooks/useHaptic';
 import { PostMedia } from './PostMedia';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Post } from '@/types';
 
@@ -19,11 +33,16 @@ interface Props {
 export function PostCard({ post, viewerId, isOwn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const haptic = useHaptic();
   const [localLiked, setLocalLiked] = useState(post.userReaction === 'LIKE');
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+
+  // Double-tap overlay heart
+  const overlayHeartScale = useSharedValue(0);
+  const overlayHeartOpacity = useSharedValue(0);
 
   const reactMutation = useMutation({
     mutationFn: () =>
@@ -83,6 +102,36 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
     });
   };
 
+  // Double-tap to like handler
+  const lastTap = useSharedValue(0);
+  const handleDoubleTap = useCallback(() => {
+    const now = Date.now();
+    if (now - lastTap.value < 300) {
+      // Double tap detected
+      if (!localLiked) {
+        reactMutation.mutate();
+      }
+      haptic.medium();
+      // Show overlay heart
+      overlayHeartScale.value = 0;
+      overlayHeartOpacity.value = 1;
+      overlayHeartScale.value = withSequence(
+        withSpring(1.3, animation.spring.bouncy),
+        withSpring(1, animation.spring.responsive),
+      );
+      overlayHeartOpacity.value = withDelay(
+        600,
+        withTiming(0, { duration: 300 }),
+      );
+    }
+    lastTap.value = now;
+  }, [localLiked, reactMutation, haptic, overlayHeartScale, overlayHeartOpacity, lastTap]);
+
+  const overlayHeartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: overlayHeartScale.value }],
+    opacity: overlayHeartOpacity.value,
+  }));
+
   const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true });
 
   if (dismissed) return null;
@@ -100,13 +149,17 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           <View>
             <View style={styles.nameRow}>
               <Text style={styles.name}>{post.user.displayName}</Text>
-              {post.user.isVerified && <Text style={styles.verified}>✓</Text>}
+              {post.user.isVerified && <VerifiedBadge size={14} />}
             </View>
             <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.moreBtn} hitSlop={8} onPress={() => setShowMenu(true)}>
-          <Text style={styles.moreBtnText}>•••</Text>
+        <TouchableOpacity
+          style={styles.moreBtn}
+          hitSlop={8}
+          onPress={() => { haptic.light(); setShowMenu(true); }}
+        >
+          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
 
@@ -120,140 +173,129 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
         />
       ) : null}
 
-      {/* Media */}
+      {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
-        <TouchableOpacity
-          activeOpacity={0.95}
-          onPress={() => router.push(`/(screens)/post/${post.id}`)}
-        >
+        <Pressable onPress={handleDoubleTap}>
           <PostMedia
             mediaUrls={post.mediaUrls}
             mediaTypes={post.mediaTypes}
             thumbnailUrl={post.thumbnailUrl}
             aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
           />
-        </TouchableOpacity>
+          {/* Overlay heart for double-tap */}
+          <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
+            <Icon name="heart-filled" size={80} color="#FFF" fill="#FFF" />
+          </Animated.View>
+        </Pressable>
       )}
 
       {/* Actions */}
       <View style={styles.actions}>
-        {/* Like */}
-        <TouchableOpacity
-          style={styles.action}
+        <ActionButton
+          icon={<Icon name="heart" size="sm" color={colors.text.secondary} />}
+          activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
+          isActive={localLiked}
+          count={post.hideLikesCount ? undefined : (localLikes > 0 ? localLikes : undefined)}
           onPress={() => reactMutation.mutate()}
-          activeOpacity={0.7}
           disabled={!viewerId}
-        >
-          <Text style={[styles.actionIcon, localLiked && styles.actionIconActive]}>
-            {localLiked ? '❤️' : '🤍'}
-          </Text>
-          {!post.hideLikesCount && (
-            <Text style={[styles.actionCount, localLiked && styles.actionCountActive]}>
-              {localLikes > 0 ? localLikes : ''}
-            </Text>
-          )}
-        </TouchableOpacity>
+          activeColor={colors.like}
+        />
 
-        {/* Comment */}
-        <TouchableOpacity
-          style={styles.action}
+        <ActionButton
+          icon={<Icon name="message-circle" size="sm" color={colors.text.secondary} />}
+          count={post.commentsCount > 0 ? post.commentsCount : undefined}
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.actionIcon}>💬</Text>
-          {post.commentsCount > 0 && (
-            <Text style={styles.actionCount}>{post.commentsCount}</Text>
-          )}
-        </TouchableOpacity>
+          hapticType="light"
+        />
 
-        {/* Share */}
-        <TouchableOpacity
-          style={styles.action}
+        <ActionButton
+          icon={<Icon name="share" size="sm" color={colors.text.secondary} />}
+          count={post.sharesCount > 0 ? post.sharesCount : undefined}
           onPress={handleShare}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.actionIcon}>↗️</Text>
-          {post.sharesCount > 0 && (
-            <Text style={styles.actionCount}>{post.sharesCount}</Text>
-          )}
-        </TouchableOpacity>
+          hapticType="light"
+        />
 
         <View style={styles.spacer} />
 
-        {/* Bookmark */}
-        <TouchableOpacity
-          style={styles.action}
+        <ActionButton
+          icon={<Icon name="bookmark" size="sm" color={localSaved ? colors.bookmark : colors.text.tertiary} />}
+          activeIcon={<Icon name="bookmark-filled" size="sm" color={colors.bookmark} fill={colors.bookmark} />}
+          isActive={localSaved}
           onPress={() => saveMutation.mutate()}
-          activeOpacity={0.7}
           disabled={!viewerId}
-        >
-          <Text style={[styles.actionIcon, !localSaved && styles.actionIconDim]}>
-            🔖
-          </Text>
-        </TouchableOpacity>
+          activeColor={colors.bookmark}
+        />
       </View>
 
       {/* More menu */}
-      <Modal visible={showMenu} transparent animationType="fade">
-        <Pressable style={styles.menuOverlay} onPress={() => setShowMenu(false)}>
-          <Pressable style={styles.menuSheet}>
-            {isOwn ? (
-              <>
-                <TouchableOpacity style={styles.menuItem} onPress={handleDelete}>
-                  <Text style={styles.menuItemDestructive}>🗑️  Delete post</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <TouchableOpacity style={styles.menuItem} onPress={() => dismissMutation.mutate()}>
-                  <Text style={styles.menuItemText}>🙈  Not interested</Text>
-                </TouchableOpacity>
-                <View style={styles.menuDivider} />
-                <TouchableOpacity style={styles.menuItem} onPress={handleReport}>
-                  <Text style={styles.menuItemDestructive}>🚩  Report</Text>
-                </TouchableOpacity>
-              </>
-            )}
-            <View style={styles.menuDivider} />
-            <TouchableOpacity style={styles.menuItem} onPress={() => setShowMenu(false)}>
-              <Text style={styles.menuItemCancel}>Cancel</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
+      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+        {isOwn ? (
+          <BottomSheetItem
+            label="Delete post"
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            onPress={handleDelete}
+            destructive
+          />
+        ) : (
+          <>
+            <BottomSheetItem
+              label="Not interested"
+              icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+              onPress={() => dismissMutation.mutate()}
+            />
+            <BottomSheetItem
+              label="Report"
+              icon={<Icon name="flag" size="sm" color={colors.error} />}
+              onPress={handleReport}
+              destructive
+            />
+          </>
+        )}
+      </BottomSheet>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm },
+  card: {
+    backgroundColor: colors.dark.bgCard,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.xs,
+    overflow: 'hidden',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
-  verified: { color: colors.emerald, fontSize: fontSize.sm },
   handle: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
   moreBtn: { padding: spacing.sm },
-  moreBtnText: { color: colors.text.secondary, fontSize: fontSize.sm, letterSpacing: 1 },
-  content: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22, paddingHorizontal: spacing.base, paddingBottom: spacing.sm },
-  actions: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.xl },
-  action: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  actionIcon: { fontSize: 22 },
-  actionIconActive: { },
-  actionIconDim: { opacity: 0.4 },
-  actionCount: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
-  actionCountActive: { color: colors.like },
-  bookmarkActive: { },
-  spacer: { flex: 1 },
-
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
-  menuSheet: {
-    backgroundColor: colors.dark.bgSheet, borderTopLeftRadius: 18, borderTopRightRadius: 18,
-    paddingBottom: spacing.xl, overflow: 'hidden',
+  content: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    lineHeight: 22,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.sm,
   },
-  menuItem: { paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2 },
-  menuItemText: { color: colors.text.primary, fontSize: fontSize.base },
-  menuItemDestructive: { color: '#FF453A', fontSize: fontSize.base },
-  menuItemCancel: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center' },
-  menuDivider: { height: 0.5, backgroundColor: colors.dark.border },
+  overlayHeart: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    gap: spacing.xl,
+  },
+  spacer: { flex: 1 },
 });

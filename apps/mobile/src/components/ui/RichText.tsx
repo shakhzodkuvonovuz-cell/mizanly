@@ -1,23 +1,17 @@
 import { Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import { colors, fontSize } from '@/theme';
+import { colors, fontSize, fonts } from '@/theme';
 
 interface Props {
   text: string;
   style?: object;
   numberOfLines?: number;
-  onPostPress?: () => void; // tap on body text (non-link areas)
+  onPostPress?: () => void;
 }
 
-/**
- * Renders text with tappable #hashtag and @mention links.
- * Hashtags navigate to /(screens)/hashtag/[tag]
- * Mentions navigate to /(screens)/profile/[username]
- */
 export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
 
-  // Split text into segments: plain text | hashtag | mention
   const segments: { type: 'text' | 'hashtag' | 'mention'; value: string }[] = [];
   const TOKEN_RE = /(#[\w\u0600-\u06FF]+|@[\w.]+)/g;
 
@@ -79,7 +73,17 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  base: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
-  hashtag: { color: colors.emerald, fontWeight: '500' },
-  mention: { color: colors.emerald, fontWeight: '500' },
+  base: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    lineHeight: 22,
+  },
+  hashtag: {
+    color: colors.emerald,
+    fontWeight: '600',
+  },
+  mention: {
+    color: colors.emerald,
+    fontWeight: '600',
+  },
 });
