@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 
@@ -171,7 +172,10 @@ export default function EditProfileScreen() {
             <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
           ) : (
             <View style={styles.coverPlaceholder}>
-              <Text style={styles.coverPlaceholderText}>📷 Add cover photo</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Icon name="camera" size="md" color={colors.text.secondary} />
+                <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
+              </View>
             </View>
           )}
         </TouchableOpacity>
@@ -180,7 +184,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} activeOpacity={0.8}>
           <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
           <View style={styles.avatarEdit}>
-            <Text style={styles.avatarEditIcon}>📷</Text>
+            <Icon name="camera" size={14} color={colors.text.primary} />
           </View>
         </TouchableOpacity>
 
@@ -268,7 +272,7 @@ export default function EditProfileScreen() {
               links.map((link) => (
                 <View key={link.id} style={styles.linkRow}>
                   <View style={styles.linkIcon}>
-                    <Text style={styles.linkIconText}>🔗</Text>
+                    <Icon name="link" size="sm" color={colors.emerald} />
                   </View>
                   <View style={styles.linkInfo}>
                     <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
@@ -279,7 +283,7 @@ export default function EditProfileScreen() {
                     onPress={() => deleteLinkMutation.mutate(link.id)}
                     disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
                   >
-                    <Text style={styles.linkDelete}>✕</Text>
+                    <Icon name="x" size="sm" color={colors.text.tertiary} />
                   </TouchableOpacity>
                 </View>
               ))
@@ -369,7 +373,6 @@ const styles = StyleSheet.create({
     borderWidth: 2, borderColor: colors.dark.bg,
     alignItems: 'center', justifyContent: 'center',
   },
-  avatarEditIcon: { fontSize: 14 },
 
   form: { paddingHorizontal: spacing.base },
 
@@ -403,11 +406,9 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 8, backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
   },
-  linkIconText: { fontSize: 18 },
   linkInfo: { flex: 1 },
   linkTitle: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
   linkUrl: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  linkDelete: { color: colors.text.tertiary, fontSize: fontSize.base, padding: 4 },
 
   addLinkBtn: {
     marginTop: spacing.sm, paddingVertical: spacing.sm,

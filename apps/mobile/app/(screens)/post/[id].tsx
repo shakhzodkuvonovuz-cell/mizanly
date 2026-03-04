@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, ActivityIndicator, FlatList,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
+import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
@@ -25,6 +29,7 @@ function CommentRow({
   viewerId?: string;
   onReply: (id: string, username: string) => void;
 }) {
+  const haptic = useHaptic();
   const [localLiked, setLocalLiked] = useState(false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
@@ -63,14 +68,17 @@ function CommentRow({
         </View>
       </View>
       <TouchableOpacity
-        onPress={() => viewerId && likeMutation.mutate()}
+        onPress={() => { viewerId && likeMutation.mutate(); haptic.medium(); }}
         disabled={!viewerId}
         hitSlop={8}
         style={styles.commentLike}
       >
-        <Text style={[styles.commentLikeIcon, localLiked && styles.liked]}>
-          {localLiked ? '❤️' : '🤍'}
-        </Text>
+        <Icon
+          name={localLiked ? 'heart-filled' : 'heart'}
+          size={16}
+          color={localLiked ? colors.like : colors.text.tertiary}
+          fill={localLiked ? colors.like : undefined}
+        />
       </TouchableOpacity>
     </View>
   );
@@ -123,9 +131,9 @@ export default function PostDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Post</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -155,7 +163,9 @@ export default function PostDetailScreen() {
                 </View>
               </View>
             ) : postQuery.isLoading ? (
-              <ActivityIndicator color={colors.emerald} style={styles.loader} />
+              <View style={{ padding: spacing.base }}>
+                <Skeleton.PostCard />
+              </View>
             ) : null
           }
           renderItem={({ item }) => (
@@ -168,14 +178,16 @@ export default function PostDetailScreen() {
           )}
           ListEmptyComponent={() =>
             !commentsQuery.isLoading && postQuery.data ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No comments yet. Be the first!</Text>
-              </View>
+              <EmptyState
+                icon="message-circle"
+                title="No comments yet"
+                subtitle="Be the first to comment!"
+              />
             ) : null
           }
           ListFooterComponent={() =>
             commentsQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.lg }} />
+              <Skeleton.Rect width="100%" height={60} />
             ) : null
           }
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -189,9 +201,9 @@ export default function PostDetailScreen() {
                 <Text style={styles.replyBannerText}>
                   Replying to @{replyTo.username}
                 </Text>
-                <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={8}>
-                  <Text style={styles.replyClose}>✕</Text>
-                </TouchableOpacity>
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
               </View>
             )}
             <View style={styles.inputRow}>
@@ -211,7 +223,7 @@ export default function PostDetailScreen() {
                 disabled={!canSend}
               >
                 {sendMutation.isPending ? (
-                  <ActivityIndicator color={colors.emerald} size="small" />
+                  <Icon name="loader" size="sm" color={colors.emerald} />
                 ) : (
                   <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
                     Send
@@ -234,7 +246,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 40, alignItems: 'flex-start' },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   loader: { marginTop: 60 },
   commentsHeader: {
@@ -258,10 +269,6 @@ const styles = StyleSheet.create({
   commentLikesLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   commentAction: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '700' },
   commentLike: { paddingTop: 4 },
-  commentLikeIcon: { fontSize: 16 },
-  liked: {},
-  empty: { alignItems: 'center', paddingTop: 40 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,
     backgroundColor: colors.dark.bg,

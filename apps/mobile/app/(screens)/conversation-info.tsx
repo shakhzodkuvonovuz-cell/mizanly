@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, fontSize } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
@@ -67,9 +69,9 @@ export default function ConversationInfoScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Info</Text>
         <View style={{ width: 32 }} />
       </View>
@@ -94,7 +96,7 @@ export default function ConversationInfoScreen() {
               style={styles.quickAction}
               onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
             >
-              <Text style={styles.quickActionIcon}>👤</Text>
+              <Icon name="user" size={28} color={colors.text.primary} />
               <Text style={styles.quickActionLabel}>Profile</Text>
             </TouchableOpacity>
           </View>
@@ -115,7 +117,7 @@ export default function ConversationInfoScreen() {
                 <View style={styles.memberInfo}>
                   <View style={styles.memberNameRow}>
                     <Text style={styles.memberName}>{m.user.displayName}</Text>
-                    {m.user.isVerified && <Text style={styles.verified}>✓</Text>}
+                    {m.user.isVerified && <VerifiedBadge size={13} />}
                   </View>
                   <Text style={styles.memberHandle}>@{m.user.username}</Text>
                 </View>
@@ -133,7 +135,10 @@ export default function ConversationInfoScreen() {
             <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
               {leaveGroupMutation.isPending
                 ? <ActivityIndicator color="#FF453A" />
-                : <Text style={styles.actionDestructive}>🚪  Leave group</Text>
+                : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <Icon name="log-out" size="sm" color="#FF453A" />
+                    <Text style={styles.actionDestructive}>Leave group</Text>
+                  </View>
               }
             </TouchableOpacity>
           )}
@@ -145,7 +150,10 @@ export default function ConversationInfoScreen() {
                 { text: 'Block', style: 'destructive', onPress: () => {} },
               ])}
             >
-              <Text style={styles.actionDestructive}>🚫  Block user</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                <Icon name="slash" size="sm" color="#FF453A" />
+                <Text style={styles.actionDestructive}>Block user</Text>
+              </View>
             </TouchableOpacity>
           )}
         </View>
@@ -162,7 +170,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   hero: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
@@ -171,7 +178,6 @@ const styles = StyleSheet.create({
 
   quickActions: { flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.lg },
   quickAction: { alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xl },
-  quickActionIcon: { fontSize: 28 },
   quickActionLabel: { color: colors.text.secondary, fontSize: fontSize.xs },
 
   section: {
@@ -191,7 +197,6 @@ const styles = StyleSheet.create({
   memberInfo: { flex: 1 },
   memberNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   memberName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  verified: { color: colors.emerald, fontSize: fontSize.xs },
   memberHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   youLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
 

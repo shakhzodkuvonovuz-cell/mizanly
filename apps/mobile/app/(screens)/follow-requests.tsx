@@ -1,12 +1,14 @@
 import { useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
   FlatList, ActivityIndicator, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize } from '@/theme';
 import { followsApi } from '@/services/api';
 
@@ -104,9 +106,9 @@ export default function FollowRequestsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Follow Requests</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -129,13 +131,11 @@ export default function FollowRequestsScreen() {
             />
           )}
           ListEmptyComponent={() => (
-            <View style={styles.empty}>
-              <Text style={styles.emptyIcon}>✉️</Text>
-              <Text style={styles.emptyTitle}>No pending requests</Text>
-              <Text style={styles.emptyText}>
-                Follow requests from people who want to follow your private account will appear here.
-              </Text>
-            </View>
+            <EmptyState
+              icon="user"
+              title="No pending requests"
+              subtitle="Follow requests from people who want to follow your private account will appear here."
+            />
           )}
         />
       )}
@@ -151,7 +151,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 36 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   loader: { marginTop: 60 },
@@ -183,8 +182,4 @@ const styles = StyleSheet.create({
   },
   declineText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
 
-  empty: { alignItems: 'center', paddingTop: 80, gap: spacing.md, paddingHorizontal: spacing.xl },
-  emptyIcon: { fontSize: 48 },
-  emptyTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base, textAlign: 'center', lineHeight: 22 },
 });

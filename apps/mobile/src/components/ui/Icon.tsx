@@ -4,10 +4,11 @@ import {
   Play, MoreHorizontal, Share2, CheckCircle, ArrowLeft,
   Plus, Camera, ImageIcon, Mic, Phone, Video, Settings,
   Bell, User, Users, Globe, Lock, Flag, Trash2, Pencil,
-  X, ChevronRight, ChevronLeft, Repeat2, Eye, EyeOff,
+  X, ChevronRight, ChevronLeft, ChevronDown, Repeat2, Eye, EyeOff,
   VolumeX, Mail, Hash, TrendingUp, MapPin, Link, Clock,
   Check, CheckCheck, Paperclip, Smile, AtSign, Filter,
-  Layers, CirclePlus, Edit3, type LucideProps,
+  Layers, CirclePlus, Edit3, Slash, LogOut, BarChart2, Loader,
+  type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 
@@ -20,7 +21,7 @@ type IconName =
   | 'repeat' | 'eye' | 'eye-off' | 'volume-x' | 'mail' | 'hash'
   | 'trending-up' | 'map-pin' | 'link' | 'clock' | 'check' | 'check-check'
   | 'paperclip' | 'smile' | 'at-sign' | 'filter' | 'layers' | 'circle-plus'
-  | 'pencil';
+  | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -83,6 +84,11 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'layers': Layers,
   'circle-plus': CirclePlus,
   'pencil': Pencil,
+  'slash': Slash,
+  'log-out': LogOut,
+  'bar-chart-2': BarChart2,
+  'chevron-down': ChevronDown,
+  'loader': Loader,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
-  KeyboardAvoidingView, Platform, ActivityIndicator, FlatList,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,9 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { colors, spacing, fontSize } from '@/theme';
 import { threadsApi } from '@/services/api';
@@ -53,13 +56,13 @@ function ReplyRow({
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
           >
-            <Text style={styles.replyActionIcon}>💬</Text>
+            <Icon name="message-circle" size={16} color={colors.text.secondary} />
             {(reply._count?.replies ?? 0) > 0 && (
               <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
             )}
           </TouchableOpacity>
           <TouchableOpacity style={styles.replyAction}>
-            <Text style={styles.replyActionIcon}>🤍</Text>
+            <Icon name="heart" size={16} color={colors.text.secondary} />
             {reply.likesCount > 0 && (
               <Text style={styles.replyActionCount}>{reply.likesCount}</Text>
             )}
@@ -117,9 +120,9 @@ export default function ThreadDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Thread</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -148,7 +151,9 @@ export default function ThreadDetailScreen() {
                 </View>
               </View>
             ) : threadQuery.isLoading ? (
-              <ActivityIndicator color={colors.emerald} style={styles.loader} />
+              <View style={{ padding: spacing.base }}>
+                <Skeleton.ThreadCard />
+              </View>
             ) : null
           }
           renderItem={({ item }) => (
@@ -156,14 +161,12 @@ export default function ThreadDetailScreen() {
           )}
           ListEmptyComponent={() =>
             !repliesQuery.isLoading && threadQuery.data ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No replies yet.</Text>
-              </View>
+              <EmptyState icon="message-circle" title="No replies yet" subtitle="Be the first to reply" />
             ) : null
           }
           ListFooterComponent={() =>
             repliesQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.lg }} />
+              <Skeleton.Rect width="100%" height={60} />
             ) : null
           }
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -177,9 +180,9 @@ export default function ThreadDetailScreen() {
                 <Text style={styles.replyBannerText}>
                   Replying to @{replyTo.username}
                 </Text>
-                <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={8}>
-                  <Text style={styles.replyClose}>✕</Text>
-                </TouchableOpacity>
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
               </View>
             )}
             <View style={styles.inputRow}>
@@ -199,7 +202,7 @@ export default function ThreadDetailScreen() {
                 disabled={!canSend}
               >
                 {sendMutation.isPending ? (
-                  <ActivityIndicator color={colors.emerald} size="small" />
+                  <Icon name="loader" size="sm" color={colors.emerald} />
                 ) : (
                   <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
                     Reply
@@ -222,7 +225,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 40, alignItems: 'flex-start' },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   loader: { marginTop: 60 },
   repliesHeader: {
@@ -254,10 +256,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm,
   },
   replyAction: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  replyActionIcon: { fontSize: 18 },
   replyActionCount: { color: colors.text.secondary, fontSize: fontSize.sm },
-  empty: { alignItems: 'center', paddingTop: 40 },
-  emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,
     backgroundColor: colors.dark.bg,

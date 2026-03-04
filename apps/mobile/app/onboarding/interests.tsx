@@ -5,6 +5,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 
@@ -84,7 +85,7 @@ export default function InterestsScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.count}>
-          {selected.size} selected {selected.size < 3 ? `(need ${3 - selected.size} more)` : '✓'}
+          {selected.size} selected {selected.size < 3 ? `(need ${3 - selected.size} more)` : ''}
         </Text>
         <TouchableOpacity
           style={[styles.btn, selected.size < 3 && styles.btnDisabled]}

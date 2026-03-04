@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ActivityIndicator, FlatList, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  FlatList, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { TabSelector } from '@/components/ui/TabSelector';
 import { colors, spacing, fontSize } from '@/theme';
 import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
@@ -34,7 +38,7 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
       )}
       {post.mediaUrls.length > 1 && (
         <View style={styles.carouselBadge}>
-          <Text style={styles.carouselBadgeText}>⊞</Text>
+          <Icon name="layers" size={12} color="#fff" />
         </View>
       )}
     </TouchableOpacity>
@@ -68,27 +72,19 @@ export default function SavedScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Saved</Text>
         <View style={{ width: 32 }} />
       </View>
 
-      <View style={styles.tabs}>
-        {(['posts', 'threads'] as Tab[]).map((t) => (
-          <TouchableOpacity
-            key={t}
-            style={[styles.tab, activeTab === t && styles.tabActive]}
-            onPress={() => setActiveTab(t)}
-          >
-            <Text style={[styles.tabText, activeTab === t && styles.tabTextActive]}>
-              {t === 'posts' ? 'Posts' : 'Threads'}
-            </Text>
-            {activeTab === t && <View style={styles.tabIndicator} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      <TabSelector
+        tabs={['Posts', 'Threads']}
+        activeIndex={activeTab === 'posts' ? 0 : 1}
+        onChange={(i) => setActiveTab(i === 0 ? 'posts' : 'threads')}
+        variant="underline"
+      />
 
       {activeTab === 'posts' ? (
         <FlatList
@@ -107,17 +103,18 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedPostsQuery.isLoading ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No saved posts yet</Text>
-                <Text style={styles.emptyHint}>Tap 🔖 on any post to save it</Text>
-              </View>
+              <EmptyState icon="bookmark" title="No saved posts yet" subtitle="Tap the bookmark icon on any post to save it" />
             ) : (
-              <ActivityIndicator color={colors.emerald} style={styles.loader} />
+              <View style={{ padding: spacing.base, gap: spacing.md }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} />
+                ))}
+              </View>
             )
           }
           ListFooterComponent={() =>
             savedPostsQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.lg }} />
+              <Skeleton.Rect width="100%" height={60} />
             ) : null
           }
           contentContainerStyle={styles.gridContainer}
@@ -137,17 +134,16 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedThreadsQuery.isLoading ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>No saved threads yet</Text>
-                <Text style={styles.emptyHint}>Tap 🔖 on any thread to save it</Text>
-              </View>
+              <EmptyState icon="bookmark" title="No saved threads yet" subtitle="Tap the bookmark icon on any thread to save it" />
             ) : (
-              <ActivityIndicator color={colors.emerald} style={styles.loader} />
+              <View style={{ padding: spacing.base }}>
+                <Skeleton.ThreadCard />
+              </View>
             )
           }
           ListFooterComponent={() =>
             savedThreadsQuery.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.lg }} />
+              <Skeleton.Rect width="100%" height={60} />
             ) : null
           }
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -165,15 +161,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   backBtn: { width: 32 },
-  backIcon: { color: colors.text.primary, fontSize: 22 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
-  tabs: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },
-  tab: { flex: 1, alignItems: 'center', paddingTop: spacing.md },
-  tabActive: {},
-  tabText: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '600', paddingBottom: spacing.md },
-  tabTextActive: { color: colors.text.primary },
-  tabIndicator: { height: 2, width: '60%', backgroundColor: colors.emerald, borderRadius: 1, marginBottom: -0.5 },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 1 },
@@ -181,11 +169,5 @@ const styles = StyleSheet.create({
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: colors.dark.bgCard, justifyContent: 'center' },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
-  carouselBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 2 },
-  carouselBadgeText: { color: '#fff', fontSize: 12 },
-
-  empty: { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '600' },
-  emptyHint: { color: colors.text.secondary, fontSize: fontSize.base },
-  loader: { marginTop: 60 },
+  carouselBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 3 },
 });

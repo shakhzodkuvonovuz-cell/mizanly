@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Switch, Alert, ActivityIndicator,
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  ScrollView, Switch, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 
@@ -44,7 +46,7 @@ function Row({
           thumbColor="#fff"
         />
       ) : onPress ? (
-        <Text style={styles.chevron}>›</Text>
+        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
       ) : null}
     </TouchableOpacity>
   );
@@ -136,7 +138,11 @@ export default function SettingsScreen() {
   if (settingsQuery.isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ActivityIndicator color={colors.emerald} style={{ flex: 1 }} />
+        <View style={{ flex: 1, padding: spacing.base, gap: spacing.lg }}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton.Rect key={i} width="100%" height={48} />
+          ))}
+        </View>
       </SafeAreaView>
     );
   }
@@ -145,9 +151,9 @@ export default function SettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.backIcon}>←</Text>
-        </TouchableOpacity>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
         <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 36 }} />
       </View>
@@ -157,7 +163,7 @@ export default function SettingsScreen() {
         <SectionHeader title="Content" />
         <View style={styles.card}>
           <Row
-            label="🔖  Saved"
+            label="Saved"
             hint="Your saved posts and threads"
             onPress={() => router.push('/(screens)/saved')}
           />
@@ -292,7 +298,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  backIcon: { color: colors.text.primary, fontSize: 22, width: 36 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   body: { flex: 1 },
@@ -316,7 +321,6 @@ const styles = StyleSheet.create({
   rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   destructive: { color: '#FF453A' },
-  chevron: { color: colors.text.tertiary, fontSize: 20 },
   divider: { height: 0.5, backgroundColor: colors.dark.border, marginLeft: spacing.base },
 
   version: {

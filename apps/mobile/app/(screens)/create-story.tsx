@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 
@@ -100,7 +101,7 @@ export default function CreateStoryScreen() {
           <Image source={{ uri: mediaUri }} style={styles.preview} contentFit="cover" />
         ) : (
           <View style={styles.pickPlaceholder}>
-            <Text style={styles.pickIcon}>📷</Text>
+            <Icon name="camera" size={48} color={colors.text.secondary} />
             <Text style={styles.pickText}>Tap to pick a photo or video</Text>
           </View>
         )}
@@ -151,7 +152,7 @@ export default function CreateStoryScreen() {
           activeOpacity={0.7}
         >
           <View style={styles.toggleIcon}>
-            <Text>{closeFriendsOnly ? '⭕' : '🌍'}</Text>
+            <Icon name={closeFriendsOnly ? 'lock' : 'globe'} size="sm" color={colors.text.secondary} />
           </View>
           <View style={styles.toggleText}>
             <Text style={styles.toggleLabel}>
@@ -161,7 +162,7 @@ export default function CreateStoryScreen() {
               {closeFriendsOnly ? 'Only your close friends list' : 'Visible to your followers'}
             </Text>
           </View>
-          <Text style={styles.toggleCaret}>›</Text>
+          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -192,7 +193,6 @@ const styles = StyleSheet.create({
   },
   preview: { ...StyleSheet.absoluteFillObject },
   pickPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  pickIcon: { fontSize: 48 },
   pickText: { color: colors.text.secondary, fontSize: fontSize.base },
 
   textOverlayPreview: {
@@ -229,5 +229,4 @@ const styles = StyleSheet.create({
   toggleText: { flex: 1 },
   toggleLabel: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   toggleHint: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  toggleCaret: { color: colors.text.tertiary, fontSize: 20 },
 });
