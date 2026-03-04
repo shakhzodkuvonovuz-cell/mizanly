@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import { api } from '@/services/api';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -66,20 +67,22 @@ function AuthGuard() {
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
-        <ClerkLoaded>
-          <QueryClientProvider client={queryClient}>
-            <StatusBar style="light" />
-            <AuthGuard />
-            <Stack screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
-              <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-              <Stack.Screen name="(screens)" />
-            </Stack>
-          </QueryClientProvider>
-        </ClerkLoaded>
-      </ClerkProvider>
+      <ErrorBoundary>
+        <ClerkProvider publishableKey={CLERK_KEY} tokenCache={tokenCache}>
+          <ClerkLoaded>
+            <QueryClientProvider client={queryClient}>
+              <StatusBar style="light" />
+              <AuthGuard />
+              <Stack screenOptions={{ headerShown: false }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
+                <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
+                <Stack.Screen name="(screens)" />
+              </Stack>
+            </QueryClientProvider>
+          </ClerkLoaded>
+        </ClerkProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   );
 }

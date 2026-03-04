@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Pressable } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -105,10 +105,12 @@ export default function RisalahScreen() {
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
 
-  const { data: conversations, isLoading } = useQuery({
+  const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
+
+  const handleRefresh = useCallback(() => { refetch(); }, [refetch]);
 
   const all: Conversation[] = (conversations as Conversation[]) ?? [];
 
@@ -150,6 +152,13 @@ export default function RisalahScreen() {
             onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
           />
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching && !isLoading}
+            onRefresh={handleRefresh}
+            tintColor={colors.emerald}
+          />
+        }
         ListEmptyComponent={() =>
           isLoading ? (
             <View>

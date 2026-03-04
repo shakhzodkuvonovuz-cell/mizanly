@@ -18,7 +18,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { formatDistanceToNowStrict, format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -72,27 +72,105 @@ function TypingDots() {
   );
 }
 
-function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean }) {
+// ── Message list with grouping + date separators ──────────────────────────
+const GROUP_GAP_MS = 2 * 60 * 1000; // 2 min gap breaks a group
+
+type ListItem =
+  | { type: 'date'; label: string; key: string }
+  | { type: 'msg'; message: Message; isGroupStart: boolean; isGroupEnd: boolean; key: string };
+
+function buildMessageList(messages: Message[]): ListItem[] {
+  const items: ListItem[] = [];
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    const prev = i > 0 ? messages[i - 1] : null;
+    const next = i < messages.length - 1 ? messages[i + 1] : null;
+
+    // Date separator when day changes
+    if (!prev || !isSameDay(new Date(msg.createdAt), new Date(prev.createdAt))) {
+      const d = new Date(msg.createdAt);
+      const label = isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'MMMM d, yyyy');
+      items.push({ type: 'date', label, key: `date-${msg.id}` });
+    }
+
+    const diffPrev = prev ? new Date(msg.createdAt).getTime() - new Date(prev.createdAt).getTime() : Infinity;
+    const diffNext = next ? new Date(next.createdAt).getTime() - new Date(msg.createdAt).getTime() : Infinity;
+    const isGroupStart = !prev || prev.sender.id !== msg.sender.id || diffPrev > GROUP_GAP_MS;
+    const isGroupEnd   = !next || next.sender.id !== msg.sender.id || diffNext > GROUP_GAP_MS;
+
+    items.push({ type: 'msg', message: msg, isGroupStart, isGroupEnd, key: msg.id });
+  }
+  return items;
+}
+
+function DateSeparator({ label }: { label: string }) {
+  return (
+    <View style={styles.dateSep}>
+      <View style={styles.dateSepLine} />
+      <Text style={styles.dateSepText}>{label}</Text>
+      <View style={styles.dateSepLine} />
+    </View>
+  );
+}
+
+function MessageBubble({
+  message, isOwn, isGroupStart, isGroupEnd,
+}: {
+  message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
+}) {
   const time = messageTimestamp(message.createdAt);
+  const AVATAR_SIZE = 28;
 
   if (message.isDeleted) {
     return (
-      <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn]}>
+      <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn, !isGroupEnd && styles.bubbleWrapGrouped]}>
+        {!isOwn && <View style={{ width: AVATAR_SIZE }} />}
         <Text style={styles.deletedMsg}>Message deleted</Text>
       </View>
     );
   }
 
+  // Corner radius system (WhatsApp style)
+  const ownRadius = {
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: isGroupStart ? 20 : 4,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: isGroupEnd ? 4 : 20,
+  };
+  const otherRadius = {
+    borderTopLeftRadius: isGroupStart ? 20 : 4,
+    borderTopRightRadius: 20,
+    borderBottomLeftRadius: isGroupEnd ? 4 : 20,
+    borderBottomRightRadius: 20,
+  };
+
   return (
-    <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn]}>
+    <View style={[
+      styles.bubbleWrap,
+      isOwn && styles.bubbleWrapOwn,
+      !isGroupEnd && styles.bubbleWrapGrouped,
+    ]}>
+      {/* Avatar: show on last message of a group, spacer otherwise */}
       {!isOwn && (
-        <Avatar uri={message.sender.avatarUrl} name={message.sender.displayName} size="xs" />
+        isGroupEnd
+          ? <Avatar uri={message.sender.avatarUrl} name={message.sender.displayName} size="xs" />
+          : <View style={{ width: AVATAR_SIZE }} />
       )}
-      <View style={[styles.bubble, isOwn ? styles.bubbleOwn : styles.bubbleOther]}>
+
+      <View style={[
+        styles.bubble,
+        isOwn ? [styles.bubbleOwn, ownRadius] : [styles.bubbleOther, otherRadius],
+      ]}>
+        {/* Sender name in groups (only on group start for others) */}
+        {!isOwn && isGroupStart && (
+          <Text style={styles.senderName}>{message.sender.displayName}</Text>
+        )}
         {message.replyTo && (
-          <View style={styles.replyPreview}>
-            <Text style={styles.replyPreviewUser}>@{message.replyTo.sender.username}</Text>
-            <Text style={styles.replyPreviewText} numberOfLines={1}>
+          <View style={[styles.replyPreview, !isOwn && styles.replyPreviewOther]}>
+            <Text style={[styles.replyPreviewUser, !isOwn && styles.replyPreviewUserOther]}>
+              {message.replyTo.sender.username}
+            </Text>
+            <Text style={[styles.replyPreviewText, !isOwn && styles.replyPreviewTextOther]} numberOfLines={1}>
               {message.replyTo.content ?? 'Media'}
             </Text>
           </View>
@@ -111,7 +189,7 @@ function MessageBubble({ message, isOwn }: { message: Message; isOwn: boolean })
           )}
           <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>{time}</Text>
           {isOwn && (
-            <Icon name="check-check" size={12} color="rgba(255,255,255,0.7)" />
+            <Icon name="check-check" size={12} color="rgba(255,255,255,0.6)" />
           )}
         </View>
         {message.reactions && message.reactions.length > 0 && (
@@ -326,11 +404,19 @@ export default function ConversationScreen() {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={messages}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <MessageBubble message={item} isOwn={item.sender.id === user?.id} />
-            )}
+            data={buildMessageList(messages)}
+            keyExtractor={(item) => item.key}
+            renderItem={({ item }) => {
+              if (item.type === 'date') return <DateSeparator label={item.label} />;
+              return (
+                <MessageBubble
+                  message={item.message}
+                  isOwn={item.message.sender.id === user?.id}
+                  isGroupStart={item.isGroupStart}
+                  isGroupEnd={item.isGroupEnd}
+                />
+              );
+            }}
             onEndReached={() => {
               if (messagesQuery.hasNextPage && !messagesQuery.isFetchingNextPage) {
                 messagesQuery.fetchNextPage();
@@ -427,22 +513,38 @@ const styles = StyleSheet.create({
   loaderWrap: { flex: 1, padding: spacing.base, justifyContent: 'center' },
   messageList: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, flexGrow: 1 },
 
+  dateSep: {
+    flexDirection: 'row', alignItems: 'center',
+    marginVertical: spacing.md, paddingHorizontal: spacing.base, gap: spacing.sm,
+  },
+  dateSepLine: { flex: 1, height: 0.5, backgroundColor: colors.dark.border },
+  dateSepText: { color: colors.text.tertiary, fontSize: fontSize.xs, fontWeight: '500' },
+
+  senderName: {
+    color: colors.emerald, fontSize: fontSize.xs, fontWeight: '700',
+    marginBottom: 2,
+  },
+
   bubbleWrap: {
-    flexDirection: 'row', alignItems: 'flex-end', marginVertical: 2, gap: spacing.xs,
+    flexDirection: 'row', alignItems: 'flex-end', marginVertical: 1, gap: spacing.xs,
   },
   bubbleWrapOwn: { flexDirection: 'row-reverse' },
+  bubbleWrapGrouped: { marginVertical: 1 },
   bubble: {
-    maxWidth: '78%', borderRadius: 20, paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    maxWidth: '78%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
-  bubbleOwn: { backgroundColor: colors.emerald, borderBottomRightRadius: 6 },
-  bubbleOther: { backgroundColor: colors.dark.bgElevated, borderBottomLeftRadius: 6 },
+  bubbleOwn: { backgroundColor: colors.emerald },
+  bubbleOther: { backgroundColor: colors.dark.bgElevated },
   deletedMsg: { color: colors.text.tertiary, fontSize: fontSize.sm, fontStyle: 'italic', paddingVertical: spacing.xs },
   replyPreview: {
     borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',
     paddingLeft: spacing.xs, marginBottom: spacing.xs,
   },
+  replyPreviewOther: { borderLeftColor: colors.emerald },
   replyPreviewUser: { color: 'rgba(255,255,255,0.8)', fontSize: fontSize.xs, fontWeight: '700' },
+  replyPreviewUserOther: { color: colors.emerald },
   replyPreviewText: { color: 'rgba(255,255,255,0.6)', fontSize: fontSize.xs },
+  replyPreviewTextOther: { color: colors.text.secondary },
   bubbleMedia: { width: 200, height: 200, borderRadius: radius.md, marginBottom: spacing.xs },
   bubbleText: { color: colors.text.inverse, fontSize: fontSize.base, lineHeight: 22 },
   bubbleTextOwn: { color: '#fff' },

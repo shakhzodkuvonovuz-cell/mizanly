@@ -14,6 +14,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize } from '@/theme';
 import { postsApi, uploadApi, circlesApi } from '@/services/api';
 
@@ -246,10 +247,6 @@ export default function CreatePostScreen() {
           autoFocus
         />
 
-        {content.length > 1800 && (
-          <Text style={styles.charCount}>{2200 - content.length} remaining</Text>
-        )}
-
         {/* Media previews */}
         {media.length > 0 && (
           <ScrollView
@@ -343,7 +340,7 @@ export default function CreatePostScreen() {
           <Icon name="at-sign" size="md" color={colors.text.secondary} />
         </TouchableOpacity>
         <View style={styles.toolbarSpacer} />
-        <Text style={styles.charCountInline}>{content.length}/2200</Text>
+        <CharCountRing current={content.length} max={2200} />
       </View>
     </SafeAreaView>
   );
@@ -401,10 +398,6 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.base, lineHeight: 24,
     minHeight: 120, textAlignVertical: 'top',
   },
-  charCount: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'right', marginTop: spacing.xs,
-  },
-
   // Media
   mediaRow: { marginTop: spacing.md },
   mediaThumbnail: {
@@ -446,7 +439,6 @@ const styles = StyleSheet.create({
   },
   toolbarBtn: { padding: spacing.xs },
   toolbarSpacer: { flex: 1 },
-  charCountInline: { color: colors.text.tertiary, fontSize: fontSize.xs },
 
   // Circle inline pill
   circlePill: {

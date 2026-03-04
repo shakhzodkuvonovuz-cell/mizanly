@@ -13,6 +13,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize } from '@/theme';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 
@@ -101,9 +102,7 @@ function ThreadPart({
               <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
             </TouchableOpacity>
           )}
-          <Text style={[styles.partCharCount, part.content.length > CHAR_LIMIT * 0.8 && styles.charCountWarn]}>
-            {CHAR_LIMIT - part.content.length}
-          </Text>
+          <CharCountRing current={part.content.length} max={CHAR_LIMIT} size={24} />
         </View>
       </View>
     </View>
@@ -467,9 +466,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm, gap: spacing.md,
   },
   toolbarDisabled: { opacity: 0.3 },
-  partCharCount: { color: colors.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
-  charCountWarn: { color: colors.warning },
-
   // Visibility
   visBar: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.xs,

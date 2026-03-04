@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -125,6 +125,11 @@ export default function PostDetailScreen() {
     inputRef.current?.focus();
   }, []);
 
+  const handleRefresh = useCallback(() => {
+    postQuery.refetch();
+    commentsQuery.refetch();
+  }, [postQuery, commentsQuery]);
+
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
   return (
@@ -152,6 +157,13 @@ export default function PostDetailScreen() {
             }
           }}
           onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl
+              refreshing={postQuery.isRefetching || commentsQuery.isRefetching}
+              onRefresh={handleRefresh}
+              tintColor={colors.emerald}
+            />
+          }
           ListHeaderComponent={() =>
             postQuery.data ? (
               <View>
