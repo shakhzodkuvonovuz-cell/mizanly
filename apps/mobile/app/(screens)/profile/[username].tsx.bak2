@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
+  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -224,13 +224,6 @@ export default function ProfileScreen() {
       setLoadingHighlightId(null);
     }
   }, [loadingHighlightId, profile, router]);
-  const handleShareProfile = () => {
-    const profileUrl = `https://mizanly.app/@${username}`;
-    Share.share({
-      message: `Check out @${username} on Mizanly!`,
-      url: profileUrl,
-    });
-  };
 
   const handleEndReached = useCallback(() => {
     if (activeTab === 'posts' && postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
@@ -332,26 +325,6 @@ export default function ProfileScreen() {
             <Text style={styles.websiteLink}>{profile.website}</Text>
           </TouchableOpacity>
         ) : null}
-        {profile.profileLinks && profile.profileLinks.length > 0 && (
-          <View style={styles.profileLinksSection}>
-            {profile.profileLinks.map((link) => (
-              <Pressable
-                key={link.id}
-                style={styles.profileLinkRow}
-                onPress={() => {
-                  const url = link.url.startsWith('http') ? link.url : `https://${link.url}`;
-                  Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
-                }}
-              >
-                <Icon name="link" size={13} color={colors.emerald} />
-                <Text style={styles.profileLinkTitle}>{link.title}</Text>
-                <Text style={styles.profileLinkUrl} numberOfLines={1}>
-                  {link.url.replace(/^https?:\/\//, '').replace(/^www\./, '')}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
       </View>
 
       {/* Story highlights */}

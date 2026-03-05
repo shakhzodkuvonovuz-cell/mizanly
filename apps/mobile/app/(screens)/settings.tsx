@@ -11,6 +11,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
+import { useStore } from "@/store";
 
 function Row({
   label,
@@ -59,6 +60,7 @@ function SectionHeader({ title }: { title: string }) {
 export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
+  const { theme, setTheme } = useStore();
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -150,6 +152,41 @@ export default function SettingsScreen() {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* Content */}
         <SectionHeader title="Content" />
+        {/* Appearance */}
+        <SectionHeader title="Appearance" />
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setTheme('dark')}
+          >
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Dark</Text>
+            </View>
+            {theme === 'dark' && <Icon name="check" size="sm" color={colors.emerald} />}
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setTheme('light')}
+          >
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>Light</Text>
+            </View>
+            {theme === 'light' && <Icon name="check" size="sm" color={colors.emerald} />}
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setTheme('system')}
+          >
+            <View style={styles.rowText}>
+              <Text style={styles.rowLabel}>System</Text>
+              <Text style={styles.rowHint}>Match device settings</Text>
+            </View>
+            {theme === 'system' && <Icon name="check" size="sm" color={colors.emerald} />}
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.card}>
           <Row
             label="Saved"
