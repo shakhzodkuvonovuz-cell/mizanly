@@ -60,14 +60,14 @@ export class BlocksService {
       }),
       ...(blockerWasFollowing
         ? [
-            this.prisma.user.update({ where: { id: blockerId }, data: { followingCount: { decrement: 1 } } }),
-            this.prisma.user.update({ where: { id: blockedId }, data: { followersCount: { decrement: 1 } } }),
+            this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
+            this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
           ]
         : []),
       ...(blockedWasFollowing
         ? [
-            this.prisma.user.update({ where: { id: blockedId }, data: { followingCount: { decrement: 1 } } }),
-            this.prisma.user.update({ where: { id: blockerId }, data: { followersCount: { decrement: 1 } } }),
+            this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
+            this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
           ]
         : []),
     ]);

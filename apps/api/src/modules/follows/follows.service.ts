@@ -120,11 +120,11 @@ export class FollowsService {
       }),
       this.prisma.user.update({
         where: { id: currentUserId },
-        data: { followingCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${currentUserId}`,
       }),
       this.prisma.user.update({
         where: { id: targetUserId },
-        data: { followersCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${targetUserId}`,
       }),
     ]);
 

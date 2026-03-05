@@ -207,7 +207,7 @@ export class PostsService {
       }),
       this.prisma.user.update({
         where: { id: userId },
-        data: { postsCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
       }),
     ]);
     return { deleted: true };
@@ -258,7 +258,7 @@ export class PostsService {
       }),
       this.prisma.post.update({
         where: { id: postId },
-        data: { likesCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Post" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`,
       }),
     ]);
     return { reaction: null };
@@ -287,7 +287,7 @@ export class PostsService {
 
     await this.prisma.$transaction([
       this.prisma.savedPost.delete({ where: { userId_postId: { userId, postId } } }),
-      this.prisma.post.update({ where: { id: postId }, data: { savesCount: { decrement: 1 } } }),
+      this.prisma.$executeRaw`UPDATE "Post" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${postId}`,
     ]);
     return { saved: false };
   }
@@ -437,7 +437,7 @@ export class PostsService {
       }),
       this.prisma.post.update({
         where: { id: comment.postId },
-        data: { commentsCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Post" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${comment.postId}`,
       }),
     ]);
     return { deleted: true };
@@ -477,7 +477,7 @@ export class PostsService {
       }),
       this.prisma.comment.update({
         where: { id: commentId },
-        data: { likesCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Comment" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
       }),
     ]);
     return { liked: false };

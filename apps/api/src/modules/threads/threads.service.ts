@@ -232,7 +232,7 @@ export class ThreadsService {
       }),
       this.prisma.user.update({
         where: { id: userId },
-        data: { threadsCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "User" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE id = ${userId}`,
       }),
     ]);
     return { deleted: true };
@@ -276,7 +276,7 @@ export class ThreadsService {
       }),
       this.prisma.thread.update({
         where: { id: threadId },
-        data: { likesCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Thread" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${threadId}`,
       }),
     ]);
     return { liked: false };
@@ -330,7 +330,7 @@ export class ThreadsService {
       }),
       this.prisma.thread.update({
         where: { id: threadId },
-        data: { repostsCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Thread" SET "repostsCount" = GREATEST("repostsCount" - 1, 0) WHERE id = ${threadId}`,
       }),
     ]);
     return { reposted: false };
@@ -366,7 +366,7 @@ export class ThreadsService {
       }),
       this.prisma.thread.update({
         where: { id: threadId },
-        data: { bookmarksCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Thread" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
       }),
     ]);
     return { bookmarked: false };
@@ -435,7 +435,7 @@ export class ThreadsService {
       }),
       this.prisma.threadReply.update({
         where: { id: replyId },
-        data: { likesCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "ThreadReply" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${replyId}`,
       }),
     ]);
     return { liked: false };
@@ -478,7 +478,7 @@ export class ThreadsService {
       this.prisma.threadReply.delete({ where: { id: replyId } }),
       this.prisma.thread.update({
         where: { id: reply.threadId },
-        data: { repliesCount: { decrement: 1 } },
+      this.prisma.$executeRaw`UPDATE "Thread" SET "repliesCount" = GREATEST("repliesCount" - 1, 0) WHERE id = ${reply.threadId}`,
       }),
     ]);
     return { deleted: true };
