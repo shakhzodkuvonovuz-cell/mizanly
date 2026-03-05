@@ -8,6 +8,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
+import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
+import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
 import { api } from '@/services/api';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -75,19 +78,15 @@ function AuthGuard() {
 }
 
 export default function RootLayout() {
-  // TODO: Install font packages:
-  //   npx expo install @expo-google-fonts/playfair-display @expo-google-fonts/dm-sans @expo-google-fonts/noto-naskh-arabic
-  // Then replace the empty object with the imported font map:
-  //   import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
-  //   import { DMSans_400Regular, DMSans_500Medium } from '@expo-google-fonts/dm-sans';
-  //   import { NotoNaskhArabic_400Regular } from '@expo-google-fonts/noto-naskh-arabic';
-  const [fontsLoaded] = useFonts({
-    // PlayfairDisplay_700Bold,
-    // DMSans_400Regular,
-    // DMSans_500Medium,
-    // NotoNaskhArabic_400Regular,
-  });
 
+  const [fontsLoaded] = useFonts({
+    PlayfairDisplay_700Bold,
+    DMSans_400Regular,
+    DMSans_500Medium,
+    DMSans_700Bold,
+    NotoNaskhArabic_400Regular,
+    NotoNaskhArabic_700Bold,
+  });
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
