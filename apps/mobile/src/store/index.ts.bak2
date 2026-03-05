@@ -62,15 +62,6 @@ export const useStore = create<AppState>()(
       // Create sheet
       isCreateSheetOpen: false,
       setCreateSheetOpen: (isCreateSheetOpen) => set({ isCreateSheetOpen }),
-
-      // Auth actions
-      logout: () => set({
-        user: null,
-        isAuthenticated: false,
-        unreadNotifications: 0,
-        unreadMessages: 0,
-        isCreateSheetOpen: false,
-      }),
     }),
     {
       name: 'mizanly-store',
@@ -83,11 +74,3 @@ export const useStore = create<AppState>()(
     }
   )
 );
-
-// Granular selectors
-export const useUser = () => useStore((s) => s.user);
-export const useTheme = () => useStore((s) => s.theme);
-export const useUnreadNotifications = () => useStore((s) => s.unreadNotifications);
-export const useUnreadMessages = () => useStore((s) => s.unreadMessages);
-export const useSafFeedType = () => useStore((s) => s.safFeedType);
-export const useMajlisFeedType = () => useStore((s) => s.majlisFeedType);

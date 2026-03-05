@@ -129,6 +129,7 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('posts');
   const isOwnProfile = clerkUser?.username === username;
   const [showMenu, setShowMenu] = useState(false);
+  const [showShareSheet, setShowShareSheet] = useState(false);
   const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
 
   const profileQuery = useQuery({
@@ -415,20 +416,25 @@ export default function ProfileScreen() {
         <Icon name="arrow-left" size="md" color={colors.text.primary} />
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
-      {isOwnProfile ? (
-        <View style={styles.headerActions}>
-          <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
-            <Icon name="bookmark" size="sm" color={colors.text.primary} />
-          </Pressable>
-          <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
-            <Icon name="settings" size="sm" color={colors.text.primary} />
-          </Pressable>
-        </View>
-      ) : (
-        <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }}>
-          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+      <View style={styles.headerActions}>
+        <Pressable hitSlop={8} onPress={handleShareProfile}>
+          <Icon name="share" size="sm" color={colors.text.primary} />
         </Pressable>
-      )}
+        {isOwnProfile ? (
+          <>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
+              <Icon name="bookmark" size="sm" color={colors.text.primary} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
+              <Icon name="settings" size="sm" color={colors.text.primary} />
+            </Pressable>
+          </>
+        ) : (
+          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }}>
+            <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 
