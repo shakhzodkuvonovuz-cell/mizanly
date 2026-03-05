@@ -93,7 +93,7 @@ export default function InterestsScreen() {
           disabled={selected.size < 3 || loading}
           activeOpacity={0.8}
         >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Continue</Text>}
+          {loading ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>Continue</Text>}
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -180,7 +180,7 @@ export default function CreatePostScreen() {
           disabled={!canPost}
         >
           {createMutation.isPending ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={colors.text.primary} size="small" />
           ) : (
             <Text style={styles.postBtnText}>Share</Text>
           )}

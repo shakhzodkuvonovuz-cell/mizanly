@@ -108,7 +108,7 @@ export default function SuggestedScreen() {
           disabled={finishing}
           activeOpacity={0.8}
         >
-          {finishing ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Get Started</Text>}
+          {finishing ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>Get Started</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleFinish}>
           <Text style={styles.skip}>Skip for now</Text>

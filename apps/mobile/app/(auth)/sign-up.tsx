@@ -83,7 +83,7 @@ export default function SignUpScreen() {
               activeOpacity={0.8}
             >
               {loading
-                ? <ActivityIndicator color="#fff" />
+                ? <ActivityIndicator color={colors.text.primary} />
                 : <Text style={styles.btnText}>Verify Email</Text>}
             </TouchableOpacity>
           </View>
@@ -133,7 +133,7 @@ export default function SignUpScreen() {
             activeOpacity={0.8}
           >
             {loading
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color={colors.text.primary} />
               : <Text style={styles.btnText}>Create Account</Text>}
           </TouchableOpacity>
 

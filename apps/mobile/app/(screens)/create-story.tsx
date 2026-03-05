@@ -88,7 +88,7 @@ export default function CreateStoryScreen() {
           disabled={!mediaUri || postMutation.isPending || uploading}
         >
           {postMutation.isPending || uploading ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={colors.text.primary} size="small" />
           ) : (
             <Text style={styles.postBtnText}>Share</Text>
           )}

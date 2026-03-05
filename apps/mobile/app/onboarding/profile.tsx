@@ -112,7 +112,7 @@ export default function OnboardingProfileScreen() {
         activeOpacity={0.8}
       >
         {loading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.text.primary} />
         ) : (
           <Text style={styles.btnText}>Continue</Text>
         )}

@@ -78,7 +78,7 @@ export default function SignInScreen() {
             activeOpacity={0.8}
           >
             {loading
-              ? <ActivityIndicator color="#fff" />
+              ? <ActivityIndicator color={colors.text.primary} />
               : <Text style={styles.btnText}>Sign In</Text>}
           </TouchableOpacity>
         </View>

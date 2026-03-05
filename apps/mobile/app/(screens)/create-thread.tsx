@@ -332,7 +332,7 @@ export default function CreateThreadScreen() {
           disabled={!canPost || createMutation.isPending}
         >
           {createMutation.isPending ? (
-            <ActivityIndicator color="#fff" size="small" />
+            <ActivityIndicator color={colors.text.primary} size="small" />
           ) : (
             <Text style={styles.postBtnText}>Post</Text>
           )}

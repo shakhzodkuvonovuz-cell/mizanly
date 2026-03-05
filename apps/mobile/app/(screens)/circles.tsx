@@ -79,7 +79,7 @@ function CreateSheet({
         disabled={!name.trim() || createMutation.isPending}
       >
         {createMutation.isPending ? (
-          <ActivityIndicator color="#fff" size="small" />
+          <ActivityIndicator color={colors.text.primary} size="small" />
         ) : (
           <Text style={styles.createBtnText}>Create Circle</Text>
         )}

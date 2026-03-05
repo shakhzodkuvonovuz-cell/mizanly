@@ -328,7 +328,7 @@ export default function EditProfileScreen() {
                     disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
                   >
                     {addLinkMutation.isPending ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <ActivityIndicator color={colors.text.primary} size="small" />
                     ) : (
                       <Text style={styles.addLinkSaveText}>Add</Text>
                     )}
