@@ -54,6 +54,12 @@ function messageTimestamp(dateStr: string): string {
   return format(d, 'MMM d, HH:mm');
 }
 
+function formatRecordingTime(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
 function TypingDots() {
   const dot1 = useSharedValue(0);
   const dot2 = useSharedValue(0);
@@ -407,7 +413,6 @@ export default function ConversationScreen() {
   const [slideOffset, setSlideOffset] = useState(0);
   const [cancelled, setCancelled] = useState(false);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -416,6 +421,15 @@ export default function ConversationScreen() {
   const [gifSearchQuery, setGifSearchQuery] = useState("");
   const [gifResults, setGifResults] = useState<any[]>([]);
   const [gifLoading, setGifLoading] = useState(false);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+    };
+  }, []);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -532,19 +546,54 @@ export default function ConversationScreen() {
     await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     await recording.startAsync();
     recordingRef.current = recording;
-  const [recordingTime, setRecordingTime] = useState(0);
+    // Reset states
+    setRecordingTime(0);
+    setSlideOffset(0);
+    setCancelled(false);
     setIsRecording(true);
+    // Start timer
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingTime((prev) => prev + 1);
+    }, 1000);
     haptic.medium();
   }, [haptic]);
 
+  const cancelRecording = useCallback(async () => {
+    if (!recordingRef.current) return;
+    // Clear timer
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    const recording = recordingRef.current;
+    recordingRef.current = null;
+    await recording.stopAndUnloadAsync();
+    setCancelled(true);
+    setIsRecording(false);
+    setRecordingTime(0);
+    setSlideOffset(0);
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+  }, []);
+
   const handleVoiceStop = useCallback(async () => {
     if (!recordingRef.current) return;
-  const [recordingTime, setRecordingTime] = useState(0);
+    // Clear timer
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    // If cancelled, do not send
+    if (cancelled) {
+      setCancelled(false);
+      setIsRecording(false);
+      setRecordingTime(0);
+      setSlideOffset(0);
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+      return;
+    }
     setIsRecording(false);
     const recording = recordingRef.current;
-  const [recordingTime, setRecordingTime] = useState(0);
     recordingRef.current = null;
-  const [recordingTime, setRecordingTime] = useState(0);
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     if (!uri) return;
@@ -569,7 +618,7 @@ export default function ConversationScreen() {
       setUploadingVoice(false);
       await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
     }
-  }, [id, replyTo, haptic]);
+  }, [id, replyTo, haptic, cancelled]);
 
   const handleContextMenu = useCallback((msg: Message) => {
     haptic.medium();
@@ -746,21 +795,54 @@ export default function ConversationScreen() {
                 </AnimatedPressable>
               </Animated.View>
             ) : (
-              <Pressable
-                hitSlop={8}
-                style={[styles.micBtn, isRecording && styles.micBtnRecording]}
-                onPressIn={handleVoiceStart}
-                onPressOut={handleVoiceStop}
-                disabled={uploadingVoice}
+              <PanGestureHandler
+                onGestureEvent={(event) => {
+                  const translationX = event.nativeEvent.translationX;
+                  setSlideOffset(translationX);
+                  if (translationX < -60) {
+                    setCancelled(true);
+                  }
+                }}
+                onEnded={() => {
+                  if (cancelled) {
+                    cancelRecording();
+                  }
+                  setSlideOffset(0);
+                }}
               >
-                <Icon
-                  name="mic"
-                  size="sm"
-                  color={isRecording ? colors.error : uploadingVoice ? colors.text.tertiary : colors.text.secondary}
-                />
-              </Pressable>
+                <View style={styles.micButtonWrap}>
+                  <Pressable
+                    hitSlop={8}
+                    style={[styles.micBtn, isRecording && styles.micBtnRecording]}
+                    onPressIn={handleVoiceStart}
+                    onPressOut={handleVoiceStop}
+                    disabled={uploadingVoice}
+                  >
+                    <Icon
+                      name="mic"
+                      size="sm"
+                      color={isRecording ? colors.error : uploadingVoice ? colors.text.tertiary : colors.text.secondary}
+                    />
+                  </Pressable>
+                  {isRecording && (
+                    <View style={[styles.slideCancelIndicator, { transform: [{ translateX: slideOffset }] }]}>
+                      <Icon name="x" size="sm" color={colors.text.secondary} />
+                    </View>
+                  )}
+                </View>
+              </PanGestureHandler>
             )}
           </View>
+          {/* Recording overlay */}
+          {isRecording && (
+            <View style={styles.recordingOverlay}>
+              <View style={styles.recordingIndicator}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingTimer}>{formatRecordingTime(recordingTime)}</Text>
+              </View>
+              <Text style={styles.slideCancelHint}>Slide to cancel</Text>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
 
@@ -1097,4 +1179,49 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   gifBtn: { paddingBottom: 8 },
+  micButtonWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  slideCancelIndicator: {
+    position: 'absolute',
+    left: 50,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.full,
+    padding: spacing.xs,
+  },
+  recordingOverlay: {
+    position: 'absolute',
+    bottom: 80,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.dark.bg,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.dark.border,
+  },
+  recordingIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  recordingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.error,
+  },
+  recordingTimer: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '700',
+  },
+  slideCancelHint: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
 });
