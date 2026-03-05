@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import {
+import { ActivityIndicator,
   View, Text, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Alert,
 } from 'react-native';
@@ -21,7 +21,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { format, isToday, isYesterday, isSameDay } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay, differenceInMinutes } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -178,6 +178,96 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
     </Pressable>
   );
 }
+function GifPicker({ visible, onClose, onSelect }: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: (gifUrl: string) => void;
+}) {
+  const [search, setSearch] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const apiKey = process.env.EXPO_PUBLIC_TENOR_API_KEY;
+
+  const fetchGifs = useCallback(async (query: string) => {
+    if (!apiKey) {
+      Alert.alert('Error', 'GIF service not configured.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const url = query.trim()
+        ? `https://tenor.googleapis.com/v2/search?key=${apiKey}&q=${encodeURIComponent(query)}&limit=30`
+        : `https://tenor.googleapis.com/v2/featured?key=${apiKey}&limit=30`;
+      const resp = await fetch(url);
+      const data = await resp.json();
+      setResults(data.results || []);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to load GIFs.');
+    } finally {
+      setLoading(false);
+    }
+  }, [apiKey]);
+
+  useEffect(() => {
+    if (visible) {
+      fetchGifs('');
+    }
+  }, [visible, fetchGifs]);
+
+  const handleSearch = useCallback(() => {
+    fetchGifs(search);
+  }, [search, fetchGifs]);
+
+  return (
+    <BottomSheet
+      visible={visible}
+      onClose={onClose}
+      snapPoint={400}
+    >
+      <View style={styles.gifPicker}>
+        <View style={styles.gifSearchRow}>
+          <TextInput
+            style={styles.gifSearchInput}
+            placeholder="Search GIFs..."
+            placeholderTextColor={colors.text.tertiary}
+            value={search}
+            onChangeText={setSearch}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          <Pressable onPress={handleSearch} style={styles.gifSearchButton}>
+            <Icon name="search" size="sm" color={colors.text.secondary} />
+          </Pressable>
+        </View>
+        {loading ? (
+          <View style={styles.gifLoader}>
+            <ActivityIndicator size="small" color={colors.emerald} />
+          </View>
+        ) : (
+          <FlatList
+            data={results}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            contentContainerStyle={styles.gifGrid}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.gifItem}
+                onPress={() => onSelect(item.media_formats.gif.url)}
+              >
+                <Image
+                  source={{ uri: item.media_formats.gif.url }}
+                  style={styles.gifImage}
+                  contentFit="cover"
+                />
+              </Pressable>
+            )}
+          />
+        )}
+      </View>
+    </BottomSheet>
+  );
+}
 
 function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress,
@@ -316,6 +406,11 @@ export default function ConversationScreen() {
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  // GIF picker
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifSearchQuery, setGifSearchQuery] = useState("");
+  const [gifResults, setGifResults] = useState<any[]>([]);
+  const [gifLoading, setGifLoading] = useState(false);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -613,6 +708,14 @@ export default function ConversationScreen() {
                 color={uploadingMedia ? colors.text.tertiary : colors.text.secondary}
               />
             </Pressable>
+            <Pressable
+              style={styles.gifBtn}
+              hitSlop={8}
+              onPress={() => setShowGifPicker(true)}
+              disabled={uploadingMedia}
+            >
+              <Icon name="smile" size="sm" color={colors.text.secondary} />
+            </Pressable>
             <TextInput
               ref={inputRef}
               style={styles.input}
@@ -783,6 +886,24 @@ export default function ConversationScreen() {
           </View>
         </View>
       </BottomSheet>
+
+      {/* GIF picker */}
+      <GifPicker
+        visible={showGifPicker}
+        onClose={() => setShowGifPicker(false)}
+        onSelect={(gifUrl) => {
+          socketRef.current?.emit('send_message', {
+            conversationId: id,
+            content: '',
+            messageType: 'GIF',
+            mediaUrl: gifUrl,
+            mediaType: 'gif',
+            replyToId: replyTo?.id,
+          });
+          setShowGifPicker(false);
+          setReplyTo(null);
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -918,4 +1039,53 @@ const styles = StyleSheet.create({
   reactionEmojiBig: {
     fontSize: 28,
   },
+  gifPicker: {
+    flex: 1,
+    maxHeight: 400,
+  },
+  gifSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+    gap: spacing.sm,
+  },
+  gifSearchInput: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: Platform.OS === 'ios' ? spacing.sm : 6,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+  },
+  gifSearchButton: {
+    padding: spacing.sm,
+  },
+  gifLoader: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+  },
+  gifGrid: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  gifItem: {
+    flex: 1,
+    margin: spacing.xs,
+    aspectRatio: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.bgElevated,
+  },
+  gifImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gifBtn: { paddingBottom: 8 },
 });
