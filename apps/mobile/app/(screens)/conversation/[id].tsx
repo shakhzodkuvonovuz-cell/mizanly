@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Alert,
 } from 'react-native';
+import { Swipeable } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -471,6 +472,16 @@ export default function ConversationScreen() {
     setContextMenuMsg(msg);
   }, [haptic]);
 
+  const handleSwipeReply = useCallback((msg: Message) => {
+    haptic.medium();
+    setReplyTo({
+      id: msg.id,
+      content: msg.content,
+      username: msg.sender.username,
+    });
+    inputRef.current?.focus();
+  }, [haptic]);
+
   const isMessageEditable = useCallback((msg: Message): boolean => {
     if (msg.sender.id !== user?.id) return false;
     const ageMinutes = differenceInMinutes(new Date(), new Date(msg.createdAt));
@@ -537,13 +548,23 @@ export default function ConversationScreen() {
             renderItem={({ item }) => {
               if (item.type === 'date') return <DateSeparator label={item.label} />;
               return (
-                <MessageBubble
-                  message={item.message}
-                  isOwn={item.message.sender.id === user?.id}
-                  isGroupStart={item.isGroupStart}
-                  isGroupEnd={item.isGroupEnd}
-                  onLongPress={handleContextMenu}
-                />
+                <Swipeable
+                  renderRightActions={() => (
+                    <View style={styles.swipeAction}>
+                      <Icon name="message-circle" size="sm" color={colors.emerald} />
+                    </View>
+                  )}
+                  onSwipeableWillOpen={() => handleSwipeReply(item.message)}
+                  rightThreshold={40}
+                >
+                  <MessageBubble
+                    message={item.message}
+                    isOwn={item.message.sender.id === user?.id}
+                    isGroupStart={item.isGroupStart}
+                    isGroupEnd={item.isGroupEnd}
+                    onLongPress={handleContextMenu}
+                  />
+                </Swipeable>
               );
             }}
             onEndReached={() => {
@@ -874,6 +895,7 @@ const styles = StyleSheet.create({
   voiceBar: { width: 2.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
   voiceBarOwn: { backgroundColor: 'rgba(255,255,255,0.6)' },
   voiceBarOther: { backgroundColor: colors.emerald },
+  swipeAction: { justifyContent: "center", alignItems: "center", width: 60, backgroundColor: colors.dark.bgElevated },
   reactionPicker: {
     padding: spacing.base,
     alignItems: 'center',
