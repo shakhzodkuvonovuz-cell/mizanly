@@ -4,7 +4,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -15,6 +15,8 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
+import { PostCard } from '@/components/saf/PostCard';
+import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag } from '@/types';
 
 const SEARCH_TABS = [

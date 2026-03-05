@@ -178,6 +178,7 @@ function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) 
     </Pressable>
   );
 }
+function RecordingTimer({ seconds }: { seconds: number }) {  const mm = Math.floor(seconds / 60).toString().padStart(2, "0");  const ss = (seconds % 60).toString().padStart(2, "0");  return <Text style={styles.timerText}>{`${mm}:${ss}`}</Text>;}
 function GifPicker({ visible, onClose, onSelect }: {
   visible: boolean;
   onClose: () => void;
@@ -407,7 +408,6 @@ export default function ConversationScreen() {
   const [slideOffset, setSlideOffset] = useState(0);
   const [cancelled, setCancelled] = useState(false);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const [recordingTime, setRecordingTime] = useState(0);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
@@ -532,19 +532,15 @@ export default function ConversationScreen() {
     await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     await recording.startAsync();
     recordingRef.current = recording;
-  const [recordingTime, setRecordingTime] = useState(0);
     setIsRecording(true);
     haptic.medium();
   }, [haptic]);
 
   const handleVoiceStop = useCallback(async () => {
     if (!recordingRef.current) return;
-  const [recordingTime, setRecordingTime] = useState(0);
     setIsRecording(false);
     const recording = recordingRef.current;
-  const [recordingTime, setRecordingTime] = useState(0);
     recordingRef.current = null;
-  const [recordingTime, setRecordingTime] = useState(0);
     await recording.stopAndUnloadAsync();
     const uri = recording.getURI();
     if (!uri) return;
