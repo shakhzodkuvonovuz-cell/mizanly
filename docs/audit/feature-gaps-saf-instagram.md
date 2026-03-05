@@ -2,7 +2,7 @@
 
 ## Feature Comparison Matrix
 
-| Feature | Instagram | Saf (Current) | Gap Severity | Notes |
+| Feature | Competitor Implementation | Mizanly Status | Priority | Notes |
 |---------|-----------|---------------|--------------|-------|
 | **Core Posting** | Photo/video posts, Stories, Reels, Carousels | Photo/video posts, Stories | Medium | Missing Reels (short video), Carousel posts |
 | **Content Discovery** | Explore tab, Hashtags, Location tags, Search | Basic feed, hashtags | High | Missing Explore algorithm, location-based discovery |

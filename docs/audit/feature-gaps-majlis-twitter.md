@@ -2,7 +2,7 @@
 
 ## Feature Comparison Matrix
 
-| Feature | Twitter/X | Majlis (Current) | Gap Severity | Notes |
+| Feature | Competitor Implementation | Mizanly Status | Priority | Notes |
 |---------|-----------|------------------|--------------|-------|
 | **Character Limit** | 280 chars, 25k for Premium | Basic text posts | Low | Character limit less critical |
 | **Threads** | Thread creation, unrolling | Basic sequential posts | Medium | Missing dedicated thread interface |
