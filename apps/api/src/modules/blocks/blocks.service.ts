@@ -20,7 +20,26 @@ export class BlocksService {
     });
     if (existing) throw new ConflictException('Already blocked');
 
-    // Remove existing follow relationships in both directions
+    // Count follows being deleted to decrement counts accurately
+    const deletedFollows = await this.prisma.follow.findMany({
+      where: {
+        OR: [
+          { followerId: blockerId, followingId: blockedId },
+          { followerId: blockedId, followingId: blockerId },
+        ],
+      },
+      select: { followerId: true, followingId: true },
+    });
+
+    // blocker→blocked: blocker loses 1 following, blocked loses 1 follower
+    const blockerWasFollowing = deletedFollows.some(
+      (f) => f.followerId === blockerId && f.followingId === blockedId,
+    );
+    // blocked→blocker: blocked loses 1 following, blocker loses 1 follower
+    const blockedWasFollowing = deletedFollows.some(
+      (f) => f.followerId === blockedId && f.followingId === blockerId,
+    );
+
     await this.prisma.$transaction([
       this.prisma.block.create({ data: { blockerId, blockedId } }),
       this.prisma.follow.deleteMany({
@@ -39,6 +58,18 @@ export class BlocksService {
           ],
         },
       }),
+      ...(blockerWasFollowing
+        ? [
+            this.prisma.user.update({ where: { id: blockerId }, data: { followingCount: { decrement: 1 } } }),
+            this.prisma.user.update({ where: { id: blockedId }, data: { followersCount: { decrement: 1 } } }),
+          ]
+        : []),
+      ...(blockedWasFollowing
+        ? [
+            this.prisma.user.update({ where: { id: blockedId }, data: { followingCount: { decrement: 1 } } }),
+            this.prisma.user.update({ where: { id: blockerId }, data: { followersCount: { decrement: 1 } } }),
+          ]
+        : []),
     ]);
 
     return { message: 'User blocked' };

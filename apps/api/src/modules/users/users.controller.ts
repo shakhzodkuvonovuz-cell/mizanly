@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Delete,
   Body,
@@ -130,21 +131,25 @@ export class UsersController {
   }
 
   @Get(':username/posts')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: "User's posts grid (cursor paginated)" })
   getUserPosts(
     @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.usersService.getUserPosts(username, cursor);
+    return this.usersService.getUserPosts(username, cursor, viewerId);
   }
 
   @Get(':username/threads')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: "User's threads" })
   getUserThreads(
     @Param('username') username: string,
+    @CurrentUser('id') viewerId?: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.usersService.getUserThreads(username, cursor);
+    return this.usersService.getUserThreads(username, cursor, viewerId);
   }
 
   @Get(':username/followers')
@@ -163,5 +168,18 @@ export class UsersController {
     @Query('cursor') cursor?: string,
   ) {
     return this.usersService.getFollowing(username, cursor);
+  }
+
+  @Post(':id/report')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Report a user' })
+  report(
+    @Param('id') reportedId: string,
+    @CurrentUser('id') reporterId: string,
+    @Body('reason') reason: string,
+  ) {
+    return this.usersService.report(reporterId, reportedId, reason);
   }
 }

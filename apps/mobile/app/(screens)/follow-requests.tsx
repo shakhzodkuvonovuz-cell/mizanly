@@ -6,23 +6,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
 import { followsApi } from '@/services/api';
-
-interface FollowRequest {
-  id: string;
-  createdAt: string;
-  follower: {
-    id: string;
-    username: string;
-    displayName: string;
-    avatarUrl?: string;
-    bio?: string;
-  };
-}
+import type { FollowRequest } from '@/types';
 
 function RequestRow({
   request,
@@ -41,13 +31,7 @@ function RequestRow({
   return (
     <View style={styles.row}>
       <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
-        {follower.avatarUrl ? (
-          <Image source={{ uri: follower.avatarUrl }} style={styles.avatar} contentFit="cover" />
-        ) : (
-          <View style={[styles.avatar, styles.avatarFallback]}>
-            <Text style={styles.avatarLetter}>{follower.displayName[0]?.toUpperCase()}</Text>
-          </View>
-        )}
+        <Avatar uri={follower.avatarUrl} name={follower.displayName} size="md" />
       </TouchableOpacity>
 
       <View style={styles.info}>
@@ -87,7 +71,7 @@ export default function FollowRequestsScreen() {
     queryFn: () => followsApi.getRequests(),
   });
 
-  const requests: FollowRequest[] = (requestsQuery.data as any)?.requests ?? (requestsQuery.data as any) ?? [];
+  const requests: FollowRequest[] = requestsQuery.data?.data ?? [];
 
   const acceptMutation = useMutation({
     mutationFn: (id: string) => followsApi.acceptRequest(id),
@@ -114,7 +98,17 @@ export default function FollowRequestsScreen() {
       </View>
 
       {requestsQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={48} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={120} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={requests}
@@ -153,8 +147,12 @@ const styles = StyleSheet.create({
   backBtn: { width: 36 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
-  loader: { marginTop: 60 },
   list: { paddingBottom: 40 },
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+  },
 
   row: {
     flexDirection: 'row', alignItems: 'center',
@@ -162,9 +160,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
     gap: spacing.sm,
   },
-  avatar: { width: 48, height: 48, borderRadius: 24 },
-  avatarFallback: { backgroundColor: colors.dark.surface, alignItems: 'center', justifyContent: 'center' },
-  avatarLetter: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
   info: { flex: 1 },
   name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
   username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },

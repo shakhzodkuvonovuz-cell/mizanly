@@ -1,13 +1,14 @@
 import { Controller, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { DevicesService } from './devices.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class RegisterDeviceDto {
-  pushToken: string;
-  platform: string;
-  deviceId?: string;
+  @IsString() @IsNotEmpty() pushToken: string;
+  @IsString() @IsNotEmpty() platform: string;
+  @IsString() @IsOptional() deviceId?: string;
 }
 
 @ApiTags('Devices')
@@ -20,7 +21,7 @@ export class DevicesController {
   @Post()
   @ApiOperation({ summary: 'Register push notification token' })
   register(
-    @CurrentUser() userId: string,
+    @CurrentUser('id') userId: string,
     @Body() dto: RegisterDeviceDto,
   ) {
     return this.devicesService.register(userId, dto.pushToken, dto.platform, dto.deviceId);
@@ -29,7 +30,7 @@ export class DevicesController {
   @Delete(':token')
   @ApiOperation({ summary: 'Unregister push notification token' })
   unregister(
-    @CurrentUser() userId: string,
+    @CurrentUser('id') userId: string,
     @Param('token') token: string,
   ) {
     return this.devicesService.unregister(token, userId);

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, StyleSheet, Dimensions, Pressable } from 'react-native';
+import { View, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useAnimatedStyle,
@@ -7,10 +7,7 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
-import { colors, radius, animation } from '@/theme';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MEDIA_HEIGHT = SCREEN_WIDTH;
+import { colors, radius } from '@/theme';
 
 interface Props {
   mediaUrls: string[];
@@ -20,11 +17,12 @@ interface Props {
 }
 
 export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: Props) {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
 
   if (!mediaUrls.length) return null;
 
-  const height = aspectRatio ? SCREEN_WIDTH / aspectRatio : MEDIA_HEIGHT;
+  const height = aspectRatio ? SCREEN_WIDTH / aspectRatio : SCREEN_WIDTH;
 
   if (mediaUrls.length === 1) {
     return (
@@ -83,8 +81,8 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: 
 }
 
 const styles = StyleSheet.create({
-  single: { width: SCREEN_WIDTH },
-  carousel: { width: SCREEN_WIDTH },
+  single: { width: '100%' },
+  carousel: { width: '100%' },
   fill: { width: '100%', height: '100%' },
   dots: {
     position: 'absolute', bottom: 12, left: 0, right: 0,
@@ -102,7 +100,7 @@ const styles = StyleSheet.create({
   arrow: {
     position: 'absolute', top: '50%', marginTop: -18,
     width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.35)', borderRadius: radius.full,
   },
   arrowLeft: { left: 8 },
   arrowRight: { right: 8 },

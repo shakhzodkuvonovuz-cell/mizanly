@@ -1,13 +1,23 @@
 import { useEffect } from 'react';
+import { I18nManager } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
+import * as SplashScreen from 'expo-splash-screen';
+import { useFonts } from 'expo-font';
 import { api } from '@/services/api';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+
+// Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
+// Most React Native flex layouts auto-mirror when this is enabled.
+I18nManager.allowRTL(true);
+
+// Keep the splash screen visible until fonts are loaded
+SplashScreen.preventAutoHideAsync();
 
 const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -65,6 +75,27 @@ function AuthGuard() {
 }
 
 export default function RootLayout() {
+  // TODO: Install font packages:
+  //   npx expo install @expo-google-fonts/playfair-display @expo-google-fonts/dm-sans @expo-google-fonts/noto-naskh-arabic
+  // Then replace the empty object with the imported font map:
+  //   import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
+  //   import { DMSans_400Regular, DMSans_500Medium } from '@expo-google-fonts/dm-sans';
+  //   import { NotoNaskhArabic_400Regular } from '@expo-google-fonts/noto-naskh-arabic';
+  const [fontsLoaded] = useFonts({
+    // PlayfairDisplay_700Bold,
+    // DMSans_400Regular,
+    // DMSans_500Medium,
+    // NotoNaskhArabic_400Regular,
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>

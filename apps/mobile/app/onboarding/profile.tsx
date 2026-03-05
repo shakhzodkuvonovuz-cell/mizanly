@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator 
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize } from '@/theme';
 import { usersApi } from '@/services/api';
 
@@ -99,7 +100,7 @@ export default function OnboardingProfileScreen() {
           multiline
           maxLength={150}
         />
-        <Text style={styles.charCount}>{bio.length}/150</Text>
+        <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
       </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -168,10 +169,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.dark.border,
   },
   bioInput: { height: 80, textAlignVertical: 'top' },
-  charCount: {
-    color: colors.text.tertiary, fontSize: fontSize.xs,
-    textAlign: 'right', marginTop: 4,
-  },
+  charCountWrap: { alignItems: 'flex-end', marginTop: 4 },
   error: {
     color: colors.error, fontSize: fontSize.sm,
     marginBottom: spacing.md, textAlign: 'center',

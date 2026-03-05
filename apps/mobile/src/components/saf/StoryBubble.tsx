@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -22,7 +22,7 @@ interface Props {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function StoryBubble({ group, onPress, isOwn }: Props) {
+export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: Props) {
   const { user, hasUnread } = group;
   const haptic = useHaptic();
   const scale = useSharedValue(1);
@@ -85,7 +85,7 @@ export function StoryBubble({ group, onPress, isOwn }: Props) {
       </Text>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', gap: spacing.xs, width: 72 },

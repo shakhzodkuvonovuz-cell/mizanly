@@ -1,9 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList,
 } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  cancelAnimation,
+  runOnJS,
+} from 'react-native-reanimated';
+import type { SharedValue } from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -14,13 +22,34 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, messagesApi } from '@/services/api';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const STORY_DURATION = 5000; // ms per story slide for images
+
+function ProgressSegment({
+  index,
+  activeIndex,
+  progress,
+}: {
+  index: number;
+  activeIndex: number;
+  progress: SharedValue<number>;
+}) {
+  const fillStyle = useAnimatedStyle(() => {
+    const pct =
+      index < activeIndex ? 100 : index === activeIndex ? progress.value * 100 : 0;
+    return { width: `${pct}%` };
+  });
+  return (
+    <View style={styles.progressTrack}>
+      <Animated.View style={[styles.progressFill, fillStyle]} />
+    </View>
+  );
+}
 
 function ProgressBar({
   count,
@@ -29,21 +58,12 @@ function ProgressBar({
 }: {
   count: number;
   activeIndex: number;
-  progress: number; // 0–1
+  progress: SharedValue<number>;
 }) {
   return (
     <View style={styles.progressRow}>
       {Array.from({ length: count }).map((_, i) => (
-        <View key={i} style={styles.progressTrack}>
-          <View
-            style={[
-              styles.progressFill,
-              {
-                width: i < activeIndex ? '100%' : i === activeIndex ? `${progress * 100}%` : '0%',
-              },
-            ]}
-          />
-        </View>
+        <ProgressSegment key={i} index={i} activeIndex={activeIndex} progress={progress} />
       ))}
     </View>
   );
@@ -61,56 +81,50 @@ export default function StoryViewerScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const group: StoryGroup = groupJson ? JSON.parse(groupJson) : null;
-  if (!group || group.stories.length === 0) {
-    router.back();
-    return null;
+  let group: StoryGroup | null = null;
+  try {
+    group = groupJson ? JSON.parse(groupJson) : null;
+  } catch {
+    group = null;
   }
 
   const [storyIndex, setStoryIndex] = useState(Number(startIndexParam ?? 0));
-  const [progress, setProgress] = useState(0);
+  const progressValue = useSharedValue(0);
   const [paused, setPaused] = useState(false);
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
 
-  const story = group.stories[storyIndex];
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const story = group?.stories[storyIndex];
 
   const viewersQuery = useQuery({
     queryKey: ['story-viewers', story?.id],
-    queryFn: () => storiesApi.getViewers(story.id),
+    queryFn: () => storiesApi.getViewers(story!.id),
     enabled: ownStory && showViewers && !!story?.id,
   });
-  const progressRef = useRef(0);
 
   const advance = useCallback(() => {
+    cancelAnimation(progressValue);
+    progressValue.value = 0;
     setStoryIndex((prev) => {
-      if (prev + 1 < group.stories.length) return prev + 1;
+      if (prev + 1 < (group?.stories.length ?? 0)) return prev + 1;
       router.back();
       return prev;
     });
-    setProgress(0);
-    progressRef.current = 0;
-  }, [group.stories.length, router]);
+  }, [group?.stories.length, router, progressValue]);
 
-  // Progress timer (for images; videos use their own duration)
+  // Progress animation (for images; videos use their own duration)
   useEffect(() => {
-    if (paused || showViewers || story?.mediaType?.startsWith('video')) return;
-    progressRef.current = 0;
-    setProgress(0);
-    const interval = 50;
-    const steps = STORY_DURATION / interval;
-    timerRef.current = setInterval(() => {
-      progressRef.current += 1 / steps;
-      setProgress(progressRef.current);
-      if (progressRef.current >= 1) {
-        clearInterval(timerRef.current!);
-        advance();
-      }
-    }, interval);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [storyIndex, paused, showViewers, story?.mediaType, advance]);
+    if (paused || showViewers || story?.mediaType?.startsWith('video')) {
+      cancelAnimation(progressValue);
+      return;
+    }
+    progressValue.value = 0;
+    progressValue.value = withTiming(1, { duration: STORY_DURATION }, (finished) => {
+      if (finished) runOnJS(advance)();
+    });
+    return () => { cancelAnimation(progressValue); };
+  }, [storyIndex, paused, showViewers, story?.mediaType, advance, progressValue]);
 
   // Mark viewed
   useEffect(() => {
@@ -121,7 +135,7 @@ export default function StoryViewerScreen() {
 
   const replyMutation = useMutation({
     mutationFn: async () => {
-      const convo = await messagesApi.createDM(group.user.id);
+      const convo = await messagesApi.createDM(group!.user.id);
       await messagesApi.sendMessage(convo.id, { content: replyText });
     },
     onSuccess: () => {
@@ -131,11 +145,16 @@ export default function StoryViewerScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
+  // Guard: must be after all hooks
+  if (!group || group.stories.length === 0) {
+    return null;
+  }
+
   const handleTapLeft = () => {
+    cancelAnimation(progressValue);
+    progressValue.value = 0;
     if (storyIndex > 0) {
       setStoryIndex(storyIndex - 1);
-      setProgress(0);
-      progressRef.current = 0;
     } else {
       router.back();
     }
@@ -159,7 +178,7 @@ export default function StoryViewerScreen() {
           isLooping={false}
           onPlaybackStatusUpdate={(status) => {
             if (status.isLoaded && status.durationMillis) {
-              setProgress(status.positionMillis / status.durationMillis);
+              progressValue.value = status.positionMillis / status.durationMillis;
               if (status.didJustFinish) advance();
             }
           }}
@@ -182,7 +201,7 @@ export default function StoryViewerScreen() {
           <ProgressBar
             count={group.stories.length}
             activeIndex={storyIndex}
-            progress={progress}
+            progress={progressValue}
           />
           {/* User info */}
           <View style={styles.userRow}>
@@ -231,7 +250,10 @@ export default function StoryViewerScreen() {
             onPress={() => setShowViewers(true)}
             activeOpacity={0.8}
           >
-            <Text style={styles.viewsBtnText}>👁  {story.viewsCount} views</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Icon name="eye" size="sm" color="#fff" />
+              <Text style={styles.viewsBtnText}>{story.viewsCount} views</Text>
+            </View>
           </TouchableOpacity>
         </SafeAreaView>
       ) : (
@@ -294,9 +316,9 @@ export default function StoryViewerScreen() {
           </View>
         ) : (
           <FlatList
-            data={(viewersQuery.data as any)?.data ?? []}
-            keyExtractor={(item: any) => item.id}
-            renderItem={({ item }: { item: any }) => (
+            data={viewersQuery.data?.data ?? []}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
               <View style={styles.viewerRow}>
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
                 <View style={styles.viewerInfo}>
@@ -373,7 +395,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255,255,255,0.18)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',

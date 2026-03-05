@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 
 export default function CreateStoryScreen() {
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
   cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postBtn: {
-    backgroundColor: colors.emerald, borderRadius: 20,
+    backgroundColor: colors.emerald, borderRadius: radius.full,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
     minWidth: 70, alignItems: 'center',
   },

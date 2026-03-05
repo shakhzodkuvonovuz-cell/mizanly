@@ -184,6 +184,17 @@ export class MessagesService {
   async createDM(userId: string, targetUserId: string) {
     if (userId === targetUserId) throw new BadRequestException('Cannot DM yourself');
 
+    // Check if either user has blocked the other
+    const block = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: targetUserId },
+          { blockerId: targetUserId, blockedId: userId },
+        ],
+      },
+    });
+    if (block) throw new ForbiddenException('Cannot message this user');
+
     // Check if DM already exists
     const existing = await this.prisma.conversation.findFirst({
       where: {

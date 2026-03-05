@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
+import { useScrollToTop } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -105,6 +106,9 @@ export default function RisalahScreen() {
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
 
+  const listRef = useRef<FlatList<Conversation>>(null);
+  useScrollToTop(listRef);
+
   const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
@@ -122,6 +126,27 @@ export default function RisalahScreen() {
   const filtered = all.filter((c) =>
     activeTab === 'groups' ? c.isGroup : !c.isGroup,
   );
+
+  const listEmpty = useMemo(() => (
+    isLoading ? (
+      <View>
+        <Skeleton.ConversationItem />
+        <Skeleton.ConversationItem />
+        <Skeleton.ConversationItem />
+        <Skeleton.ConversationItem />
+      </View>
+    ) : (
+      <EmptyState
+        icon="mail"
+        title={activeTab === 'groups' ? 'No groups yet' : 'No conversations'}
+        subtitle={
+          activeTab === 'groups'
+            ? 'Create a group to chat with multiple people'
+            : 'Message someone to get started'
+        }
+      />
+    )
+  ), [isLoading, activeTab]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -143,6 +168,7 @@ export default function RisalahScreen() {
       />
 
       <FlatList
+        ref={listRef}
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -159,26 +185,7 @@ export default function RisalahScreen() {
             tintColor={colors.emerald}
           />
         }
-        ListEmptyComponent={() =>
-          isLoading ? (
-            <View>
-              <Skeleton.ConversationItem />
-              <Skeleton.ConversationItem />
-              <Skeleton.ConversationItem />
-              <Skeleton.ConversationItem />
-            </View>
-          ) : (
-            <EmptyState
-              icon="mail"
-              title={activeTab === 'groups' ? 'No groups yet' : 'No conversations'}
-              subtitle={
-                activeTab === 'groups'
-                  ? 'Create a group to chat with multiple people'
-                  : 'Message someone to get started'
-              }
-            />
-          )
-        }
+        ListEmptyComponent={listEmpty}
       />
     </SafeAreaView>
   );

@@ -25,9 +25,10 @@ export class TransformInterceptor<T>
       map((data) => {
         // If data already has a `data` envelope (e.g. paginated responses), pass through
         if (data && typeof data === 'object' && 'data' in data && 'meta' in data) {
-          return { ...data, timestamp: new Date().toISOString() };
+          return { success: true, ...data, timestamp: new Date().toISOString() };
         }
         return {
+          success: true,
           data,
           timestamp: new Date().toISOString(),
         };

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
   ConflictException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -48,6 +49,7 @@ const POST_SELECT = {
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -59,22 +61,26 @@ export class PostsService {
     cursor?: string,
     limit = 20,
   ) {
-    let userIds: string[] = [userId];
+    const [follows, blocks, mutes] = await Promise.all([
+      type === 'following'
+        ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
+        : Promise.resolve([]),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+    ]);
 
-    if (type === 'following') {
-      const follows = await this.prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
-      userIds = [userId, ...follows.map((f) => f.followingId)];
-    }
+    const followingIds = follows.map((f) => f.followingId);
+    const excludedIds = [
+      ...blocks.map((b) => b.blockedId),
+      ...mutes.map((m) => m.mutedId),
+    ];
 
     const where: any = {
       isRemoved: false,
       scheduledAt: null,
       ...(type === 'following'
-        ? { userId: { in: userIds } }
-        : { visibility: 'PUBLIC' }),
+        ? { userId: { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) } }
+        : { visibility: 'PUBLIC', ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}) }),
     };
 
     const posts = await this.prisma.post.findMany({
@@ -94,29 +100,51 @@ export class PostsService {
   }
 
   async create(userId: string, dto: CreatePostDto) {
-    return this.prisma.post.create({
-      data: {
-        userId,
-        postType: dto.postType as any,
-        content: dto.content,
-        visibility: (dto.visibility as any) ?? 'PUBLIC',
-        circleId: dto.circleId,
-        mediaUrls: dto.mediaUrls ?? [],
-        mediaTypes: dto.mediaTypes ?? [],
-        thumbnailUrl: dto.thumbnailUrl,
-        mediaWidth: dto.mediaWidth,
-        mediaHeight: dto.mediaHeight,
-        videoDuration: dto.videoDuration,
-        hashtags: dto.hashtags ?? [],
-        mentions: dto.mentions ?? [],
-        locationName: dto.locationName,
-        isSensitive: dto.isSensitive ?? false,
-        altText: dto.altText,
-        hideLikesCount: dto.hideLikesCount ?? false,
-        commentsDisabled: dto.commentsDisabled ?? false,
-      },
-      select: POST_SELECT,
-    });
+    // Parse and upsert hashtags
+    const hashtagMatches = (dto.content ?? '').match(/#([a-zA-Z0-9_\u0600-\u06FF]+)/g) ?? [];
+    const hashtagNames = [...new Set(hashtagMatches.map((h) => h.slice(1).toLowerCase()))];
+    if (hashtagNames.length > 0) {
+      await Promise.all(
+        hashtagNames.map((name) =>
+          this.prisma.hashtag.upsert({
+            where: { name },
+            create: { name, postsCount: 1 },
+            update: { postsCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
+
+    const [post] = await this.prisma.$transaction([
+      this.prisma.post.create({
+        data: {
+          userId,
+          postType: dto.postType as any,
+          content: dto.content,
+          visibility: (dto.visibility as any) ?? 'PUBLIC',
+          circleId: dto.circleId,
+          mediaUrls: dto.mediaUrls ?? [],
+          mediaTypes: dto.mediaTypes ?? [],
+          thumbnailUrl: dto.thumbnailUrl,
+          mediaWidth: dto.mediaWidth,
+          mediaHeight: dto.mediaHeight,
+          videoDuration: dto.videoDuration,
+          hashtags: dto.hashtags ?? [],
+          mentions: dto.mentions ?? [],
+          locationName: dto.locationName,
+          isSensitive: dto.isSensitive ?? false,
+          altText: dto.altText,
+          hideLikesCount: dto.hideLikesCount ?? false,
+          commentsDisabled: dto.commentsDisabled ?? false,
+        },
+        select: POST_SELECT,
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { postsCount: { increment: 1 } },
+      }),
+    ]);
+    return post;
   }
 
   async getById(postId: string, viewerId?: string) {
@@ -172,10 +200,16 @@ export class PostsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException();
 
-    await this.prisma.post.update({
-      where: { id: postId },
-      data: { isRemoved: true, removedAt: new Date(), removedById: userId },
-    });
+    await this.prisma.$transaction([
+      this.prisma.post.update({
+        where: { id: postId },
+        data: { isRemoved: true, removedAt: new Date(), removedById: userId },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { postsCount: { decrement: 1 } },
+      }),
+    ]);
     return { deleted: true };
   }
 
@@ -207,7 +241,7 @@ export class PostsService {
       this.notifications.create({
         userId: post.userId, actorId: userId,
         type: 'LIKE', postId,
-      }).catch(() => {});
+      }).catch((err) => this.logger.error('Failed to create notification', err));
     }
     return { reaction };
   }
@@ -373,7 +407,7 @@ export class PostsService {
       type: dto.parentId ? 'REPLY' : 'COMMENT',
       postId, commentId: comment.id,
       body: dto.content.substring(0, 100),
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
     return comment;
   }
 

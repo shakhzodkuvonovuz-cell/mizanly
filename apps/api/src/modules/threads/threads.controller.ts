@@ -15,6 +15,7 @@ import { IsString, MaxLength, IsOptional } from 'class-validator';
 import { ThreadsService } from './threads.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class AddReplyDto {
@@ -53,8 +54,9 @@ export class ThreadsController {
   }
 
   @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get thread by ID' })
-  getById(@Param('id') id: string, @Query('viewerId') viewerId?: string) {
+  getById(@Param('id') id: string, @CurrentUser('id') viewerId?: string) {
     return this.threadsService.getById(id, viewerId);
   }
 
@@ -119,9 +121,39 @@ export class ThreadsController {
   }
 
   @Get(':id/replies')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get replies to a thread' })
-  getReplies(@Param('id') id: string, @Query('cursor') cursor?: string) {
-    return this.threadsService.getReplies(id, cursor);
+  getReplies(
+    @Param('id') id: string,
+    @Query('cursor') cursor?: string,
+    @CurrentUser('id') viewerId?: string,
+  ) {
+    return this.threadsService.getReplies(id, cursor, 20, viewerId);
+  }
+
+  @Post(':id/replies/:replyId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Like a thread reply' })
+  likeReply(
+    @Param('id') threadId: string,
+    @Param('replyId') replyId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.likeReply(threadId, replyId, userId);
+  }
+
+  @Delete(':id/replies/:replyId/like')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unlike a thread reply' })
+  unlikeReply(
+    @Param('id') threadId: string,
+    @Param('replyId') replyId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.unlikeReply(threadId, replyId, userId);
   }
 
   @Post(':id/replies')

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -28,7 +28,7 @@ interface Props {
   isOwn?: boolean;
 }
 
-export function ThreadCard({ thread, viewerId, isOwn }: Props) {
+export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -157,6 +157,8 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
           <TouchableOpacity
             onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
             activeOpacity={0.8}
+            accessibilityLabel={`View ${thread.user.displayName}'s profile`}
+            accessibilityRole="button"
           >
             <Avatar uri={thread.user.avatarUrl} name={thread.user.displayName} size="md" />
           </TouchableOpacity>
@@ -176,6 +178,8 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               style={styles.userInfo}
               onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
               activeOpacity={0.8}
+              accessibilityLabel={`View ${thread.user.displayName}'s profile`}
+              accessibilityRole="button"
             >
               <Text style={styles.name}>{thread.user.displayName}</Text>
               {thread.user.isVerified && <VerifiedBadge size={13} />}
@@ -185,6 +189,8 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
             <TouchableOpacity
               hitSlop={8}
               onPress={() => { haptic.light(); setShowMenu(true); }}
+              accessibilityLabel="More options"
+              accessibilityRole="button"
             >
               <Icon name="more-horizontal" size="xs" color={colors.text.tertiary} />
             </TouchableOpacity>
@@ -266,6 +272,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               count={thread.repliesCount > 0 ? thread.repliesCount : undefined}
               onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
               hapticType="light"
+              accessibilityLabel="Reply to thread"
             />
 
             <ActionButton
@@ -275,6 +282,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               onPress={() => viewerId && repostMutation.mutate()}
               disabled={!viewerId}
               activeColor={colors.emerald}
+              accessibilityLabel={localReposted ? 'Undo repost' : 'Repost'}
             />
 
             <ActionButton
@@ -285,6 +293,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               onPress={() => likeMutation.mutate()}
               disabled={!viewerId}
               activeColor={colors.like}
+              accessibilityLabel={localLiked ? 'Unlike thread' : 'Like thread'}
             />
 
             <View style={styles.spacer} />
@@ -293,6 +302,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               icon={<Icon name="share" size="xs" color={colors.text.secondary} />}
               onPress={handleShare}
               hapticType="light"
+              accessibilityLabel="Share thread"
             />
 
             <ActionButton
@@ -302,6 +312,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
               onPress={() => bookmarkMutation.mutate()}
               disabled={!viewerId}
               activeColor={colors.bookmark}
+              accessibilityLabel={localBookmarked ? 'Remove bookmark' : 'Bookmark thread'}
             />
           </View>
         </View>
@@ -334,7 +345,7 @@ export function ThreadCard({ thread, viewerId, isOwn }: Props) {
       </BottomSheet>
     </TouchableOpacity>
   );
-}
+});
 
 function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; isSelected: boolean }) {
   const width = useSharedValue(0);

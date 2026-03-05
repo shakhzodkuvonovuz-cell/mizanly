@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -39,6 +40,9 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
 
+  const feedRef = useRef<FlashList<Thread>>(null);
+  useScrollToTop(feedRef);
+
   // Floating compose button
   const fabScale = useSharedValue(1);
   const fabStyle = useAnimatedStyle(() => ({
@@ -53,6 +57,31 @@ export default function MajlisScreen() {
   });
 
   const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const listEmpty = useMemo(() => (
+    feedQuery.isLoading ? (
+      <View>
+        <Skeleton.ThreadCard />
+        <Skeleton.ThreadCard />
+        <Skeleton.ThreadCard />
+        <Skeleton.ThreadCard />
+      </View>
+    ) : (
+      <EmptyState
+        icon="message-circle"
+        title="No threads yet"
+        subtitle="Start a conversation"
+      />
+    )
+  ), [feedQuery.isLoading]);
+
+  const listFooter = useMemo(() => (
+    feedQuery.isFetchingNextPage ? (
+      <View style={styles.footer}>
+        <Skeleton.ThreadCard />
+      </View>
+    ) : null
+  ), [feedQuery.isFetchingNextPage]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -81,6 +110,7 @@ export default function MajlisScreen() {
       />
 
       <FlashList
+        ref={feedRef}
         data={threads}
         keyExtractor={(item) => item.id}
         estimatedItemSize={120}
@@ -93,29 +123,8 @@ export default function MajlisScreen() {
         renderItem={({ item }) => (
           <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
         )}
-        ListEmptyComponent={() =>
-          feedQuery.isLoading ? (
-            <View>
-              <Skeleton.ThreadCard />
-              <Skeleton.ThreadCard />
-              <Skeleton.ThreadCard />
-              <Skeleton.ThreadCard />
-            </View>
-          ) : (
-            <EmptyState
-              icon="message-circle"
-              title="No threads yet"
-              subtitle="Start a conversation"
-            />
-          )
-        }
-        ListFooterComponent={() =>
-          feedQuery.isFetchingNextPage ? (
-            <View style={styles.footer}>
-              <Skeleton.ThreadCard />
-            </View>
-          ) : null
-        }
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
       />
 
       {/* Floating compose button */}
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
   fabGradient: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -147,6 +147,7 @@ export interface ThreadReply {
   content: string;
   mediaUrls: string[];
   likesCount: number;
+  isLiked?: boolean;
   createdAt: string;
   parentId?: string;
   user: User;
@@ -257,6 +258,55 @@ export interface SearchResults {
   threads?: Thread[];
   posts?: Post[];
   hashtags?: { id: string; name: string; postsCount: number }[];
+}
+
+// ── Circles ──
+export interface CircleMember {
+  user: User;
+  role: string;
+  joinedAt: string;
+}
+
+// ── Profile links ──
+export interface ProfileLink {
+  id: string;
+  title: string;
+  url: string;
+  position: number;
+}
+
+// ── Follow requests ──
+export interface FollowRequest {
+  id: string;
+  createdAt: string;
+  follower: User;
+}
+
+// ── Trending ──
+export interface TrendingHashtag {
+  id: string;
+  name: string;
+  postsCount: number;
+  threadsCount: number;
+}
+
+// ── Blocked keywords ──
+export interface BlockedKeyword {
+  id: string;
+  word: string;
+  createdAt: string;
+}
+
+// ── Settings ──
+export interface Settings {
+  isPrivate: boolean;
+  notifyLikes: boolean;
+  notifyComments: boolean;
+  notifyFollows: boolean;
+  notifyMentions: boolean;
+  notifyMessages: boolean;
+  sensitiveContentFilter: boolean;
+  reducedMotion: boolean;
 }
 
 // ── Pagination ──

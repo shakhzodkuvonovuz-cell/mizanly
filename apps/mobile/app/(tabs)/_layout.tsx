@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   createGradient: {
     width: 48,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.emerald,

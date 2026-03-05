@@ -1,7 +1,75 @@
 import type {
-  Post, Story, StoryGroup, Thread, ThreadReply, Message, Conversation,
+  Post, Story, StoryGroup, StoryHighlightAlbum, Thread, ThreadReply, Message, Conversation,
   Comment, Notification, SearchResults, PaginatedResponse, User,
+  Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
+  BlockedKeyword, Settings,
 } from '@/types';
+
+// ── Request payload types (API layer only) ──
+
+type UpdateUserPayload = {
+  displayName?: string;
+  bio?: string;
+  website?: string;
+  isPrivate?: boolean;
+  avatarUrl?: string;
+  coverUrl?: string;
+};
+
+type CreatePostPayload = {
+  postType: string;
+  content?: string;
+  mediaUrls?: string[];
+  mediaTypes?: string[];
+  thumbnailUrl?: string;
+  mediaWidth?: number;
+  mediaHeight?: number;
+  visibility?: string;
+  locationName?: string;
+  hashtags?: string[];
+  hideLikesCount?: boolean;
+  commentsDisabled?: boolean;
+};
+
+type CreateStoryPayload = {
+  mediaUrl: string;
+  mediaType: string;
+  thumbnailUrl?: string;
+  textOverlay?: string;
+  textColor?: string;
+  bgColor?: string;
+  closeFriendsOnly?: boolean;
+};
+
+type UpdateHighlightPayload = { title?: string; coverUrl?: string; position?: number };
+
+type CreateThreadPayload = {
+  content: string;
+  mediaUrls?: string[];
+  mediaTypes?: string[];
+  visibility?: string;
+  isQuotePost?: boolean;
+  quoteText?: string;
+};
+
+type SendMessagePayload = {
+  content?: string;
+  messageType?: string;
+  mediaUrl?: string;
+  replyToId?: string;
+  voiceDuration?: number;
+};
+
+type PrivacySettings = { isPrivate?: boolean };
+type NotificationSettings = {
+  notifyLikes?: boolean;
+  notifyComments?: boolean;
+  notifyFollows?: boolean;
+  notifyMentions?: boolean;
+  notifyMessages?: boolean;
+};
+type AccessibilitySettings = { reducedMotion?: boolean; fontSize?: string };
+type WellbeingSettings = { sensitiveContentFilter?: boolean; dailyTimeLimit?: number };
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -29,20 +97,21 @@ class ApiClient {
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
+    if (res.status === 204) return null as T;
     return res.json();
   }
 
   get<T>(path: string) { return this.request<T>(path); }
-  post<T>(path: string, body?: any) {
+  post<T>(path: string, body?: unknown) {
     return this.request<T>(path, { method: 'POST', body: body ? JSON.stringify(body) : undefined });
   }
-  patch<T>(path: string, body?: any) {
+  patch<T>(path: string, body?: unknown) {
     return this.request<T>(path, { method: 'PATCH', body: body ? JSON.stringify(body) : undefined });
   }
-  put<T>(path: string, body?: any) {
+  put<T>(path: string, body?: unknown) {
     return this.request<T>(path, { method: 'PUT', body: body ? JSON.stringify(body) : undefined });
   }
-  delete<T>(path: string, body?: any) {
+  delete<T>(path: string, body?: unknown) {
     return this.request<T>(path, {
       method: 'DELETE',
       body: body ? JSON.stringify(body) : undefined,
@@ -75,7 +144,7 @@ export const authApi = {
 // ── Users ──
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
-  updateMe: (data: any) => api.patch<User>('/users/me', data),
+  updateMe: (data: UpdateUserPayload) => api.patch<User>('/users/me', data),
   deactivate: () => api.delete('/users/me'),
   getProfile: (username: string) => api.get<User>(`/users/${username}`),
   getUserPosts: (username: string, cursor?: string) =>
@@ -88,6 +157,7 @@ export const usersApi = {
     api.get<PaginatedResponse<Thread>>(`/users/me/saved-threads${qs({ cursor })}`),
   getFollowRequests: () => api.get('/users/me/follow-requests'),
   getAnalytics: () => api.get('/users/me/analytics'),
+  report: (userId: string, reason: string) => api.post(`/users/${userId}/report`, { reason }),
 };
 
 // ── Follows ──
@@ -98,7 +168,7 @@ export const followsApi = {
     api.get<PaginatedResponse<User>>(`/follows/${userId}/followers${qs({ cursor })}`),
   getFollowing: (userId: string, cursor?: string) =>
     api.get<PaginatedResponse<User>>(`/follows/${userId}/following${qs({ cursor })}`),
-  getRequests: () => api.get<any>('/follows/requests'),
+  getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests'),
   acceptRequest: (id: string) => api.post(`/follows/requests/${id}/accept`),
   declineRequest: (id: string) => api.post(`/follows/requests/${id}/decline`),
   cancelRequest: (id: string) => api.delete(`/follows/requests/${id}`),
@@ -109,9 +179,9 @@ export const followsApi = {
 export const postsApi = {
   getFeed: (type: 'following' | 'foryou' = 'following', cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/posts/feed${qs({ type, cursor })}`),
-  create: (data: any) => api.post<Post>('/posts', data),
+  create: (data: CreatePostPayload) => api.post<Post>('/posts', data),
   getById: (id: string) => api.get<Post>(`/posts/${id}`),
-  update: (id: string, data: any) => api.patch<Post>(`/posts/${id}`, data),
+  update: (id: string, data: Partial<CreatePostPayload>) => api.patch<Post>(`/posts/${id}`, data),
   delete: (id: string) => api.delete(`/posts/${id}`),
   react: (id: string, reaction: string) => api.post(`/posts/${id}/react`, { reaction }),
   unreact: (id: string) => api.delete(`/posts/${id}/react`),
@@ -139,17 +209,18 @@ export const postsApi = {
 // ── Stories (Saf) ──
 export const storiesApi = {
   getFeed: () => api.get<StoryGroup[]>('/stories/feed'),
-  create: (data: any) => api.post<Story>('/stories', data),
+  create: (data: CreateStoryPayload) => api.post<Story>('/stories', data),
   getById: (id: string) => api.get<Story>(`/stories/${id}`),
   delete: (id: string) => api.delete(`/stories/${id}`),
   markViewed: (id: string) => api.post<{ viewed: boolean }>(`/stories/${id}/view`),
   getViewers: (id: string, cursor?: string) =>
-    api.get(`/stories/${id}/viewers${qs({ cursor })}`),
-  getHighlights: (userId: string) => api.get(`/stories/highlights/${userId}`),
+    api.get<PaginatedResponse<User>>(`/stories/${id}/viewers${qs({ cursor })}`),
+  getHighlights: (userId: string) => api.get<StoryHighlightAlbum[]>(`/stories/highlights/${userId}`),
+  getHighlightById: (albumId: string) => api.get<StoryHighlightAlbum>(`/stories/highlights/album/${albumId}`),
   createHighlight: (title: string, coverUrl?: string) =>
-    api.post('/stories/highlights', { title, coverUrl }),
-  updateHighlight: (albumId: string, data: any) =>
-    api.patch(`/stories/highlights/${albumId}`, data),
+    api.post<StoryHighlightAlbum>('/stories/highlights', { title, coverUrl }),
+  updateHighlight: (albumId: string, data: UpdateHighlightPayload) =>
+    api.patch<StoryHighlightAlbum>(`/stories/highlights/${albumId}`, data),
   deleteHighlight: (albumId: string) => api.delete(`/stories/highlights/${albumId}`),
   addToHighlight: (albumId: string, storyId: string) =>
     api.post(`/stories/highlights/${albumId}/stories/${storyId}`),
@@ -159,7 +230,7 @@ export const storiesApi = {
 export const threadsApi = {
   getFeed: (type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/feed${qs({ type, cursor })}`),
-  create: (data: any) => api.post<Thread>('/threads', data),
+  create: (data: CreateThreadPayload) => api.post<Thread>('/threads', data),
   getById: (id: string) => api.get<Thread>(`/threads/${id}`),
   delete: (id: string) => api.delete(`/threads/${id}`),
   report: (id: string, reason: string) => api.post(`/threads/${id}/report`, { reason }),
@@ -176,6 +247,10 @@ export const threadsApi = {
     api.post<ThreadReply>(`/threads/${id}/replies`, { content, parentId }),
   deleteReply: (threadId: string, replyId: string) =>
     api.delete(`/threads/${threadId}/replies/${replyId}`),
+  likeReply: (threadId: string, replyId: string) =>
+    api.post(`/threads/${threadId}/replies/${replyId}/like`),
+  unlikeReply: (threadId: string, replyId: string) =>
+    api.delete(`/threads/${threadId}/replies/${replyId}/like`),
   votePoll: (optionId: string) => api.post(`/threads/polls/${optionId}/vote`),
   getUserThreads: (username: string, cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/user/${username}${qs({ cursor })}`),
@@ -187,7 +262,7 @@ export const messagesApi = {
   getConversation: (id: string) => api.get<Conversation>(`/messages/conversations/${id}`),
   getMessages: (id: string, cursor?: string) =>
     api.get<PaginatedResponse<Message>>(`/messages/conversations/${id}/messages${qs({ cursor })}`),
-  sendMessage: (id: string, data: any) =>
+  sendMessage: (id: string, data: SendMessagePayload) =>
     api.post<Message>(`/messages/conversations/${id}/messages`, data),
   deleteMessage: (convId: string, messageId: string) =>
     api.delete(`/messages/conversations/${convId}/messages/${messageId}`),
@@ -222,10 +297,10 @@ export const notificationsApi = {
 export const searchApi = {
   search: (query: string, type?: string, cursor?: string) =>
     api.get<SearchResults>(`/search${qs({ q: query, type, cursor })}`),
-  trending: () => api.get('/search/trending'),
+  trending: () => api.get<TrendingHashtag[]>('/search/trending'),
   suggestions: () => api.get<User[]>('/search/suggestions'),
   hashtagPosts: (tag: string, cursor?: string) =>
-    api.get(`/search/hashtag/${encodeURIComponent(tag)}${qs({ cursor })}`),
+    api.get<PaginatedResponse<Post>>(`/search/hashtag/${encodeURIComponent(tag)}${qs({ cursor })}`),
 };
 
 // ── Upload ──
@@ -239,12 +314,12 @@ export const uploadApi = {
 
 // ── Circles ──
 export const circlesApi = {
-  getMyCircles: () => api.get<any[]>('/circles'),
-  create: (name: string, emoji?: string) => api.post<any>('/circles', { name, emoji }),
+  getMyCircles: () => api.get<Circle[]>('/circles'),
+  create: (name: string, emoji?: string) => api.post<Circle>('/circles', { name, emoji }),
   update: (id: string, data: { name?: string; emoji?: string }) =>
-    api.patch<any>(`/circles/${id}`, data),
+    api.patch<Circle>(`/circles/${id}`, data),
   delete: (id: string) => api.delete(`/circles/${id}`),
-  getMembers: (id: string) => api.get<any[]>(`/circles/${id}/members`),
+  getMembers: (id: string) => api.get<CircleMember[]>(`/circles/${id}/members`),
   addMembers: (id: string, memberIds: string[]) =>
     api.post(`/circles/${id}/members`, { memberIds }),
   removeMembers: (id: string, memberIds: string[]) =>
@@ -260,36 +335,36 @@ export const devicesApi = {
 
 // ── Profile Links ──
 export const profileLinksApi = {
-  getLinks: () => api.get<any[]>('/profile-links'),
-  create: (data: { title: string; url: string }) => api.post<any>('/profile-links', data),
+  getLinks: () => api.get<ProfileLink[]>('/profile-links'),
+  create: (data: { title: string; url: string }) => api.post<ProfileLink>('/profile-links', data),
   update: (id: string, data: { title?: string; url?: string }) =>
-    api.patch<any>(`/profile-links/${id}`, data),
+    api.patch<ProfileLink>(`/profile-links/${id}`, data),
   delete: (id: string) => api.delete(`/profile-links/${id}`),
   reorder: (ids: string[]) => api.put('/profile-links/reorder', { ids }),
 };
 
 // ── Blocks ──
 export const blocksApi = {
-  getBlocked: (cursor?: string) => api.get<any>(`/blocks${qs({ cursor })}`),
+  getBlocked: (cursor?: string) => api.get<PaginatedResponse<User>>(`/blocks${qs({ cursor })}`),
   block: (userId: string) => api.post(`/blocks/${userId}`),
   unblock: (userId: string) => api.delete(`/blocks/${userId}`),
 };
 
 // ── Mutes ──
 export const mutesApi = {
-  getMuted: (cursor?: string) => api.get<any>(`/mutes${qs({ cursor })}`),
+  getMuted: (cursor?: string) => api.get<PaginatedResponse<User>>(`/mutes${qs({ cursor })}`),
   mute: (userId: string) => api.post(`/mutes/${userId}`),
   unmute: (userId: string) => api.delete(`/mutes/${userId}`),
 };
 
 // ── Settings ──
 export const settingsApi = {
-  get: () => api.get('/settings'),
-  updatePrivacy: (data: any) => api.patch('/settings/privacy', data),
-  updateNotifications: (data: any) => api.patch('/settings/notifications', data),
-  updateAccessibility: (data: any) => api.patch('/settings/accessibility', data),
-  updateWellbeing: (data: any) => api.patch('/settings/wellbeing', data),
-  getBlockedKeywords: () => api.get('/settings/blocked-keywords'),
-  addBlockedKeyword: (word: string) => api.post('/settings/blocked-keywords', { word }),
+  get: () => api.get<Settings>('/settings'),
+  updatePrivacy: (data: PrivacySettings) => api.patch<Settings>('/settings/privacy', data),
+  updateNotifications: (data: NotificationSettings) => api.patch<Settings>('/settings/notifications', data),
+  updateAccessibility: (data: AccessibilitySettings) => api.patch<Settings>('/settings/accessibility', data),
+  updateWellbeing: (data: WellbeingSettings) => api.patch<Settings>('/settings/wellbeing', data),
+  getBlockedKeywords: () => api.get<BlockedKeyword[]>('/settings/blocked-keywords'),
+  addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { word }),
   deleteBlockedKeyword: (id: string) => api.delete(`/settings/blocked-keywords/${id}`),
 };

@@ -1,3 +1,4 @@
+import { View, I18nManager } from 'react-native';
 import { colors, iconSize as iconSizes } from '@/theme';
 import {
   Heart, MessageCircle, Bookmark, Send, Search, Home,
@@ -93,6 +94,8 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);
 
+const MIRROR_IN_RTL: Set<IconName> = new Set(['arrow-left', 'chevron-left', 'chevron-right']);
+
 export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill }: IconProps) {
   const LucideIcon = iconMap[name];
   if (!LucideIcon) return null;
@@ -100,8 +103,9 @@ export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill }: Ico
   const dim = typeof size === 'number' ? size : iconSizes[size];
   const isFilled = filledIcons.has(name);
   const iconColor = color ?? colors.text.primary;
+  const shouldMirror = I18nManager.isRTL && MIRROR_IN_RTL.has(name);
 
-  return (
+  const icon = (
     <LucideIcon
       size={dim}
       color={iconColor}
@@ -109,4 +113,14 @@ export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill }: Ico
       fill={isFilled ? (fill ?? iconColor) : 'none'}
     />
   );
+
+  if (shouldMirror) {
+    return (
+      <View style={{ transform: [{ scaleX: -1 }] }}>
+        {icon}
+      </View>
+    );
+  }
+
+  return icon;
 }

@@ -54,6 +54,7 @@ export class StoriesService {
       },
       select: STORY_SELECT,
       orderBy: { createdAt: 'desc' },
+      take: 100,
     });
 
     // Group by user

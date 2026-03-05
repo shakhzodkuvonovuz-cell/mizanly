@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, fontSize } from '@/theme';
-import { messagesApi } from '@/services/api';
+import { messagesApi, blocksApi } from '@/services/api';
 import type { Conversation } from '@/types';
 
 function conversationName(convo: Conversation, myId?: string): string {
@@ -55,7 +56,7 @@ export default function ConversationInfoScreen() {
   if (convoQuery.isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <Skeleton.ProfileHeader />
       </SafeAreaView>
     );
   }
@@ -145,10 +146,20 @@ export default function ConversationInfoScreen() {
           {!isGroup && (
             <TouchableOpacity
               style={styles.actionRow}
-              onPress={() => Alert.alert('Block user', 'Are you sure?', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Block', style: 'destructive', onPress: () => {} },
-              ])}
+              onPress={() => {
+                const other = convo?.members.find((m) => m.user.id !== user?.id);
+                if (!other) return;
+                Alert.alert('Block user', 'Are you sure?', [
+                  { text: 'Cancel', style: 'cancel' },
+                  {
+                    text: 'Block', style: 'destructive', onPress: () => {
+                      blocksApi.block(other.user.id)
+                        .then(() => router.replace('/(tabs)/risalah'))
+                        .catch(() => Alert.alert('Error', 'Could not block user.'));
+                    },
+                  },
+                ]);
+              }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                 <Icon name="slash" size="sm" color="#FF453A" />

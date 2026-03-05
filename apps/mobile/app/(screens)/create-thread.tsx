@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, ActivityIndicator, Alert,
@@ -14,7 +14,8 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize } from '@/theme';
+import { Autocomplete } from '@/components/ui/Autocomplete';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -27,9 +28,34 @@ const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconN
 
 const CHAR_LIMIT = 500;
 
+type AutocompleteType = 'hashtag' | 'mention' | null;
+interface AutocompleteState {
+  partIndex: number | null;
+  type: AutocompleteType;
+  query: string;
+}
+
 interface ChainPart {
   content: string;
   media: { uri: string; type: 'image' | 'video' }[];
+}
+
+interface ThreadPartProps {
+  part: ChainPart;
+  index: number;
+  isLast: boolean;
+  onChange: (content: string) => void;
+  onAddMedia: () => void;
+  onRemoveMedia: (mi: number) => void;
+  onTogglePoll?: () => void;
+  hasPoll?: boolean;
+  showLine: boolean;
+  avatar?: string;
+  name: string;
+  autocomplete: AutocompleteState;
+  setAutocomplete: (state: AutocompleteState) => void;
+  setShowAutocomplete: (show: boolean) => void;
+  inputRef: (index: number, ref: TextInput | null) => void;
 }
 
 function ThreadPart({
@@ -44,19 +70,11 @@ function ThreadPart({
   showLine,
   avatar,
   name,
-}: {
-  part: ChainPart;
-  index: number;
-  isLast: boolean;
-  onChange: (content: string) => void;
-  onAddMedia: () => void;
-  onRemoveMedia: (mi: number) => void;
-  onTogglePoll?: () => void;
-  hasPoll?: boolean;
-  showLine: boolean;
-  avatar?: string;
-  name: string;
-}) {
+  autocomplete,
+  setAutocomplete,
+  setShowAutocomplete,
+  inputRef,
+}: ThreadPartProps) {
   return (
     <View style={styles.part}>
       <View style={styles.partLeft}>
@@ -66,11 +84,40 @@ function ThreadPart({
       <View style={styles.partRight}>
         <Text style={styles.partUser}>{name}</Text>
         <TextInput
+          ref={(ref) => inputRef(index, ref)}
           style={styles.partInput}
           placeholder={index === 0 ? "What's on your mind?" : 'Continue the thread…'}
           placeholderTextColor={colors.text.tertiary}
           value={part.content}
-          onChangeText={onChange}
+          onChangeText={(text) => {
+            onChange(text);
+
+            // Detect if typing a hashtag or mention
+            const cursorPos = text.length;
+            const textBeforeCursor = text.slice(0, cursorPos);
+
+            // Check for hashtag pattern: #word
+            const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
+            if (hashMatch) {
+              setAutocomplete({ partIndex: index, type: 'hashtag', query: hashMatch[1] });
+              setShowAutocomplete(true);
+              return;
+            }
+
+            // Check for mention pattern: @word
+            const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
+            if (mentionMatch) {
+              setAutocomplete({ partIndex: index, type: 'mention', query: mentionMatch[1] });
+              setShowAutocomplete(true);
+              return;
+            }
+
+            // If this part was showing autocomplete, hide it
+            if (autocomplete.partIndex === index) {
+              setShowAutocomplete(false);
+              setAutocomplete({ partIndex: null, type: null, query: '' });
+            }
+          }}
           multiline
           maxLength={CHAR_LIMIT}
           autoFocus={index === 0}
@@ -97,6 +144,42 @@ function ThreadPart({
           <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8} style={part.media.length >= 4 ? styles.toolbarDisabled : undefined}>
             <Icon name="image" size="sm" color={colors.text.secondary} />
           </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
+                // Toggle off
+                setShowAutocomplete(false);
+                setAutocomplete({ partIndex: null, type: null, query: '' });
+              } else {
+                // Trigger hashtag autocomplete
+                const newContent = part.content + '#';
+                onChange(newContent);
+                setAutocomplete({ partIndex: index, type: 'hashtag', query: '' });
+                setShowAutocomplete(true);
+              }
+            }}
+            hitSlop={8}
+          >
+            <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : colors.text.secondary} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
+                // Toggle off
+                setShowAutocomplete(false);
+                setAutocomplete({ partIndex: null, type: null, query: '' });
+              } else {
+                // Trigger mention autocomplete
+                const newContent = part.content + '@';
+                onChange(newContent);
+                setAutocomplete({ partIndex: index, type: 'mention', query: '' });
+                setShowAutocomplete(true);
+              }
+            }}
+            hitSlop={8}
+          >
+            <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : colors.text.secondary} />
+          </TouchableOpacity>
           {onTogglePoll && (
             <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
               <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
@@ -120,6 +203,17 @@ export default function CreateThreadScreen() {
   const [circleId, setCircleId] = useState<string | undefined>();
   const [showCirclePicker, setShowCirclePicker] = useState(false);
   const [poll, setPoll] = useState<{ question: string; options: string[]; allowMultiple: boolean } | null>(null);
+
+  // Autocomplete state - tracks which part is currently showing autocomplete
+  const [autocomplete, setAutocomplete] = useState<AutocompleteState>({
+    partIndex: null,
+    type: null,
+    query: '',
+  });
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
+  // Refs for each part's input
+  const inputRefs = useRef<Map<number, TextInput>>(new Map());
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -337,6 +431,10 @@ export default function CreateThreadScreen() {
               hasPoll={index === 0 && !!poll}
               avatar={user?.imageUrl}
               name={user?.fullName ?? user?.username ?? 'Me'}
+              autocomplete={autocomplete}
+              setAutocomplete={setAutocomplete}
+              setShowAutocomplete={setShowAutocomplete}
+              inputRef={(idx, ref) => { if (ref) inputRefs.current.set(idx, ref); }}
             />
             {/* Poll form — only on first part */}
             {index === 0 && poll && (
@@ -416,6 +514,39 @@ export default function CreateThreadScreen() {
         )}
         <View style={{ height: 80 }} />
       </ScrollView>
+
+      {/* Autocomplete dropdown */}
+      <Autocomplete
+        visible={showAutocomplete}
+        type={autocomplete.type || 'hashtag'}
+        query={autocomplete.query}
+        onSelect={(value) => {
+          const idx = autocomplete.partIndex;
+          if (idx === null) return;
+
+          const partContent = parts[idx].content;
+          const cursorPos = partContent.length;
+          const lastHashIndex = partContent.lastIndexOf('#', cursorPos - 1);
+          const lastAtIndex = partContent.lastIndexOf('@', cursorPos - 1);
+
+          let newContent = partContent;
+          if (autocomplete.type === 'hashtag' && lastHashIndex !== -1) {
+            const before = partContent.slice(0, lastHashIndex);
+            const after = partContent.slice(cursorPos);
+            newContent = before + value + ' ' + after;
+          } else if (autocomplete.type === 'mention' && lastAtIndex !== -1) {
+            const before = partContent.slice(0, lastAtIndex);
+            const after = partContent.slice(cursorPos);
+            newContent = before + value + ' ' + after;
+          }
+
+          updateContent(idx, newContent);
+        }}
+        onClose={() => {
+          setShowAutocomplete(false);
+          setAutocomplete({ partIndex: null, type: null, query: '' });
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -430,7 +561,7 @@ const styles = StyleSheet.create({
   cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postBtn: {
-    backgroundColor: colors.emerald, borderRadius: 20,
+    backgroundColor: colors.emerald, borderRadius: radius.full,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
     minWidth: 60, alignItems: 'center',
   },
@@ -473,7 +604,7 @@ const styles = StyleSheet.create({
   },
   visPill: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.dark.bgElevated, borderRadius: 20,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.sm, paddingVertical: 3,
   },
   visPillText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
@@ -497,7 +628,7 @@ const styles = StyleSheet.create({
   },
   skeletonList: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  circleIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
+  circleIconWrap: { width: 36, height: 36, borderRadius: radius.full, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
   circleEmoji: { fontSize: 18 },
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },

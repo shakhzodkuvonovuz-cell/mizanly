@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, FlatList }
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, fontSize, radius, avatar as avatarSize } from '@/theme';
+import { Avatar } from '@/components/ui/Avatar';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 
@@ -59,8 +60,16 @@ export default function SuggestedScreen() {
       </View>
 
       {isLoading ? (
-        <View style={styles.loader}>
-          <ActivityIndicator color={colors.emerald} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={52} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={120} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
         </View>
       ) : (
         <FlatList
@@ -71,11 +80,7 @@ export default function SuggestedScreen() {
             const isFollowing = following.has(item.id);
             return (
               <View style={styles.row}>
-                <View style={styles.avatar}>
-                  {item.avatarUrl
-                    ? <Image source={{ uri: item.avatarUrl }} style={styles.avatarImg} contentFit="cover" />
-                    : <Text style={styles.avatarFallback}>{item.displayName[0]?.toUpperCase()}</Text>}
-                </View>
+                <Avatar uri={item.avatarUrl} name={item.displayName} size="lg" />
                 <View style={styles.info}>
                   <Text style={styles.name}>{item.displayName}</Text>
                   <Text style={styles.handle}>@{item.username}</Text>
@@ -121,15 +126,10 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: spacing.xl, marginBottom: spacing.lg },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', marginBottom: spacing.sm },
   subtitle: { color: colors.text.secondary, fontSize: fontSize.base },
-  loader: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  skeletonList: { flex: 1, padding: spacing.base, gap: spacing.md },
+  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   list: { paddingHorizontal: spacing.base },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.md, gap: spacing.md },
-  avatar: {
-    width: avatarSize.lg, height: avatarSize.lg, borderRadius: avatarSize.lg / 2,
-    backgroundColor: colors.dark.surface, alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-  },
-  avatarImg: { width: avatarSize.lg, height: avatarSize.lg, borderRadius: avatarSize.lg / 2 },
-  avatarFallback: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
   info: { flex: 1 },
   name: { color: colors.text.primary, fontWeight: '600', fontSize: fontSize.base },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm },

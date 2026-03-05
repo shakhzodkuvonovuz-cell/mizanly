@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Share, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -30,7 +30,7 @@ interface Props {
   isOwn?: boolean;
 }
 
-export function PostCard({ post, viewerId, isOwn }: Props) {
+export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -144,6 +144,8 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           style={styles.userInfo}
           onPress={() => router.push(`/(screens)/profile/${post.user.username}`)}
           activeOpacity={0.8}
+          accessibilityLabel={`View ${post.user.displayName}'s profile`}
+          accessibilityRole="button"
         >
           <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
           <View>
@@ -158,6 +160,8 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           style={styles.moreBtn}
           hitSlop={8}
           onPress={() => { haptic.light(); setShowMenu(true); }}
+          accessibilityLabel="More options"
+          accessibilityRole="button"
         >
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
         </TouchableOpacity>
@@ -175,7 +179,11 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
-        <Pressable onPress={handleDoubleTap}>
+        <Pressable
+          onPress={handleDoubleTap}
+          accessibilityLabel="Double-tap to like"
+          accessibilityRole="button"
+        >
           <PostMedia
             mediaUrls={post.mediaUrls}
             mediaTypes={post.mediaTypes}
@@ -199,6 +207,7 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           onPress={() => reactMutation.mutate()}
           disabled={!viewerId}
           activeColor={colors.like}
+          accessibilityLabel={localLiked ? 'Unlike post' : 'Like post'}
         />
 
         <ActionButton
@@ -206,6 +215,7 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           count={post.commentsCount > 0 ? post.commentsCount : undefined}
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
           hapticType="light"
+          accessibilityLabel="Comment on post"
         />
 
         <ActionButton
@@ -213,6 +223,7 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           count={post.sharesCount > 0 ? post.sharesCount : undefined}
           onPress={handleShare}
           hapticType="light"
+          accessibilityLabel="Share post"
         />
 
         <View style={styles.spacer} />
@@ -224,6 +235,7 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
           onPress={() => saveMutation.mutate()}
           disabled={!viewerId}
           activeColor={colors.bookmark}
+          accessibilityLabel={localSaved ? 'Remove bookmark' : 'Bookmark post'}
         />
       </View>
 
@@ -254,7 +266,7 @@ export function PostCard({ post, viewerId, isOwn }: Props) {
       </BottomSheet>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   card: {

@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from 'react';
-import { View, StyleSheet, Pressable, Dimensions, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, useWindowDimensions, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -11,8 +11,6 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import { colors, radius, spacing, animation } from '@/theme';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
 interface BottomSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -21,6 +19,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ visible, onClose, children, snapPoint }: BottomSheetProps) {
+  const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const context = useSharedValue({ y: 0 });
@@ -36,7 +35,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint }: BottomShe
     backdropOpacity.value = withTiming(0, { duration: animation.timing.fast });
     translateY.value = withSpring(SCREEN_HEIGHT, animation.spring.responsive);
     setTimeout(onClose, 250);
-  }, [translateY, backdropOpacity, onClose]);
+  }, [translateY, backdropOpacity, onClose, SCREEN_HEIGHT]);
 
   useEffect(() => {
     if (visible) open();
@@ -75,7 +74,12 @@ export function BottomSheet({ visible, onClose, children, snapPoint }: BottomShe
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View style={[styles.backdrop, backdropStyle]}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={close} />
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={close}
+          accessibilityLabel="Close"
+          accessibilityRole="button"
+        />
       </Animated.View>
 
       <GestureDetector gesture={panGesture}>
@@ -112,6 +116,8 @@ export function BottomSheetItem({ label, icon, onPress, destructive, disabled }:
       ]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityLabel={label}
+      accessibilityRole="button"
     >
       {icon}
       <Animated.Text

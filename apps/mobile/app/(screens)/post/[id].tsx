@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
@@ -23,16 +24,21 @@ function CommentRow({
   postId,
   viewerId,
   onReply,
+  onDeleted,
 }: {
   comment: Comment;
   postId: string;
   viewerId?: string;
   onReply: (id: string, username: string) => void;
+  onDeleted: () => void;
 }) {
   const haptic = useHaptic();
-  const [localLiked, setLocalLiked] = useState(false);
+  const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(comment.content);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
+  const isOwn = !!viewerId && comment.user.id === viewerId;
 
   const likeMutation = useMutation({
     mutationFn: () =>
@@ -49,37 +55,93 @@ function CommentRow({
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: () => postsApi.deleteComment(postId, comment.id),
+    onSuccess: onDeleted,
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (content: string) => postsApi.editComment(postId, comment.id, content),
+    onSuccess: () => setEditing(false),
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
+  const handleDelete = () => {
+    Alert.alert('Delete Comment', 'Delete this comment?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
+  };
+
   return (
     <View style={styles.commentRow}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
         <View style={styles.commentBubble}>
           <Text style={styles.commentUser}>{comment.user.displayName}</Text>
-          <Text style={styles.commentText}>{comment.content}</Text>
-        </View>
-        <View style={styles.commentMeta}>
-          <Text style={styles.commentTime}>{timeAgo}</Text>
-          {localLikes > 0 && (
-            <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
+          {editing ? (
+            <TextInput
+              style={[styles.commentText, styles.commentEditInput]}
+              value={editText}
+              onChangeText={setEditText}
+              multiline
+              autoFocus
+              maxLength={500}
+            />
+          ) : (
+            <RichText content={comment.content} />
           )}
-          <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
-            <Text style={styles.commentAction}>Reply</Text>
-          </TouchableOpacity>
         </View>
+        {editing ? (
+          <View style={styles.commentMeta}>
+            <TouchableOpacity onPress={() => setEditing(false)}>
+              <Text style={styles.commentAction}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => editMutation.mutate(editText.trim())}
+              disabled={!editText.trim() || editMutation.isPending}
+            >
+              <Text style={[styles.commentAction, { color: colors.emerald }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.commentMeta}>
+            <Text style={styles.commentTime}>{timeAgo}</Text>
+            {localLikes > 0 && (
+              <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
+            )}
+            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
+              <Text style={styles.commentAction}>Reply</Text>
+            </TouchableOpacity>
+            {isOwn && (
+              <>
+                <TouchableOpacity onPress={() => setEditing(true)}>
+                  <Text style={styles.commentAction}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
+                  <Text style={styles.commentActionDestructive}>Delete</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
       </View>
-      <TouchableOpacity
-        onPress={() => { viewerId && likeMutation.mutate(); haptic.medium(); }}
-        disabled={!viewerId}
-        hitSlop={8}
-        style={styles.commentLike}
-      >
-        <Icon
-          name={localLiked ? 'heart-filled' : 'heart'}
-          size={16}
-          color={localLiked ? colors.like : colors.text.tertiary}
-          fill={localLiked ? colors.like : undefined}
-        />
-      </TouchableOpacity>
+      {!editing && (
+        <TouchableOpacity
+          onPress={() => { viewerId && likeMutation.mutate(); haptic.medium(); }}
+          disabled={!viewerId}
+          hitSlop={8}
+          style={styles.commentLike}
+        >
+          <Icon
+            name={localLiked ? 'heart-filled' : 'heart'}
+            size={16}
+            color={localLiked ? colors.like : colors.text.tertiary}
+            fill={localLiked ? colors.like : undefined}
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
@@ -132,6 +194,39 @@ export default function PostDetailScreen() {
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
+  const listHeader = useMemo(() => (
+    postQuery.data ? (
+      <View>
+        <PostCard post={postQuery.data} viewerId={user?.id} />
+        <View style={styles.commentsHeader}>
+          <Text style={styles.commentsTitle}>
+            {postQuery.data.commentsCount} Comments
+          </Text>
+        </View>
+      </View>
+    ) : postQuery.isLoading ? (
+      <View style={{ padding: spacing.base }}>
+        <Skeleton.PostCard />
+      </View>
+    ) : null
+  ), [postQuery.data, postQuery.isLoading, user?.id]);
+
+  const listEmpty = useMemo(() => (
+    !commentsQuery.isLoading && postQuery.data ? (
+      <EmptyState
+        icon="message-circle"
+        title="No comments yet"
+        subtitle="Be the first to comment!"
+      />
+    ) : null
+  ), [commentsQuery.isLoading, postQuery.data]);
+
+  const listFooter = useMemo(() => (
+    commentsQuery.isFetchingNextPage ? (
+      <Skeleton.Rect width="100%" height={60} />
+    ) : null
+  ), [commentsQuery.isFetchingNextPage]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -164,44 +259,21 @@ export default function PostDetailScreen() {
               tintColor={colors.emerald}
             />
           }
-          ListHeaderComponent={() =>
-            postQuery.data ? (
-              <View>
-                <PostCard post={postQuery.data} viewerId={user?.id} />
-                <View style={styles.commentsHeader}>
-                  <Text style={styles.commentsTitle}>
-                    {postQuery.data.commentsCount} Comments
-                  </Text>
-                </View>
-              </View>
-            ) : postQuery.isLoading ? (
-              <View style={{ padding: spacing.base }}>
-                <Skeleton.PostCard />
-              </View>
-            ) : null
-          }
+          ListHeaderComponent={listHeader}
           renderItem={({ item }) => (
             <CommentRow
               comment={item}
               postId={id}
               viewerId={user?.id}
               onReply={handleReply}
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
+                queryClient.invalidateQueries({ queryKey: ['post', id] });
+              }}
             />
           )}
-          ListEmptyComponent={() =>
-            !commentsQuery.isLoading && postQuery.data ? (
-              <EmptyState
-                icon="message-circle"
-                title="No comments yet"
-                subtitle="Be the first to comment!"
-              />
-            ) : null
-          }
-          ListFooterComponent={() =>
-            commentsQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 100 }}
         />
 
@@ -276,10 +348,12 @@ const styles = StyleSheet.create({
   },
   commentUser: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: 2 },
   commentText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
+  commentEditInput: { borderBottomWidth: 0.5, borderBottomColor: colors.emerald, paddingBottom: 2 },
   commentMeta: { flexDirection: 'row', gap: spacing.md, marginTop: 4, paddingHorizontal: 4 },
   commentTime: { color: colors.text.tertiary, fontSize: fontSize.xs },
   commentLikesLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   commentAction: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '700' },
+  commentActionDestructive: { color: colors.error, fontSize: fontSize.xs, fontWeight: '700' },
   commentLike: { paddingTop: 4 },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,

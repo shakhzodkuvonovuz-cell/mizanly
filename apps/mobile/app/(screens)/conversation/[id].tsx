@@ -13,6 +13,8 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
+import { Audio } from 'expo-av';
+import * as Clipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -22,6 +24,7 @@ import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
@@ -31,6 +34,17 @@ import { io, Socket } from 'socket.io-client';
 const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+// Stable module-level select function — React Query memoizes when reference is stable
+function selectMessagesReversed(data: { pages: Array<{ data: Message[]; meta: { cursor?: string; hasMore: boolean } }>; pageParams: unknown[] }) {
+  return {
+    ...data,
+    pages: [...data.pages].reverse().map((p) => ({
+      ...p,
+      data: [...p.data].reverse(),
+    })),
+  };
+}
 
 function messageTimestamp(dateStr: string): string {
   const d = new Date(dateStr);
@@ -113,10 +127,62 @@ function DateSeparator({ label }: { label: string }) {
   );
 }
 
+function VoicePlayer({ mediaUrl, isOwn }: { mediaUrl: string; isOwn: boolean }) {
+  const [playing, setPlaying] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const toggle = useCallback(async () => {
+    if (playing) {
+      await soundRef.current?.pauseAsync();
+      setPlaying(false);
+    } else {
+      if (soundRef.current) {
+        await soundRef.current.playAsync();
+      } else {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: mediaUrl },
+          { shouldPlay: true },
+        );
+        soundRef.current = sound;
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.isLoaded && status.didJustFinish) {
+            setPlaying(false);
+            soundRef.current = null;
+          }
+        });
+      }
+      setPlaying(true);
+    }
+  }, [playing, mediaUrl]);
+
+  useEffect(() => {
+    return () => { soundRef.current?.unloadAsync(); };
+  }, []);
+
+  return (
+    <Pressable style={styles.voicePlayer} onPress={toggle}>
+      <Icon name={playing ? 'volume-x' : 'play'} size={18} color={isOwn ? '#fff' : colors.emerald} />
+      <View style={styles.voiceWaveform}>
+        {Array.from({ length: 20 }).map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.voiceBar,
+              { height: 4 + Math.sin(i * 0.8) * 8 + Math.random() * 4 },
+              isOwn ? styles.voiceBarOwn : styles.voiceBarOther,
+            ]}
+          />
+        ))}
+      </View>
+    </Pressable>
+  );
+}
+
 function MessageBubble({
-  message, isOwn, isGroupStart, isGroupEnd,
+  message, isOwn, isGroupStart, isGroupEnd, onLongPress,
 }: {
   message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
+  onLongPress: (msg: Message) => void;
 }) {
   const time = messageTimestamp(message.createdAt);
   const AVATAR_SIZE = 28;
@@ -157,10 +223,14 @@ function MessageBubble({
           : <View style={{ width: AVATAR_SIZE }} />
       )}
 
-      <View style={[
-        styles.bubble,
-        isOwn ? [styles.bubbleOwn, ownRadius] : [styles.bubbleOther, otherRadius],
-      ]}>
+      <Pressable
+        onLongPress={() => onLongPress(message)}
+        style={[
+          styles.bubble,
+          isOwn ? [styles.bubbleOwn, ownRadius] : [styles.bubbleOther, otherRadius],
+        ]}
+        delayLongPress={300}
+      >
         {/* Sender name in groups (only on group start for others) */}
         {!isOwn && isGroupStart && (
           <Text style={styles.senderName}>{message.sender.displayName}</Text>
@@ -175,13 +245,19 @@ function MessageBubble({
             </Text>
           </View>
         )}
-        {message.mediaUrl && (
-          <Image source={{ uri: message.mediaUrl }} style={styles.bubbleMedia} contentFit="cover" />
-        )}
-        {message.content && (
-          <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
-            {message.content}
-          </Text>
+        {message.messageType === 'VOICE' && message.mediaUrl ? (
+          <VoicePlayer mediaUrl={message.mediaUrl} isOwn={isOwn} />
+        ) : (
+          <>
+            {message.mediaUrl && (
+              <Image source={{ uri: message.mediaUrl }} style={styles.bubbleMedia} contentFit="cover" />
+            )}
+            {message.content && (
+              <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
+                {message.content}
+              </Text>
+            )}
+          </>
         )}
         <View style={styles.bubbleMeta}>
           {message.editedAt && (
@@ -199,7 +275,7 @@ function MessageBubble({
             ))}
           </View>
         )}
-      </View>
+      </Pressable>
     </View>
   );
 }
@@ -232,6 +308,12 @@ export default function ConversationScreen() {
   const [otherTyping, setOtherTyping] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Voice recording
+  const [isRecording, setIsRecording] = useState(false);
+  const [uploadingVoice, setUploadingVoice] = useState(false);
+  const recordingRef = useRef<Audio.Recording | null>(null);
+  // Context menu
+  const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -256,13 +338,7 @@ export default function ConversationScreen() {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
-    select: (data) => ({
-      ...data,
-      pages: [...data.pages].reverse().map((p) => ({
-        ...p,
-        data: [...p.data].reverse(),
-      })),
-    }),
+    select: selectMessagesReversed,
   });
 
   const messages: Message[] = messagesQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -300,31 +376,22 @@ export default function ConversationScreen() {
       .catch(() => {});
   }, [id, queryClient]);
 
-  const sendMutation = useMutation({
-    mutationFn: () =>
-      messagesApi.sendMessage(id, {
-        content: text.trim(),
-        replyToId: replyTo?.id,
-        messageType: 'TEXT',
-      }),
-    onSuccess: () => {
-      setText('');
-      setReplyTo(null);
-      queryClient.invalidateQueries({ queryKey: ['messages', id] });
-    },
-  });
+  const [isSending, setIsSending] = useState(false);
 
   const handleSend = useCallback(() => {
-    if (!text.trim() || sendMutation.isPending) return;
+    if (!text.trim() || isSending) return;
     haptic.medium();
+    setIsSending(true);
     socketRef.current?.emit('send_message', {
       conversationId: id,
       content: text.trim(),
       replyToId: replyTo?.id,
       messageType: 'TEXT',
     });
-    sendMutation.mutate();
-  }, [text, replyTo, id, sendMutation, haptic]);
+    setText('');
+    setReplyTo(null);
+    setIsSending(false);
+  }, [text, replyTo, id, isSending, haptic]);
 
   const pickAndSendMedia = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -354,6 +421,54 @@ export default function ConversationScreen() {
       setUploadingMedia(false);
     }
   }, [id, replyTo, queryClient, haptic]);
+
+  const handleVoiceStart = useCallback(async () => {
+    const { granted } = await Audio.requestPermissionsAsync();
+    if (!granted) { Alert.alert('Permission needed', 'Microphone access is required.'); return; }
+    await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+    const recording = new Audio.Recording();
+    await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+    await recording.startAsync();
+    recordingRef.current = recording;
+    setIsRecording(true);
+    haptic.medium();
+  }, [haptic]);
+
+  const handleVoiceStop = useCallback(async () => {
+    if (!recordingRef.current) return;
+    setIsRecording(false);
+    const recording = recordingRef.current;
+    recordingRef.current = null;
+    await recording.stopAndUnloadAsync();
+    const uri = recording.getURI();
+    if (!uri) return;
+    setUploadingVoice(true);
+    try {
+      const { uploadUrl, publicUrl } = await uploadApi.getPresignUrl('audio/m4a', 'messages');
+      const blob = await (await fetch(uri)).blob();
+      await fetch(uploadUrl, { method: 'PUT', body: blob, headers: { 'Content-Type': 'audio/m4a' } });
+      socketRef.current?.emit('send_message', {
+        conversationId: id,
+        content: '',
+        messageType: 'VOICE',
+        mediaUrl: publicUrl,
+        mediaType: 'audio',
+        replyToId: replyTo?.id,
+      });
+      setReplyTo(null);
+      haptic.success();
+    } catch {
+      Alert.alert('Error', 'Failed to send voice message.');
+    } finally {
+      setUploadingVoice(false);
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
+    }
+  }, [id, replyTo, haptic]);
+
+  const handleContextMenu = useCallback((msg: Message) => {
+    haptic.medium();
+    setContextMenuMsg(msg);
+  }, [haptic]);
 
   const handleChangeText = (val: string) => {
     setText(val);
@@ -414,6 +529,7 @@ export default function ConversationScreen() {
                   isOwn={item.message.sender.id === user?.id}
                   isGroupStart={item.isGroupStart}
                   isGroupEnd={item.isGroupEnd}
+                  onLongPress={handleContextMenu}
                 />
               );
             }}
@@ -477,20 +593,77 @@ export default function ConversationScreen() {
               <Animated.View style={sendButtonStyle}>
                 <AnimatedPressable
                   onPress={handleSend}
-                  disabled={sendMutation.isPending}
+                  disabled={isSending}
                   style={styles.sendCircle}
                 >
                   <Icon name="send" size="xs" color="#FFF" />
                 </AnimatedPressable>
               </Animated.View>
             ) : (
-              <Pressable hitSlop={8} style={styles.micBtn}>
-                <Icon name="mic" size="sm" color={colors.text.secondary} />
+              <Pressable
+                hitSlop={8}
+                style={[styles.micBtn, isRecording && styles.micBtnRecording]}
+                onPressIn={handleVoiceStart}
+                onPressOut={handleVoiceStop}
+                disabled={uploadingVoice}
+              >
+                <Icon
+                  name="mic"
+                  size="sm"
+                  color={isRecording ? colors.error : uploadingVoice ? colors.text.tertiary : colors.text.secondary}
+                />
               </Pressable>
             )}
           </View>
         </View>
       </KeyboardAvoidingView>
+
+      {/* Message context menu */}
+      <BottomSheet
+        visible={!!contextMenuMsg}
+        onClose={() => setContextMenuMsg(null)}
+      >
+        {contextMenuMsg?.content ? (
+          <BottomSheetItem
+            label="Copy Text"
+            icon={<Icon name="edit" size="sm" color={colors.text.secondary} />}
+            onPress={() => {
+              Clipboard.setStringAsync(contextMenuMsg.content ?? '');
+              setContextMenuMsg(null);
+            }}
+          />
+        ) : null}
+        <BottomSheetItem
+          label="Reply"
+          icon={<Icon name="message-circle" size="sm" color={colors.text.secondary} />}
+          onPress={() => {
+            if (contextMenuMsg) {
+              setReplyTo({
+                id: contextMenuMsg.id,
+                content: contextMenuMsg.content,
+                username: contextMenuMsg.sender.username,
+              });
+              setContextMenuMsg(null);
+              inputRef.current?.focus();
+            }
+          }}
+        />
+        {contextMenuMsg?.sender.id === user?.id && (
+          <BottomSheetItem
+            label="Delete Message"
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
+            destructive
+            onPress={() => {
+              if (contextMenuMsg) {
+                messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                setContextMenuMsg(null);
+              }
+            }}
+          />
+        )}
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -583,13 +756,24 @@ const styles = StyleSheet.create({
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     maxHeight: 120, minHeight: 38,
     backgroundColor: colors.dark.bgElevated,
-    borderRadius: 20, paddingHorizontal: spacing.md,
+    borderRadius: radius.full, paddingHorizontal: spacing.md,
     paddingVertical: Platform.OS === 'ios' ? spacing.sm : 6,
     borderWidth: 0.5, borderColor: colors.dark.border,
   },
   sendCircle: {
-    width: 38, height: 38, borderRadius: 19,
+    width: 38, height: 38, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
   micBtn: { paddingBottom: 8 },
+  micBtnRecording: { opacity: 0.7 },
+  voicePlayer: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingVertical: spacing.xs, minWidth: 140,
+  },
+  voiceWaveform: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 2, height: 24,
+  },
+  voiceBar: { width: 2.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
+  voiceBarOwn: { backgroundColor: 'rgba(255,255,255,0.6)' },
+  voiceBarOther: { backgroundColor: colors.emerald },
 });

@@ -1,4 +1,4 @@
-import { Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, fontSize, fonts } from '@/theme';
 
@@ -12,8 +12,8 @@ interface Props {
 export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
 
-  const segments: { type: 'text' | 'hashtag' | 'mention'; value: string }[] = [];
-  const TOKEN_RE = /(#[\w\u0600-\u06FF]+|@[\w.]+)/g;
+  const segments: { type: 'text' | 'hashtag' | 'mention' | 'url'; value: string }[] = [];
+  const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+)/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -23,7 +23,9 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
       segments.push({ type: 'text', value: text.slice(lastIndex, match.index) });
     }
     const token = match[0];
-    if (token.startsWith('#')) {
+    if (token.startsWith('http')) {
+      segments.push({ type: 'url', value: token });
+    } else if (token.startsWith('#')) {
       segments.push({ type: 'hashtag', value: token.slice(1) });
     } else {
       segments.push({ type: 'mention', value: token.slice(1) });
@@ -38,6 +40,17 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   return (
     <Text style={[styles.base, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
       {segments.map((seg, i) => {
+        if (seg.type === 'url') {
+          return (
+            <Text
+              key={i}
+              style={styles.url}
+              onPress={(e) => { e.stopPropagation?.(); Linking.openURL(seg.value); }}
+            >
+              {seg.value}
+            </Text>
+          );
+        }
         if (seg.type === 'hashtag') {
           return (
             <Text
@@ -85,5 +98,9 @@ const styles = StyleSheet.create({
   mention: {
     color: colors.emerald,
     fontWeight: '600',
+  },
+  url: {
+    color: colors.emerald,
+    textDecorationLine: 'underline',
   },
 });

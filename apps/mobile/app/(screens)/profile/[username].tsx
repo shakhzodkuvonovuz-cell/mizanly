@@ -1,7 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ScrollView, Dimensions, Pressable, Alert,
+  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import Animated, {
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { RichText } from '@/components/ui/RichText';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -86,6 +87,39 @@ function StatItem({ num, label, onPress }: { num: number; label: string; onPress
   );
 }
 
+interface FollowButtonProps {
+  isFollowing: boolean;
+  isPending: boolean;
+  onPress: () => void;
+}
+
+function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
+  const btnScale = useSharedValue(1);
+  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+
+  return (
+    <Animated.View style={btnStyle}>
+      <Pressable
+        style={[styles.followBtn, isFollowing && styles.followingBtn]}
+        onPress={() => {
+          btnScale.value = withSequence(
+            withSpring(0.9, animation.spring.bouncy),
+            withSpring(1, animation.spring.bouncy),
+          );
+          onPress();
+        }}
+        disabled={isPending}
+        accessibilityLabel={isFollowing ? 'Unfollow user' : 'Follow user'}
+        accessibilityRole="button"
+      >
+        <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+          {isFollowing ? 'Following' : 'Follow'}
+        </Text>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function ProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
@@ -95,6 +129,7 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('posts');
   const isOwnProfile = clerkUser?.username === username;
   const [showMenu, setShowMenu] = useState(false);
+  const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
 
   const profileQuery = useQuery({
     queryKey: ['profile', username],
@@ -160,13 +195,35 @@ export default function ProfileScreen() {
 
   const handleReport = () => {
     setShowMenu(false);
+    const sendReport = (reason: string) => {
+      usersApi.report(profile!.id, reason).catch(() => {});
+      Alert.alert('Report sent', 'Thank you for your report.');
+    };
     Alert.alert('Report account', 'Why are you reporting this account?', [
-      { text: 'Spam', onPress: () => {} },
-      { text: 'Impersonation', onPress: () => {} },
-      { text: 'Inappropriate', onPress: () => {} },
+      { text: 'Spam', onPress: () => sendReport('spam') },
+      { text: 'Impersonation', onPress: () => sendReport('impersonation') },
+      { text: 'Inappropriate', onPress: () => sendReport('inappropriate') },
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
+
+  const handleHighlightPress = useCallback(async (albumId: string) => {
+    if (loadingHighlightId || !profile) return;
+    setLoadingHighlightId(albumId);
+    try {
+      const album = await storiesApi.getHighlightById(albumId);
+      if (!album.stories || album.stories.length === 0) return;
+      const group = { user: profile, stories: album.stories, hasUnread: false };
+      router.push({
+        pathname: '/(screens)/story-viewer',
+        params: { groupJson: JSON.stringify(group), startIndex: '0' },
+      });
+    } catch {
+      // silently ignore — album might be empty
+    } finally {
+      setLoadingHighlightId(null);
+    }
+  }, [loadingHighlightId, profile, router]);
 
   const handleEndReached = useCallback(() => {
     if (activeTab === 'posts' && postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) {
@@ -203,33 +260,6 @@ export default function ProfileScreen() {
     );
   }
 
-  // Follow button with spring animation
-  const FollowButton = () => {
-    const btnScale = useSharedValue(1);
-    const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
-
-    return (
-      <Animated.View style={btnStyle}>
-        <Pressable
-          style={[styles.followBtn, isFollowing && styles.followingBtn]}
-          onPress={() => {
-            haptic.medium();
-            btnScale.value = withSequence(
-              withSpring(0.9, animation.spring.bouncy),
-              withSpring(1, animation.spring.bouncy),
-            );
-            followMutation.mutate();
-          }}
-          disabled={followMutation.isPending}
-        >
-          <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-            {isFollowing ? 'Following' : 'Follow'}
-          </Text>
-        </Pressable>
-      </Animated.View>
-    );
-  };
-
   const ListHeader = (
     <View>
       {/* Cover image */}
@@ -251,7 +281,11 @@ export default function ProfileScreen() {
           </Pressable>
         ) : (
           <View style={styles.actionBtns}>
-            <FollowButton />
+            <FollowButton
+              isFollowing={isFollowing}
+              isPending={followMutation.isPending}
+              onPress={() => { haptic.medium(); followMutation.mutate(); }}
+            />
             <Pressable
               style={styles.msgBtn}
               onPress={async () => {
@@ -278,12 +312,18 @@ export default function ProfileScreen() {
           {profile.isVerified && <VerifiedBadge size={18} />}
         </View>
         <Text style={styles.handle}>@{profile.username}</Text>
-        {profile.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+        {profile.bio ? <RichText text={profile.bio} style={styles.bio} /> : null}
         {profile.website ? (
-          <View style={styles.websiteRow}>
+          <TouchableOpacity
+            style={styles.websiteRow}
+            onPress={() => {
+              const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
+              Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
+            }}
+          >
             <Icon name="link" size={13} color={colors.emerald} />
             <Text style={styles.websiteLink}>{profile.website}</Text>
-          </View>
+          </TouchableOpacity>
         ) : null}
       </View>
 
@@ -296,8 +336,14 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingHorizontal: spacing.base, gap: spacing.md }}
         >
           {highlights.map((album) => (
-            <TouchableOpacity key={album.id} style={styles.highlightItem} activeOpacity={0.8}>
-              <View style={styles.highlightCircle}>
+            <TouchableOpacity
+              key={album.id}
+              style={styles.highlightItem}
+              activeOpacity={0.75}
+              onPress={() => handleHighlightPress(album.id)}
+              disabled={loadingHighlightId !== null}
+            >
+              <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
                 {album.coverUrl ? (
                   <Image source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
                 ) : (

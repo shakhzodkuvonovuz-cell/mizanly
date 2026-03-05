@@ -64,7 +64,7 @@ export default function SettingsScreen() {
     queryKey: ['settings'],
     queryFn: () => settingsApi.get(),
   });
-  const s: any = settingsQuery.data ?? {};
+  const s = settingsQuery.data;
 
   // Local state mirrors the fetched settings
   const [isPrivate, setIsPrivate] = useState(false);
@@ -87,23 +87,12 @@ export default function SettingsScreen() {
       setSensitiveContent(s.sensitiveContentFilter ?? false);
       setReducedMotion(s.reducedMotion ?? false);
     }
-  }, [settingsQuery.data]);
+  }, [s]);
 
-  const privacyMutation = useMutation({
-    mutationFn: (data: any) => settingsApi.updatePrivacy(data),
-  });
-
-  const notifMutation = useMutation({
-    mutationFn: (data: any) => settingsApi.updateNotifications(data),
-  });
-
-  const accessibilityMutation = useMutation({
-    mutationFn: (data: any) => settingsApi.updateAccessibility(data),
-  });
-
-  const wellbeingMutation = useMutation({
-    mutationFn: (data: any) => settingsApi.updateWellbeing(data),
-  });
+  const privacyMutation = useMutation({ mutationFn: settingsApi.updatePrivacy });
+  const notifMutation = useMutation({ mutationFn: settingsApi.updateNotifications });
+  const accessibilityMutation = useMutation({ mutationFn: settingsApi.updateAccessibility });
+  const wellbeingMutation = useMutation({ mutationFn: settingsApi.updateWellbeing });
 
   const deactivateMutation = useMutation({
     mutationFn: () => usersApi.deactivate(),
@@ -189,7 +178,7 @@ export default function SettingsScreen() {
           <Row
             label="Blocked Keywords"
             hint="Filter comments with specific words"
-            onPress={() => {}}
+            onPress={() => router.push('/(screens)/blocked-keywords')}
           />
         </View>
 

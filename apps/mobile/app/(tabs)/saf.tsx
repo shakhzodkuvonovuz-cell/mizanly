@@ -1,6 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -38,6 +39,9 @@ export default function SafScreen() {
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
+  const feedRef = useRef<FlashList<Post>>(null);
+  useScrollToTop(feedRef);
+
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
 
@@ -45,7 +49,7 @@ export default function SafScreen() {
     queryKey: ['notifications-count'],
     queryFn: async () => {
       const data = await notificationsApi.getUnreadCount();
-      setUnreadNotifications((data as any).unread ?? 0);
+      setUnreadNotifications(data.unread ?? 0);
       return data;
     },
     refetchInterval: 60_000,
@@ -79,6 +83,61 @@ export default function SafScreen() {
   };
 
   const storyGroups: StoryGroup[] = (storiesQuery.data as StoryGroup[]) ?? [];
+
+  const listHeader = useMemo(() => (
+    <View>
+      <StoryRow
+        groups={storyGroups}
+        onPressGroup={(group) =>
+          router.push({
+            pathname: '/(screens)/story-viewer',
+            params: { groupJson: JSON.stringify(group), startIndex: '0' },
+          })
+        }
+        onPressOwn={() => {
+          const ownGroup = storyGroups.find((g) => g.user.id === user?.id);
+          if (ownGroup && ownGroup.stories.length > 0) {
+            router.push({
+              pathname: '/(screens)/story-viewer',
+              params: { groupJson: JSON.stringify(ownGroup), startIndex: '0', isOwn: 'true' },
+            });
+          } else {
+            router.push('/(screens)/create-story');
+          }
+        }}
+      />
+      <TabSelector
+        tabs={FEED_TABS}
+        activeKey={feedType}
+        onTabChange={(key) => setFeedType(key as 'following' | 'foryou')}
+        variant="pill"
+      />
+    </View>
+  ), [storyGroups, feedType, setFeedType, user?.id, router]);
+
+  const listEmpty = useMemo(() => (
+    feedQuery.isLoading ? (
+      <View>
+        <Skeleton.PostCard />
+        <Skeleton.PostCard />
+        <Skeleton.PostCard />
+      </View>
+    ) : (
+      <EmptyState
+        icon="users"
+        title="No posts yet"
+        subtitle="Follow people to fill your feed"
+      />
+    )
+  ), [feedQuery.isLoading]);
+
+  const listFooter = useMemo(() => (
+    feedQuery.isFetchingNextPage ? (
+      <View style={styles.footer}>
+        <Skeleton.PostCard />
+      </View>
+    ) : null
+  ), [feedQuery.isFetchingNextPage]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -121,6 +180,7 @@ export default function SafScreen() {
       </View>
 
       <FlashList
+        ref={feedRef}
         data={posts}
         keyExtractor={(item) => item.id}
         estimatedItemSize={450}
@@ -131,60 +191,9 @@ export default function SafScreen() {
         renderItem={({ item }) => (
           <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
         )}
-        ListHeaderComponent={() => (
-          <View>
-            {/* Stories */}
-            <StoryRow
-              groups={storyGroups}
-              onPressGroup={(group) =>
-                router.push({
-                  pathname: '/(screens)/story-viewer',
-                  params: { groupJson: JSON.stringify(group), startIndex: '0' },
-                })
-              }
-              onPressOwn={() => {
-                const ownGroup = storyGroups.find((g) => g.user.id === user?.id);
-                if (ownGroup && ownGroup.stories.length > 0) {
-                  router.push({
-                    pathname: '/(screens)/story-viewer',
-                    params: { groupJson: JSON.stringify(ownGroup), startIndex: '0', isOwn: 'true' },
-                  });
-                } else {
-                  router.push('/(screens)/create-story');
-                }
-              }}
-            />
-            {/* Feed type tabs */}
-            <TabSelector
-              tabs={FEED_TABS}
-              activeKey={feedType}
-              onTabChange={(key) => setFeedType(key as any)}
-              variant="pill"
-            />
-          </View>
-        )}
-        ListEmptyComponent={() => (
-          feedQuery.isLoading ? (
-            <View>
-              <Skeleton.PostCard />
-              <Skeleton.PostCard />
-              <Skeleton.PostCard />
-            </View>
-          ) : (
-            <EmptyState
-              icon="users"
-              title="No posts yet"
-              subtitle="Follow people to fill your feed"
-            />
-          )
-        )}
-        ListFooterComponent={() =>
-          feedQuery.isFetchingNextPage ? (
-            <View style={styles.footer}>
-              <Skeleton.PostCard />
-            </View>
-          ) : null
-        }
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
       />
     </SafeAreaView>
   );

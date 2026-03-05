@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   FlatList,
@@ -11,10 +11,20 @@ import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { TabSelector } from '@/components/ui/TabSelector';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
-import type { User } from '@/types';
+import type { User, TrendingHashtag } from '@/types';
+
+const SEARCH_TABS = [
+  { key: 'people', label: 'People' },
+  { key: 'hashtags', label: 'Hashtags' },
+  { key: 'posts', label: 'Posts' },
+  { key: 'threads', label: 'Threads' },
+] as const;
+
+type SearchTab = typeof SEARCH_TABS[number]['key'];
 
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   return (
@@ -42,14 +52,18 @@ export default function SearchScreen() {
   const haptic = useHaptic();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [activeTab, setActiveTab] = useState<SearchTab>('people');
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
-    if (debounceTimer) clearTimeout(debounceTimer);
-    const t = setTimeout(() => setDebouncedQuery(text), 400);
-    setDebounceTimer(t);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(text), 400);
   };
 
   const searchQuery = useQuery({
@@ -66,7 +80,7 @@ export default function SearchScreen() {
 
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
-  const trending = (trendingQuery.data as any[]) ?? [];
+  const trending: TrendingHashtag[] = trendingQuery.data ?? [];
   const isSearching = debouncedQuery.trim().length >= 2;
 
   return (
@@ -99,6 +113,14 @@ export default function SearchScreen() {
         </View>
       </View>
 
+      {isSearching && (
+        <TabSelector
+          tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
+          activeKey={activeTab}
+          onChange={(k) => setActiveTab(k as SearchTab)}
+        />
+      )}
+
       {searchQuery.isLoading ? (
         <View style={styles.skeletonList}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -112,51 +134,62 @@ export default function SearchScreen() {
           ))}
         </View>
       ) : isSearching ? (
-        <FlatList
-          data={[
-            ...people.map((p) => ({ type: 'user' as const, data: p })),
-            ...hashtags.map((h) => ({ type: 'hashtag' as const, data: h })),
-          ]}
-          keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
-          renderItem={({ item }) => {
-            if (item.type === 'user') {
-              return (
-                <UserRow
-                  user={item.data}
-                  onPress={() => router.push(`/(screens)/profile/${item.data.username}`)}
-                />
-              );
-            }
-            return (
-              <Pressable
-                style={styles.hashtagRow}
-                onPress={() => router.push(`/(screens)/hashtag/${item.data.name}`)}
-              >
-                <View style={styles.hashtagIconWrap}>
-                  <Icon name="hash" size="sm" color={colors.emerald} />
-                </View>
-                <View>
-                  <Text style={styles.hashtagName}>#{item.data.name}</Text>
-                  <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
-                </View>
-              </Pressable>
-            );
-          }}
-          ListEmptyComponent={() => (
+        <>
+          {(activeTab === 'posts' || activeTab === 'threads') ? (
             <EmptyState
               icon="search"
-              title={`No results for "${debouncedQuery}"`}
-              subtitle="Try a different search term"
+              title="Full-text search coming soon"
+              subtitle="Search by people and hashtags is available now"
+            />
+          ) : (
+            <FlatList
+              data={
+                activeTab === 'people'
+                  ? people.map((p) => ({ type: 'user' as const, data: p }))
+                  : hashtags.map((h) => ({ type: 'hashtag' as const, data: h }))
+              }
+              keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
+              renderItem={({ item }) => {
+                if (item.type === 'user') {
+                  return (
+                    <UserRow
+                      user={item.data}
+                      onPress={() => router.push(`/(screens)/profile/${item.data.username}`)}
+                    />
+                  );
+                }
+                return (
+                  <Pressable
+                    style={styles.hashtagRow}
+                    onPress={() => router.push(`/(screens)/hashtag/${item.data.name}`)}
+                  >
+                    <View style={styles.hashtagIconWrap}>
+                      <Icon name="hash" size="sm" color={colors.emerald} />
+                    </View>
+                    <View>
+                      <Text style={styles.hashtagName}>#{item.data.name}</Text>
+                      <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
+                    </View>
+                  </Pressable>
+                );
+              }}
+              ListEmptyComponent={() => (
+                <EmptyState
+                  icon="search"
+                  title={`No ${activeTab === 'people' ? 'people' : 'hashtags'} for "${debouncedQuery}"`}
+                  subtitle="Try a different search term"
+                />
+              )}
+              contentContainerStyle={{ paddingBottom: 40 }}
             />
           )}
-          contentContainerStyle={{ paddingBottom: 40 }}
-        />
+        </>
       ) : (
         <View style={styles.discoverSection}>
           <Text style={styles.discoverTitle}>Trending</Text>
           {trending.length > 0 ? (
             <View style={styles.trendingChips}>
-              {trending.map((item: any, i: number) => (
+              {trending.map((item, i) => (
                 <Pressable
                   key={i}
                   style={styles.trendingChip}
@@ -223,7 +256,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   hashtagIconWrap: {
-    width: 40, height: 40, borderRadius: 20,
+    width: 40, height: 40, borderRadius: radius.full,
     backgroundColor: colors.active.emerald10,
     alignItems: 'center', justifyContent: 'center',
   },

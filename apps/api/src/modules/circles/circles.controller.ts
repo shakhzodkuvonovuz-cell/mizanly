@@ -15,13 +15,13 @@ export class CirclesController {
   getMyCircles(@CurrentUser('id') userId: string) { return this.circlesService.getMyCircles(userId); }
 
   @Post()
-  create(@CurrentUser('id') userId: string, @Body('name') name: string, @Body('emoji') emoji?: string, @Body('memberIds') memberIds?: string[]) {
-    return this.circlesService.create(userId, name, emoji, memberIds);
+  create(@CurrentUser('id') userId: string, @Body('name') name: string, @Body('memberIds') memberIds?: string[]) {
+    return this.circlesService.create(userId, name, memberIds);
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('name') name?: string, @Body('emoji') emoji?: string) {
-    return this.circlesService.update(id, userId, name, emoji);
+  update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('name') name?: string) {
+    return this.circlesService.update(id, userId, name);
   }
 
   @Delete(':id')

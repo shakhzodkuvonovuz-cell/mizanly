@@ -15,7 +15,9 @@ import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize } from '@/theme';
+import { Autocomplete } from '@/components/ui/Autocomplete';
+import { LocationPicker } from '@/components/ui/LocationPicker';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -26,6 +28,8 @@ interface PickedMedia {
   width?: number;
   height?: number;
 }
+
+type AutocompleteType = 'hashtag' | 'mention' | null;
 
 type VisIconName = React.ComponentProps<typeof Icon>['name'];
 const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconName }[] = [
@@ -46,6 +50,15 @@ export default function CreatePostScreen() {
   const [circleId, setCircleId] = useState<string | undefined>();
   const [showCirclePicker, setShowCirclePicker] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Autocomplete state
+  const [autocompleteType, setAutocompleteType] = useState<AutocompleteType>(null);
+  const [autocompleteQuery, setAutocompleteQuery] = useState('');
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
+  // Location state
+  const [showLocationPicker, setShowLocationPicker] = useState(false);
+  const [location, setLocation] = useState<{ name: string; latitude?: number; longitude?: number } | null>(null);
 
   const inputRef = useRef<TextInput>(null);
 
@@ -131,6 +144,7 @@ export default function CreatePostScreen() {
         mediaHeight,
         visibility,
         circleId: visibility === 'CIRCLE' ? circleId : undefined,
+        locationName: location?.name,
       });
     },
     onSuccess: () => {
@@ -241,7 +255,38 @@ export default function CreatePostScreen() {
           placeholder="What's on your mind?"
           placeholderTextColor={colors.text.tertiary}
           value={content}
-          onChangeText={setContent}
+          onChangeText={(text) => {
+            setContent(text);
+
+            // Detect if typing a hashtag or mention
+            const cursorPos = text.length;
+            const textBeforeCursor = text.slice(0, cursorPos);
+
+            // Check for hashtag pattern: #word
+            const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
+            if (hashMatch) {
+              setAutocompleteType('hashtag');
+              setShowAutocomplete(true);
+              setAutocompleteQuery(hashMatch[1]);
+              return;
+            }
+
+            // Check for mention pattern: @word
+            const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
+            if (mentionMatch) {
+              setAutocompleteType('mention');
+              setShowAutocomplete(true);
+              setAutocompleteQuery(mentionMatch[1]);
+              return;
+            }
+
+            // If no pattern matched, hide autocomplete
+            if (showAutocomplete) {
+              setShowAutocomplete(false);
+              setAutocompleteType(null);
+              setAutocompleteQuery('');
+            }
+          }}
           multiline
           maxLength={2200}
           autoFocus
@@ -325,19 +370,91 @@ export default function CreatePostScreen() {
         </View>
       )}
 
+      {/* Location display */}
+      {location && (
+        <View style={styles.locationPill}>
+          <Icon name="map-pin" size="xs" color={colors.emerald} />
+          <Text style={styles.locationPillText}>{location.name}</Text>
+          <TouchableOpacity onPress={() => setLocation(null)} hitSlop={8}>
+            <Icon name="x" size="xs" color={colors.text.tertiary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Autocomplete dropdown */}
+      <Autocomplete
+        visible={showAutocomplete}
+        type={autocompleteType || 'hashtag'}
+        query={autocompleteQuery}
+        onSelect={(value) => {
+          // Find cursor position and replace the partial tag
+          const cursorPos = inputRef.current?._lastNativeText?.length ?? content.length;
+          const lastHashIndex = content.lastIndexOf('#', cursorPos - 1);
+          const lastAtIndex = content.lastIndexOf('@', cursorPos - 1);
+
+          let newContent = content;
+          if (autocompleteType === 'hashtag' && lastHashIndex !== -1) {
+            // Replace from # to cursor with the selected hashtag
+            const before = content.slice(0, lastHashIndex);
+            const after = content.slice(cursorPos);
+            newContent = before + value + ' ' + after;
+          } else if (autocompleteType === 'mention' && lastAtIndex !== -1) {
+            // Replace from @ to cursor with the selected mention
+            const before = content.slice(0, lastAtIndex);
+            const after = content.slice(cursorPos);
+            newContent = before + value + ' ' + after;
+          }
+          setContent(newContent);
+        }}
+        onClose={() => {
+          setShowAutocomplete(false);
+          setAutocompleteType(null);
+          setAutocompleteQuery('');
+        }}
+      />
+
+      {/* Location Picker */}
+      <LocationPicker
+        visible={showLocationPicker}
+        onClose={() => setShowLocationPicker(false)}
+        onSelect={(loc) => setLocation(loc)}
+      />
+
       {/* Bottom toolbar */}
       <View style={styles.toolbar}>
         <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
           <Icon name="image" size="md" color={colors.text.secondary} />
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8} style={styles.toolbarBtn}>
-          <Icon name="map-pin" size="md" color={colors.text.secondary} />
+        <TouchableOpacity
+          hitSlop={8}
+          style={[styles.toolbarBtn, location && styles.toolbarBtnActive]}
+          onPress={() => setShowLocationPicker(true)}
+        >
+          <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8} style={styles.toolbarBtn}>
-          <Icon name="hash" size="md" color={colors.text.secondary} />
+        <TouchableOpacity
+          hitSlop={8}
+          style={[styles.toolbarBtn, showAutocomplete && autocompleteType === 'hashtag' && styles.toolbarBtnActive]}
+          onPress={() => {
+            setAutocompleteType('hashtag');
+            setShowAutocomplete(true);
+            setAutocompleteQuery('');
+            inputRef.current?.focus();
+          }}
+        >
+          <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
         </TouchableOpacity>
-        <TouchableOpacity hitSlop={8} style={styles.toolbarBtn}>
-          <Icon name="at-sign" size="md" color={colors.text.secondary} />
+        <TouchableOpacity
+          hitSlop={8}
+          style={[styles.toolbarBtn, showAutocomplete && autocompleteType === 'mention' && styles.toolbarBtnActive]}
+          onPress={() => {
+            setAutocompleteType('mention');
+            setShowAutocomplete(true);
+            setAutocompleteQuery('');
+            inputRef.current?.focus();
+          }}
+        >
+          <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
         </TouchableOpacity>
         <View style={styles.toolbarSpacer} />
         <CharCountRing current={content.length} max={2200} />
@@ -358,7 +475,7 @@ const styles = StyleSheet.create({
   cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postBtn: {
-    backgroundColor: colors.emerald, borderRadius: 20,
+    backgroundColor: colors.emerald, borderRadius: radius.full,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
     minWidth: 70, alignItems: 'center',
   },
@@ -373,7 +490,7 @@ const styles = StyleSheet.create({
   userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
   userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: 4 },
   visibilityPill: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 20,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.sm, paddingVertical: 3,
     alignSelf: 'flex-start',
   },
@@ -439,6 +556,25 @@ const styles = StyleSheet.create({
   },
   toolbarBtn: { padding: spacing.xs },
   toolbarSpacer: { flex: 1 },
+  toolbarBtnActive: { opacity: 1 },
+
+  // Location pill
+  locationPill: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    backgroundColor: colors.active.emerald10,
+    borderRadius: 8,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+    borderWidth: 1, borderColor: colors.emerald,
+  },
+  locationPillText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
 
   // Circle inline pill
   circlePill: {
@@ -456,7 +592,7 @@ const styles = StyleSheet.create({
   },
   skeletonList: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingBottom: spacing.md },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  circleIconWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
+  circleIconWrap: { width: 36, height: 36, borderRadius: radius.full, backgroundColor: colors.active.emerald10, alignItems: 'center', justifyContent: 'center' },
   circleEmoji: { fontSize: 18 },
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },

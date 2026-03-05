@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
   TextInput, FlatList, ActivityIndicator, Alert,
@@ -17,13 +17,16 @@ export default function NewConversationScreen() {
   const router = useRouter();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [debounceTimer, setDebounceTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, []);
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
-    if (debounceTimer) clearTimeout(debounceTimer);
-    const t = setTimeout(() => setDebouncedQuery(text), 350);
-    setDebounceTimer(t);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedQuery(text), 350);
   };
 
   const searchQuery = useQuery({

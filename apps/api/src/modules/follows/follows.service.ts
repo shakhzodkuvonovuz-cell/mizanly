@@ -4,12 +4,14 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class FollowsService {
+  private readonly logger = new Logger(FollowsService.name);
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -69,7 +71,7 @@ export class FollowsService {
       this.notifications.create({
         userId: targetUserId, actorId: currentUserId,
         type: 'FOLLOW_REQUEST', followRequestId: request.id,
-      }).catch(() => {});
+      }).catch((err) => this.logger.error('Failed to create notification', err));
       return { type: 'request', request };
     }
 
@@ -91,7 +93,7 @@ export class FollowsService {
     this.notifications.create({
       userId: targetUserId, actorId: currentUserId,
       type: 'FOLLOW',
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
 
     return { type: 'follow', follow };
   }
@@ -262,7 +264,7 @@ export class FollowsService {
     this.notifications.create({
       userId: request.senderId, actorId: request.receiverId,
       type: 'FOLLOW_REQUEST_ACCEPTED',
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
 
     return { message: 'Follow request accepted' };
   }

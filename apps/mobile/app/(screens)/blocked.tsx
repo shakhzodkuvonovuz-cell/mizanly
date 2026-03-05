@@ -5,9 +5,10 @@ import {
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Image } from 'expo-image';
+import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize } from '@/theme';
 import { blocksApi } from '@/services/api';
 
@@ -63,7 +64,17 @@ export default function BlockedScreen() {
       </View>
 
       {query.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={46} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={120} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={blocked}
@@ -77,13 +88,7 @@ export default function BlockedScreen() {
             const u = item.blocked;
             return (
               <View style={styles.row}>
-                {u.avatarUrl ? (
-                  <Image source={{ uri: u.avatarUrl }} style={styles.avatar} contentFit="cover" />
-                ) : (
-                  <View style={[styles.avatar, styles.avatarFallback]}>
-                    <Text style={styles.avatarLetter}>{u.displayName[0]?.toUpperCase()}</Text>
-                  </View>
-                )}
+                <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
                 <View style={styles.info}>
                   <Text style={styles.name}>{u.displayName}</Text>
                   <Text style={styles.username}>@{u.username}</Text>
@@ -104,7 +109,13 @@ export default function BlockedScreen() {
           }}
           ListFooterComponent={() =>
             query.isFetchingNextPage ? (
-              <ActivityIndicator color={colors.emerald} style={{ paddingVertical: spacing.xl }} />
+              <View style={styles.skeletonRow}>
+                <Skeleton.Circle size={46} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton.Rect width={120} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
+                </View>
+              </View>
             ) : null
           }
           ListEmptyComponent={() => (
@@ -130,17 +141,18 @@ const styles = StyleSheet.create({
   backBtn: { width: 36 },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
-  loader: { marginTop: 60 },
   list: { paddingBottom: 40 },
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+  },
 
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  avatar: { width: 46, height: 46, borderRadius: 23 },
-  avatarFallback: { backgroundColor: colors.dark.surface, alignItems: 'center', justifyContent: 'center' },
-  avatarLetter: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
   info: { flex: 1 },
   name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
   username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },

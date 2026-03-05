@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
@@ -26,6 +27,7 @@ const PUBLIC_USER_FIELDS = {
 
 @Injectable()
 export class UsersService {
+  private readonly logger = new Logger(UsersService.name);
   constructor(private prisma: PrismaService) {}
 
   async getMe(userId: string) {
@@ -113,12 +115,23 @@ export class UsersService {
     return { ...user, isFollowing, followRequestPending };
   }
 
-  async getUserPosts(username: string, cursor?: string, limit = 20) {
+  async getUserPosts(username: string, cursor?: string, viewerId?: string, limit = 20) {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
 
+    const isOwn = viewerId === user.id;
+    const isFollower = !isOwn && !!viewerId && await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: viewerId, followingId: user.id } },
+    }).then(Boolean);
+
+    const visibilityFilter = isOwn
+      ? {}
+      : isFollower
+        ? { visibility: { in: ['PUBLIC', 'FOLLOWERS'] } }
+        : { visibility: 'PUBLIC' };
+
     const posts = await this.prisma.post.findMany({
-      where: { userId: user.id, isRemoved: false, scheduledAt: null },
+      where: { userId: user.id, isRemoved: false, scheduledAt: null, ...visibilityFilter },
       select: {
         id: true,
         content: true,
@@ -145,12 +158,23 @@ export class UsersService {
     };
   }
 
-  async getUserThreads(username: string, cursor?: string, limit = 20) {
+  async getUserThreads(username: string, cursor?: string, viewerId?: string, limit = 20) {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
 
+    const isOwn = viewerId === user.id;
+    const isFollower = !isOwn && !!viewerId && await this.prisma.follow.findUnique({
+      where: { followerId_followingId: { followerId: viewerId, followingId: user.id } },
+    }).then(Boolean);
+
+    const visibilityFilter = isOwn
+      ? {}
+      : isFollower
+        ? { visibility: { in: ['PUBLIC', 'FOLLOWERS'] } }
+        : { visibility: 'PUBLIC' };
+
     const threads = await this.prisma.thread.findMany({
-      where: { userId: user.id, isRemoved: false, isChainHead: true },
+      where: { userId: user.id, isRemoved: false, isChainHead: true, ...visibilityFilter },
       select: {
         id: true,
         content: true,
@@ -417,5 +441,19 @@ export class UsersService {
         hasMore,
       },
     };
+  }
+
+  async report(reporterId: string, reportedUserId: string, reason: string) {
+    if (reporterId === reportedUserId) return { reported: false };
+    const reasonMap: Record<string, string> = {
+      spam: 'SPAM',
+      impersonation: 'HARASSMENT',
+      inappropriate: 'NUDITY',
+    };
+    const mappedReason = (reasonMap[reason] ?? 'SPAM') as any;
+    await this.prisma.report.create({
+      data: { reporterId, reportedUserId, reason: mappedReason },
+    }).catch((err) => this.logger.error('Failed to save report', err));
+    return { reported: true };
   }
 }

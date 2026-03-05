@@ -10,8 +10,11 @@ import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
+import type { ProfileLink } from '@/types';
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -36,7 +39,7 @@ export default function EditProfileScreen() {
     queryKey: ['profile-links'],
     queryFn: () => profileLinksApi.getLinks(),
   });
-  const links: any[] = (linksQuery.data as any[]) ?? [];
+  const links: ProfileLink[] = linksQuery.data ?? [];
 
   const [newLinkTitle, setNewLinkTitle] = useState('');
   const [newLinkUrl, setNewLinkUrl] = useState('');
@@ -64,7 +67,7 @@ export default function EditProfileScreen() {
     if (me) {
       setDisplayName(me.displayName ?? '');
       setBio(me.bio ?? '');
-      setWebsite((me as any).website ?? '');
+      setWebsite(me.website ?? '');
       setIsPrivate(me.isPrivate ?? false);
     }
   }, [me]);
@@ -136,7 +139,7 @@ export default function EditProfileScreen() {
   if (meQuery.isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ActivityIndicator color={colors.emerald} style={{ flex: 1 }} />
+        <Skeleton.ProfileHeader />
       </SafeAreaView>
     );
   }
@@ -223,7 +226,7 @@ export default function EditProfileScreen() {
               maxLength={150}
               textAlignVertical="top"
             />
-            <Text style={styles.charCount}>{bio.length}/150</Text>
+            <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
           </View>
 
           <View style={styles.divider} />
@@ -267,7 +270,10 @@ export default function EditProfileScreen() {
             </View>
 
             {linksQuery.isLoading ? (
-              <ActivityIndicator color={colors.emerald} size="small" style={{ marginTop: spacing.sm }} />
+              <View style={{ gap: 8, marginTop: spacing.sm }}>
+                <Skeleton.Rect width="100%" height={44} />
+                <Skeleton.Rect width="70%" height={44} />
+              </View>
             ) : (
               links.map((link) => (
                 <View key={link.id} style={styles.linkRow}>
@@ -387,9 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
   },
   multiline: { minHeight: 80, lineHeight: 22 },
-  charCount: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'right', marginTop: 4,
-  },
+  charCountWrap: { alignItems: 'flex-end', marginTop: 4 },
   usernameText: { color: colors.text.secondary, fontSize: fontSize.base },
 
   divider: { height: 0.5, backgroundColor: colors.dark.border },

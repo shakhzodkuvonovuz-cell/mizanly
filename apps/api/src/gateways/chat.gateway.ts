@@ -14,7 +14,10 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../config/prisma.service';
 import { MessagesService } from '../modules/messages/messages.service';
 
-@WebSocketGateway({ cors: { origin: '*' }, namespace: '/chat' })
+@WebSocketGateway({
+  cors: { origin: process.env.CORS_ORIGINS?.split(',') ?? [] },
+  namespace: '/chat',
+})
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 

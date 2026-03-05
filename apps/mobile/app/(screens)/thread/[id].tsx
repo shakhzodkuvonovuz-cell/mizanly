@@ -1,7 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
@@ -20,13 +21,53 @@ import type { ThreadReply } from '@/types';
 
 function ReplyRow({
   reply,
+  threadId,
+  viewerId,
   onReply,
+  onDeleted,
 }: {
   reply: ThreadReply;
+  threadId: string;
+  viewerId?: string;
   onReply: (id: string, username: string) => void;
+  onDeleted: () => void;
 }) {
   const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true });
   const hasReplies = (reply._count?.replies ?? 0) > 0;
+  const [liked, setLiked] = useState(reply.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(reply.likesCount);
+
+  const isOwn = !!viewerId && reply.user.id === viewerId;
+
+  const handleLike = useCallback(() => {
+    setLiked((prev) => {
+      const next = !prev;
+      setLikeCount((c) => c + (next ? 1 : -1));
+      if (next) {
+        threadsApi.likeReply(threadId, reply.id).catch(() => {
+          setLiked(false); setLikeCount((c) => c - 1);
+        });
+      } else {
+        threadsApi.unlikeReply(threadId, reply.id).catch(() => {
+          setLiked(true); setLikeCount((c) => c + 1);
+        });
+      }
+      return next;
+    });
+  }, [threadId, reply.id]);
+
+  const deleteMutation = useMutation({
+    mutationFn: () => threadsApi.deleteReply(threadId, reply.id),
+    onSuccess: onDeleted,
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
+  const handleDelete = useCallback(() => {
+    Alert.alert('Delete Reply', 'Delete this reply?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    ]);
+  }, [deleteMutation]);
 
   return (
     <View style={styles.replyRow}>
@@ -43,7 +84,7 @@ function ReplyRow({
           <Text style={styles.replyHandle}>@{reply.user.username}</Text>
           <Text style={styles.replyTime}>{timeAgo}</Text>
         </View>
-        <Text style={styles.replyContent}>{reply.content}</Text>
+        <RichText content={reply.content} />
         {reply.mediaUrls.length > 0 && (
           <Image
             source={{ uri: reply.mediaUrls[0] }}
@@ -61,12 +102,28 @@ function ReplyRow({
               <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.replyAction}>
-            <Icon name="heart" size={16} color={colors.text.secondary} />
-            {reply.likesCount > 0 && (
-              <Text style={styles.replyActionCount}>{reply.likesCount}</Text>
+          <TouchableOpacity style={styles.replyAction} onPress={handleLike}>
+            <Icon
+              name={liked ? 'heart-filled' : 'heart'}
+              size={16}
+              color={liked ? colors.like : colors.text.secondary}
+              fill={liked ? colors.like : undefined}
+            />
+            {likeCount > 0 && (
+              <Text style={[styles.replyActionCount, liked && { color: colors.like }]}>
+                {likeCount}
+              </Text>
             )}
           </TouchableOpacity>
+          {isOwn && (
+            <TouchableOpacity
+              style={styles.replyAction}
+              onPress={handleDelete}
+              disabled={deleteMutation.isPending}
+            >
+              <Icon name="trash" size={16} color={colors.error} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
     </View>
@@ -98,6 +155,11 @@ export default function ThreadDetailScreen() {
 
   const replies: ThreadReply[] = repliesQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
+  const handleRefresh = useCallback(() => {
+    threadQuery.refetch();
+    repliesQuery.refetch();
+  }, [threadQuery, repliesQuery]);
+
   const sendMutation = useMutation({
     mutationFn: () =>
       threadsApi.addReply(id, replyText.trim(), replyTo?.id),
@@ -115,6 +177,35 @@ export default function ThreadDetailScreen() {
   }, []);
 
   const canSend = replyText.trim().length > 0 && !sendMutation.isPending;
+
+  const listHeader = useMemo(() => (
+    threadQuery.data ? (
+      <View>
+        <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
+        <View style={styles.repliesHeader}>
+          <Text style={styles.repliesTitle}>
+            {threadQuery.data.repliesCount} Replies
+          </Text>
+        </View>
+      </View>
+    ) : threadQuery.isLoading ? (
+      <View style={{ padding: spacing.base }}>
+        <Skeleton.ThreadCard />
+      </View>
+    ) : null
+  ), [threadQuery.data, threadQuery.isLoading, user?.id]);
+
+  const listEmpty = useMemo(() => (
+    !repliesQuery.isLoading && threadQuery.data ? (
+      <EmptyState icon="message-circle" title="No replies yet" subtitle="Be the first to reply" />
+    ) : null
+  ), [repliesQuery.isLoading, threadQuery.data]);
+
+  const listFooter = useMemo(() => (
+    repliesQuery.isFetchingNextPage ? (
+      <Skeleton.Rect width="100%" height={60} />
+    ) : null
+  ), [repliesQuery.isFetchingNextPage]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -140,35 +231,28 @@ export default function ThreadDetailScreen() {
             }
           }}
           onEndReachedThreshold={0.4}
-          ListHeaderComponent={() =>
-            threadQuery.data ? (
-              <View>
-                <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
-                <View style={styles.repliesHeader}>
-                  <Text style={styles.repliesTitle}>
-                    {threadQuery.data.repliesCount} Replies
-                  </Text>
-                </View>
-              </View>
-            ) : threadQuery.isLoading ? (
-              <View style={{ padding: spacing.base }}>
-                <Skeleton.ThreadCard />
-              </View>
-            ) : null
+          ListHeaderComponent={listHeader}
+          refreshControl={
+            <RefreshControl
+              refreshing={threadQuery.isRefetching || repliesQuery.isRefetching}
+              onRefresh={handleRefresh}
+              tintColor={colors.emerald}
+            />
           }
           renderItem={({ item }) => (
-            <ReplyRow reply={item} onReply={handleReply} />
+            <ReplyRow
+              reply={item}
+              threadId={id}
+              viewerId={user?.id}
+              onReply={handleReply}
+              onDeleted={() => {
+                queryClient.invalidateQueries({ queryKey: ['thread-replies', id] });
+                queryClient.invalidateQueries({ queryKey: ['thread', id] });
+              }}
+            />
           )}
-          ListEmptyComponent={() =>
-            !repliesQuery.isLoading && threadQuery.data ? (
-              <EmptyState icon="message-circle" title="No replies yet" subtitle="Be the first to reply" />
-            ) : null
-          }
-          ListFooterComponent={() =>
-            repliesQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
           contentContainerStyle={{ paddingBottom: 100 }}
         />
 

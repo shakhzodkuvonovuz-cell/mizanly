@@ -1,6 +1,17 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+    .slice(0, 50)
+    + '-' + Math.random().toString(36).slice(2, 7);
+}
+
 @Injectable()
 export class CirclesService {
   constructor(private prisma: PrismaService) {}
@@ -13,21 +24,30 @@ export class CirclesService {
     });
   }
 
-  async create(userId: string, name: string, emoji?: string, memberIds?: string[]) {
+  async create(userId: string, name: string, memberIds?: string[]) {
+    const slug = generateSlug(name);
+    const extraMemberIds = (memberIds ?? []).filter(id => id !== userId);
     return this.prisma.circle.create({
       data: {
-        ownerId: userId, name, emoji,
-        members: memberIds?.length ? { create: memberIds.map(id => ({ userId: id })) } : undefined,
+        ownerId: userId,
+        name,
+        slug,
+        members: {
+          create: [
+            { userId },
+            ...extraMemberIds.map(id => ({ userId: id })),
+          ],
+        },
       },
       include: { _count: { select: { members: true } } },
     });
   }
 
-  async update(circleId: string, userId: string, name?: string, emoji?: string) {
+  async update(circleId: string, userId: string, name?: string) {
     const circle = await this.prisma.circle.findUnique({ where: { id: circleId } });
     if (!circle) throw new NotFoundException();
     if (circle.ownerId !== userId) throw new ForbiddenException();
-    return this.prisma.circle.update({ where: { id: circleId }, data: { ...(name && { name }), ...(emoji && { emoji }) } });
+    return this.prisma.circle.update({ where: { id: circleId }, data: { ...(name && { name }) } });
   }
 
   async delete(circleId: string, userId: string) {

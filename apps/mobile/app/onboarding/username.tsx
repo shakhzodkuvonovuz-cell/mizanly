@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 
@@ -56,7 +57,7 @@ export default function UsernameScreen() {
     if (username.length < 3) return null;
     if (!USERNAME_RE.test(username)) return { text: 'Only letters, numbers, _ and .', color: colors.error };
     if (checking) return { text: 'Checking…', color: colors.text.secondary };
-    if (available === true) return { text: `@${username} is available ✓`, color: colors.success };
+    if (available === true) return { text: `@${username} is available`, color: colors.success };
     if (available === false) return { text: 'Username taken', color: colors.error };
     return null;
   };
@@ -91,7 +92,10 @@ export default function UsernameScreen() {
         </View>
 
         {status && (
-          <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
+          <View style={styles.statusRow}>
+            <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
+            {available === true && <Icon name="check" size="xs" color={colors.success} />}
+          </View>
         )}
 
         <TouchableOpacity
@@ -127,7 +131,8 @@ const styles = StyleSheet.create({
   },
   at: { color: colors.text.secondary, fontSize: fontSize.base },
   input: { flex: 1, paddingVertical: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
-  status: { fontSize: fontSize.sm, marginTop: spacing.sm },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
+  status: { fontSize: fontSize.sm },
   btn: {
     backgroundColor: colors.emerald,
     borderRadius: radius.md,

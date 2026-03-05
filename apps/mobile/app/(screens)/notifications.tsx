@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -170,16 +171,25 @@ function NotificationRow({ notification }: { notification: Notification }) {
   );
 }
 
+type NotifFilter = 'all' | 'mentions' | 'verified';
+
+const NOTIF_TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'mentions', label: 'Mentions' },
+  { key: 'verified', label: 'Verified' },
+];
+
 export default function NotificationsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
   const setUnread = useStore((s) => s.setUnreadNotifications);
+  const [filter, setFilter] = useState<NotifFilter>('all');
 
   const query = useInfiniteQuery({
-    queryKey: ['notifications'],
+    queryKey: ['notifications', filter],
     queryFn: ({ pageParam }) =>
-      notificationsApi.get(undefined, pageParam as string | undefined),
+      notificationsApi.get(filter === 'all' ? undefined : filter, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
@@ -216,6 +226,12 @@ export default function NotificationsScreen() {
           <Text style={styles.markAllText}>Mark all read</Text>
         </Pressable>
       </View>
+
+      <TabSelector
+        tabs={NOTIF_TABS}
+        activeKey={filter}
+        onTabChange={(key) => setFilter(key as NotifFilter)}
+      />
 
       <FlatList
         data={notifications}

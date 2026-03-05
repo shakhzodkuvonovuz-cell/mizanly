@@ -26,7 +26,7 @@ export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
       createdAt: '',
     },
     stories: apiOwnGroup?.stories ?? [],
-    hasUnread: (apiOwnGroup?.stories.length ?? 0) > 0,
+    hasUnread: false, // Own story never shows unread ring
   };
 
   const items = [ownGroup, ...groups.filter((g) => g.user.id !== user?.id)];

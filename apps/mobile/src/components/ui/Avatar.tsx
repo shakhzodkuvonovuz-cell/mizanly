@@ -19,6 +19,7 @@ interface AvatarProps {
   showOnline?: boolean;
   showStoryRing?: boolean;
   onPress?: () => void;
+  accessibilityLabel?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -32,6 +33,7 @@ export function Avatar({
   showOnline,
   showStoryRing,
   onPress,
+  accessibilityLabel,
 }: AvatarProps) {
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
@@ -165,6 +167,8 @@ export function Avatar({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        accessibilityLabel={accessibilityLabel ?? (name ? `${name}'s avatar` : 'Avatar')}
+        accessibilityRole="button"
       >
         {content}
       </AnimatedPressable>

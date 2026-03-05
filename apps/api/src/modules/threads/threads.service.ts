@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -83,6 +84,7 @@ const REPLY_SELECT = {
 
 @Injectable()
 export class ThreadsService {
+  private readonly logger = new Logger(ThreadsService.name);
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
@@ -94,16 +96,27 @@ export class ThreadsService {
     cursor?: string,
     limit = 20,
   ) {
-    let where: any = { isRemoved: false, isChainHead: true };
+    const [follows, blocks, mutes] = await Promise.all([
+      type === 'following'
+        ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
+        : Promise.resolve([]),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+    ]);
+
+    const followingIds = follows.map((f) => f.followingId);
+    const excludedIds = [
+      ...blocks.map((b) => b.blockedId),
+      ...mutes.map((m) => m.mutedId),
+    ];
+
+    const where: any = { isRemoved: false, isChainHead: true };
 
     if (type === 'following') {
-      const follows = await this.prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
-      where.userId = { in: [userId, ...follows.map((f) => f.followingId)] };
+      where.userId = { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) };
     } else {
       where.visibility = 'PUBLIC';
+      if (excludedIds.length) where.userId = { notIn: excludedIds };
     }
 
     const threads = await this.prisma.thread.findMany({
@@ -126,37 +139,59 @@ export class ThreadsService {
   }
 
   async create(userId: string, dto: CreateThreadDto) {
-    return this.prisma.thread.create({
-      data: {
-        userId,
-        content: dto.content,
-        visibility: (dto.visibility as any) ?? 'PUBLIC',
-        circleId: dto.circleId,
-        mediaUrls: dto.mediaUrls ?? [],
-        mediaTypes: dto.mediaTypes ?? [],
-        hashtags: dto.hashtags ?? [],
-        mentions: dto.mentions ?? [],
-        isQuotePost: dto.isQuotePost ?? false,
-        quoteText: dto.quoteText,
-        repostOfId: dto.repostOfId,
-        poll: dto.poll
-          ? {
-              create: {
-                question: dto.poll.question,
-                endsAt: dto.poll.endsAt ? new Date(dto.poll.endsAt) : undefined,
-                allowMultiple: dto.poll.allowMultiple ?? false,
-                options: {
-                  create: dto.poll.options.map((o, i) => ({
-                    text: o.text,
-                    position: i,
-                  })),
+    // Parse and upsert hashtags
+    const hashtagMatches = (dto.content ?? '').match(/#([a-zA-Z0-9_\u0600-\u06FF]+)/g) ?? [];
+    const hashtagNames = [...new Set(hashtagMatches.map((h) => h.slice(1).toLowerCase()))];
+    if (hashtagNames.length > 0) {
+      await Promise.all(
+        hashtagNames.map((name) =>
+          this.prisma.hashtag.upsert({
+            where: { name },
+            create: { name, threadsCount: 1 },
+            update: { threadsCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
+
+    const [thread] = await this.prisma.$transaction([
+      this.prisma.thread.create({
+        data: {
+          userId,
+          content: dto.content,
+          visibility: (dto.visibility as any) ?? 'PUBLIC',
+          circleId: dto.circleId,
+          mediaUrls: dto.mediaUrls ?? [],
+          mediaTypes: dto.mediaTypes ?? [],
+          hashtags: dto.hashtags ?? [],
+          mentions: dto.mentions ?? [],
+          isQuotePost: dto.isQuotePost ?? false,
+          quoteText: dto.quoteText,
+          repostOfId: dto.repostOfId,
+          poll: dto.poll
+            ? {
+                create: {
+                  question: dto.poll.question,
+                  endsAt: dto.poll.endsAt ? new Date(dto.poll.endsAt) : undefined,
+                  allowMultiple: dto.poll.allowMultiple ?? false,
+                  options: {
+                    create: dto.poll.options.map((o, i) => ({
+                      text: o.text,
+                      position: i,
+                    })),
+                  },
                 },
-              },
-            }
-          : undefined,
-      },
-      select: THREAD_SELECT,
-    });
+              }
+            : undefined,
+        },
+        select: THREAD_SELECT,
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { threadsCount: { increment: 1 } },
+      }),
+    ]);
+    return thread;
   }
 
   async getById(threadId: string, viewerId?: string) {
@@ -190,10 +225,16 @@ export class ThreadsService {
     if (!thread) throw new NotFoundException('Thread not found');
     if (thread.userId !== userId) throw new ForbiddenException();
 
-    await this.prisma.thread.update({
-      where: { id: threadId },
-      data: { isRemoved: true },
-    });
+    await this.prisma.$transaction([
+      this.prisma.thread.update({
+        where: { id: threadId },
+        data: { isRemoved: true },
+      }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { threadsCount: { decrement: 1 } },
+      }),
+    ]);
     return { deleted: true };
   }
 
@@ -219,7 +260,7 @@ export class ThreadsService {
     this.notifications.create({
       userId: thread.userId, actorId: userId,
       type: 'LIKE', threadId,
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
     return { liked: true };
   }
 
@@ -272,7 +313,7 @@ export class ThreadsService {
     this.notifications.create({
       userId: original.userId, actorId: userId,
       type: 'REPOST', threadId,
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
     return repost;
   }
 
@@ -331,7 +372,7 @@ export class ThreadsService {
     return { bookmarked: false };
   }
 
-  async getReplies(threadId: string, cursor?: string, limit = 20) {
+  async getReplies(threadId: string, cursor?: string, limit = 20, viewerId?: string) {
     const replies = await this.prisma.threadReply.findMany({
       where: { threadId, parentId: null },
       select: REPLY_SELECT,
@@ -342,10 +383,62 @@ export class ThreadsService {
 
     const hasMore = replies.length > limit;
     const items = hasMore ? replies.slice(0, limit) : replies;
+
+    // Attach isLiked for authenticated viewer
+    if (viewerId && items.length > 0) {
+      const replyIds = items.map((r) => r.id);
+      const liked = await this.prisma.threadReplyLike.findMany({
+        where: { userId: viewerId, replyId: { in: replyIds } },
+        select: { replyId: true },
+      });
+      const likedSet = new Set(liked.map((l) => l.replyId));
+      return {
+        data: items.map((r) => ({ ...r, isLiked: likedSet.has(r.id) })),
+        meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+      };
+    }
+
     return {
-      data: items,
+      data: items.map((r) => ({ ...r, isLiked: false })),
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
+  }
+
+  async likeReply(threadId: string, replyId: string, userId: string) {
+    const reply = await this.prisma.threadReply.findUnique({ where: { id: replyId } });
+    if (!reply || reply.threadId !== threadId) throw new NotFoundException('Reply not found');
+
+    const existing = await this.prisma.threadReplyLike.findUnique({
+      where: { userId_replyId: { userId, replyId } },
+    });
+    if (existing) throw new ConflictException('Already liked');
+
+    await this.prisma.$transaction([
+      this.prisma.threadReplyLike.create({ data: { userId, replyId } }),
+      this.prisma.threadReply.update({
+        where: { id: replyId },
+        data: { likesCount: { increment: 1 } },
+      }),
+    ]);
+    return { liked: true };
+  }
+
+  async unlikeReply(threadId: string, replyId: string, userId: string) {
+    const existing = await this.prisma.threadReplyLike.findUnique({
+      where: { userId_replyId: { userId, replyId } },
+    });
+    if (!existing) throw new NotFoundException('Like not found');
+
+    await this.prisma.$transaction([
+      this.prisma.threadReplyLike.delete({
+        where: { userId_replyId: { userId, replyId } },
+      }),
+      this.prisma.threadReply.update({
+        where: { id: replyId },
+        data: { likesCount: { decrement: 1 } },
+      }),
+    ]);
+    return { liked: false };
   }
 
   async addReply(threadId: string, userId: string, content: string, parentId?: string) {
@@ -372,7 +465,7 @@ export class ThreadsService {
       userId: thread.userId, actorId: userId,
       type: 'THREAD_REPLY', threadId,
       body: content.substring(0, 100),
-    }).catch(() => {});
+    }).catch((err) => this.logger.error('Failed to create notification', err));
     return reply;
   }
 
@@ -406,6 +499,14 @@ export class ThreadsService {
       where: { userId_optionId: { userId, optionId } },
     });
     if (existing) throw new ConflictException('Already voted');
+
+    // If allowMultiple is false, check if user has already voted on any option in this poll
+    if (!option.poll.allowMultiple) {
+      const existingVoteOnPoll = await this.prisma.pollVote.findFirst({
+        where: { userId, option: { pollId: option.pollId } },
+      });
+      if (existingVoteOnPoll) throw new ConflictException('Already voted on this poll');
+    }
 
     await this.prisma.$transaction([
       this.prisma.pollVote.create({ data: { userId, optionId } }),

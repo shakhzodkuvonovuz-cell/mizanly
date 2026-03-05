@@ -1,9 +1,16 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { DevicesService } from '../devices/devices.service';
+
+const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+  constructor(
+    private prisma: PrismaService,
+    private devices: DevicesService,
+  ) {}
 
   async getNotifications(
     userId: string,
@@ -99,7 +106,7 @@ export class NotificationsService {
     body?: string;
   }) {
     if (params.userId === params.actorId) return null; // No self-notifications
-    return this.prisma.notification.create({
+    const notification = await this.prisma.notification.create({
       data: {
         userId: params.userId,
         actorId: params.actorId,
@@ -114,5 +121,26 @@ export class NotificationsService {
         body: params.body,
       },
     });
+
+    // Send push notification if title/body provided
+    if (params.title || params.body) {
+      this.devices.getActiveTokensForUser(params.userId).then((tokens) => {
+        if (!tokens.length) return;
+        return fetch(EXPO_PUSH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            tokens.map((to) => ({
+              to,
+              title: params.title,
+              body: params.body,
+              data: { notificationId: notification.id, type: params.type },
+            })),
+          ),
+        });
+      }).catch((err) => this.logger.error('Failed to send push notification', err));
+    }
+
+    return notification;
   }
 }
