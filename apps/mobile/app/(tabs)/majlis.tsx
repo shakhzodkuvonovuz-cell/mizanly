@@ -106,7 +106,7 @@ export default function MajlisScreen() {
       <TabSelector
         tabs={TABS}
         activeKey={feedType}
-        onTabChange={(key) => setFeedType(key as any)}
+        onTabChange={(key) => setFeedType(key as 'foryou' | 'following' | 'trending')}
       />
 
       <FlashList

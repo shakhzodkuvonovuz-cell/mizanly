@@ -198,16 +198,16 @@ function MessageBubble({
 
   // Corner radius system (WhatsApp style)
   const ownRadius = {
-    borderTopLeftRadius: 20,
+    borderTopLeftRadius: radius.lg,
     borderTopRightRadius: isGroupStart ? 20 : 4,
-    borderBottomLeftRadius: 20,
+    borderBottomLeftRadius: radius.lg,
     borderBottomRightRadius: isGroupEnd ? 4 : 20,
   };
   const otherRadius = {
     borderTopLeftRadius: isGroupStart ? 20 : 4,
-    borderTopRightRadius: 20,
+    borderTopRightRadius: radius.lg,
     borderBottomLeftRadius: isGroupEnd ? 4 : 20,
-    borderBottomRightRadius: 20,
+    borderBottomRightRadius: radius.lg,
   };
 
   return (

@@ -584,13 +584,13 @@ const styles = StyleSheet.create({
   },
   mediaRow: { marginTop: spacing.xs },
   thumb: {
-    width: 80, height: 80, borderRadius: 8, overflow: 'hidden',
+    width: 80, height: 80, borderRadius: radius.sm, overflow: 'hidden',
     backgroundColor: colors.dark.bgElevated,
   },
   thumbImg: { width: '100%', height: '100%' },
   removeThumb: {
     position: 'absolute', top: 3, right: 3,
-    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.sm,
     width: 18, height: 18, alignItems: 'center', justifyContent: 'center',
   },
   partToolbar: {
@@ -609,7 +609,7 @@ const styles = StyleSheet.create({
   },
   visPillText: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   visMenu: {
-    backgroundColor: colors.dark.bgSheet, borderRadius: 12,
+    backgroundColor: colors.dark.bgSheet, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.dark.border,
     marginHorizontal: spacing.base, marginBottom: spacing.sm, overflow: 'hidden',
   },
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
   // Poll form
   pollForm: {
     marginHorizontal: spacing.base, marginBottom: spacing.md,
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 12,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.md,
     padding: spacing.md, backgroundColor: colors.dark.bgElevated,
   },
   pollFormHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
@@ -651,7 +651,7 @@ const styles = StyleSheet.create({
   pollOptionRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.xs },
   pollOptionInput: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.sm,
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: 8,
+    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
   },
   pollAddOption: { paddingVertical: spacing.sm },

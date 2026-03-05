@@ -498,7 +498,7 @@ const styles = StyleSheet.create({
 
   // Visibility dropdown
   visibilityMenu: {
-    backgroundColor: colors.dark.bgSheet, borderRadius: 12,
+    backgroundColor: colors.dark.bgSheet, borderRadius: radius.md,
     borderWidth: 1, borderColor: colors.dark.border,
     marginBottom: spacing.md, overflow: 'hidden',
   },
@@ -518,22 +518,22 @@ const styles = StyleSheet.create({
   // Media
   mediaRow: { marginTop: spacing.md },
   mediaThumbnail: {
-    width: 100, height: 100, borderRadius: 10, overflow: 'hidden',
+    width: 100, height: 100, borderRadius: radius.md, overflow: 'hidden',
     backgroundColor: colors.dark.bgElevated,
   },
   mediaImage: { width: '100%', height: '100%' },
   videoBadge: {
     position: 'absolute', bottom: 6, left: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md,
     paddingHorizontal: 6, paddingVertical: 2,
   },
   removeMedia: {
     position: 'absolute', top: 4, right: 4,
-    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.md,
     width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
   },
   addMoreMedia: {
-    width: 100, height: 100, borderRadius: 10,
+    width: 100, height: 100, borderRadius: radius.md,
     borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.dark.border,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
   locationPill: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
     backgroundColor: colors.active.emerald10,
-    borderRadius: 8,
+    borderRadius: radius.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     marginHorizontal: spacing.base,
@@ -579,7 +579,7 @@ const styles = StyleSheet.create({
   // Circle inline pill
   circlePill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(10,123,79,0.1)', borderRadius: 10,
+    backgroundColor: 'rgba(10,123,79,0.1)', borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginBottom: spacing.md, borderWidth: 1, borderColor: colors.emerald,
   },

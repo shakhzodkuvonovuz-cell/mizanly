@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
 
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },
   replyPlaceholder: {
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: radius.lg,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -384,7 +384,7 @@ const styles = StyleSheet.create({
 
   replyRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: 24,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: radius.lg,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
     marginBottom: spacing.md,
   },

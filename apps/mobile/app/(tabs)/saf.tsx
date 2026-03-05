@@ -82,7 +82,7 @@ export default function SafScreen() {
     }
   };
 
-  const storyGroups: StoryGroup[] = (storiesQuery.data as StoryGroup[]) ?? [];
+  const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
 
   const listHeader = useMemo(() => (
     <View>

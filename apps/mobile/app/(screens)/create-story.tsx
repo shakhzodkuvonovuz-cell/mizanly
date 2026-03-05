@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
 
   previewArea: {
     flex: 1, backgroundColor: colors.dark.bgElevated, position: 'relative',
-    margin: spacing.base, borderRadius: 16, overflow: 'hidden',
+    margin: spacing.base, borderRadius: radius.lg, overflow: 'hidden',
   },
   preview: { ...StyleSheet.absoluteFillObject },
   pickPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
