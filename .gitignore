@@ -42,3 +42,6 @@ apps/mobile/android/
 
 # Misc
 *.tsbuildinfo
+
+.worktrees/
+*backup*
