@@ -266,8 +266,12 @@ export const messagesApi = {
     api.post<Message>(`/messages/conversations/${id}/messages`, data),
   deleteMessage: (convId: string, messageId: string) =>
     api.delete(`/messages/conversations/${convId}/messages/${messageId}`),
+  editMessage: (convId: string, messageId: string, content: string) =>
+    api.patch(`/messages/conversations/${convId}/messages/${messageId}`, { content }),
   reactToMessage: (convId: string, messageId: string, emoji: string) =>
     api.post(`/messages/conversations/${convId}/messages/${messageId}/react`, { emoji }),
+  removeReaction: (convId: string, messageId: string, emoji: string) =>
+    api.delete(`/messages/conversations/${convId}/messages/${messageId}/react`, { emoji }),
   markRead: (id: string) => api.post(`/messages/conversations/${id}/read`),
   mute: (id: string, muted: boolean) =>
     api.post(`/messages/conversations/${id}/mute`, { muted }),

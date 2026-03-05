@@ -314,6 +314,7 @@ export default function ConversationScreen() {
   const recordingRef = useRef<Audio.Recording | null>(null);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
+  const [showReactionPicker, setShowReactionPicker] = useState(false);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -470,6 +471,18 @@ export default function ConversationScreen() {
     setContextMenuMsg(msg);
   }, [haptic]);
 
+  const isMessageEditable = useCallback((msg: Message): boolean => {
+    if (msg.sender.id !== user?.id) return false;
+    const ageMinutes = differenceInMinutes(new Date(), new Date(msg.createdAt));
+    return ageMinutes < 15;
+  }, [user?.id]);
+
+  const isMessageDeletableForEveryone = useCallback((msg: Message): boolean => {
+    if (msg.sender.id !== user?.id) return false;
+    const ageMinutes = differenceInMinutes(new Date(), new Date(msg.createdAt));
+    return ageMinutes < 15;
+  }, [user?.id]);
+
   const handleChangeText = (val: string) => {
     setText(val);
     if (!isTyping) {
@@ -620,8 +633,11 @@ export default function ConversationScreen() {
 
       {/* Message context menu */}
       <BottomSheet
-        visible={!!contextMenuMsg}
-        onClose={() => setContextMenuMsg(null)}
+        visible={!!contextMenuMsg && !showReactionPicker}
+        onClose={() => {
+          setContextMenuMsg(null);
+          setShowReactionPicker(false);
+        }}
       >
         {contextMenuMsg?.content ? (
           <BottomSheetItem
@@ -648,21 +664,103 @@ export default function ConversationScreen() {
             }
           }}
         />
+        <BottomSheetItem
+          label="Forward"
+          icon={<Icon name="repeat" size="sm" color={colors.text.secondary} />}
+          onPress={() => {
+            // TODO: Implement forward picker
+            Alert.alert('Coming Soon', 'Forward feature will be available soon.');
+            setContextMenuMsg(null);
+          }}
+        />
+        <BottomSheetItem
+          label="React"
+          icon={<Icon name="smile" size="sm" color={colors.text.secondary} />}
+          onPress={() => {
+            setShowReactionPicker(true);
+          }}
+        />
         {contextMenuMsg?.sender.id === user?.id && (
-          <BottomSheetItem
-            label="Delete Message"
-            icon={<Icon name="trash" size="sm" color={colors.error} />}
-            destructive
-            onPress={() => {
-              if (contextMenuMsg) {
-                messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
-                  queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                }).catch(() => Alert.alert('Error', 'Could not delete message.'));
-                setContextMenuMsg(null);
-              }
-            }}
-          />
+          <>
+            {isMessageEditable(contextMenuMsg) && (
+              <BottomSheetItem
+                label="Edit"
+                icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
+                onPress={() => {
+                  if (contextMenuMsg) {
+                    // TODO: Implement inline edit mode
+                    Alert.alert('Coming Soon', 'Edit feature will be available soon.');
+                    setContextMenuMsg(null);
+                  }
+                }}
+              />
+            )}
+            {isMessageDeletableForEveryone(contextMenuMsg) ? (
+              <BottomSheetItem
+                label="Delete for Everyone"
+                icon={<Icon name="trash" size="sm" color={colors.error} />}
+                destructive
+                onPress={() => {
+                  if (contextMenuMsg) {
+                    messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                    }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                    setContextMenuMsg(null);
+                  }
+                }}
+              />
+            ) : (
+              <BottomSheetItem
+                label="Delete"
+                icon={<Icon name="trash" size="sm" color={colors.error} />}
+                destructive
+                onPress={() => {
+                  if (contextMenuMsg) {
+                    messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                    }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                    setContextMenuMsg(null);
+                  }
+                }}
+              />
+            )}
+          </>
         )}
+      </BottomSheet>
+
+      {/* Reaction picker */}
+      <BottomSheet
+        visible={!!contextMenuMsg && showReactionPicker}
+        onClose={() => {
+          setShowReactionPicker(false);
+          setContextMenuMsg(null);
+        }}
+        snapPoint={180}
+      >
+        <View style={styles.reactionPicker}>
+          <Text style={styles.reactionPickerTitle}>React with</Text>
+          <View style={styles.reactionGrid}>
+            {['❤️', '👍', '😂', '😮', '😢', '🤲'].map((emoji) => (
+              <Pressable
+                key={emoji}
+                style={styles.reactionButton}
+                onPress={() => {
+                  if (contextMenuMsg) {
+                    messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)
+                      .then(() => {
+                        queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                      })
+                      .catch(() => Alert.alert('Error', 'Could not add reaction.'));
+                  }
+                  setShowReactionPicker(false);
+                  setContextMenuMsg(null);
+                }}
+              >
+                <Text style={styles.reactionEmojiBig}>{emoji}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       </BottomSheet>
     </SafeAreaView>
   );
@@ -776,4 +874,26 @@ const styles = StyleSheet.create({
   voiceBar: { width: 2.5, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.5)' },
   voiceBarOwn: { backgroundColor: 'rgba(255,255,255,0.6)' },
   voiceBarOther: { backgroundColor: colors.emerald },
+  reactionPicker: {
+    padding: spacing.base,
+    alignItems: 'center',
+  },
+  reactionPickerTitle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    marginBottom: spacing.md,
+  },
+  reactionGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  reactionButton: {
+    padding: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  reactionEmojiBig: {
+    fontSize: 28,
+  },
 });
