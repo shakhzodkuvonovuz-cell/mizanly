@@ -181,6 +181,26 @@ export class MessagesService {
     return { deleted: true };
   }
 
+  async editMessage(messageId: string, userId: string, content: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.senderId !== userId) throw new ForbiddenException();
+    if (message.isDeleted) throw new BadRequestException('Cannot edit deleted message');
+
+    // Check if message is older than 15 minutes
+    const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+    if (message.createdAt < fifteenMinutesAgo) {
+      throw new BadRequestException('Message can only be edited within 15 minutes');
+    }
+
+    const updated = await this.prisma.message.update({
+      where: { id: messageId },
+      data: { content, editedAt: new Date() },
+    });
+    return { message: updated };
+  }
+
+
   async createDM(userId: string, targetUserId: string) {
     if (userId === targetUserId) throw new BadRequestException('Cannot DM yourself');
 

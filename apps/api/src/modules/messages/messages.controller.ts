@@ -73,6 +73,11 @@ class ReactDto {
   @IsString()
   emoji: string;
 }
+class EditMessageDto {
+  @IsString()
+  @MaxLength(5000)
+  content: string;
+}
 
 @ApiTags('Messages (Risalah)')
 @Controller('messages')
@@ -122,6 +127,17 @@ export class MessagesController {
   ) {
     return this.messagesService.deleteMessage(messageId, userId);
   }
+
+  @Patch('conversations/:id/messages/:messageId')
+  @ApiOperation({ summary: 'Edit a message (within 15 minutes)' })
+  editMessage(
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: EditMessageDto,
+  ) {
+    return this.messagesService.editMessage(messageId, userId, dto.content);
+  }
+
 
   @Post('conversations/:id/messages/:messageId/react')
   @ApiOperation({ summary: 'React to a message with emoji' })
