@@ -3,8 +3,10 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import Redis from 'ioredis';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const PUBLIC_USER_FIELDS = {
@@ -28,7 +30,10 @@ const PUBLIC_USER_FIELDS = {
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+  ) {}
 
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -48,11 +53,13 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
-    return this.prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id: userId },
       data: dto,
       select: PUBLIC_USER_FIELDS,
     });
+    await this.redis.del(`user:${updated.username}`);
+    return updated;
   }
 
   async deactivate(userId: string) {
@@ -64,14 +71,23 @@ export class UsersService {
   }
 
   async getProfile(username: string, currentUserId?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
-      select: {
-        ...PUBLIC_USER_FIELDS,
-        profileLinks: { orderBy: { position: 'asc' } },
-      },
-    });
-    if (!user) throw new NotFoundException('User not found');
+    // Try cache first
+    const cached = await this.redis.get(`user:${username}`);
+    let user;
+    if (cached) {
+      user = JSON.parse(cached);
+    } else {
+      user = await this.prisma.user.findUnique({
+        where: { username },
+        select: {
+          ...PUBLIC_USER_FIELDS,
+          profileLinks: { orderBy: { position: 'asc' } },
+        },
+      });
+      if (!user) throw new NotFoundException('User not found');
+      // Cache for 5 minutes
+      await this.redis.setex(`user:${username}`, 300, JSON.stringify(user));
+    }
 
     // Check if current user is blocked
     if (currentUserId) {

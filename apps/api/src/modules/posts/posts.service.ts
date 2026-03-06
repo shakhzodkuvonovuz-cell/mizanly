@@ -5,11 +5,14 @@ import {
   BadRequestException,
   ConflictException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PostType, Visibility, Reaction, ReportReason } from '@prisma/client';
 
 const POST_SELECT = {
   id: true,
@@ -53,6 +56,7 @@ export class PostsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    @Inject('REDIS') private redis: Redis,
   ) {}
 
   async getFeed(
@@ -61,6 +65,13 @@ export class PostsService {
     cursor?: string,
     limit = 20,
   ) {
+    // Cache only "for you" feed for 30 seconds
+    if (type === 'foryou') {
+      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
+
     const [follows, blocks, mutes] = await Promise.all([
       type === 'following'
         ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
@@ -93,10 +104,18 @@ export class PostsService {
 
     const hasMore = posts.length > limit;
     const items = hasMore ? posts.slice(0, limit) : posts;
-    return {
+    const result = {
       data: items,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
+
+    // Cache "for you" feed for 30 seconds
+    if (type === 'foryou') {
+      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
+      await this.redis.setex(cacheKey, 30, JSON.stringify(result));
+    }
+
+    return result;
   }
 
   async create(userId: string, dto: CreatePostDto) {
@@ -119,9 +138,9 @@ export class PostsService {
       this.prisma.post.create({
         data: {
           userId,
-          postType: dto.postType as any,
+          postType: dto.postType as PostType,
           content: dto.content,
-          visibility: (dto.visibility as any) ?? 'PUBLIC',
+          visibility: (dto.visibility as Visibility) ?? 'PUBLIC',
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -225,12 +244,12 @@ export class PostsService {
       // Update reaction type
       await this.prisma.postReaction.update({
         where: { userId_postId: { userId, postId } },
-        data: { reaction: reaction as any },
+        data: { reaction: reaction as Reaction },
       });
     } else {
       await this.prisma.$transaction([
         this.prisma.postReaction.create({
-          data: { userId, postId, reaction: reaction as any },
+          data: { userId, postId, reaction: reaction as Reaction },
         }),
         this.prisma.post.update({
           where: { id: postId },
@@ -492,7 +511,7 @@ export class PostsService {
       data: {
         reporterId: userId,
         reportedPostId: postId,
-        reason: (reasonMap[reason] ?? 'OTHER') as any,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
       },
     });
     return { reported: true };
