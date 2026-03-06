@@ -217,8 +217,8 @@ describe('ReelsService', () => {
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.reel.findMany.mockResolvedValue(mockReels);
-      prisma.reelLike.findMany.mockResolvedValue([]);
-      prisma.reelBookmark.findMany.mockResolvedValue([]);
+      prisma.reelReaction.findMany.mockResolvedValue([]);
+      prisma.reelInteraction.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed(userId);
 
@@ -274,8 +274,8 @@ describe('ReelsService', () => {
       prisma.block.findMany.mockResolvedValue([{ blockedId: blockedUser }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: mutedUser }]);
       prisma.reel.findMany.mockResolvedValue(mockReels);
-      prisma.reelLike.findMany.mockResolvedValue([]);
-      prisma.reelBookmark.findMany.mockResolvedValue([]);
+      prisma.reelReaction.findMany.mockResolvedValue([]);
+      prisma.reelInteraction.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed(userId);
 
@@ -358,12 +358,15 @@ describe('ReelsService', () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReaction = { userId, reelId, reaction: ReactionType.LIKE };
+      const mockReel = { id: reelId, status: ReelStatus.READY };
 
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
       prisma.reelReaction.findUnique.mockResolvedValue(mockReaction);
       prisma.$transaction.mockResolvedValue([{}, {}, 1]);
 
       const result = await service.unlike(reelId, userId);
 
+      expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
       expect(prisma.reelReaction.findUnique).toHaveBeenCalledWith({
         where: { userId_reelId: { userId, reelId } },
       });
@@ -374,7 +377,9 @@ describe('ReelsService', () => {
     it('should throw NotFoundException if like not found', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
+      const mockReel = { id: reelId, status: ReelStatus.READY };
 
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
       prisma.reelReaction.findUnique.mockResolvedValue(null);
 
       await expect(service.unlike(reelId, userId)).rejects.toThrow(NotFoundException);
@@ -393,20 +398,19 @@ describe('ReelsService', () => {
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
+      prisma.reel.update.mockResolvedValue({ ...mockReel, isRemoved: true });
+      prisma.$executeRaw.mockResolvedValue(1);
       prisma.$transaction.mockResolvedValue([{ ...mockReel, isRemoved: true }, 1]);
 
       const result = await service.delete(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
+      expect(prisma.reel.update).toHaveBeenCalledWith({
+        where: { id: reelId },
+        data: { isRemoved: true },
+      });
+      expect(prisma.$executeRaw).toHaveBeenCalled();
       expect(prisma.$transaction).toHaveBeenCalled();
-      // Check transaction includes reel.update with isRemoved: true and $executeRaw
-      expect(prisma.$transaction.mock.calls[0][0]).toHaveLength(2);
-      expect(prisma.$transaction.mock.calls[0][0][0]).toEqual(
-        expect.objectContaining({
-          where: { id: reelId },
-          data: { isRemoved: true },
-        }),
-      );
       expect(result).toEqual({ deleted: true });
     });
 

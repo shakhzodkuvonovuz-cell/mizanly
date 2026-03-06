@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 
 // Extend Express Request type to include id property for pino-http
 interface RequestWithId extends Request {
-  id?: string;
+  id: string;
 }
 
 @Injectable()

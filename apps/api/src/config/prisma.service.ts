@@ -13,7 +13,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super();
     // Clamp count fields to >= 0 after any update
-    this.$use(async (params: any, next: any) => {
+    (this as any).$use(async (params: any, next: any) => {
       const result = await next(params);
       if (params.action === 'update' && result && typeof result === 'object') {
         for (const field of COUNT_FIELDS) {

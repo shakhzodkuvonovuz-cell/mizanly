@@ -223,6 +223,17 @@ export class MessagesController {
     return this.messagesService.addGroupMembers(id, userId, dto.memberIds);
   }
 
+  @Delete('groups/:id/members/:userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove member from group (creator only)' })
+  removeMember(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.messagesService.removeGroupMember(id, userId, targetUserId);
+  }
+
   @Delete('groups/:id/members/me')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Leave a group' })

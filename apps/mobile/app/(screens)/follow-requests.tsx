@@ -10,7 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { FollowRequest } from '@/types';
 
@@ -167,12 +167,12 @@ const styles = StyleSheet.create({
 
   actions: { alignItems: 'center', gap: spacing.xs },
   acceptBtn: {
-    backgroundColor: colors.emerald, borderRadius: 8,
+    backgroundColor: colors.emerald, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
   },
   acceptText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
   declineBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 8,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
   },
   declineText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },

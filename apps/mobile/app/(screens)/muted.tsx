@@ -9,7 +9,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { mutesApi } from '@/services/api';
 
 interface MutedUser {
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
   name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
   username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
   unmuteBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 8,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
     minWidth: 80, alignItems: 'center',
   },

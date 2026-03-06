@@ -1,22 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
+import { INestApplication, NotFoundException, ForbiddenException } from '@nestjs/common';
 import * as request from 'supertest';
-import { AppModule } from '../src/app.module';
+import { PostsModule } from '../src/modules/posts/posts.module';
+import { PrismaModule } from '../src/config/prisma.module';
+import { RedisModule } from '../src/config/redis.module';
+import { ConfigService } from '@nestjs/config';
+import { TransformInterceptor } from '../src/common/interceptors/transform.interceptor';
 import { ClerkAuthGuard } from '../src/common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../src/common/guards/optional-clerk-auth.guard';
 import { PostsService } from '../src/modules/posts/posts.service';
 import { PrismaService } from '../src/config/prisma.service';
 import { NotificationsService } from '../src/modules/notifications/notifications.service';
-import { PostType, Visibility } from '@prisma/client';
+import { DevicesService } from '../src/modules/devices/devices.service';
+import { PostType, PostVisibility } from '@prisma/client';
 
 // Mock guard that always authenticates
-class MockClerkAuthGuard extends ClerkAuthGuard {
-  canActivate(context: any) {
-    const request = context.switchToHttp().getRequest();
-    // Simulate authenticated user
-    request.user = { id: 'test-user-id', clerkId: 'test-clerk-id' };
-    return true;
-  }
-}
+const mockClerkAuthGuard = { canActivate: jest.fn(async (context) => {
+  const request = context.switchToHttp().getRequest();
+  request.user = { id: 'test-user-id', clerkId: 'test-clerk-id' };
+  return true;
+}) };
+
+// Mock optional guard (same behavior)
+const mockOptionalClerkAuthGuard = { canActivate: jest.fn(async (context) => {
+  const request = context.switchToHttp().getRequest();
+  request.user = { id: 'test-user-id', clerkId: 'test-clerk-id' };
+  return true;
+}) };
 
 describe('PostsController (e2e)', () => {
   let app: INestApplication;
@@ -24,10 +34,12 @@ describe('PostsController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [PostsModule, PrismaModule, RedisModule],
     })
       .overrideGuard(ClerkAuthGuard)
-      .useClass(MockClerkAuthGuard)
+      .useValue(mockClerkAuthGuard)
+      .overrideGuard(OptionalClerkAuthGuard)
+      .useValue(mockOptionalClerkAuthGuard)
       .overrideProvider(PrismaService)
       .useValue({
         // minimal mock
@@ -43,9 +55,12 @@ describe('PostsController (e2e)', () => {
       })
       .overrideProvider(NotificationsService)
       .useValue({
+        create: jest.fn(),
         notifyLike: jest.fn(),
         notifyComment: jest.fn(),
       })
+      .overrideProvider(DevicesService)
+      .useValue({})
       .overrideProvider('REDIS')
       .useValue({
         get: jest.fn(),
@@ -55,6 +70,8 @@ describe('PostsController (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.setGlobalPrefix('/api/v1');
+    app.useGlobalInterceptors(new TransformInterceptor());
     await app.init();
 
     postsService = moduleFixture.get<PostsService>(PostsService);
@@ -71,7 +88,7 @@ describe('PostsController (e2e)', () => {
         userId: 'test-user-id',
         postType: PostType.TEXT,
         content: 'Test content',
-        visibility: Visibility.PUBLIC,
+        visibility: PostVisibility.PUBLIC,
         mediaUrls: [],
         mediaTypes: [],
         likesCount: 0,
@@ -82,7 +99,7 @@ describe('PostsController (e2e)', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      jest.spyOn(postsService, 'create').mockResolvedValue(mockPost);
+      jest.spyOn(postsService, 'create').mockResolvedValue(mockPost as any);
 
       const response = await request(app.getHttpServer())
         .post('/api/v1/posts')
@@ -109,7 +126,7 @@ describe('PostsController (e2e)', () => {
         userId: 'test-user-id',
         postType: PostType.TEXT,
         content: 'Test content',
-        visibility: Visibility.PUBLIC,
+        visibility: PostVisibility.PUBLIC,
         mediaUrls: [],
         mediaTypes: [],
         likesCount: 5,
@@ -120,7 +137,7 @@ describe('PostsController (e2e)', () => {
         createdAt: new Date(),
         updatedAt: new Date(),
       };
-      jest.spyOn(postsService, 'getById').mockResolvedValue(mockPost);
+      jest.spyOn(postsService, 'getById').mockResolvedValue(mockPost as any);
 
       const response = await request(app.getHttpServer())
         .get('/api/v1/posts/post-123')
@@ -136,7 +153,7 @@ describe('PostsController (e2e)', () => {
 
     it('should return 404 for nonexistent post', async () => {
       jest.spyOn(postsService, 'getById').mockRejectedValue(
-        new Error('Not found'),
+        new NotFoundException('Post not found'),
       );
 
       await request(app.getHttpServer())
@@ -147,16 +164,19 @@ describe('PostsController (e2e)', () => {
 
   describe('DELETE /api/v1/posts/:id', () => {
     it('should delete a post', async () => {
-      jest.spyOn(postsService, 'delete').mockResolvedValue(undefined);
+      jest.spyOn(postsService, 'delete').mockResolvedValue({ deleted: true });
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .delete('/api/v1/posts/post-123')
-        .expect(204);
+        .expect(200);
+
+      expect(response.body.data).toEqual({ deleted: true });
+      expect(response.body.success).toBe(true);
     });
 
     it('should return 403 if user is not the author', async () => {
       jest.spyOn(postsService, 'delete').mockRejectedValue(
-        new Error('Forbidden'),
+        new ForbiddenException(),
       );
 
       await request(app.getHttpServer())

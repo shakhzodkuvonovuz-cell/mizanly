@@ -12,7 +12,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 import type { ProfileLink } from '@/types';
 
@@ -270,7 +270,7 @@ export default function EditProfileScreen() {
             </View>
 
             {linksQuery.isLoading ? (
-              <View style={{ gap: 8, marginTop: spacing.sm }}>
+              <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
                 <Skeleton.Rect width="100%" height={44} />
                 <Skeleton.Rect width="70%" height={44} />
               </View>
@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   },
   avatarEdit: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: 14,
+    width: 28, height: 28, borderRadius: radius.lg,
     backgroundColor: colors.dark.bgElevated,
     borderWidth: 2, borderColor: colors.dark.bg,
     alignItems: 'center', justifyContent: 'center',
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
   },
   multiline: { minHeight: 80, lineHeight: 22 },
-  charCountWrap: { alignItems: 'flex-end', marginTop: 4 },
+  charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
   usernameText: { color: colors.text.secondary, fontSize: fontSize.base },
 
   divider: { height: 0.5, backgroundColor: colors.dark.border },
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   linkIcon: {
-    width: 36, height: 36, borderRadius: 8, backgroundColor: colors.dark.bgElevated,
+    width: 36, height: 36, borderRadius: radius.sm, backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
   },
   linkInfo: { flex: 1 },
@@ -417,13 +417,13 @@ const styles = StyleSheet.create({
   addLinkBtn: {
     marginTop: spacing.sm, paddingVertical: spacing.sm,
     borderWidth: 1, borderStyle: 'dashed', borderColor: colors.dark.border,
-    borderRadius: 8, alignItems: 'center',
+    borderRadius: radius.sm, alignItems: 'center',
   },
   addLinkBtnText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
 
   addLinkForm: {
     marginTop: spacing.sm, backgroundColor: colors.dark.bgElevated,
-    borderRadius: 10, overflow: 'hidden',
+    borderRadius: radius.md, overflow: 'hidden',
   },
   addLinkInput: {
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   },
   addLinkCancel: { color: colors.text.secondary, fontSize: fontSize.base },
   addLinkSave: {
-    backgroundColor: colors.emerald, borderRadius: 8,
+    backgroundColor: colors.emerald, borderRadius: radius.sm,
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
     minWidth: 60, alignItems: 'center',
   },

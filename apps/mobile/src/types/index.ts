@@ -14,6 +14,7 @@ export interface User {
   _count?: { followers: number; following: number; posts: number; threads: number };
   isFollowing?: boolean;
   isFollowedBy?: boolean;
+  channel?: Channel;
 }
 
 // ── Saf: Posts ──
@@ -347,6 +348,8 @@ export interface SearchResults {
   threads?: Thread[];
   posts?: Post[];
   hashtags?: { id: string; name: string; postsCount: number }[];
+  videos?: Video[];
+  channels?: Channel[];
 }
 
 // ── Circles ──

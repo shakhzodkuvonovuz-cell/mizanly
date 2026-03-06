@@ -1,11 +1,11 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { colors, spacing, fontSize } from '@/theme';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi } from '@/services/api';
@@ -32,6 +32,7 @@ const FEED_TABS = [
 export default function SafScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const navigation = useNavigation();
   const haptic = useHaptic();
   const feedType = useStore((s) => s.safFeedType);
   const setFeedType = useStore((s) => s.setSafFeedType);
@@ -41,6 +42,14 @@ export default function SafScreen() {
 
   const feedRef = useRef<FlashList<Post>>(null);
   useScrollToTop(feedRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', (e) => {
+      // Only if already on this tab
+      feedRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();

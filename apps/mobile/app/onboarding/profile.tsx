@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { CharCountRing } from '@/components/ui/CharCountRing';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 
 const STEP = 2; // Step 2 of 4 in onboarding
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     paddingTop: 60,
   },
   dots: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
-  dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.dark.border },
+  dot: { width: 8, height: 8, borderRadius: radius.sm, backgroundColor: colors.dark.border },
   dotActive: { backgroundColor: colors.emerald, width: 20 },
   title: {
     color: colors.text.primary, fontSize: fontSize.xl,
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
     textAlign: 'center', marginBottom: spacing.xl,
   },
   avatar: {
-    width: 96, height: 96, borderRadius: 48, marginBottom: spacing.sm,
+    width: 96, height: 96, borderRadius: radius.full, marginBottom: spacing.sm,
   },
   avatarPlaceholder: {
     backgroundColor: colors.dark.bgElevated,
@@ -165,19 +165,19 @@ const styles = StyleSheet.create({
   label: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.xs, fontWeight: '600' },
   optional: { color: colors.text.tertiary, fontWeight: '400' },
   input: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 12,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.lg,
     color: colors.text.primary, fontSize: fontSize.base,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderWidth: 1, borderColor: colors.dark.border,
   },
   bioInput: { height: 80, textAlignVertical: 'top' },
-  charCountWrap: { alignItems: 'flex-end', marginTop: 4 },
+  charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
   error: {
     color: colors.error, fontSize: fontSize.sm,
     marginBottom: spacing.md, textAlign: 'center',
   },
   btn: {
-    width: '100%', height: 52, borderRadius: 14,
+    width: '100%', height: 52, borderRadius: radius.lg,
     backgroundColor: colors.emerald,
     alignItems: 'center', justifyContent: 'center',
     marginTop: spacing.sm,

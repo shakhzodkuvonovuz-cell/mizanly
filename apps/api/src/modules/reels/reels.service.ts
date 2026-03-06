@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateReelDto } from './dto/create-reel.dto';
-import { Prisma, ReelStatus, ReactionType } from '@prisma/client';
+import { Prisma, ReelStatus, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -132,7 +132,7 @@ export class ReelsService {
 
     const [blocks, mutes] = userId ? await Promise.all([
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
     ]) : [[], []];
 
     const excludedIds = [
@@ -158,8 +158,33 @@ export class ReelsService {
     const data = hasMore ? reels.slice(0, limit) : reels;
     const nextCursor = hasMore ? data[data.length - 1].id : null;
 
+    let likedReelIds: string[] = [];
+    let bookmarkedReelIds: string[] = [];
+
+    if (userId && data.length > 0) {
+      const reelIds = data.map(r => r.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.reelReaction.findMany({
+          where: { userId, reelId: { in: reelIds } },
+          select: { reelId: true },
+        }),
+        this.prisma.reelInteraction.findMany({
+          where: { userId, reelId: { in: reelIds }, saved: true },
+          select: { reelId: true },
+        }),
+      ]);
+      likedReelIds = reactions.map(r => r.reelId);
+      bookmarkedReelIds = interactions.map(i => i.reelId);
+    }
+
+    const enhancedData = data.map(reel => ({
+      ...reel,
+      isLiked: userId ? likedReelIds.includes(reel.id) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+    }));
+
     const result = {
-      data,
+      data: enhancedData,
       meta: { cursor: nextCursor, hasMore },
     };
 
@@ -420,7 +445,7 @@ export class ReelsService {
     return { viewed: true };
   }
 
-  async getUserReels(username: string, cursor?: string, limit = 20) {
+  async getUserReels(username: string, cursor?: string, limit = 20, userId?: string) {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
 
@@ -434,8 +459,34 @@ export class ReelsService {
 
     const hasMore = reels.length > limit;
     const items = hasMore ? reels.slice(0, limit) : reels;
+
+    let likedReelIds: string[] = [];
+    let bookmarkedReelIds: string[] = [];
+
+    if (userId && items.length > 0) {
+      const reelIds = items.map(r => r.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.reelReaction.findMany({
+          where: { userId, reelId: { in: reelIds } },
+          select: { reelId: true },
+        }),
+        this.prisma.reelInteraction.findMany({
+          where: { userId, reelId: { in: reelIds }, saved: true },
+          select: { reelId: true },
+        }),
+      ]);
+      likedReelIds = reactions.map(r => r.reelId);
+      bookmarkedReelIds = interactions.map(i => i.reelId);
+    }
+
+    const data = items.map((reel) => ({
+      ...reel,
+      isLiked: userId ? likedReelIds.includes(reel.id) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+    }));
+
     return {
-      data: items.map((r) => ({ ...r, isLiked: false, isBookmarked: false })),
+      data,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
   }

@@ -307,7 +307,7 @@ export default function StoryViewerScreen() {
             {Array.from({ length: 5 }).map((_, i) => (
               <View key={i} style={styles.viewerSkeletonRow}>
                 <Skeleton.Circle size={32} />
-                <View style={{ flex: 1, gap: 4 }}>
+                <View style={{ flex: 1, gap: spacing.xs }}>
                   <Skeleton.Rect width={120} height={13} />
                   <Skeleton.Rect width={80} height={11} />
                 </View>
@@ -330,7 +330,7 @@ export default function StoryViewerScreen() {
             ListEmptyComponent={
               <Text style={styles.viewersEmpty}>No views yet</Text>
             }
-            contentContainerStyle={{ paddingBottom: 32 }}
+            contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
           />
         )}
       </BottomSheet>
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   userName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700', flex: 1 },
   timeAgo: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
-  closeBtn: { padding: 4 },
+  closeBtn: { padding: spacing.xs },
 
   tapZones: { ...StyleSheet.absoluteFillObject, flexDirection: 'row' },
   tapLeft: { flex: 1 },

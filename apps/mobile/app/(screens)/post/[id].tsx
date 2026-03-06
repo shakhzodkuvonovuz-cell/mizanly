@@ -15,7 +15,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
 
@@ -23,12 +23,14 @@ function CommentRow({
   comment,
   postId,
   viewerId,
+  postAuthorId,
   onReply,
   onDeleted,
 }: {
   comment: Comment;
   postId: string;
   viewerId?: string;
+  postAuthorId?: string;
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
 }) {
@@ -39,6 +41,9 @@ function CommentRow({
   const [editText, setEditText] = useState(comment.content);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
   const isOwn = !!viewerId && comment.user.id === viewerId;
+  const isPostAuthor = !!viewerId && !!postAuthorId && postAuthorId === viewerId;
+  const canDelete = isOwn || isPostAuthor;
+  const canEdit = isOwn; // only comment author can edit their own text
 
   const likeMutation = useMutation({
     mutationFn: () =>
@@ -114,15 +119,15 @@ function CommentRow({
             <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
               <Text style={styles.commentAction}>Reply</Text>
             </TouchableOpacity>
-            {isOwn && (
-              <>
-                <TouchableOpacity onPress={() => setEditing(true)}>
-                  <Text style={styles.commentAction}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
-                  <Text style={styles.commentActionDestructive}>Delete</Text>
-                </TouchableOpacity>
-              </>
+            {canEdit && (
+              <TouchableOpacity onPress={() => setEditing(true)}>
+                <Text style={styles.commentAction}>Edit</Text>
+              </TouchableOpacity>
+            )}
+            {canDelete && (
+              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
+                <Text style={styles.commentActionDestructive}>Delete</Text>
+              </TouchableOpacity>
             )}
           </View>
         )}
@@ -265,6 +270,7 @@ export default function PostDetailScreen() {
               comment={item}
               postId={id}
               viewerId={user?.id}
+              postAuthorId={postQuery.data?.userId}
               onReply={handleReply}
               onDeleted={() => {
                 queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
@@ -343,18 +349,18 @@ const styles = StyleSheet.create({
   },
   commentBody: { flex: 1 },
   commentBubble: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: 14,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.lg,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
   commentUser: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: 2 },
   commentText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
   commentEditInput: { borderBottomWidth: 0.5, borderBottomColor: colors.emerald, paddingBottom: 2 },
-  commentMeta: { flexDirection: 'row', gap: spacing.md, marginTop: 4, paddingHorizontal: 4 },
+  commentMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xs, paddingHorizontal: spacing.xs },
   commentTime: { color: colors.text.tertiary, fontSize: fontSize.xs },
   commentLikesLabel: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   commentAction: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '700' },
   commentActionDestructive: { color: colors.error, fontSize: fontSize.xs, fontWeight: '700' },
-  commentLike: { paddingTop: 4 },
+  commentLike: { paddingTop: spacing.xs },
   inputWrap: {
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,
     backgroundColor: colors.dark.bg,

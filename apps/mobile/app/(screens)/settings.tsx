@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.dark.bgElevated,
-    marginHorizontal: spacing.base, borderRadius: 14, overflow: 'hidden',
+    marginHorizontal: spacing.base, borderRadius: radius.lg, overflow: 'hidden',
   },
 
   row: {

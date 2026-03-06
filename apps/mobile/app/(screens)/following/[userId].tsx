@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   info: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 

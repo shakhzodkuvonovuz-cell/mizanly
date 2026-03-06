@@ -11,6 +11,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
@@ -42,8 +43,6 @@ function CommentRow({
   const haptic = useHaptic();
   const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
-  const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState(comment.content);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
   const isOwn = !!viewerId && comment.user.id === viewerId;
 
@@ -74,55 +73,24 @@ function CommentRow({
       <View style={styles.commentBody}>
         <View style={styles.commentBubble}>
           <Text style={styles.commentUser}>{comment.user.displayName}</Text>
-          {editing ? (
-            <TextInput
-              style={[styles.commentText, styles.commentEditInput]}
-              value={editText}
-              onChangeText={setEditText}
-              multiline
-              autoFocus
-              maxLength={500}
-            />
-          ) : (
-            <RichText content={comment.content} />
+          <RichText content={comment.content} />
+        </View>
+        <View style={styles.commentMeta}>
+          <Text style={styles.commentTime}>{timeAgo}</Text>
+          {localLikes > 0 && (
+            <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
+          )}
+          <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
+            <Text style={styles.commentAction}>Reply</Text>
+          </TouchableOpacity>
+          {isOwn && (
+            <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
+              <Text style={styles.commentActionDestructive}>Delete</Text>
+            </TouchableOpacity>
           )}
         </View>
-        {editing ? (
-          <View style={styles.commentMeta}>
-            <TouchableOpacity onPress={() => setEditing(false)}>
-              <Text style={styles.commentAction}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {}}
-              disabled={!editText.trim()}
-            >
-              <Text style={[styles.commentAction, { color: colors.emerald }]}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={styles.commentMeta}>
-            <Text style={styles.commentTime}>{timeAgo}</Text>
-            {localLikes > 0 && (
-              <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
-            )}
-            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
-              <Text style={styles.commentAction}>Reply</Text>
-            </TouchableOpacity>
-            {isOwn && (
-              <>
-                <TouchableOpacity onPress={() => setEditing(true)}>
-                  <Text style={styles.commentAction}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
-                  <Text style={styles.commentActionDestructive}>Delete</Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
-        )}
       </View>
-      {!editing && (
-        <TouchableOpacity
+      <TouchableOpacity
           onPress={() => { viewerId && handleLikeComment(); }}
           disabled={!viewerId}
           hitSlop={8}
@@ -135,7 +103,6 @@ function CommentRow({
             fill={localLiked ? colors.like : undefined}
           />
         </TouchableOpacity>
-      )}
     </View>
   );
 }
@@ -340,7 +307,7 @@ export default function ReelDetailScreen() {
               </TouchableOpacity>
 
               <TouchableOpacity
-                onPress={() => {}}
+                onPress={() => inputRef.current?.focus()}
                 style={styles.actionButton}
               >
                 <Icon name="message-circle" size={28} color={colors.text.primary} />

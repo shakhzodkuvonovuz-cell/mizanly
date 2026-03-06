@@ -168,7 +168,6 @@ export class ChannelsService {
       userId: channel.userId,
       actorId: userId,
       type: 'FOLLOW', // reuse follow notification type for subscription
-      channelId: channel.id,
     }).catch((err) => this.logger.error('Failed to create notification', err));
 
     return { subscribed: true };

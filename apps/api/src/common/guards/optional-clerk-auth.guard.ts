@@ -1,5 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { createClerkClient } from '@clerk/backend';
+import { verifyToken } from '@clerk/backend';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 
@@ -11,16 +11,10 @@ import { PrismaService } from '../../config/prisma.service';
  */
 @Injectable()
 export class OptionalClerkAuthGuard implements CanActivate {
-  private clerk;
-
   constructor(
     private config: ConfigService,
     private prisma: PrismaService,
-  ) {
-    this.clerk = createClerkClient({
-      secretKey: this.config.get('CLERK_SECRET_KEY'),
-    });
-  }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -28,7 +22,9 @@ export class OptionalClerkAuthGuard implements CanActivate {
     if (!token) return true; // no token → still allowed, just no user
 
     try {
-      const { sub: clerkId } = await this.clerk.verifyToken(token);
+      const { sub: clerkId } = await verifyToken(token, {
+        secretKey: this.config.get('CLERK_SECRET_KEY'),
+      });
       const user = await this.prisma.user.findUnique({
         where: { clerkId },
         select: { id: true, clerkId: true, username: true, displayName: true },

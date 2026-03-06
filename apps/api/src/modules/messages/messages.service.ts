@@ -10,6 +10,7 @@ import { MessageType } from '@prisma/client';
 const CONVERSATION_SELECT = {
   id: true,
   isGroup: true,
+  createdById: true,
   groupName: true,
   groupAvatarUrl: true,
   lastMessageText: true,
@@ -286,6 +287,16 @@ export class MessagesService {
       skipDuplicates: true,
     });
     return { added: true };
+  }
+
+  async removeGroupMember(conversationId: string, userId: string, targetUserId: string) {
+    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!convo || !convo.isGroup) throw new NotFoundException('Group not found');
+    if (convo.createdById !== userId) throw new ForbiddenException('Only group creator can remove members');
+    await this.prisma.conversationMember.delete({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+    });
+    return { removed: true };
   }
 
   async leaveGroup(conversationId: string, userId: string) {

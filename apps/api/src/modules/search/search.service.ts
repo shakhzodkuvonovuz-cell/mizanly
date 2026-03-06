@@ -245,10 +245,12 @@ export class SearchService {
       }
     }
 
-    // For people, tags, or no type specified, return the legacy SearchResults format
+    // For people, tags, or no type specified, return the aggregate SearchResults format
+    // At this point, type is narrowed to 'people' | 'tags' | undefined
     const results: any = {};
+    const isAggregate = !type;
 
-    if (!type || type === 'people') {
+    if (isAggregate || type === 'people') {
       results.people = await this.prisma.user.findMany({
         where: {
           OR: [
@@ -257,12 +259,12 @@ export class SearchService {
           ],
         },
         select: USER_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: isAggregate ? 5 : limit,
         orderBy: { followers: { _count: 'desc' } },
       });
     }
 
-    if (!type || type === 'threads') {
+    if (isAggregate) {
       results.threads = await this.prisma.thread.findMany({
         where: {
           content: { contains: query, mode: 'insensitive' },
@@ -271,12 +273,10 @@ export class SearchService {
           isRemoved: false,
         },
         select: THREAD_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: 5,
         orderBy: { likesCount: 'desc' },
       });
-    }
 
-    if (!type || type === 'posts') {
       results.posts = await this.prisma.post.findMany({
         where: {
           content: { contains: query, mode: 'insensitive' },
@@ -284,24 +284,20 @@ export class SearchService {
           isRemoved: false,
         },
         select: POST_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: 5,
         orderBy: { likesCount: 'desc' },
       });
-    }
 
-    if (!type || type === 'reels') {
       results.reels = await this.prisma.reel.findMany({
         where: {
           caption: { contains: query, mode: 'insensitive' },
           status: 'READY',
         },
         select: REEL_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: 5,
         orderBy: { likesCount: 'desc' },
       });
-    }
 
-    if (!type || type === 'videos') {
       results.videos = await this.prisma.video.findMany({
         where: {
           OR: [
@@ -311,12 +307,10 @@ export class SearchService {
           status: 'PUBLISHED',
         },
         select: VIDEO_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: 5,
         orderBy: { viewsCount: 'desc' },
       });
-    }
 
-    if (!type || type === 'channels') {
       results.channels = await this.prisma.channel.findMany({
         where: {
           OR: [
@@ -326,7 +320,7 @@ export class SearchService {
           ],
         },
         select: CHANNEL_SEARCH_SELECT,
-        take: type ? limit : 5,
+        take: 5,
         orderBy: { subscribersCount: 'desc' },
       });
     }

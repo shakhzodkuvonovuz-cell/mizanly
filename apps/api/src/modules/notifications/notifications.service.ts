@@ -135,7 +135,15 @@ export class NotificationsService {
               to,
               title: params.title,
               body: params.body,
-              data: { notificationId: notification.id, type: params.type },
+              data: {
+                notificationId: notification.id,
+                type: params.type,
+                ...(params.postId && { postId: params.postId }),
+                ...(params.threadId && { threadId: params.threadId }),
+                ...(params.reelId && { reelId: params.reelId }),
+                ...(params.videoId && { videoId: params.videoId }),
+                ...(params.commentId && { commentId: params.commentId }),
+              },
             })),
           ),
         });

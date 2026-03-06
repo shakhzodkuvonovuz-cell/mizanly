@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
 import { Image } from 'expo-image';
+import ImageViewing from 'react-native-image-viewing';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -19,64 +20,89 @@ interface Props {
 export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lightboxVisible, setLightboxVisible] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = (index: number) => {
+    setLightboxIndex(index);
+    setLightboxVisible(true);
+  };
 
   if (!mediaUrls.length) return null;
 
   const height = aspectRatio ? SCREEN_WIDTH / aspectRatio : SCREEN_WIDTH;
 
+  let mediaElement;
   if (mediaUrls.length === 1) {
-    return (
+    mediaElement = (
       <View style={[styles.single, { height }]}>
-        <Image
-          source={{ uri: mediaUrls[0] }}
-          style={styles.fill}
-          contentFit="cover"
-          placeholder={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
-          transition={200}
-        />
+        <Pressable onPress={() => openLightbox(0)} style={styles.fill}>
+          <Image
+            source={{ uri: mediaUrls[0] }}
+            style={styles.fill}
+            contentFit="cover"
+            placeholder={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
+            transition={200}
+          />
+        </Pressable>
+      </View>
+    );
+  } else {
+    mediaElement = (
+      <View style={[styles.carousel, { height }]}>
+        <Pressable onPress={() => openLightbox(activeIndex)} style={styles.fill}>
+          <Image
+            source={{ uri: mediaUrls[activeIndex] }}
+            style={styles.fill}
+            contentFit="cover"
+            transition={150}
+          />
+        </Pressable>
+        {/* Dot indicators */}
+        <View style={styles.dots}>
+          {mediaUrls.map((_, i) => (
+            <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
+          ))}
+        </View>
+        {/* Navigation arrows */}
+        {activeIndex > 0 && (
+          <Pressable
+            style={[styles.arrow, styles.arrowLeft]}
+            onPress={() => setActiveIndex(activeIndex - 1)}
+          >
+            <Icon name="chevron-left" size="sm" color="#FFF" />
+          </Pressable>
+        )}
+        {activeIndex < mediaUrls.length - 1 && (
+          <Pressable
+            style={[styles.arrow, styles.arrowRight]}
+            onPress={() => setActiveIndex(activeIndex + 1)}
+          >
+            <Icon name="chevron-right" size="sm" color="#FFF" />
+          </Pressable>
+        )}
+        {/* Counter */}
+        <View style={styles.counter}>
+          <Icon name="layers" size={12} color="#FFF" />
+          <Animated.Text style={styles.counterText}>
+            {activeIndex + 1}/{mediaUrls.length}
+          </Animated.Text>
+        </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.carousel, { height }]}>
-      <Image
-        source={{ uri: mediaUrls[activeIndex] }}
-        style={styles.fill}
-        contentFit="cover"
-        transition={150}
+    <>
+      {mediaElement}
+      <ImageViewing
+        images={mediaUrls.map(url => ({ uri: url }))}
+        imageIndex={lightboxIndex}
+        visible={lightboxVisible}
+        onRequestClose={() => setLightboxVisible(false)}
+        presentationStyle="overFullScreen"
       />
-      {/* Dot indicators */}
-      <View style={styles.dots}>
-        {mediaUrls.map((_, i) => (
-          <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
-        ))}
-      </View>
-      {/* Navigation arrows */}
-      {activeIndex > 0 && (
-        <Pressable
-          style={[styles.arrow, styles.arrowLeft]}
-          onPress={() => setActiveIndex(activeIndex - 1)}
-        >
-          <Icon name="chevron-left" size="sm" color="#FFF" />
-        </Pressable>
-      )}
-      {activeIndex < mediaUrls.length - 1 && (
-        <Pressable
-          style={[styles.arrow, styles.arrowRight]}
-          onPress={() => setActiveIndex(activeIndex + 1)}
-        >
-          <Icon name="chevron-right" size="sm" color="#FFF" />
-        </Pressable>
-      )}
-      {/* Counter */}
-      <View style={styles.counter}>
-        <Icon name="layers" size={12} color="#FFF" />
-        <Animated.Text style={styles.counterText}>
-          {activeIndex + 1}/{mediaUrls.length}
-        </Animated.Text>
-      </View>
-    </View>
+    </>
   );
 }
 

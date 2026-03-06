@@ -12,7 +12,7 @@ import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PostType, Visibility, Reaction, ReportReason } from '@prisma/client';
+import { PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
 
 const POST_SELECT = {
   id: true,
@@ -77,7 +77,7 @@ export class PostsService {
         ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
         : Promise.resolve([]),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
@@ -140,7 +140,7 @@ export class PostsService {
           userId,
           postType: dto.postType as PostType,
           content: dto.content,
-          visibility: (dto.visibility as Visibility) ?? 'PUBLIC',
+          visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC,
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -224,10 +224,7 @@ export class PostsService {
         where: { id: postId },
         data: { isRemoved: true, removedAt: new Date(), removedById: userId },
       }),
-      this.prisma.user.update({
-        where: { id: userId },
       this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
-      }),
     ]);
     return { deleted: true };
   }
@@ -244,12 +241,12 @@ export class PostsService {
       // Update reaction type
       await this.prisma.postReaction.update({
         where: { userId_postId: { userId, postId } },
-        data: { reaction: reaction as Reaction },
+        data: { reaction: reaction as ReactionType },
       });
     } else {
       await this.prisma.$transaction([
         this.prisma.postReaction.create({
-          data: { userId, postId, reaction: reaction as Reaction },
+          data: { userId, postId, reaction: reaction as ReactionType },
         }),
         this.prisma.post.update({
           where: { id: postId },
@@ -275,10 +272,7 @@ export class PostsService {
       this.prisma.postReaction.delete({
         where: { userId_postId: { userId, postId } },
       }),
-      this.prisma.post.update({
-        where: { id: postId },
       this.prisma.$executeRaw`UPDATE "Post" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`,
-      }),
     ]);
     return { reaction: null };
   }
@@ -454,10 +448,7 @@ export class PostsService {
         where: { id: commentId },
         data: { isRemoved: true },
       }),
-      this.prisma.post.update({
-        where: { id: comment.postId },
       this.prisma.$executeRaw`UPDATE "Post" SET "commentsCount" = GREATEST("commentsCount" - 1, 0) WHERE id = ${comment.postId}`,
-      }),
     ]);
     return { deleted: true };
   }
@@ -494,10 +485,7 @@ export class PostsService {
       this.prisma.commentReaction.delete({
         where: { userId_commentId: { userId, commentId } },
       }),
-      this.prisma.comment.update({
-        where: { id: commentId },
       this.prisma.$executeRaw`UPDATE "Comment" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${commentId}`,
-      }),
     ]);
     return { liked: false };
   }

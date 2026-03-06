@@ -237,6 +237,13 @@ export default function BakraScreen() {
                 color={item.isBookmarked ? colors.gold : colors.text.primary}
               />
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push(`/(screens)/report?type=reel&id=${item.id}`)}
+              activeOpacity={0.7}
+            >
+              <Icon name="flag" size="lg" color={colors.text.primary} />
+            </TouchableOpacity>
           </View>
         </View>
       </GestureDetector>

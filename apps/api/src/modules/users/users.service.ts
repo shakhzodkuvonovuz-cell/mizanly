@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
 
 const PUBLIC_USER_FIELDS = {
   id: true,
@@ -24,6 +25,20 @@ const PUBLIC_USER_FIELDS = {
   followingCount: true,
   postsCount: true,
   role: true,
+  createdAt: true,
+};
+
+const CHANNEL_SELECT = {
+  id: true,
+  handle: true,
+  name: true,
+  description: true,
+  avatarUrl: true,
+  bannerUrl: true,
+  subscribersCount: true,
+  videosCount: true,
+  totalViews: true,
+  isVerified: true,
   createdAt: true,
 };
 
@@ -82,6 +97,7 @@ export class UsersService {
         select: {
           ...PUBLIC_USER_FIELDS,
           profileLinks: { orderBy: { position: 'asc' } },
+          channel: { select: CHANNEL_SELECT },
         },
       });
       if (!user) throw new NotFoundException('User not found');
@@ -143,8 +159,8 @@ export class UsersService {
     const visibilityFilter = isOwn
       ? {}
       : isFollower
-        ? { visibility: { in: ['PUBLIC', 'FOLLOWERS'] } }
-        : { visibility: 'PUBLIC' };
+        ? { visibility: { in: [PostVisibility.PUBLIC, PostVisibility.FOLLOWERS] } }
+        : { visibility: PostVisibility.PUBLIC };
 
     const posts = await this.prisma.post.findMany({
       where: { userId: user.id, isRemoved: false, scheduledAt: null, ...visibilityFilter },
@@ -186,8 +202,8 @@ export class UsersService {
     const visibilityFilter = isOwn
       ? {}
       : isFollower
-        ? { visibility: { in: ['PUBLIC', 'FOLLOWERS'] } }
-        : { visibility: 'PUBLIC' };
+        ? { visibility: { in: [ThreadVisibility.PUBLIC, ThreadVisibility.FOLLOWERS] } }
+        : { visibility: ThreadVisibility.PUBLIC };
 
     const threads = await this.prisma.thread.findMany({
       where: { userId: user.id, isRemoved: false, isChainHead: true, ...visibilityFilter },
@@ -461,12 +477,12 @@ export class UsersService {
 
   async report(reporterId: string, reportedUserId: string, reason: string) {
     if (reporterId === reportedUserId) return { reported: false };
-    const reasonMap: Record<string, string> = {
-      spam: 'SPAM',
-      impersonation: 'HARASSMENT',
-      inappropriate: 'NUDITY',
+    const reasonMap: Record<string, ReportReason> = {
+      spam: 'SPAM' as ReportReason,
+      impersonation: 'HARASSMENT' as ReportReason,
+      inappropriate: 'NUDITY' as ReportReason,
     };
-    const mappedReason = (reasonMap[reason] ?? 'SPAM') as any;
+    const mappedReason = reasonMap[reason] ?? ('SPAM' as ReportReason);
     await this.prisma.report.create({
       data: { reporterId, reportedUserId, reason: mappedReason },
     }).catch((err: any) => this.logger.error('Failed to save report', err));

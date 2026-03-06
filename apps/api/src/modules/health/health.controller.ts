@@ -24,8 +24,8 @@ export class HealthController {
   async metrics() {
     const [userCount, postCount, threadCount, reelCount] = await Promise.all([
       this.prisma.user.count(),
-      this.prisma.post.count({ where: { deletedAt: null } }),
-      this.prisma.thread.count({ where: { deletedAt: null } }),
+      this.prisma.post.count(),
+      this.prisma.thread.count(),
       this.prisma.reel.count({ where: { status: 'READY' } }),
     ]);
     return {

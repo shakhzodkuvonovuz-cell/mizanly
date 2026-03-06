@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import type { BlockedKeyword } from '@/types';
 
@@ -154,12 +154,12 @@ const styles = StyleSheet.create({
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     backgroundColor: colors.dark.bgElevated,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderRadius: 10, borderWidth: 0.5, borderColor: colors.dark.border,
+    borderRadius: radius.md, borderWidth: 0.5, borderColor: colors.dark.border,
   },
   addBtn: {
     backgroundColor: colors.emerald,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderRadius: 10,
+    borderRadius: radius.md,
   },
   addBtnDisabled: { opacity: 0.4 },
   addBtnText: { color: '#FFF', fontWeight: '700', fontSize: fontSize.sm },

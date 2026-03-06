@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     right: -2,
     width: 18,
     height: 18,
-    borderRadius: 9,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   rowText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
   rowActor: { fontWeight: '700' },
   rowBody: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
-  rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 4 },
+  rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs },
 
   requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
   requestActions: { flexDirection: 'row', gap: spacing.xs },

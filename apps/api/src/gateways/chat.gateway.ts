@@ -9,7 +9,7 @@ import {
   WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { createClerkClient } from '@clerk/backend';
+import { verifyToken } from '@clerk/backend';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../config/prisma.service';
 import { MessagesService } from '../modules/messages/messages.service';
@@ -21,7 +21,6 @@ import { MessagesService } from '../modules/messages/messages.service';
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
-  private clerk: ReturnType<typeof createClerkClient>;
   private messageCounts = new Map<string, number>();
 
   constructor(
@@ -29,9 +28,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
     private config: ConfigService,
   ) {
-    this.clerk = createClerkClient({
-      secretKey: this.config.get('CLERK_SECRET_KEY'),
-    });
     // Reset rate limit counters every minute
     setInterval(() => this.messageCounts.clear(), 60000);
   }
@@ -53,7 +49,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return;
       }
 
-      const { sub: clerkId } = await this.clerk.verifyToken(token);
+      const { sub: clerkId } = await verifyToken(token, {
+        secretKey: this.config.get('CLERK_SECRET_KEY'),
+      });
       const user = await this.prisma.user.findUnique({
         where: { clerkId },
         select: { id: true, username: true },

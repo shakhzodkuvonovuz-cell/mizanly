@@ -9,7 +9,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { Visibility, ReportReason } from '@prisma/client';
+import { ThreadVisibility, ReportReason } from '@prisma/client';
 
 const THREAD_SELECT = {
   id: true,
@@ -102,7 +102,7 @@ export class ThreadsService {
         ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
         : Promise.resolve([]),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
@@ -160,7 +160,7 @@ export class ThreadsService {
         data: {
           userId,
           content: dto.content,
-          visibility: (dto.visibility as Visibility) ?? 'PUBLIC',
+          visibility: (dto.visibility as ThreadVisibility) ?? 'PUBLIC',
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -231,10 +231,7 @@ export class ThreadsService {
         where: { id: threadId },
         data: { isRemoved: true },
       }),
-      this.prisma.user.update({
-        where: { id: userId },
       this.prisma.$executeRaw`UPDATE "User" SET "threadsCount" = GREATEST("threadsCount" - 1, 0) WHERE id = ${userId}`,
-      }),
     ]);
     return { deleted: true };
   }
@@ -275,10 +272,7 @@ export class ThreadsService {
       this.prisma.threadReaction.delete({
         where: { userId_threadId: { userId, threadId } },
       }),
-      this.prisma.thread.update({
-        where: { id: threadId },
       this.prisma.$executeRaw`UPDATE "Thread" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${threadId}`,
-      }),
     ]);
     return { liked: false };
   }
@@ -329,10 +323,7 @@ export class ThreadsService {
         where: { id: repost.id },
         data: { isRemoved: true },
       }),
-      this.prisma.thread.update({
-        where: { id: threadId },
       this.prisma.$executeRaw`UPDATE "Thread" SET "repostsCount" = GREATEST("repostsCount" - 1, 0) WHERE id = ${threadId}`,
-      }),
     ]);
     return { reposted: false };
   }
@@ -365,10 +356,7 @@ export class ThreadsService {
       this.prisma.threadBookmark.delete({
         where: { userId_threadId: { userId, threadId } },
       }),
-      this.prisma.thread.update({
-        where: { id: threadId },
       this.prisma.$executeRaw`UPDATE "Thread" SET "bookmarksCount" = GREATEST("bookmarksCount" - 1, 0) WHERE id = ${threadId}`,
-      }),
     ]);
     return { bookmarked: false };
   }
@@ -434,10 +422,7 @@ export class ThreadsService {
       this.prisma.threadReplyLike.delete({
         where: { userId_replyId: { userId, replyId } },
       }),
-      this.prisma.threadReply.update({
-        where: { id: replyId },
       this.prisma.$executeRaw`UPDATE "ThreadReply" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${replyId}`,
-      }),
     ]);
     return { liked: false };
   }
@@ -477,10 +462,7 @@ export class ThreadsService {
 
     await this.prisma.$transaction([
       this.prisma.threadReply.delete({ where: { id: replyId } }),
-      this.prisma.thread.update({
-        where: { id: reply.threadId },
       this.prisma.$executeRaw`UPDATE "Thread" SET "repliesCount" = GREATEST("repliesCount" - 1, 0) WHERE id = ${reply.threadId}`,
-      }),
     ]);
     return { deleted: true };
   }

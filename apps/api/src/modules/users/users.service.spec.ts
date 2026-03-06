@@ -6,8 +6,8 @@ import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let prisma: jest.Mocked<PrismaService>;
-  let redis: jest.Mocked<Redis>;
+  let prisma: any;
+  let redis: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,7 +39,7 @@ describe('UsersService', () => {
     }).compile();
 
     service = module.get<UsersService>(UsersService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
   });
 
@@ -77,7 +77,7 @@ describe('UsersService', () => {
         300,
         JSON.stringify(mockUser),
       );
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({ ...mockUser, isFollowing: false, followRequestPending: false });
     });
 
     it('should return cached user if available', async () => {
@@ -92,7 +92,7 @@ describe('UsersService', () => {
 
       expect(redis.get).toHaveBeenCalledWith('user:testuser');
       expect(prisma.user.findUnique).not.toHaveBeenCalled();
-      expect(result).toEqual(cachedUser);
+      expect(result).toEqual({ ...cachedUser, isFollowing: false, followRequestPending: false });
     });
 
     it('should throw NotFoundException for nonexistent user', async () => {
@@ -159,7 +159,7 @@ describe('UsersService', () => {
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
           reporterId,
-          targetId,
+          reportedUserId: targetId,
           reason: 'SPAM',
         },
       });

@@ -1,451 +1,559 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 3)
+# ARCHITECT INSTRUCTIONS — Mizanly (Batch 7: Production Polish)
 ## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
 
-**Last updated:** 2026-03-06 by Claude Opus 4.6
-**Previous batches:** Batch 1 (56 tasks, 46 done) → Batch 2 (27 tasks, 20 done) → This file.
+**Last updated:** 2026-03-07 by Claude Opus 4.6
+**Previous batches:** 1 (56) -> 2 (27) -> 3 (25) -> 4 (30) -> 5 (28) -> 6 (19+3) -> This file.
 
 ---
 
 ## CRITICAL CONTEXT
 
-A 3rd-party audit (`docs/audit/`) rated the project 3.8/10. Some findings are valid, some are wrong:
+Batch 6 achieved: 0 compilation errors, 0 dead buttons, 0 `as any` in non-test code, all CLAUDE.md stubs fixed, 16 service spec files. The app is ~75% feature complete.
 
-**FALSE FINDING — "SQL Injection":** The audit claims `$executeRaw` is vulnerable. This is WRONG. All 18 calls use Prisma's tagged template literals (`$executeRaw\`...\``), which auto-parameterize values. There are ZERO `$executeRawUnsafe` calls. Do NOT "fix" this — it's already safe.
-
-**VALID findings to address:** No tests, no monitoring, no CI/CD, no privacy compliance, missing security headers, Redis not implemented, `as any` casts in backend services.
+**This batch focuses on production polish:** make tests pass, optimize performance, add accessibility, harden error handling, and ensure every screen feels like a shipped product. No new features.
 
 ---
 
-## STEP 0: CLEANUP FIRST
+## DO NOT TOUCH
 
-### 0.1 Delete junk files
-```bash
-rm apps/mobile/src/store/index.ts.bak
-rm apps/mobile/src/store/index.ts.bak2
-rm temp
-rm temp_plan.md
-```
-
-### 0.2 Remove stale worktrees
-```bash
-git worktree remove .worktrees/feature-voice-messages --force
-git worktree remove .worktrees/feature-search-discovery --force
-git worktree remove .worktrees/step3-search-discovery --force
-git worktree remove .worktrees/batch2-implementation --force
-git worktree remove .worktrees/step4-profile-polish --force
-git worktree remove .claude/worktrees/sad-beaver --force
-```
-
-### 0.3 Commit cleanup + untracked docs
-```bash
-git add -A
-git commit -m "chore: cleanup stale worktrees, backup files, temp files"
-```
+- Prisma schema field names — final
+- `$executeRaw` tagged template literals — they are safe
+- Working features (all 5 spaces, messaging, notifications, search, offline, reports)
+- Existing test logic (only fix failures, don't rewrite passing tests)
 
 ---
 
-## STEP 1: REMAINING BATCH 2 ITEMS (7 tasks)
+## STEP 1: MAKE ALL TESTS PASS (3 tasks)
 
-### 1.1 Content Search — Wire Posts + Threads tabs
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Problem:** Posts and Threads tabs show `<EmptyState>` placeholder "Full-text search coming soon".
-**Fix:** Replace placeholder with actual search:
+### 1.1 Run All Backend Tests and Fix Failures
+
+Run: `cd apps/api && npx jest --passWithNoTests 2>&1`
+
+Read every failure. Common causes:
+- Mock shape doesn't match updated service signatures (batch 5/6 changed method params)
+- Missing mock providers (NotificationsService, DevicesService added as deps)
+- `$transaction` mock not set up (services now use `$transaction` arrays)
+- Prisma enum imports changed (PostVisibility, ReactionType)
+
+**Rules for fixing:**
+- Fix the TEST to match the current SERVICE code, not the other way around
+- If a service method signature changed, update the test's mock calls and assertions
+- If a new dependency was injected, add it to the test module providers with a mock
+- NEVER change service logic to make a test pass
+- NEVER use `@ts-ignore` or skip tests
+
+### 1.2 Run E2E Tests and Fix Failures
+
+Run: `cd apps/api && npx jest --config test/jest-e2e.json 2>&1`
+
+E2E test files: `test/health.e2e-spec.ts`, `test/posts.e2e-spec.ts`
+
+Fix any import/setup issues. These tests use the actual NestJS app bootstrap, so module registration changes from batch 5 (ChannelsModule, VideosModule) may cause issues.
+
+### 1.3 Verify All Tests Green
+
+Run: `cd apps/api && npx jest --passWithNoTests --verbose 2>&1`
+
+**Expected:** ALL tests pass. If any test is fundamentally broken due to missing infrastructure (e.g., needs real database), mark it with `it.todo()` and add a comment explaining why — but try to fix it first.
+
+---
+
+## STEP 2: PERFORMANCE OPTIMIZATION (5 tasks)
+
+### 2.1 Memoize Heavy Components
+
+These components re-render on every parent render. Wrap them with `React.memo`:
+
+**File:** `apps/mobile/src/components/saf/PostCard.tsx`
 ```tsx
-// For Posts tab:
-const postsQuery = useInfiniteQuery({
-  queryKey: ['search-posts', debouncedQuery],
-  queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'post', pageParam),
-  enabled: !!debouncedQuery && activeTab === 'posts',
-  getNextPageParam: (last) => last.meta?.cursor,
-  initialPageParam: undefined,
+export const PostCard = React.memo(function PostCard(props: PostCardProps) {
+  // existing component body
 });
-// Render with <PostCard> in a FlatList
 ```
-Do the same for Threads tab with `<ThreadCard>`. Both need `onEndReached` for pagination.
 
-**Backend check:** Verify `searchApi.search(query, 'post')` and `searchApi.search(query, 'thread')` exist in `apps/mobile/src/services/api.ts`. If not, add them — the backend's `SearchController` should accept type='post'|'thread'.
+**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
+Same pattern — wrap with `React.memo`.
 
-### 1.2 Search History
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Steps:**
-1. `import AsyncStorage from '@react-native-async-storage/async-storage'`
-2. State: `const [searchHistory, setSearchHistory] = useState<string[]>([])`
-3. On mount: load from `AsyncStorage.getItem('search-history')`, parse JSON
-4. On search submit: prepend to history (max 20), save to AsyncStorage
-5. When query is empty and input focused: show history list with "x" to remove each + "Clear All"
-6. Tap history item → set it as query
+**File:** `apps/mobile/app/(tabs)/bakra.tsx`
+The `ReelItem` component rendered inside FlatList — wrap with `React.memo`.
 
-### 1.3 Explore Grid
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Steps:**
-1. When search is NOT active (empty query, not focused), show explore grid
-2. Fetch: `postsApi.getFeed('foryou')` or create `postsApi.getExplore()` endpoint
-3. Render: `<FlatList numColumns={3}>` with square image thumbnails
-4. Each cell: `<Pressable onPress={() => router.push(\`/post/\${post.id}\`)}>`
-5. Video posts: overlay `<Icon name="play" />` in corner
-6. Style: `aspectRatio: 1`, `gap: 2` between cells
+**File:** `apps/mobile/app/(tabs)/minbar.tsx`
+The `VideoCard` component rendered inside FlatList — wrap with `React.memo`.
 
-### 1.4 QR Code Screen
-**Steps:**
-1. Install: `npx expo install react-native-qrcode-svg react-native-svg` (run in Windows terminal)
-2. Create `apps/mobile/app/(screens)/qr-code.tsx`:
+**Rule:** Only memo components that receive props and are rendered in lists. Do NOT memo screen-level components or components that always receive new props (callbacks without useCallback).
+
+### 2.2 Add useCallback to FlatList Handlers
+
+In every tab screen that uses FlatList, ensure `renderItem`, `onEndReached`, and `keyExtractor` are wrapped in `useCallback` (or defined outside the component for static functions).
+
+**Files to check and fix:**
+- `apps/mobile/app/(tabs)/saf.tsx`
+- `apps/mobile/app/(tabs)/majlis.tsx`
+- `apps/mobile/app/(tabs)/bakra.tsx`
+- `apps/mobile/app/(tabs)/minbar.tsx`
+- `apps/mobile/app/(tabs)/risalah.tsx`
+
+For each file:
+1. Read the file
+2. Check if `renderItem` is an inline arrow function in the FlatList props
+3. If so, extract it to a `useCallback`-wrapped function
+4. Same for `onEndReached`
+5. `keyExtractor` can be a static function defined outside the component
+
+**Example fix:**
 ```tsx
-import QRCode from 'react-native-qrcode-svg';
-// Accept username via route params
-// Render QRCode encoding `mizanly://profile/${username}`
-// Share button using Share.share()
-// Save button using expo-media-library (optional, can defer)
+// BEFORE (re-creates function every render):
+<FlatList renderItem={({ item }) => <PostCard post={item} />} />
+
+// AFTER:
+const renderItem = useCallback(({ item }) => <PostCard post={item} />, []);
+<FlatList renderItem={renderItem} />
 ```
-3. In `profile/[username].tsx`, wire share button to show BottomSheet with "Share Profile" + "QR Code" options. "QR Code" navigates to `/qr-code?username=${username}`.
 
-### 1.5 Pull-to-Refresh on profile/[username].tsx
-**File:** `apps/mobile/app/(screens)/profile/[username].tsx`
-**Steps:**
-1. Add `refreshing` state
-2. Add `handleRefresh` that invalidates the profile + posts queries
-3. Add `<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.emerald} />` to the FlatList
+### 2.3 Add `getItemLayout` to Fixed-Height Lists
 
-### 1.6 Fix Onboarding Username Registration
-**File:** `apps/mobile/app/onboarding/profile.tsx`
-**Problem:** Username chosen in step 1 is passed via route params but never sent to backend. Only `displayName` and `bio` are sent.
-**Fix:**
+For FlatLists where items have a known fixed height, add `getItemLayout` to skip measurement:
+
+**File:** `apps/mobile/app/(tabs)/bakra.tsx` — reels are full-screen height
 ```tsx
-// In profile.tsx handleFinish/handleContinue:
-const username = params.username; // from route params
-await usersApi.updateMe({ displayName, bio, username });
+getItemLayout={(_, index) => ({
+  length: SCREEN_H,
+  offset: SCREEN_H * index,
+  index,
+})}
 ```
-Also verify the backend's `updateMe` endpoint accepts `username` in `UpdateUserDto`.
 
-### 1.7 Remaining borderRadius
-**Minor — fix only if touching these files for other reasons:**
-- `create-thread.tsx:661` — `borderRadius: 4` → `radius.sm`
-- `create-story.tsx:220` — `borderRadius: 14` → `radius.lg`
-- `conversation/[id].tsx:1215` — `borderRadius: 6` → `radius.sm`
-- `borderRadius: 1` on thin lines/bars is fine, leave as-is
+**File:** `apps/mobile/app/(tabs)/risalah.tsx` — conversation items are fixed height (~72px)
+```tsx
+getItemLayout={(_, index) => ({
+  length: 72,
+  offset: 72 * index,
+  index,
+})}
+```
 
----
+Only add this where item heights are truly fixed. Do NOT add to saf/majlis/minbar feeds (variable height cards).
 
-## STEP 2: BACKEND HARDENING
+### 2.4 Add `maxToRenderPerBatch` and `windowSize` to Heavy Lists
 
-### 2.1 Security Headers Middleware
-**File:** Create `apps/api/src/common/middleware/security-headers.middleware.ts`
-```ts
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+For feeds with heavy items (images, videos), add performance props:
 
-@Injectable()
-export class SecurityHeadersMiddleware implements NestMiddleware {
-  use(req: Request, res: Response, next: NextFunction) {
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
-    res.setHeader('X-XSS-Protection', '0'); // modern browsers don't need it, CSP is better
-    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-    // Don't add CSP — mobile app doesn't load web content from API
-    next();
+**Files:** `saf.tsx`, `majlis.tsx`, `minbar.tsx`, `bakra.tsx`
+```tsx
+<FlatList
+  maxToRenderPerBatch={5}
+  windowSize={5}
+  removeClippedSubviews={true}
+  // ... existing props
+/>
+```
+
+Only add these if not already present. Read each file first.
+
+### 2.5 Pause Off-Screen Videos in Bakra
+
+**File:** `apps/mobile/app/(tabs)/bakra.tsx`
+
+Check if off-screen reels are paused. The FlatList should track the currently visible item and only play that one. If this isn't implemented:
+
+Use `onViewableItemsChanged` to track the visible item index:
+```tsx
+const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
+const [activeIndex, setActiveIndex] = useState(0);
+
+const onViewableItemsChanged = useRef(({ viewableItems }) => {
+  if (viewableItems.length > 0) {
+    setActiveIndex(viewableItems[0].index ?? 0);
   }
-}
-```
-Register in `app.module.ts`:
-```ts
-configure(consumer: MiddlewareConsumer) {
-  consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
-}
-```
+}).current;
 
-### 2.2 Environment-Aware Error Filter
-**File:** `apps/api/src/common/filters/http-exception.filter.ts`
-**Problem:** Stack traces may leak in production.
-**Fix:** Check `process.env.NODE_ENV`:
-```ts
-if (process.env.NODE_ENV === 'production') {
-  // Return generic message, log full error server-side
-  response.status(status).json({
-    statusCode: status,
-    message: status >= 500 ? 'Internal server error' : message,
-    timestamp: new Date().toISOString(),
-  });
-} else {
-  // Return full error details in development
-  response.status(status).json({
-    statusCode: status, message, stack: exception.stack,
-    timestamp: new Date().toISOString(),
-  });
-}
+// Pass to FlatList:
+<FlatList
+  onViewableItemsChanged={onViewableItemsChanged}
+  viewabilityConfig={viewabilityConfig}
+/>
+
+// In ReelItem, only play if active:
+<Video shouldPlay={index === activeIndex} />
 ```
 
-### 2.3 Health Check Endpoint
-**File:** Create `apps/api/src/modules/health/health.controller.ts`
-```ts
-@Controller('health')
-export class HealthController {
-  constructor(private prisma: PrismaService) {}
-
-  @Get()
-  async check() {
-    const dbOk = await this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
-    return {
-      status: dbOk ? 'healthy' : 'degraded',
-      timestamp: new Date().toISOString(),
-      database: dbOk ? 'up' : 'down',
-    };
-  }
-}
-```
-Register `HealthModule` in `app.module.ts`.
-
-### 2.4 WebSocket Rate Limiting
-**File:** `apps/api/src/gateways/chat.gateway.ts`
-**Steps:**
-1. Track message counts per userId with a Map or Redis
-2. Allow max 30 messages/minute per user
-3. On rate limit exceeded: `socket.emit('error', { message: 'Rate limit exceeded' })`
-4. Reset counter every 60 seconds
-
-### 2.5 Fix Remaining `as any` Casts in Backend
-**These are the real ones that should be proper enums:**
-
-| File | Line | Current | Fix |
-|------|------|---------|-----|
-| `posts.service.ts:122` | `dto.postType as any` | Import `PostType` enum from Prisma, cast properly |
-| `posts.service.ts:124` | `(dto.visibility as any) ?? 'PUBLIC'` | Import `Visibility` enum from Prisma |
-| `posts.service.ts:228,233` | `reaction as any` | Import `Reaction` enum from Prisma |
-| `posts.service.ts:495` | `(reasonMap[reason] ?? 'OTHER') as any` | Import `ReportReason` enum |
-| `threads.service.ts:162` | `(dto.visibility as any) ?? 'PUBLIC'` | Import `Visibility` enum |
-| `threads.service.ts:554` | reason cast | Import `ReportReason` enum |
-| `messages.service.ts:145` | `(data.messageType as any) ?? 'TEXT'` | Import `MessageType` enum |
-| `notifications.service.ts:113` | `params.type as any` | Import `NotificationType` enum |
-| `stories.service.ts:123` | `data.stickerData as any` | Type as `Prisma.InputJsonValue` |
-| `search.controller.ts:14` | `type as any` | Define union type for search type param |
-| `users.service.ts:453` | reason cast | Import `ReportReason` enum |
-
-**Pattern:** All Prisma enums are auto-generated. Import from `@prisma/client`:
-```ts
-import { PostType, Visibility, Reaction, ReportReason, MessageType, NotificationType } from '@prisma/client';
-```
-Then use `dto.postType as PostType` instead of `as any`.
-
-### 2.6 Endpoint-Specific Rate Limiting
-**Files:** Controllers with sensitive operations
-**Steps:**
-1. Import `@Throttle()` from `@nestjs/throttler`
-2. Apply to sensitive endpoints:
-   - `POST /posts` — `@Throttle({ default: { limit: 10, ttl: 60000 } })`
-   - `POST /threads` — same
-   - `POST /stories` — same
-   - `POST /messages/.../send` — `@Throttle({ default: { limit: 30, ttl: 60000 } })`
-   - `POST /auth/check-username` — already has 20/min
+Read the file first — this may already be implemented. If so, skip.
 
 ---
 
-## STEP 3: REDIS IMPLEMENTATION
+## STEP 3: ACCESSIBILITY (4 tasks)
 
-### 3.1 Create Redis Module
-**File:** Create `apps/api/src/config/redis.module.ts`
-```ts
-import { Module, Global } from '@nestjs/common';
-import Redis from 'ioredis';
+### 3.1 Add accessibilityLabel to Tab Bar Icons
 
-const REDIS_PROVIDER = {
-  provide: 'REDIS',
-  useFactory: () => {
-    return new Redis(process.env.UPSTASH_REDIS_URL, {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: true,
-    });
-  },
-};
+**File:** `apps/mobile/app/(tabs)/_layout.tsx`
 
-@Global()
-@Module({ providers: [REDIS_PROVIDER], exports: [REDIS_PROVIDER] })
-export class RedisModule {}
-```
-Register in `app.module.ts`.
-
-### 3.2 Cache User Profiles
-**File:** `apps/api/src/modules/users/users.service.ts`
-```ts
-// In constructor: @Inject('REDIS') private redis: Redis
-// In getProfile:
-const cached = await this.redis.get(`user:${username}`);
-if (cached) return JSON.parse(cached);
-// ... fetch from DB ...
-await this.redis.setex(`user:${username}`, 300, JSON.stringify(user)); // 5 min TTL
-```
-Invalidate on profile update: `await this.redis.del(\`user:\${username}\`)`.
-
-### 3.3 Cache Feed Responses
-**File:** `apps/api/src/modules/posts/posts.service.ts`
-**Cache the "for you" feed for 30 seconds per user:**
-```ts
-const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
-const cached = await this.redis.get(cacheKey);
-if (cached) return JSON.parse(cached);
-// ... generate feed ...
-await this.redis.setex(cacheKey, 30, JSON.stringify(result));
+Each `Tabs.Screen` should have an accessible label. Check if `tabBarAccessibilityLabel` is set:
+```tsx
+<Tabs.Screen
+  name="saf"
+  options={{
+    tabBarAccessibilityLabel: "Home feed",
+    // ... existing options
+  }}
+/>
 ```
 
----
+Add for all 5 tabs: saf ("Home feed"), bakra ("Short videos"), minbar ("Videos"), majlis ("Threads"), risalah ("Messages").
 
-## STEP 4: TESTING FOUNDATION
+### 3.2 Add accessibilityLabel to Action Buttons
 
-### 4.1 Backend Unit Test Setup
-```bash
-# In Windows terminal:
-cd apps/api && npm install --save-dev @nestjs/testing jest @types/jest ts-jest
-```
-Create `apps/api/jest.config.ts`:
-```ts
-export default {
-  moduleFileExtensions: ['js', 'json', 'ts'],
-  rootDir: 'src',
-  testRegex: '.*\\.spec\\.ts$',
-  transform: { '^.+\\.(t|j)s$': 'ts-jest' },
-  collectCoverageFrom: ['**/*.(t|j)s'],
-  coverageDirectory: '../coverage',
-  testEnvironment: 'node',
-};
-```
+In these files, find interactive elements (TouchableOpacity, Pressable) that have only an Icon child and no text. Add `accessibilityLabel`:
 
-### 4.2 Write First Tests — Users Service
-**File:** Create `apps/api/src/modules/users/users.service.spec.ts`
-Test the most critical paths:
-- `getProfile()` returns user data
-- `updateMe()` validates input
-- `reportUser()` creates a report record
-- `getProfile()` returns null for nonexistent user
-
-Mock Prisma with `@prisma/client/testing`.
-
-### 4.3 Write First Tests — Posts Service
-**File:** Create `apps/api/src/modules/posts/posts.service.spec.ts`
-- `createPost()` creates post and increments count
-- `deletePost()` soft-deletes and decrements count
-- `likePost()` creates like record
-- `unlikePost()` removes like record
-- Feed generation excludes blocked users
-
-### 4.4 API Integration Test Example
-**File:** Create `apps/api/test/posts.e2e-spec.ts`
-Use NestJS testing module to spin up the app and test full request cycle:
-- `POST /api/v1/posts` creates a post
-- `GET /api/v1/posts/:id` returns the post
-- `DELETE /api/v1/posts/:id` removes it
-
----
-
-## STEP 5: MOBILE POLISH
-
-### 5.1 Double-Tap to Like (Saf)
 **File:** `apps/mobile/src/components/saf/PostCard.tsx`
-**Steps:**
-1. Wrap image area in `<Pressable>` with double-tap detection
-2. On double-tap: if not already liked, trigger like mutation
-3. Show brief heart animation overlay (Reanimated scale + fade)
-4. Add haptic feedback (`useHaptic().medium()`)
+- Like button: `accessibilityLabel={post.isLiked ? "Unlike post" : "Like post"}`
+- Comment button: `accessibilityLabel="Comment on post"`
+- Share button: `accessibilityLabel="Share post"`
+- Bookmark button: `accessibilityLabel={post.isBookmarked ? "Remove bookmark" : "Bookmark post"}`
+- More button: `accessibilityLabel="More options"`
 
-### 5.2 Heart Like Animation
-**File:** `apps/mobile/src/components/saf/PostCard.tsx`
-**Steps:**
-1. On like: show `<Icon name="heart-filled" color={colors.error} />` centered on post image
-2. Animate: scale from 0 → 1.2 → 1 → 0 over 800ms using `withSequence`
-3. After animation: update like state
+**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
+Same pattern for like, reply, repost, share, more buttons.
 
-### 5.3 Message Send Animation
+**File:** `apps/mobile/app/(tabs)/bakra.tsx`
+Same pattern for reel action column (like, comment, share, bookmark, report).
+
+Read each file first. Only add labels to buttons that DON'T already have them.
+
+### 3.3 Add accessibilityRole to Interactive Elements
+
+Add `accessibilityRole="button"` to custom Pressable/TouchableOpacity elements that act as buttons but might not be announced as such by screen readers.
+
+Focus on the most used screens:
+- `PostCard.tsx` — action buttons
+- `ThreadCard.tsx` — action buttons
+- Tab bar custom create button in `_layout.tsx`
+
+### 3.4 Add accessibilityLabel to Text Inputs
+
+In compose screens, add labels to TextInput elements:
+
+**File:** `apps/mobile/app/(screens)/create-post.tsx`
+```tsx
+<TextInput
+  accessibilityLabel="Post content"
+  // ... existing props
+/>
+```
+
+**File:** `apps/mobile/app/(screens)/create-thread.tsx`
+```tsx
+<TextInput
+  accessibilityLabel="Thread content"
+  // ... existing props
+/>
+```
+
 **File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-**Steps:**
-1. When a message is sent, animate the new bubble sliding up from bottom
-2. Use `Animated.View` with `translateY` from screen height to 0
-3. Duration: 200ms with spring animation
+```tsx
+<TextInput
+  accessibilityLabel="Message input"
+  // ... existing props
+/>
+```
 
-### 5.4 Missing Accessibility Labels
-Run through ALL interactive elements and add:
-- `accessibilityLabel` — describes what it is
-- `accessibilityRole` — "button", "link", "image", etc.
-- `accessibilityHint` — describes what happens when tapped
+Read each file first. Only add if not present.
 
-Priority screens (most user-facing):
-1. `saf.tsx` — feed tab
-2. `majlis.tsx` — threads tab
-3. `risalah.tsx` — messages tab
-4. `PostCard.tsx` — every post
-5. `ThreadCard.tsx` — every thread
+---
+
+## STEP 4: ERROR HANDLING HARDENING (4 tasks)
+
+### 4.1 Add Error Boundaries to Detail Screens
+
+If a detail screen crashes (bad data, network error during render), the whole app shouldn't crash. The app already has a root `ErrorBoundary` in `src/components/ErrorBoundary.tsx`.
+
+Check if it's used. If the root ErrorBoundary exists and wraps the app in `_layout.tsx`, that's sufficient for crash protection. Verify this by reading `_layout.tsx`.
+
+If individual screens need their own error boundaries (e.g., for graceful "Something went wrong" UI instead of the global fallback), wrap the most crash-prone screens:
+
+**Screens to wrap (if not already):**
+- `video/[id].tsx` — video player can crash on bad URLs
+- `reel/[id].tsx` — same
+- `story-viewer.tsx` — complex gesture/animation code
+
+Use the existing ErrorBoundary component. Only add if not already wrapped.
+
+### 4.2 Add Error States to Queries
+
+Check detail screens for missing error states. When a query fails, the user should see something — not a blank screen.
+
+**Pattern to add where missing:**
+```tsx
+if (query.isError) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
+      </View>
+      <EmptyState
+        icon="slash"
+        title="Something went wrong"
+        subtitle="Please try again later"
+        actionLabel="Go back"
+        onAction={() => router.back()}
+      />
+    </SafeAreaView>
+  );
+}
+```
+
+**Files to check and add error states if missing:**
+- `apps/mobile/app/(screens)/post/[id].tsx`
+- `apps/mobile/app/(screens)/thread/[id].tsx`
+- `apps/mobile/app/(screens)/video/[id].tsx`
+- `apps/mobile/app/(screens)/reel/[id].tsx`
+- `apps/mobile/app/(screens)/channel/[handle].tsx`
+- `apps/mobile/app/(screens)/profile/[username].tsx`
+
+Read each file first. If it already handles `isError`, skip it.
+
+### 4.3 Add Confirmation to Destructive Actions
+
+Check that all destructive actions (delete post, delete comment, leave group, block user, delete conversation) show `Alert.alert` confirmation before executing.
+
+**Files to check:**
+- `PostCard.tsx` — delete post
+- `ThreadCard.tsx` — delete thread
+- `post/[id].tsx` — delete comment
+- `conversation-info.tsx` — leave group, remove member
+- `profile/[username].tsx` — block user
+
+Read each file. If any destructive mutation fires without an Alert confirmation, add one:
+```tsx
+Alert.alert(
+  'Delete Post',
+  'Are you sure? This cannot be undone.',
+  [
+    { text: 'Cancel', style: 'cancel' },
+    { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+  ],
+);
+```
+
+### 4.4 Replace console.error/warn with Proper Handling
+
+Search for `console.error` and `console.warn` in mobile app code (not node_modules). Replace with either:
+- Silent catch (if truly non-critical)
+- `Alert.alert` (if user should know)
+- Remove entirely (if it's debug logging)
+
+Run: `grep -rn "console\.\(error\|warn\|log\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts"`
+
+Do NOT add `console.log` anywhere. The backend uses Pino structured logging — that's fine.
+
+---
+
+## STEP 5: VISUAL POLISH (4 tasks)
+
+### 5.1 Ensure Consistent Header Heights
+
+All detail screens should have the same header pattern:
+```tsx
+<View style={styles.header}>
+  <Pressable onPress={() => router.back()} hitSlop={8}>
+    <Icon name="arrow-left" size="md" color={colors.text.primary} />
+  </Pressable>
+  <Text style={styles.headerTitle}>Title</Text>
+  <View style={{ width: 40 }} />  {/* spacer for centering */}
+</View>
+```
+
+Header style should be consistent:
+```tsx
+header: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  paddingHorizontal: spacing.base,
+  paddingVertical: spacing.sm,
+  borderBottomWidth: StyleSheet.hairlineWidth,
+  borderBottomColor: colors.dark.border,
+},
+```
+
+**Check these screens and fix inconsistencies:**
+- `post/[id].tsx`, `thread/[id].tsx`, `video/[id].tsx`, `reel/[id].tsx`
+- `channel/[handle].tsx`, `profile/[username].tsx`
+- `create-post.tsx`, `create-thread.tsx`, `create-video.tsx`, `create-reel.tsx`
+- `report.tsx`, `notifications.tsx`, `settings.tsx`
+
+Read each file. Only fix if the header pattern is visibly different (wrong padding, missing border, wrong icon).
+
+### 5.2 Ensure Loading States Use Skeleton
+
+Check that ALL detail screens show Skeleton loading (not blank screen) while data loads:
+
+**Pattern:**
+```tsx
+if (query.isLoading) {
+  return (
+    <SafeAreaView style={styles.container}>
+      <Skeleton.Rect width="100%" height={200} />
+      <View style={{ padding: spacing.base }}>
+        <Skeleton.Rect width="60%" height={20} />
+        <Skeleton.Rect width="40%" height={16} style={{ marginTop: spacing.sm }} />
+      </View>
+    </SafeAreaView>
+  );
+}
+```
+
+**Files to verify:**
+- `post/[id].tsx`, `thread/[id].tsx`, `video/[id].tsx`, `reel/[id].tsx`
+- `channel/[handle].tsx`, `profile/[username].tsx`
+- `conversation/[id].tsx`
+
+Read each. If loading state is missing or uses ActivityIndicator instead of Skeleton, fix it.
+
+### 5.3 Fix Hardcoded Colors
+
+Search for hardcoded color strings in screen files:
+```bash
+grep -rn "'#[0-9a-fA-F]\{3,6\}'" apps/mobile/app/ apps/mobile/src/components/ --include="*.tsx" | grep -v node_modules | grep -v theme
+```
+
+Replace with theme tokens:
+- `'#000'` or `'#000000'` -> `colors.dark.bg` or `'#000'` (acceptable for true black overlays)
+- `'#fff'` or `'#ffffff'` -> `colors.text.primary` or keep for contrast (loading backgrounds)
+- `'#333'` etc. -> find the closest theme token
+
+**Exception:** `'#000'` and `'#fff'` in story-viewer.tsx and video players are acceptable (true black/white for media backgrounds). Do not change those.
+
+### 5.4 Verify EmptyState on All List Screens
+
+Every FlatList should have a `ListEmptyComponent`. Check these screens:
+
+- `saf.tsx`, `majlis.tsx`, `bakra.tsx`, `minbar.tsx`, `risalah.tsx` (tabs)
+- `notifications.tsx`, `search.tsx`, `hashtag/[tag].tsx`
+- `followers/[userId].tsx`, `following/[userId].tsx`
+- `blocked.tsx`, `muted.tsx`, `circles.tsx`
+
+Each should use `<EmptyState>` component (not bare text) when the list is empty AND not loading. If loading, show Skeleton.
+
+Read each file. Only fix if missing.
 
 ---
 
 ## ABSOLUTE RULES — NEVER VIOLATE
 
-1. **NEVER use RN `Modal`** → Always `<BottomSheet>`
-2. **NEVER use text emoji for icons** → Always `<Icon name="..." />`
-3. **NEVER hardcode border radius >= 6** → Always `radius.*` from theme
-4. **NEVER use bare "No items" text** → Always `<EmptyState>`
-5. **NEVER create new files unless necessary** → Edit existing first
-6. **NEVER change Prisma schema field names** → They are final
-7. **NEVER use `@CurrentUser()` without `'id'`** → Always `@CurrentUser('id')`
-8. **ALL FlatLists must have `<RefreshControl>`**
-9. **NEVER use `any` in new code** → Type everything properly
-10. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
-11. **NEVER call both socket.emit AND REST mutation for the same action**
-12. **The `$executeRaw` tagged template literals are SAFE** — do NOT replace them with Prisma increment/decrement (we need GREATEST clamping)
+1. **NEVER use RN `Modal`** — Always `<BottomSheet>`
+2. **NEVER use text emoji for icons** — Always `<Icon name="..." />`
+3. **NEVER hardcode border radius >= 6** — Always `radius.*` from theme
+4. **NEVER use bare "No items" text** — Always `<EmptyState>`
+5. **NEVER change Prisma schema field names** — They are final
+6. **ALL FlatLists must have `<RefreshControl>`** (or `onRefresh`+`refreshing` shorthand)
+7. **NEVER use `any` in new non-test code** — Type everything properly
+8. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
+9. **The `$executeRaw` tagged template literals are SAFE** — do NOT replace them
+10. **NEVER suppress errors with `@ts-ignore`** — fix the actual type
+11. **NEVER add `console.log` to mobile code** — use Alert or silent catch
+12. **NEVER rewrite passing tests** — only fix failures
+13. **NEVER change service logic to make a test pass** — fix the test instead
 
 ---
 
 ## PRIORITY QUEUE
 
-Work in this exact order. Commit after each step.
-
 ```
-STEP 0 — CLEANUP
-[ ] 0.1  Delete junk files (.bak, temp, temp_plan.md)
-[ ] 0.2  Remove 6 stale worktrees
-[ ] 0.3  Commit cleanup
+STEP 1 — TESTS (do first, reveals hidden breaks)
+[ ] 1.1  Run unit tests, fix all failures
+[ ] 1.2  Run e2e tests, fix all failures
+[ ] 1.3  Verify all green
 
-STEP 1 — REMAINING BATCH 2
-[ ] 1.1  Wire content search (posts + threads tabs)
-[ ] 1.2  Search history with AsyncStorage
-[ ] 1.3  Explore grid (3-column trending)
-[ ] 1.4  QR code screen + wire share button
-[ ] 1.5  Pull-to-refresh on profile/[username].tsx
-[ ] 1.6  Fix onboarding username registration
-[ ] 1.7  Fix remaining borderRadius (minor)
+STEP 2 — PERFORMANCE
+[ ] 2.1  React.memo on PostCard, ThreadCard, ReelItem, VideoCard
+[ ] 2.2  useCallback on FlatList handlers in all 5 tabs
+[ ] 2.3  getItemLayout on bakra + risalah (fixed-height items)
+[ ] 2.4  maxToRenderPerBatch + windowSize + removeClippedSubviews on feed lists
+[ ] 2.5  Pause off-screen videos in bakra
 
-STEP 2 — BACKEND HARDENING
-[ ] 2.1  Security headers middleware
-[ ] 2.2  Environment-aware error filter
-[ ] 2.3  Health check endpoint
-[ ] 2.4  WebSocket rate limiting
-[ ] 2.5  Fix remaining `as any` casts (11 in backend)
-[ ] 2.6  Endpoint-specific rate limiting
+STEP 3 — ACCESSIBILITY
+[ ] 3.1  Tab bar accessibilityLabels
+[ ] 3.2  Action button accessibilityLabels (PostCard, ThreadCard, bakra)
+[ ] 3.3  accessibilityRole="button" on custom touchables
+[ ] 3.4  TextInput accessibilityLabels on compose screens
 
-STEP 3 — REDIS
-[ ] 3.1  Create Redis module
-[ ] 3.2  Cache user profiles (5 min TTL)
-[ ] 3.3  Cache feed responses (30 sec TTL)
+STEP 4 — ERROR HANDLING
+[ ] 4.1  Verify ErrorBoundary wraps app
+[ ] 4.2  Add isError states to 6 detail screens
+[ ] 4.3  Confirm Alert on all destructive actions
+[ ] 4.4  Remove console.error/warn from mobile code
 
-STEP 4 — TESTING FOUNDATION
-[ ] 4.1  Backend unit test setup (Jest + ts-jest)
-[ ] 4.2  Users service tests
-[ ] 4.3  Posts service tests
-[ ] 4.4  API integration test example
-
-STEP 5 — MOBILE POLISH
-[ ] 5.1  Double-tap to like on PostCard
-[ ] 5.2  Heart like animation
-[ ] 5.3  Message send animation
-[ ] 5.4  Accessibility labels on priority screens
+STEP 5 — VISUAL POLISH
+[ ] 5.1  Consistent header heights across all detail screens
+[ ] 5.2  Skeleton loading states on all detail screens
+[ ] 5.3  Replace hardcoded colors with theme tokens
+[ ] 5.4  EmptyState on all list screens
 ```
-
-Each step is 15-60 minutes. Commit after each step number.
 
 ---
 
-## WHAT NOT TO TOUCH (deferred / out of scope)
+## PARALLELIZATION GUIDE
 
-- Bakra (TikTok space) — V1.1, not this batch
-- Minbar (YouTube space) — V1.2, not this batch
-- E2E encryption — V2.0
-- Monetization / payments — separate initiative
-- GDPR/CCPA compliance — needs legal review first
-- CI/CD pipeline — needs DevOps setup, not a code task
-- Multi-region deployment — infrastructure, not code
-- The `$executeRaw` calls — they are SAFE, leave them alone
+```
+Wave 1 — MUST RUN FIRST:
+  Step 1 (all tests) — reveals broken code that other steps might miss
+
+Wave 2 — After Step 1 (all parallel, no file conflicts):
+  Agent A: Step 2.1 + 2.2 (memo + useCallback — touches PostCard, ThreadCard, all 5 tabs)
+  Agent B: Step 2.3 + 2.4 + 2.5 (FlatList perf — touches bakra, risalah, saf, majlis, minbar)
+  *** CONFLICT: Agents A and B both touch tab files. Merge into ONE agent for all of Step 2.
+
+  Agent C: Step 3 (all accessibility — touches _layout, PostCard, ThreadCard, bakra, compose screens)
+  *** CONFLICT: Agent C touches PostCard/ThreadCard too. Run AFTER Agent A/B.
+
+  Agent D: Step 4 (error handling — touches detail screens)
+  Agent E: Step 5 (visual polish — touches detail screens)
+  *** CONFLICT: D and E both touch detail screens. Merge into ONE agent.
+
+SAFE PARALLEL PLAN:
+  Wave 1: Step 1 (tests) — solo
+  Wave 2: Step 2 (perf, all 5 tasks) — solo agent
+  Wave 3 (parallel):
+    - Step 3 (accessibility) — touches tab files + compose screens
+    - Steps 4+5 combined (error handling + visual polish) — touches detail screens only
+```
+
+**CONFLICT ZONES:**
+- `PostCard.tsx` — Steps 2.1, 3.2 both touch it
+- `ThreadCard.tsx` — Steps 2.1, 3.2 both touch it
+- `bakra.tsx` — Steps 2.1, 2.3, 2.4, 2.5, 3.2 all touch it
+- Tab files (saf, majlis, minbar, risalah) — Steps 2.2, 2.4 touch them
+- Detail screens — Steps 4.2, 5.1, 5.2 touch them
+- `_layout.tsx` — Steps 3.1 touch it
+
+---
+
+## VERIFICATION CHECKLIST
+
+```bash
+# 1. All tests pass
+cd apps/api && npx jest --passWithNoTests
+# Expected: all green
+
+# 2. Backend still compiles
+cd apps/api && npx tsc --noEmit
+# Expected: 0 errors
+
+# 3. No dead buttons
+grep -rn "onPress={() => {}}" apps/mobile/app/ --include="*.tsx"
+# Expected: 0 results
+
+# 4. No console.log/warn/error in mobile
+grep -rn "console\.\(log\|warn\|error\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts" | grep -v node_modules
+# Expected: 0 results (or only in non-critical catch blocks)
+
+# 5. No as any in non-test backend
+grep -rn "as any" apps/api/src/ --include="*.ts" | grep -v ".spec.ts" | grep -v "prisma.service.ts" | grep -v "webhooks.controller.ts"
+# Expected: 0 results
+
+# 6. No merge conflicts
+grep -rn "<<<<<<" apps/ --include="*.ts" --include="*.tsx"
+# Expected: 0 results
+```

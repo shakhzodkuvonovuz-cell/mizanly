@@ -27,18 +27,19 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi } from '@/services/api';
-import type { Post, Thread, StoryHighlightAlbum } from '@/types';
+import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
+import type { Post, Thread, StoryHighlightAlbum, Reel } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 4) / 3;
 const COVER_HEIGHT = 160;
 
-type Tab = 'posts' | 'threads';
+type Tab = 'posts' | 'threads' | 'reels';
 
 const PROFILE_TABS = [
   { key: 'posts', label: 'Posts' },
   { key: 'threads', label: 'Threads' },
+  { key: 'reels', label: 'Reels' },
 ];
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
@@ -131,7 +132,6 @@ export default function ProfileScreen() {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['profile', username],
@@ -157,6 +157,15 @@ export default function ProfileScreen() {
     enabled: activeTab === 'threads',
   });
   const threads: Thread[] = threadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const reelsQuery = useInfiniteQuery({
+    queryKey: ['user-reels', username],
+    queryFn: ({ pageParam }) => reelsApi.getUserReels(username, pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: activeTab === 'reels',
+  });
+  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const highlightsQuery = useQuery({
     queryKey: ['highlights', profile?.id],
@@ -241,7 +250,10 @@ export default function ProfileScreen() {
     if (activeTab === 'threads' && threadsQuery.hasNextPage && !threadsQuery.isFetchingNextPage) {
       threadsQuery.fetchNextPage();
     }
-  }, [activeTab, postsQuery, threadsQuery]);
+    if (activeTab === 'reels' && reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
+      reelsQuery.fetchNextPage();
+    }
+  }, [activeTab, postsQuery, threadsQuery, reelsQuery]);
 
   if (profileQuery.isLoading) {
     return (
@@ -334,6 +346,15 @@ export default function ProfileScreen() {
             <Text style={styles.websiteLink}>{profile.website}</Text>
           </TouchableOpacity>
         ) : null}
+        {profile.channel && (
+          <TouchableOpacity
+            style={styles.channelRow}
+            onPress={() => router.push(`/(screens)/channel/${profile.channel.handle}`)}
+          >
+            <Icon name="video" size={13} color={colors.emerald} />
+            <Text style={styles.channelText}>View Channel</Text>
+          </TouchableOpacity>
+        )}
         {profile.profileLinks && profile.profileLinks.length > 0 && (
           <View style={styles.profileLinksSection}>
             {profile.profileLinks.map((link) => (
@@ -508,7 +529,7 @@ export default function ProfileScreen() {
             icon={<Icon name="share" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setShowShareSheet(false);
-              handleShareAction();
+              handleShareProfile();
             }}
           />
           <BottomSheetItem
@@ -524,8 +545,9 @@ export default function ProfileScreen() {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+  if (activeTab === 'threads') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <FlatList
         data={threads}
@@ -597,6 +619,97 @@ export default function ProfileScreen() {
       </BottomSheet>
     </SafeAreaView>
   );
+  }
+
+  // Reels tab
+  const renderReelItem = ({ item }: { item: Reel }) => (
+    <Pressable
+      style={styles.gridItem}
+      onPress={() => router.push(`/(screens)/reel/${item.id}`)}
+    >
+      {item.thumbnailUrl ? (
+        <Image
+          source={{ uri: item.thumbnailUrl }}
+          style={styles.gridImage}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={styles.gridTextPost}>
+          <Icon name="video" size={24} color={colors.text.secondary} />
+        </View>
+      )}
+      <View style={styles.reelOverlay}>
+        <Icon name="play" size={16} color="#fff" />
+        <Text style={styles.reelDuration}>
+          {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, '0')}
+        </Text>
+      </View>
+      <View style={styles.reelStats}>
+        <Icon name="heart" size={12} color="#fff" />
+        <Text style={styles.reelStatText}>{item.likesCount}</Text>
+      </View>
+    </Pressable>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {renderHeaderActions()}
+      <FlatList
+        data={reels}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        columnWrapperStyle={styles.gridRow}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        ListHeaderComponent={() => ListHeader}
+        renderItem={renderReelItem}
+        ListEmptyComponent={() =>
+          reelsQuery.isLoading ? (
+            <View style={styles.skeletonGrid}>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState icon="video" title="No reels yet" />
+          )
+        }
+        ListFooterComponent={() =>
+          reelsQuery.isFetchingNextPage ? <Skeleton.Rect width="100%" height={GRID_ITEM} /> : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={reelsQuery.isRefetching}
+            onRefresh={() => {
+              profileQuery.refetch();
+              reelsQuery.refetch();
+            }}
+            tintColor={colors.emerald}
+          />
+        }
+        contentContainerStyle={styles.gridContainer}
+      />
+      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+        <BottomSheetItem
+          label={`Mute @${username}`}
+          icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
+          onPress={() => muteMutation.mutate()}
+        />
+        <BottomSheetItem
+          label={`Block @${username}`}
+          icon={<Icon name="lock" size="sm" color={colors.error} />}
+          onPress={handleBlock}
+          destructive
+        />
+        <BottomSheetItem
+          label="Report"
+          icon={<Icon name="flag" size="sm" color={colors.error} />}
+          onPress={handleReport}
+          destructive
+        />
+      </BottomSheet>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -646,6 +759,8 @@ const styles = StyleSheet.create({
   bio: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
   websiteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
   websiteLink: { color: colors.emerald, fontSize: fontSize.sm },
+  channelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
+  channelText: { color: colors.emerald, fontSize: fontSize.sm },
   profileLinksSection: { marginTop: spacing.xs },
   profileLinkRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, marginTop: spacing.xs },
   profileLinkTitle: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: "600" },
@@ -654,10 +769,10 @@ const styles = StyleSheet.create({
   highlightsRow: { marginBottom: spacing.md },
   highlightItem: { alignItems: 'center', width: 68 },
   highlightCircle: {
-    width: 62, height: 62, borderRadius: 31,
+    width: 62, height: 62, borderRadius: radius.full,
     borderWidth: 2, borderColor: colors.dark.borderLight,
     overflow: 'hidden', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.dark.bgElevated, marginBottom: 4,
+    backgroundColor: colors.dark.bgElevated, marginBottom: spacing.xs,
   },
   highlightImg: { width: '100%', height: '100%' },
   highlightLabel: { color: colors.text.secondary, fontSize: fontSize.xs, textAlign: 'center' },
@@ -688,7 +803,40 @@ const styles = StyleSheet.create({
   gridTextContent: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: {
     position: 'absolute', top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 3,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
+  },
+  reelOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reelDuration: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+  reelStats: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: radius.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  reelStatText: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+    marginLeft: 2,
   },
   skeletonGrid: {
     flexDirection: 'row', flexWrap: 'wrap', gap: 2,
@@ -700,6 +848,6 @@ const styles = StyleSheet.create({
   },
   threadContent: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22, marginBottom: spacing.xs },
   threadMeta: { flexDirection: 'row', gap: spacing.lg },
-  threadMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  threadMetaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   threadMetaText: { color: colors.text.tertiary, fontSize: fontSize.xs },
 });

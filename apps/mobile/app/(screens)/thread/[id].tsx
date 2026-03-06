@@ -15,7 +15,7 @@ import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
 
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   replyHandle: { color: colors.text.secondary, fontSize: fontSize.xs },
   replyTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginLeft: 'auto' },
   replyContent: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 21 },
-  replyMedia: { width: '100%', height: 160, borderRadius: 10, marginTop: spacing.sm },
+  replyMedia: { width: '100%', height: 160, borderRadius: radius.md, marginTop: spacing.sm },
   replyActions: {
     flexDirection: 'row', gap: spacing.xl, marginTop: spacing.sm,
   },

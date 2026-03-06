@@ -4,7 +4,7 @@ import { SearchService } from './search.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-type SearchType = 'people' | 'threads' | 'posts' | 'tags';
+type SearchType = 'people' | 'threads' | 'posts' | 'tags' | 'reels' | 'videos' | 'channels';
 
 @ApiTags('Search & Discover')
 @Controller('search')

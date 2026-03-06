@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -13,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Badge } from '@/components/ui/Badge';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -104,13 +105,23 @@ function ConversationRow({
 
 export default function RisalahScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { user } = useUser();
   const haptic = useHaptic();
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
+  const [openNewConvoSheet, setOpenNewConvoSheet] = useState(false);
 
   const listRef = useRef<FlatList<Conversation>>(null);
   useScrollToTop(listRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', (e) => {
+      // Only if already on this tab
+      listRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
@@ -157,7 +168,7 @@ export default function RisalahScreen() {
         <Text style={styles.logo}>Risalah</Text>
         <Pressable
           hitSlop={8}
-          onPress={() => { haptic.light(); router.push('/(screens)/new-conversation'); }}
+          onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
           accessibilityLabel="New conversation"
           accessibilityRole="button"
           accessibilityHint="Start a new chat or group"
@@ -165,6 +176,25 @@ export default function RisalahScreen() {
           <Icon name="pencil" size="sm" color={colors.text.primary} />
         </Pressable>
       </View>
+
+      <BottomSheet visible={openNewConvoSheet} onClose={() => setOpenNewConvoSheet(false)}>
+        <BottomSheetItem
+          label="New Message"
+          icon={<Icon name="mail" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setOpenNewConvoSheet(false);
+            router.push('/(screens)/new-conversation');
+          }}
+        />
+        <BottomSheetItem
+          label="New Group"
+          icon={<Icon name="users" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setOpenNewConvoSheet(false);
+            router.push('/(screens)/create-group');
+          }}
+        />
+      </BottomSheet>
 
       {/* Tabs */}
       <TabSelector
@@ -215,7 +245,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   chatInfo: { flex: 1 },
-  chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   chatName: {
     color: colors.text.primary,
     fontWeight: '500',

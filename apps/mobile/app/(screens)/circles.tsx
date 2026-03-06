@@ -219,7 +219,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   circleIcon: {
-    width: 48, height: 48, borderRadius: 24,
+    width: 48, height: 48, borderRadius: radius.full,
     backgroundColor: 'rgba(10,123,79,0.12)',
     alignItems: 'center', justifyContent: 'center',
   },
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   circleInfo: { flex: 1 },
   circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   circleMemberCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
-  deleteBtn: { padding: 4 },
+  deleteBtn: { padding: spacing.xs },
 
 
   // Sheet content
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   emojiBtn: {
-    width: 44, height: 44, borderRadius: 22, borderWidth: 1.5,
+    width: 44, height: 44, borderRadius: radius.full, borderWidth: 1.5,
     borderColor: 'transparent', alignItems: 'center', justifyContent: 'center',
   },
   emojiBtnActive: { borderColor: colors.emerald, backgroundColor: 'rgba(10,123,79,0.1)' },

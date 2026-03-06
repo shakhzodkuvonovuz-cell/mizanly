@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, ActivityIndicator, Platform, Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -61,6 +62,58 @@ export default function CreatePostScreen() {
   const [location, setLocation] = useState<{ name: string; latitude?: number; longitude?: number } | null>(null);
 
   const inputRef = useRef<TextInput>(null);
+  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [showDraftBanner, setShowDraftBanner] = useState(false);
+
+  // Load draft on mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('post-draft');
+        if (saved) {
+          const draft = JSON.parse(saved);
+          if (draft.content) setContent(draft.content);
+          if (draft.mediaUrls && draft.mediaUrls.length > 0) {
+            // Note: mediaUrls are URLs, not local URIs. We cannot restore picked media files.
+            // We'll only restore content for now.
+          }
+          setShowDraftBanner(true);
+          setTimeout(() => setShowDraftBanner(false), 3000);
+        }
+      } catch (err) {
+        console.warn('Failed to load draft', err);
+      }
+    };
+    loadDraft();
+
+    return () => {
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+    };
+  }, []);
+
+  // Debounced auto-save
+  const saveDraft = useCallback(() => {
+    if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+    draftSaveRef.current = setTimeout(async () => {
+      try {
+        if (!content.trim() && media.length === 0) {
+          await AsyncStorage.removeItem('post-draft');
+          return;
+        }
+        await AsyncStorage.setItem('post-draft', JSON.stringify({
+          content,
+          mediaUrls: media.map(m => m.uri),
+        }));
+      } catch (err) {
+        console.warn('Failed to save draft', err);
+      }
+    }, 2000);
+  }, [content, media]);
+
+  // Auto-save when content or media changes
+  useEffect(() => {
+    saveDraft();
+  }, [saveDraft]);
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -147,8 +200,13 @@ export default function CreatePostScreen() {
         locationName: location?.name,
       });
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['saf-feed'] });
+      try {
+        await AsyncStorage.removeItem('post-draft');
+      } catch (err) {
+        console.warn('Failed to clear draft', err);
+      }
       router.back();
     },
     onError: (err: Error) => {
@@ -187,6 +245,17 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Draft restored banner */}
+      {showDraftBanner && (
+        <View style={styles.draftBanner}>
+          <Icon name="clock" size="sm" color={colors.gold} />
+          <Text style={styles.draftBannerText}>Draft restored</Text>
+          <TouchableOpacity onPress={() => setShowDraftBanner(false)} hitSlop={8}>
+            <Icon name="x" size="xs" color={colors.text.secondary} />
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView
         style={styles.body}
         keyboardShouldPersistTaps="handled"
@@ -202,7 +271,7 @@ export default function CreatePostScreen() {
               style={styles.visibilityPill}
               onPress={() => setShowVisibility((v) => !v)}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                 <Icon name={visibilityLabel.iconName} size={12} color={colors.text.secondary} />
                 <Text style={styles.visibilityPillText}>{pillText}</Text>
                 <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
@@ -332,7 +401,7 @@ export default function CreatePostScreen() {
             {Array.from({ length: 3 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
                 <Skeleton.Circle size={36} />
-                <View style={{ flex: 1, gap: 4 }}>
+                <View style={{ flex: 1, gap: spacing.xs }}>
                   <Skeleton.Rect width={120} height={14} />
                   <Skeleton.Rect width={80} height={11} />
                 </View>
@@ -481,6 +550,25 @@ const styles = StyleSheet.create({
   },
   postBtnDisabled: { backgroundColor: colors.dark.surface },
   postBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
+  draftBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.active.emerald10,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  draftBannerText: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
 
   // Body
   body: { flex: 1 },
@@ -488,7 +576,7 @@ const styles = StyleSheet.create({
 
   // User row
   userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: 4 },
+  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
   visibilityPill: {
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
     paddingHorizontal: spacing.sm, paddingVertical: 3,
@@ -528,7 +616,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, paddingVertical: 2,
   },
   removeMedia: {
-    position: 'absolute', top: 4, right: 4,
+    position: 'absolute', top: spacing.xs, right: spacing.xs,
     backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.md,
     width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
   },

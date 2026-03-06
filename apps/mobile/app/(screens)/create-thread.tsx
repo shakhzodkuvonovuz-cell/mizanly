@@ -346,7 +346,7 @@ export default function CreateThreadScreen() {
           onPress={() => setShowVisibility((v) => !v)}
         >
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <Icon name={VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
             <Text style={styles.visPillText}>
               {visibility === 'CIRCLE' && selectedCircle
@@ -386,7 +386,7 @@ export default function CreateThreadScreen() {
             {Array.from({ length: 3 }).map((_, i) => (
               <View key={i} style={styles.skeletonRow}>
                 <Skeleton.Circle size={36} />
-                <View style={{ flex: 1, gap: 4 }}>
+                <View style={{ flex: 1, gap: spacing.xs }}>
                   <Skeleton.Rect width={120} height={14} />
                   <Skeleton.Rect width={80} height={11} />
                 </View>
@@ -444,7 +444,7 @@ export default function CreateThreadScreen() {
                     <Icon name="bar-chart-2" size="sm" color={colors.text.primary} />
                     <Text style={styles.pollFormTitle}>Poll</Text>
                   </View>
-                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                     <Icon name="x" size={14} color="#FF453A" />
                     <Text style={styles.pollFormRemove}>Remove</Text>
                   </TouchableOpacity>
@@ -672,7 +672,7 @@ const styles = StyleSheet.create({
   },
   addPartLine: {
     width: 2, height: 20, backgroundColor: colors.dark.border,
-    borderRadius: 1, marginLeft: 20, marginRight: spacing.xs,
+    borderRadius: 1, marginLeft: spacing.lg, marginRight: spacing.xs,
   },
   addPartText: { color: colors.text.tertiary, fontSize: fontSize.base },
 });

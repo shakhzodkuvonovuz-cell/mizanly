@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   },
   at: { color: colors.text.secondary, fontSize: fontSize.base },
   input: { flex: 1, paddingVertical: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
-  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   status: { fontSize: fontSize.sm },
   btn: {
     backgroundColor: colors.emerald,

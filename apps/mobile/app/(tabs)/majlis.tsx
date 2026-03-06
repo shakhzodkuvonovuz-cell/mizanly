@@ -1,11 +1,11 @@
-import { useCallback, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -35,6 +35,7 @@ const TABS = [
 export default function MajlisScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const navigation = useNavigation();
   const haptic = useHaptic();
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
@@ -42,6 +43,14 @@ export default function MajlisScreen() {
 
   const feedRef = useRef<FlashList<Thread>>(null);
   useScrollToTop(feedRef);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('tabPress', (e) => {
+      // Only if already on this tab
+      feedRef.current?.scrollToOffset({ offset: 0, animated: true });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Floating compose button
   const fabScale = useSharedValue(1);

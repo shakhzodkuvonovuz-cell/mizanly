@@ -7,7 +7,7 @@ import { PostsService } from './posts.service';
 
 describe('PostsService', () => {
   let service: PostsService;
-  let prisma: jest.Mocked<PrismaService>;
+  let prisma: any;
   let redis: jest.Mocked<Redis>;
   let notifications: jest.Mocked<NotificationsService>;
 
@@ -18,6 +18,9 @@ describe('PostsService', () => {
         {
           provide: PrismaService,
           useValue: {
+            $transaction: jest.fn(),
+            $executeRaw: jest.fn(),
+            $queryRaw: jest.fn(),
             post: {
               create: jest.fn(),
               findUnique: jest.fn(),
@@ -48,6 +51,31 @@ describe('PostsService', () => {
             hashtag: {
               upsert: jest.fn(),
             },
+            user: {
+              update: jest.fn(),
+            },
+            comment: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              update: jest.fn(),
+              findMany: jest.fn(),
+            },
+            commentReaction: {
+              create: jest.fn(),
+              delete: jest.fn(),
+              findUnique: jest.fn(),
+            },
+            savedPost: {
+              create: jest.fn(),
+              delete: jest.fn(),
+              findUnique: jest.fn(),
+            },
+            feedDismissal: {
+              upsert: jest.fn(),
+            },
+            report: {
+              create: jest.fn(),
+            },
           },
         },
         {
@@ -70,7 +98,7 @@ describe('PostsService', () => {
     }).compile();
 
     service = module.get<PostsService>(PostsService);
-    prisma = module.get(PrismaService);
+    prisma = module.get(PrismaService) as any;
     redis = module.get('REDIS');
     notifications = module.get(NotificationsService);
   });
@@ -98,7 +126,9 @@ describe('PostsService', () => {
         updatedAt: new Date(),
       };
       prisma.post.create.mockResolvedValue(mockPost);
+      prisma.user.update.mockResolvedValue(undefined);
       prisma.hashtag.upsert.mockResolvedValue({} as any);
+      prisma.$transaction.mockResolvedValue([mockPost, undefined]);
 
       const result = await service.create(userId, dto);
 
@@ -108,10 +138,26 @@ describe('PostsService', () => {
           postType: dto.postType,
           content: dto.content,
           visibility: dto.visibility,
+          circleId: undefined,
           mediaUrls: [],
           mediaTypes: [],
+          thumbnailUrl: undefined,
+          mediaWidth: undefined,
+          mediaHeight: undefined,
+          videoDuration: undefined,
+          hashtags: [],
+          mentions: [],
+          locationName: undefined,
+          isSensitive: false,
+          altText: undefined,
+          hideLikesCount: false,
+          commentsDisabled: false,
         },
         select: expect.any(Object),
+      });
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: userId },
+        data: { postsCount: { increment: 1 } },
       });
       expect(result).toEqual(mockPost);
     });
@@ -130,14 +176,20 @@ describe('PostsService', () => {
       prisma.post.update.mockResolvedValue({
         ...mockPost,
         isRemoved: true,
+        removedAt: new Date(),
+        removedById: userId,
       });
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockResolvedValue([undefined, undefined]);
 
-      await service.delete(userId, postId);
+      await service.delete(postId, userId);
 
+      expect(prisma.post.findUnique).toHaveBeenCalledWith({ where: { id: postId } });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id: postId },
-        data: { isRemoved: true },
+        data: { isRemoved: true, removedAt: expect.any(Date), removedById: userId },
       });
+      expect(prisma.$executeRaw).toHaveBeenCalled();
     });
 
     it('should throw ForbiddenException if user is not the author', async () => {
@@ -150,7 +202,7 @@ describe('PostsService', () => {
       };
       prisma.post.findUnique.mockResolvedValue(mockPost);
 
-      await expect(service.delete(userId, postId)).rejects.toThrow(
+      await expect(service.delete(postId, userId)).rejects.toThrow(
         ForbiddenException,
       );
     });
@@ -158,7 +210,7 @@ describe('PostsService', () => {
     it('should throw NotFoundException if post does not exist', async () => {
       prisma.post.findUnique.mockResolvedValue(null);
 
-      await expect(service.delete('user-123', 'post-456')).rejects.toThrow(
+      await expect(service.delete('post-456', 'user-123')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -177,6 +229,8 @@ describe('PostsService', () => {
       prisma.postReaction.findUnique.mockResolvedValue(null);
       prisma.postReaction.create.mockResolvedValue({} as any);
       prisma.post.update.mockResolvedValue({ ...mockPost, likesCount: 6 });
+      prisma.$transaction.mockResolvedValue([undefined, undefined]);
+      notifications.create.mockResolvedValue({} as any);
 
       await service.react(postId, userId, 'LIKE');
 
@@ -211,17 +265,15 @@ describe('PostsService', () => {
       };
       prisma.postReaction.findUnique.mockResolvedValue(mockLike);
       prisma.postReaction.delete.mockResolvedValue({} as any);
-      prisma.post.update.mockResolvedValue({} as any);
+      prisma.$executeRaw.mockResolvedValue(1);
+      prisma.$transaction.mockResolvedValue([undefined, undefined]);
 
       await service.unreact(postId, userId);
 
       expect(prisma.postReaction.delete).toHaveBeenCalledWith({
         where: { userId_postId: { userId, postId } },
       });
-      expect(prisma.post.update).toHaveBeenCalledWith({
-        where: { id: postId },
-        data: { likesCount: { decrement: 1 } },
-      });
+      expect(prisma.$executeRaw).toHaveBeenCalled();
     });
   });
 

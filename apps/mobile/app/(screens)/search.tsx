@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { formatDistanceToNowStrict } from 'date-fns';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -18,13 +19,16 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, postsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
-import type { User, TrendingHashtag } from '@/types';
+import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
 
 const SEARCH_TABS = [
   { key: 'people', label: 'People' },
   { key: 'hashtags', label: 'Hashtags' },
   { key: 'posts', label: 'Posts' },
   { key: 'threads', label: 'Threads' },
+  { key: 'reels', label: 'Reels' },
+  { key: 'videos', label: 'Videos' },
+  { key: 'channels', label: 'Channels' },
 ] as const;
 
 type SearchTab = typeof SEARCH_TABS[number]['key'];
@@ -46,6 +50,52 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
       {user.isFollowing ? (
         <Text style={styles.followingLabel}>Following</Text>
       ) : null}
+    </Pressable>
+  );
+}
+
+function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+  const durationMinutes = Math.floor(video.duration / 60);
+  const durationSeconds = Math.floor(video.duration % 60);
+  const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+
+  return (
+    <Pressable style={styles.videoRow} onPress={onPress}>
+      <Image
+        source={{ uri: video.thumbnailUrl || video.videoUrl }}
+        style={styles.videoThumbnail}
+        resizeMode="cover"
+      />
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+        <Text style={styles.videoChannel}>{video.channel?.name || 'Unknown'}</Text>
+        <View style={styles.videoStats}>
+          <Icon name="eye" size={14} color={colors.text.secondary} />
+          <Text style={styles.videoStat}>{video.viewsCount.toLocaleString()} views</Text>
+          <Icon name="clock" size={14} color={colors.text.secondary} />
+          <Text style={styles.videoStat}>{durationText}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
+  return (
+    <Pressable style={styles.channelRow} onPress={onPress}>
+      <Avatar uri={channel.avatarUrl} name={channel.name} size="lg" />
+      <View style={styles.channelInfo}>
+        <View style={styles.channelNameRow}>
+          <Text style={styles.channelName}>{channel.name}</Text>
+          {channel.isVerified && <VerifiedBadge size={13} />}
+        </View>
+        <Text style={styles.channelHandle}>@{channel.handle}</Text>
+        <View style={styles.channelStats}>
+          <Text style={styles.channelStat}>{channel.subscribersCount.toLocaleString()} subscribers</Text>
+          <Text style={styles.channelStat}>•</Text>
+          <Text style={styles.channelStat}>{channel.videosCount.toLocaleString()} videos</Text>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -132,6 +182,30 @@ export default function SearchScreen() {
     initialPageParam: undefined,
   });
 
+  const reelsQuery = useInfiniteQuery({
+    queryKey: ['search-reels', debouncedQuery],
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'reels', pageParam),
+    enabled: !!debouncedQuery && activeTab === 'reels',
+    getNextPageParam: (last) => last.meta?.cursor,
+    initialPageParam: undefined,
+  });
+
+  const videosQuery = useInfiniteQuery({
+    queryKey: ['search-videos', debouncedQuery],
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'videos', pageParam),
+    enabled: !!debouncedQuery && activeTab === 'videos',
+    getNextPageParam: (last) => last.meta?.cursor,
+    initialPageParam: undefined,
+  });
+
+  const channelsQuery = useInfiniteQuery({
+    queryKey: ['search-channels', debouncedQuery],
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'channels', pageParam),
+    enabled: !!debouncedQuery && activeTab === 'channels',
+    getNextPageParam: (last) => last.meta?.cursor,
+    initialPageParam: undefined,
+  });
+
   const showExplore = query.length === 0 && !isFocused;
   const exploreQuery = useInfiniteQuery({
     queryKey: ['explore'],
@@ -144,6 +218,9 @@ export default function SearchScreen() {
   const explorePosts = exploreQuery.data?.pages.flatMap(p => p.data) ?? [];
   const posts = postsQuery.data?.pages.flatMap(p => p.data) ?? [];
   const threads = threadsQuery.data?.pages.flatMap(p => p.data) ?? [];
+  const reels = reelsQuery.data?.pages.flatMap(p => p.data) ?? [];
+  const videos = videosQuery.data?.pages.flatMap(p => p.data) ?? [];
+  const channels = channelsQuery.data?.pages.flatMap(p => p.data) ?? [];
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
   const trending: TrendingHashtag[] = trendingQuery.data ?? [];
@@ -202,7 +279,7 @@ export default function SearchScreen() {
         </View>
       ) : isSearching ? (
         <>
-          {(activeTab === 'posts' || activeTab === 'threads') ? (
+          {(activeTab === 'posts' || activeTab === 'threads' || activeTab === 'reels' || activeTab === 'videos' || activeTab === 'channels') ? (
             <>
               {activeTab === 'posts' ? (
                 <>
@@ -243,7 +320,7 @@ export default function SearchScreen() {
                     />
                   )}
                 </>
-              ) : (
+              ) : activeTab === 'threads' ? (
                 <>
                   {threadsQuery.isLoading ? (
                     <View style={styles.skeletonList}>
@@ -282,7 +359,162 @@ export default function SearchScreen() {
                     />
                   )}
                 </>
-              )}
+              ) : activeTab === 'reels' ? (
+                <>
+                  {reelsQuery.isLoading ? (
+                    <View style={styles.skeletonList}>
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton.Rect key={i} width={120} height={160} />
+                      ))}
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={reels}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <Pressable
+                          style={styles.reelRow}
+                          onPress={() => router.push(`/(screens)/reel/${item.id}`)}
+                        >
+                          <Image
+                            source={{ uri: item.thumbnailUrl || item.videoUrl }}
+                            style={styles.reelThumbnail}
+                            resizeMode="cover"
+                          />
+                          <View style={styles.reelInfo}>
+                            <Text style={styles.reelCaption} numberOfLines={2}>
+                              {item.caption || 'No caption'}
+                            </Text>
+                            <View style={styles.reelStats}>
+                              <Icon name="heart" size={14} color={colors.text.secondary} />
+                              <Text style={styles.reelStat}>{item.likesCount}</Text>
+                              <Icon name="message-circle" size={14} color={colors.text.secondary} />
+                              <Text style={styles.reelStat}>{item.commentsCount}</Text>
+                              <Icon name="eye" size={14} color={colors.text.secondary} />
+                              <Text style={styles.reelStat}>{item.viewsCount}</Text>
+                            </View>
+                            <View style={styles.reelUser}>
+                              <Avatar
+                                uri={item.user.avatarUrl}
+                                name={item.user.username}
+                                size="xs"
+                                showRing={false}
+                              />
+                              <Text style={styles.reelUsername}>@{item.user.username}</Text>
+                            </View>
+                          </View>
+                        </Pressable>
+                      )}
+                      ListEmptyComponent={() => (
+                        <EmptyState
+                          icon="video"
+                          title={`No reels for "${debouncedQuery}"`}
+                          subtitle="Try a different search term"
+                        />
+                      )}
+                      onEndReached={() => {
+                        if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
+                          reelsQuery.fetchNextPage();
+                        }
+                      }}
+                      onEndReachedThreshold={0.5}
+                      contentContainerStyle={{ paddingBottom: 40 }}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={reelsQuery.isRefetching}
+                          onRefresh={() => reelsQuery.refetch()}
+                          tintColor={colors.emerald}
+                        />
+                      }
+                    />
+                  )}
+                </>
+              ) : activeTab === 'videos' ? (
+                <>
+                  {videosQuery.isLoading ? (
+                    <View style={styles.skeletonList}>
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton.Rect key={i} width={120} height={90} />
+                      ))}
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={videos}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <VideoRow
+                          video={item}
+                          onPress={() => router.push(`/(screens)/video/${item.id}`)}
+                        />
+                      )}
+                      ListEmptyComponent={() => (
+                        <EmptyState
+                          icon="video"
+                          title={`No videos for "${debouncedQuery}"`}
+                          subtitle="Try a different search term"
+                        />
+                      )}
+                      onEndReached={() => {
+                        if (videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
+                          videosQuery.fetchNextPage();
+                        }
+                      }}
+                      onEndReachedThreshold={0.5}
+                      contentContainerStyle={{ paddingBottom: 40 }}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={videosQuery.isRefetching}
+                          onRefresh={() => videosQuery.refetch()}
+                          tintColor={colors.emerald}
+                        />
+                      }
+                    />
+                  )}
+                </>
+              ) : activeTab === 'channels' ? (
+                <>
+                  {channelsQuery.isLoading ? (
+                    <View style={styles.skeletonList}>
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <Skeleton.Rect key={i} width={120} height={60} />
+                      ))}
+                    </View>
+                  ) : (
+                    <FlatList
+                      data={channels}
+                      keyExtractor={(item) => item.id}
+                      renderItem={({ item }) => (
+                        <ChannelRow
+                          channel={item}
+                          onPress={() => router.push(`/(screens)/channel/${item.handle}`)}
+                        />
+                      )}
+                      ListEmptyComponent={() => (
+                        <EmptyState
+                          icon="users"
+                          title={`No channels for "${debouncedQuery}"`}
+                          subtitle="Try a different search term"
+                        />
+                      )}
+                      onEndReached={() => {
+                        if (channelsQuery.hasNextPage && !channelsQuery.isFetchingNextPage) {
+                          channelsQuery.fetchNextPage();
+                        }
+                      }}
+                      onEndReachedThreshold={0.5}
+                      contentContainerStyle={{ paddingBottom: 40 }}
+                      refreshControl={
+                        <RefreshControl
+                          refreshing={channelsQuery.isRefetching}
+                          onRefresh={() => channelsQuery.refetch()}
+                          tintColor={colors.emerald}
+                        />
+                      }
+                    />
+                  )}
+                </>
+              ) : null
+            }
             </>
           ) : (
             <FlatList
@@ -359,7 +591,7 @@ export default function SearchScreen() {
                     </Pressable>
                   </View>
                 )}
-                contentContainerStyle={{ paddingBottom: 20 }}
+                contentContainerStyle={{ paddingBottom: spacing.lg }}
               />
               <Pressable
                 onPress={() => {
@@ -482,7 +714,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   userInfo: { flex: 1 },
-  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   userFollowers: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
@@ -542,4 +774,148 @@ const styles = StyleSheet.create({
     marginTop: spacing.base,
   },
   clearButtonText: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
+  exploreSection: {
+    flex: 1,
+    paddingTop: spacing.md,
+  },
+  exploreGrid: {
+    gap: 2,
+    paddingBottom: 40,
+  },
+  exploreItem: {
+    flex: 1,
+    aspectRatio: 1,
+    overflow: 'hidden' as const,
+    backgroundColor: colors.dark.bgElevated,
+    margin: 1,
+  },
+  exploreImage: {
+    width: '100%',
+    height: '100%',
+  },
+  videoOverlay: {
+    position: 'absolute' as const,
+    bottom: spacing.xs,
+    right: spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: radius.sm,
+    padding: spacing.xs,
+  },
+  reelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  reelThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  reelInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  reelCaption: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+  },
+  reelStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  reelStat: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    marginRight: spacing.sm,
+  },
+  reelUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  reelUsername: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  videoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  videoThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  videoInfo: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  videoTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+  videoChannel: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  videoStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  videoStat: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    marginRight: spacing.sm,
+  },
+  channelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  channelInfo: {
+    flex: 1,
+  },
+  channelNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  channelName: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '700',
+  },
+  channelHandle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    marginTop: 1,
+  },
+  channelStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: 2,
+  },
+  channelStat: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
 });

@@ -142,9 +142,10 @@ export class VideosService {
     };
 
     // If user has subscriptions, prioritize subscribed channels
-    const orderBy: Prisma.VideoOrderByWithRelationInput = channelIds.length > 0
-      ? [{ channelId: { in: channelIds }, publishedAt: 'desc' }, { viewsCount: 'desc' }]
-      : { viewsCount: 'desc' };
+    const orderBy: Prisma.VideoOrderByWithRelationInput = {
+      publishedAt: 'desc',
+      viewsCount: 'desc'
+    };
 
     const videos = await this.prisma.video.findMany({
       where,
@@ -456,7 +457,6 @@ export class VideosService {
         content: true,
         createdAt: true,
         likesCount: true,
-        repliesCount: true,
         user: {
           select: {
             id: true,
@@ -466,14 +466,25 @@ export class VideosService {
             isVerified: true,
           },
         },
+        _count: { select: { replies: true } },
       },
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { likesCount: 'desc' }, // sort by popular first
     });
 
+    // Map _count.replies to repliesCount
+    const mappedComments = comments.map(comment => ({
+      id: comment.id,
+      content: comment.content,
+      createdAt: comment.createdAt,
+      likesCount: comment.likesCount,
+      repliesCount: comment._count?.replies ?? 0,
+      user: comment.user,
+    }));
+
     const hasMore = comments.length > limit;
-    const items = hasMore ? comments.slice(0, limit) : comments;
+    const items = hasMore ? mappedComments.slice(0, limit) : mappedComments;
     return {
       data: items,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },

@@ -129,6 +129,7 @@ enum ReportReason {
   TERRORISM
   DOXXING
   COPYRIGHT
+  IMPERSONATION
   OTHER
 }
 
@@ -235,6 +236,8 @@ model User {
   followersCount Int @default(0)
   followingCount Int @default(0)
   postsCount     Int @default(0)
+  threadsCount   Int @default(0)
+  reelsCount     Int @default(0)
 
   role             UserRole @default(USER)
   isVerified       Boolean  @default(false)

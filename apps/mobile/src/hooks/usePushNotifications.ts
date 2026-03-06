@@ -2,29 +2,19 @@ import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import { devicesApi } from '@/services/api';
 
-/**
- * Registers this device for push notifications and syncs the token
- * with the Mizanly backend (/devices endpoint).
- *
- * Requires expo-notifications and expo-device to be installed:
- *   npx expo install expo-notifications expo-device
- *
- * And app.json must include the plugin:
- *   { "expo": { "plugins": ["expo-notifications"] } }
- */
 export function usePushNotifications(isSignedIn: boolean) {
   const registered = useRef(false);
 
+  // Register push token (only when signed in)
   useEffect(() => {
     if (!isSignedIn || registered.current) return;
 
     const register = async () => {
       try {
-        // Dynamically import so the hook doesn't crash if package isn't installed yet
         const Notifications = await import('expo-notifications');
         const Device = await import('expo-device');
 
-        if (!Device.default.isDevice) return; // Push tokens only work on real devices
+        if (!Device.default.isDevice) return;
 
         const { status: existingStatus } = await Notifications.getPermissionsAsync();
         let finalStatus = existingStatus;
@@ -36,7 +26,6 @@ export function usePushNotifications(isSignedIn: boolean) {
 
         if (finalStatus !== 'granted') return;
 
-        // Configure Android channel
         if (Platform.OS === 'android') {
           await Notifications.setNotificationChannelAsync('default', {
             name: 'Mizanly',
@@ -53,10 +42,40 @@ export function usePushNotifications(isSignedIn: boolean) {
         await devicesApi.register(tokenData.data, platform);
         registered.current = true;
       } catch {
-        // Push registration is non-critical — silently fail
+        // Push registration is non-critical
       }
     };
 
     register();
   }, [isSignedIn]);
+
+  // Handle notification taps (always active, regardless of sign-in state)
+  useEffect(() => {
+    let subscription: { remove: () => void } | undefined;
+
+    const setup = async () => {
+      try {
+        const Notifications = await import('expo-notifications');
+        const { router } = await import('expo-router');
+
+        subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+          const data = response.notification.request.content.data;
+          if (!data) return;
+
+          if (data.postId) router.push(`/(screens)/post/${data.postId}` as never);
+          else if (data.threadId) router.push(`/(screens)/thread/${data.threadId}` as never);
+          else if (data.reelId) router.push(`/(screens)/reel/${data.reelId}` as never);
+          else if (data.videoId) router.push(`/(screens)/video/${data.videoId}` as never);
+          else if (data.conversationId) router.push(`/(screens)/conversation/${data.conversationId}` as never);
+          else if (data.username) router.push(`/(screens)/profile/${data.username}` as never);
+          else router.push('/(screens)/notifications' as never);
+        });
+      } catch {
+        // Notification handling is non-critical
+      }
+    };
+
+    setup();
+    return () => subscription?.remove();
+  }, []);
 }
