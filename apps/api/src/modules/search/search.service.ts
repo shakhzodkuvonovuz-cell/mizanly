@@ -48,18 +48,99 @@ const POST_SEARCH_SELECT = {
   },
 };
 
+const REEL_SEARCH_SELECT = {
+  id: true,
+  videoUrl: true,
+  thumbnailUrl: true,
+  duration: true,
+  caption: true,
+  mentions: true,
+  likesCount: true,
+  commentsCount: true,
+  sharesCount: true,
+  viewsCount: true,
+  status: true,
+  createdAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+};
+
+const VIDEO_SEARCH_SELECT = {
+  id: true,
+  title: true,
+  description: true,
+  thumbnailUrl: true,
+  duration: true,
+  category: true,
+  tags: true,
+  viewsCount: true,
+  likesCount: true,
+  dislikesCount: true,
+  commentsCount: true,
+  publishedAt: true,
+  createdAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+  channel: {
+    select: {
+      id: true,
+      handle: true,
+      name: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+};
+
+const CHANNEL_SEARCH_SELECT = {
+  id: true,
+  handle: true,
+  name: true,
+  description: true,
+  avatarUrl: true,
+  bannerUrl: true,
+  subscribersCount: true,
+  videosCount: true,
+  totalViews: true,
+  isVerified: true,
+  createdAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+};
+
 @Injectable()
 export class SearchService {
   constructor(private prisma: PrismaService) {}
 
   async search(
     query: string,
-    type?: 'people' | 'threads' | 'posts' | 'tags',
+    type?: 'people' | 'threads' | 'posts' | 'tags' | 'reels' | 'videos' | 'channels',
     cursor?: string,
     limit = 20,
   ) {
-    // If type is specified and is 'posts' or 'threads', return paginated response
-    if (type === 'posts' || type === 'threads') {
+    // If type is specified and is 'posts', 'threads', 'reels', 'videos', or 'channels', return paginated response
+    if (type === 'posts' || type === 'threads' || type === 'reels' || type === 'videos' || type === 'channels') {
       const take = limit + 1; // Fetch one extra to check if there's more
 
       if (type === 'posts') {
@@ -81,7 +162,7 @@ export class SearchService {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
         };
-      } else { // threads
+      } else if (type === 'threads') {
         const threads = await this.prisma.thread.findMany({
           where: {
             content: { contains: query, mode: 'insensitive' },
@@ -97,6 +178,66 @@ export class SearchService {
 
         const hasMore = threads.length > limit;
         const items = hasMore ? threads.slice(0, limit) : threads;
+        return {
+          data: items,
+          meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        };
+      } else if (type === 'videos') {
+        const videos = await this.prisma.video.findMany({
+          where: {
+            OR: [
+              { title: { contains: query, mode: 'insensitive' } },
+              { description: { contains: query, mode: 'insensitive' } },
+            ],
+            status: 'PUBLISHED',
+          },
+          select: VIDEO_SEARCH_SELECT,
+          take,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { viewsCount: 'desc' },
+        });
+
+        const hasMore = videos.length > limit;
+        const items = hasMore ? videos.slice(0, limit) : videos;
+        return {
+          data: items,
+          meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        };
+      } else if (type === 'channels') {
+        const channels = await this.prisma.channel.findMany({
+          where: {
+            OR: [
+              { handle: { contains: query, mode: 'insensitive' } },
+              { name: { contains: query, mode: 'insensitive' } },
+              { description: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+          select: CHANNEL_SEARCH_SELECT,
+          take,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { subscribersCount: 'desc' },
+        });
+
+        const hasMore = channels.length > limit;
+        const items = hasMore ? channels.slice(0, limit) : channels;
+        return {
+          data: items,
+          meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        };
+      } else { // reels
+        const reels = await this.prisma.reel.findMany({
+          where: {
+            caption: { contains: query, mode: 'insensitive' },
+            status: 'READY',
+          },
+          select: REEL_SEARCH_SELECT,
+          take,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { createdAt: 'desc' },
+        });
+
+        const hasMore = reels.length > limit;
+        const items = hasMore ? reels.slice(0, limit) : reels;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -145,6 +286,48 @@ export class SearchService {
         select: POST_SEARCH_SELECT,
         take: type ? limit : 5,
         orderBy: { likesCount: 'desc' },
+      });
+    }
+
+    if (!type || type === 'reels') {
+      results.reels = await this.prisma.reel.findMany({
+        where: {
+          caption: { contains: query, mode: 'insensitive' },
+          status: 'READY',
+        },
+        select: REEL_SEARCH_SELECT,
+        take: type ? limit : 5,
+        orderBy: { likesCount: 'desc' },
+      });
+    }
+
+    if (!type || type === 'videos') {
+      results.videos = await this.prisma.video.findMany({
+        where: {
+          OR: [
+            { title: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+          ],
+          status: 'PUBLISHED',
+        },
+        select: VIDEO_SEARCH_SELECT,
+        take: type ? limit : 5,
+        orderBy: { viewsCount: 'desc' },
+      });
+    }
+
+    if (!type || type === 'channels') {
+      results.channels = await this.prisma.channel.findMany({
+        where: {
+          OR: [
+            { handle: { contains: query, mode: 'insensitive' } },
+            { name: { contains: query, mode: 'insensitive' } },
+            { description: { contains: query, mode: 'insensitive' } },
+          ],
+        },
+        select: CHANNEL_SEARCH_SELECT,
+        take: type ? limit : 5,
+        orderBy: { subscribersCount: 'desc' },
       });
     }
 
