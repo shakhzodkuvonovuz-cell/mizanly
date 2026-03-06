@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { PostsService } from './posts.service';
@@ -62,6 +63,7 @@ export class PostsController {
     return this.postsService.getFeed(userId, type, cursor);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

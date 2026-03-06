@@ -4,14 +4,20 @@ import { SearchService } from './search.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+type SearchType = 'people' | 'threads' | 'posts' | 'tags';
+
 @ApiTags('Search & Discover')
 @Controller('search')
 export class SearchController {
   constructor(private searchService: SearchService) {}
 
   @Get()
-  search(@Query('q') query: string, @Query('type') type?: string) {
-    return this.searchService.search(query, type as any);
+  search(
+    @Query('q') query: string,
+    @Query('type') type?: SearchType,
+    @Query('cursor') cursor?: string
+  ) {
+    return this.searchService.search(query, type, cursor);
   }
 
   @Get('trending')

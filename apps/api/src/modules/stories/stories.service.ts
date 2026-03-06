@@ -4,6 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 const STORY_SELECT = {
   id: true,
@@ -120,7 +121,7 @@ export class StoriesService {
         textOverlay: data.textOverlay,
         textColor: data.textColor,
         bgColor: data.bgColor,
-        stickerData: data.stickerData as any,
+        stickerData: data.stickerData as Prisma.InputJsonValue,
         closeFriendsOnly: data.closeFriendsOnly ?? false,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },

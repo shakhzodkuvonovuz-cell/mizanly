@@ -9,6 +9,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { Visibility, ReportReason } from '@prisma/client';
 
 const THREAD_SELECT = {
   id: true,
@@ -159,7 +160,7 @@ export class ThreadsService {
         data: {
           userId,
           content: dto.content,
-          visibility: (dto.visibility as any) ?? 'PUBLIC',
+          visibility: (dto.visibility as Visibility) ?? 'PUBLIC',
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
           mediaTypes: dto.mediaTypes ?? [],
@@ -551,7 +552,7 @@ export class ThreadsService {
       data: {
         reporterId: userId,
         description: `thread:${threadId}`,
-        reason: (reasonMap[reason] ?? 'OTHER') as any,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
       },
     });
     return { reported: true };

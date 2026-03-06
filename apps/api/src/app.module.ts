@@ -21,6 +21,7 @@ import { ProfileLinksModule } from './modules/profile-links/profile-links.module
 import { HealthModule } from './modules/health/health.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 
 @Module({
   imports: [
@@ -49,4 +50,8 @@ import { DevicesModule } from './modules/devices/devices.module';
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
+  }
+}

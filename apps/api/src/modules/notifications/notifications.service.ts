@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { DevicesService } from '../devices/devices.service';
+import { NotificationType } from '@prisma/client';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -110,7 +111,7 @@ export class NotificationsService {
       data: {
         userId: params.userId,
         actorId: params.actorId,
-        type: params.type as any,
+        type: params.type as NotificationType,
         postId: params.postId,
         threadId: params.threadId,
         commentId: params.commentId,

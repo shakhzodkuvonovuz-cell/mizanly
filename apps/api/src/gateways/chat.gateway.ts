@@ -22,6 +22,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
 
   private clerk: ReturnType<typeof createClerkClient>;
+  private messageCounts = new Map<string, number>();
 
   constructor(
     private messagesService: MessagesService,
@@ -31,6 +32,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
     });
+    // Reset rate limit counters every minute
+    setInterval(() => this.messageCounts.clear(), 60000);
+  }
+
+  private checkRateLimit(userId: string): boolean {
+    const count = this.messageCounts.get(userId) || 0;
+    if (count >= 30) {
+      return false;
+    }
+    this.messageCounts.set(userId, count + 1);
+    return true;
   }
 
   async handleConnection(client: Socket) {
@@ -89,6 +101,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     },
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+
+    if (!this.checkRateLimit(client.data.userId)) {
+      client.emit('error', { message: 'Rate limit exceeded' });
+      return;
+    }
 
     const message = await this.messagesService.sendMessage(
       data.conversationId,

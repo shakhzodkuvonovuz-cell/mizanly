@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { MessageType } from '@prisma/client';
 
 const CONVERSATION_SELECT = {
   id: true,
@@ -142,7 +143,7 @@ export class MessagesService {
         conversationId,
         senderId,
         content: data.content,
-        messageType: (data.messageType as any) ?? 'TEXT',
+        messageType: (data.messageType as MessageType) ?? 'TEXT',
         mediaUrl: data.mediaUrl,
         mediaType: data.mediaType,
         replyToId: data.replyToId,

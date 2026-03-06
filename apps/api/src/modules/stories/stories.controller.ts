@@ -12,6 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsString, IsOptional, IsBoolean, IsUrl, IsObject } from 'class-validator';
 import { StoriesService } from './stories.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -56,6 +57,7 @@ export class StoriesController {
     return this.storiesService.getFeedStories(userId);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

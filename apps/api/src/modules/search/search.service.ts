@@ -55,8 +55,56 @@ export class SearchService {
   async search(
     query: string,
     type?: 'people' | 'threads' | 'posts' | 'tags',
+    cursor?: string,
     limit = 20,
   ) {
+    // If type is specified and is 'posts' or 'threads', return paginated response
+    if (type === 'posts' || type === 'threads') {
+      const take = limit + 1; // Fetch one extra to check if there's more
+
+      if (type === 'posts') {
+        const posts = await this.prisma.post.findMany({
+          where: {
+            content: { contains: query, mode: 'insensitive' },
+            visibility: 'PUBLIC',
+            isRemoved: false,
+          },
+          select: POST_SEARCH_SELECT,
+          take,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { likesCount: 'desc' },
+        });
+
+        const hasMore = posts.length > limit;
+        const items = hasMore ? posts.slice(0, limit) : posts;
+        return {
+          data: items,
+          meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        };
+      } else { // threads
+        const threads = await this.prisma.thread.findMany({
+          where: {
+            content: { contains: query, mode: 'insensitive' },
+            visibility: 'PUBLIC',
+            isChainHead: true,
+            isRemoved: false,
+          },
+          select: THREAD_SEARCH_SELECT,
+          take,
+          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+          orderBy: { likesCount: 'desc' },
+        });
+
+        const hasMore = threads.length > limit;
+        const items = hasMore ? threads.slice(0, limit) : threads;
+        return {
+          data: items,
+          meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        };
+      }
+    }
+
+    // For people, tags, or no type specified, return the legacy SearchResults format
     const results: any = {};
 
     if (!type || type === 'people') {

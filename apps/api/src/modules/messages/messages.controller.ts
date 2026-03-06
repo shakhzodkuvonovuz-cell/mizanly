@@ -12,6 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum,
 } from 'class-validator';
@@ -108,6 +109,7 @@ export class MessagesController {
     return this.messagesService.getMessages(id, userId, cursor);
   }
 
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @Post('conversations/:id/messages')
   @ApiOperation({ summary: 'Send a message' })
   sendMessage(

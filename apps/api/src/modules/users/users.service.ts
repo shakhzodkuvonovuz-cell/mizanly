@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
+import { ReportReason } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const PUBLIC_USER_FIELDS = {
@@ -466,7 +467,7 @@ export class UsersService {
       impersonation: 'HARASSMENT',
       inappropriate: 'NUDITY',
     };
-    const mappedReason = (reasonMap[reason] ?? 'SPAM') as any;
+    const mappedReason = (reasonMap[reason] ?? 'SPAM') as ReportReason;
     await this.prisma.report.create({
       data: { reporterId, reportedUserId, reason: mappedReason },
     }).catch((err) => this.logger.error('Failed to save report', err));

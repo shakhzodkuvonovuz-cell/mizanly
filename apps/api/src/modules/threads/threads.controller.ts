@@ -11,6 +11,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsString, MaxLength, IsOptional } from 'class-validator';
 import { ThreadsService } from './threads.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -45,6 +46,7 @@ export class ThreadsController {
     return this.threadsService.getFeed(userId, type ?? 'foryou', cursor);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
