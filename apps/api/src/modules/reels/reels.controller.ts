@@ -1,7 +1,8 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Query } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReelsService } from './reels.service';
 import { CreateReelDto } from './dto/create-reel.dto';
@@ -21,5 +22,15 @@ export class ReelsController {
     @Body() dto: CreateReelDto,
   ) {
     return this.reelsService.create(userId, dto);
+  }
+
+  @Get('feed')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get reels feed' })
+  getFeed(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getFeed(userId, cursor);
   }
 }
