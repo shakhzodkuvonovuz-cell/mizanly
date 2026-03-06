@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import * as Sentry from '@sentry/node';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -24,6 +25,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         typeof exceptionResponse === 'string'
           ? { message: exceptionResponse }
           : (exceptionResponse as Record<string, unknown>);
+
+      // Capture 5xx errors in Sentry
+      if (process.env.SENTRY_DSN && status >= 500 && exception instanceof Error) {
+        Sentry.captureException(exception);
+      }
 
       if (process.env.NODE_ENV === 'production') {
         // In production, return generic message for server errors
@@ -49,6 +55,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     } else {
       this.logger.error('Unhandled exception', exception instanceof Error ? exception.stack : String(exception));
+
+      // Capture unhandled exceptions in Sentry
+      if (process.env.SENTRY_DSN && exception instanceof Error) {
+        Sentry.captureException(exception);
+      }
       if (process.env.NODE_ENV === 'production') {
         response.status(500).json({
           success: false,

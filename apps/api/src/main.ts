@@ -4,8 +4,12 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { initSentry } from './config/sentry';
 
 async function bootstrap() {
+  // Initialize Sentry before creating the app
+  initSentry();
+
   const app = await NestFactory.create(AppModule, {
     rawBody: true,
   });
