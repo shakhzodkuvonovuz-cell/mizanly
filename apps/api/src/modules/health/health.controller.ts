@@ -18,4 +18,21 @@ export class HealthController {
       version: process.env.npm_package_version ?? '0.1.0',
     };
   }
+
+  @Get('metrics')
+  @ApiOperation({ summary: 'API metrics (counts, system health)' })
+  async metrics() {
+    const [userCount, postCount, threadCount, reelCount] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.post.count({ where: { deletedAt: null } }),
+      this.prisma.thread.count({ where: { deletedAt: null } }),
+      this.prisma.reel.count({ where: { status: 'READY' } }),
+    ]);
+    return {
+      timestamp: new Date().toISOString(),
+      counts: { users: userCount, posts: postCount, threads: threadCount, reels: reelCount },
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+    };
+  }
 }
