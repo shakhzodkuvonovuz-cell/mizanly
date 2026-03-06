@@ -102,6 +102,7 @@ export class NotificationsService {
     commentId?: string;
     reelId?: string;
     videoId?: string;
+    conversationId?: string;
     followRequestId?: string;
     title?: string;
     body?: string;
@@ -117,6 +118,7 @@ export class NotificationsService {
         commentId: params.commentId,
         reelId: params.reelId,
         videoId: params.videoId,
+        conversationId: params.conversationId,
         followRequestId: params.followRequestId,
         title: params.title,
         body: params.body,
@@ -125,8 +127,33 @@ export class NotificationsService {
 
     // Send push notification if title/body provided
     if (params.title || params.body) {
-      this.devices.getActiveTokensForUser(params.userId).then((tokens) => {
+      this.devices.getActiveTokensForUser(params.userId).then(async (tokens) => {
         if (!tokens.length) return;
+
+        // Build routing data for deep linking
+        const pushData: Record<string, string> = {
+          notificationId: notification.id,
+          type: params.type,
+        };
+
+        // Include entity IDs for routing
+        if (params.postId) pushData.postId = params.postId;
+        if (params.threadId) pushData.threadId = params.threadId;
+        if (params.reelId) pushData.reelId = params.reelId;
+        if (params.videoId) pushData.videoId = params.videoId;
+        if (params.conversationId) pushData.conversationId = params.conversationId;
+        if (params.commentId) pushData.commentId = params.commentId;
+        if (params.followRequestId) pushData.followRequestId = params.followRequestId;
+
+        // For follow notifications, include actor username
+        if (params.type === 'FOLLOW') {
+          const actor = await this.prisma.user.findUnique({
+            where: { id: params.actorId },
+            select: { username: true },
+          });
+          if (actor) pushData.username = actor.username;
+        }
+
         return fetch(EXPO_PUSH_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -135,7 +162,7 @@ export class NotificationsService {
               to,
               title: params.title,
               body: params.body,
-              data: { notificationId: notification.id, type: params.type },
+              data: pushData,
             })),
           ),
         });

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { router } from 'expo-router';
+import type { Subscription } from 'expo-notifications';
 import { devicesApi } from '@/services/api';
 
 /**
@@ -58,5 +60,35 @@ export function usePushNotifications(isSignedIn: boolean) {
     };
 
     register();
+  }, [isSignedIn]);
+
+  // Notification tap routing
+  useEffect(() => {
+    if (!isSignedIn) return;
+
+    const setupListener = async () => {
+      const Notifications = await import('expo-notifications');
+      const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data;
+        if (data?.postId) router.push(`/(screens)/post/${data.postId}`);
+        else if (data?.threadId) router.push(`/(screens)/thread/${data.threadId}`);
+        else if (data?.reelId) router.push(`/(screens)/reel/${data.reelId}`);
+        else if (data?.videoId) router.push(`/(screens)/video/${data.videoId}`);
+        else if (data?.conversationId) router.push(`/(screens)/conversation/${data.conversationId}`);
+        else if (data?.username) router.push(`/(screens)/profile/${data.username}`);
+        // Fallback: navigate to notifications screen
+        else router.push('/(screens)/notifications');
+      });
+      return subscription;
+    };
+
+    let subscription: Subscription | undefined;
+    setupListener().then((sub) => {
+      subscription = sub;
+    });
+
+    return () => {
+      if (subscription) subscription.remove();
+    };
   }, [isSignedIn]);
 }
