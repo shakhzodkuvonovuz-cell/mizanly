@@ -24,6 +24,7 @@ import { HealthModule } from './modules/health/health.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
+import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
 @Module({
   imports: [
@@ -64,6 +65,6 @@ import { SecurityHeadersMiddleware } from './common/middleware/security-headers.
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, SecurityHeadersMiddleware).forRoutes('*');
   }
 }
