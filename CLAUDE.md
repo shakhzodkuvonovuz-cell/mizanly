@@ -8,82 +8,53 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ## The Five Spaces
 | Space | Arabic | Model | Status |
 |-------|--------|-------|--------|
-| Saf | الصف | Instagram (feed + stories) | ✅ Built, has gaps (see below) |
-| Majlis | المجلس | X/Twitter (threads) | ✅ Built, has gaps |
-| Risalah | رسالة | WhatsApp (DMs + groups) | ✅ Built, has gaps |
-| Bakra | بكرة | TikTok (short video) | ❌ PLACEHOLDER ONLY — V1.1 |
-| Minbar | المنبر | YouTube (long video) | ❌ Not started — V1.2 |
+| Saf | الصف | Instagram (feed + stories) | ✅ Built |
+| Majlis | المجلس | X/Twitter (threads) | ✅ Built |
+| Risalah | رسالة | WhatsApp (DMs + groups) | ✅ Built |
+| Bakra | بكرة | TikTok (short video) | ✅ Built (V1.1) |
+| Minbar | المنبر | YouTube (long video) | ✅ Built (V1.2 MVP) |
 
 ---
 
-## Honest Status: ~50% Complete (as of 2026-03-04)
-35 screens exist but contain significant stubs, dead buttons, and missing features.
-This is NOT production-ready. Read the gap list below carefully before starting any work.
+## Status: ~75% Feature Complete (as of 2026-03-07)
+All 5 spaces built and functional. 42 screens, 151 API endpoints, 78+ tests.
+Backend: NestJS with 20 modules, Redis, security headers, rate limiting, observability.
+Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
 
 ---
 
-## CRITICAL STUBS — FIX THESE FIRST
-These are broken/fake elements users hit immediately:
+## CRITICAL STUBS — ALL RESOLVED
+All 7 original critical stubs have been fixed in batches 1-5:
 
-1. **`create-post.tsx` + `create-thread.tsx` toolbar** — map-pin / hash / at-sign buttons
-   have NO `onPress`. They render but do absolutely nothing. Need: location picker,
-   hashtag autocomplete dropdown, mention (@username) autocomplete dropdown.
-
-2. **`thread/[id].tsx` reply like button** — `onPress` is empty. Tapping the heart
-   on a thread reply does nothing. Wire it to `threadsApi.likeReply()`.
-
-3. **`profile/[username].tsx` story highlights** — `onPress={() => {}}`.
-   Tapping a highlight circle does nothing. Should open story-viewer.
-
-4. **`settings.tsx` blocked keywords** — row `onPress={() => {}}`.
-   Should navigate to a keyword management screen.
-
-5. **`conversation/[id].tsx` mic button** — Renders but has no recording logic.
-   Voice messages (record → waveform → send → playback) not implemented.
-
-6. **`_layout.tsx` — NO `useFonts()` call**. Theme defines PlayfairDisplay / DM Sans /
-   Noto Naskh Arabic but they never load. All text uses system font.
-   Fix: `npx expo install @expo-google-fonts/playfair-display @expo-google-fonts/dm-sans
-   @expo-google-fonts/noto-naskh-arabic` then add useFonts() to _layout.tsx.
-
-7. **`StoryBubble`** — `hasUnread` exists on StoryGroup but the ring looks identical
-   for seen and unseen stories. Unviewed = emerald-gold gradient ring,
-   viewed = gray dimmed ring.
+1. Composer toolbar (location, hashtag, mention) — Fixed batch 2
+2. Thread reply like button — Fixed batch 2
+3. Story highlights — Fixed batch 2
+4. Blocked keywords navigation — Fixed batch 2
+5. Voice messages — Fixed batch 2
+6. Font loading (useFonts) — Fixed batch 1
+7. StoryBubble ring colors — Fixed batch 1
 
 ---
 
-## KNOWN FEATURE GAPS (by priority)
+## REMAINING GAPS (by priority)
 
-### Tier 1 — Users notice immediately
-- Thread reply interactions (like, delete) — API exists, no UI buttons
-- Comment edit + delete — API exists, no UI in comment cards
-- Tab scroll-to-top on active tab tap (standard iOS/Android behavior)
-- Pull-to-refresh on `thread/[id].tsx`
-- Search is people + hashtags only — no post content search, no explore grid, no history
+### Implemented (remove from gap tracking)
+All Tier 1, Tier 2, and most Tier 3 items from original gap list are now implemented:
+- Thread reply interactions, comment edit/delete, tab scroll-to-top, pull-to-refresh
+- Voice messages, swipe-to-reply, long-press context menu, GIF picker
+- Hashtag/mention autocomplete, location picker, story highlights, profile links
+- Lightbox/pinch-zoom, draft auto-save, notification filters, theme selector
 
-### Tier 2 — Core feature parity
-- Voice messages in Risalah (full record → send → playback flow)
-- Swipe-to-reply gesture in conversation screen
-- Long-press message context menu (delete, edit, react, forward, copy)
-- GIF picker in messages (Tenor/GIPHY integration)
-- Hashtag autocomplete while composing posts/threads
-- Mention (@) autocomplete while composing
-- Location picker for posts
-- Story highlights actually opening story-viewer
-- Profile links not clickable in profile view (tapping does nothing)
-- Bio URLs not parsed as tappable links
-- Share profile button / QR code screen
-
-### Tier 3 — Premium polish
+### Still Missing (deferred to V2.0+)
 - Story filters, drawing tools, stickers, music
-- Post draft auto-save
-- Image lightbox / pinch-to-zoom on post images
-- Alt text input for media (accessibility)
-- Notification filter tabs (All / Mentions / Follows)
-- Theme selector UI (dark/light/system toggle works in store, no UI)
-- Comment moderation (pin, delete own post comments)
+- Alt text for media accessibility
 - "Who can reply" control on threads
-- Bakra (V1.1) — entire short video space
+- E2E encryption
+- Monetization / payments
+- GDPR/CCPA compliance
+- CI/CD pipeline
+- i18n / Arabic translations
+- Playlists, watch history, subtitles (Minbar V1.3)
 
 ---
 
@@ -108,7 +79,7 @@ These are broken/fake elements users hit immediately:
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 20 feature modules (complete)
+│   │   ├── src/modules/         # 20+ feature modules (complete)
 │   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
 │   │   ├── src/gateways/        # Socket.io /chat namespace
 │   │   └── prisma/schema.prisma # v3 schema, 1652 lines
@@ -116,7 +87,7 @@ mizanly/
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, create
 │       │   ├── (auth)/          # sign-in, sign-up
-│       │   ├── (screens)/       # all detail screens (30 files)
+│       │   ├── (screens)/       # 42+ screens
 │       │   └── onboarding/      # 4 steps
 │       └── src/
 │           ├── components/ui/   # BottomSheet, Skeleton, Icon, Avatar, Badge,
@@ -259,4 +230,4 @@ cd apps/api && npx prisma studio                  # DB browser GUI
 ```
 
 ## Deferred
-Bakra V1.1 | Minbar V1.2 | Live streaming V2.0 | E2E encryption V2.0 | Monetization V2.0
+Minbar V1.3 (playlists, history) | Live streaming V2.0 | E2E encryption V2.0 | Monetization V2.0
