@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
 
   colorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginBottom: spacing.md },
   colorPicker: { flex: 1, flexDirection: 'row', gap: spacing.sm },
-  colorSwatch: { width: 28, height: 28, borderRadius: 14 },
+  colorSwatch: { width: 28, height: 28, borderRadius: radius.lg },
   colorSwatchActive: { borderWidth: 2, borderColor: colors.emerald },
 
   toggleRow: {

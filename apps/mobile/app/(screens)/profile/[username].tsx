@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
+  FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -131,6 +131,7 @@ export default function ProfileScreen() {
   const [showMenu, setShowMenu] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const profileQuery = useQuery({
     queryKey: ['profile', username],
@@ -417,7 +418,7 @@ export default function ProfileScreen() {
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
       <View style={styles.headerActions}>
-        <Pressable hitSlop={8} onPress={handleShareProfile}>
+        <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)}>
           <Icon name="share" size="sm" color={colors.text.primary} />
         </Pressable>
         {isOwnProfile ? (
@@ -470,6 +471,16 @@ export default function ProfileScreen() {
           ListFooterComponent={() =>
             postsQuery.isFetchingNextPage ? <Skeleton.Rect width="100%" height={GRID_ITEM} /> : null
           }
+          refreshControl={
+            <RefreshControl
+              refreshing={postsQuery.isRefetching}
+              onRefresh={() => {
+                profileQuery.refetch();
+                postsQuery.refetch();
+              }}
+              tintColor={colors.emerald}
+            />
+          }
           contentContainerStyle={styles.gridContainer}
         />
         <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
@@ -489,6 +500,24 @@ export default function ProfileScreen() {
             icon={<Icon name="flag" size="sm" color={colors.error} />}
             onPress={handleReport}
             destructive
+          />
+        </BottomSheet>
+        <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
+          <BottomSheetItem
+            label="Share Profile"
+            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              handleShareAction();
+            }}
+          />
+          <BottomSheetItem
+            label="QR Code"
+            icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              router.push(`/(screens)/qr-code?username=${username}`);
+            }}
           />
         </BottomSheet>
       </SafeAreaView>
@@ -534,6 +563,16 @@ export default function ProfileScreen() {
         }
         ListFooterComponent={() =>
           threadsQuery.isFetchingNextPage ? <Skeleton.ThreadCard /> : null
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={threadsQuery.isRefetching}
+            onRefresh={() => {
+              profileQuery.refetch();
+              threadsQuery.refetch();
+            }}
+            tintColor={colors.emerald}
+          />
         }
         contentContainerStyle={{ paddingBottom: 100 }}
       />

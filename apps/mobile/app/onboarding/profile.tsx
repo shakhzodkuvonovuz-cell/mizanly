@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { CharCountRing } from '@/components/ui/CharCountRing';
@@ -12,6 +12,7 @@ const STEP = 2; // Step 2 of 4 in onboarding
 export default function OnboardingProfileScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const { username } = useLocalSearchParams<{ username: string }>();
   const [displayName, setDisplayName] = useState(user?.fullName ?? '');
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +34,7 @@ export default function OnboardingProfileScreen() {
     try {
       await usersApi.updateMe({
         displayName: trimmedName,
+        username: username,
         bio: bio.trim() || undefined,
       });
       router.push('/onboarding/interests');

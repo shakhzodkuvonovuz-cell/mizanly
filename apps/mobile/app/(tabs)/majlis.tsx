@@ -97,6 +97,8 @@ export default function MajlisScreen() {
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+          accessibilityLabel="Search"
+          accessibilityRole="button"
         >
           <Icon name="search" size="sm" color={colors.text.primary} />
         </Pressable>
@@ -138,6 +140,8 @@ export default function MajlisScreen() {
           );
           router.push('/(screens)/create-thread');
         }}
+        accessibilityLabel="Compose thread"
+        accessibilityRole="button"
       >
         <LinearGradient
           colors={[colors.emeraldLight, colors.emerald]}

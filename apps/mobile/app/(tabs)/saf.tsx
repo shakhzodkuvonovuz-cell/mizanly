@@ -151,6 +151,9 @@ export default function SafScreen() {
             onPressIn={searchPress.onPressIn}
             onPressOut={searchPress.onPressOut}
             style={searchPress.animatedStyle}
+            accessibilityLabel="Search"
+            accessibilityRole="button"
+            accessibilityHint="Search for content and people"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
@@ -164,6 +167,9 @@ export default function SafScreen() {
             onPressIn={bellPress.onPressIn}
             onPressOut={bellPress.onPressOut}
             style={bellPress.animatedStyle}
+            accessibilityLabel="Notifications"
+            accessibilityRole="button"
+            accessibilityHint="View your notifications"
           >
             <View>
               <Icon name="bell" size="sm" color={colors.text.primary} />

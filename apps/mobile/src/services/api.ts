@@ -9,6 +9,7 @@ import type {
 
 type UpdateUserPayload = {
   displayName?: string;
+  username?: string;
   bio?: string;
   website?: string;
   isPrivate?: boolean;

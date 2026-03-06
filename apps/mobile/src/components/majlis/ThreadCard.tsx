@@ -251,6 +251,8 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                     }}
                     disabled={!viewerId || votePollMutation.isPending}
                     activeOpacity={0.7}
+                    accessibilityLabel={`Vote for ${opt.text}`}
+                    accessibilityRole="button"
                   >
                     <Text style={styles.pollOptionText}>{opt.text}</Text>
                   </TouchableOpacity>

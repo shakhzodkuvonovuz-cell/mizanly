@@ -658,7 +658,7 @@ const styles = StyleSheet.create({
   pollAddOptionText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
   pollAllowMultiple: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm },
   pollCheckbox: {
-    width: 20, height: 20, borderRadius: 4,
+    width: 20, height: 20, borderRadius: radius.sm,
     borderWidth: 1.5, borderColor: colors.dark.border,
     alignItems: 'center', justifyContent: 'center',
   },

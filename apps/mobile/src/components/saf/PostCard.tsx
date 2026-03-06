@@ -116,12 +116,13 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       overlayHeartScale.value = 0;
       overlayHeartOpacity.value = 1;
       overlayHeartScale.value = withSequence(
-        withSpring(1.3, animation.spring.bouncy),
-        withSpring(1, animation.spring.responsive),
+        withTiming(1.2, { duration: 200 }),
+        withTiming(1, { duration: 200 }),
+        withTiming(0, { duration: 400 }),
       );
       overlayHeartOpacity.value = withDelay(
         600,
-        withTiming(0, { duration: 300 }),
+        withTiming(0, { duration: 200 }),
       );
     }
     lastTap.value = now;
@@ -192,7 +193,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           />
           {/* Overlay heart for double-tap */}
           <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
-            <Icon name="heart-filled" size={80} color="#FFF" fill="#FFF" />
+            <Icon name="heart-filled" size={80} color={colors.like} fill={colors.like} />
           </Animated.View>
         </Pressable>
       )}

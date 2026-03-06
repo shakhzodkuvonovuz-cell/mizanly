@@ -71,6 +71,9 @@ function ConversationRow({
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.98, animation.spring.snappy); }}
       onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
+      accessibilityLabel={`${item.isGroup ? 'Group' : 'Chat'} with ${name}`}
+      accessibilityRole="button"
+      accessibilityHint="Open conversation"
     >
       <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup} />
       <View style={styles.chatInfo}>
@@ -155,6 +158,8 @@ export default function RisalahScreen() {
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); router.push('/(screens)/new-conversation'); }}
+          accessibilityLabel="New conversation"
+          accessibilityRole="button"
         >
           <Icon name="pencil" size="sm" color={colors.text.primary} />
         </Pressable>

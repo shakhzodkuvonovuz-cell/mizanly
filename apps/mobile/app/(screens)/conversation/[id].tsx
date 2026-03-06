@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ActivityIndicator,
   View, Text, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, Alert,
+  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation,
 } from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -467,6 +467,7 @@ export default function ConversationScreen() {
       const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
       socket.on('connect', () => { socket.emit('join_conversation', { conversationId: id }); });
       socket.on('new_message', (msg: Message) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
         queryClient.setQueryData(['messages', id], (old: any) => {
           if (!old) return old;
           const pages = [...old.pages];
@@ -759,6 +760,8 @@ export default function ConversationScreen() {
               hitSlop={8}
               onPress={pickAndSendMedia}
               disabled={uploadingMedia}
+              accessibilityLabel="Attach media"
+              accessibilityRole="button"
             >
               <Icon
                 name="paperclip"
@@ -771,6 +774,8 @@ export default function ConversationScreen() {
               hitSlop={8}
               onPress={() => setShowGifPicker(true)}
               disabled={uploadingMedia}
+              accessibilityLabel="GIF picker"
+              accessibilityRole="button"
             >
               <Icon name="smile" size="sm" color={colors.text.secondary} />
             </Pressable>
@@ -790,6 +795,8 @@ export default function ConversationScreen() {
                   onPress={handleSend}
                   disabled={isSending}
                   style={styles.sendCircle}
+                  accessibilityLabel="Send message"
+                  accessibilityRole="button"
                 >
                   <Icon name="send" size="xs" color="#FFF" />
                 </AnimatedPressable>
@@ -817,6 +824,8 @@ export default function ConversationScreen() {
                     onPressIn={handleVoiceStart}
                     onPressOut={handleVoiceStop}
                     disabled={uploadingVoice}
+                    accessibilityLabel="Record voice message"
+                    accessibilityRole="button"
                   >
                     <Icon
                       name="mic"
@@ -1212,7 +1221,7 @@ const styles = StyleSheet.create({
   recordingDot: {
     width: 12,
     height: 12,
-    borderRadius: 6,
+    borderRadius: radius.sm,
     backgroundColor: colors.error,
   },
   recordingTimer: {
