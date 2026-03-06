@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
-  FlatList, Dimensions,
+  FlatList, Dimensions, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -10,9 +10,15 @@ import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
 import type { Post } from '@/types';
+
+type HashtagPostsPage = {
+  hashtag?: { postsCount: number };
+  data: Post[];
+  meta: { cursor: string | null; hasMore: boolean };
+};
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3;
@@ -52,11 +58,11 @@ export default function HashtagScreen() {
     queryFn: ({ pageParam }) =>
       searchApi.hashtagPosts(tag, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last: HashtagPostsPage) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
-  const posts: Post[] = postsQuery.data?.pages.flatMap((p: any) => p.data ?? []) ?? [];
-  const totalCount = (postsQuery.data?.pages[0] as any)?.hashtag?.postsCount ?? posts.length;
+  const posts: Post[] = postsQuery.data?.pages.flatMap((p: HashtagPostsPage) => p.data ?? []) ?? [];
+  const totalCount = (postsQuery.data?.pages[0] as HashtagPostsPage)?.hashtag?.postsCount ?? posts.length;
 
   const onEndReached = useCallback(() => {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
@@ -82,6 +88,13 @@ export default function HashtagScreen() {
         columnWrapperStyle={styles.gridRow}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl
+            refreshing={postsQuery.isRefetching && !postsQuery.isFetchingNextPage}
+            onRefresh={() => postsQuery.refetch()}
+            tintColor={colors.emerald}
+          />
+        }
         renderItem={({ item }) => (
           <GridItem
             post={item}
@@ -144,6 +157,6 @@ const styles = StyleSheet.create({
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: {
     position: 'absolute', top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: 3,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
   },
 });
