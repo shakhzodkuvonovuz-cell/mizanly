@@ -8,11 +8,11 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ## The Five Spaces
 | Space | Arabic | Model | Status |
 |-------|--------|-------|--------|
-| Saf | الصف | Instagram (feed + stories) | ✅ Built |
-| Majlis | المجلس | X/Twitter (threads) | ✅ Built |
-| Risalah | رسالة | WhatsApp (DMs + groups) | ✅ Built |
-| Bakra | بكرة | TikTok (short video) | ✅ Built (V1.1) |
-| Minbar | المنبر | YouTube (long video) | ✅ Built (V1.2 MVP) |
+| Saf | الصف | Instagram (feed + stories) | Built |
+| Majlis | المجلس | X/Twitter (threads) | Built |
+| Risalah | رسالة | WhatsApp (DMs + groups) | Built |
+| Bakra | بكرة | TikTok (short video) | Built (V1.1) |
+| Minbar | المنبر | YouTube (long video) | Built (V1.2 MVP) |
 
 ---
 
@@ -71,6 +71,24 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 8. Round radius → `radius.full` from theme — NEVER hardcoded `borderRadius: 20`
 9. Gradients → `expo-linear-gradient` — NEVER CSS `linear-gradient(...)` string
 10. Pull-to-refresh → `<RefreshControl tintColor={colors.emerald} />` on all FlatLists
+
+---
+
+## ABSOLUTE RULES — NEVER VIOLATE
+
+1. **NEVER use RN `Modal`** — Always `<BottomSheet>`
+2. **NEVER use text emoji for icons** — Always `<Icon name="..." />`
+3. **NEVER hardcode border radius >= 6** — Always `radius.*` from theme
+4. **NEVER use bare "No items" text** — Always `<EmptyState>`
+5. **NEVER change Prisma schema field names** — They are final
+6. **NEVER use `@CurrentUser()` without `'id'`** — Always `@CurrentUser('id')`
+7. **ALL FlatLists must have `<RefreshControl>`** (or `onRefresh` + `refreshing` shorthand)
+8. **NEVER use `any` in new non-test code** — Type everything properly
+9. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
+10. **The `$executeRaw` tagged template literals are SAFE** — do NOT replace them
+11. **NEVER suppress errors with `@ts-ignore` or `@ts-expect-error`** — fix the actual type
+12. **NEVER add `as any` in non-test code** — find the correct type instead
+13. **Test files (*.spec.ts) MAY use `as any` for mocks** — this is the only exception
 
 ---
 
