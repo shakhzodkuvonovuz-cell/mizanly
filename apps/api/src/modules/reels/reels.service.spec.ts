@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { ReelsService } from './reels.service';
+import { ReelStatus } from '@prisma/client';
 
 describe('ReelsService', () => {
   let service: ReelsService;
@@ -19,6 +20,7 @@ describe('ReelsService', () => {
               create: jest.fn(),
               update: jest.fn(),
             },
+            $transaction: jest.fn(),
           },
         },
         {
