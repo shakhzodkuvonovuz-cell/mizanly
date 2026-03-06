@@ -118,14 +118,8 @@ export class FollowsService {
           },
         },
       }),
-      this.prisma.user.update({
-        where: { id: currentUserId },
       this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${currentUserId}`,
-      }),
-      this.prisma.user.update({
-        where: { id: targetUserId },
       this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${targetUserId}`,
-      }),
     ]);
 
     return { message: 'Unfollowed' };
@@ -321,5 +315,17 @@ export class FollowsService {
     });
 
     return suggestions;
+  }
+
+  async checkFollowing(followerId: string, followingId: string) {
+    const follow = await this.prisma.follow.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId,
+          followingId,
+        },
+      },
+    });
+    return { isFollowing: !!follow };
   }
 }
