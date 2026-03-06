@@ -99,6 +99,7 @@ export default function MajlisScreen() {
           onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
           accessibilityLabel="Search"
           accessibilityRole="button"
+          accessibilityHint="Search for threads and people"
         >
           <Icon name="search" size="sm" color={colors.text.primary} />
         </Pressable>
@@ -142,6 +143,7 @@ export default function MajlisScreen() {
         }}
         accessibilityLabel="Compose thread"
         accessibilityRole="button"
+        accessibilityHint="Create a new thread"
       >
         <LinearGradient
           colors={[colors.emeraldLight, colors.emerald]}

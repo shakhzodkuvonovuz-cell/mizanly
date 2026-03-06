@@ -276,13 +276,25 @@ function GifPicker({ visible, onClose, onSelect }: {
 }
 
 function MessageBubble({
-  message, isOwn, isGroupStart, isGroupEnd, onLongPress,
+  message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
 }: {
   message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
-  onLongPress: (msg: Message) => void;
+  onLongPress: (msg: Message) => void; isNew?: boolean;
 }) {
   const time = messageTimestamp(message.createdAt);
   const AVATAR_SIZE = 28;
+
+  // Animation for new messages
+  const translateY = useSharedValue(isNew ? 100 : 0);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  useEffect(() => {
+    if (isNew) {
+      translateY.value = withSpring(0, animation.spring.responsive);
+    }
+  }, [isNew, translateY]);
 
   if (message.isDeleted) {
     return (
@@ -308,10 +320,11 @@ function MessageBubble({
   };
 
   return (
-    <View style={[
+    <Animated.View style={[
       styles.bubbleWrap,
       isOwn && styles.bubbleWrapOwn,
       !isGroupEnd && styles.bubbleWrapGrouped,
+      animatedStyle,
     ]}>
       {/* Avatar: show on last message of a group, spacer otherwise */}
       {!isOwn && (
@@ -399,6 +412,7 @@ export default function ConversationScreen() {
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<TextInput>(null);
+  const newMessageIdsRef = useRef(new Set<string>());
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -468,6 +482,7 @@ export default function ConversationScreen() {
       socket.on('connect', () => { socket.emit('join_conversation', { conversationId: id }); });
       socket.on('new_message', (msg: Message) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
+        newMessageIdsRef.current.add(msg.id);
         queryClient.setQueryData(['messages', id], (old: any) => {
           if (!old) return old;
           const pages = [...old.pages];
@@ -477,6 +492,10 @@ export default function ConversationScreen() {
           return { ...old, pages };
         });
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+        // Remove from new message set after animation completes
+        setTimeout(() => {
+          newMessageIdsRef.current.delete(msg.id);
+        }, 500);
       });
       socket.on('user_typing', ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
         if (userId !== user?.id) setOtherTyping(typing);
@@ -717,6 +736,7 @@ export default function ConversationScreen() {
                     isGroupStart={item.isGroupStart}
                     isGroupEnd={item.isGroupEnd}
                     onLongPress={handleContextMenu}
+                    isNew={newMessageIdsRef.current.has(item.message.id)}
                   />
                 </Swipeable>
               );

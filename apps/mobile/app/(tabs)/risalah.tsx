@@ -160,6 +160,7 @@ export default function RisalahScreen() {
           onPress={() => { haptic.light(); router.push('/(screens)/new-conversation'); }}
           accessibilityLabel="New conversation"
           accessibilityRole="button"
+          accessibilityHint="Start a new chat or group"
         >
           <Icon name="pencil" size="sm" color={colors.text.primary} />
         </Pressable>

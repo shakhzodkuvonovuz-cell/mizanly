@@ -19,6 +19,7 @@ interface ActionButtonProps {
   activeColor?: string;
   hapticType?: 'light' | 'medium';
   accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -33,6 +34,7 @@ export function ActionButton({
   activeColor = colors.like,
   hapticType = 'medium',
   accessibilityLabel,
+  accessibilityHint,
 }: ActionButtonProps) {
   const scale = useSharedValue(1);
   const haptic = useHaptic();
@@ -61,6 +63,7 @@ export function ActionButton({
       hitSlop={4}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
+      accessibilityHint={accessibilityHint}
     >
       {isActive && activeIcon ? activeIcon : icon}
       {count !== undefined && count > 0 && (

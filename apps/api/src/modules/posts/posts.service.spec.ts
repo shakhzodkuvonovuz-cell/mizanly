@@ -4,7 +4,6 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PostsService } from './posts.service';
-import { PostType, Visibility, Reaction, ReportReason } from '@prisma/client';
 
 describe('PostsService', () => {
   let service: PostsService;
@@ -31,6 +30,12 @@ describe('PostsService', () => {
               delete: jest.fn(),
               findUnique: jest.fn(),
             },
+            postReaction: {
+              create: jest.fn(),
+              update: jest.fn(),
+              findUnique: jest.fn(),
+              delete: jest.fn(),
+            },
             follow: {
               findMany: jest.fn(),
             },
@@ -50,6 +55,7 @@ describe('PostsService', () => {
           useValue: {
             notifyLike: jest.fn(),
             notifyComment: jest.fn(),
+            create: jest.fn(),
           },
         },
         {
@@ -73,9 +79,9 @@ describe('PostsService', () => {
     it('should create a post and increment postsCount', async () => {
       const userId = 'user-123';
       const dto = {
-        postType: PostType.TEXT,
+        postType: 'TEXT',
         content: 'Hello world',
-        visibility: Visibility.PUBLIC,
+        visibility: 'PUBLIC',
       };
       const mockPost = {
         id: 'post-456',
@@ -168,28 +174,29 @@ describe('PostsService', () => {
         likesCount: 5,
       };
       prisma.post.findUnique.mockResolvedValue(mockPost);
-      prisma.like.findUnique.mockResolvedValue(null);
-      prisma.like.create.mockResolvedValue({} as any);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.postReaction.create.mockResolvedValue({} as any);
       prisma.post.update.mockResolvedValue({ ...mockPost, likesCount: 6 });
 
-      await service.likePost(userId, postId, Reaction.LIKE);
+      await service.react(postId, userId, 'LIKE');
 
-      expect(prisma.like.create).toHaveBeenCalledWith({
+      expect(prisma.postReaction.create).toHaveBeenCalledWith({
         data: {
           userId,
           postId,
-          reaction: Reaction.LIKE,
+          reaction: 'LIKE',
         },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id: postId },
         data: { likesCount: { increment: 1 } },
       });
-      expect(notifications.notifyLike).toHaveBeenCalledWith(
-        'post-owner',
-        userId,
+      expect(notifications.create).toHaveBeenCalledWith({
+        userId: 'post-owner',
+        actorId: userId,
+        type: 'LIKE',
         postId,
-      );
+      });
     });
   });
 
@@ -200,15 +207,15 @@ describe('PostsService', () => {
       const mockLike = {
         userId,
         postId,
-        reaction: Reaction.LIKE,
+        reaction: 'LIKE',
       };
-      prisma.like.findUnique.mockResolvedValue(mockLike);
-      prisma.like.delete.mockResolvedValue({} as any);
+      prisma.postReaction.findUnique.mockResolvedValue(mockLike);
+      prisma.postReaction.delete.mockResolvedValue({} as any);
       prisma.post.update.mockResolvedValue({} as any);
 
-      await service.unlikePost(userId, postId);
+      await service.unreact(postId, userId);
 
-      expect(prisma.like.delete).toHaveBeenCalledWith({
+      expect(prisma.postReaction.delete).toHaveBeenCalledWith({
         where: { userId_postId: { userId, postId } },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({

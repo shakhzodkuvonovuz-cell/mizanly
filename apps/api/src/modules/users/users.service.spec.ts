@@ -3,7 +3,6 @@ import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UsersService } from './users.service';
-import { ReportReason } from '@prisma/client';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -150,21 +149,21 @@ describe('UsersService', () => {
         id: 'report-789',
         reporterId,
         targetId,
-        reason: ReportReason.SPAM,
+        reason: 'SPAM',
         createdAt: new Date(),
       };
       prisma.report.create.mockResolvedValue(mockReport);
 
-      const result = await service.reportUser(reporterId, targetId, reason);
+      const result = await service.report(reporterId, targetId, reason);
 
       expect(prisma.report.create).toHaveBeenCalledWith({
         data: {
           reporterId,
           targetId,
-          reason: ReportReason.SPAM,
+          reason: 'SPAM',
         },
       });
-      expect(result).toEqual(mockReport);
+      expect(result).toEqual({ reported: true });
     });
   });
 });

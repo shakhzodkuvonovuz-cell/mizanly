@@ -159,6 +159,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             activeOpacity={0.8}
             accessibilityLabel={`View ${thread.user.displayName}'s profile`}
             accessibilityRole="button"
+            accessibilityHint="Open user profile"
           >
             <Avatar uri={thread.user.avatarUrl} name={thread.user.displayName} size="md" />
           </TouchableOpacity>
@@ -180,6 +181,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               activeOpacity={0.8}
               accessibilityLabel={`View ${thread.user.displayName}'s profile`}
               accessibilityRole="button"
+              accessibilityHint="Open user profile"
             >
               <Text style={styles.name}>{thread.user.displayName}</Text>
               {thread.user.isVerified && <VerifiedBadge size={13} />}
@@ -191,6 +193,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               onPress={() => { haptic.light(); setShowMenu(true); }}
               accessibilityLabel="More options"
               accessibilityRole="button"
+              accessibilityHint="Open thread options menu"
             >
               <Icon name="more-horizontal" size="xs" color={colors.text.tertiary} />
             </TouchableOpacity>
@@ -253,6 +256,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                     activeOpacity={0.7}
                     accessibilityLabel={`Vote for ${opt.text}`}
                     accessibilityRole="button"
+                    accessibilityHint="Select this poll option"
                   >
                     <Text style={styles.pollOptionText}>{opt.text}</Text>
                   </TouchableOpacity>
@@ -275,6 +279,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
               hapticType="light"
               accessibilityLabel="Reply to thread"
+              accessibilityHint="Reply to this thread"
             />
 
             <ActionButton
@@ -285,6 +290,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               disabled={!viewerId}
               activeColor={colors.emerald}
               accessibilityLabel={localReposted ? 'Undo repost' : 'Repost'}
+              accessibilityHint={localReposted ? 'Remove repost' : 'Repost this thread'}
             />
 
             <ActionButton
@@ -296,6 +302,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               disabled={!viewerId}
               activeColor={colors.like}
               accessibilityLabel={localLiked ? 'Unlike thread' : 'Like thread'}
+              accessibilityHint={localLiked ? 'Remove like' : 'Like this thread'}
             />
 
             <View style={styles.spacer} />
@@ -305,6 +312,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               onPress={handleShare}
               hapticType="light"
               accessibilityLabel="Share thread"
+              accessibilityHint="Share this thread with others"
             />
 
             <ActionButton
@@ -315,6 +323,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               disabled={!viewerId}
               activeColor={colors.bookmark}
               accessibilityLabel={localBookmarked ? 'Remove bookmark' : 'Bookmark thread'}
+              accessibilityHint={localBookmarked ? 'Remove from bookmarks' : 'Bookmark this thread'}
             />
           </View>
         </View>

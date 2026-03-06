@@ -710,6 +710,7 @@ model Video {
   subtitles      SubtitleTrack[]
   bookmarks      VideoBookmark[]
   interactions   VideoInteraction[]
+  watchLater     WatchLater[]
   watchHistory   WatchHistory[]
   notifications  Notification[]
   @@index([channelId, publishedAt(sort: Desc)])

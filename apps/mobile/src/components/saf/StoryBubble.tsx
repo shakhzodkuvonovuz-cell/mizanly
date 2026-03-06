@@ -68,6 +68,7 @@ export const StoryBubble = memo(function StoryBubble({ group, onPress, isOwn }: 
       onPressOut={handlePressOut}
       accessibilityLabel={isOwn ? 'Add story' : `${user.displayName}'s story`}
       accessibilityRole="button"
+      accessibilityHint={isOwn ? 'Add a new story' : 'View story'}
     >
       <Avatar
         uri={user.avatarUrl}

@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
-import { ReportReason } from '@prisma/client';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
 const PUBLIC_USER_FIELDS = {
@@ -243,7 +242,7 @@ export class UsersService {
     const hasMore = saved.length > limit;
     const items = hasMore ? saved.slice(0, limit) : saved;
     return {
-      data: items.map((s) => s.post),
+      data: items.map((s: any) => s.post),
       meta: {
         cursor: hasMore ? items[items.length - 1].postId : null,
         hasMore,
@@ -275,7 +274,7 @@ export class UsersService {
     const hasMore = bookmarks.length > limit;
     const items = hasMore ? bookmarks.slice(0, limit) : bookmarks;
     return {
-      data: items.map((b) => b.thread),
+      data: items.map((b: any) => b.thread),
       meta: {
         cursor: hasMore ? items[items.length - 1].threadId : null,
         hasMore,
@@ -337,7 +336,7 @@ export class UsersService {
     const hasMore = items.length > limit;
     const result = hasMore ? items.slice(0, limit) : items;
     return {
-      data: result.map((w) => w.video),
+      data: result.map((w: any) => w.video),
       meta: {
         cursor: hasMore ? result[result.length - 1].videoId : null,
         hasMore,
@@ -409,7 +408,7 @@ export class UsersService {
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
-      data: items.map((f) => f.follower),
+      data: items.map((f: any) => f.follower),
       meta: {
         cursor: hasMore ? items[items.length - 1].followerId : null,
         hasMore,
@@ -452,7 +451,7 @@ export class UsersService {
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
-      data: items.map((f) => f.following),
+      data: items.map((f: any) => f.following),
       meta: {
         cursor: hasMore ? items[items.length - 1].followingId : null,
         hasMore,
@@ -467,10 +466,10 @@ export class UsersService {
       impersonation: 'HARASSMENT',
       inappropriate: 'NUDITY',
     };
-    const mappedReason = (reasonMap[reason] ?? 'SPAM') as ReportReason;
+    const mappedReason = (reasonMap[reason] ?? 'SPAM') as any;
     await this.prisma.report.create({
       data: { reporterId, reportedUserId, reason: mappedReason },
-    }).catch((err) => this.logger.error('Failed to save report', err));
+    }).catch((err: any) => this.logger.error('Failed to save report', err));
     return { reported: true };
   }
 }

@@ -102,6 +102,29 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
     });
   };
 
+  // Heart animation trigger
+  const triggerHeartAnimation = useCallback(() => {
+    overlayHeartScale.value = 0;
+    overlayHeartOpacity.value = 1;
+    overlayHeartScale.value = withSequence(
+      withTiming(1.2, { duration: 200 }),
+      withTiming(1, { duration: 200 }),
+      withTiming(0, { duration: 400 }),
+    );
+    overlayHeartOpacity.value = withDelay(
+      600,
+      withTiming(0, { duration: 200 }),
+    );
+  }, [overlayHeartScale, overlayHeartOpacity]);
+
+  // Handle like button press
+  const handleLike = useCallback(() => {
+    if (!localLiked) {
+      triggerHeartAnimation();
+    }
+    reactMutation.mutate();
+  }, [localLiked, triggerHeartAnimation, reactMutation]);
+
   // Double-tap to like handler
   const lastTap = useSharedValue(0);
   const handleDoubleTap = useCallback(() => {
@@ -110,23 +133,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       // Double tap detected
       if (!localLiked) {
         reactMutation.mutate();
+        triggerHeartAnimation();
       }
       haptic.medium();
-      // Show overlay heart
-      overlayHeartScale.value = 0;
-      overlayHeartOpacity.value = 1;
-      overlayHeartScale.value = withSequence(
-        withTiming(1.2, { duration: 200 }),
-        withTiming(1, { duration: 200 }),
-        withTiming(0, { duration: 400 }),
-      );
-      overlayHeartOpacity.value = withDelay(
-        600,
-        withTiming(0, { duration: 200 }),
-      );
     }
     lastTap.value = now;
-  }, [localLiked, reactMutation, haptic, overlayHeartScale, overlayHeartOpacity, lastTap]);
+  }, [localLiked, reactMutation, haptic, lastTap, triggerHeartAnimation]);
 
   const overlayHeartStyle = useAnimatedStyle(() => ({
     transform: [{ scale: overlayHeartScale.value }],
@@ -147,6 +159,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           activeOpacity={0.8}
           accessibilityLabel={`View ${post.user.displayName}'s profile`}
           accessibilityRole="button"
+          accessibilityHint="Open user profile"
         >
           <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
           <View>
@@ -163,6 +176,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           onPress={() => { haptic.light(); setShowMenu(true); }}
           accessibilityLabel="More options"
           accessibilityRole="button"
+          accessibilityHint="Open post options menu"
         >
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
         </TouchableOpacity>
@@ -184,6 +198,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           onPress={handleDoubleTap}
           accessibilityLabel="Double-tap to like"
           accessibilityRole="button"
+          accessibilityHint="Double tap to like this post"
         >
           <PostMedia
             mediaUrls={post.mediaUrls}
@@ -205,10 +220,11 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           activeIcon={<Icon name="heart-filled" size="sm" color={colors.like} fill={colors.like} />}
           isActive={localLiked}
           count={post.hideLikesCount ? undefined : (localLikes > 0 ? localLikes : undefined)}
-          onPress={() => reactMutation.mutate()}
+          onPress={handleLike}
           disabled={!viewerId}
           activeColor={colors.like}
           accessibilityLabel={localLiked ? 'Unlike post' : 'Like post'}
+          accessibilityHint={localLiked ? 'Remove like from post' : 'Like this post'}
         />
 
         <ActionButton
@@ -217,6 +233,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
           hapticType="light"
           accessibilityLabel="Comment on post"
+          accessibilityHint="View or add comments"
         />
 
         <ActionButton
@@ -225,6 +242,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           onPress={handleShare}
           hapticType="light"
           accessibilityLabel="Share post"
+          accessibilityHint="Share this post with others"
         />
 
         <View style={styles.spacer} />
@@ -237,6 +255,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           disabled={!viewerId}
           activeColor={colors.bookmark}
           accessibilityLabel={localSaved ? 'Remove bookmark' : 'Bookmark post'}
+          accessibilityHint={localSaved ? 'Remove from saved items' : 'Save this post for later'}
         />
       </View>
 
