@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
@@ -45,7 +45,7 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
   return other?.user.avatarUrl;
 }
 
-function ConversationRow({
+const ConversationRow = memo(function ConversationRow({
   item,
   userId,
   onPress,
@@ -101,7 +101,7 @@ function ConversationRow({
       )}
     </AnimatedPressable>
   );
-}
+});
 
 export default function RisalahScreen() {
   const router = useRouter();
@@ -162,6 +162,20 @@ export default function RisalahScreen() {
     )
   ), [isLoading, activeTab]);
 
+  const keyExtractor = useCallback((item: Conversation) => item.id, []);
+  const renderItem = useCallback(({ item }: { item: Conversation }) => (
+    <ConversationRow
+      item={item}
+      userId={user?.id}
+      onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
+    />
+  ), [user?.id, router]);
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: 72,
+    offset: 72 * index,
+    index,
+  }), []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -206,14 +220,12 @@ export default function RisalahScreen() {
       <FlatList
         ref={listRef}
         data={filtered}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <ConversationRow
-            item={item}
-            userId={user?.id}
-            onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
-          />
-        )}
+        keyExtractor={keyExtractor}
+        renderItem={renderItem}
+        getItemLayout={getItemLayout}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         refreshControl={
           <RefreshControl
             refreshing={isRefetching && !isLoading}

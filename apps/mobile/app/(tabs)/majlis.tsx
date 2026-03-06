@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
@@ -98,6 +98,14 @@ export default function MajlisScreen() {
     setRefreshing(false);
   }, [feedQuery]);
 
+  const keyExtractor = useCallback((item: Thread) => item.id, []);
+  const renderItem = useCallback(({ item }: { item: Thread }) => (
+    <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+  ), [user?.id, user?.username]);
+  const onEndReached = useCallback(() => {
+    if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
+  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -124,17 +132,16 @@ export default function MajlisScreen() {
       <FlashList
         ref={feedRef}
         data={threads}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         estimatedItemSize={120}
-        onEndReached={() => {
-          if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
-        }}
+        onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        renderItem={({ item }) => (
-          <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
-        )}
+        renderItem={renderItem}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
       />

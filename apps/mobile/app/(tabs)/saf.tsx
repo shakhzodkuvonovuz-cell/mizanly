@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
@@ -85,11 +85,16 @@ export default function SafScreen() {
     setRefreshing(false);
   }, [storiesQuery, feedQuery]);
 
-  const onEndReached = () => {
+  const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
       feedQuery.fetchNextPage();
     }
-  };
+  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
+
+  const keyExtractor = useCallback((item: Post) => item.id, []);
+  const renderItem = useCallback(({ item }: { item: Post }) => (
+    <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+  ), [user?.id, user?.username]);
 
   const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
 
@@ -197,15 +202,16 @@ export default function SafScreen() {
       <FlashList
         ref={feedRef}
         data={posts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         estimatedItemSize={450}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onRefresh={onRefresh}
         refreshing={refreshing}
-        renderItem={({ item }) => (
-          <PostCard post={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
-        )}
+        renderItem={renderItem}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}

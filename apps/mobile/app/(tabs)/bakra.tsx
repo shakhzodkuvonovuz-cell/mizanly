@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
@@ -32,6 +32,161 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_H;
 const VIDEO_WIDTH = SCREEN_W;
 
+interface ReelItemProps {
+  item: Reel;
+  index: number;
+  isActive: boolean;
+  onLike: (reel: Reel) => void;
+  onBookmark: (reel: Reel) => void;
+  onShare: (reel: Reel) => void;
+  onComment: (reel: Reel) => void;
+  onProfilePress: (username: string) => void;
+  onReport: (reel: Reel) => void;
+  setVideoRef: (id: string, ref: Video) => void;
+  doubleTapGesture: any;
+}
+
+const ReelItem = memo(function ReelItem({
+  item,
+  index,
+  isActive,
+  onLike,
+  onBookmark,
+  onShare,
+  onComment,
+  onProfilePress,
+  onReport,
+  setVideoRef,
+  doubleTapGesture,
+}: ReelItemProps) {
+  const localVideoRef = useRef<Video | null>(null);
+
+  const handleVideoRef = (ref: Video | null) => {
+    localVideoRef.current = ref;
+    if (ref) {
+      setVideoRef(item.id, ref);
+    }
+  };
+
+  return (
+    <GestureDetector gesture={doubleTapGesture}>
+      <View style={styles.videoContainer}>
+        <Video
+          ref={handleVideoRef}
+          source={{ uri: item.videoUrl }}
+          style={styles.video}
+          resizeMode={ResizeMode.COVER}
+          shouldPlay={isActive}
+          isLooping
+          useNativeControls={false}
+          onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
+            if (status.isLoaded && !status.isPlaying && isActive) {
+              // Auto-play if paused but should be playing
+              localVideoRef.current?.playAsync();
+            }
+          }}
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.8)']}
+          locations={[0.6, 1]}
+          style={styles.bottomGradient}
+        />
+        <LinearGradient
+          colors={['rgba(0,0,0,0.4)', 'transparent']}
+          locations={[0, 0.4]}
+          style={styles.topGradient}
+        />
+
+        {/* User info & caption */}
+        <View style={styles.infoContainer}>
+          <TouchableOpacity
+            style={styles.userRow}
+            onPress={() => onProfilePress(item.user.username)}
+            activeOpacity={0.7}
+          >
+            <Avatar
+              uri={item.user.avatarUrl}
+              name={item.user.username}
+              size="sm"
+              showRing={false}
+            />
+            <View style={styles.userText}>
+              <Text style={styles.username}>{item.user.username}</Text>
+              <Text style={styles.time}>
+                {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+              </Text>
+            </View>
+          </TouchableOpacity>
+          {item.caption && (
+            <Text style={styles.caption} numberOfLines={3}>
+              {item.caption}
+            </Text>
+          )}
+          {item.audioTitle && (
+            <View style={styles.soundRow}>
+              <Icon name="music" size="sm" color={colors.text.primary} />
+              <Text style={styles.soundText}>
+                {item.audioTitle}
+                {item.audioArtist && ` · ${item.audioArtist}`}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Right action buttons */}
+        <View style={styles.actionColumn}>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onLike(item)}
+            activeOpacity={0.7}
+          >
+            <Icon
+              name={item.isLiked ? 'heart-filled' : 'heart'}
+              size="lg"
+              color={item.isLiked ? colors.error : colors.text.primary}
+            />
+            <Text style={styles.actionCount}>{item.likesCount}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onComment(item)}
+            activeOpacity={0.7}
+          >
+            <Icon name="message-circle" size="lg" color={colors.text.primary} />
+            <Text style={styles.actionCount}>{item.commentsCount}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onShare(item)}
+            activeOpacity={0.7}
+          >
+            <Icon name="share" size="lg" color={colors.text.primary} />
+            <Text style={styles.actionCount}>{item.sharesCount}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onBookmark(item)}
+            activeOpacity={0.7}
+          >
+            <Icon
+              name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
+              size="lg"
+              color={item.isBookmarked ? colors.gold : colors.text.primary}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => onReport(item)}
+            activeOpacity={0.7}
+          >
+            <Icon name="flag" size="lg" color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </GestureDetector>
+  );
+});
+
 export default function BakraScreen() {
   const { user } = useUser();
   const router = useRouter();
@@ -40,6 +195,9 @@ export default function BakraScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
   const videoRefs = useRef<{ [key: string]: Video }>({});
+  const setVideoRef = useCallback((id: string, ref: Video) => {
+    videoRefs.current[id] = ref;
+  }, []);
   const listRef = useRef<FlashList<Reel>>(null);
   useScrollToTop(listRef);
 
@@ -58,11 +216,11 @@ export default function BakraScreen() {
     setRefreshing(false);
   }, [feedQuery]);
 
-  const onEndReached = () => {
+  const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
       feedQuery.fetchNextPage();
     }
-  };
+  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
     if (viewableItems.length > 0) {
@@ -118,6 +276,10 @@ export default function BakraScreen() {
     router.push(`/(screens)/profile/${username}`);
   };
 
+  const handleReport = (reel: Reel) => {
+    router.push(`/(screens)/report?type=reel&id=${reel.id}`);
+  };
+
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
@@ -128,127 +290,28 @@ export default function BakraScreen() {
       }
     });
 
-  const renderItem = ({ item, index }: { item: Reel; index: number }) => {
-    const isActive = index === currentIndex;
+  const renderItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
+    <ReelItem
+      item={item}
+      index={index}
+      isActive={index === currentIndex}
+      onLike={handleLike}
+      onBookmark={handleBookmark}
+      onShare={handleShare}
+      onComment={handleComment}
+      onProfilePress={handleProfilePress}
+      onReport={handleReport}
+      setVideoRef={setVideoRef}
+      doubleTapGesture={doubleTapGesture}
+    />
+  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, setVideoRef, doubleTapGesture]);
 
-    return (
-      <GestureDetector gesture={doubleTapGesture}>
-        <View style={styles.videoContainer}>
-          <Video
-            ref={(ref) => { if (ref) videoRefs.current[item.id] = ref; }}
-            source={{ uri: item.videoUrl }}
-            style={styles.video}
-            resizeMode={ResizeMode.COVER}
-            shouldPlay={isActive}
-            isLooping
-            useNativeControls={false}
-            onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-              if (status.isLoaded && !status.isPlaying && isActive) {
-                // Auto-play if paused but should be playing
-                videoRefs.current[item.id]?.playAsync();
-              }
-            }}
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.8)']}
-            locations={[0.6, 1]}
-            style={styles.bottomGradient}
-          />
-          <LinearGradient
-            colors={['rgba(0,0,0,0.4)', 'transparent']}
-            locations={[0, 0.4]}
-            style={styles.topGradient}
-          />
-
-          {/* User info & caption */}
-          <View style={styles.infoContainer}>
-            <TouchableOpacity
-              style={styles.userRow}
-              onPress={() => handleProfilePress(item.user.username)}
-              activeOpacity={0.7}
-            >
-              <Avatar
-                uri={item.user.avatarUrl}
-                name={item.user.username}
-                size="sm"
-                showRing={false}
-              />
-              <View style={styles.userText}>
-                <Text style={styles.username}>{item.user.username}</Text>
-                <Text style={styles.time}>
-                  {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
-                </Text>
-              </View>
-            </TouchableOpacity>
-            {item.caption && (
-              <Text style={styles.caption} numberOfLines={3}>
-                {item.caption}
-              </Text>
-            )}
-            {item.audioTitle && (
-              <View style={styles.soundRow}>
-                <Icon name="music" size="sm" color={colors.text.primary} />
-                <Text style={styles.soundText}>
-                  {item.audioTitle}
-                  {item.audioArtist && ` · ${item.audioArtist}`}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          {/* Right action buttons */}
-          <View style={styles.actionColumn}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleLike(item)}
-              activeOpacity={0.7}
-            >
-              <Icon
-                name={item.isLiked ? 'heart-filled' : 'heart'}
-                size="lg"
-                color={item.isLiked ? colors.error : colors.text.primary}
-              />
-              <Text style={styles.actionCount}>{item.likesCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleComment(item)}
-              activeOpacity={0.7}
-            >
-              <Icon name="message-circle" size="lg" color={colors.text.primary} />
-              <Text style={styles.actionCount}>{item.commentsCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleShare(item)}
-              activeOpacity={0.7}
-            >
-              <Icon name="share" size="lg" color={colors.text.primary} />
-              <Text style={styles.actionCount}>{item.sharesCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleBookmark(item)}
-              activeOpacity={0.7}
-            >
-              <Icon
-                name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
-                size="lg"
-                color={item.isBookmarked ? colors.gold : colors.text.primary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => router.push(`/(screens)/report?type=reel&id=${item.id}`)}
-              activeOpacity={0.7}
-            >
-              <Icon name="flag" size="lg" color={colors.text.primary} />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </GestureDetector>
-    );
-  };
+  const keyExtractor = useCallback((item: Reel) => item.id, []);
+  const getItemLayout = useCallback((_: any, index: number) => ({
+    length: SCREEN_H,
+    offset: SCREEN_H * index,
+    index,
+  }), []);
 
   const listEmpty = feedQuery.isLoading ? (
     <View style={styles.skeletonContainer}>
@@ -296,7 +359,8 @@ export default function BakraScreen() {
       <FlashList
         ref={listRef}
         data={reels}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
+        getItemLayout={getItemLayout}
         estimatedItemSize={VIDEO_HEIGHT}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
@@ -307,6 +371,9 @@ export default function BakraScreen() {
         snapToInterval={VIDEO_HEIGHT}
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
         onViewableItemsChanged={handleViewableItemsChanged}
         ListEmptyComponent={listEmpty}

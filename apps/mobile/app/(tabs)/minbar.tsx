@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
@@ -37,6 +37,75 @@ const CATEGORIES: { key: VideoCategory | 'all'; label: string }[] = [
   { key: 'TECH', label: 'Tech' },
   { key: 'OTHER', label: 'Other' },
 ];
+
+interface VideoCardProps {
+  item: Video;
+  onPress: (video: Video) => void;
+  onChannelPress: (handle: string) => void;
+  onMorePress: (video: Video) => void;
+}
+
+const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMorePress }: VideoCardProps) {
+  const durationMinutes = Math.floor(item.duration / 60);
+  const durationSeconds = Math.floor(item.duration % 60);
+  const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+
+  return (
+    <TouchableOpacity
+      style={styles.videoCard}
+      activeOpacity={0.8}
+      onPress={() => onPress(item)}
+    >
+      {/* Thumbnail */}
+      <View style={styles.thumbnailContainer}>
+        {item.thumbnailUrl ? (
+          <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+        ) : (
+          <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
+            <Icon name="video" size="lg" color={colors.text.secondary} />
+          </View>
+        )}
+        <View style={styles.durationBadge}>
+          <Text style={styles.durationText}>{durationText}</Text>
+        </View>
+      </View>
+
+      {/* Info row */}
+      <View style={styles.infoRow}>
+        <TouchableOpacity
+          style={styles.channelAvatar}
+          onPress={() => onChannelPress(item.channel.handle)}
+          hitSlop={8}
+        >
+          <Avatar
+            uri={item.channel.avatarUrl}
+            name={item.channel.name}
+            size="sm"
+            showRing={false}
+          />
+        </TouchableOpacity>
+        <View style={styles.videoDetails}>
+          <Text style={styles.videoTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.channelName} numberOfLines={1}>
+            {item.channel.name}
+          </Text>
+          <Text style={styles.videoStats} numberOfLines={1}>
+            {item.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(item.publishedAt || item.createdAt), { addSuffix: true })}
+          </Text>
+        </View>
+        <TouchableOpacity
+          style={styles.moreButton}
+          onPress={() => onMorePress(item)}
+          hitSlop={8}
+        >
+          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 export default function MinbarScreen() {
   const { user } = useUser();
@@ -78,11 +147,11 @@ export default function MinbarScreen() {
     setRefreshing(false);
   }, [feedQuery]);
 
-  const onEndReached = () => {
+  const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
       feedQuery.fetchNextPage();
     }
-  };
+  }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
   const handleVideoPress = (video: Video) => {
     haptic.light();
@@ -99,67 +168,16 @@ export default function MinbarScreen() {
     // TODO: open bottom sheet with options (save, report, etc.)
   };
 
-  const renderVideoItem = ({ item }: { item: Video }) => {
-    const durationMinutes = Math.floor(item.duration / 60);
-    const durationSeconds = Math.floor(item.duration % 60);
-    const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+  const renderVideoItem = useCallback(({ item }: { item: Video }) => (
+    <VideoCard
+      item={item}
+      onPress={handleVideoPress}
+      onChannelPress={handleChannelPress}
+      onMorePress={handleMorePress}
+    />
+  ), [handleVideoPress, handleChannelPress, handleMorePress]);
 
-    return (
-      <TouchableOpacity
-        style={styles.videoCard}
-        activeOpacity={0.8}
-        onPress={() => handleVideoPress(item)}
-      >
-        {/* Thumbnail */}
-        <View style={styles.thumbnailContainer}>
-          {item.thumbnailUrl ? (
-            <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
-          ) : (
-            <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
-              <Icon name="video" size="lg" color={colors.text.secondary} />
-            </View>
-          )}
-          <View style={styles.durationBadge}>
-            <Text style={styles.durationText}>{durationText}</Text>
-          </View>
-        </View>
-
-        {/* Info row */}
-        <View style={styles.infoRow}>
-          <TouchableOpacity
-            style={styles.channelAvatar}
-            onPress={() => handleChannelPress(item.channel.handle)}
-            hitSlop={8}
-          >
-            <Avatar
-              uri={item.channel.avatarUrl}
-              name={item.channel.name}
-              size="sm"
-              showRing={false}
-            />
-          </TouchableOpacity>
-          <View style={styles.videoDetails}>
-            <Text style={styles.videoTitle} numberOfLines={2}>
-              {item.title}
-            </Text>
-            <Text style={styles.channelName} numberOfLines={1}>
-              {item.channel.name}
-            </Text>
-            <Text style={styles.videoStats} numberOfLines={1}>
-              {item.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(item.publishedAt || item.createdAt), { addSuffix: true })}
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.moreButton}
-            onPress={() => handleMorePress(item)}
-            hitSlop={8}
-          >
-            <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  };
+  const keyExtractor = useCallback((item: Video) => item.id, []);
 
   const listHeader = useMemo(() => (
     <View>
@@ -271,13 +289,16 @@ export default function MinbarScreen() {
       <FlashList
         ref={feedRef}
         data={videos}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         estimatedItemSize={260}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         onRefresh={onRefresh}
         refreshing={refreshing}
         renderItem={renderVideoItem}
+        maxToRenderPerBatch={5}
+        windowSize={5}
+        removeClippedSubviews={true}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
