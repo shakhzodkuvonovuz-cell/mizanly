@@ -1,415 +1,375 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 2)
-## For Sonnet/Haiku: Read This Entirely Before Doing Anything
+# ARCHITECT INSTRUCTIONS — Mizanly (Batch 3)
+## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
 
-**Last updated:** 2026-03-05 by Claude Opus 4.6
-**Previous batch:** 46/56 tasks completed. This file contains ONLY remaining + new work.
-
----
-
-## STATUS: What Was Done
-
-All crash bugs, security vulnerabilities, functional bugs, performance fixes, accessibility/RTL, backend hardening, and most pattern cleanups are DONE. The following items remain incomplete, followed by a large batch of new feature work.
+**Last updated:** 2026-03-06 by Claude Opus 4.6
+**Previous batches:** Batch 1 (56 tasks, 46 done) → Batch 2 (27 tasks, 20 done) → This file.
 
 ---
 
-## STEP 0: COMMIT EVERYTHING FIRST
+## CRITICAL CONTEXT
 
-There are **58 modified files** and untracked files from the previous batch. Nothing has been committed.
+A 3rd-party audit (`docs/audit/`) rated the project 3.8/10. Some findings are valid, some are wrong:
 
+**FALSE FINDING — "SQL Injection":** The audit claims `$executeRaw` is vulnerable. This is WRONG. All 18 calls use Prisma's tagged template literals (`$executeRaw\`...\``), which auto-parameterize values. There are ZERO `$executeRawUnsafe` calls. Do NOT "fix" this — it's already safe.
+
+**VALID findings to address:** No tests, no monitoring, no CI/CD, no privacy compliance, missing security headers, Redis not implemented, `as any` casts in backend services.
+
+---
+
+## STEP 0: CLEANUP FIRST
+
+### 0.1 Delete junk files
 ```bash
-# Stage everything
+rm apps/mobile/src/store/index.ts.bak
+rm apps/mobile/src/store/index.ts.bak2
+rm temp
+rm temp_plan.md
+```
+
+### 0.2 Remove stale worktrees
+```bash
+git worktree remove .worktrees/feature-voice-messages --force
+git worktree remove .worktrees/feature-search-discovery --force
+git worktree remove .worktrees/step3-search-discovery --force
+git worktree remove .worktrees/batch2-implementation --force
+git worktree remove .worktrees/step4-profile-polish --force
+git worktree remove .claude/worktrees/sad-beaver --force
+```
+
+### 0.3 Commit cleanup + untracked docs
+```bash
 git add -A
-
-# Commit with descriptive message
-git commit -m "fix: full audit — crash bugs, security, functional bugs, patterns, perf, a11y, types
-
-Phase 0: Fix duplicate state in create-post/thread, Rules of Hooks in story-viewer,
-         FollowButton extraction from render
-Phase 1: Fix thread IDOR, WebSocket CORS, devices controller, circles module,
-         feed blocked/muted filter, visibility checks
-Phase 2: Fix double message send, like states, report/block actions, counts,
-         hashtags, story limit, poll enforcement, DM block check, debounce leaks
-Phase 3: Replace emoji with Icon, CharCountRing, Avatar, RichText for comments
-Phase 4: Catch-all filter, TransformInterceptor, 204 handling, push notifications,
-         schema indexes, notification logging
-Phase 5: Reply like endpoints, story highlights, blocked keywords nav, StoryBubble ring
-Phase 6: React.memo, stable list refs, useWindowDimensions, Reanimated progress
-Phase 7: Accessibility labels, I18nManager RTL, Icon mirroring
-Phase 8: Typed API client, typed payloads, missing interfaces
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+git commit -m "chore: cleanup stale worktrees, backup files, temp files"
 ```
 
 ---
 
-## STEP 1: REMAINING CLEANUP (from previous batch)
+## STEP 1: REMAINING BATCH 2 ITEMS (7 tasks)
 
-### 1.1 Actually Load Fonts
-**File:** `apps/mobile/app/_layout.tsx`
-**Problem:** `useFonts({})` is called with an EMPTY map. The font imports are commented out. All text still uses system fonts.
-**Steps:**
-1. Run in Windows terminal: `cd apps/mobile && npx expo install @expo-google-fonts/playfair-display @expo-google-fonts/dm-sans @expo-google-fonts/noto-naskh-arabic expo-splash-screen`
-2. In `_layout.tsx`, import the actual fonts and pass them to `useFonts()`:
+### 1.1 Content Search — Wire Posts + Threads tabs
+**File:** `apps/mobile/app/(screens)/search.tsx`
+**Problem:** Posts and Threads tabs show `<EmptyState>` placeholder "Full-text search coming soon".
+**Fix:** Replace placeholder with actual search:
 ```tsx
-import { PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
-import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from '@expo-google-fonts/dm-sans';
-import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from '@expo-google-fonts/noto-naskh-arabic';
-import * as SplashScreen from 'expo-splash-screen';
-
-SplashScreen.preventAutoHideAsync();
-
-// Inside component:
-const [fontsLoaded] = useFonts({
-  PlayfairDisplay_700Bold,
-  DMSans_400Regular,
-  DMSans_500Medium,
-  DMSans_700Bold,
-  NotoNaskhArabic_400Regular,
-  NotoNaskhArabic_700Bold,
+// For Posts tab:
+const postsQuery = useInfiniteQuery({
+  queryKey: ['search-posts', debouncedQuery],
+  queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'post', pageParam),
+  enabled: !!debouncedQuery && activeTab === 'posts',
+  getNextPageParam: (last) => last.meta?.cursor,
+  initialPageParam: undefined,
 });
-
-useEffect(() => {
-  if (fontsLoaded) SplashScreen.hideAsync();
-}, [fontsLoaded]);
-
-if (!fontsLoaded) return null;
+// Render with <PostCard> in a FlatList
 ```
-3. Update `theme/index.ts` fontFamily values to reference the loaded font names.
+Do the same for Threads tab with `<ThreadCard>`. Both need `onEndReached` for pagination.
 
-### 1.2 Prevent Negative Counts
-**Files:** `blocks.service.ts`, `posts.service.ts`, `follows.service.ts`, `threads.service.ts`
-**Problem:** All `{ decrement: 1 }` operations can go negative on race conditions.
-**Fix:** Use raw SQL for decrements:
-```ts
-// Instead of:
-await this.prisma.user.update({
-  where: { id: userId },
-  data: { postsCount: { decrement: 1 } },
-});
+**Backend check:** Verify `searchApi.search(query, 'post')` and `searchApi.search(query, 'thread')` exist in `apps/mobile/src/services/api.ts`. If not, add them — the backend's `SearchController` should accept type='post'|'thread'.
 
-// Use:
-await this.prisma.$executeRaw`
-  UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}
-`;
+### 1.2 Search History
+**File:** `apps/mobile/app/(screens)/search.tsx`
+**Steps:**
+1. `import AsyncStorage from '@react-native-async-storage/async-storage'`
+2. State: `const [searchHistory, setSearchHistory] = useState<string[]>([])`
+3. On mount: load from `AsyncStorage.getItem('search-history')`, parse JSON
+4. On search submit: prepend to history (max 20), save to AsyncStorage
+5. When query is empty and input focused: show history list with "x" to remove each + "Clear All"
+6. Tap history item → set it as query
+
+### 1.3 Explore Grid
+**File:** `apps/mobile/app/(screens)/search.tsx`
+**Steps:**
+1. When search is NOT active (empty query, not focused), show explore grid
+2. Fetch: `postsApi.getFeed('foryou')` or create `postsApi.getExplore()` endpoint
+3. Render: `<FlatList numColumns={3}>` with square image thumbnails
+4. Each cell: `<Pressable onPress={() => router.push(\`/post/\${post.id}\`)}>`
+5. Video posts: overlay `<Icon name="play" />` in corner
+6. Style: `aspectRatio: 1`, `gap: 2` between cells
+
+### 1.4 QR Code Screen
+**Steps:**
+1. Install: `npx expo install react-native-qrcode-svg react-native-svg` (run in Windows terminal)
+2. Create `apps/mobile/app/(screens)/qr-code.tsx`:
+```tsx
+import QRCode from 'react-native-qrcode-svg';
+// Accept username via route params
+// Render QRCode encoding `mizanly://profile/${username}`
+// Share button using Share.share()
+// Save button using expo-media-library (optional, can defer)
 ```
-Apply this pattern to ALL decrement operations across:
-- `posts.service.ts` — postsCount, likesCount, savesCount, commentsCount
-- `threads.service.ts` — threadsCount, likesCount, repostsCount, bookmarksCount, repliesCount
-- `follows.service.ts` — followingCount, followersCount
-- `blocks.service.ts` — followingCount, followersCount
+3. In `profile/[username].tsx`, wire share button to show BottomSheet with "Share Profile" + "QR Code" options. "QR Code" navigates to `/qr-code?username=${username}`.
 
-### 1.3 Replace Remaining ActivityIndicator in Buttons
-**Context:** The CLAUDE.md rule says "NEVER bare ActivityIndicator." However, for inline button loading spinners (e.g., "Posting..." button), a full Skeleton doesn't make sense. The practical fix is to use `<Icon name="loader" size="sm" />` with a spin animation, or keep `ActivityIndicator` but in a themed wrapper.
-
-**Decision:** For button spinners specifically, `ActivityIndicator` is acceptable IF it uses `color={colors.text.primary}` (not bare white). Update these files to at least use themed color:
-- `sign-in.tsx`, `sign-up.tsx`, `create-post.tsx`, `create-thread.tsx`, `create-story.tsx`
-- `edit-profile.tsx`, `new-conversation.tsx`, `conversation-info.tsx`
-- `blocked.tsx`, `muted.tsx`, `follow-requests.tsx`
-- `onboarding/username.tsx`, `onboarding/profile.tsx`, `onboarding/suggested.tsx`
-
-For each: ensure `<ActivityIndicator size="small" color="#fff" />` or similar. This is a soft rule exception — don't change these to Skeleton.
-
-### 1.4 Replace Hardcoded borderRadius
-**Files and fixes:**
-
-| File | Line(s) | Current | Replace With |
-|------|---------|---------|--------------|
-| `create-post.tsx` | 501, 521, 527, 532, 536, 565, 582 | 12, 10, 10, 10, 10, 8, 10 | `radius.md` (10), `radius.sm` (6) for small pills |
-| `create-thread.tsx` | 578, 587, 593, 612, 640, 654, 661 | 1, 8, 8, 12, 12, 8, 4 | `radius.sm`, `radius.md`, `radius.lg` |
-| `create-story.tsx` | 192, 220 | 16, 14 | `radius.lg` (16) |
-| `story-viewer.tsx` | 355, 357, 379, 387 | 1, 1, 24, 24 | 1 is fine for thin bars, 24 → `radius.lg` |
-| `conversation/[id].tsx` | ~201-211, 684, 776 | 20, 2.5, 2 | 20 → `radius.lg`, small dots fine |
-
-**Rule of thumb:** If value ≤ 2, it's a thin visual element — leave it. If ≥ 6, use the nearest theme token.
-
-### 1.5 Fix Last Two `any` Casts
-- **`majlis.tsx` line 109:** `key as any` → `key as 'foryou' | 'following' | 'trending'`
-- **`saf.tsx` line 85:** Remove redundant `as StoryGroup[]` cast — the API already returns that type.
-
----
-
-## STEP 2: NEW FEATURES — Messaging Polish
-
-### 2.1 Message Long-Press Context Menu
-**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-**What:** Long-press a message bubble to show options.
-**Steps:**
-1. Wrap each message bubble in `<Pressable onLongPress={...}>`
-2. Show `<BottomSheet>` with items:
-   - **Reply** — set `replyToId` state, show quoted message above input, focus input
-   - **Copy** — `Clipboard.setStringAsync(message.content)`, show brief toast/haptic
-   - **Forward** — navigate to conversation picker, then send original message
-   - **React** — show 6 preset emoji buttons (❤️ 👍 😂 😮 😢 🤲), call `messagesApi.reactToMessage(messageId, emoji)`
-   - **Delete for Me** — call `messagesApi.deleteForMe(messageId)`, remove from local cache
-   - **Delete for Everyone** (own messages, <15 min old) — call `messagesApi.deleteForEveryone(messageId)`
-   - **Edit** (own messages, <15 min old) — enter inline edit mode, call `messagesApi.editMessage(messageId, newContent)`
-3. Add haptic feedback on long-press (`useHaptic().medium()`)
-
-**Backend needed:**
-- `POST /messages/:id/react` with `{ emoji }` body — check if exists in messages controller
-- `DELETE /messages/:id` with `{ forEveryone: boolean }` body
-- `PATCH /messages/:id` with `{ content }` body
-
-### 2.2 Swipe-to-Reply on Messages
-**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-**Steps:**
-1. Use `react-native-gesture-handler` `Swipeable` or Reanimated `PanGestureHandler`
-2. Swipe right reveals reply arrow icon
-3. On swipe complete: set `replyToId`, show quoted message preview above input, focus TextInput
-4. Reply preview: small card above input showing sender name + truncated message
-5. Tap "x" on preview to cancel reply
-**Dependency:** Share reply state with long-press menu (Task 2.1)
-
-### 2.3 Voice Messages — Record, Send, Playback
-**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-**Steps:**
-1. Check `expo-av` is installed (`npx expo install expo-av` in Windows terminal if not)
-2. **Recording UI:**
-   - Press and hold mic button → start recording via `Audio.Recording`
-   - Show red recording indicator + timer (00:00 counting up)
-   - Slide left to cancel (Reanimated gesture)
-   - Release to stop and send
-3. **Sending:**
-   - Stop recording → get URI
-   - Upload to R2 via `uploadApi.getPresignUrl({ type: 'audio', folder: 'voice' })`
-   - Send via socket: `{ messageType: 'VOICE', mediaUrl: r2Url, duration: seconds }`
-4. **Playback (received messages):**
-   - Render as waveform bar (can be a simple animated bar, no need for real waveform analysis)
-   - Play/pause button using `Audio.Sound`
-   - Show duration, progress bar
-
-### 2.4 GIF Picker in Messages
-**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-**Steps:**
-1. Add GIF button to attachment row (next to image, camera buttons)
-2. Open `<BottomSheet>` with search input + grid of GIFs
-3. Use Tenor API (free tier, generous):
-   - `GET https://tenor.googleapis.com/v2/featured?key=API_KEY&limit=30`
-   - `GET https://tenor.googleapis.com/v2/search?key=API_KEY&q=QUERY&limit=30`
-4. Display results in 2-column `FlatList` with `Image` from `expo-image`
-5. On select: send message with `messageType: 'GIF'` and `mediaUrl: gif.url`
-6. **Env var needed:** `EXPO_PUBLIC_TENOR_API_KEY` — get from Google Cloud Console (free)
-
----
-
-## STEP 3: NEW FEATURES — Search & Discovery
-
-### 3.1 Content Search (Posts + Threads)
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Steps:**
-1. Add `<TabSelector>` with tabs: "People", "Hashtags", "Posts", "Threads"
-2. For "Posts" tab: call `searchApi.search(query, 'post')`, render results with `<PostCard>`
-3. For "Threads" tab: call `searchApi.search(query, 'thread')`, render results with `<ThreadCard>`
-4. Each result FlatList should have pagination (infinite scroll with `onEndReached`)
-
-**Backend:** The current search uses `ILIKE '%query%'` which is a full table scan. For MVP this is OK with small data. For production, integrate Meilisearch (already in deps):
-- In `search.service.ts`, index posts and threads content to Meilisearch on creation
-- Query Meilisearch instead of Prisma for content search
-
-### 3.2 Search History
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Steps:**
-1. Use `AsyncStorage` to persist recent searches (max 20)
-2. Show recent searches when input is focused but empty
-3. Each item: search text + "x" button to remove
-4. "Clear All" button at top of history list
-5. On search submit: add to history. On result tap: add to history.
-
-### 3.3 Explore Grid
-**File:** `apps/mobile/app/(screens)/search.tsx`
-**Steps:**
-1. When search is NOT active, show an explore grid of trending/recommended posts
-2. 3-column grid using `FlatList` with `numColumns={3}`
-3. Fetch from `postsApi.getDiscover()` or `postsApi.getFeed('foryou')`
-4. Each cell: square thumbnail image. Video posts show play icon overlay.
-5. On tap: navigate to post detail
-
----
-
-## STEP 4: NEW FEATURES — Profile Polish
-
-### 4.1 Profile Links Clickable
+### 1.5 Pull-to-Refresh on profile/[username].tsx
 **File:** `apps/mobile/app/(screens)/profile/[username].tsx`
 **Steps:**
-1. Find where profile links render (likely in the header section)
-2. Wrap each link in `<Pressable onPress={() => Linking.openURL(link.url)}>`
-3. Show link icon + truncated URL text
-4. Apply emerald color to link text
+1. Add `refreshing` state
+2. Add `handleRefresh` that invalidates the profile + posts queries
+3. Add `<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.emerald} />` to the FlatList
 
-### 4.2 Bio URL Parsing in RichText
-**File:** `apps/mobile/src/components/ui/RichText.tsx`
-**Steps:**
-1. The regex already includes URL pattern: `https?:\/\/[^\s]+`
-2. Verify URL matches render as tappable `<Text>` with `onPress={() => Linking.openURL(url)}`
-3. If not rendering: add the URL case to the `renderPart` switch
-4. Style URL text with emerald color, underline optional
-
-### 4.3 Share Profile + QR Code
-**Steps:**
-1. Add a share button to profile header (or wire existing one)
-2. On press: show `<BottomSheet>` with:
-   - "Share Profile" → `Share.share({ message: 'Check out @username on Mizanly!', url: 'https://mizanly.app/@username' })`
-   - "Show QR Code" → navigate to QR screen
-3. QR screen: install `react-native-qrcode-svg`, render QR encoding `mizanly://profile/username`
-4. "Save QR" button: capture view to image with `react-native-view-shot`, save with `expo-media-library`
-
-### 4.4 Theme Selector UI
-**File:** `apps/mobile/app/(screens)/settings.tsx`
-**Steps:**
-1. Add "Appearance" section with three radio-style options: Dark, Light, System
-2. On select: `useStore.getState().setTheme(value)`
-3. For now, only Dark and System do anything (light theme colors not fully defined)
-4. Show current selection with checkmark icon
-5. Persist theme choice (Zustand persist middleware or AsyncStorage)
-
----
-
-## STEP 5: NEW FEATURES — Social Features
-
-### 5.1 Tab Scroll-to-Top on Active Tab Tap
-**Files:** `apps/mobile/app/(tabs)/_layout.tsx`, `saf.tsx`, `majlis.tsx`, `risalah.tsx`
-**Steps:**
-1. In tab layout, use `listeners` prop on each Tab.Screen:
+### 1.6 Fix Onboarding Username Registration
+**File:** `apps/mobile/app/onboarding/profile.tsx`
+**Problem:** Username chosen in step 1 is passed via route params but never sent to backend. Only `displayName` and `bio` are sent.
+**Fix:**
 ```tsx
-listeners={({ navigation, route }) => ({
-  tabPress: (e) => {
-    if (navigation.isFocused()) {
-      // Tab already active — scroll to top
-      // Emit a custom event or use a ref
-      navigation.emit({ type: 'scrollToTop' });
-    }
-  },
-})}
-```
-2. In each tab screen, use `useNavigation().addListener('scrollToTop', ...)` to call `flatListRef.current?.scrollToOffset({ offset: 0, animated: true })`
-
-### 5.2 Pull-to-Refresh on All Missing FlatLists
-Check these screens and add `<RefreshControl tintColor={colors.emerald}>` if missing:
-- `thread/[id].tsx` — thread detail
-- `profile/[username].tsx` — profile posts/threads
-- `followers/[userId].tsx`
-- `following/[userId].tsx`
-- `hashtag/[tag].tsx`
-- `blocked.tsx`
-- `muted.tsx`
-- `follow-requests.tsx`
-- `saved.tsx`
-- `blocked-keywords.tsx`
-
-### 5.3 Saved.tsx TabSelector Fix
-**File:** `apps/mobile/app/(screens)/saved.tsx`
-**Problem:** TabSelector is called with wrong prop format. Check current state — if it uses `tabs={['Posts', 'Threads']}` with `activeIndex`/`onChange`, convert to use the correct `tabs={[{key, label}]}` with `activeKey`/`onTabChange` API.
-
-### 5.4 Onboarding Username Actually Saved
-**Files:** `apps/mobile/app/onboarding/username.tsx`, `onboarding/profile.tsx`
-**Problem:** Username is chosen in step 1 but never sent to the backend. `profile.tsx` calls `usersApi.updateMe` with `displayName` and `bio` but NOT `username`.
-**Fix:** In `profile.tsx`, include `username` from route params in the `updateMe` call:
-```tsx
+// In profile.tsx handleFinish/handleContinue:
+const username = params.username; // from route params
 await usersApi.updateMe({ displayName, bio, username });
 ```
+Also verify the backend's `updateMe` endpoint accepts `username` in `UpdateUserDto`.
+
+### 1.7 Remaining borderRadius
+**Minor — fix only if touching these files for other reasons:**
+- `create-thread.tsx:661` — `borderRadius: 4` → `radius.sm`
+- `create-story.tsx:220` — `borderRadius: 14` → `radius.lg`
+- `conversation/[id].tsx:1215` — `borderRadius: 6` → `radius.sm`
+- `borderRadius: 1` on thin lines/bars is fine, leave as-is
 
 ---
 
-## STEP 6: BACKEND NEW ENDPOINTS
+## STEP 2: BACKEND HARDENING
 
-### 6.1 Message Edit Endpoint
-**File:** `apps/api/src/modules/messages/messages.controller.ts`
+### 2.1 Security Headers Middleware
+**File:** Create `apps/api/src/common/middleware/security-headers.middleware.ts`
 ```ts
-@Patch(':id')
-@UseGuards(ClerkAuthGuard)
-async editMessage(
-  @CurrentUser('id') userId: string,
-  @Param('id') messageId: string,
-  @Body() dto: EditMessageDto,
-) {
-  return this.messagesService.editMessage(userId, messageId, dto.content);
+import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Request, Response, NextFunction } from 'express';
+
+@Injectable()
+export class SecurityHeadersMiddleware implements NestMiddleware {
+  use(req: Request, res: Response, next: NextFunction) {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    res.setHeader('X-XSS-Protection', '0'); // modern browsers don't need it, CSP is better
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Don't add CSP — mobile app doesn't load web content from API
+    next();
+  }
 }
 ```
-Service should verify: sender owns message, message is < 15 min old, set `editedAt: new Date()`.
-
-### 6.2 Message Delete Endpoint
+Register in `app.module.ts`:
 ```ts
-@Delete(':id')
-@UseGuards(ClerkAuthGuard)
-async deleteMessage(
-  @CurrentUser('id') userId: string,
-  @Param('id') messageId: string,
-  @Body() dto: DeleteMessageDto, // { forEveryone: boolean }
-)
+configure(consumer: MiddlewareConsumer) {
+  consumer.apply(SecurityHeadersMiddleware).forRoutes('*');
+}
 ```
-- `forEveryone: false` → soft-delete for that user only (add to a `DeletedForUser` join table or mark in ConversationMember)
-- `forEveryone: true` → verify sender owns message + < 15 min, set `deletedAt: new Date()` on message
 
-### 6.3 Message React Endpoint
+### 2.2 Environment-Aware Error Filter
+**File:** `apps/api/src/common/filters/http-exception.filter.ts`
+**Problem:** Stack traces may leak in production.
+**Fix:** Check `process.env.NODE_ENV`:
 ```ts
-@Post(':id/react')
-@UseGuards(ClerkAuthGuard)
-async reactToMessage(
-  @CurrentUser('id') userId: string,
-  @Param('id') messageId: string,
-  @Body() dto: ReactMessageDto, // { emoji: string }
-)
+if (process.env.NODE_ENV === 'production') {
+  // Return generic message, log full error server-side
+  response.status(status).json({
+    statusCode: status,
+    message: status >= 500 ? 'Internal server error' : message,
+    timestamp: new Date().toISOString(),
+  });
+} else {
+  // Return full error details in development
+  response.status(status).json({
+    statusCode: status, message, stack: exception.stack,
+    timestamp: new Date().toISOString(),
+  });
+}
 ```
-Upsert on `MessageReaction` table. Toggle: if same emoji exists, remove it.
 
-### 6.4 User Report Endpoint (verify exists)
-Check if `POST /users/:id/report` exists in `users.controller.ts`. If not, add it using the `Report` model.
+### 2.3 Health Check Endpoint
+**File:** Create `apps/api/src/modules/health/health.controller.ts`
+```ts
+@Controller('health')
+export class HealthController {
+  constructor(private prisma: PrismaService) {}
 
-### 6.5 Blocked Keywords Backend
-Check if these exist in settings module. If not, create:
-- `GET /settings/blocked-keywords` — return user's blocked keywords
-- `POST /settings/blocked-keywords` with `{ word: string }` — create
-- `DELETE /settings/blocked-keywords/:id` — delete
+  @Get()
+  async check() {
+    const dbOk = await this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false);
+    return {
+      status: dbOk ? 'healthy' : 'degraded',
+      timestamp: new Date().toISOString(),
+      database: dbOk ? 'up' : 'down',
+    };
+  }
+}
+```
+Register `HealthModule` in `app.module.ts`.
 
-These may need a `BlockedKeyword` model in Prisma schema if it doesn't exist yet.
+### 2.4 WebSocket Rate Limiting
+**File:** `apps/api/src/gateways/chat.gateway.ts`
+**Steps:**
+1. Track message counts per userId with a Map or Redis
+2. Allow max 30 messages/minute per user
+3. On rate limit exceeded: `socket.emit('error', { message: 'Rate limit exceeded' })`
+4. Reset counter every 60 seconds
+
+### 2.5 Fix Remaining `as any` Casts in Backend
+**These are the real ones that should be proper enums:**
+
+| File | Line | Current | Fix |
+|------|------|---------|-----|
+| `posts.service.ts:122` | `dto.postType as any` | Import `PostType` enum from Prisma, cast properly |
+| `posts.service.ts:124` | `(dto.visibility as any) ?? 'PUBLIC'` | Import `Visibility` enum from Prisma |
+| `posts.service.ts:228,233` | `reaction as any` | Import `Reaction` enum from Prisma |
+| `posts.service.ts:495` | `(reasonMap[reason] ?? 'OTHER') as any` | Import `ReportReason` enum |
+| `threads.service.ts:162` | `(dto.visibility as any) ?? 'PUBLIC'` | Import `Visibility` enum |
+| `threads.service.ts:554` | reason cast | Import `ReportReason` enum |
+| `messages.service.ts:145` | `(data.messageType as any) ?? 'TEXT'` | Import `MessageType` enum |
+| `notifications.service.ts:113` | `params.type as any` | Import `NotificationType` enum |
+| `stories.service.ts:123` | `data.stickerData as any` | Type as `Prisma.InputJsonValue` |
+| `search.controller.ts:14` | `type as any` | Define union type for search type param |
+| `users.service.ts:453` | reason cast | Import `ReportReason` enum |
+
+**Pattern:** All Prisma enums are auto-generated. Import from `@prisma/client`:
+```ts
+import { PostType, Visibility, Reaction, ReportReason, MessageType, NotificationType } from '@prisma/client';
+```
+Then use `dto.postType as PostType` instead of `as any`.
+
+### 2.6 Endpoint-Specific Rate Limiting
+**Files:** Controllers with sensitive operations
+**Steps:**
+1. Import `@Throttle()` from `@nestjs/throttler`
+2. Apply to sensitive endpoints:
+   - `POST /posts` — `@Throttle({ default: { limit: 10, ttl: 60000 } })`
+   - `POST /threads` — same
+   - `POST /stories` — same
+   - `POST /messages/.../send` — `@Throttle({ default: { limit: 30, ttl: 60000 } })`
+   - `POST /auth/check-username` — already has 20/min
 
 ---
 
-## STEP 7: ZUSTAND STORE IMPROVEMENTS
+## STEP 3: REDIS IMPLEMENTATION
 
-### 7.1 Add Persist Middleware
-**File:** `apps/mobile/src/store/index.ts`
-```tsx
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+### 3.1 Create Redis Module
+**File:** Create `apps/api/src/config/redis.module.ts`
+```ts
+import { Module, Global } from '@nestjs/common';
+import Redis from 'ioredis';
 
-export const useStore = create<StoreState>()(
-  persist(
-    (set) => ({
-      // ... existing state and actions
-    }),
-    {
-      name: 'mizanly-store',
-      storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        theme: state.theme,
-        safFeedType: state.safFeedType,
-        majlisFeedType: state.majlisFeedType,
-      }),
-    }
-  )
-);
+const REDIS_PROVIDER = {
+  provide: 'REDIS',
+  useFactory: () => {
+    return new Redis(process.env.UPSTASH_REDIS_URL, {
+      maxRetriesPerRequest: 3,
+      enableReadyCheck: true,
+    });
+  },
+};
+
+@Global()
+@Module({ providers: [REDIS_PROVIDER], exports: [REDIS_PROVIDER] })
+export class RedisModule {}
 ```
-Only persist user preferences, NOT transient state like `user`, `unreadNotifications`, etc.
+Register in `app.module.ts`.
 
-### 7.2 Add Logout/Reset Action
-```tsx
-logout: () => set({
-  user: null,
-  unreadNotifications: 0,
-  unreadMessages: 0,
-  isCreateSheetOpen: false,
-}),
+### 3.2 Cache User Profiles
+**File:** `apps/api/src/modules/users/users.service.ts`
+```ts
+// In constructor: @Inject('REDIS') private redis: Redis
+// In getProfile:
+const cached = await this.redis.get(`user:${username}`);
+if (cached) return JSON.parse(cached);
+// ... fetch from DB ...
+await this.redis.setex(`user:${username}`, 300, JSON.stringify(user)); // 5 min TTL
+```
+Invalidate on profile update: `await this.redis.del(\`user:\${username}\`)`.
+
+### 3.3 Cache Feed Responses
+**File:** `apps/api/src/modules/posts/posts.service.ts`
+**Cache the "for you" feed for 30 seconds per user:**
+```ts
+const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
+const cached = await this.redis.get(cacheKey);
+if (cached) return JSON.parse(cached);
+// ... generate feed ...
+await this.redis.setex(cacheKey, 30, JSON.stringify(result));
 ```
 
-### 7.3 Export Granular Selectors
-```tsx
-export const useUser = () => useStore((s) => s.user);
-export const useTheme = () => useStore((s) => s.theme);
-export const useUnreadNotifications = () => useStore((s) => s.unreadNotifications);
-// etc.
+---
+
+## STEP 4: TESTING FOUNDATION
+
+### 4.1 Backend Unit Test Setup
+```bash
+# In Windows terminal:
+cd apps/api && npm install --save-dev @nestjs/testing jest @types/jest ts-jest
 ```
-This prevents unnecessary re-renders when unrelated state changes.
+Create `apps/api/jest.config.ts`:
+```ts
+export default {
+  moduleFileExtensions: ['js', 'json', 'ts'],
+  rootDir: 'src',
+  testRegex: '.*\\.spec\\.ts$',
+  transform: { '^.+\\.(t|j)s$': 'ts-jest' },
+  collectCoverageFrom: ['**/*.(t|j)s'],
+  coverageDirectory: '../coverage',
+  testEnvironment: 'node',
+};
+```
+
+### 4.2 Write First Tests — Users Service
+**File:** Create `apps/api/src/modules/users/users.service.spec.ts`
+Test the most critical paths:
+- `getProfile()` returns user data
+- `updateMe()` validates input
+- `reportUser()` creates a report record
+- `getProfile()` returns null for nonexistent user
+
+Mock Prisma with `@prisma/client/testing`.
+
+### 4.3 Write First Tests — Posts Service
+**File:** Create `apps/api/src/modules/posts/posts.service.spec.ts`
+- `createPost()` creates post and increments count
+- `deletePost()` soft-deletes and decrements count
+- `likePost()` creates like record
+- `unlikePost()` removes like record
+- Feed generation excludes blocked users
+
+### 4.4 API Integration Test Example
+**File:** Create `apps/api/test/posts.e2e-spec.ts`
+Use NestJS testing module to spin up the app and test full request cycle:
+- `POST /api/v1/posts` creates a post
+- `GET /api/v1/posts/:id` returns the post
+- `DELETE /api/v1/posts/:id` removes it
+
+---
+
+## STEP 5: MOBILE POLISH
+
+### 5.1 Double-Tap to Like (Saf)
+**File:** `apps/mobile/src/components/saf/PostCard.tsx`
+**Steps:**
+1. Wrap image area in `<Pressable>` with double-tap detection
+2. On double-tap: if not already liked, trigger like mutation
+3. Show brief heart animation overlay (Reanimated scale + fade)
+4. Add haptic feedback (`useHaptic().medium()`)
+
+### 5.2 Heart Like Animation
+**File:** `apps/mobile/src/components/saf/PostCard.tsx`
+**Steps:**
+1. On like: show `<Icon name="heart-filled" color={colors.error} />` centered on post image
+2. Animate: scale from 0 → 1.2 → 1 → 0 over 800ms using `withSequence`
+3. After animation: update like state
+
+### 5.3 Message Send Animation
+**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
+**Steps:**
+1. When a message is sent, animate the new bubble sliding up from bottom
+2. Use `Animated.View` with `translateY` from screen height to 0
+3. Duration: 200ms with spring animation
+
+### 5.4 Missing Accessibility Labels
+Run through ALL interactive elements and add:
+- `accessibilityLabel` — describes what it is
+- `accessibilityRole` — "button", "link", "image", etc.
+- `accessibilityHint` — describes what happens when tapped
+
+Priority screens (most user-facing):
+1. `saf.tsx` — feed tab
+2. `majlis.tsx` — threads tab
+3. `risalah.tsx` — messages tab
+4. `PostCard.tsx` — every post
+5. `ThreadCard.tsx` — every thread
 
 ---
 
@@ -417,17 +377,16 @@ This prevents unnecessary re-renders when unrelated state changes.
 
 1. **NEVER use RN `Modal`** → Always `<BottomSheet>`
 2. **NEVER use text emoji for icons** → Always `<Icon name="..." />`
-3. **NEVER hardcode border radius ≥ 6** → Always `radius.*` from theme
+3. **NEVER hardcode border radius >= 6** → Always `radius.*` from theme
 4. **NEVER use bare "No items" text** → Always `<EmptyState>`
 5. **NEVER create new files unless necessary** → Edit existing first
 6. **NEVER change Prisma schema field names** → They are final
 7. **NEVER use `@CurrentUser()` without `'id'`** → Always `@CurrentUser('id')`
 8. **ALL FlatLists must have `<RefreshControl>`**
-9. **NEVER use inline arrow functions for List*Component props** → Use stable refs
-10. **NEVER use `any` in new code** → Type everything
-11. **ALL Pressable/TouchableOpacity must have `accessibilityLabel` + `accessibilityRole`**
-12. **NEVER call both socket.emit AND REST mutation for the same action**
-13. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
+9. **NEVER use `any` in new code** → Type everything properly
+10. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
+11. **NEVER call both socket.emit AND REST mutation for the same action**
+12. **The `$executeRaw` tagged template literals are SAFE** — do NOT replace them with Prisma increment/decrement (we need GREATEST clamping)
 
 ---
 
@@ -436,50 +395,57 @@ This prevents unnecessary re-renders when unrelated state changes.
 Work in this exact order. Commit after each step.
 
 ```
-STEP 0 — COMMIT (do first)
-[ ] 0.1  git add -A && git commit (all 58 modified files from previous batch)
+STEP 0 — CLEANUP
+[ ] 0.1  Delete junk files (.bak, temp, temp_plan.md)
+[ ] 0.2  Remove 6 stale worktrees
+[ ] 0.3  Commit cleanup
 
-STEP 1 — REMAINING CLEANUP
-[ ] 1.1  Actually load fonts (install packages, fill useFonts map)
-[ ] 1.2  Prevent negative counts (GREATEST in all decrements)
-[ ] 1.3  Theme ActivityIndicator colors in buttons
-[ ] 1.4  Replace hardcoded borderRadius with theme tokens
-[ ] 1.5  Fix last two `any` casts (majlis.tsx, saf.tsx)
+STEP 1 — REMAINING BATCH 2
+[ ] 1.1  Wire content search (posts + threads tabs)
+[ ] 1.2  Search history with AsyncStorage
+[ ] 1.3  Explore grid (3-column trending)
+[ ] 1.4  QR code screen + wire share button
+[ ] 1.5  Pull-to-refresh on profile/[username].tsx
+[ ] 1.6  Fix onboarding username registration
+[ ] 1.7  Fix remaining borderRadius (minor)
 
-STEP 2 — MESSAGING POLISH
-[ ] 2.1  Message long-press context menu
-[ ] 2.2  Swipe-to-reply on messages
-[ ] 2.3  Voice messages (record → send → playback)
-[ ] 2.4  GIF picker in messages
+STEP 2 — BACKEND HARDENING
+[ ] 2.1  Security headers middleware
+[ ] 2.2  Environment-aware error filter
+[ ] 2.3  Health check endpoint
+[ ] 2.4  WebSocket rate limiting
+[ ] 2.5  Fix remaining `as any` casts (11 in backend)
+[ ] 2.6  Endpoint-specific rate limiting
 
-STEP 3 — SEARCH & DISCOVERY
-[ ] 3.1  Content search (posts + threads)
-[ ] 3.2  Search history (AsyncStorage)
-[ ] 3.3  Explore grid (trending content)
+STEP 3 — REDIS
+[ ] 3.1  Create Redis module
+[ ] 3.2  Cache user profiles (5 min TTL)
+[ ] 3.3  Cache feed responses (30 sec TTL)
 
-STEP 4 — PROFILE POLISH
-[ ] 4.1  Profile links clickable
-[ ] 4.2  Bio URL parsing in RichText
-[ ] 4.3  Share profile + QR code
-[ ] 4.4  Theme selector UI in settings
+STEP 4 — TESTING FOUNDATION
+[ ] 4.1  Backend unit test setup (Jest + ts-jest)
+[ ] 4.2  Users service tests
+[ ] 4.3  Posts service tests
+[ ] 4.4  API integration test example
 
-STEP 5 — SOCIAL FEATURES
-[ ] 5.1  Tab scroll-to-top on active tab tap
-[ ] 5.2  Pull-to-refresh on all remaining FlatLists (10 screens)
-[ ] 5.3  Fix Saved.tsx TabSelector props
-[ ] 5.4  Fix onboarding username registration
-
-STEP 6 — BACKEND ENDPOINTS
-[ ] 6.1  Message edit endpoint
-[ ] 6.2  Message delete endpoint
-[ ] 6.3  Message react endpoint
-[ ] 6.4  Verify user report endpoint
-[ ] 6.5  Verify blocked keywords CRUD endpoints
-
-STEP 7 — STORE IMPROVEMENTS
-[ ] 7.1  Add Zustand persist middleware
-[ ] 7.2  Add logout/reset action
-[ ] 7.3  Export granular selectors
+STEP 5 — MOBILE POLISH
+[ ] 5.1  Double-tap to like on PostCard
+[ ] 5.2  Heart like animation
+[ ] 5.3  Message send animation
+[ ] 5.4  Accessibility labels on priority screens
 ```
 
-Each task is 15-60 minutes. Commit after each step number (e.g., after all of Step 1, after all of Step 2, etc.).
+Each step is 15-60 minutes. Commit after each step number.
+
+---
+
+## WHAT NOT TO TOUCH (deferred / out of scope)
+
+- Bakra (TikTok space) — V1.1, not this batch
+- Minbar (YouTube space) — V1.2, not this batch
+- E2E encryption — V2.0
+- Monetization / payments — separate initiative
+- GDPR/CCPA compliance — needs legal review first
+- CI/CD pipeline — needs DevOps setup, not a code task
+- Multi-region deployment — infrastructure, not code
+- The `$executeRaw` calls — they are SAFE, leave them alone
