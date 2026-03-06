@@ -16,7 +16,7 @@ import { colors, tabBar, spacing, fontSize, animation, radius, glass } from '@/t
 import { useStore } from '@/store';
 import { useState } from 'react';
 
-type TabName = 'saf' | 'bakra' | 'majlis' | 'risalah';
+type TabName = 'saf' | 'bakra' | 'minbar' | 'majlis' | 'risalah';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -24,6 +24,7 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
   const iconMap: Record<TabName, { icon: React.ComponentProps<typeof Icon>['name']; label: string }> = {
     saf: { icon: 'home', label: 'Saf' },
     bakra: { icon: 'play', label: 'Bakra' },
+    minbar: { icon: 'video', label: 'Minbar' },
     majlis: { icon: 'message-circle', label: 'Majlis' },
     risalah: { icon: 'mail', label: 'Risalah' },
   };
@@ -159,6 +160,13 @@ export default function TabLayout() {
         options={{
           title: 'Bakra',
           tabBarIcon: ({ focused }) => <TabIcon name="bakra" focused={focused} />,
+        }}
+      />
+      <Tabs.Screen
+        name="minbar"
+        options={{
+          title: 'Minbar',
+          tabBarIcon: ({ focused }) => <TabIcon name="minbar" focused={focused} />,
         }}
       />
       <Tabs.Screen

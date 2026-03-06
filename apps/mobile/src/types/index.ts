@@ -154,6 +154,94 @@ export interface ThreadReply {
   _count?: { replies: number };
 }
 
+// ── Bakra: Reels ──
+export interface Reel {
+  id: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  caption?: string;
+  mentions: string[];
+  hashtags: string[];
+  status: 'PROCESSING' | 'READY' | 'FAILED';
+  isRemoved: boolean;
+  audioTrackId?: string;
+  audioTitle?: string;
+  audioArtist?: string;
+  isDuet: boolean;
+  isStitch: boolean;
+  likesCount: number;
+  commentsCount: number;
+  sharesCount: number;
+  viewsCount: number;
+  createdAt: string;
+  user: User;
+  isLiked?: boolean;
+  isBookmarked?: boolean;
+}
+
+// ── Minbar: Long Video ──
+export type VideoStatus = 'DRAFT' | 'PROCESSING' | 'PUBLISHED' | 'UNLISTED' | 'PRIVATE';
+export type VideoCategory = 'EDUCATION' | 'QURAN' | 'LECTURE' | 'VLOG' | 'NEWS' | 'DOCUMENTARY' | 'ENTERTAINMENT' | 'SPORTS' | 'COOKING' | 'TECH' | 'OTHER';
+
+export interface Channel {
+  id: string;
+  userId: string;
+  handle: string;
+  name: string;
+  description?: string;
+  avatarUrl?: string;
+  bannerUrl?: string;
+  subscribersCount: number;
+  videosCount: number;
+  totalViews: number;
+  isVerified: boolean;
+  createdAt: string;
+  user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
+  isSubscribed?: boolean;
+}
+
+export interface Video {
+  id: string;
+  userId: string;
+  channelId: string;
+  title: string;
+  description?: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  category: VideoCategory;
+  tags: string[];
+  viewsCount: number;
+  likesCount: number;
+  dislikesCount: number;
+  commentsCount: number;
+  savesCount: number;
+  status: VideoStatus;
+  publishedAt?: string;
+  createdAt: string;
+  user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
+  channel: Pick<Channel, 'id' | 'handle' | 'name' | 'avatarUrl' | 'isVerified'>;
+  isLiked?: boolean;
+  isDisliked?: boolean;
+  isBookmarked?: boolean;
+  isSubscribed?: boolean;
+}
+
+export interface VideoComment {
+  id: string;
+  videoId: string;
+  userId: string;
+  parentId?: string;
+  content: string;
+  likesCount: number;
+  timestamp?: number;
+  isPinned: boolean;
+  createdAt: string;
+  user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
+  _count?: { replies: number };
+}
+
 // ── Risalah: Messages ──
 export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'VOICE' | 'FILE' | 'GIF' | 'STICKER' | 'LOCATION';
 
@@ -194,6 +282,7 @@ export interface ConversationMember {
 export interface Conversation {
   id: string;
   isGroup: boolean;
+  createdById?: string;
   groupName?: string;
   groupAvatarUrl?: string;
   lastMessageText?: string;

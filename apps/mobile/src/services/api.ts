@@ -1,8 +1,9 @@
 import type {
-  Post, Story, StoryGroup, StoryHighlightAlbum, Thread, ThreadReply, Message, Conversation,
+  Post, Story, StoryGroup, StoryHighlightAlbum, Thread, Reel, ThreadReply, Message, Conversation,
   Comment, Notification, SearchResults, PaginatedResponse, User,
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
   BlockedKeyword, Settings,
+  Channel, Video, VideoComment,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -51,6 +52,29 @@ type CreateThreadPayload = {
   visibility?: string;
   isQuotePost?: boolean;
   quoteText?: string;
+};
+
+type CreateReelPayload = {
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  caption?: string;
+  mentions?: string[];
+  hashtags?: string[];
+  audioTrackId?: string;
+  isDuet?: boolean;
+  isStitch?: boolean;
+};
+
+type CreateVideoData = {
+  channelId: string;
+  title: string;
+  description?: string;
+  videoUrl: string;
+  thumbnailUrl?: string;
+  duration: number;
+  category?: string;
+  tags?: string[];
 };
 
 type SendMessagePayload = {
@@ -227,6 +251,76 @@ export const storiesApi = {
     api.post(`/stories/highlights/${albumId}/stories/${storyId}`),
 };
 
+// ── Reels (Bakra) ──
+export const reelsApi = {
+  getFeed: (cursor?: string) => api.get<PaginatedResponse<Reel>>(`/reels/feed${qs({ cursor })}`),
+  getById: (id: string) => api.get<Reel>(`/reels/${id}`),
+  create: (data: CreateReelPayload) => api.post<Reel>('/reels', data),
+  delete: (id: string) => api.delete(`/reels/${id}`),
+  like: (id: string) => api.post(`/reels/${id}/like`),
+  unlike: (id: string) => api.delete(`/reels/${id}/like`),
+  comment: (id: string, content: string) => api.post(`/reels/${id}/comment`, { content }),
+  getComments: (id: string, cursor?: string) => api.get<PaginatedResponse<Comment>>(`/reels/${id}/comments${qs({ cursor })}`),
+  share: (id: string) => api.post(`/reels/${id}/share`),
+  bookmark: (id: string) => api.post(`/reels/${id}/bookmark`),
+  unbookmark: (id: string) => api.delete(`/reels/${id}/bookmark`),
+  view: (id: string) => api.post(`/reels/${id}/view`),
+  getUserReels: (username: string, cursor?: string) => api.get<PaginatedResponse<Reel>>(`/reels/user/${username}${qs({ cursor })}`),
+  report: (id: string, reason: string) => api.post(`/reels/${id}/report`, { reason }),
+};
+
+// ── Channels (Minbar) ──
+export const channelsApi = {
+  create: (data: { handle: string; name: string; description?: string }) =>
+    api.post<Channel>('/channels', data).then(r => r.data),
+  getByHandle: (handle: string) =>
+    api.get<Channel>(`/channels/${handle}`).then(r => r.data),
+  update: (handle: string, data: Partial<Channel>) =>
+    api.patch<Channel>(`/channels/${handle}`, data).then(r => r.data),
+  delete: (handle: string) =>
+    api.delete(`/channels/${handle}`).then(r => r.data),
+  subscribe: (handle: string) =>
+    api.post(`/channels/${handle}/subscribe`).then(r => r.data),
+  unsubscribe: (handle: string) =>
+    api.delete(`/channels/${handle}/subscribe`).then(r => r.data),
+  getVideos: (handle: string, cursor?: string) =>
+    api.get<PaginatedResponse<Video>>(`/channels/${handle}/videos${qs({ cursor })}`).then(r => r.data),
+  getMyChannels: () =>
+    api.get<Channel[]>('/channels/me/channels').then(r => r.data),
+};
+
+// ── Videos (Minbar) ──
+export const videosApi = {
+  getFeed: (category?: string, cursor?: string) =>
+    api.get<PaginatedResponse<Video>>(`/videos/feed${qs({ category, cursor })}`).then(r => r.data),
+  getById: (id: string) =>
+    api.get<Video>(`/videos/${id}`).then(r => r.data),
+  create: (data: CreateVideoData) =>
+    api.post<Video>('/videos', data).then(r => r.data),
+  update: (id: string, data: Partial<Video>) =>
+    api.patch<Video>(`/videos/${id}`, data).then(r => r.data),
+  delete: (id: string) =>
+    api.delete(`/videos/${id}`).then(r => r.data),
+  like: (id: string) =>
+    api.post(`/videos/${id}/like`).then(r => r.data),
+  dislike: (id: string) =>
+    api.post(`/videos/${id}/dislike`).then(r => r.data),
+  removeReaction: (id: string) =>
+    api.delete(`/videos/${id}/reaction`).then(r => r.data),
+  comment: (id: string, content: string, parentId?: string) =>
+    api.post(`/videos/${id}/comment`, { content, parentId }).then(r => r.data),
+  getComments: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<VideoComment>>(`/videos/${id}/comments${qs({ cursor })}`).then(r => r.data),
+  bookmark: (id: string) =>
+    api.post(`/videos/${id}/bookmark`).then(r => r.data),
+  unbookmark: (id: string) =>
+    api.delete(`/videos/${id}/bookmark`).then(r => r.data),
+  view: (id: string) =>
+    api.post(`/videos/${id}/view`).then(r => r.data),
+  report: (id: string, reason: string) =>
+    api.post(`/videos/${id}/report`, { reason }).then(r => r.data),
+};
+
 // ── Threads (Majlis) ──
 export const threadsApi = {
   getFeed: (type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string) =>
@@ -285,6 +379,8 @@ export const messagesApi = {
     api.patch<Conversation>(`/messages/groups/${id}`, data),
   addMembers: (id: string, memberIds: string[]) =>
     api.post(`/messages/groups/${id}/members`, { memberIds }),
+  removeMember: (id: string, userId: string) =>
+    api.delete(`/messages/groups/${id}/members/${userId}`),
   leaveGroup: (id: string) => api.delete(`/messages/groups/${id}/members/me`),
 };
 

@@ -1,0 +1,563 @@
+import {
+  Injectable,
+  Logger,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
+import { CreateVideoDto } from './dto/create-video.dto';
+import { UpdateVideoDto } from './dto/update-video.dto';
+import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
+import Redis from 'ioredis';
+import { NotificationsService } from '../notifications/notifications.service';
+
+const VIDEO_SELECT = {
+  id: true,
+  userId: true,
+  channelId: true,
+  title: true,
+  description: true,
+  videoUrl: true,
+  thumbnailUrl: true,
+  duration: true,
+  category: true,
+  tags: true,
+  viewsCount: true,
+  likesCount: true,
+  dislikesCount: true,
+  commentsCount: true,
+  status: true,
+  publishedAt: true,
+  createdAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+  channel: {
+    select: {
+      id: true,
+      handle: true,
+      name: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+};
+
+@Injectable()
+export class VideosService {
+  private readonly logger = new Logger(VideosService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    @Inject('REDIS') private redis: Redis,
+    private notifications: NotificationsService,
+  ) {}
+
+  async create(userId: string, dto: CreateVideoDto) {
+    // Verify channel exists and user owns it
+    const channel = await this.prisma.channel.findUnique({
+      where: { id: dto.channelId },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException();
+
+    const video = await this.prisma.$transaction([
+      this.prisma.video.create({
+        data: {
+          userId,
+          channelId: dto.channelId,
+          title: dto.title,
+          description: dto.description,
+          videoUrl: dto.videoUrl,
+          thumbnailUrl: dto.thumbnailUrl,
+          duration: dto.duration,
+          category: dto.category || VideoCategory.OTHER,
+          tags: dto.tags || [],
+          status: VideoStatus.PROCESSING,
+          publishedAt: new Date(),
+        },
+        select: VIDEO_SELECT,
+      }),
+      this.prisma.channel.update({
+        where: { id: dto.channelId },
+        data: { videosCount: { increment: 1 } },
+      }),
+    ]);
+
+    // TODO: In future, trigger video processing job here
+    // For now, just mark as PUBLISHED
+    const updatedVideo = await this.prisma.video.update({
+      where: { id: video[0].id },
+      data: { status: VideoStatus.PUBLISHED },
+      select: VIDEO_SELECT,
+    });
+
+    return {
+      ...updatedVideo,
+      isLiked: false,
+      isDisliked: false,
+      isBookmarked: false,
+    };
+  }
+
+  async getFeed(userId: string | undefined, category?: string, cursor?: string, limit = 20) {
+    // Cache for 30 seconds if user is logged in
+    if (userId) {
+      const cacheKey = `feed:videos:${userId}:${category ?? 'all'}:${cursor ?? 'first'}`;
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    }
+
+    const [blocks, mutes] = userId ? await Promise.all([
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+    ]) : [[], []];
+
+    const excludedIds = [
+      ...blocks.map(b => b.blockedId),
+      ...mutes.map(m => m.mutedId),
+    ];
+
+    // Build feed: videos from subscribed channels + trending (by views)
+    const subscribedChannels = userId ? await this.prisma.subscription.findMany({
+      where: { userId },
+      select: { channelId: true },
+    }) : [];
+
+    const channelIds = subscribedChannels.map(s => s.channelId);
+
+    const where: Prisma.VideoWhereInput = {
+      status: VideoStatus.PUBLISHED,
+      ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+      ...(category && category !== 'all' ? { category: category as VideoCategory } : {}),
+    };
+
+    // If user has subscriptions, prioritize subscribed channels
+    const orderBy: Prisma.VideoOrderByWithRelationInput = channelIds.length > 0
+      ? [{ channelId: { in: channelIds }, publishedAt: 'desc' }, { viewsCount: 'desc' }]
+      : { viewsCount: 'desc' };
+
+    const videos = await this.prisma.video.findMany({
+      where,
+      select: VIDEO_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy,
+    });
+
+    const hasMore = videos.length > limit;
+    const data = hasMore ? videos.slice(0, limit) : videos;
+    const nextCursor = hasMore ? data[data.length - 1].id : null;
+
+    let likedVideoIds: string[] = [];
+    let dislikedVideoIds: string[] = [];
+    let bookmarkedVideoIds: string[] = [];
+
+    if (userId && data.length > 0) {
+      const videoIds = data.map(v => v.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.videoReaction.findMany({
+          where: { userId, videoId: { in: videoIds } },
+          select: { videoId: true, isLike: true },
+        }),
+        this.prisma.videoBookmark.findMany({
+          where: { userId, videoId: { in: videoIds } },
+          select: { videoId: true },
+        }),
+      ]);
+      likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
+      dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
+      bookmarkedVideoIds = interactions.map(i => i.videoId);
+    }
+
+    const enhancedData = data.map(video => ({
+      ...video,
+      isLiked: userId ? likedVideoIds.includes(video.id) : false,
+      isDisliked: userId ? dislikedVideoIds.includes(video.id) : false,
+      isBookmarked: userId ? bookmarkedVideoIds.includes(video.id) : false,
+    }));
+
+    const result = {
+      data: enhancedData,
+      meta: { cursor: nextCursor, hasMore },
+    };
+
+    if (userId) {
+      const cacheKey = `feed:videos:${userId}:${category ?? 'all'}:${cursor ?? 'first'}`;
+      await this.redis.setex(cacheKey, 30, JSON.stringify(result));
+    }
+
+    return result;
+  }
+
+  async getById(videoId: string, userId?: string) {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: VIDEO_SELECT,
+    });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    let isLiked = false;
+    let isDisliked = false;
+    let isBookmarked = false;
+    let isSubscribed = false;
+
+    if (userId) {
+      const [reaction, bookmark, subscription] = await Promise.all([
+        this.prisma.videoReaction.findUnique({
+          where: { userId_videoId: { userId, videoId } },
+        }),
+        this.prisma.videoBookmark.findUnique({
+          where: { userId_videoId: { userId, videoId } },
+        }),
+        this.prisma.subscription.findUnique({
+          where: { userId_channelId: { userId, channelId: video.channelId } },
+        }),
+      ]);
+      isLiked = reaction?.isLike === true;
+      isDisliked = reaction?.isLike === false;
+      isBookmarked = !!bookmark;
+      isSubscribed = !!subscription;
+    }
+
+    return {
+      ...video,
+      isLiked,
+      isDisliked,
+      isBookmarked,
+      isSubscribed,
+    };
+  }
+
+  async update(videoId: string, userId: string, dto: UpdateVideoDto) {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+    });
+    if (!video) throw new NotFoundException('Video not found');
+    if (video.userId !== userId) throw new ForbiddenException();
+
+    const updated = await this.prisma.video.update({
+      where: { id: videoId },
+      data: {
+        title: dto.title,
+        description: dto.description,
+        thumbnailUrl: dto.thumbnailUrl,
+        category: dto.category,
+        tags: dto.tags,
+      },
+      select: VIDEO_SELECT,
+    });
+
+    // Re-fetch flags
+    const [reaction, bookmark] = await Promise.all([
+      this.prisma.videoReaction.findUnique({
+        where: { userId_videoId: { userId, videoId } },
+      }),
+      this.prisma.videoBookmark.findUnique({
+        where: { userId_videoId: { userId, videoId } },
+      }),
+    ]);
+    return {
+      ...updated,
+      isLiked: reaction?.isLike === true,
+      isDisliked: reaction?.isLike === false,
+      isBookmarked: !!bookmark,
+    };
+  }
+
+  async delete(videoId: string, userId: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video) throw new NotFoundException('Video not found');
+    if (video.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.$transaction([
+      this.prisma.video.delete({
+        where: { id: videoId },
+      }),
+      this.prisma.$executeRaw`
+        UPDATE "Channel"
+        SET "videosCount" = GREATEST("videosCount" - 1, 0)
+        WHERE id = ${video.channelId}
+      `,
+    ]);
+    return { deleted: true };
+  }
+
+  async like(videoId: string, userId: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    const existingReaction = await this.prisma.videoReaction.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+    if (existingReaction?.isLike === true) throw new ConflictException('Already liked');
+    // If existing reaction is dislike, we'll replace it
+
+    await this.prisma.$transaction(async (tx) => {
+      if (existingReaction) {
+        // Update existing reaction
+        await tx.videoReaction.update({
+          where: { userId_videoId: { userId, videoId } },
+          data: { isLike: true },
+        });
+        // Decrement dislikesCount, increment likesCount
+        await tx.$executeRaw`
+          UPDATE "Video"
+          SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1),
+              "likesCount" = GREATEST(0, "likesCount" + 1)
+          WHERE id = ${videoId}
+        `;
+      } else {
+        // Create new reaction
+        await tx.videoReaction.create({
+          data: { userId, videoId, isLike: true },
+        });
+        await tx.$executeRaw`
+          UPDATE "Video"
+          SET "likesCount" = GREATEST(0, "likesCount" + 1)
+          WHERE id = ${videoId}
+        `;
+      }
+    });
+
+    // Notify video owner
+    this.notifications.create({
+      userId: video.userId,
+      actorId: userId,
+      type: 'VIDEO_LIKE',
+      videoId,
+    }).catch((err) => this.logger.error('Failed to create notification', err));
+
+    return { liked: true };
+  }
+
+  async dislike(videoId: string, userId: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    const existingReaction = await this.prisma.videoReaction.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+    if (existingReaction?.isLike === false) throw new ConflictException('Already disliked');
+
+    await this.prisma.$transaction(async (tx) => {
+      if (existingReaction) {
+        await tx.videoReaction.update({
+          where: { userId_videoId: { userId, videoId } },
+          data: { isLike: false },
+        });
+        await tx.$executeRaw`
+          UPDATE "Video"
+          SET "likesCount" = GREATEST(0, "likesCount" - 1),
+              "dislikesCount" = GREATEST(0, "dislikesCount" + 1)
+          WHERE id = ${videoId}
+        `;
+      } else {
+        await tx.videoReaction.create({
+          data: { userId, videoId, isLike: false },
+        });
+        await tx.$executeRaw`
+          UPDATE "Video"
+          SET "dislikesCount" = GREATEST(0, "dislikesCount" + 1)
+          WHERE id = ${videoId}
+        `;
+      }
+    });
+
+    return { disliked: true };
+  }
+
+  async removeReaction(videoId: string, userId: string) {
+    const existingReaction = await this.prisma.videoReaction.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+    if (!existingReaction) throw new NotFoundException('Reaction not found');
+
+    await this.prisma.$transaction([
+      this.prisma.videoReaction.delete({
+        where: { userId_videoId: { userId, videoId } },
+      }),
+      existingReaction.isLike
+        ? this.prisma.$executeRaw`
+            UPDATE "Video"
+            SET "likesCount" = GREATEST(0, "likesCount" - 1)
+            WHERE id = ${videoId}
+          `
+        : this.prisma.$executeRaw`
+            UPDATE "Video"
+            SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1)
+            WHERE id = ${videoId}
+          `,
+    ]);
+
+    return { removed: true };
+  }
+
+  async comment(videoId: string, userId: string, content: string, parentId?: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    const [comment] = await this.prisma.$transaction([
+      this.prisma.videoComment.create({
+        data: {
+          userId,
+          videoId,
+          content,
+          parentId,
+        },
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              username: true,
+              displayName: true,
+              avatarUrl: true,
+            },
+          },
+        },
+      }),
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { commentsCount: { increment: 1 } },
+      }),
+    ]);
+
+    // Notify video owner (if not own comment)
+    if (video.userId !== userId) {
+      this.notifications.create({
+        userId: video.userId,
+        actorId: userId,
+        type: 'VIDEO_COMMENT',
+        videoId,
+        body: content.substring(0, 100),
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    }
+
+    return comment;
+  }
+
+  async getComments(videoId: string, cursor?: string, limit = 20) {
+    const comments = await this.prisma.videoComment.findMany({
+      where: { videoId, parentId: null }, // top-level comments only
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        likesCount: true,
+        repliesCount: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            isVerified: true,
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { likesCount: 'desc' }, // sort by popular first
+    });
+
+    const hasMore = comments.length > limit;
+    const items = hasMore ? comments.slice(0, limit) : comments;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  async bookmark(videoId: string, userId: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    const existing = await this.prisma.videoBookmark.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+    if (existing) throw new ConflictException('Already bookmarked');
+
+    await this.prisma.$transaction([
+      this.prisma.videoBookmark.create({
+        data: { userId, videoId },
+      }),
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { savesCount: { increment: 1 } },
+      }),
+    ]);
+    return { bookmarked: true };
+  }
+
+  async unbookmark(videoId: string, userId: string) {
+    const existing = await this.prisma.videoBookmark.findUnique({
+      where: { userId_videoId: { userId, videoId } },
+    });
+    if (!existing) throw new NotFoundException('Bookmark not found');
+
+    await this.prisma.$transaction([
+      this.prisma.videoBookmark.delete({
+        where: { userId_videoId: { userId, videoId } },
+      }),
+      this.prisma.$executeRaw`UPDATE "Video" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${videoId}`,
+    ]);
+    return { bookmarked: false };
+  }
+
+  async view(videoId: string, userId: string) {
+    const video = await this.prisma.video.findUnique({ where: { id: videoId } });
+    if (!video || video.status !== VideoStatus.PUBLISHED) throw new NotFoundException('Video not found');
+
+    // Check if already viewed recently? For simplicity, just increment.
+    await this.prisma.$transaction([
+      this.prisma.video.update({
+        where: { id: videoId },
+        data: { viewsCount: { increment: 1 } },
+      }),
+      this.prisma.channel.update({
+        where: { id: video.channelId },
+        data: { totalViews: { increment: 1 } },
+      }),
+      // Create or update watch history
+      this.prisma.watchHistory.upsert({
+        where: { userId_videoId: { userId, videoId } },
+        create: { userId, videoId, watchedAt: new Date() },
+        update: { watchedAt: new Date() },
+      }),
+    ]);
+    return { viewed: true };
+  }
+
+  async report(videoId: string, userId: string, reason: string) {
+    const reasonMap: Record<string, string> = {
+      SPAM: 'SPAM',
+      HARASSMENT: 'HARASSMENT',
+      HATE_SPEECH: 'HATE_SPEECH',
+      VIOLENCE: 'VIOLENCE',
+      MISINFORMATION: 'MISINFORMATION',
+      NUDITY: 'NUDITY',
+      IMPERSONATION: 'IMPERSONATION',
+      OTHER: 'OTHER',
+    };
+    await this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        description: `video:${videoId}`,
+        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+      },
+    });
+    return { reported: true };
+  }
+}

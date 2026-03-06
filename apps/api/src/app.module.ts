@@ -11,6 +11,8 @@ import { PostsModule } from './modules/posts/posts.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { ThreadsModule } from './modules/threads/threads.module';
 import { ReelsModule } from './modules/reels/reels.module';
+import { ChannelsModule } from './modules/channels/channels.module';
+import { VideosModule } from './modules/videos/videos.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { CirclesModule } from './modules/circles/circles.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -46,6 +48,8 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     StoriesModule,
     ThreadsModule,
     ReelsModule,
+    ChannelsModule,
+    VideosModule,
     MessagesModule,
     CirclesModule,
     NotificationsModule,
