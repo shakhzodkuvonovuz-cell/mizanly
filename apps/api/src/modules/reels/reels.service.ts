@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreateReelDto } from './dto/create-reel.dto';
-import { ReelStatus } from '@prisma/client';
+import { Prisma, ReelStatus, ReactionType } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -22,6 +22,7 @@ const REEL_SELECT = {
   mentions: true,
   hashtags: true,
   status: true,
+  isRemoved: true,
   audioTrackId: true,
   audioTitle: true,
   audioArtist: true,
@@ -99,11 +100,10 @@ export class ReelsService {
         },
         select: REEL_SELECT,
       }),
-      // TODO: Uncomment when User model has reelsCount field
-      // this.prisma.user.update({
-      //   where: { id: userId },
-      //   data: { reelsCount: { increment: 1 } },
-      // }),
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { reelsCount: { increment: 1 } },
+      }),
     ]);
 
     // TODO: In future, trigger video processing job here
@@ -140,8 +140,9 @@ export class ReelsService {
       ...mutes.map(m => m.mutedId),
     ];
 
-    const where: any = {
+    const where: Prisma.ReelWhereInput = {
       status: ReelStatus.READY,
+      isRemoved: false,
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
@@ -175,22 +176,22 @@ export class ReelsService {
       where: { id: reelId },
       select: REEL_SELECT,
     });
-    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+    if (!reel || reel.status !== ReelStatus.READY || reel.isRemoved) throw new NotFoundException('Reel not found');
 
     let isLiked = false;
     let isBookmarked = false;
 
     if (userId) {
-      const [like, bookmark] = await Promise.all([
-        this.prisma.reelLike.findUnique({
+      const [reaction, interaction] = await Promise.all([
+        this.prisma.reelReaction.findUnique({
           where: { userId_reelId: { userId, reelId } },
         }),
-        this.prisma.reelBookmark.findUnique({
+        this.prisma.reelInteraction.findUnique({
           where: { userId_reelId: { userId, reelId } },
         }),
       ]);
-      isLiked = !!like;
-      isBookmarked = !!bookmark;
+      isLiked = !!reaction; // any reaction counts as liked
+      isBookmarked = !!interaction?.saved;
     }
 
     return { ...reel, isLiked, isBookmarked };
@@ -215,14 +216,19 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
-    const existing = await this.prisma.reelLike.findUnique({
+    const existingReaction = await this.prisma.reelReaction.findUnique({
       where: { userId_reelId: { userId, reelId } },
     });
-    if (existing) throw new ConflictException('Already liked');
+    if (existingReaction) throw new ConflictException('Already liked');
 
     await this.prisma.$transaction([
-      this.prisma.reelLike.create({
-        data: { userId, reelId },
+      this.prisma.reelReaction.create({
+        data: { userId, reelId, reaction: ReactionType.LIKE },
+      }),
+      this.prisma.reelInteraction.upsert({
+        where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, liked: true },
+        update: { liked: true },
       }),
       this.prisma.reel.update({
         where: { id: reelId },
@@ -238,14 +244,19 @@ export class ReelsService {
   }
 
   async unlike(reelId: string, userId: string) {
-    const existing = await this.prisma.reelLike.findUnique({
+    const existingReaction = await this.prisma.reelReaction.findUnique({
       where: { userId_reelId: { userId, reelId } },
     });
-    if (!existing) throw new NotFoundException('Like not found');
+    if (!existingReaction) throw new NotFoundException('Like not found');
 
     await this.prisma.$transaction([
-      this.prisma.reelLike.delete({
+      this.prisma.reelReaction.delete({
         where: { userId_reelId: { userId, reelId } },
+      }),
+      this.prisma.reelInteraction.upsert({
+        where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, liked: false },
+        update: { liked: false },
       }),
       this.prisma.$executeRaw`UPDATE "Reel" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${reelId}`,
     ]);
@@ -257,11 +268,11 @@ export class ReelsService {
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
     const [comment] = await this.prisma.$transaction([
-      this.prisma.comment.create({
+      this.prisma.reelComment.create({
         data: {
           userId,
-          content,
           reelId,
+          content,
         },
         select: {
           id: true,
@@ -292,7 +303,7 @@ export class ReelsService {
   }
 
   async getComments(reelId: string, cursor?: string, limit = 20) {
-    const comments = await this.prisma.comment.findMany({
+    const comments = await this.prisma.reelComment.findMany({
       where: { reelId },
       select: {
         id: true,
@@ -324,10 +335,17 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
-    await this.prisma.reel.update({
-      where: { id: reelId },
-      data: { sharesCount: { increment: 1 } },
-    });
+    await this.prisma.$transaction([
+      this.prisma.reelInteraction.upsert({
+        where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, shared: true },
+        update: { shared: true },
+      }),
+      this.prisma.reel.update({
+        where: { id: reelId },
+        data: { sharesCount: { increment: 1 } },
+      }),
+    ]);
     return { shared: true };
   }
 
@@ -335,29 +353,36 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
-    try {
-      await this.prisma.$transaction([
-        this.prisma.reelBookmark.create({ data: { userId, reelId } }),
-        this.prisma.reel.update({
-          where: { id: reelId },
-          data: { savesCount: { increment: 1 } },
-        }),
-      ]);
-    } catch {
-      throw new ConflictException('Already bookmarked');
-    }
+    const existingInteraction = await this.prisma.reelInteraction.findUnique({
+      where: { userId_reelId: { userId, reelId } },
+    });
+    if (existingInteraction?.saved) throw new ConflictException('Already bookmarked');
+
+    await this.prisma.$transaction([
+      this.prisma.reelInteraction.upsert({
+        where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, saved: true },
+        update: { saved: true },
+      }),
+      this.prisma.reel.update({
+        where: { id: reelId },
+        data: { savesCount: { increment: 1 } },
+      }),
+    ]);
     return { bookmarked: true };
   }
 
   async unbookmark(reelId: string, userId: string) {
-    const existing = await this.prisma.reelBookmark.findUnique({
+    const existingInteraction = await this.prisma.reelInteraction.findUnique({
       where: { userId_reelId: { userId, reelId } },
     });
-    if (!existing) throw new NotFoundException('Bookmark not found');
+    if (!existingInteraction?.saved) throw new NotFoundException('Bookmark not found');
 
     await this.prisma.$transaction([
-      this.prisma.reelBookmark.delete({
+      this.prisma.reelInteraction.upsert({
         where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, saved: false },
+        update: { saved: false },
       }),
       this.prisma.$executeRaw`UPDATE "Reel" SET "savesCount" = GREATEST("savesCount" - 1, 0) WHERE id = ${reelId}`,
     ]);
@@ -368,14 +393,16 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
-    const existing = await this.prisma.reelView.findUnique({
+    const existingInteraction = await this.prisma.reelInteraction.findUnique({
       where: { userId_reelId: { userId, reelId } },
     });
-    if (existing) return { viewed: true }; // Already viewed
+    if (existingInteraction?.viewed) return { viewed: true }; // Already viewed
 
     await this.prisma.$transaction([
-      this.prisma.reelView.create({
-        data: { userId, reelId },
+      this.prisma.reelInteraction.upsert({
+        where: { userId_reelId: { userId, reelId } },
+        create: { userId, reelId, viewed: true },
+        update: { viewed: true },
       }),
       this.prisma.reel.update({
         where: { id: reelId },
