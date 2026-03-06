@@ -11,6 +11,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { ReelStatus } from '@prisma/client';
 import Redis from 'ioredis';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const REEL_SELECT = {
   id: true,
@@ -71,6 +72,7 @@ export class ReelsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
+    private notifications: NotificationsService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
