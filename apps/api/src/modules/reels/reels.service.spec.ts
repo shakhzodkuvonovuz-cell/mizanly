@@ -4,7 +4,7 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ReelsService } from './reels.service';
-import { ReelStatus, ReportReason } from '@prisma/client';
+import { ReelStatus, ReportReason, ReactionType } from '@prisma/client';
 
 describe('ReelsService', () => {
   let service: ReelsService;
@@ -25,14 +25,15 @@ describe('ReelsService', () => {
               update: jest.fn(),
               findMany: jest.fn(),
             },
-            reelLike: {
+            reelReaction: {
               create: jest.fn(),
               delete: jest.fn(),
               findUnique: jest.fn(),
               findMany: jest.fn(),
             },
-            reelBookmark: {
+            reelInteraction: {
               create: jest.fn(),
+              upsert: jest.fn(),
               delete: jest.fn(),
               findUnique: jest.fn(),
               findMany: jest.fn(),
@@ -41,7 +42,7 @@ describe('ReelsService', () => {
               create: jest.fn(),
               findUnique: jest.fn(),
             },
-            comment: {
+            reelComment: {
               create: jest.fn(),
               findMany: jest.fn(),
             },
@@ -175,6 +176,7 @@ describe('ReelsService', () => {
           audioTrackId: null,
           isDuet: false,
           isStitch: false,
+          isRemoved: false,
           likesCount: 5,
           commentsCount: 2,
           sharesCount: 1,
@@ -199,6 +201,7 @@ describe('ReelsService', () => {
           audioTrackId: null,
           isDuet: false,
           isStitch: false,
+          isRemoved: false,
           likesCount: 10,
           commentsCount: 3,
           sharesCount: 2,
@@ -222,6 +225,7 @@ describe('ReelsService', () => {
       expect(prisma.reel.findMany).toHaveBeenCalledWith({
         where: {
           status: ReelStatus.READY,
+          isRemoved: false,
           userId: undefined, // no excluded IDs
         },
         select: expect.any(Object),
@@ -254,6 +258,7 @@ describe('ReelsService', () => {
           audioTrackId: null,
           isDuet: false,
           isStitch: false,
+          isRemoved: false,
           likesCount: 0,
           commentsCount: 0,
           sharesCount: 0,
@@ -277,6 +282,7 @@ describe('ReelsService', () => {
       expect(prisma.reel.findMany).toHaveBeenCalledWith({
         where: {
           status: ReelStatus.READY,
+          isRemoved: false,
           userId: { notIn: [blockedUser, mutedUser] },
         },
         select: expect.any(Object),
@@ -297,17 +303,18 @@ describe('ReelsService', () => {
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelLike.findUnique.mockResolvedValue(null);
-      prisma.$transaction.mockResolvedValue([{}, {}]);
+      prisma.reelReaction.findUnique.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
       notifications.create.mockResolvedValue(undefined);
 
       const result = await service.like(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reelLike.findUnique).toHaveBeenCalledWith({
+      expect(prisma.reelReaction.findUnique).toHaveBeenCalledWith({
         where: { userId_reelId: { userId, reelId } },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
+      // Check transaction includes reelReaction.create, reelInteraction.upsert, reel.update
       expect(notifications.create).toHaveBeenCalledWith({
         userId: mockReel.userId,
         actorId: userId,
@@ -324,10 +331,10 @@ describe('ReelsService', () => {
         id: reelId,
         status: ReelStatus.READY,
       };
-      const mockLike = { userId, reelId };
+      const mockReaction = { userId, reelId, reaction: ReactionType.LIKE };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelLike.findUnique.mockResolvedValue(mockLike);
+      prisma.reelReaction.findUnique.mockResolvedValue(mockReaction);
 
       await expect(service.like(reelId, userId)).rejects.toThrow(ConflictException);
     });
@@ -350,14 +357,14 @@ describe('ReelsService', () => {
     it('should delete like and decrement count', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
-      const mockLike = { userId, reelId };
+      const mockReaction = { userId, reelId, reaction: ReactionType.LIKE };
 
-      prisma.reelLike.findUnique.mockResolvedValue(mockLike);
-      prisma.$transaction.mockResolvedValue([{}, 1]);
+      prisma.reelReaction.findUnique.mockResolvedValue(mockReaction);
+      prisma.$transaction.mockResolvedValue([{}, {}, 1]);
 
       const result = await service.unlike(reelId, userId);
 
-      expect(prisma.reelLike.findUnique).toHaveBeenCalledWith({
+      expect(prisma.reelReaction.findUnique).toHaveBeenCalledWith({
         where: { userId_reelId: { userId, reelId } },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
@@ -368,32 +375,38 @@ describe('ReelsService', () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
 
-      prisma.reelLike.findUnique.mockResolvedValue(null);
+      prisma.reelReaction.findUnique.mockResolvedValue(null);
 
       await expect(service.unlike(reelId, userId)).rejects.toThrow(NotFoundException);
     });
   });
 
   describe('delete', () => {
-    it('should soft-delete reel (update status to DELETED)', async () => {
+    it('should soft-delete reel (set isRemoved to true)', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReel = {
         id: reelId,
         userId,
         status: ReelStatus.READY,
+        isRemoved: false,
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reel.update.mockResolvedValue({ ...mockReel, status: ReelStatus.DELETED });
+      prisma.$transaction.mockResolvedValue([{ ...mockReel, isRemoved: true }, 1]);
 
       const result = await service.delete(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reel.update).toHaveBeenCalledWith({
-        where: { id: reelId },
-        data: { status: ReelStatus.DELETED },
-      });
+      expect(prisma.$transaction).toHaveBeenCalled();
+      // Check transaction includes reel.update with isRemoved: true and $executeRaw
+      expect(prisma.$transaction.mock.calls[0][0]).toHaveLength(2);
+      expect(prisma.$transaction.mock.calls[0][0][0]).toEqual(
+        expect.objectContaining({
+          where: { id: reelId },
+          data: { isRemoved: true },
+        }),
+      );
       expect(result).toEqual({ deleted: true });
     });
 
@@ -431,13 +444,13 @@ describe('ReelsService', () => {
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelView.findUnique.mockResolvedValue(null);
+      prisma.reelInteraction.findUnique.mockResolvedValue(null);
       prisma.$transaction.mockResolvedValue([{}, {}]);
 
       const result = await service.view(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reelView.findUnique).toHaveBeenCalledWith({
+      expect(prisma.reelInteraction.findUnique).toHaveBeenCalledWith({
         where: { userId_reelId: { userId, reelId } },
       });
       expect(prisma.$transaction).toHaveBeenCalled();
@@ -451,14 +464,14 @@ describe('ReelsService', () => {
         id: reelId,
         status: ReelStatus.READY,
       };
-      const mockView = { userId, reelId };
+      const mockInteraction = { userId, reelId, viewed: true };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelView.findUnique.mockResolvedValue(mockView);
+      prisma.reelInteraction.findUnique.mockResolvedValue(mockInteraction);
 
       const result = await service.view(reelId, userId);
 
-      expect(prisma.reelView.findUnique).toHaveBeenCalled();
+      expect(prisma.reelInteraction.findUnique).toHaveBeenCalled();
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
     });

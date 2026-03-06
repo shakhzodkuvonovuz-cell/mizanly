@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards, Query } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -32,5 +32,17 @@ export class ReelsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.reelsService.getFeed(userId, cursor);
+  }
+
+  @Post(':id/like')
+  @ApiOperation({ summary: 'Like a reel' })
+  like(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.reelsService.like(id, userId);
+  }
+
+  @Delete(':id/like')
+  @ApiOperation({ summary: 'Unlike a reel' })
+  unlike(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.reelsService.unlike(id, userId);
   }
 }

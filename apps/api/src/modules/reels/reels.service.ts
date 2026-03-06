@@ -221,20 +221,23 @@ export class ReelsService {
     });
     if (existingReaction) throw new ConflictException('Already liked');
 
-    await this.prisma.$transaction([
-      this.prisma.reelReaction.create({
+    await this.prisma.$transaction(async (tx) => {
+      await tx.reelReaction.create({
         data: { userId, reelId, reaction: ReactionType.LIKE },
-      }),
-      this.prisma.reelInteraction.upsert({
+      });
+
+      await tx.reelInteraction.upsert({
         where: { userId_reelId: { userId, reelId } },
         create: { userId, reelId, liked: true },
         update: { liked: true },
-      }),
-      this.prisma.reel.update({
-        where: { id: reelId },
-        data: { likesCount: { increment: 1 } },
-      }),
-    ]);
+      });
+
+      await tx.$executeRaw`
+        UPDATE "Reel"
+        SET "likesCount" = GREATEST(0, "likesCount" + 1)
+        WHERE id = ${reelId}
+      `;
+    });
     // Notify reel owner
     this.notifications.create({
       userId: reel.userId, actorId: userId,
@@ -244,22 +247,31 @@ export class ReelsService {
   }
 
   async unlike(reelId: string, userId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
+
     const existingReaction = await this.prisma.reelReaction.findUnique({
       where: { userId_reelId: { userId, reelId } },
     });
     if (!existingReaction) throw new NotFoundException('Like not found');
 
-    await this.prisma.$transaction([
-      this.prisma.reelReaction.delete({
+    await this.prisma.$transaction(async (tx) => {
+      await tx.reelReaction.delete({
         where: { userId_reelId: { userId, reelId } },
-      }),
-      this.prisma.reelInteraction.upsert({
+      });
+
+      await tx.reelInteraction.upsert({
         where: { userId_reelId: { userId, reelId } },
         create: { userId, reelId, liked: false },
         update: { liked: false },
-      }),
-      this.prisma.$executeRaw`UPDATE "Reel" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${reelId}`,
-    ]);
+      });
+
+      await tx.$executeRaw`
+        UPDATE "Reel"
+        SET "likesCount" = GREATEST(0, "likesCount" - 1)
+        WHERE id = ${reelId}
+      `;
+    });
     return { liked: false };
   }
 
