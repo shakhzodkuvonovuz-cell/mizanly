@@ -112,6 +112,11 @@ function CreateButton() {
           icon={<Icon name="circle-plus" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-story')}
         />
+        <BottomSheetItem
+          label="Short Video"
+          icon={<Icon name="video" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/create-reel')}
+        />
       </BottomSheet>
     </>
   );
@@ -220,7 +225,7 @@ const styles = StyleSheet.create({
     right: -10,
   },
   createButton: {
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   createGradient: {
     width: 48,
