@@ -61,6 +61,28 @@ function formatRecordingTime(seconds: number): string {
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+// Highlight search matches in message text
+function highlightSearchText(text: string, query: string) {
+  if (!query.trim()) return [{ text, highlight: false }];
+  const lowerText = text.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const segments = [];
+  let lastIndex = 0;
+  let index = lowerText.indexOf(lowerQuery);
+  while (index !== -1) {
+    if (index > lastIndex) {
+      segments.push({ text: text.slice(lastIndex, index), highlight: false });
+    }
+    segments.push({ text: text.slice(index, index + query.length), highlight: true });
+    lastIndex = index + query.length;
+    index = lowerText.indexOf(lowerQuery, lastIndex);
+  }
+  if (lastIndex < text.length) {
+    segments.push({ text: text.slice(lastIndex), highlight: false });
+  }
+  return segments;
+}
+
 function TypingDots() {
   const dot1 = useSharedValue(0);
   const dot2 = useSharedValue(0);
@@ -287,9 +309,12 @@ function GifPicker({ visible, onClose, onSelect }: {
 
 function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
+  searchQuery = '', onSearchResultPress, readByMembers = [],
 }: {
   message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
   onLongPress: (msg: Message) => void; isNew?: boolean;
+  searchQuery?: string; onSearchResultPress?: (msgId: string) => void;
+  readByMembers?: any[];
 }) {
   const time = messageTimestamp(message.createdAt);
   const AVATAR_SIZE = 28;
@@ -345,6 +370,7 @@ function MessageBubble({
 
       <Pressable
         onLongPress={() => onLongPress(message)}
+        onPress={() => searchQuery.trim() && onSearchResultPress?.(message.id)}
         style={[
           styles.bubble,
           isOwn ? [styles.bubbleOwn, ownRadius] : [styles.bubbleOther, otherRadius],
@@ -374,7 +400,18 @@ function MessageBubble({
             )}
             {message.content && (
               <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn]}>
-                {message.content}
+                {searchQuery.trim() ? (
+                  highlightSearchText(message.content, searchQuery).map((seg, idx) => (
+                    <Text
+                      key={idx}
+                      style={seg.highlight ? { backgroundColor: colors.gold + '80' } : {}}
+                    >
+                      {seg.text}
+                    </Text>
+                  ))
+                ) : (
+                  message.content
+                )}
               </Text>
             )}
           </>
@@ -386,6 +423,22 @@ function MessageBubble({
           <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>{time}</Text>
           {isOwn && (
             <Icon name="check-check" size={12} color="rgba(255,255,255,0.6)" />
+          )}
+          {readByMembers.length > 0 && (
+            <View style={styles.readReceipts}>
+              {readByMembers.slice(0, 3).map(member => (
+                <Avatar
+                  key={member.userId}
+                  uri={member.user.avatarUrl}
+                  name={member.user.displayName}
+                  size="xs"
+                  style={styles.readReceiptAvatar}
+                />
+              ))}
+              {readByMembers.length > 3 && (
+                <Text style={styles.readReceiptMore}>+{readByMembers.length - 3}</Text>
+              )}
+            </View>
           )}
         </View>
         {message.reactions && message.reactions.length > 0 && (
@@ -460,6 +513,9 @@ export default function ConversationScreen() {
   const [gifSearchQuery, setGifSearchQuery] = useState("");
   const [gifResults, setGifResults] = useState<any[]>([]);
   const [gifLoading, setGifLoading] = useState(false);
+  // Message search
+  const [searchMode, setSearchMode] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -507,6 +563,9 @@ export default function ConversationScreen() {
     messageType: 'TEXT',
     replyToId: p.replyToId,
   } as unknown as Message))];
+  const filteredMessages = searchQuery.trim()
+    ? combinedMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : combinedMessages;
   // We'll need to adjust buildMessageList to handle pending vs real messages
 
   useEffect(() => {
@@ -758,6 +817,14 @@ export default function ConversationScreen() {
     return ageMinutes < 15;
   }, [user?.id]);
 
+  const scrollToMessageIndex = useCallback((index: number) => {
+    flatListRef.current?.scrollToIndex({ index, animated: true });
+  }, []);
+
+  const handleSearchResultPress = useCallback((index: number) => {
+    scrollToMessageIndex(index);
+  }, [scrollToMessageIndex]);
+
   const handleChangeText = (val: string) => {
     setText(val);
     if (!isTyping) {
@@ -776,7 +843,10 @@ export default function ConversationScreen() {
   const avatarUri = convo ? conversationAvatar(convo, user?.id) : undefined;
 
   // Build list items combining real messages and pending messages
-  const listItems = buildMessageList(messages);
+  const filteredRealMessages = searchQuery.trim()
+    ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
+  const listItems = buildMessageList(filteredRealMessages);
   pendingMessages.forEach(pending => {
     listItems.push({
       type: 'pending',
@@ -788,21 +858,55 @@ export default function ConversationScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
-          <Avatar uri={avatarUri} name={name} size="sm" showOnline />
-          <View>
-            <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
-            {otherTyping && <TypingDots />}
+      {searchMode ? (
+        <View style={styles.searchHeader}>
+          <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <View style={styles.searchInputWrap}>
+            <Icon name="search" size="sm" color={colors.text.secondary} />
+            <TextInput
+              style={styles.searchInput}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search messages…"
+              placeholderTextColor={colors.text.tertiary}
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Icon name="x" size="xs" color={colors.text.secondary} />
+              </Pressable>
+            )}
           </View>
-        </Pressable>
-        <Pressable hitSlop={8} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
-          <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
-        </Pressable>
-      </View>
+          <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} style={styles.cancelBtn}>
+            <Text style={styles.cancelText}>Cancel</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
+            <Avatar uri={avatarUri} name={name} size="sm" showOnline />
+            <View>
+              <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
+              {otherTyping && <TypingDots />}
+            </View>
+          </Pressable>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+            <Pressable hitSlop={8} onPress={() => setSearchMode(true)}>
+              <Icon name="search" size="sm" color={colors.text.secondary} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
+              <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+            </Pressable>
+          </View>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -819,12 +923,17 @@ export default function ConversationScreen() {
             ref={flatListRef}
             data={listItems}
             keyExtractor={(item) => item.key}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
               if (item.type === 'date') return <DateSeparator label={item.label} />;
               if (item.type === 'pending') {
                 // Render pending message with opacity/spinner
                 return <PendingMessageRow pending={item.pending} />;
               }
+              const readByMembers = convoQuery.data?.members?.filter(member =>
+                member.userId !== user?.id &&
+                member.lastReadAt &&
+                new Date(member.lastReadAt) >= new Date(item.message.createdAt)
+              ).slice(0, 3) ?? [];
               return (
                 <Swipeable
                   renderRightActions={() => (
@@ -842,6 +951,9 @@ export default function ConversationScreen() {
                     isGroupEnd={item.isGroupEnd}
                     onLongPress={handleContextMenu}
                     isNew={newMessageIdsRef.current.has(item.message.id)}
+                    searchQuery={searchQuery}
+                    readByMembers={readByMembers}
+                    onSearchResultPress={() => handleSearchResultPress(index)}
                   />
                 </Swipeable>
               );
@@ -860,6 +972,7 @@ export default function ConversationScreen() {
               </View>
             )}
             contentContainerStyle={styles.messageList}
+            onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
         )}
@@ -1145,6 +1258,28 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
+  // Search header
+  searchHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    gap: spacing.sm,
+  },
+  searchInputWrap: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    backgroundColor: colors.dark.bgCard, borderRadius: radius.full,
+  },
+  searchInput: {
+    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+  },
+  cancelBtn: {
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.sm,
+  },
+  cancelText: {
+    color: colors.emerald, fontSize: fontSize.base, fontWeight: '600',
+  },
+
   typingDots: { flexDirection: 'row', gap: 3, paddingTop: 2 },
   dot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.emerald },
 
@@ -1375,5 +1510,21 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     flex: 1,
     marginRight: spacing.sm,
+  },
+  readReceipts: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: spacing.xs,
+  },
+  readReceiptAvatar: {
+    marginLeft: -6,
+    borderWidth: 1,
+    borderColor: colors.dark.bg,
+  },
+  readReceiptMore: {
+    marginLeft: 2,
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
   },
 });
