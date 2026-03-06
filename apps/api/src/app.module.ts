@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { PostsModule } from './modules/posts/posts.module';
 import { StoriesModule } from './modules/stories/stories.module';
 import { ThreadsModule } from './modules/threads/threads.module';
+import { ReelsModule } from './modules/reels/reels.module';
 import { MessagesModule } from './modules/messages/messages.module';
 import { CirclesModule } from './modules/circles/circles.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -33,6 +34,7 @@ import { SecurityHeadersMiddleware } from './common/middleware/security-headers.
     PostsModule,
     StoriesModule,
     ThreadsModule,
+    ReelsModule,
     MessagesModule,
     CirclesModule,
     NotificationsModule,
