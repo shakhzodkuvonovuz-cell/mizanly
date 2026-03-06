@@ -120,4 +120,11 @@ export class BlocksService {
       },
     };
   }
+
+  async isBlocked(blockerId: string, blockedId: string): Promise<boolean> {
+    const block = await this.prisma.block.findUnique({
+      where: { blockerId_blockedId: { blockerId, blockedId } },
+    });
+    return !!block;
+  }
 }
