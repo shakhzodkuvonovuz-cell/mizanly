@@ -27,6 +27,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
 import type { Message, Conversation } from '@/types';
@@ -96,9 +97,18 @@ function TypingDots() {
 // ── Message list with grouping + date separators ──────────────────────────
 const GROUP_GAP_MS = 2 * 60 * 1000; // 2 min gap breaks a group
 
+type PendingMessage = {
+  id: string; // client-generated temporary ID
+  content: string;
+  createdAt: string;
+  status: 'pending' | 'failed';
+  replyToId?: string;
+};
+
 type ListItem =
   | { type: 'date'; label: string; key: string }
-  | { type: 'msg'; message: Message; isGroupStart: boolean; isGroupEnd: boolean; key: string };
+  | { type: 'msg'; message: Message; isGroupStart: boolean; isGroupEnd: boolean; key: string }
+  | { type: 'pending'; pending: PendingMessage; key: string };
 
 function buildMessageList(messages: Message[]): ListItem[] {
   const items: ListItem[] = [];
@@ -386,7 +396,7 @@ function MessageBubble({
           </View>
         )}
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -402,12 +412,22 @@ function conversationAvatar(convo: Conversation, myId?: string): string | undefi
   return other?.user.avatarUrl;
 }
 
+function PendingMessageRow({ pending }: { pending: PendingMessage }) {
+  return (
+    <View style={styles.pendingRow}>
+      <Text style={styles.pendingText}>{pending.content}</Text>
+      <ActivityIndicator size="small" color={colors.text.tertiary} />
+    </View>
+  );
+}
+
 export default function ConversationScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { getToken } = useAuth();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const isOffline = useStore((s) => s.isOffline);
   const haptic = useHaptic();
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -415,6 +435,11 @@ export default function ConversationScreen() {
   const newMessageIdsRef = useRef(new Set<string>());
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
+  const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
+  const pendingMessagesRef = useRef(pendingMessages);
+  useEffect(() => {
+    pendingMessagesRef.current = pendingMessages;
+  }, [pendingMessages]);
   const [isTyping, setIsTyping] = useState(false);
   const [otherTyping, setOtherTyping] = useState(false);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -472,6 +497,17 @@ export default function ConversationScreen() {
   });
 
   const messages: Message[] = messagesQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const combinedMessages = [...messages, ...pendingMessages.map(p => ({
+    ...p,
+    // Convert PendingMessage to a shape compatible with Message
+    id: p.id,
+    content: p.content,
+    createdAt: p.createdAt,
+    sender: user ? { id: user.id, displayName: user.fullName || user.username, avatarUrl: user.imageUrl, username: user.username } : { id: 'pending', displayName: 'You', avatarUrl: '', username: 'pending' },
+    messageType: 'TEXT',
+    replyToId: p.replyToId,
+  } as unknown as Message))];
+  // We'll need to adjust buildMessageList to handle pending vs real messages
 
   useEffect(() => {
     let mounted = true;
@@ -479,10 +515,32 @@ export default function ConversationScreen() {
       const token = await getToken();
       if (!token || !mounted) return;
       const socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'] });
-      socket.on('connect', () => { socket.emit('join_conversation', { conversationId: id }); });
-      socket.on('new_message', (msg: Message) => {
+      socket.on('connect', () => {
+        socket.emit('join_conversation', { conversationId: id });
+        // Retry pending messages on reconnect
+        const pending = pendingMessagesRef.current.filter(p => p.status === 'pending');
+        pending.forEach(pending => {
+          socket.emit('send_message', {
+            conversationId: id,
+            content: pending.content,
+            replyToId: pending.replyToId,
+            messageType: 'TEXT',
+            clientId: pending.id,
+          });
+        });
+      });
+      socket.on('new_message', (msg: Message & { clientId?: string }) => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.spring);
         newMessageIdsRef.current.add(msg.id);
+        // Remove any pending message that matches this incoming message
+        const pending = pendingMessagesRef.current;
+        const matchedIndex = pending.findIndex(p =>
+          p.id === msg.clientId ||
+          (p.content === msg.content && Date.now() - new Date(p.createdAt).getTime() < 30000)
+        );
+        if (matchedIndex >= 0) {
+          setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
+        }
         queryClient.setQueryData(['messages', id], (old: any) => {
           if (!old) return old;
           const pages = [...old.pages];
@@ -518,16 +576,49 @@ export default function ConversationScreen() {
     if (!text.trim() || isSending) return;
     haptic.medium();
     setIsSending(true);
-    socketRef.current?.emit('send_message', {
-      conversationId: id,
+    const pendingId = `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const pendingMessage: PendingMessage = {
+      id: pendingId,
       content: text.trim(),
+      createdAt: new Date().toISOString(),
+      status: 'pending',
       replyToId: replyTo?.id,
-      messageType: 'TEXT',
-    });
+    };
+    setPendingMessages(prev => [...prev, pendingMessage]);
     setText('');
     setReplyTo(null);
     setIsSending(false);
-  }, [text, replyTo, id, isSending, haptic]);
+
+    // If online, attempt to send via socket
+    if (!isOffline && socketRef.current?.connected) {
+      socketRef.current.emit('send_message', {
+        conversationId: id,
+        content: text.trim(),
+        replyToId: replyTo?.id,
+        messageType: 'TEXT',
+        clientId: pendingId, // custom field for matching
+      });
+    } else {
+      // Offline or socket not connected: message stays pending
+      // Will be retried when network returns (see useEffect below)
+    }
+  }, [text, replyTo, id, isSending, haptic, isOffline]);
+
+  // Retry pending messages when network comes back online
+  useEffect(() => {
+    if (isOffline || !socketRef.current?.connected) return;
+    // Filter pending messages that haven't been sent yet
+    const toRetry = pendingMessages.filter(p => p.status === 'pending');
+    toRetry.forEach(pending => {
+      socketRef.current?.emit('send_message', {
+        conversationId: id,
+        content: pending.content,
+        replyToId: pending.replyToId,
+        messageType: 'TEXT',
+        clientId: pending.id,
+      });
+    });
+  }, [isOffline, pendingMessages, id]);
 
   const pickAndSendMedia = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -684,6 +775,16 @@ export default function ConversationScreen() {
   const name = convo ? conversationName(convo, user?.id) : '';
   const avatarUri = convo ? conversationAvatar(convo, user?.id) : undefined;
 
+  // Build list items combining real messages and pending messages
+  const listItems = buildMessageList(messages);
+  pendingMessages.forEach(pending => {
+    listItems.push({
+      type: 'pending',
+      pending,
+      key: pending.id,
+    });
+  });
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
@@ -716,10 +817,14 @@ export default function ConversationScreen() {
         ) : (
           <FlatList
             ref={flatListRef}
-            data={buildMessageList(messages)}
+            data={listItems}
             keyExtractor={(item) => item.key}
             renderItem={({ item }) => {
               if (item.type === 'date') return <DateSeparator label={item.label} />;
+              if (item.type === 'pending') {
+                // Render pending message with opacity/spinner
+                return <PendingMessageRow pending={item.pending} />;
+              }
               return (
                 <Swipeable
                   renderRightActions={() => (
@@ -1081,7 +1186,7 @@ const styles = StyleSheet.create({
   bubbleMedia: { width: 200, height: 200, borderRadius: radius.md, marginBottom: spacing.xs },
   bubbleText: { color: colors.text.inverse, fontSize: fontSize.base, lineHeight: 22 },
   bubbleTextOwn: { color: '#fff' },
-  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, justifyContent: 'flex-end' },
+  bubbleMeta: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: 2, justifyContent: 'flex-end' },
   editedLabel: { color: 'rgba(0,0,0,0.4)', fontSize: 10 },
   editedLabelOwn: { color: 'rgba(255,255,255,0.6)' },
   bubbleTime: { color: 'rgba(0,0,0,0.4)', fontSize: 10 },
@@ -1111,7 +1216,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'flex-end',
     paddingHorizontal: spacing.sm, paddingTop: spacing.sm, gap: spacing.sm,
   },
-  attachBtn: { paddingBottom: 8 },
+  attachBtn: { paddingBottom: spacing.sm },
   input: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     maxHeight: 120, minHeight: 38,
@@ -1124,7 +1229,7 @@ const styles = StyleSheet.create({
     width: 38, height: 38, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
-  micBtn: { paddingBottom: 8 },
+  micBtn: { paddingBottom: spacing.sm },
   micBtnRecording: { opacity: 0.7 },
   voicePlayer: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -1207,7 +1312,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  gifBtn: { paddingBottom: 8 },
+  gifBtn: { paddingBottom: spacing.sm },
   micButtonWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1252,5 +1357,23 @@ const styles = StyleSheet.create({
   slideCancelHint: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+  },
+  pendingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.dark.bgCard,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.xs,
+    borderRadius: radius.md,
+    opacity: 0.7,
+  },
+  pendingText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.base,
+    flex: 1,
+    marginRight: spacing.sm,
   },
 });

@@ -13,6 +13,10 @@ interface AppState {
   theme: 'dark' | 'light' | 'system';
   setTheme: (theme: 'dark' | 'light' | 'system') => void;
 
+  // Network
+  isOffline: boolean;
+  setIsOffline: (v: boolean) => void;
+
   // Notifications
   unreadNotifications: number;
   setUnreadNotifications: (count: number) => void;
@@ -44,6 +48,10 @@ export const useStore = create<AppState>()(
       // Theme
       theme: 'dark',
       setTheme: (theme) => set({ theme }),
+
+      // Network
+      isOffline: false,
+      setIsOffline: (isOffline) => set({ isOffline }),
 
       // Notifications
       unreadNotifications: 0,

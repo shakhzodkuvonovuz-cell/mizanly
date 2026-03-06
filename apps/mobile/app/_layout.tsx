@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { I18nManager } from 'react-native';
+import { I18nManager, Alert } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
@@ -13,7 +13,9 @@ import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-googl
 import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
 import { api } from '@/services/api';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 
 // Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
 // Most React Native flex layouts auto-mirror when this is enabled.
@@ -27,6 +29,17 @@ const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 1000 * 60, retry: 2 },
+    mutations: {
+      onError: (error: Error) => {
+        // Show a toast/alert for failed mutations
+        Alert.alert('Error', error.message);
+      },
+      retry: (failureCount, error) => {
+        // Retry network errors up to 3 times
+        if (error.message?.includes('Network') && failureCount < 3) return true;
+        return false;
+      },
+    },
   },
 });
 
@@ -93,6 +106,8 @@ export default function RootLayout() {
     }
   }, [fontsLoaded]);
 
+  useNetworkStatus();
+
   if (!fontsLoaded) return null;
 
   return (
@@ -102,6 +117,7 @@ export default function RootLayout() {
           <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
               <StatusBar style="light" />
+              <OfflineBanner />
               <AuthGuard />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
