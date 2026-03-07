@@ -60,4 +60,31 @@ export class PlaylistsService {
     if (!playlist) throw new NotFoundException('Playlist not found');
     return playlist;
   }
+
+  async getByChannel(channelId: string, cursor?: string, limit = 20): Promise<{ data: any[]; meta: { cursor: string | null; hasMore: boolean } }> {
+    const playlists = await this.prisma.playlist.findMany({
+      where: { channelId, isPublic: true },
+      select: {
+        id: true,
+        channelId: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        isPublic: true,
+        videosCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = playlists.length > limit;
+    const items = hasMore ? playlists.slice(0, limit) : playlists;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
 }

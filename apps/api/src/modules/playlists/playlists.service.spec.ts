@@ -232,4 +232,61 @@ describe('PlaylistsService', () => {
       await expect(service.getById(PLAYLIST_ID)).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('getByChannel', () => {
+    const CHANNEL_ID = 'channel-789';
+    const mockPlaylists = [
+      {
+        id: 'playlist-abc',
+        channelId: CHANNEL_ID,
+        title: 'Playlist 1',
+        description: 'Desc 1',
+        thumbnailUrl: null,
+        isPublic: true,
+        videosCount: 5,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 'playlist-def',
+        channelId: CHANNEL_ID,
+        title: 'Playlist 2',
+        description: 'Desc 2',
+        thumbnailUrl: null,
+        isPublic: true,
+        videosCount: 3,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    it('should return paginated playlists for channel', async () => {
+      prisma.playlist.findMany.mockResolvedValue(mockPlaylists);
+
+      const result = await service.getByChannel(CHANNEL_ID);
+
+      expect(prisma.playlist.findMany).toHaveBeenCalledWith({
+        where: { channelId: CHANNEL_ID, isPublic: true },
+        select: expect.any(Object),
+        take: 21, // limit + 1
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should handle cursor pagination', async () => {
+      const cursor = 'playlist-abc';
+      prisma.playlist.findMany.mockResolvedValue(mockPlaylists.slice(0, 1));
+
+      await service.getByChannel(CHANNEL_ID, cursor);
+
+      expect(prisma.playlist.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: cursor },
+          skip: 1,
+        }),
+      );
+    });
+  });
 });
