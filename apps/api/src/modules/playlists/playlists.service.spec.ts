@@ -143,7 +143,7 @@ describe('PlaylistsService', () => {
       prisma.channel.findUnique.mockResolvedValue(mockChannel);
       prisma.playlist.create.mockResolvedValue(mockPlaylist);
 
-      const result = await service.create(USER_ID, dtoWithoutIsPublic as any);
+      const result = await service.create(USER_ID, dtoWithoutIsPublic);
 
       expect(prisma.playlist.create).toHaveBeenCalledWith({
         data: {
@@ -179,7 +179,7 @@ describe('PlaylistsService', () => {
       prisma.channel.findUnique.mockResolvedValue(mockChannel);
       prisma.playlist.create.mockResolvedValue(mockPlaylist);
 
-      const result = await service.create(USER_ID, dtoWithoutDescription as any);
+      const result = await service.create(USER_ID, dtoWithoutDescription);
 
       expect(prisma.playlist.create).toHaveBeenCalledWith({
         data: {

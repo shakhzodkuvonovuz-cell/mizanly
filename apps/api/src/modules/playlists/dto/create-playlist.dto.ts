@@ -1,20 +1,22 @@
-import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, MaxLength, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePlaylistDto {
   @ApiProperty({ description: 'ID of the channel that owns the playlist' })
   @IsString()
+  @IsNotEmpty()
   channelId: string;
 
-  @ApiProperty({ maxLength: 100, description: 'Playlist title' })
+  @ApiProperty({ maxLength: 200, description: 'Playlist title' })
   @IsString()
-  @MaxLength(100)
+  @IsNotEmpty()
+  @MaxLength(200)
   title: string;
 
-  @ApiProperty({ required: false, maxLength: 500, description: 'Playlist description' })
+  @ApiProperty({ required: false, maxLength: 1000, description: 'Playlist description' })
   @IsOptional()
   @IsString()
-  @MaxLength(500)
+  @MaxLength(1000)
   description?: string;
 
   @ApiProperty({ required: false, default: true, description: 'Whether the playlist is public' })
