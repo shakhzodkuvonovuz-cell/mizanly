@@ -10,6 +10,41 @@
 
 ---
 
+## ANALYSIS FINDINGS (Task 1 Completed)
+
+### 1. Existing Pagination Pattern
+**From `apps/api/src/modules/users/users.service.ts:264-328`:**
+- `getSavedPosts`: Uses `SavedPost` model with cursor: `{ userId_postId: { userId, postId: cursor } }` (line 283)
+- `getSavedThreads`: Uses `ThreadBookmark` with cursor: `{ userId_threadId: { userId, threadId: cursor } }` (line 315)
+- Both return: `{ data: items.map((x) => x.post/thread), meta: { cursor, hasMore } }`
+- Both have: `take: limit + 1`, `orderBy: { createdAt: 'desc' }`
+
+### 2. Prisma Schema Constraints
+**Existing Models:**
+- `SavedPost`: `@@id([userId, postId])` (line 859) - composite primary key
+- `ThreadBookmark`: `@@id([userId, threadId])` (line 1319) - composite primary key
+
+**New Models:**
+- `ReelInteraction`: `@@unique([userId, reelId])` (line 1654) - unique constraint, has separate `id` field
+- `VideoBookmark`: `@@id([userId, videoId])` (line 1330) - composite primary key
+
+### 3. Key Discovery: `@@id` vs `@@unique`
+- **Both work with same cursor syntax**: `{ userId_XId: { userId, XId: cursor } }`
+- **Evidence**: Existing `getSavedPosts` (`@@id`) and `getSavedThreads` (`@@id`) both work
+- **Prisma handles both the same way** for cursor pagination
+
+### 4. Method Signature Pattern
+Both existing methods have: `async getSavedX(userId: string, cursor?: string, limit = 20)`
+
+### 5. Implementation Implications
+1. **ReelInteraction**: Needs `saved: true` filter (has `saved Boolean @default(false)` field)
+2. **VideoBookmark**: No `saved` filter needed (all records are bookmarks)
+3. **Cursor syntax**: Follows `userId_{modelName}Id` pattern for both constraint types
+
+---
+
+
+
 ### Task 1: Read Existing Saved Methods
 
 **Files:**
