@@ -289,4 +289,54 @@ describe('PlaylistsService', () => {
       );
     });
   });
+
+  describe('getItems', () => {
+    const PLAYLIST_ID = 'playlist-abc';
+    const mockItems = [
+      {
+        id: 'item-1',
+        position: 0,
+        createdAt: new Date(),
+        video: {
+          id: 'video-1',
+          title: 'Video 1',
+          thumbnailUrl: null,
+          duration: 120,
+          viewsCount: 100,
+          createdAt: new Date(),
+          channel: {
+            id: 'channel-789',
+            handle: 'tech',
+            name: 'Tech Channel',
+            avatarUrl: null,
+          },
+        },
+      },
+    ];
+
+    it('should return paginated playlist items', async () => {
+      prisma.playlist.findUnique.mockResolvedValue({ id: PLAYLIST_ID });
+      prisma.playlistItem.findMany.mockResolvedValue(mockItems);
+
+      const result = await service.getItems(PLAYLIST_ID);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+      });
+      expect(prisma.playlistItem.findMany).toHaveBeenCalledWith({
+        where: { playlistId: PLAYLIST_ID },
+        select: expect.any(Object),
+        take: 21,
+        orderBy: { position: 'asc' },
+      });
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should throw NotFoundException when playlist not found', async () => {
+      prisma.playlist.findUnique.mockResolvedValue(null);
+
+      await expect(service.getItems(PLAYLIST_ID)).rejects.toThrow(NotFoundException);
+    });
+  });
 });

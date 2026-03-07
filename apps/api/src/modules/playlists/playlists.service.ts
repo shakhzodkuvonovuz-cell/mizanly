@@ -87,4 +87,48 @@ export class PlaylistsService {
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
   }
+
+  async getItems(playlistId: string, cursor?: string, limit = 20): Promise<{ data: any[]; meta: { cursor: string | null; hasMore: boolean } }> {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id: playlistId }
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+
+    const items = await this.prisma.playlistItem.findMany({
+      where: { playlistId },
+      select: {
+        id: true,
+        position: true,
+        createdAt: true,
+        video: {
+          select: {
+            id: true,
+            title: true,
+            thumbnailUrl: true,
+            duration: true,
+            viewsCount: true,
+            createdAt: true,
+            channel: {
+              select: {
+                id: true,
+                handle: true,
+                name: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { position: 'asc' },
+    });
+
+    const hasMore = items.length > limit;
+    const result = hasMore ? items.slice(0, limit) : items;
+    return {
+      data: result,
+      meta: { cursor: hasMore ? result[result.length - 1].id : null, hasMore },
+    };
+  }
 }
