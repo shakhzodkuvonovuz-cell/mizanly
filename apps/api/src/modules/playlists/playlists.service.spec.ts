@@ -338,5 +338,20 @@ describe('PlaylistsService', () => {
 
       await expect(service.getItems(PLAYLIST_ID)).rejects.toThrow(NotFoundException);
     });
+
+    it('should handle cursor pagination', async () => {
+      const cursor = 'item-1';
+      prisma.playlist.findUnique.mockResolvedValue({ id: PLAYLIST_ID });
+      prisma.playlistItem.findMany.mockResolvedValue([]);
+
+      await service.getItems(PLAYLIST_ID, cursor);
+
+      expect(prisma.playlistItem.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cursor: { id: cursor },
+          skip: 1,
+        }),
+      );
+    });
   });
 });

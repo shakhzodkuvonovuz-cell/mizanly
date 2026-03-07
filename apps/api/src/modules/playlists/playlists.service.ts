@@ -2,6 +2,43 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../../config/prisma.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 
+interface PlaylistItemResponse {
+  id: string;
+  position: number;
+  createdAt: Date;
+  video: {
+    id: string;
+    title: string;
+    thumbnailUrl: string | null;
+    duration: number;
+    viewsCount: number;
+    createdAt: Date;
+    channel: {
+      id: string;
+      handle: string;
+      name: string;
+      avatarUrl: string | null;
+    };
+  };
+}
+
+interface PlaylistResponse {
+  id: string;
+  channelId: string;
+  title: string;
+  description: string | null;
+  thumbnailUrl: string | null;
+  isPublic: boolean;
+  videosCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PaginatedResponse<T> {
+  data: T[];
+  meta: { cursor: string | null; hasMore: boolean };
+}
+
 @Injectable()
 export class PlaylistsService {
   constructor(private prisma: PrismaService) {}
@@ -61,7 +98,7 @@ export class PlaylistsService {
     return playlist;
   }
 
-  async getByChannel(channelId: string, cursor?: string, limit = 20): Promise<{ data: any[]; meta: { cursor: string | null; hasMore: boolean } }> {
+  async getByChannel(channelId: string, cursor?: string, limit = 20): Promise<PaginatedResponse<PlaylistResponse>> {
     const playlists = await this.prisma.playlist.findMany({
       where: { channelId, isPublic: true },
       select: {
@@ -88,7 +125,7 @@ export class PlaylistsService {
     };
   }
 
-  async getItems(playlistId: string, cursor?: string, limit = 20): Promise<{ data: any[]; meta: { cursor: string | null; hasMore: boolean } }> {
+  async getItems(playlistId: string, cursor?: string, limit = 20): Promise<PaginatedResponse<PlaylistItemResponse>> {
     const playlist = await this.prisma.playlist.findUnique({
       where: { id: playlistId }
     });
