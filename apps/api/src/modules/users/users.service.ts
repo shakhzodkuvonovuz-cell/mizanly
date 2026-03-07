@@ -389,6 +389,22 @@ export class UsersService {
     };
   }
 
+  async addWatchLater(userId: string, videoId: string) {
+    await this.prisma.watchLater.upsert({
+      where: { userId_videoId: { userId, videoId } },
+      create: { userId, videoId },
+      update: {},
+    });
+    return { added: true };
+  }
+
+  async removeWatchLater(userId: string, videoId: string) {
+    await this.prisma.watchLater.deleteMany({
+      where: { userId, videoId },
+    });
+    return { removed: true };
+  }
+
   async getWatchHistory(userId: string, cursor?: string, limit = 20) {
     const items = await this.prisma.watchHistory.findMany({
       where: { userId },
