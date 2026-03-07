@@ -168,4 +168,29 @@ export class PlaylistsService {
       meta: { cursor: hasMore ? result[result.length - 1].id : null, hasMore },
     };
   }
+
+  async update(id: string, userId: string, dto: any) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    return this.prisma.playlist.update({
+      where: { id },
+      data: dto,
+      select: {
+        id: true,
+        channelId: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        isPublic: true,
+        videosCount: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
 }

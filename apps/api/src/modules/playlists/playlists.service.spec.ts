@@ -354,4 +354,62 @@ describe('PlaylistsService', () => {
       );
     });
   });
+
+  describe('update', () => {
+    const USER_ID = 'user-123';
+    const PLAYLIST_ID = 'playlist-abc';
+    const dto = {
+      title: 'Updated Title',
+      description: 'Updated description',
+      isPublic: false,
+    };
+
+    it('should update playlist when user is owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: USER_ID },
+      };
+      const updatedPlaylist = {
+        id: PLAYLIST_ID,
+        channelId: 'channel-789',
+        ...dto,
+        thumbnailUrl: null,
+        videosCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.playlist.update.mockResolvedValue(updatedPlaylist);
+
+      const result = await service.update(PLAYLIST_ID, USER_ID, dto);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        include: { channel: { select: { userId: true } } },
+      });
+      expect(prisma.playlist.update).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        data: dto,
+        select: expect.any(Object),
+      });
+      expect(result).toEqual(updatedPlaylist);
+    });
+
+    it('should throw NotFoundException when playlist not found', async () => {
+      prisma.playlist.findUnique.mockResolvedValue(null);
+
+      await expect(service.update(PLAYLIST_ID, USER_ID, dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is not owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: 'other-user' },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+
+      await expect(service.update(PLAYLIST_ID, USER_ID, dto)).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
