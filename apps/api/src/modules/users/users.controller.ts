@@ -106,6 +106,28 @@ export class UsersController {
     return this.usersService.getWatchLater(userId, cursor);
   }
 
+  @Post('me/watch-later/:videoId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add video to watch later' })
+  addWatchLater(
+    @Param('videoId') videoId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.usersService.addWatchLater(userId, videoId);
+  }
+
+  @Delete('me/watch-later/:videoId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove video from watch later' })
+  removeWatchLater(
+    @Param('videoId') videoId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.usersService.removeWatchLater(userId, videoId);
+  }
+
   @Get('me/watch-history')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
