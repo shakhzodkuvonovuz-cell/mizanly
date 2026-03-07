@@ -8,6 +8,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { IsString, IsIn } from 'class-validator';
 import { UploadService } from './upload.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -29,6 +30,7 @@ export class UploadController {
   constructor(private uploadService: UploadService) {}
 
   @Post('presign')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Get presigned URL for direct R2 upload' })
   getPresignedUrl(
     @CurrentUser('id') userId: string,

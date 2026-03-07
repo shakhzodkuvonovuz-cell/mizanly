@@ -171,6 +171,18 @@ export default function CreateReelScreen() {
     uploadMutation.mutate({});
   };
 
+  const handleBack = () => {
+    const hasContent = !!video || caption.trim().length > 0;
+    if (hasContent) {
+      Alert.alert('Discard reel?', 'You have unsaved content.', [
+        { text: 'Keep editing' },
+        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+      ]);
+    } else {
+      router.back();
+    }
+  };
+
   const handleToolbarPress = (type: AutocompleteType) => {
     haptic.light();
     setShowAutocomplete(type);
@@ -180,7 +192,7 @@ export default function CreateReelScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+        <TouchableOpacity onPress={handleBack} hitSlop={8}>
           <Icon name="arrow-left" size="sm" color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Create Reel</Text>

@@ -199,6 +199,27 @@ export default function PostDetailScreen() {
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
+  if (postQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Error</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <EmptyState
+          icon="slash"
+          title="Something went wrong"
+          subtitle="Could not load this content. Please try again."
+          actionLabel="Go back"
+          onAction={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const listHeader = useMemo(() => (
     postQuery.data ? (
       <View>

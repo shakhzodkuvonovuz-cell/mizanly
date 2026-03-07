@@ -18,7 +18,7 @@ export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
 
   const remaining = max - current;
   const offset = CIRCUMFERENCE * (1 - ratio);
-  const color = ratio >= 1 ? '#EF4444' : ratio >= 0.9 ? '#F59E0B' : colors.emerald;
+  const color = ratio >= 1 ? colors.error : ratio >= 0.9 ? colors.gold : colors.emerald;
 
   return (
     <View style={[styles.wrap, { width: size, height: size }]}>

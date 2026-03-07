@@ -1,442 +1,496 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 7: Production Polish)
+# ARCHITECT INSTRUCTIONS — Mizanly (Batch 10: Bug Fixes + Quality)
 ## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
 
 **Last updated:** 2026-03-07 by Claude Opus 4.6
-**Previous batches:** 1 (56) -> 2 (27) -> 3 (25) -> 4 (30) -> 5 (28) -> 6 (19+3) -> This file.
+**Previous batches:** 1-8 (features+quality+security) -> 9 (close gaps) -> This file.
 
 ---
 
 ## CRITICAL CONTEXT
 
-Batch 6 achieved: 0 compilation errors, 0 dead buttons, 0 `as any` in non-test code, all CLAUDE.md stubs fixed, 16 service spec files. The app is ~75% feature complete.
+Batch 9 completed perfectly: 200/200 tests pass, 0 dead buttons, 0 console statements, 0 `as any` (except 3 accepted), all detail screens have error states. This batch fixes bugs found in a deep 6-agent audit sweep.
 
-**This batch focuses on production polish:** make tests pass, optimize performance, add accessibility, harden error handling, and ensure every screen feels like a shipped product. No new features.
+**Codebase status:** 0 compilation errors, 200/200 tests pass, 42 screens, 151+ endpoints.
+**This batch:** 3 critical bugs, 5 high-priority quality fixes, 3 missing spec files.
 
 ---
 
 ## DO NOT TOUCH
 
 - Prisma schema field names — final
-- `$executeRaw` tagged template literals — they are safe
-- Working features (all 5 spaces, messaging, notifications, search, offline, reports)
-- Existing test logic (only fix failures, don't rewrite passing tests)
+- `$executeRaw` tagged template literals — safe
+- Passing tests — don't rewrite
+- All working features across all 5 spaces
+- Files not listed in your assigned step
 
 ---
 
-## STEP 1: MAKE ALL TESTS PASS (3 tasks)
+## STEP 1: ADD REEL COMMENT DELETE ENDPOINT (backend)
 
-### 1.1 Run All Backend Tests and Fix Failures
+### 1.1 Add deleteComment to ReelsService
 
-Run: `cd apps/api && npx jest --passWithNoTests 2>&1`
+**File:** `apps/api/src/modules/reels/reels.service.ts`
 
-Read every failure. Common causes:
-- Mock shape doesn't match updated service signatures (batch 5/6 changed method params)
-- Missing mock providers (NotificationsService, DevicesService added as deps)
-- `$transaction` mock not set up (services now use `$transaction` arrays)
-- Prisma enum imports changed (PostVisibility, ReactionType)
+The backend has NO endpoint to delete a reel comment. The mobile currently calls `reelsApi.delete(reelId)` which deletes the ENTIRE REEL — critical bug.
 
-**Rules for fixing:**
-- Fix the TEST to match the current SERVICE code, not the other way around
-- If a service method signature changed, update the test's mock calls and assertions
-- If a new dependency was injected, add it to the test module providers with a mock
-- NEVER change service logic to make a test pass
-- NEVER use `@ts-ignore` or skip tests
+**Add this method** after the existing `comment()` method (around line 320):
 
-### 1.2 Run E2E Tests and Fix Failures
+```ts
+async deleteComment(reelId: string, commentId: string, userId: string) {
+  const comment = await this.prisma.reelComment.findUnique({
+    where: { id: commentId },
+  });
+  if (!comment) throw new NotFoundException('Comment not found');
+  if (comment.reelId !== reelId) throw new NotFoundException('Comment not found');
+  if (comment.userId !== userId) throw new ForbiddenException('Not your comment');
 
-Run: `cd apps/api && npx jest --config test/jest-e2e.json 2>&1`
+  await this.prisma.$transaction([
+    this.prisma.reelComment.delete({ where: { id: commentId } }),
+    this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
+  ]);
+  return { deleted: true };
+}
+```
 
-E2E test files: `test/health.e2e-spec.ts`, `test/posts.e2e-spec.ts`
+### 1.2 Add deleteComment to ReelsController
 
-Fix any import/setup issues. These tests use the actual NestJS app bootstrap, so module registration changes from batch 5 (ChannelsModule, VideosModule) may cause issues.
+**File:** `apps/api/src/modules/reels/reels.controller.ts`
 
-### 1.3 Verify All Tests Green
+Add this endpoint AFTER the `getComments` method (after line 84):
 
-Run: `cd apps/api && npx jest --passWithNoTests --verbose 2>&1`
+```ts
+@Delete(':id/comments/:commentId')
+@ApiOperation({ summary: 'Delete a comment from a reel' })
+deleteComment(
+  @Param('id') id: string,
+  @Param('commentId') commentId: string,
+  @CurrentUser('id') userId: string,
+) {
+  return this.reelsService.deleteComment(id, commentId, userId);
+}
+```
 
-**Expected:** ALL tests pass. If any test is fundamentally broken due to missing infrastructure (e.g., needs real database), mark it with `it.todo()` and add a comment explaining why — but try to fix it first.
+### 1.3 Update reels.service.spec.ts
+
+**File:** `apps/api/src/modules/reels/reels.service.spec.ts`
+
+Add tests for `deleteComment`:
+1. Read the spec file to understand the mock pattern used
+2. Add a `describe('deleteComment')` block with 3 tests:
+   - Should delete own comment successfully
+   - Should throw NotFoundException for non-existent comment
+   - Should throw ForbiddenException when deleting another user's comment
+
+### 1.4 Clarify TODO
+
+In `reels.service.ts` line 110, replace:
+```ts
+// TODO: In future, trigger video processing job here
+```
+with:
+```ts
+// Video processing deferred — mark as READY immediately for MVP
+```
+
+**Run after:** `cd apps/api && npx jest reels.service.spec && npx jest --passWithNoTests`
 
 ---
 
-## STEP 2: PERFORMANCE OPTIMIZATION (5 tasks)
+## STEP 2: FIX MOBILE REEL COMMENT DELETE + FOLLOW PATH (mobile)
 
-### 2.1 Memoize Heavy Components
+### 2.1 Add deleteComment to reelsApi
 
-These components re-render on every parent render. Wrap them with `React.memo`:
+**File:** `apps/mobile/src/services/api.ts`
 
-**File:** `apps/mobile/src/components/saf/PostCard.tsx`
-```tsx
-export const PostCard = React.memo(function PostCard(props: PostCardProps) {
-  // existing component body
+Find the `reelsApi` object (around line 254). Add this method after the existing `delete` method:
+
+```ts
+deleteComment: (reelId: string, commentId: string) =>
+  api.delete(`/reels/${reelId}/comments/${commentId}`),
+```
+
+### 2.2 Fix follow requests path
+
+**Same file:** `apps/mobile/src/services/api.ts`
+
+Find line 197:
+```ts
+getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests'),
+```
+
+Change to:
+```ts
+getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests/incoming'),
+```
+
+The backend endpoint is `GET /follows/requests/incoming` (see follows.controller.ts line 61).
+
+### 2.3 Fix comment delete mutation in reel/[id].tsx
+
+**File:** `apps/mobile/app/(screens)/reel/[id].tsx`
+
+Find line 57-58 (inside the CommentRow component):
+```ts
+const deleteMutation = useMutation({
+  mutationFn: () => reelsApi.delete(reelId),
+```
+
+Change to:
+```ts
+const deleteMutation = useMutation({
+  mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
+```
+
+This fixes the critical bug where deleting a comment would delete the entire reel.
+
+---
+
+## STEP 3: FIX PollResultBar useState MISUSE (mobile)
+
+**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
+
+Find lines 364-369 (inside `PollResultBar` function):
+```ts
+// Animate the bar width on mount
+useState(() => {
+  setTimeout(() => {
+    width.value = withSpring(pct, animation.spring.gentle);
+  }, 100);
 });
 ```
 
-**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
-Same pattern — wrap with `React.memo`.
-
-**File:** `apps/mobile/app/(tabs)/bakra.tsx`
-The `ReelItem` component rendered inside FlatList — wrap with `React.memo`.
-
-**File:** `apps/mobile/app/(tabs)/minbar.tsx`
-The `VideoCard` component rendered inside FlatList — wrap with `React.memo`.
-
-**Rule:** Only memo components that receive props and are rendered in lists. Do NOT memo screen-level components or components that always receive new props (callbacks without useCallback).
-
-### 2.2 Add useCallback to FlatList Handlers
-
-In every tab screen that uses FlatList, ensure `renderItem`, `onEndReached`, and `keyExtractor` are wrapped in `useCallback` (or defined outside the component for static functions).
-
-**Files to check and fix:**
-- `apps/mobile/app/(tabs)/saf.tsx`
-- `apps/mobile/app/(tabs)/majlis.tsx`
-- `apps/mobile/app/(tabs)/bakra.tsx`
-- `apps/mobile/app/(tabs)/minbar.tsx`
-- `apps/mobile/app/(tabs)/risalah.tsx`
-
-For each file:
-1. Read the file
-2. Check if `renderItem` is an inline arrow function in the FlatList props
-3. If so, extract it to a `useCallback`-wrapped function
-4. Same for `onEndReached`
-5. `keyExtractor` can be a static function defined outside the component
-
-**Example fix:**
-```tsx
-// BEFORE (re-creates function every render):
-<FlatList renderItem={({ item }) => <PostCard post={item} />} />
-
-// AFTER:
-const renderItem = useCallback(({ item }) => <PostCard post={item} />, []);
-<FlatList renderItem={renderItem} />
+Replace with:
+```ts
+// Animate the bar width on mount
+useEffect(() => {
+  const timer = setTimeout(() => {
+    width.value = withSpring(pct, animation.spring.gentle);
+  }, 100);
+  return () => clearTimeout(timer);
+}, [pct]);
 ```
 
-### 2.3 Add `getItemLayout` to Fixed-Height Lists
-
-For FlatLists where items have a known fixed height, add `getItemLayout` to skip measurement:
-
-**File:** `apps/mobile/app/(tabs)/bakra.tsx` — reels are full-screen height
-```tsx
-getItemLayout={(_, index) => ({
-  length: SCREEN_H,
-  offset: SCREEN_H * index,
-  index,
-})}
-```
-
-**File:** `apps/mobile/app/(tabs)/risalah.tsx` — conversation items are fixed height (~72px)
-```tsx
-getItemLayout={(_, index) => ({
-  length: 72,
-  offset: 72 * index,
-  index,
-})}
-```
-
-Only add this where item heights are truly fixed. Do NOT add to saf/majlis/minbar feeds (variable height cards).
-
-### 2.4 Add `maxToRenderPerBatch` and `windowSize` to Heavy Lists
-
-For feeds with heavy items (images, videos), add performance props:
-
-**Files:** `saf.tsx`, `majlis.tsx`, `minbar.tsx`, `bakra.tsx`
-```tsx
-<FlatList
-  maxToRenderPerBatch={5}
-  windowSize={5}
-  removeClippedSubviews={true}
-  // ... existing props
-/>
-```
-
-Only add these if not already present. Read each file first.
-
-### 2.5 Pause Off-Screen Videos in Bakra
-
-**File:** `apps/mobile/app/(tabs)/bakra.tsx`
-
-Check if off-screen reels are paused. The FlatList should track the currently visible item and only play that one. If this isn't implemented:
-
-Use `onViewableItemsChanged` to track the visible item index:
-```tsx
-const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 80 }).current;
-const [activeIndex, setActiveIndex] = useState(0);
-
-const onViewableItemsChanged = useRef(({ viewableItems }) => {
-  if (viewableItems.length > 0) {
-    setActiveIndex(viewableItems[0].index ?? 0);
-  }
-}).current;
-
-// Pass to FlatList:
-<FlatList
-  onViewableItemsChanged={onViewableItemsChanged}
-  viewabilityConfig={viewabilityConfig}
-/>
-
-// In ReelItem, only play if active:
-<Video shouldPlay={index === activeIndex} />
-```
-
-Read the file first — this may already be implemented. If so, skip.
+**Also check imports at the top of the file:**
+- If `useEffect` is not imported from 'react', add it to the existing react import
+- `useState` may become unused after this change — remove it from imports ONLY if no other code in the file uses it (search the file first)
 
 ---
 
-## STEP 3: ACCESSIBILITY (4 tasks)
-
-### 3.1 Add accessibilityLabel to Tab Bar Icons
-
-**File:** `apps/mobile/app/(tabs)/_layout.tsx`
-
-Each `Tabs.Screen` should have an accessible label. Check if `tabBarAccessibilityLabel` is set:
-```tsx
-<Tabs.Screen
-  name="saf"
-  options={{
-    tabBarAccessibilityLabel: "Home feed",
-    // ... existing options
-  }}
-/>
-```
-
-Add for all 5 tabs: saf ("Home feed"), bakra ("Short videos"), minbar ("Videos"), majlis ("Threads"), risalah ("Messages").
-
-### 3.2 Add accessibilityLabel to Action Buttons
-
-In these files, find interactive elements (TouchableOpacity, Pressable) that have only an Icon child and no text. Add `accessibilityLabel`:
-
-**File:** `apps/mobile/src/components/saf/PostCard.tsx`
-- Like button: `accessibilityLabel={post.isLiked ? "Unlike post" : "Like post"}`
-- Comment button: `accessibilityLabel="Comment on post"`
-- Share button: `accessibilityLabel="Share post"`
-- Bookmark button: `accessibilityLabel={post.isBookmarked ? "Remove bookmark" : "Bookmark post"}`
-- More button: `accessibilityLabel="More options"`
-
-**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
-Same pattern for like, reply, repost, share, more buttons.
-
-**File:** `apps/mobile/app/(tabs)/bakra.tsx`
-Same pattern for reel action column (like, comment, share, bookmark, report).
-
-Read each file first. Only add labels to buttons that DON'T already have them.
-
-### 3.3 Add accessibilityRole to Interactive Elements
-
-Add `accessibilityRole="button"` to custom Pressable/TouchableOpacity elements that act as buttons but might not be announced as such by screen readers.
-
-Focus on the most used screens:
-- `PostCard.tsx` — action buttons
-- `ThreadCard.tsx` — action buttons
-- Tab bar custom create button in `_layout.tsx`
-
-### 3.4 Add accessibilityLabel to Text Inputs
-
-In compose screens, add labels to TextInput elements:
-
-**File:** `apps/mobile/app/(screens)/create-post.tsx`
-```tsx
-<TextInput
-  accessibilityLabel="Post content"
-  // ... existing props
-/>
-```
+## STEP 4: ADD DISCARD CONFIRMATION + DRAFT SAVE TO create-thread.tsx
 
 **File:** `apps/mobile/app/(screens)/create-thread.tsx`
-```tsx
-<TextInput
-  accessibilityLabel="Thread content"
-  // ... existing props
-/>
+
+### 4.1 Add draft auto-save
+
+Read create-post.tsx to see the existing draft pattern (uses AsyncStorage with a 2-second debounce). Implement the same pattern for threads:
+
+1. Add import at top:
+```ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
 ```
 
-**File:** `apps/mobile/app/(screens)/conversation/[id].tsx`
-```tsx
-<TextInput
-  accessibilityLabel="Message input"
-  // ... existing props
-/>
+2. Add draft key constant near the top of the component:
+```ts
+const THREAD_DRAFT_KEY = 'draft:thread';
 ```
 
-Read each file first. Only add if not present.
+3. Add load-draft effect (near other useEffects):
+```ts
+useEffect(() => {
+  AsyncStorage.getItem(THREAD_DRAFT_KEY).then((saved) => {
+    if (saved) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft.parts) setParts(draft.parts);
+      } catch {}
+    }
+  }).catch(() => {});
+}, []);
+```
+
+4. Add save-draft effect:
+```ts
+useEffect(() => {
+  const timer = setTimeout(() => {
+    const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
+    if (hasContent) {
+      AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts })).catch(() => {});
+    }
+  }, 2000);
+  return () => clearTimeout(timer);
+}, [parts]);
+```
+
+5. Clear draft on successful post (in the mutation's onSuccess):
+```ts
+AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+```
+
+### 4.2 Add discard confirmation
+
+Find the back/cancel button handler. Replace the direct `router.back()` call with:
+
+```ts
+const handleBack = () => {
+  const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
+  if (hasContent) {
+    Alert.alert('Discard thread?', 'You have unsaved content.', [
+      { text: 'Keep editing' },
+      { text: 'Discard', style: 'destructive', onPress: () => {
+        AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+        router.back();
+      }},
+    ]);
+  } else {
+    router.back();
+  }
+};
+```
+
+Make sure `Alert` is imported from `react-native`. Wire `handleBack` to the Cancel/back button's `onPress`.
 
 ---
 
-## STEP 4: ERROR HANDLING HARDENING (4 tasks)
+## STEP 5: ADD DISCARD CONFIRMATION TO create-reel.tsx + create-story.tsx
 
-### 4.1 Add Error Boundaries to Detail Screens
+### 5.1 create-reel.tsx
 
-If a detail screen crashes (bad data, network error during render), the whole app shouldn't crash. The app already has a root `ErrorBoundary` in `src/components/ErrorBoundary.tsx`.
+**File:** `apps/mobile/app/(screens)/create-reel.tsx`
 
-Check if it's used. If the root ErrorBoundary exists and wraps the app in `_layout.tsx`, that's sufficient for crash protection. Verify this by reading `_layout.tsx`.
+Find the back button handler. Replace direct `router.back()` with:
 
-If individual screens need their own error boundaries (e.g., for graceful "Something went wrong" UI instead of the global fallback), wrap the most crash-prone screens:
-
-**Screens to wrap (if not already):**
-- `video/[id].tsx` — video player can crash on bad URLs
-- `reel/[id].tsx` — same
-- `story-viewer.tsx` — complex gesture/animation code
-
-Use the existing ErrorBoundary component. Only add if not already wrapped.
-
-### 4.2 Add Error States to Queries
-
-Check detail screens for missing error states. When a query fails, the user should see something — not a blank screen.
-
-**Pattern to add where missing:**
-```tsx
-if (query.isError) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-      </View>
-      <EmptyState
-        icon="slash"
-        title="Something went wrong"
-        subtitle="Please try again later"
-        actionLabel="Go back"
-        onAction={() => router.back()}
-      />
-    </SafeAreaView>
-  );
-}
+```ts
+const handleBack = () => {
+  const hasContent = !!video || caption.trim().length > 0;
+  if (hasContent) {
+    Alert.alert('Discard reel?', 'You have unsaved content.', [
+      { text: 'Keep editing' },
+      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+    ]);
+  } else {
+    router.back();
+  }
+};
 ```
 
-**Files to check and add error states if missing:**
-- `apps/mobile/app/(screens)/post/[id].tsx`
-- `apps/mobile/app/(screens)/thread/[id].tsx`
-- `apps/mobile/app/(screens)/video/[id].tsx`
-- `apps/mobile/app/(screens)/reel/[id].tsx`
-- `apps/mobile/app/(screens)/channel/[handle].tsx`
-- `apps/mobile/app/(screens)/profile/[username].tsx`
+Read the file first to find the correct state variable names (`video`, `caption`, etc.). Wire `handleBack` to the back button. Make sure `Alert` is imported.
 
-Read each file first. If it already handles `isError`, skip it.
+### 5.2 create-story.tsx
 
-### 4.3 Add Confirmation to Destructive Actions
+**File:** `apps/mobile/app/(screens)/create-story.tsx`
 
-Check that all destructive actions (delete post, delete comment, leave group, block user, delete conversation) show `Alert.alert` confirmation before executing.
+Same pattern:
 
-**Files to check:**
-- `PostCard.tsx` — delete post
-- `ThreadCard.tsx` — delete thread
-- `post/[id].tsx` — delete comment
-- `conversation-info.tsx` — leave group, remove member
-- `profile/[username].tsx` — block user
-
-Read each file. If any destructive mutation fires without an Alert confirmation, add one:
-```tsx
-Alert.alert(
-  'Delete Post',
-  'Are you sure? This cannot be undone.',
-  [
-    { text: 'Cancel', style: 'cancel' },
-    { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
-  ],
-);
+```ts
+const handleBack = () => {
+  const hasContent = !!mediaUri || (textOverlay?.trim().length ?? 0) > 0;
+  if (hasContent) {
+    Alert.alert('Discard story?', 'You have unsaved content.', [
+      { text: 'Keep editing' },
+      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+    ]);
+  } else {
+    router.back();
+  }
+};
 ```
 
-### 4.4 Replace console.error/warn with Proper Handling
-
-Search for `console.error` and `console.warn` in mobile app code (not node_modules). Replace with either:
-- Silent catch (if truly non-critical)
-- `Alert.alert` (if user should know)
-- Remove entirely (if it's debug logging)
-
-Run: `grep -rn "console\.\(error\|warn\|log\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts"`
-
-Do NOT add `console.log` anywhere. The backend uses Pino structured logging — that's fine.
+Read the file first to find the correct state variable names. Wire `handleBack` to the Cancel button.
 
 ---
 
-## STEP 5: VISUAL POLISH (4 tasks)
+## STEP 6: FIX THEME COMPLIANCE IN 5 COMPONENTS
 
-### 5.1 Ensure Consistent Header Heights
+### 6.1 ErrorBoundary.tsx — Replace emoji with Icon
 
-All detail screens should have the same header pattern:
+**File:** `apps/mobile/src/components/ErrorBoundary.tsx`
+
+Line 29: Replace `<Text style={styles.emoji}>🕌</Text>` with:
 ```tsx
-<View style={styles.header}>
-  <Pressable onPress={() => router.back()} hitSlop={8}>
-    <Icon name="arrow-left" size="md" color={colors.text.primary} />
-  </Pressable>
-  <Text style={styles.headerTitle}>Title</Text>
-  <View style={{ width: 40 }} />  {/* spacer for centering */}
-</View>
+<Icon name="slash" size="xl" color={colors.text.secondary} />
 ```
 
-Header style should be consistent:
-```tsx
-header: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: spacing.base,
-  paddingVertical: spacing.sm,
-  borderBottomWidth: StyleSheet.hairlineWidth,
-  borderBottomColor: colors.dark.border,
-},
+Add imports if not present:
+```ts
+import { Icon } from '@/components/ui/Icon';
+import { colors } from '@/theme';
 ```
 
-**Check these screens and fix inconsistencies:**
-- `post/[id].tsx`, `thread/[id].tsx`, `video/[id].tsx`, `reel/[id].tsx`
-- `channel/[handle].tsx`, `profile/[username].tsx`
-- `create-post.tsx`, `create-thread.tsx`, `create-video.tsx`, `create-reel.tsx`
-- `report.tsx`, `notifications.tsx`, `settings.tsx`
+Remove the `emoji` style from the StyleSheet if it exists (it would have fontSize/textAlign for the emoji).
 
-Read each file. Only fix if the header pattern is visibly different (wrong padding, missing border, wrong icon).
+### 6.2 CharCountRing.tsx — Replace hardcoded colors
 
-### 5.2 Ensure Loading States Use Skeleton
+**File:** `apps/mobile/src/components/ui/CharCountRing.tsx`
 
-Check that ALL detail screens show Skeleton loading (not blank screen) while data loads:
+Line 21: Replace:
+```ts
+const color = ratio >= 1 ? '#EF4444' : ratio >= 0.9 ? '#F59E0B' : colors.emerald;
+```
+with:
+```ts
+const color = ratio >= 1 ? colors.error : ratio >= 0.9 ? colors.gold : colors.emerald;
+```
 
-**Pattern:**
-```tsx
-if (query.isLoading) {
-  return (
-    <SafeAreaView style={styles.container}>
-      <Skeleton.Rect width="100%" height={200} />
-      <View style={{ padding: spacing.base }}>
-        <Skeleton.Rect width="60%" height={20} />
-        <Skeleton.Rect width="40%" height={16} style={{ marginTop: spacing.sm }} />
-      </View>
-    </SafeAreaView>
-  );
+`colors.error` is `#F85149` (close to the original red) and `colors.gold` is `#C8963E` (brand gold, replaces the yellow warning).
+
+### 6.3 PostMedia.tsx — Replace hardcoded colors
+
+**File:** `apps/mobile/src/components/saf/PostMedia.tsx`
+
+These are overlay/carousel UI colors. Replace:
+
+| Line | Old | New |
+|------|-----|-----|
+| 73 | `color="#FFF"` | `color={colors.text.primary}` |
+| 81 | `color="#FFF"` | `color={colors.text.primary}` |
+| 86 | `color="#FFF"` | `color={colors.text.primary}` |
+| 119 (style) | `backgroundColor: 'rgba(255,255,255,0.35)'` | `backgroundColor: 'rgba(255,255,255,0.35)'` (KEEP — this is an overlay dot, not a theme color) |
+| 122 (style) | `backgroundColor: '#fff'` | `backgroundColor: colors.text.primary` |
+| 135 (style) | `backgroundColor: 'rgba(0,0,0,0.5)'` | `backgroundColor: 'rgba(0,0,0,0.5)'` (KEEP — overlay backdrop) |
+| 140 (style) | `color: '#fff'` | `color: colors.text.primary` |
+
+**Import `colors` from `@/theme`** if not already imported.
+
+**NOTE:** Semi-transparent overlays (`rgba(0,0,0,...)` and `rgba(255,255,255,0.35)`) are acceptable as-is — they're opacity variants for media overlays, not theme colors.
+
+### 6.4 Badge.tsx — Fix hardcoded padding
+
+**File:** `apps/mobile/src/components/ui/Badge.tsx`
+
+Find line 65 with `paddingHorizontal: 4`. Replace with:
+```ts
+paddingHorizontal: spacing.xs,
+```
+
+Import `spacing` from `@/theme` if not already imported.
+
+### 6.5 LocationPicker.tsx — Fix hardcoded padding
+
+**File:** `apps/mobile/src/components/ui/LocationPicker.tsx`
+
+Find line 227 with `paddingVertical: 4`. Replace with:
+```ts
+paddingVertical: spacing.xs,
+```
+
+Import `spacing` from `@/theme` if not already imported.
+
+---
+
+## STEP 7: ADD 3 MISSING SERVICE SPEC FILES (backend)
+
+### 7.1 profile-links.service.spec.ts
+
+**File to create:** `apps/api/src/modules/profile-links/profile-links.service.spec.ts`
+
+1. Read `apps/api/src/modules/profile-links/profile-links.service.ts` to see all public methods
+2. Read an existing spec file (e.g., `apps/api/src/modules/blocks/blocks.service.spec.ts`) for the mock pattern
+3. Create spec with tests for each public method:
+   - getLinks — returns user's links ordered by position
+   - addLink — creates a new link
+   - updateLink — updates an existing link (check ownership)
+   - deleteLink — deletes a link (check ownership)
+   - reorderLinks — updates positions
+
+**Mock pattern (use this for all 3 specs):**
+```ts
+const mockPrisma = {
+  profileLink: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), updateMany: jest.fn() },
+};
+
+beforeEach(async () => {
+  const module = await Test.createTestingModule({
+    providers: [
+      ProfileLinksService,
+      { provide: PrismaService, useValue: mockPrisma },
+    ],
+  }).compile();
+  service = module.get(ProfileLinksService);
+});
+```
+
+### 7.2 settings.service.spec.ts
+
+**File to create:** `apps/api/src/modules/settings/settings.service.spec.ts`
+
+1. Read `apps/api/src/modules/settings/settings.service.ts`
+2. Create spec with tests for each method (getSettings, updatePrivacy, updateNotifications, etc.)
+3. Mock PrismaService with `userSetting` model methods
+
+### 7.3 upload.service.spec.ts
+
+**File to create:** `apps/api/src/modules/upload/upload.service.spec.ts`
+
+1. Read `apps/api/src/modules/upload/upload.service.ts`
+2. Create spec with tests for presigned URL generation, content type validation
+3. Mock the AWS S3 client
+
+**Run after all 3:** `cd apps/api && npx jest --passWithNoTests`
+
+---
+
+## STEP 8: BACKEND CLEANUP (3 files)
+
+### 8.1 Clarify TODO in videos.service.ts
+
+**File:** `apps/api/src/modules/videos/videos.service.ts`
+
+Find line 97:
+```ts
+// TODO: In future, trigger video processing job here
+```
+Replace with:
+```ts
+// Video processing deferred — mark as PUBLISHED immediately for MVP
+```
+
+### 8.2 Fix swallowed catch in posts.service.ts
+
+**File:** `apps/api/src/modules/posts/posts.service.ts`
+
+Find the catch block around line 290 that looks like:
+```ts
+} catch {
+  throw new ConflictException('Post already saved');
 }
 ```
 
-**Files to verify:**
-- `post/[id].tsx`, `thread/[id].tsx`, `video/[id].tsx`, `reel/[id].tsx`
-- `channel/[handle].tsx`, `profile/[username].tsx`
-- `conversation/[id].tsx`
-
-Read each. If loading state is missing or uses ActivityIndicator instead of Skeleton, fix it.
-
-### 5.3 Fix Hardcoded Colors
-
-Search for hardcoded color strings in screen files:
-```bash
-grep -rn "'#[0-9a-fA-F]\{3,6\}'" apps/mobile/app/ apps/mobile/src/components/ --include="*.tsx" | grep -v node_modules | grep -v theme
+Replace with:
+```ts
+} catch (error) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    throw new ConflictException('Post already saved');
+  }
+  throw error;
+}
 ```
 
-Replace with theme tokens:
-- `'#000'` or `'#000000'` -> `colors.dark.bg` or `'#000'` (acceptable for true black overlays)
-- `'#fff'` or `'#ffffff'` -> `colors.text.primary` or keep for contrast (loading backgrounds)
-- `'#333'` etc. -> find the closest theme token
+Make sure `Prisma` is imported from `@prisma/client`. This catches unique constraint violations specifically while re-throwing unexpected errors.
 
-**Exception:** `'#000'` and `'#fff'` in story-viewer.tsx and video players are acceptable (true black/white for media backgrounds). Do not change those.
+### 8.3 Fix swallowed catch in threads.service.ts
 
-### 5.4 Verify EmptyState on All List Screens
+**File:** `apps/api/src/modules/threads/threads.service.ts`
 
-Every FlatList should have a `ListEmptyComponent`. Check these screens:
+Find the catch block around line 345:
+```ts
+} catch {
+  throw new ConflictException('Already bookmarked');
+}
+```
 
-- `saf.tsx`, `majlis.tsx`, `bakra.tsx`, `minbar.tsx`, `risalah.tsx` (tabs)
-- `notifications.tsx`, `search.tsx`, `hashtag/[tag].tsx`
-- `followers/[userId].tsx`, `following/[userId].tsx`
-- `blocked.tsx`, `muted.tsx`, `circles.tsx`
+Replace with:
+```ts
+} catch (error) {
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    throw new ConflictException('Already bookmarked');
+  }
+  throw error;
+}
+```
 
-Each should use `<EmptyState>` component (not bare text) when the list is empty AND not loading. If loading, show Skeleton.
+Make sure `Prisma` is imported from `@prisma/client`.
 
-Read each file. Only fix if missing.
+**Run after:** `cd apps/api && npx jest --passWithNoTests`
 
 ---
 
@@ -446,114 +500,139 @@ Read each file. Only fix if missing.
 2. **NEVER use text emoji for icons** — Always `<Icon name="..." />`
 3. **NEVER hardcode border radius >= 6** — Always `radius.*` from theme
 4. **NEVER use bare "No items" text** — Always `<EmptyState>`
-5. **NEVER change Prisma schema field names** — They are final
-6. **ALL FlatLists must have `<RefreshControl>`** (or `onRefresh`+`refreshing` shorthand)
-7. **NEVER use `any` in new non-test code** — Type everything properly
-8. **ActivityIndicator OK in buttons only** — use `<Skeleton>` for content loading
-9. **The `$executeRaw` tagged template literals are SAFE** — do NOT replace them
-10. **NEVER suppress errors with `@ts-ignore`** — fix the actual type
-11. **NEVER add `console.log` to mobile code** — use Alert or silent catch
-12. **NEVER rewrite passing tests** — only fix failures
-13. **NEVER change service logic to make a test pass** — fix the test instead
+5. **ALL FlatLists must have `<RefreshControl>`**
+6. **NEVER use `any` in new non-test code**
+7. **NEVER suppress errors with `@ts-ignore`**
+8. **NEVER add `console.log/warn/error` to mobile code**
+9. **The `$executeRaw` tagged template literals are SAFE**
+10. **Fix TESTS to match SERVICE logic, never the reverse**
 
 ---
 
 ## PRIORITY QUEUE
 
 ```
-STEP 1 — TESTS (do first, reveals hidden breaks)
-[ ] 1.1  Run unit tests, fix all failures
-[ ] 1.2  Run e2e tests, fix all failures
-[ ] 1.3  Verify all green
+STEP 1 — REEL COMMENT DELETE ENDPOINT (backend)
+[ ] 1.1  Add deleteComment to reels.service.ts
+[ ] 1.2  Add DELETE endpoint to reels.controller.ts
+[ ] 1.3  Add tests to reels.service.spec.ts
+[ ] 1.4  Clarify TODO in reels.service.ts
 
-STEP 2 — PERFORMANCE
-[ ] 2.1  React.memo on PostCard, ThreadCard, ReelItem, VideoCard
-[ ] 2.2  useCallback on FlatList handlers in all 5 tabs
-[ ] 2.3  getItemLayout on bakra + risalah (fixed-height items)
-[ ] 2.4  maxToRenderPerBatch + windowSize + removeClippedSubviews on feed lists
-[ ] 2.5  Pause off-screen videos in bakra
+STEP 2 — FIX MOBILE API + REEL COMMENT DELETE
+[ ] 2.1  Add reelsApi.deleteComment to api.ts
+[ ] 2.2  Fix followsApi.getRequests path to /follows/requests/incoming
+[ ] 2.3  Fix reel/[id].tsx to call deleteComment instead of delete
 
-STEP 3 — ACCESSIBILITY
-[ ] 3.1  Tab bar accessibilityLabels
-[ ] 3.2  Action button accessibilityLabels (PostCard, ThreadCard, bakra)
-[ ] 3.3  accessibilityRole="button" on custom touchables
-[ ] 3.4  TextInput accessibilityLabels on compose screens
+STEP 3 — FIX PollResultBar
+[ ] 3.1  Fix useState -> useEffect in ThreadCard.tsx
 
-STEP 4 — ERROR HANDLING
-[ ] 4.1  Verify ErrorBoundary wraps app
-[ ] 4.2  Add isError states to 6 detail screens
-[ ] 4.3  Confirm Alert on all destructive actions
-[ ] 4.4  Remove console.error/warn from mobile code
+STEP 4 — DISCARD + DRAFT SAVE FOR THREADS
+[ ] 4.1  Add draft auto-save to create-thread.tsx
+[ ] 4.2  Add discard confirmation to create-thread.tsx
 
-STEP 5 — VISUAL POLISH
-[ ] 5.1  Consistent header heights across all detail screens
-[ ] 5.2  Skeleton loading states on all detail screens
-[ ] 5.3  Replace hardcoded colors with theme tokens
-[ ] 5.4  EmptyState on all list screens
+STEP 5 — DISCARD CONFIRMATION
+[ ] 5.1  Add discard confirmation to create-reel.tsx
+[ ] 5.2  Add discard confirmation to create-story.tsx
+
+STEP 6 — THEME COMPLIANCE
+[ ] 6.1  Fix ErrorBoundary.tsx emoji -> Icon
+[ ] 6.2  Fix CharCountRing.tsx hardcoded colors
+[ ] 6.3  Fix PostMedia.tsx hardcoded colors
+[ ] 6.4  Fix Badge.tsx hardcoded padding
+[ ] 6.5  Fix LocationPicker.tsx hardcoded padding
+
+STEP 7 — MISSING SPEC FILES
+[ ] 7.1  Create profile-links.service.spec.ts
+[ ] 7.2  Create settings.service.spec.ts
+[ ] 7.3  Create upload.service.spec.ts
+
+STEP 8 — BACKEND CLEANUP
+[ ] 8.1  Clarify TODO in videos.service.ts
+[ ] 8.2  Fix swallowed catch in posts.service.ts
+[ ] 8.3  Fix swallowed catch in threads.service.ts
 ```
 
 ---
 
-## PARALLELIZATION GUIDE
+## 8-AGENT PARALLELIZATION (zero file conflicts)
 
 ```
-Wave 1 — MUST RUN FIRST:
-  Step 1 (all tests) — reveals broken code that other steps might miss
-
-Wave 2 — After Step 1 (all parallel, no file conflicts):
-  Agent A: Step 2.1 + 2.2 (memo + useCallback — touches PostCard, ThreadCard, all 5 tabs)
-  Agent B: Step 2.3 + 2.4 + 2.5 (FlatList perf — touches bakra, risalah, saf, majlis, minbar)
-  *** CONFLICT: Agents A and B both touch tab files. Merge into ONE agent for all of Step 2.
-
-  Agent C: Step 3 (all accessibility — touches _layout, PostCard, ThreadCard, bakra, compose screens)
-  *** CONFLICT: Agent C touches PostCard/ThreadCard too. Run AFTER Agent A/B.
-
-  Agent D: Step 4 (error handling — touches detail screens)
-  Agent E: Step 5 (visual polish — touches detail screens)
-  *** CONFLICT: D and E both touch detail screens. Merge into ONE agent.
-
-SAFE PARALLEL PLAN:
-  Wave 1: Step 1 (tests) — solo
-  Wave 2: Step 2 (perf, all 5 tasks) — solo agent
-  Wave 3 (parallel):
-    - Step 3 (accessibility) — touches tab files + compose screens
-    - Steps 4+5 combined (error handling + visual polish) — touches detail screens only
+Agent 1: Step 1         — reels.controller.ts, reels.service.ts, reels.service.spec.ts
+Agent 2: Step 2         — api.ts, reel/[id].tsx
+Agent 3: Step 3         — ThreadCard.tsx
+Agent 4: Step 4         — create-thread.tsx
+Agent 5: Step 5         — create-reel.tsx, create-story.tsx
+Agent 6: Step 6         — ErrorBoundary.tsx, CharCountRing.tsx, PostMedia.tsx, Badge.tsx, LocationPicker.tsx
+Agent 7: Step 7         — profile-links.service.spec.ts (new), settings.service.spec.ts (new), upload.service.spec.ts (new)
+Agent 8: Step 8         — videos.service.ts, posts.service.ts, threads.service.ts
 ```
 
-**CONFLICT ZONES:**
-- `PostCard.tsx` — Steps 2.1, 3.2 both touch it
-- `ThreadCard.tsx` — Steps 2.1, 3.2 both touch it
-- `bakra.tsx` — Steps 2.1, 2.3, 2.4, 2.5, 3.2 all touch it
-- Tab files (saf, majlis, minbar, risalah) — Steps 2.2, 2.4 touch them
-- Detail screens — Steps 4.2, 5.1, 5.2 touch them
-- `_layout.tsx` — Steps 3.1 touch it
+**File conflict check — every file appears in exactly one agent:**
+| File | Agent |
+|------|-------|
+| reels.controller.ts | 1 |
+| reels.service.ts | 1 |
+| reels.service.spec.ts | 1 |
+| api.ts | 2 |
+| reel/[id].tsx | 2 |
+| ThreadCard.tsx | 3 |
+| create-thread.tsx | 4 |
+| create-reel.tsx | 5 |
+| create-story.tsx | 5 |
+| ErrorBoundary.tsx | 6 |
+| CharCountRing.tsx | 6 |
+| PostMedia.tsx | 6 |
+| Badge.tsx | 6 |
+| LocationPicker.tsx | 6 |
+| profile-links.service.spec.ts | 7 |
+| settings.service.spec.ts | 7 |
+| upload.service.spec.ts | 7 |
+| videos.service.ts | 8 |
+| posts.service.ts | 8 |
+| threads.service.ts | 8 |
 
 ---
 
 ## VERIFICATION CHECKLIST
 
 ```bash
-# 1. All tests pass
+# 1. All tests pass (including new reel comment delete tests + 3 new spec files)
 cd apps/api && npx jest --passWithNoTests
-# Expected: all green
+# Expected: 210+ tests pass (200 existing + ~10 new), 0 failures
 
-# 2. Backend still compiles
+# 2. Backend compiles
 cd apps/api && npx tsc --noEmit
 # Expected: 0 errors
 
-# 3. No dead buttons
+# 3. No console statements in mobile
+grep -rn "console\.\(log\|warn\|error\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts" | grep -v node_modules
+# Expected: 0 results
+
+# 4. No dead buttons
 grep -rn "onPress={() => {}}" apps/mobile/app/ --include="*.tsx"
 # Expected: 0 results
 
-# 4. No console.log/warn/error in mobile
-grep -rn "console\.\(log\|warn\|error\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts" | grep -v node_modules
-# Expected: 0 results (or only in non-critical catch blocks)
-
-# 5. No as any in non-test backend
-grep -rn "as any" apps/api/src/ --include="*.ts" | grep -v ".spec.ts" | grep -v "prisma.service.ts" | grep -v "webhooks.controller.ts"
+# 5. No hardcoded #FFF or #fff in component files (except overlay rgba)
+grep -rn "'#[Ff][Ff][Ff]'" apps/mobile/src/components/ --include="*.tsx"
 # Expected: 0 results
 
-# 6. No merge conflicts
-grep -rn "<<<<<<" apps/ --include="*.ts" --include="*.tsx"
+# 6. No emoji in components
+grep -rn "🕌\|🕋\|☪" apps/mobile/src/components/ --include="*.tsx"
 # Expected: 0 results
+
+# 7. Reel comment delete endpoint exists
+grep "deleteComment" apps/api/src/modules/reels/reels.controller.ts
+# Expected: deleteComment method found
+
+# 8. Follow requests path fixed
+grep "requests/incoming" apps/mobile/src/services/api.ts
+# Expected: /follows/requests/incoming
+
+# 9. No useState misuse in PollResultBar
+grep "useState" apps/mobile/src/components/majlis/ThreadCard.tsx
+# Expected: no useState used as side effect (only normal state)
+
+# 10. Discard confirmation exists
+grep -l "Discard" apps/mobile/app/\(screens\)/create-thread.tsx apps/mobile/app/\(screens\)/create-reel.tsx apps/mobile/app/\(screens\)/create-story.tsx
+# Expected: all 3 files listed
 ```

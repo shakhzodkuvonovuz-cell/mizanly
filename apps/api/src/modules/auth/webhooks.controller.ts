@@ -9,7 +9,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { Webhook } from 'svix';
 import { ConfigService } from '@nestjs/config';
@@ -27,6 +27,7 @@ export class WebhooksController {
   ) {}
 
   @Post('clerk')
+  @Throttle({ default: { limit: 50, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Clerk webhook receiver (user.created / updated / deleted)' })
   async handleClerkWebhook(

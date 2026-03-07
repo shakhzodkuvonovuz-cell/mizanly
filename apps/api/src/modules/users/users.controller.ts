@@ -12,6 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -34,6 +35,7 @@ export class UsersController {
   @Patch('me')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Update profile fields' })
   updateProfile(
     @CurrentUser('id') userId: string,
@@ -42,13 +44,22 @@ export class UsersController {
     return this.usersService.updateProfile(userId, dto);
   }
 
-  @Delete('me')
+  @Delete('me/deactivate')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Deactivate account (soft delete)' })
   deactivate(@CurrentUser('id') userId: string) {
     return this.usersService.deactivate(userId);
+  }
+
+  @Delete('me')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Permanently delete account (soft delete)' })
+  deleteAccount(@CurrentUser('id') userId: string) {
+    return this.usersService.deleteAccount(userId);
   }
 
   @Get('me/saved-posts')
@@ -173,6 +184,7 @@ export class UsersController {
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Report a user' })
   report(

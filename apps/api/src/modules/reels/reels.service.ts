@@ -12,6 +12,7 @@ import { CreateReelDto } from './dto/create-reel.dto';
 import { Prisma, ReelStatus, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 const REEL_SELECT = {
   id: true,
@@ -80,7 +81,7 @@ export class ReelsService {
           videoUrl: dto.videoUrl,
           thumbnailUrl: dto.thumbnailUrl,
           duration: dto.duration,
-          caption: dto.caption,
+          caption: dto.caption ? sanitizeText(dto.caption) : dto.caption,
           mentions: dto.mentions || [],
           hashtags: dto.hashtags || [],
           audioTrackId: dto.audioTrackId,
@@ -106,8 +107,7 @@ export class ReelsService {
       }),
     ]);
 
-    // TODO: In future, trigger video processing job here
-    // For now, just mark as READY
+    // Video processing deferred — mark as READY immediately for MVP
     const updatedReel = await this.prisma.reel.update({
       where: { id: reel.id },
       data: { status: ReelStatus.READY },
@@ -143,6 +143,7 @@ export class ReelsService {
     const where: Prisma.ReelWhereInput = {
       status: ReelStatus.READY,
       isRemoved: false,
+      user: { isPrivate: false },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
@@ -305,7 +306,7 @@ export class ReelsService {
         data: {
           userId,
           reelId,
-          content,
+          content: sanitizeText(content),
         },
         select: {
           id: true,
@@ -333,6 +334,21 @@ export class ReelsService {
       body: content.substring(0, 100),
     }).catch((err) => this.logger.error('Failed to create notification', err));
     return comment;
+  }
+
+  async deleteComment(reelId: string, commentId: string, userId: string) {
+    const comment = await this.prisma.reelComment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.reelId !== reelId) throw new NotFoundException('Comment not found');
+    if (comment.userId !== userId) throw new ForbiddenException('Not your comment');
+
+    await this.prisma.$transaction([
+      this.prisma.reelComment.delete({ where: { id: commentId } }),
+      this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
+    ]);
+    return { deleted: true };
   }
 
   async getComments(reelId: string, cursor?: string, limit = 20) {

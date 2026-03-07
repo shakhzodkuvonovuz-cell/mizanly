@@ -62,13 +62,21 @@ export function usePushNotifications(isSignedIn: boolean) {
           const data = response.notification.request.content.data;
           if (!data) return;
 
-          if (data.postId) router.push(`/(screens)/post/${data.postId}` as never);
-          else if (data.threadId) router.push(`/(screens)/thread/${data.threadId}` as never);
-          else if (data.reelId) router.push(`/(screens)/reel/${data.reelId}` as never);
-          else if (data.videoId) router.push(`/(screens)/video/${data.videoId}` as never);
-          else if (data.conversationId) router.push(`/(screens)/conversation/${data.conversationId}` as never);
-          else if (data.username) router.push(`/(screens)/profile/${data.username}` as never);
-          else router.push('/(screens)/notifications' as never);
+          if (data.postId && typeof data.postId === 'string' && data.postId.length < 100) {
+            router.push(`/(screens)/post/${data.postId}` as never);
+          } else if (data.threadId && typeof data.threadId === 'string' && data.threadId.length < 100) {
+            router.push(`/(screens)/thread/${data.threadId}` as never);
+          } else if (data.reelId && typeof data.reelId === 'string' && data.reelId.length < 100) {
+            router.push(`/(screens)/reel/${data.reelId}` as never);
+          } else if (data.videoId && typeof data.videoId === 'string' && data.videoId.length < 100) {
+            router.push(`/(screens)/video/${data.videoId}` as never);
+          } else if (data.conversationId && typeof data.conversationId === 'string' && data.conversationId.length < 100) {
+            router.push(`/(screens)/conversation/${data.conversationId}` as never);
+          } else if (data.username && typeof data.username === 'string' && data.username.length < 100) {
+            router.push(`/(screens)/profile/${data.username}` as never);
+          } else {
+            router.push('/(screens)/notifications' as never);
+          }
         });
       } catch {
         // Notification handling is non-critical

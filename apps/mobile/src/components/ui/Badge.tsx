@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, animation } from '@/theme';
+import { colors, animation, spacing } from '@/theme';
 
 interface BadgeProps {
   count: number;
@@ -62,10 +62,10 @@ const styles = StyleSheet.create({
   badge: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
   },
   text: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontWeight: '700',
     textAlign: 'center',
   },

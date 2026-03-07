@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -362,11 +362,12 @@ function PollResultBar({ text, pct, isSelected }: { text: string; pct: number; i
   const width = useSharedValue(0);
 
   // Animate the bar width on mount
-  useState(() => {
-    setTimeout(() => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
       width.value = withSpring(pct, animation.spring.gentle);
     }, 100);
-  });
+    return () => clearTimeout(timer);
+  }, [pct]);
 
   const barStyle = useAnimatedStyle(() => ({
     width: `${width.value}%`,

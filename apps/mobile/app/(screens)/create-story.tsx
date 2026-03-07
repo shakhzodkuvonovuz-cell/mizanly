@@ -36,6 +36,18 @@ export default function CreateStoryScreen() {
     }
   };
 
+  const handleBack = () => {
+    const hasContent = !!mediaUri || textOverlay.trim().length > 0;
+    if (hasContent) {
+      Alert.alert('Discard story?', 'You have unsaved content.', [
+        { text: 'Keep editing' },
+        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+      ]);
+    } else {
+      router.back();
+    }
+  };
+
   const TEXT_COLORS = ['#FFFFFF', '#000000', '#0A7B4F', '#C8963E', '#FF453A', '#30D158'];
 
   const postMutation = useMutation({
@@ -78,7 +90,7 @@ export default function CreateStoryScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+        <TouchableOpacity onPress={handleBack} hitSlop={8}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Story</Text>

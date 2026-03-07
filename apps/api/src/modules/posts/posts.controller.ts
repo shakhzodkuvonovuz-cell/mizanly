@@ -231,6 +231,7 @@ export class PostsController {
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Report a post' })
   report(

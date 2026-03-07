@@ -1,8 +1,9 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
   ScrollView, ActivityIndicator, Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -27,6 +29,7 @@ const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconN
 ];
 
 const CHAR_LIMIT = 500;
+const THREAD_DRAFT_KEY = 'draft:thread';
 
 type AutocompleteType = 'hashtag' | 'mention' | null;
 interface AutocompleteState {
@@ -215,13 +218,56 @@ export default function CreateThreadScreen() {
 
   // Refs for each part's input
   const inputRefs = useRef<Map<number, TextInput>>(new Map());
+  const draftSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load draft on mount
+  useEffect(() => {
+    const loadDraft = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(THREAD_DRAFT_KEY);
+        if (saved) {
+          const draft = JSON.parse(saved);
+          if (draft.parts) setParts(draft.parts);
+        }
+      } catch (err) {
+        // ignore
+      }
+    };
+    loadDraft();
+
+    return () => {
+      if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+    };
+  }, []);
+
+  // Debounced auto-save
+  const saveDraft = useCallback(() => {
+    if (draftSaveRef.current) clearTimeout(draftSaveRef.current);
+    draftSaveRef.current = setTimeout(async () => {
+      try {
+        const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
+        if (!hasContent) {
+          await AsyncStorage.removeItem(THREAD_DRAFT_KEY);
+          return;
+        }
+        await AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts }));
+      } catch (err) {
+        // ignore
+      }
+    }, 2000);
+  }, [parts]);
+
+  // Auto-save when parts changes
+  useEffect(() => {
+    saveDraft();
+  }, [saveDraft]);
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
     queryFn: () => circlesApi.getMyCircles(),
     enabled: visibility === 'CIRCLE',
   });
-  const circles: any[] = (circlesQuery.data as any[]) ?? [];
+  const circles: Circle[] = (circlesQuery.data ?? []) as Circle[];
   const selectedCircle = circles.find((c) => c.id === circleId);
 
   const addPart = () => {
@@ -310,6 +356,7 @@ export default function CreateThreadScreen() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['majlis-feed'] });
+      AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
       router.back();
     },
     onError: (err: Error) => {
@@ -319,11 +366,26 @@ export default function CreateThreadScreen() {
 
   const canPost = parts.some((p) => p.content.trim().length > 0 || p.media.length > 0);
 
+  const handleBack = () => {
+    const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
+    if (hasContent) {
+      Alert.alert('Discard thread?', 'You have unsaved content.', [
+        { text: 'Keep editing' },
+        { text: 'Discard', style: 'destructive', onPress: () => {
+          AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
+          router.back();
+        }},
+      ]);
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+        <TouchableOpacity onPress={handleBack} hitSlop={8}>
           <Text style={styles.cancelText}>Cancel</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Thread</Text>

@@ -19,6 +19,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { LocationPicker } from '@/components/ui/LocationPicker';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
@@ -81,7 +82,6 @@ export default function CreatePostScreen() {
           setTimeout(() => setShowDraftBanner(false), 3000);
         }
       } catch (err) {
-        console.warn('Failed to load draft', err);
       }
     };
     loadDraft();
@@ -105,7 +105,6 @@ export default function CreatePostScreen() {
           mediaUrls: media.map(m => m.uri),
         }));
       } catch (err) {
-        console.warn('Failed to save draft', err);
       }
     }, 2000);
   }, [content, media]);
@@ -120,7 +119,7 @@ export default function CreatePostScreen() {
     queryFn: () => circlesApi.getMyCircles(),
     enabled: visibility === 'CIRCLE',
   });
-  const circles: any[] = (circlesQuery.data as any[]) ?? [];
+  const circles: Circle[] = (circlesQuery.data ?? []) as Circle[];
 
   // ── Media picker ──
   const pickMedia = async () => {
@@ -205,7 +204,6 @@ export default function CreatePostScreen() {
       try {
         await AsyncStorage.removeItem('post-draft');
       } catch (err) {
-        console.warn('Failed to clear draft', err);
       }
       router.back();
     },

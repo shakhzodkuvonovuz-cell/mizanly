@@ -11,37 +11,85 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsString, IsOptional, IsBoolean, IsUrl, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUrl, IsObject, IsNumber, MaxLength } from 'class-validator';
 import { StoriesService } from './stories.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class CreateStoryDto {
+  @ApiProperty({ description: 'URL of the story media' })
   @IsUrl()
   mediaUrl: string;
 
+  @ApiProperty({ description: 'Media type (e.g., IMAGE, VIDEO)', maxLength: 20 })
   @IsString()
+  @MaxLength(20)
   mediaType: string;
 
-  @IsOptional() @IsUrl() thumbnailUrl?: string;
-  @IsOptional() duration?: number;
-  @IsOptional() @IsString() textOverlay?: string;
-  @IsOptional() @IsString() textColor?: string;
-  @IsOptional() @IsString() bgColor?: string;
-  @IsOptional() @IsObject() stickerData?: object;
-  @IsOptional() @IsBoolean() closeFriendsOnly?: boolean;
+  @ApiProperty({ required: false, description: 'Thumbnail URL for video stories' })
+  @IsOptional()
+  @IsUrl()
+  thumbnailUrl?: string;
+
+  @ApiProperty({ required: false, description: 'Duration in seconds for video stories' })
+  @IsOptional()
+  @IsNumber()
+  duration?: number;
+
+  @ApiProperty({ required: false, description: 'Text overlay content', maxLength: 200 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  textOverlay?: string;
+
+  @ApiProperty({ required: false, description: 'Text color hex code', maxLength: 7 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  textColor?: string;
+
+  @ApiProperty({ required: false, description: 'Background color hex code', maxLength: 7 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(7)
+  bgColor?: string;
+
+  @ApiProperty({ required: false, description: 'Sticker data as JSON object' })
+  @IsOptional()
+  @IsObject()
+  stickerData?: object;
+
+  @ApiProperty({ required: false, description: 'Whether story is for close friends only' })
+  @IsOptional()
+  @IsBoolean()
+  closeFriendsOnly?: boolean;
 }
 
 class CreateHighlightDto {
-  @IsString() title: string;
-  @IsOptional() @IsUrl() coverUrl?: string;
+  @ApiProperty({ description: 'Highlight album title', maxLength: 50 })
+  @IsString()
+  @MaxLength(50)
+  title: string;
+
+  @ApiProperty({ required: false, description: 'Cover image URL for the highlight album' })
+  @IsOptional()
+  @IsUrl()
+  coverUrl?: string;
 }
 
 class UpdateHighlightDto {
-  @IsOptional() @IsString() title?: string;
-  @IsOptional() @IsUrl() coverUrl?: string;
+  @ApiProperty({ required: false, description: 'Highlight album title', maxLength: 50 })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  title?: string;
+
+  @ApiProperty({ required: false, description: 'Cover image URL for the highlight album' })
+  @IsOptional()
+  @IsUrl()
+  coverUrl?: string;
 }
 
 @ApiTags('Stories (Saf)')

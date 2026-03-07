@@ -16,7 +16,7 @@ export class ReelsController {
   constructor(private readonly reelsService: ReelsService) {}
 
   @Post()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a reel' })
   create(
     @CurrentUser('id') userId: string,
@@ -83,6 +83,16 @@ export class ReelsController {
     return this.reelsService.getComments(id, cursor);
   }
 
+  @Delete(':id/comments/:commentId')
+  @ApiOperation({ summary: 'Delete a comment from a reel' })
+  deleteComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.deleteComment(id, commentId, userId);
+  }
+
   @Post(':id/share')
   @ApiOperation({ summary: 'Share a reel' })
   share(@Param('id') id: string, @CurrentUser('id') userId: string) {
@@ -125,6 +135,7 @@ export class ReelsController {
   }
 
   @Post(':id/report')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Report a reel' })
   report(
     @Param('id') id: string,

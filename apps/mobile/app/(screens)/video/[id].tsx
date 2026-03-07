@@ -52,7 +52,7 @@ export default function VideoDetailScreen() {
   // Record view on mount
   useEffect(() => {
     if (video?.id && user?.id) {
-      videosApi.view(video.id).catch(console.error);
+      videosApi.view(video.id).catch(() => {});
     }
   }, [video?.id, user?.id]);
 
@@ -190,6 +190,25 @@ export default function VideoDetailScreen() {
           <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
           <Skeleton.Rect width="100%" height={80} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (videoQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+        <EmptyState
+          icon="slash"
+          title="Something went wrong"
+          subtitle="Could not load this content. Please try again."
+          actionLabel="Go back"
+          onAction={() => router.back()}
+        />
       </SafeAreaView>
     );
   }

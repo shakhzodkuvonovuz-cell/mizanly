@@ -95,7 +95,6 @@ export default function CreateVideoScreen() {
           // Note: cannot restore video/thumbnail files
         }
       } catch (err) {
-        console.warn('Failed to load draft', err);
       }
     };
     loadDraft();
@@ -120,7 +119,6 @@ export default function CreateVideoScreen() {
         };
         await AsyncStorage.setItem('video-draft', JSON.stringify(draft));
       } catch (err) {
-        console.warn('Failed to save draft', err);
       }
     }, 1000);
   }, [title, description, selectedCategory, tags, selectedChannelId, visibility]);
@@ -164,7 +162,6 @@ export default function CreateVideoScreen() {
         });
         setThumbnailUri(uri);
       } catch (e) {
-        console.warn('Failed to generate thumbnail', e);
       }
     }
   };

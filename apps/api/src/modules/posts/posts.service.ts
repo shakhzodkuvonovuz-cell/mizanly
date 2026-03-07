@@ -12,7 +12,8 @@ import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
+import { sanitizeText } from '@/common/utils/sanitize';
+import { Prisma, PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
 
 const POST_SELECT = {
   id: true,
@@ -91,7 +92,7 @@ export class PostsService {
       scheduledAt: null,
       ...(type === 'following'
         ? { userId: { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) } }
-        : { visibility: 'PUBLIC', ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}) }),
+        : { visibility: 'PUBLIC', user: { isPrivate: false }, ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}) }),
     };
 
     const posts = await this.prisma.post.findMany({
@@ -139,7 +140,7 @@ export class PostsService {
         data: {
           userId,
           postType: dto.postType as PostType,
-          content: dto.content,
+          content: dto.content ? sanitizeText(dto.content) : dto.content,
           visibility: (dto.visibility as PostVisibility) ?? PostVisibility.PUBLIC,
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
@@ -204,7 +205,7 @@ export class PostsService {
     return this.prisma.post.update({
       where: { id: postId },
       data: {
-        content: data.content,
+        content: data.content ? sanitizeText(data.content) : data.content,
         hideLikesCount: data.hideLikesCount,
         commentsDisabled: data.commentsDisabled,
         isSensitive: data.isSensitive,
@@ -286,8 +287,11 @@ export class PostsService {
         this.prisma.savedPost.create({ data: { userId, postId } }),
         this.prisma.post.update({ where: { id: postId }, data: { savesCount: { increment: 1 } } }),
       ]);
-    } catch {
-      throw new ConflictException('Post already saved');
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Post already saved');
+      }
+      throw error;
     }
     return { saved: true };
   }
@@ -314,7 +318,7 @@ export class PostsService {
         data: {
           userId,
           postType: 'TEXT',
-          content: content,
+          content: content ? sanitizeText(content) : content,
           sharedPostId: postId,
           visibility: 'PUBLIC',
         },
@@ -393,7 +397,7 @@ export class PostsService {
         data: {
           userId,
           postId,
-          content: dto.content,
+          content: sanitizeText(dto.content),
           parentId: dto.parentId,
           mentions: [],
         },
@@ -431,7 +435,7 @@ export class PostsService {
 
     return this.prisma.comment.update({
       where: { id: commentId },
-      data: { content },
+      data: { content: sanitizeText(content) },
       include: {
         user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       },

@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, fontSize } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
 
 interface Props {
   children: ReactNode;
@@ -26,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children;
     return (
       <View style={styles.container}>
-        <Text style={styles.emoji}>🕌</Text>
+        <Icon name="slash" size="xl" color={colors.text.secondary} />
         <Text style={styles.title}>Something went wrong</Text>
         <Text style={styles.message} numberOfLines={3}>
           {this.state.error?.message ?? 'An unexpected error occurred.'}
@@ -45,7 +46,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
     padding: spacing.xl,
   },
-  emoji: { fontSize: 48, marginBottom: spacing.lg },
   title: {
     color: colors.text.primary, fontSize: fontSize.xl,
     fontWeight: '700', marginBottom: spacing.sm, textAlign: 'center',
@@ -58,5 +58,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
     borderRadius: 999, paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
   },
-  btnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
+  btnText: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 });

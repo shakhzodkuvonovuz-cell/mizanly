@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import Animated from 'react-native-reanimated';
@@ -112,6 +113,7 @@ export default function MinbarScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
@@ -165,7 +167,7 @@ export default function MinbarScreen() {
 
   const handleMorePress = (video: Video) => {
     haptic.light();
-    // TODO: open bottom sheet with options (save, report, etc.)
+    setSelectedVideoId(video.id);
   };
 
   const renderVideoItem = useCallback(({ item }: { item: Video }) => (
@@ -303,6 +305,24 @@ export default function MinbarScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
       />
+      <BottomSheet
+        visible={!!selectedVideoId}
+        onClose={() => setSelectedVideoId(null)}
+      >
+        <BottomSheetItem
+          label="Report"
+          icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setSelectedVideoId(null);
+            router.push(`/(screens)/report?type=video&id=${selectedVideoId}`);
+          }}
+        />
+        <BottomSheetItem
+          label="Not interested"
+          icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+          onPress={() => setSelectedVideoId(null)}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
 }

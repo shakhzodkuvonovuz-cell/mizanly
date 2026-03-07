@@ -9,6 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { PostVisibility, ThreadVisibility, ReportReason } from '@prisma/client';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 const PUBLIC_USER_FIELDS = {
   id: true,
@@ -68,9 +69,15 @@ export class UsersService {
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const sanitizedData = { ...dto };
+    if (sanitizedData.displayName) sanitizedData.displayName = sanitizeText(sanitizedData.displayName);
+    if (sanitizedData.bio) sanitizedData.bio = sanitizeText(sanitizedData.bio);
+    if (sanitizedData.location) sanitizedData.location = sanitizeText(sanitizedData.location);
+    if (sanitizedData.website) sanitizedData.website = sanitizeText(sanitizedData.website);
+
     const updated = await this.prisma.user.update({
       where: { id: userId },
-      data: dto,
+      data: sanitizedData,
       select: PUBLIC_USER_FIELDS,
     });
     await this.redis.del(`user:${updated.username}`);
@@ -83,6 +90,28 @@ export class UsersService {
       data: { isDeactivated: true, deactivatedAt: new Date() },
     });
     return { message: 'Account deactivated' };
+  }
+
+  async deleteAccount(userId: string) {
+    // Soft delete: anonymize user data, mark as deleted
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        username: `deleted_${userId.slice(0, 8)}`,
+        displayName: 'Deleted User',
+        bio: '',
+        avatarUrl: null,
+        coverUrl: null,
+        website: null,
+        isDeleted: true,
+        deletedAt: new Date(),
+      },
+    });
+
+    // Delete all device tokens (stop push notifications)
+    await this.prisma.device.deleteMany({ where: { userId } });
+
+    return { deleted: true };
   }
 
   async getProfile(username: string, currentUserId?: string) {

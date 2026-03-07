@@ -104,6 +104,14 @@ export default function SettingsScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
+  const deleteAccountMutation = useMutation({
+    mutationFn: () => usersApi.deleteAccount(),
+    onSuccess: async () => {
+      await signOut();
+    },
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -121,6 +129,36 @@ export default function SettingsScreen() {
           text: 'Deactivate',
           style: 'destructive',
           onPress: () => deactivateMutation.mutate(),
+        },
+      ],
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'This will permanently delete your account and all your data. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              'Are you absolutely sure?',
+              'Type DELETE to confirm.',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Confirm Delete',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await deleteAccountMutation.mutateAsync();
+                  },
+                },
+              ],
+            );
+          },
         },
       ],
     );
@@ -308,6 +346,12 @@ export default function SettingsScreen() {
             label="Deactivate Account"
             destructive
             onPress={handleDeactivate}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Delete Account"
+            destructive
+            onPress={handleDeleteAccount}
           />
         </View>
 

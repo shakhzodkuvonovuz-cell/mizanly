@@ -175,6 +175,7 @@ export class VideosController {
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Report a video' })
   report(
     @Param('id') id: string,

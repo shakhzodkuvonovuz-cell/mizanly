@@ -70,7 +70,7 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: 
             style={[styles.arrow, styles.arrowLeft]}
             onPress={() => setActiveIndex(activeIndex - 1)}
           >
-            <Icon name="chevron-left" size="sm" color="#FFF" />
+            <Icon name="chevron-left" size="sm" color={colors.text.primary} />
           </Pressable>
         )}
         {activeIndex < mediaUrls.length - 1 && (
@@ -78,12 +78,12 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: 
             style={[styles.arrow, styles.arrowRight]}
             onPress={() => setActiveIndex(activeIndex + 1)}
           >
-            <Icon name="chevron-right" size="sm" color="#FFF" />
+            <Icon name="chevron-right" size="sm" color={colors.text.primary} />
           </Pressable>
         )}
         {/* Counter */}
         <View style={styles.counter}>
-          <Icon name="layers" size={12} color="#FFF" />
+          <Icon name="layers" size={12} color={colors.text.primary} />
           <Animated.Text style={styles.counterText}>
             {activeIndex + 1}/{mediaUrls.length}
           </Animated.Text>
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   dotActive: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.text.primary,
     width: 18,
     borderRadius: 3,
   },
@@ -137,5 +137,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 4,
     flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  counterText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  counterText: { color: colors.text.primary, fontSize: 12, fontWeight: '600' },
 });

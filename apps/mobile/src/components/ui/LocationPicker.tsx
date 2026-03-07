@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
   },
   currentLocation: {
     flexDirection: 'row',

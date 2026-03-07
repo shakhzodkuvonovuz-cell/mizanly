@@ -48,14 +48,14 @@ function CommentRow({
 
   // Note: Reel comment liking not implemented in API yet
   const handleLikeComment = () => {
-    // TODO: Implement when API supports liking reel comments
+    // Optimistic-only — no backend endpoint for reel comment likes yet
     haptic.medium();
     setLocalLiked((p) => !p);
     setLocalLikes((p) => (localLiked ? p - 1 : p + 1));
   };
 
   const deleteMutation = useMutation({
-    mutationFn: () => reelsApi.delete(reelId),
+    mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
     onSuccess: onDeleted,
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
@@ -219,6 +219,27 @@ export default function ReelDetailScreen() {
   };
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
+
+  if (reelQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Error</Text>
+          <View style={{ width: 40 }} />
+        </View>
+        <EmptyState
+          icon="slash"
+          title="Something went wrong"
+          subtitle="Could not load this content. Please try again."
+          actionLabel="Go back"
+          onAction={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const listHeader = useMemo(() => (
     reelQuery.data ? (

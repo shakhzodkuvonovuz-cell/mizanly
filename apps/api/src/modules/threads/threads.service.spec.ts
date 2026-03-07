@@ -378,6 +378,7 @@ describe('ThreadsService', () => {
           isRemoved: false,
           isChainHead: true,
           visibility: 'PUBLIC',
+          user: { isPrivate: false },
         },
         select: expect.any(Object),
         take: 21,

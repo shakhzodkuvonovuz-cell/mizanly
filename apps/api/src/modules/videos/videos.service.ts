@@ -13,6 +13,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 const VIDEO_SELECT = {
   id: true,
@@ -75,8 +76,8 @@ export class VideosService {
         data: {
           userId,
           channelId: dto.channelId,
-          title: dto.title,
-          description: dto.description,
+          title: sanitizeText(dto.title),
+          description: dto.description ? sanitizeText(dto.description) : dto.description,
           videoUrl: dto.videoUrl,
           thumbnailUrl: dto.thumbnailUrl,
           duration: dto.duration,
@@ -93,7 +94,7 @@ export class VideosService {
       }),
     ]);
 
-    // TODO: In future, trigger video processing job here
+    // Video processing deferred — mark as PUBLISHED immediately for MVP
     // For now, just mark as PUBLISHED
     const updatedVideo = await this.prisma.video.update({
       where: { id: video[0].id },
@@ -137,6 +138,7 @@ export class VideosService {
 
     const where: Prisma.VideoWhereInput = {
       status: VideoStatus.PUBLISHED,
+      user: { isPrivate: false },
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       ...(category && category !== 'all' ? { category: category as VideoCategory } : {}),
     };
@@ -249,8 +251,8 @@ export class VideosService {
     const updated = await this.prisma.video.update({
       where: { id: videoId },
       data: {
-        title: dto.title,
-        description: dto.description,
+        title: dto.title ? sanitizeText(dto.title) : dto.title,
+        description: dto.description ? sanitizeText(dto.description) : dto.description,
         thumbnailUrl: dto.thumbnailUrl,
         category: dto.category,
         tags: dto.tags,
@@ -412,7 +414,7 @@ export class VideosService {
         data: {
           userId,
           videoId,
-          content,
+          content: sanitizeText(content),
           parentId,
         },
         select: {

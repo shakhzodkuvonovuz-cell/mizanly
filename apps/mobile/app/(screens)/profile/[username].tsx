@@ -268,6 +268,25 @@ export default function ProfileScreen() {
     );
   }
 
+  if (profileQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+        </View>
+        <EmptyState
+          icon="slash"
+          title="Something went wrong"
+          subtitle="Could not load this content. Please try again."
+          actionLabel="Go back"
+          onAction={() => router.back()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (!profile) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>

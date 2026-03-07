@@ -170,7 +170,8 @@ export const authApi = {
 export const usersApi = {
   getMe: () => api.get<User>('/users/me'),
   updateMe: (data: UpdateUserPayload) => api.patch<User>('/users/me', data),
-  deactivate: () => api.delete('/users/me'),
+  deactivate: () => api.delete('/users/me/deactivate'),
+  deleteAccount: () => api.delete('/users/me'),
   getProfile: (username: string) => api.get<User>(`/users/${username}`),
   getUserPosts: (username: string, cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/users/${username}/posts${qs({ cursor })}`),
@@ -193,7 +194,7 @@ export const followsApi = {
     api.get<PaginatedResponse<User>>(`/follows/${userId}/followers${qs({ cursor })}`),
   getFollowing: (userId: string, cursor?: string) =>
     api.get<PaginatedResponse<User>>(`/follows/${userId}/following${qs({ cursor })}`),
-  getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests'),
+  getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests/incoming'),
   acceptRequest: (id: string) => api.post(`/follows/requests/${id}/accept`),
   declineRequest: (id: string) => api.post(`/follows/requests/${id}/decline`),
   cancelRequest: (id: string) => api.delete(`/follows/requests/${id}`),
@@ -257,6 +258,7 @@ export const reelsApi = {
   getById: (id: string) => api.get<Reel>(`/reels/${id}`),
   create: (data: CreateReelPayload) => api.post<Reel>('/reels', data),
   delete: (id: string) => api.delete(`/reels/${id}`),
+  deleteComment: (reelId: string, commentId: string) => api.delete(`/reels/${reelId}/comments/${commentId}`),
   like: (id: string) => api.post(`/reels/${id}/like`),
   unlike: (id: string) => api.delete(`/reels/${id}/like`),
   comment: (id: string, content: string) => api.post(`/reels/${id}/comment`, { content }),

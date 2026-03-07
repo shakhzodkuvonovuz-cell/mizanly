@@ -52,7 +52,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   };
 
   const handleLikeComment = async (commentId: string) => {
-    // TODO: Implement comment like API when available
+    // Optimistic-only — no backend endpoint for reel comment likes yet
     haptic.light();
   };
 

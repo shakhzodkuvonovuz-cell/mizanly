@@ -11,70 +11,86 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
-  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum,
+  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize,
 } from 'class-validator';
 import { MessagesService } from './messages.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class SendMessageDto {
+  @ApiProperty({ required: false, description: 'Message content (text)', maxLength: 5000 })
   @IsOptional()
   @IsString()
   @MaxLength(5000)
   content?: string;
 
+  @ApiProperty({ required: false, description: 'Message type', enum: ['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'VOICE', 'FILE', 'GIF', 'STICKER', 'LOCATION'] })
   @IsOptional()
   @IsEnum(['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'VOICE', 'FILE', 'GIF', 'STICKER', 'LOCATION'])
   messageType?: string;
 
+  @ApiProperty({ required: false, description: 'Media URL for non-text messages' })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   mediaUrl?: string;
 
+  @ApiProperty({ required: false, description: 'Media MIME type', maxLength: 50 })
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   mediaType?: string;
 
+  @ApiProperty({ required: false, description: 'ID of message being replied to' })
   @IsOptional()
-  @IsString()
+  @IsUUID()
   replyToId?: string;
 }
 
 class CreateGroupDto {
+  @ApiProperty({ description: 'Group display name', maxLength: 100 })
   @IsString()
   @MaxLength(100)
   groupName: string;
 
+  @ApiProperty({ description: 'Array of user IDs to add to group', type: [String], maxItems: 100 })
   @IsArray()
   @IsString({ each: true })
+  @ArrayMaxSize(100)
   memberIds: string[];
 }
 
 class UpdateGroupDto {
+  @ApiProperty({ required: false, description: 'Group display name', maxLength: 100 })
   @IsOptional()
   @IsString()
   @MaxLength(100)
   groupName?: string;
 
+  @ApiProperty({ required: false, description: 'URL of group avatar image' })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   groupAvatarUrl?: string;
 }
 
 class AddMembersDto {
+  @ApiProperty({ description: 'Array of user IDs to add to group', type: [String], maxItems: 100 })
   @IsArray()
   @IsString({ each: true })
+  @ArrayMaxSize(100)
   memberIds: string[];
 }
 
 class ReactDto {
+  @ApiProperty({ description: 'Emoji reaction', maxLength: 10 })
   @IsString()
+  @MaxLength(10)
   emoji: string;
 }
 class EditMessageDto {
+  @ApiProperty({ description: 'Updated message content', maxLength: 5000 })
   @IsString()
   @MaxLength(5000)
   content: string;
@@ -198,6 +214,7 @@ export class MessagesController {
   }
 
   @Post('groups')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a group conversation' })
   createGroup(@CurrentUser('id') userId: string, @Body() dto: CreateGroupDto) {
     return this.messagesService.createGroup(userId, dto.groupName, dto.memberIds);

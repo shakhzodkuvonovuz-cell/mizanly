@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
-import { I18nManager, Alert } from 'react-native';
+import { I18nManager, Alert, AppState, AppStateStatus } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
@@ -26,6 +26,7 @@ SplashScreen.preventAutoHideAsync();
 
 const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
+// Query cache persistence deferred — requires @tanstack/react-query-persist-client package install
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 1000 * 60, retry: 2 },
@@ -90,6 +91,21 @@ function AuthGuard() {
   return null;
 }
 
+function AppStateHandler() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active') {
+        queryClient.invalidateQueries(); // Refetch stale queries
+      }
+    });
+    return () => subscription.remove();
+  }, [queryClient]);
+
+  return null;
+}
+
 export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
@@ -119,6 +135,7 @@ export default function RootLayout() {
               <StatusBar style="light" />
               <OfflineBanner />
               <AuthGuard />
+              <AppStateHandler />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />

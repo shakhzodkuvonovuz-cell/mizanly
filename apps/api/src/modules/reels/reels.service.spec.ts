@@ -7,6 +7,36 @@ import { ReelsService } from './reels.service';
 import { ReelStatus, ReportReason, ReactionType } from '@prisma/client';
 
 describe('ReelsService', () => {
+  const REEL_SELECT = {
+    id: true,
+    videoUrl: true,
+    thumbnailUrl: true,
+    duration: true,
+    caption: true,
+    mentions: true,
+    hashtags: true,
+    status: true,
+    isRemoved: true,
+    audioTrackId: true,
+    audioTitle: true,
+    audioArtist: true,
+    isDuet: true,
+    isStitch: true,
+    likesCount: true,
+    commentsCount: true,
+    sharesCount: true,
+    viewsCount: true,
+    createdAt: true,
+    user: {
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        isVerified: true,
+      },
+    },
+  };
   let service: ReelsService;
   let prisma: any;
   let redis: any;
@@ -45,6 +75,8 @@ describe('ReelsService', () => {
             reelComment: {
               create: jest.fn(),
               findMany: jest.fn(),
+              findUnique: jest.fn(),
+              delete: jest.fn(),
             },
             block: {
               findMany: jest.fn(),
@@ -226,9 +258,9 @@ describe('ReelsService', () => {
         where: {
           status: ReelStatus.READY,
           isRemoved: false,
-          userId: undefined, // no excluded IDs
+          user: { isPrivate: false },
         },
-        select: expect.any(Object),
+        select: REEL_SELECT,
         take: 21, // limit + 1
         orderBy: { createdAt: 'desc' },
       });
@@ -283,9 +315,10 @@ describe('ReelsService', () => {
         where: {
           status: ReelStatus.READY,
           isRemoved: false,
+          user: { isPrivate: false },
           userId: { notIn: [blockedUser, mutedUser] },
         },
-        select: expect.any(Object),
+        select: REEL_SELECT,
         take: 21,
         orderBy: { createdAt: 'desc' },
       });
@@ -478,6 +511,65 @@ describe('ReelsService', () => {
       expect(prisma.reelInteraction.findUnique).toHaveBeenCalled();
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('should delete own comment successfully', async () => {
+      const userId = 'user-123';
+      const reelId = 'reel-456';
+      const commentId = 'comment-789';
+      const mockComment = {
+        id: commentId,
+        reelId,
+        userId,
+      };
+
+      prisma.reelComment.findUnique.mockResolvedValue(mockComment);
+      prisma.$transaction.mockResolvedValue([{}, 1]);
+
+      const result = await service.deleteComment(reelId, commentId, userId);
+
+      expect(prisma.reelComment.findUnique).toHaveBeenCalledWith({
+        where: { id: commentId },
+      });
+      expect(prisma.$transaction).toHaveBeenCalledWith([
+        prisma.reelComment.delete({ where: { id: commentId } }),
+        prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
+      ]);
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw NotFoundException for non-existent comment', async () => {
+      const userId = 'user-123';
+      const reelId = 'reel-456';
+      const commentId = 'comment-789';
+
+      prisma.reelComment.findUnique.mockResolvedValue(null);
+
+      await expect(service.deleteComment(reelId, commentId, userId))
+        .rejects.toThrow(NotFoundException);
+      expect(prisma.reelComment.findUnique).toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw ForbiddenException when deleting another user\'s comment', async () => {
+      const userId = 'user-123';
+      const otherUserId = 'other-456';
+      const reelId = 'reel-456';
+      const commentId = 'comment-789';
+      const mockComment = {
+        id: commentId,
+        reelId,
+        userId: otherUserId,
+      };
+
+      prisma.reelComment.findUnique.mockResolvedValue(mockComment);
+
+      await expect(service.deleteComment(reelId, commentId, userId))
+        .rejects.toThrow(ForbiddenException);
+      expect(prisma.reelComment.findUnique).toHaveBeenCalled();
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
   });
 });

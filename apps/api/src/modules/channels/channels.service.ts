@@ -13,6 +13,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 import { Prisma, VideoStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { sanitizeText } from '@/common/utils/sanitize';
 
 const CHANNEL_SELECT = {
   id: true,
@@ -69,8 +70,8 @@ export class ChannelsService {
       data: {
         userId,
         handle: dto.handle,
-        name: dto.name,
-        description: dto.description,
+        name: sanitizeText(dto.name),
+        description: dto.description ? sanitizeText(dto.description) : dto.description,
       },
       select: CHANNEL_SELECT,
     });
@@ -109,8 +110,8 @@ export class ChannelsService {
     const updated = await this.prisma.channel.update({
       where: { handle },
       data: {
-        name: dto.name,
-        description: dto.description,
+        name: dto.name ? sanitizeText(dto.name) : dto.name,
+        description: dto.description ? sanitizeText(dto.description) : dto.description,
         avatarUrl: dto.avatarUrl,
         bannerUrl: dto.bannerUrl,
       },

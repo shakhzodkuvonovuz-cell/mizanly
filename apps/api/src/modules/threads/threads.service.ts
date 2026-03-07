@@ -9,7 +9,8 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { ThreadVisibility, ReportReason } from '@prisma/client';
+import { sanitizeText } from '@/common/utils/sanitize';
+import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
 
 const THREAD_SELECT = {
   id: true,
@@ -117,6 +118,7 @@ export class ThreadsService {
       where.userId = { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) };
     } else {
       where.visibility = 'PUBLIC';
+      where.user = { isPrivate: false };
       if (excludedIds.length) where.userId = { notIn: excludedIds };
     }
 
@@ -159,7 +161,7 @@ export class ThreadsService {
       this.prisma.thread.create({
         data: {
           userId,
-          content: dto.content,
+          content: sanitizeText(dto.content),
           visibility: (dto.visibility as ThreadVisibility) ?? 'PUBLIC',
           circleId: dto.circleId,
           mediaUrls: dto.mediaUrls ?? [],
@@ -167,7 +169,7 @@ export class ThreadsService {
           hashtags: dto.hashtags ?? [],
           mentions: dto.mentions ?? [],
           isQuotePost: dto.isQuotePost ?? false,
-          quoteText: dto.quoteText,
+          quoteText: dto.quoteText ? sanitizeText(dto.quoteText) : dto.quoteText,
           repostOfId: dto.repostOfId,
           poll: dto.poll
             ? {
@@ -340,8 +342,11 @@ export class ThreadsService {
           data: { bookmarksCount: { increment: 1 } },
         }),
       ]);
-    } catch {
-      throw new ConflictException('Already bookmarked');
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Already bookmarked');
+      }
+      throw error;
     }
     return { bookmarked: true };
   }
@@ -438,7 +443,7 @@ export class ThreadsService {
 
     const [reply] = await this.prisma.$transaction([
       this.prisma.threadReply.create({
-        data: { threadId, userId, content, parentId },
+        data: { threadId, userId, content: sanitizeText(content), parentId },
         select: REPLY_SELECT,
       }),
       this.prisma.thread.update({
