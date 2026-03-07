@@ -323,6 +323,7 @@ export default function CreatePostScreen() {
           style={styles.input}
           placeholder="What's on your mind?"
           placeholderTextColor={colors.text.tertiary}
+          accessibilityLabel="Post content"
           value={content}
           onChangeText={(text) => {
             setContent(text);

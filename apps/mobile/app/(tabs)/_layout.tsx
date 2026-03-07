@@ -83,7 +83,7 @@ function CreateButton() {
 
   return (
     <>
-      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress}>
+      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress} accessibilityLabel="Create new post" accessibilityRole="button">
         <LinearGradient
           colors={[colors.emeraldLight, colors.emerald]}
           style={styles.createGradient}
@@ -152,6 +152,7 @@ export default function TabLayout() {
         name="saf"
         options={{
           title: 'Saf',
+          tabBarAccessibilityLabel: "Home feed",
           tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} />,
         }}
       />
@@ -159,6 +160,7 @@ export default function TabLayout() {
         name="bakra"
         options={{
           title: 'Bakra',
+          tabBarAccessibilityLabel: "Short videos",
           tabBarIcon: ({ focused }) => <TabIcon name="bakra" focused={focused} />,
         }}
       />
@@ -166,6 +168,7 @@ export default function TabLayout() {
         name="minbar"
         options={{
           title: 'Minbar',
+          tabBarAccessibilityLabel: "Videos",
           tabBarIcon: ({ focused }) => <TabIcon name="minbar" focused={focused} />,
         }}
       />
@@ -180,6 +183,7 @@ export default function TabLayout() {
         name="majlis"
         options={{
           title: 'Majlis',
+          tabBarAccessibilityLabel: "Threads",
           tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} badge={unreadNotifications || undefined} />,
         }}
       />
@@ -187,6 +191,7 @@ export default function TabLayout() {
         name="risalah"
         options={{
           title: 'Risalah',
+          tabBarAccessibilityLabel: "Messages",
           tabBarIcon: ({ focused }) => <TabIcon name="risalah" focused={focused} badge={unreadMessages || undefined} />,
         }}
       />

@@ -103,6 +103,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.userRow}
             onPress={() => onProfilePress(item.user.username)}
             activeOpacity={0.7}
+            accessibilityLabel={`View ${item.user.username}'s profile`}
+            accessibilityRole="button"
           >
             <Avatar
               uri={item.user.avatarUrl}
@@ -139,6 +141,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.actionButton}
             onPress={() => onLike(item)}
             activeOpacity={0.7}
+            accessibilityLabel={item.isLiked ? "Unlike reel" : "Like reel"}
+            accessibilityRole="button"
           >
             <Icon
               name={item.isLiked ? 'heart-filled' : 'heart'}
@@ -151,6 +155,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.actionButton}
             onPress={() => onComment(item)}
             activeOpacity={0.7}
+            accessibilityLabel="Comment on reel"
+            accessibilityRole="button"
           >
             <Icon name="message-circle" size="lg" color={colors.text.primary} />
             <Text style={styles.actionCount}>{item.commentsCount}</Text>
@@ -159,6 +165,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.actionButton}
             onPress={() => onShare(item)}
             activeOpacity={0.7}
+            accessibilityLabel="Share reel"
+            accessibilityRole="button"
           >
             <Icon name="share" size="lg" color={colors.text.primary} />
             <Text style={styles.actionCount}>{item.sharesCount}</Text>
@@ -167,6 +175,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.actionButton}
             onPress={() => onBookmark(item)}
             activeOpacity={0.7}
+            accessibilityLabel={item.isBookmarked ? "Remove bookmark" : "Bookmark reel"}
+            accessibilityRole="button"
           >
             <Icon
               name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
@@ -178,6 +188,8 @@ const ReelItem = memo(function ReelItem({
             style={styles.actionButton}
             onPress={() => onReport(item)}
             activeOpacity={0.7}
+            accessibilityLabel="Report reel"
+            accessibilityRole="button"
           >
             <Icon name="flag" size="lg" color={colors.text.primary} />
           </TouchableOpacity>
@@ -343,6 +355,7 @@ export default function BakraScreen() {
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
             accessibilityLabel="Search"
+            accessibilityRole="button"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
           </TouchableOpacity>
@@ -350,6 +363,7 @@ export default function BakraScreen() {
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/create-reel'); }}
             accessibilityLabel="Upload reel"
+            accessibilityRole="button"
           >
             <Icon name="circle-plus" size="sm" color={colors.text.primary} />
           </TouchableOpacity>

@@ -269,6 +269,7 @@ function GifPicker({ visible, onClose, onSelect }: {
             style={styles.gifSearchInput}
             placeholder="Search GIFs..."
             placeholderTextColor={colors.text.tertiary}
+            accessibilityLabel="Search GIFs"
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={handleSearch}
@@ -871,6 +872,7 @@ export default function ConversationScreen() {
               onChangeText={setSearchQuery}
               placeholder="Search messages…"
               placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Search messages"
               autoFocus
               autoCapitalize="none"
               autoCorrect={false}
@@ -1022,6 +1024,7 @@ export default function ConversationScreen() {
               style={styles.input}
               placeholder="Message…"
               placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Message input"
               value={text}
               onChangeText={handleChangeText}
               multiline

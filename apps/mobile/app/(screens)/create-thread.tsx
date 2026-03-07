@@ -88,6 +88,7 @@ function ThreadPart({
           style={styles.partInput}
           placeholder={index === 0 ? "What's on your mind?" : 'Continue the thread…'}
           placeholderTextColor={colors.text.tertiary}
+          accessibilityLabel={index === 0 ? "Thread content" : "Thread continuation"}
           value={part.content}
           onChangeText={(text) => {
             onChange(text);
