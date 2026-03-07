@@ -64,4 +64,61 @@ describe('PlaylistsService', () => {
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
+
+  describe('create', () => {
+    const USER_ID = 'user-123';
+    const CHANNEL_ID = 'channel-789';
+    const dto = {
+      channelId: CHANNEL_ID,
+      title: 'My Playlist',
+      description: 'My description',
+      isPublic: true,
+    };
+
+    it('should create playlist when user owns channel', async () => {
+      const mockChannel = { id: CHANNEL_ID, userId: USER_ID };
+      const mockPlaylist = {
+        id: 'playlist-abc',
+        channelId: CHANNEL_ID,
+        title: dto.title,
+        description: dto.description,
+        isPublic: true,
+        videosCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prisma.channel.findUnique.mockResolvedValue(mockChannel);
+      prisma.playlist.create.mockResolvedValue(mockPlaylist);
+
+      const result = await service.create(USER_ID, dto);
+
+      expect(prisma.channel.findUnique).toHaveBeenCalledWith({
+        where: { id: CHANNEL_ID },
+      });
+      expect(prisma.playlist.create).toHaveBeenCalledWith({
+        data: {
+          channelId: CHANNEL_ID,
+          title: dto.title,
+          description: dto.description,
+          isPublic: true,
+        },
+        select: expect.any(Object),
+      });
+      expect(result).toEqual(mockPlaylist);
+    });
+
+    it('should throw NotFoundException when channel not found', async () => {
+      prisma.channel.findUnique.mockResolvedValue(null);
+
+      await expect(service.create(USER_ID, dto)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user not channel owner', async () => {
+      const mockChannel = { id: CHANNEL_ID, userId: 'other-user' };
+      prisma.channel.findUnique.mockResolvedValue(mockChannel);
+
+      await expect(service.create(USER_ID, dto)).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
