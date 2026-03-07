@@ -194,4 +194,16 @@ export class PlaylistsService {
       },
     });
   }
+
+  async delete(id: string, userId: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    await this.prisma.playlist.delete({ where: { id } });
+    return { deleted: true };
+  }
 }

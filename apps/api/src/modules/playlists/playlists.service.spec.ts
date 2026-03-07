@@ -412,4 +412,45 @@ describe('PlaylistsService', () => {
       await expect(service.update(PLAYLIST_ID, USER_ID, dto)).rejects.toThrow(ForbiddenException);
     });
   });
+
+  describe('delete', () => {
+    const USER_ID = 'user-123';
+    const PLAYLIST_ID = 'playlist-abc';
+
+    it('should delete playlist when user is owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: USER_ID },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.playlist.delete.mockResolvedValue({});
+
+      const result = await service.delete(PLAYLIST_ID, USER_ID);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        include: { channel: { select: { userId: true } } },
+      });
+      expect(prisma.playlist.delete).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+      });
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw NotFoundException when playlist not found', async () => {
+      prisma.playlist.findUnique.mockResolvedValue(null);
+
+      await expect(service.delete(PLAYLIST_ID, USER_ID)).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when user is not owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: 'other-user' },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+
+      await expect(service.delete(PLAYLIST_ID, USER_ID)).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
