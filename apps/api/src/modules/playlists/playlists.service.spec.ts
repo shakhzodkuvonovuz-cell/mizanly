@@ -12,33 +12,31 @@ describe('PlaylistsService', () => {
   let notifications: any;
 
   beforeEach(async () => {
-    const mockPrisma = {
-      playlist: {
-        create: jest.fn(),
-        findUnique: jest.fn(),
-        findMany: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-      },
-      playlistItem: {
-        create: jest.fn(),
-        findMany: jest.fn(),
-        delete: jest.fn(),
-        aggregate: jest.fn(),
-      },
-      channel: {
-        findUnique: jest.fn(),
-      },
-      $executeRaw: jest.fn(),
-      $transaction: jest.fn(),
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlaylistsService,
         {
           provide: PrismaService,
-          useValue: mockPrisma,
+          useValue: {
+            playlist: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              findMany: jest.fn(),
+              update: jest.fn(),
+              delete: jest.fn(),
+            },
+            playlistItem: {
+              create: jest.fn(),
+              findMany: jest.fn(),
+              delete: jest.fn(),
+              aggregate: jest.fn(),
+            },
+            channel: {
+              findUnique: jest.fn(),
+            },
+            $executeRaw: jest.fn(),
+            $transaction: jest.fn(),
+          },
         },
         {
           provide: NotificationsService,
