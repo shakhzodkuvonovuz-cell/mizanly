@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { CreatePlaylistDto } from './dto/create-playlist.dto';
 
 @Injectable()
 export class PlaylistsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, dto: any) {
+  async create(userId: string, dto: CreatePlaylistDto) {
     const channel = await this.prisma.channel.findUnique({
       where: { id: dto.channelId }
     });

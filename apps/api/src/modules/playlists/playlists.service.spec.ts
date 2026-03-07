@@ -120,5 +120,77 @@ describe('PlaylistsService', () => {
 
       await expect(service.create(USER_ID, dto)).rejects.toThrow(ForbiddenException);
     });
+
+    it('should default isPublic to true when not provided', async () => {
+      const dtoWithoutIsPublic = {
+        channelId: CHANNEL_ID,
+        title: 'My Playlist',
+        description: 'My description',
+        // isPublic omitted
+      };
+      const mockChannel = { id: CHANNEL_ID, userId: USER_ID };
+      const mockPlaylist = {
+        id: 'playlist-abc',
+        channelId: CHANNEL_ID,
+        title: dtoWithoutIsPublic.title,
+        description: dtoWithoutIsPublic.description,
+        isPublic: true, // Should default to true
+        videosCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prisma.channel.findUnique.mockResolvedValue(mockChannel);
+      prisma.playlist.create.mockResolvedValue(mockPlaylist);
+
+      const result = await service.create(USER_ID, dtoWithoutIsPublic as any);
+
+      expect(prisma.playlist.create).toHaveBeenCalledWith({
+        data: {
+          channelId: CHANNEL_ID,
+          title: dtoWithoutIsPublic.title,
+          description: dtoWithoutIsPublic.description,
+          isPublic: true, // Should default to true
+        },
+        select: expect.any(Object),
+      });
+      expect(result).toEqual(mockPlaylist);
+    });
+
+    it('should handle missing description', async () => {
+      const dtoWithoutDescription = {
+        channelId: CHANNEL_ID,
+        title: 'My Playlist',
+        isPublic: false,
+        // description omitted
+      };
+      const mockChannel = { id: CHANNEL_ID, userId: USER_ID };
+      const mockPlaylist = {
+        id: 'playlist-abc',
+        channelId: CHANNEL_ID,
+        title: dtoWithoutDescription.title,
+        description: null, // Should be null when not provided
+        isPublic: false,
+        videosCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      prisma.channel.findUnique.mockResolvedValue(mockChannel);
+      prisma.playlist.create.mockResolvedValue(mockPlaylist);
+
+      const result = await service.create(USER_ID, dtoWithoutDescription as any);
+
+      expect(prisma.playlist.create).toHaveBeenCalledWith({
+        data: {
+          channelId: CHANNEL_ID,
+          title: dtoWithoutDescription.title,
+          description: undefined, // Prisma will set to null if undefined
+          isPublic: false,
+        },
+        select: expect.any(Object),
+      });
+      expect(result).toEqual(mockPlaylist);
+    });
   });
 });
