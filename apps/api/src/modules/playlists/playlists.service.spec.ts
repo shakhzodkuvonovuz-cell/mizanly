@@ -193,4 +193,43 @@ describe('PlaylistsService', () => {
       expect(result).toEqual(mockPlaylist);
     });
   });
+
+  describe('getById', () => {
+    const PLAYLIST_ID = 'playlist-abc';
+    const mockPlaylist = {
+      id: PLAYLIST_ID,
+      channelId: 'channel-789',
+      title: 'My Playlist',
+      description: 'My description',
+      thumbnailUrl: null,
+      isPublic: true,
+      videosCount: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      channel: {
+        id: 'channel-789',
+        handle: 'tech',
+        name: 'Tech Channel',
+        userId: 'user-123',
+      },
+    };
+
+    it('should return playlist when found', async () => {
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+
+      const result = await service.getById(PLAYLIST_ID);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        select: expect.any(Object),
+      });
+      expect(result).toEqual(mockPlaylist);
+    });
+
+    it('should throw NotFoundException when playlist not found', async () => {
+      prisma.playlist.findUnique.mockResolvedValue(null);
+
+      await expect(service.getById(PLAYLIST_ID)).rejects.toThrow(NotFoundException);
+    });
+  });
 });

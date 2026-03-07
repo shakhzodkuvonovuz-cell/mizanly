@@ -33,4 +33,31 @@ export class PlaylistsService {
       },
     });
   }
+
+  async getById(id: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        channelId: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        isPublic: true,
+        videosCount: true,
+        createdAt: true,
+        updatedAt: true,
+        channel: {
+          select: {
+            id: true,
+            handle: true,
+            name: true,
+            userId: true,
+          },
+        },
+      },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    return playlist;
+  }
 }
