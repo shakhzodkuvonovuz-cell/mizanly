@@ -206,4 +206,56 @@ export class PlaylistsService {
     await this.prisma.playlist.delete({ where: { id } });
     return { deleted: true };
   }
+
+  async addItem(playlistId: string, videoId: string, userId: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id: playlistId },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    const maxPosition = await this.prisma.playlistItem.aggregate({
+      where: { playlistId },
+      _max: { position: true },
+    });
+
+    const [item] = await this.prisma.$transaction([
+      this.prisma.playlistItem.create({
+        data: {
+          playlistId,
+          videoId,
+          position: (maxPosition._max.position ?? -1) + 1,
+        },
+        select: {
+          id: true,
+          position: true,
+          createdAt: true,
+          video: {
+            select: {
+              id: true,
+              title: true,
+              thumbnailUrl: true,
+              duration: true,
+              viewsCount: true,
+              createdAt: true,
+              channel: {
+                select: {
+                  id: true,
+                  handle: true,
+                  name: true,
+                  avatarUrl: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.playlist.update({
+        where: { id: playlistId },
+        data: { videosCount: { increment: 1 } },
+      }),
+    ]);
+    return item;
+  }
 }

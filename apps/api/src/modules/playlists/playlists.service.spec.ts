@@ -453,4 +453,82 @@ describe('PlaylistsService', () => {
       await expect(service.delete(PLAYLIST_ID, USER_ID)).rejects.toThrow(ForbiddenException);
     });
   });
+
+  describe('addItem', () => {
+    const USER_ID = 'user-123';
+    const PLAYLIST_ID = 'playlist-abc';
+    const VIDEO_ID = 'video-def';
+
+    it('should add video to playlist with auto-position', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: USER_ID },
+      };
+      const mockItem = {
+        id: 'item-1',
+        position: 0,
+        createdAt: new Date(),
+        video: {
+          id: VIDEO_ID,
+          title: 'Video 1',
+          thumbnailUrl: null,
+          duration: 120,
+          viewsCount: 100,
+          createdAt: new Date(),
+          channel: {
+            id: 'channel-789',
+            handle: 'tech',
+            name: 'Tech Channel',
+            avatarUrl: null,
+          },
+        },
+      };
+
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.playlistItem.aggregate.mockResolvedValue({ _max: { position: null } });
+      prisma.$transaction.mockResolvedValue([mockItem, {}]);
+
+      const result = await service.addItem(PLAYLIST_ID, VIDEO_ID, USER_ID);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        include: { channel: { select: { userId: true } } },
+      });
+      expect(prisma.playlistItem.aggregate).toHaveBeenCalledWith({
+        where: { playlistId: PLAYLIST_ID },
+        _max: { position: true },
+      });
+      expect(result).toEqual(mockItem);
+    });
+
+    it('should calculate correct position from existing max', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: USER_ID },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.playlistItem.aggregate.mockResolvedValue({ _max: { position: 4 } });
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      await service.addItem(PLAYLIST_ID, VIDEO_ID, USER_ID);
+
+      expect(prisma.playlistItem.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            position: 5, // 4 + 1 = 5
+          }),
+        }),
+      );
+    });
+
+    it('should throw ForbiddenException when user is not owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: 'other-user' },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+
+      await expect(service.addItem(PLAYLIST_ID, VIDEO_ID, USER_ID)).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
