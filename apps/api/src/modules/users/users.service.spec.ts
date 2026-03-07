@@ -53,6 +53,8 @@ describe('UsersService', () => {
             },
             watchLater: {
               findMany: jest.fn(),
+              upsert: jest.fn(),
+              deleteMany: jest.fn(),
             },
             draftPost: {
               findMany: jest.fn(),
@@ -520,6 +522,30 @@ describe('UsersService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.getQrCode(userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('addWatchLater', () => {
+    it('should add a video to watch later', async () => {
+      prisma.watchLater.upsert.mockResolvedValue({ userId: 'u1', videoId: 'v1' });
+      const result = await service.addWatchLater('u1', 'v1');
+      expect(result).toEqual({ added: true });
+      expect(prisma.watchLater.upsert).toHaveBeenCalledWith({
+        where: { userId_videoId: { userId: 'u1', videoId: 'v1' } },
+        create: { userId: 'u1', videoId: 'v1' },
+        update: {},
+      });
+    });
+  });
+
+  describe('removeWatchLater', () => {
+    it('should remove a video from watch later', async () => {
+      prisma.watchLater.deleteMany.mockResolvedValue({ count: 1 });
+      const result = await service.removeWatchLater('u1', 'v1');
+      expect(result).toEqual({ removed: true });
+      expect(prisma.watchLater.deleteMany).toHaveBeenCalledWith({
+        where: { userId: 'u1', videoId: 'v1' },
+      });
     });
   });
 });
