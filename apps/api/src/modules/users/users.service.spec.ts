@@ -658,18 +658,184 @@ describe('UsersService', () => {
     });
   });
 
-  // describe('getSavedVideos', () => {
-  //   it('should return bookmarked videos', async () => {
-  //     const mockBookmarks = [
-  //       { createdAt: new Date(), video: { id: 'v1', title: 'test', channel: { id: 'ch1' } } },
-  //     ];
-  //     prisma.videoBookmark.findMany.mockResolvedValue(mockBookmarks);
-  //     const result = await service.getSavedVideos('u1');
-  //     expect(result.data).toHaveLength(1);
-  //     expect(result.data[0].id).toBe('v1');
-  //     expect(result.meta.hasMore).toBe(false);
-  //   });
-  // });
+  describe('getSavedVideos', () => {
+    it('should return bookmarked videos with pagination', async () => {
+      const userId = 'user-123';
+      const mockBookmarks = [
+        {
+          createdAt: new Date('2026-03-08T10:00:00Z'),
+          videoId: 'video-1',
+          video: {
+            id: 'video-1',
+            title: 'First video',
+            thumbnailUrl: 'https://example.com/thumb1.jpg',
+            duration: 300,
+            viewsCount: 1000,
+            likesCount: 50,
+            createdAt: new Date('2026-03-07T10:00:00Z'),
+            channel: {
+              id: 'channel-1',
+              handle: 'channel1',
+              name: 'Channel One',
+              description: 'First channel',
+              avatarUrl: 'https://example.com/channel1.jpg',
+              bannerUrl: null,
+              subscribersCount: 100,
+              videosCount: 10,
+              totalViews: 5000,
+              isVerified: true,
+              createdAt: new Date('2026-01-01T00:00:00Z'),
+            },
+          },
+        },
+        {
+          createdAt: new Date('2026-03-08T09:00:00Z'),
+          videoId: 'video-2',
+          video: {
+            id: 'video-2',
+            title: 'Second video',
+            thumbnailUrl: 'https://example.com/thumb2.jpg',
+            duration: 180,
+            viewsCount: 500,
+            likesCount: 25,
+            createdAt: new Date('2026-03-07T09:00:00Z'),
+            channel: {
+              id: 'channel-2',
+              handle: 'channel2',
+              name: 'Channel Two',
+              description: 'Second channel',
+              avatarUrl: 'https://example.com/channel2.jpg',
+              bannerUrl: null,
+              subscribersCount: 50,
+              videosCount: 5,
+              totalViews: 2500,
+              isVerified: false,
+              createdAt: new Date('2026-01-02T00:00:00Z'),
+            },
+          },
+        },
+      ] as any;
+      prisma.videoBookmark.findMany.mockResolvedValue(mockBookmarks);
+
+      const result = await service.getSavedVideos(userId);
+
+      expect(prisma.videoBookmark.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        include: {
+          video: {
+            select: {
+              id: true,
+              title: true,
+              thumbnailUrl: true,
+              duration: true,
+              viewsCount: true,
+              likesCount: true,
+              createdAt: true,
+              channel: {
+                select: {
+                  id: true,
+                  handle: true,
+                  name: true,
+                  description: true,
+                  avatarUrl: true,
+                  bannerUrl: true,
+                  subscribersCount: true,
+                  videosCount: true,
+                  totalViews: true,
+                  isVerified: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+        },
+        take: 21, // limit + 1
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].id).toBe('video-1');
+      expect(result.data[0].isBookmarked).toBe(true);
+      expect(result.data[1].id).toBe('video-2');
+      expect(result.data[1].isBookmarked).toBe(true);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should paginate videos with cursor', async () => {
+      const userId = 'user-123';
+      const cursor = 'video-2';
+      const mockBookmarks = [
+        {
+          createdAt: new Date('2026-03-08T08:00:00Z'),
+          videoId: 'video-3',
+          video: {
+            id: 'video-3',
+            title: 'Third video',
+            thumbnailUrl: 'https://example.com/thumb3.jpg',
+            duration: 240,
+            viewsCount: 300,
+            likesCount: 15,
+            createdAt: new Date('2026-03-07T08:00:00Z'),
+            channel: {
+              id: 'channel-3',
+              handle: 'channel3',
+              name: 'Channel Three',
+              description: 'Third channel',
+              avatarUrl: 'https://example.com/channel3.jpg',
+              bannerUrl: null,
+              subscribersCount: 30,
+              videosCount: 3,
+              totalViews: 1500,
+              isVerified: false,
+              createdAt: new Date('2026-01-03T00:00:00Z'),
+            },
+          },
+        },
+      ] as any;
+      prisma.videoBookmark.findMany.mockResolvedValue(mockBookmarks);
+
+      const result = await service.getSavedVideos(userId, cursor, 20);
+
+      expect(prisma.videoBookmark.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        include: {
+          video: {
+            select: {
+              id: true,
+              title: true,
+              thumbnailUrl: true,
+              duration: true,
+              viewsCount: true,
+              likesCount: true,
+              createdAt: true,
+              channel: {
+                select: {
+                  id: true,
+                  handle: true,
+                  name: true,
+                  description: true,
+                  avatarUrl: true,
+                  bannerUrl: true,
+                  subscribersCount: true,
+                  videosCount: true,
+                  totalViews: true,
+                  isVerified: true,
+                  createdAt: true,
+                },
+              },
+            },
+          },
+        },
+        take: 21,
+        cursor: { userId_videoId: { userId, videoId: cursor } },
+        skip: 1,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('video-3');
+      expect(result.data[0].isBookmarked).toBe(true);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
 
   describe('getQrCode', () => {
     it('should return deeplink and profile URL', async () => {
