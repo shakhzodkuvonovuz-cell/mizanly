@@ -29,6 +29,7 @@ describe('PlaylistsService', () => {
       channel: {
         findUnique: jest.fn(),
       },
+      $executeRaw: jest.fn(),
       $transaction: jest.fn(),
     };
 
