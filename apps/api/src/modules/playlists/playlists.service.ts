@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
+import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 
 interface PlaylistItemResponse {
   id: string;
@@ -169,7 +170,7 @@ export class PlaylistsService {
     };
   }
 
-  async update(id: string, userId: string, dto: any) {
+  async update(id: string, userId: string, dto: UpdatePlaylistDto) {
     const playlist = await this.prisma.playlist.findUnique({
       where: { id },
       include: { channel: { select: { userId: true } } },
