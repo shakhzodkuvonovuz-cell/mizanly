@@ -158,7 +158,7 @@ export default function CreateGroupScreen() {
               </View>
             )}
             <View style={styles.avatarOverlay}>
-              <Icon name="edit" size={16} color="#FFF" />
+              <Icon name="edit" size={16} color=colors.text.primary />
             </View>
           </TouchableOpacity>
         </View>

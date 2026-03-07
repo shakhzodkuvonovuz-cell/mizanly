@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, Pressable,
+  FlatList, Pressable, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -70,6 +70,13 @@ export default function FollowersScreen() {
     },
   });
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await followersQuery.refetch();
+    setRefreshing(false);
+  };
+
   const onEndReached = useCallback(() => {
     if (followersQuery.hasNextPage && !followersQuery.isFetchingNextPage) {
       followersQuery.fetchNextPage();
@@ -99,6 +106,9 @@ export default function FollowersScreen() {
         )}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+        }
         ListEmptyComponent={() =>
           followersQuery.isLoading ? (
             <View style={styles.skeletonList}>

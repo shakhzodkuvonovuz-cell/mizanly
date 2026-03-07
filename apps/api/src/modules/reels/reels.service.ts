@@ -13,6 +13,7 @@ import { Prisma, ReelStatus, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { extractHashtags } from '@/common/utils/hashtag';
 
 const REEL_SELECT = {
   id: true,
@@ -57,9 +58,8 @@ export class ReelsService {
 
   async create(userId: string, dto: CreateReelDto) {
     // Parse and upsert hashtags from caption
-    const hashtagMatches = (dto.caption ?? '').match(/#([a-zA-Z0-9_\u0600-\u06FF]+)/g) ?? [];
     const hashtagNames = [...new Set([
-      ...hashtagMatches.map((h) => h.slice(1).toLowerCase()),
+      ...extractHashtags(dto.caption ?? ''),
       ...(dto.hashtags || []).map((h) => h.toLowerCase()),
     ])];
     if (hashtagNames.length > 0) {

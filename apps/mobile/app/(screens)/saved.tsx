@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, Dimensions,
+  FlatList, Dimensions, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -69,6 +69,21 @@ export default function SavedScreen() {
   const posts: Post[] = savedPostsQuery.data?.pages.flatMap((p) => p.data) ?? [];
   const threads: Thread[] = savedThreadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
+  const [refreshingPosts, setRefreshingPosts] = useState(false);
+  const [refreshingThreads, setRefreshingThreads] = useState(false);
+
+  const onRefreshPosts = async () => {
+    setRefreshingPosts(true);
+    await savedPostsQuery.refetch();
+    setRefreshingPosts(false);
+  };
+
+  const onRefreshThreads = async () => {
+    setRefreshingThreads(true);
+    await savedThreadsQuery.refetch();
+    setRefreshingThreads(false);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -98,6 +113,9 @@ export default function SavedScreen() {
             }
           }}
           onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => (
             <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
           )}
@@ -129,6 +147,9 @@ export default function SavedScreen() {
             }
           }}
           onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => (
             <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
           )}

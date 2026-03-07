@@ -593,7 +593,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
-  visOptionActive: { backgroundColor: 'rgba(10,123,79,0.1)' },
+  visOptionActive: { backgroundColor: colors.active.emerald10 },
   visOptionText: { flex: 1, color: colors.text.secondary, fontSize: fontSize.base },
   visOptionTextActive: { color: colors.text.primary, fontWeight: '600' },
 
@@ -666,7 +666,7 @@ const styles = StyleSheet.create({
   // Circle inline pill
   circlePill: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: 'rgba(10,123,79,0.1)', borderRadius: radius.md,
+    backgroundColor: colors.active.emerald10, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginBottom: spacing.md, borderWidth: 1, borderColor: colors.emerald,
   },

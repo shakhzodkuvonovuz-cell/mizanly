@@ -243,6 +243,47 @@ export interface VideoComment {
   _count?: { replies: number };
 }
 
+// ── Minbar: Playlists & Watch History ──
+export interface Playlist {
+  id: string;
+  channelId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  isPublic: boolean;
+  videosCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaylistItem {
+  id: string;
+  position: number;
+  createdAt: string;
+  video: {
+    id: string;
+    title: string;
+    thumbnailUrl?: string;
+    duration: number;
+    viewsCount: number;
+    createdAt: string;
+    channel: { id: string; handle: string; name: string; avatarUrl?: string };
+  };
+}
+
+export interface WatchHistoryItem {
+  id: string;
+  title: string;
+  thumbnailUrl?: string;
+  duration: number;
+  viewsCount: number;
+  createdAt: string;
+  channel: { id: string; handle: string; name: string; avatarUrl?: string };
+  progress: number;
+  completed: boolean;
+  watchedAt: string;
+}
+
 // ── Risalah: Messages ──
 export type MessageType = 'TEXT' | 'IMAGE' | 'VIDEO' | 'AUDIO' | 'VOICE' | 'FILE' | 'GIF' | 'STICKER' | 'LOCATION';
 

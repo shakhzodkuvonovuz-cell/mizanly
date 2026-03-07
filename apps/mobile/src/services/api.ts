@@ -3,7 +3,7 @@ import type {
   Comment, Notification, SearchResults, PaginatedResponse, User,
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
   BlockedKeyword, Settings,
-  Channel, Video, VideoComment,
+  Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -183,6 +183,10 @@ export const usersApi = {
     api.get<PaginatedResponse<Thread>>(`/users/me/saved-threads${qs({ cursor })}`),
   getFollowRequests: () => api.get('/users/me/follow-requests'),
   getAnalytics: () => api.get('/users/me/analytics'),
+  getWatchHistory: (cursor?: string) =>
+    api.get<PaginatedResponse<WatchHistoryItem>>(`/users/me/watch-history${qs({ cursor })}`),
+  clearWatchHistory: () =>
+    api.delete('/users/me/watch-history'),
   report: (userId: string, reason: string) => api.post(`/users/${userId}/report`, { reason }),
 };
 
@@ -321,6 +325,25 @@ export const videosApi = {
     api.post(`/videos/${id}/view`).then(r => r.data),
   report: (id: string, reason: string) =>
     api.post(`/videos/${id}/report`, { reason }).then(r => r.data),
+};
+// ── Playlists (Minbar) ──
+export const playlistsApi = {
+  create: (data: { channelId: string; title: string; description?: string; isPublic?: boolean }) =>
+    api.post<Playlist>('/playlists', data).then(r => r.data),
+  getById: (id: string) =>
+    api.get<Playlist>(`/playlists/${id}`).then(r => r.data),
+  getByChannel: (channelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Playlist>>(`/playlists/channel/${channelId}${qs({ cursor })}`).then(r => r.data),
+  getItems: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<PlaylistItem>>(`/playlists/${id}/items${qs({ cursor })}`).then(r => r.data),
+  update: (id: string, data: Partial<Playlist>) =>
+    api.patch<Playlist>(`/playlists/${id}`, data).then(r => r.data),
+  delete: (id: string) =>
+    api.delete(`/playlists/${id}`).then(r => r.data),
+  addItem: (id: string, videoId: string) =>
+    api.post(`/playlists/${id}/items/${videoId}`).then(r => r.data),
+  removeItem: (id: string, videoId: string) =>
+    api.delete(`/playlists/${id}/items/${videoId}`).then(r => r.data),
 };
 
 // ── Threads (Majlis) ──

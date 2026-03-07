@@ -106,6 +106,25 @@ export class UsersController {
     return this.usersService.getWatchLater(userId, cursor);
   }
 
+  @Get('me/watch-history')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get watch history' })
+  getWatchHistory(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.usersService.getWatchHistory(userId, cursor);
+  }
+
+  @Delete('me/watch-history')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Clear watch history' })
+  clearWatchHistory(@CurrentUser('id') userId: string) {
+    return this.usersService.clearWatchHistory(userId);
+  }
+
   @Get('me/drafts')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

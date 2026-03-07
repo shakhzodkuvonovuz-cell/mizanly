@@ -389,6 +389,48 @@ export class UsersService {
     };
   }
 
+  async getWatchHistory(userId: string, cursor?: string, limit = 20) {
+    const items = await this.prisma.watchHistory.findMany({
+      where: { userId },
+      include: {
+        video: {
+          select: {
+            id: true,
+            title: true,
+            thumbnailUrl: true,
+            duration: true,
+            viewsCount: true,
+            createdAt: true,
+            channel: { select: { id: true, handle: true, name: true, avatarUrl: true } },
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { watchedAt: 'desc' },
+    });
+
+    const hasMore = items.length > limit;
+    const result = hasMore ? items.slice(0, limit) : items;
+    return {
+      data: result.map((w: any) => ({
+        ...w.video,
+        progress: w.progress,
+        completed: w.completed,
+        watchedAt: w.watchedAt,
+      })),
+      meta: {
+        cursor: hasMore ? result[result.length - 1].id : null,
+        hasMore,
+      },
+    };
+  }
+
+  async clearWatchHistory(userId: string) {
+    await this.prisma.watchHistory.deleteMany({ where: { userId } });
+    return { cleared: true };
+  }
+
   async getDrafts(userId: string) {
     return this.prisma.draftPost.findMany({
       where: { userId },
@@ -514,7 +556,7 @@ export class UsersService {
     const mappedReason = reasonMap[reason] ?? ('SPAM' as ReportReason);
     await this.prisma.report.create({
       data: { reporterId, reportedUserId, reason: mappedReason },
-    }).catch((err: any) => this.logger.error('Failed to save report', err));
+    }).catch((err: unknown) => this.logger.error('Failed to save report', err));
     return { reported: true };
   }
 }

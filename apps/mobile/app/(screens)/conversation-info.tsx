@@ -181,7 +181,7 @@ export default function ConversationInfoScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+        <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back">
           <Icon name="arrow-left" size="md" color={colors.text.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Info</Text>
@@ -195,14 +195,14 @@ export default function ConversationInfoScreen() {
             <Avatar uri={avatarUri} name={name} size="2xl" />
             {isGroup && isCreator && (
               <View style={styles.avatarOverlay}>
-                <Icon name="edit" size={16} color="#FFF" />
+                <Icon name="edit" size={16} color={colors.text.primary} />
               </View>
             )}
           </TouchableOpacity>
           <View style={styles.nameRow}>
             <Text style={styles.heroName}>{name}</Text>
             {isGroup && isCreator && (
-              <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn}>
+              <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
                 <Icon name="edit" size={16} color={colors.text.secondary} />
               </TouchableOpacity>
             )}
@@ -265,6 +265,7 @@ export default function ConversationInfoScreen() {
                     }}
                     hitSlop={8}
                     style={styles.removeMemberBtn}
+                    accessibilityLabel="Remove member"
                   >
                     <Icon name="x" size={16} color={colors.text.tertiary} />
                   </Pressable>
@@ -279,9 +280,9 @@ export default function ConversationInfoScreen() {
           {isGroup && (
             <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
               {leaveGroupMutation.isPending
-                ? <ActivityIndicator color="#FF453A" />
+                ? <ActivityIndicator color={colors.error} />
                 : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Icon name="log-out" size="sm" color="#FF453A" />
+                    <Icon name="log-out" size="sm" color={colors.error} />
                     <Text style={styles.actionDestructive}>Leave group</Text>
                   </View>
               }
@@ -306,7 +307,7 @@ export default function ConversationInfoScreen() {
               }}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Icon name="slash" size="sm" color="#FF453A" />
+                <Icon name="slash" size="sm" color={colors.error} />
                 <Text style={styles.actionDestructive}>Block user</Text>
               </View>
             </TouchableOpacity>
@@ -346,7 +347,7 @@ export default function ConversationInfoScreen() {
             disabled={!newGroupName.trim() || updateGroupMutation.isPending}
           >
             {updateGroupMutation.isPending ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color={colors.text.primary} />
             ) : (
               <Text style={styles.sheetButtonText}>Save</Text>
             )}
@@ -383,6 +384,7 @@ export default function ConversationInfoScreen() {
                       onPress={() => setSelectedNewMembers(prev => prev.filter(m => m.id !== member.id))}
                       hitSlop={4}
                       style={styles.chipRemove}
+                      accessibilityLabel="Remove member"
                     >
                       <Icon name="x" size={12} color={colors.text.secondary} />
                     </Pressable>
@@ -405,7 +407,7 @@ export default function ConversationInfoScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel="Clear search">
                 <Icon name="x" size="xs" color={colors.text.secondary} />
               </Pressable>
             )}
@@ -458,7 +460,7 @@ export default function ConversationInfoScreen() {
             disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}
           >
             {addMembersMutation.isPending ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color={colors.text.primary} />
             ) : (
               <Text style={styles.sheetButtonText}>
                 Add {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
@@ -513,7 +515,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  actionDestructive: { color: '#FF453A', fontSize: fontSize.base },
+  actionDestructive: { color: colors.error, fontSize: fontSize.base },
 
   // Admin styles
   avatarOverlay: {
@@ -566,7 +568,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.border,
   },
   sheetButtonText: {
-    color: '#FFF', fontSize: fontSize.base, fontWeight: '600',
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
   },
 
   // Chips styles

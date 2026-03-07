@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert,
+  FlatList, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -42,6 +43,13 @@ export default function BlockedScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await query.refetch();
+    setRefreshing(false);
+  };
+
   const confirmUnblock = (item: BlockedUser) => {
     Alert.alert(
       `Unblock @${item.blocked.username}?`,
@@ -68,7 +76,7 @@ export default function BlockedScreen() {
           {Array.from({ length: 6 }).map((_, i) => (
             <View key={i} style={styles.skeletonRow}>
               <Skeleton.Circle size={46} />
-              <View style={{ flex: 1, gap: 6 }}>
+              <View style={{ flex: 1, gap: spacing.sm }}>
                 <Skeleton.Rect width={120} height={14} />
                 <Skeleton.Rect width={80} height={11} />
               </View>
@@ -84,6 +92,9 @@ export default function BlockedScreen() {
             if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
           }}
           onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => {
             const u = item.blocked;
             return (
@@ -111,7 +122,7 @@ export default function BlockedScreen() {
             query.isFetchingNextPage ? (
               <View style={styles.skeletonRow}>
                 <Skeleton.Circle size={46} />
-                <View style={{ flex: 1, gap: 6 }}>
+                <View style={{ flex: 1, gap: spacing.sm }}>
                   <Skeleton.Rect width={120} height={14} />
                   <Skeleton.Rect width={80} height={11} />
                 </View>

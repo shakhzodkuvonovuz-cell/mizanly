@@ -31,6 +31,7 @@ export default function VideoDetailScreen() {
   const [commentSheetOpen, setCommentSheetOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
   const [replyToId, setReplyToId] = useState<string | undefined>();
+  const [showMenu, setShowMenu] = useState(false);
 
   // Fetch video
   const videoQuery = useQuery({
@@ -247,6 +248,9 @@ export default function VideoDetailScreen() {
           <TouchableOpacity onPress={handleReport} style={styles.headerAction}>
             <Icon name="flag" size="sm" color={colors.text.primary} />
           </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.headerAction}>
+            <Icon name="more-horizontal" size="sm" color={colors.text.primary} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -406,6 +410,21 @@ export default function VideoDetailScreen() {
             <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
           </TouchableOpacity>
         </View>
+      </BottomSheet>
+
+      {/* More menu bottom sheet */}
+      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+        <View style={styles.sheetHeader}>
+          <Text style={styles.sheetTitle}>Video options</Text>
+        </View>
+        <BottomSheetItem
+          label="Save to playlist"
+          icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setShowMenu(false);
+            router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
+          }}
+        />
       </BottomSheet>
     </SafeAreaView>
   );

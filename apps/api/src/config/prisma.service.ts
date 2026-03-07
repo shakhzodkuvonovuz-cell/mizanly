@@ -1,5 +1,5 @@
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 // Count fields that must never go negative
 const COUNT_FIELDS = [
@@ -13,12 +13,13 @@ export class PrismaService extends PrismaClient implements OnModuleInit, OnModul
   constructor() {
     super();
     // Clamp count fields to >= 0 after any update
-    (this as any).$use(async (params: any, next: any) => {
+    (this as unknown as PrismaClient & { $use: Function }).$use(async (params: any, next: any) => {
       const result = await next(params);
       if (params.action === 'update' && result && typeof result === 'object') {
+        const record = result as Record<string, unknown>;
         for (const field of COUNT_FIELDS) {
-          if (field in result && typeof result[field] === 'number' && result[field] < 0) {
-            result[field] = 0;
+          if (field in record && typeof record[field] === 'number' && record[field] < 0) {
+            record[field] = 0;
           }
         }
       }

@@ -16,16 +16,17 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { channelsApi, videosApi } from '@/services/api';
-import type { Video } from '@/types';
+import { channelsApi, videosApi, playlistsApi } from '@/services/api';
+import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
 const BANNER_HEIGHT = Dimensions.get('window').width / 3; // 3:1 ratio
 
-type Tab = 'videos' | 'about';
+type Tab = 'videos' | 'playlists' | 'about';
 
 const CHANNEL_TABS = [
   { key: 'videos', label: 'Videos' },
+  { key: 'playlists', label: 'Playlists' },
   { key: 'about', label: 'About' },
 ];
 
@@ -87,6 +88,32 @@ function VideoCard({ video }: { video: Video }) {
   );
 }
 
+function PlaylistCard({ playlist }: { playlist: Playlist }) {
+  const router = useRouter();
+  const haptic = useHaptic();
+
+  const handlePress = () => {
+    haptic.light();
+    router.push(`/(screens)/playlist/${playlist.id}`);
+  };
+
+  return (
+    <TouchableOpacity style={styles.playlistCard} onPress={handlePress}>
+      {playlist.thumbnailUrl ? (
+        <Image source={{ uri: playlist.thumbnailUrl }} style={styles.playlistThumbnail} />
+      ) : (
+        <View style={[styles.playlistThumbnail, styles.playlistThumbnailPlaceholder]}>
+          <Icon name="layers" size="lg" color={colors.text.tertiary} />
+        </View>
+      )}
+      <View style={styles.playlistInfo}>
+        <Text style={styles.playlistTitle} numberOfLines={2}>{playlist.title}</Text>
+        <Text style={styles.playlistMeta}>{playlist.videosCount} videos</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 export default function ChannelScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
@@ -117,6 +144,17 @@ export default function ChannelScreen() {
 
   const videos: Video[] = videosQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
+// Fetch playlists (only when playlists tab active)
+const playlistsQuery = useInfiniteQuery({
+  queryKey: ['channel-playlists', channel?.id],
+  queryFn: ({ pageParam }) => playlistsApi.getByChannel(channel!.id, pageParam),
+  initialPageParam: undefined as string | undefined,
+  getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+  enabled: activeTab === 'playlists' && !!channel,
+});
+
+const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
   const subscribeMutation = useMutation({
     mutationFn: () => channel?.isSubscribed ? channelsApi.unsubscribe(handle) : channelsApi.subscribe(handle),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channel', handle] }),
@@ -124,13 +162,15 @@ export default function ChannelScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([channelQuery.refetch(), videosQuery.refetch()]);
+    await Promise.all([channelQuery.refetch(), videosQuery.refetch(), playlistsQuery.refetch()]);
     setRefreshing(false);
-  }, [channelQuery, videosQuery]);
+  }, [channelQuery, videosQuery, playlistsQuery]);
 
   const onEndReached = () => {
-    if (videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
+    if (activeTab === 'videos' && videosQuery.hasNextPage && !videosQuery.isFetchingNextPage) {
       videosQuery.fetchNextPage();
+    } else if (activeTab === 'playlists' && playlistsQuery.hasNextPage && !playlistsQuery.isFetchingNextPage) {
+      playlistsQuery.fetchNextPage();
     }
   };
 
@@ -295,9 +335,9 @@ export default function ChannelScreen() {
       </View>
 
       <FlatList
-        data={activeTab === 'videos' ? videos : []}
+        data={activeTab === 'videos' ? videos : activeTab === 'playlists' ? playlists : []}
         keyExtractor={(item) => item.id}
-        renderItem={renderVideoItem}
+        renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
         ListHeaderComponent={ListHeader}
         ListEmptyComponent={
           activeTab === 'videos' ? (
@@ -311,6 +351,20 @@ export default function ChannelScreen() {
                 icon="video"
                 title="No videos yet"
                 subtitle="This channel hasn't uploaded any videos"
+                style={styles.emptyState}
+              />
+            )
+          ) : activeTab === 'playlists' ? (
+            playlistsQuery.isLoading ? (
+              <View style={styles.skeletonVideos}>
+                <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+              </View>
+            ) : (
+              <EmptyState
+                icon="layers"
+                title="No playlists yet"
+                subtitle="This channel hasn't created any playlists"
                 style={styles.emptyState}
               />
             )
@@ -333,7 +387,7 @@ export default function ChannelScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
         }
-        onEndReached={activeTab === 'videos' ? onEndReached : undefined}
+        onEndReached={activeTab === 'videos' || activeTab === 'playlists' ? onEndReached : undefined}
         onEndReachedThreshold={0.4}
         showsVerticalScrollIndicator={false}
       />
@@ -610,6 +664,39 @@ const styles = StyleSheet.create({
   },
   moreButton: {
     padding: spacing.xs,
+  },
+  playlistCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.lg,
+    padding: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.md,
+  },
+  playlistThumbnail: {
+    width: 120,
+    height: 68,
+    borderRadius: radius.sm,
+    backgroundColor: colors.dark.bgCard,
+  },
+  playlistThumbnailPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playlistInfo: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+  playlistTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  playlistMeta: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
   },
   sheetHeader: {
     alignItems: 'center',

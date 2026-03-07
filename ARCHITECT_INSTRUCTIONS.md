@@ -1,496 +1,865 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 10: Bug Fixes + Quality)
+# ARCHITECT INSTRUCTIONS — Mizanly (Batch 12: Minbar V1.3 — Playlists + Watch History)
 ## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
 
 **Last updated:** 2026-03-07 by Claude Opus 4.6
-**Previous batches:** 1-8 (features+quality+security) -> 9 (close gaps) -> This file.
+**Previous batches:** 1-9 (features+quality+security+gaps) -> 10 (bugs) -> 11 (polish+tests) -> This file.
 
 ---
 
 ## CRITICAL CONTEXT
 
-Batch 9 completed perfectly: 200/200 tests pass, 0 dead buttons, 0 console statements, 0 `as any` (except 3 accepted), all detail screens have error states. This batch fixes bugs found in a deep 6-agent audit sweep.
+Batches 1-11 delivered all 5 spaces, 240+ tests, 0 compilation errors, full theme compliance, and comprehensive test coverage. This batch adds **Minbar V1.3** — playlists and watch history. The Prisma schema already has `Playlist`, `PlaylistItem`, `WatchHistory`, and `WatchLater` models. The backend already records watch history in the videos `view()` method. We need:
 
-**Codebase status:** 0 compilation errors, 200/200 tests pass, 42 screens, 151+ endpoints.
-**This batch:** 3 critical bugs, 5 high-priority quality fixes, 3 missing spec files.
+1. A full **playlists** backend module (CRUD + items management)
+2. A **watch history** endpoint (query existing data)
+3. **Mobile types, API methods, and screens** for both features
+4. Integration into existing channel and video screens
+
+**Schema models (already exist, do NOT modify):**
+
+```prisma
+model Playlist {
+  id           String   @id @default(cuid())
+  channelId    String
+  channel      Channel  @relation(...)
+  title        String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  thumbnailUrl String?
+  isPublic     Boolean  @default(true)
+  videosCount  Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  items        PlaylistItem[]
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  videoId    String
+  position   Int
+  playlist   Playlist @relation(...)
+  video      Video    @relation(...)
+  createdAt  DateTime @default(now())
+  @@unique([playlistId, videoId])
+}
+
+model WatchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  videoId   String
+  watchedAt DateTime @default(now())
+  progress  Float    @default(0)
+  completed Boolean  @default(false)
+  user      User     @relation(...)
+  video     Video    @relation(...)
+  @@unique([userId, videoId])
+}
+```
 
 ---
 
 ## DO NOT TOUCH
 
-- Prisma schema field names — final
+- Prisma schema — models are final, do not modify
 - `$executeRaw` tagged template literals — safe
 - Passing tests — don't rewrite
-- All working features across all 5 spaces
+- Existing working features in all 5 spaces
 - Files not listed in your assigned step
 
 ---
 
-## STEP 1: ADD REEL COMMENT DELETE ENDPOINT (backend)
+## STEP 1: CREATE PLAYLISTS BACKEND MODULE
 
-### 1.1 Add deleteComment to ReelsService
+### Context
+Create a complete NestJS module for playlist CRUD and item management. Follow the exact patterns used in the existing `channels` and `videos` modules.
 
-**File:** `apps/api/src/modules/reels/reels.service.ts`
+### 1.1 Create playlist DTOs
 
-The backend has NO endpoint to delete a reel comment. The mobile currently calls `reelsApi.delete(reelId)` which deletes the ENTIRE REEL — critical bug.
-
-**Add this method** after the existing `comment()` method (around line 320):
+**File to create:** `apps/api/src/modules/playlists/dto/create-playlist.dto.ts`
 
 ```ts
-async deleteComment(reelId: string, commentId: string, userId: string) {
-  const comment = await this.prisma.reelComment.findUnique({
-    where: { id: commentId },
-  });
-  if (!comment) throw new NotFoundException('Comment not found');
-  if (comment.reelId !== reelId) throw new NotFoundException('Comment not found');
-  if (comment.userId !== userId) throw new ForbiddenException('Not your comment');
+import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-  await this.prisma.$transaction([
-    this.prisma.reelComment.delete({ where: { id: commentId } }),
-    this.prisma.$executeRaw`UPDATE "Reel" SET "commentsCount" = GREATEST(0, "commentsCount" - 1) WHERE id = ${reelId}`,
-  ]);
-  return { deleted: true };
+export class CreatePlaylistDto {
+  @ApiProperty()
+  @IsString()
+  channelId: string;
+
+  @ApiProperty()
+  @IsString()
+  @MaxLength(200)
+  title: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }
 ```
 
-### 1.2 Add deleteComment to ReelsController
-
-**File:** `apps/api/src/modules/reels/reels.controller.ts`
-
-Add this endpoint AFTER the `getComments` method (after line 84):
+**File to create:** `apps/api/src/modules/playlists/dto/update-playlist.dto.ts`
 
 ```ts
-@Delete(':id/comments/:commentId')
-@ApiOperation({ summary: 'Delete a comment from a reel' })
-deleteComment(
-  @Param('id') id: string,
-  @Param('commentId') commentId: string,
-  @CurrentUser('id') userId: string,
-) {
-  return this.reelsService.deleteComment(id, commentId, userId);
+import { IsString, IsOptional, IsBoolean, MaxLength } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+
+export class UpdatePlaylistDto {
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  title?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsString()
+  thumbnailUrl?: string;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 }
 ```
 
-### 1.3 Update reels.service.spec.ts
+### 1.2 Create playlists service
 
-**File:** `apps/api/src/modules/reels/reels.service.spec.ts`
+**File to create:** `apps/api/src/modules/playlists/playlists.service.ts`
 
-Add tests for `deleteComment`:
-1. Read the spec file to understand the mock pattern used
-2. Add a `describe('deleteComment')` block with 3 tests:
-   - Should delete own comment successfully
-   - Should throw NotFoundException for non-existent comment
-   - Should throw ForbiddenException when deleting another user's comment
+Read `apps/api/src/modules/channels/channels.service.ts` for the pattern. The playlists service needs these methods:
 
-### 1.4 Clarify TODO
-
-In `reels.service.ts` line 110, replace:
 ```ts
-// TODO: In future, trigger video processing job here
-```
-with:
-```ts
-// Video processing deferred — mark as READY immediately for MVP
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
+import { CreatePlaylistDto } from './dto/create-playlist.dto';
+import { UpdatePlaylistDto } from './dto/update-playlist.dto';
+
+const PLAYLIST_SELECT = {
+  id: true,
+  channelId: true,
+  title: true,
+  description: true,
+  thumbnailUrl: true,
+  isPublic: true,
+  videosCount: true,
+  createdAt: true,
+  updatedAt: true,
+};
+
+const PLAYLIST_ITEM_SELECT = {
+  id: true,
+  position: true,
+  createdAt: true,
+  video: {
+    select: {
+      id: true,
+      title: true,
+      thumbnailUrl: true,
+      duration: true,
+      viewsCount: true,
+      createdAt: true,
+      channel: { select: { id: true, handle: true, name: true, avatarUrl: true } },
+    },
+  },
+};
+
+@Injectable()
+export class PlaylistsService {
+  constructor(private prisma: PrismaService) {}
+
+  // Create a playlist — verify channel ownership
+  async create(userId: string, dto: CreatePlaylistDto) {
+    const channel = await this.prisma.channel.findUnique({ where: { id: dto.channelId } });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException('Not your channel');
+
+    return this.prisma.playlist.create({
+      data: {
+        channelId: dto.channelId,
+        title: dto.title,
+        description: dto.description,
+        isPublic: dto.isPublic ?? true,
+      },
+      select: PLAYLIST_SELECT,
+    });
+  }
+
+  // Get a single playlist by ID
+  async getById(id: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      select: { ...PLAYLIST_SELECT, channel: { select: { id: true, handle: true, name: true, userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    return playlist;
+  }
+
+  // Get all playlists for a channel (paginated)
+  async getByChannel(channelId: string, cursor?: string, limit = 20) {
+    const playlists = await this.prisma.playlist.findMany({
+      where: { channelId, isPublic: true },
+      select: PLAYLIST_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = playlists.length > limit;
+    const items = hasMore ? playlists.slice(0, limit) : playlists;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  // Get playlist items (videos in playlist, ordered by position)
+  async getItems(playlistId: string, cursor?: string, limit = 20) {
+    const playlist = await this.prisma.playlist.findUnique({ where: { id: playlistId } });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+
+    const items = await this.prisma.playlistItem.findMany({
+      where: { playlistId },
+      select: PLAYLIST_ITEM_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { position: 'asc' },
+    });
+
+    const hasMore = items.length > limit;
+    const result = hasMore ? items.slice(0, limit) : items;
+    return {
+      data: result,
+      meta: { cursor: hasMore ? result[result.length - 1].id : null, hasMore },
+    };
+  }
+
+  // Update a playlist — verify channel ownership
+  async update(id: string, userId: string, dto: UpdatePlaylistDto) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    return this.prisma.playlist.update({
+      where: { id },
+      data: dto,
+      select: PLAYLIST_SELECT,
+    });
+  }
+
+  // Delete a playlist — verify channel ownership
+  async delete(id: string, userId: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    await this.prisma.playlist.delete({ where: { id } });
+    return { deleted: true };
+  }
+
+  // Add a video to a playlist — verify ownership, auto-set position
+  async addItem(playlistId: string, videoId: string, userId: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id: playlistId },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    const maxPosition = await this.prisma.playlistItem.aggregate({
+      where: { playlistId },
+      _max: { position: true },
+    });
+
+    const [item] = await this.prisma.$transaction([
+      this.prisma.playlistItem.create({
+        data: {
+          playlistId,
+          videoId,
+          position: (maxPosition._max.position ?? -1) + 1,
+        },
+        select: PLAYLIST_ITEM_SELECT,
+      }),
+      this.prisma.playlist.update({
+        where: { id: playlistId },
+        data: { videosCount: { increment: 1 } },
+      }),
+    ]);
+    return item;
+  }
+
+  // Remove a video from a playlist
+  async removeItem(playlistId: string, videoId: string, userId: string) {
+    const playlist = await this.prisma.playlist.findUnique({
+      where: { id: playlistId },
+      include: { channel: { select: { userId: true } } },
+    });
+    if (!playlist) throw new NotFoundException('Playlist not found');
+    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+
+    await this.prisma.$transaction([
+      this.prisma.playlistItem.delete({
+        where: { playlistId_videoId: { playlistId, videoId } },
+      }),
+      this.prisma.playlist.update({
+        where: { id: playlistId },
+        data: { videosCount: { decrement: 1 } },
+      }),
+    ]);
+    return { removed: true };
+  }
+}
 ```
 
-**Run after:** `cd apps/api && npx jest reels.service.spec && npx jest --passWithNoTests`
+### 1.3 Create playlists controller
+
+**File to create:** `apps/api/src/modules/playlists/playlists.controller.ts`
+
+```ts
+import { Body, Controller, Get, Post, Patch, Delete, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { PlaylistsService } from './playlists.service';
+import { CreatePlaylistDto } from './dto/create-playlist.dto';
+import { UpdatePlaylistDto } from './dto/update-playlist.dto';
+
+@ApiTags('playlists')
+@ApiBearerAuth()
+@Controller('playlists')
+@UseGuards(ClerkAuthGuard)
+export class PlaylistsController {
+  constructor(private readonly playlistsService: PlaylistsService) {}
+
+  @Post()
+  @ApiOperation({ summary: 'Create a playlist' })
+  create(@CurrentUser('id') userId: string, @Body() dto: CreatePlaylistDto) {
+    return this.playlistsService.create(userId, dto);
+  }
+
+  @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get playlist by ID' })
+  getById(@Param('id') id: string) {
+    return this.playlistsService.getById(id);
+  }
+
+  @Get('channel/:channelId')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get playlists for a channel' })
+  getByChannel(@Param('channelId') channelId: string, @Query('cursor') cursor?: string) {
+    return this.playlistsService.getByChannel(channelId, cursor);
+  }
+
+  @Get(':id/items')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get videos in a playlist' })
+  getItems(@Param('id') id: string, @Query('cursor') cursor?: string) {
+    return this.playlistsService.getItems(id, cursor);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update a playlist' })
+  update(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() dto: UpdatePlaylistDto) {
+    return this.playlistsService.update(id, userId, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a playlist' })
+  delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.playlistsService.delete(id, userId);
+  }
+
+  @Post(':id/items/:videoId')
+  @ApiOperation({ summary: 'Add a video to a playlist' })
+  addItem(@Param('id') id: string, @Param('videoId') videoId: string, @CurrentUser('id') userId: string) {
+    return this.playlistsService.addItem(id, videoId, userId);
+  }
+
+  @Delete(':id/items/:videoId')
+  @ApiOperation({ summary: 'Remove a video from a playlist' })
+  removeItem(@Param('id') id: string, @Param('videoId') videoId: string, @CurrentUser('id') userId: string) {
+    return this.playlistsService.removeItem(id, videoId, userId);
+  }
+}
+```
+
+### 1.4 Create playlists module
+
+**File to create:** `apps/api/src/modules/playlists/playlists.module.ts`
+
+```ts
+import { Module } from '@nestjs/common';
+import { PlaylistsService } from './playlists.service';
+import { PlaylistsController } from './playlists.controller';
+
+@Module({
+  controllers: [PlaylistsController],
+  providers: [PlaylistsService],
+  exports: [PlaylistsService],
+})
+export class PlaylistsModule {}
+```
+
+### 1.5 Register in AppModule
+
+**File:** `apps/api/src/app.module.ts`
+
+Add import and register:
+```ts
+import { PlaylistsModule } from './modules/playlists/playlists.module';
+
+// Add PlaylistsModule to the imports array
+```
+
+Read the file first to see where other modules are imported. Follow the same pattern.
+
+**Run after:** `cd apps/api && npx tsc --noEmit`
 
 ---
 
-## STEP 2: FIX MOBILE REEL COMMENT DELETE + FOLLOW PATH (mobile)
+## STEP 2: CREATE PLAYLISTS SERVICE SPEC
 
-### 2.1 Add deleteComment to reelsApi
+### Context
+Write comprehensive tests for the playlists service. Follow the exact mock pattern used in existing specs (read `apps/api/src/modules/channels/channels.service.spec.ts` for reference).
+
+**File to create:** `apps/api/src/modules/playlists/playlists.service.spec.ts`
+
+Test all 8 methods:
+1. `create` — success, channel not found, not owner
+2. `getById` — success, not found
+3. `getByChannel` — pagination with cursor, empty results
+4. `getItems` — pagination, playlist not found
+5. `update` — success, not found, not owner
+6. `delete` — success, not found, not owner
+7. `addItem` — success, auto-position, not owner
+8. `removeItem` — success, not owner
+
+Mock pattern:
+```ts
+const mockPrisma = {
+  playlist: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn(), delete: jest.fn() },
+  playlistItem: { create: jest.fn(), findMany: jest.fn(), delete: jest.fn(), aggregate: jest.fn() },
+  channel: { findUnique: jest.fn() },
+  $transaction: jest.fn((fns) => Promise.all(fns)),
+};
+```
+
+Target: 15+ test cases.
+
+**Run after:** `cd apps/api && npx jest playlists.service.spec && npx jest --passWithNoTests`
+
+---
+
+## STEP 3: ADD WATCH HISTORY BACKEND ENDPOINT
+
+### Context
+The `videos.service.ts` already upserts `WatchHistory` records when a video is viewed (line ~547). But there's NO endpoint to QUERY watch history. The `users.service.ts` has `getWatchLater()` but NO `getWatchHistory()`. Add the query endpoint.
+
+### 3.1 Add getWatchHistory to users.service.ts
+
+**File:** `apps/api/src/modules/users/users.service.ts`
+
+Read the existing `getWatchLater()` method (around line 360). Add a similar `getWatchHistory()` method right after it:
+
+```ts
+async getWatchHistory(userId: string, cursor?: string, limit = 20) {
+  const items = await this.prisma.watchHistory.findMany({
+    where: { userId },
+    include: {
+      video: {
+        select: {
+          id: true,
+          title: true,
+          thumbnailUrl: true,
+          duration: true,
+          viewsCount: true,
+          createdAt: true,
+          channel: { select: { id: true, handle: true, name: true, avatarUrl: true } },
+        },
+      },
+    },
+    take: limit + 1,
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: { watchedAt: 'desc' },
+  });
+
+  const hasMore = items.length > limit;
+  const result = hasMore ? items.slice(0, limit) : items;
+  return {
+    data: result.map((w: { video: unknown; progress: number; completed: boolean; watchedAt: Date }) => ({
+      ...w.video,
+      progress: w.progress,
+      completed: w.completed,
+      watchedAt: w.watchedAt,
+    })),
+    meta: {
+      cursor: hasMore ? result[result.length - 1].id : null,
+      hasMore,
+    },
+  };
+}
+
+async clearWatchHistory(userId: string) {
+  await this.prisma.watchHistory.deleteMany({ where: { userId } });
+  return { cleared: true };
+}
+```
+
+### 3.2 Add endpoints to users.controller.ts
+
+**File:** `apps/api/src/modules/users/users.controller.ts`
+
+Read the file to find where `getWatchLater` is exposed. Add these endpoints nearby:
+
+```ts
+@Get('me/watch-history')
+@ApiOperation({ summary: 'Get watch history' })
+getWatchHistory(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+  return this.usersService.getWatchHistory(userId, cursor);
+}
+
+@Delete('me/watch-history')
+@ApiOperation({ summary: 'Clear watch history' })
+clearWatchHistory(@CurrentUser('id') userId: string) {
+  return this.usersService.clearWatchHistory(userId);
+}
+```
+
+**Run after:** `cd apps/api && npx tsc --noEmit && npx jest --passWithNoTests`
+
+---
+
+## STEP 4: ADD MOBILE TYPES + API METHODS
+
+### Context
+Add TypeScript types for Playlist and PlaylistItem, plus all API methods for playlists and watch history. This agent owns `api.ts` and `types/index.ts` exclusively.
+
+### 4.1 Add types to types/index.ts
+
+**File:** `apps/mobile/src/types/index.ts`
+
+Add these interfaces (read the file first to find the right location — put near Video/Channel types):
+
+```ts
+export interface Playlist {
+  id: string;
+  channelId: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  isPublic: boolean;
+  videosCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaylistItem {
+  id: string;
+  position: number;
+  createdAt: string;
+  video: {
+    id: string;
+    title: string;
+    thumbnailUrl?: string;
+    duration: number;
+    viewsCount: number;
+    createdAt: string;
+    channel: { id: string; handle: string; name: string; avatarUrl?: string };
+  };
+}
+
+export interface WatchHistoryItem {
+  id: string;
+  title: string;
+  thumbnailUrl?: string;
+  duration: number;
+  viewsCount: number;
+  createdAt: string;
+  channel: { id: string; handle: string; name: string; avatarUrl?: string };
+  progress: number;
+  completed: boolean;
+  watchedAt: string;
+}
+```
+
+### 4.2 Add playlistsApi to api.ts
 
 **File:** `apps/mobile/src/services/api.ts`
 
-Find the `reelsApi` object (around line 254). Add this method after the existing `delete` method:
+Add the `Playlist`, `PlaylistItem`, `WatchHistoryItem` imports at the top (from `@/types`).
+
+Add after the `videosApi` section:
 
 ```ts
-deleteComment: (reelId: string, commentId: string) =>
-  api.delete(`/reels/${reelId}/comments/${commentId}`),
-```
-
-### 2.2 Fix follow requests path
-
-**Same file:** `apps/mobile/src/services/api.ts`
-
-Find line 197:
-```ts
-getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests'),
-```
-
-Change to:
-```ts
-getRequests: () => api.get<PaginatedResponse<FollowRequest>>('/follows/requests/incoming'),
-```
-
-The backend endpoint is `GET /follows/requests/incoming` (see follows.controller.ts line 61).
-
-### 2.3 Fix comment delete mutation in reel/[id].tsx
-
-**File:** `apps/mobile/app/(screens)/reel/[id].tsx`
-
-Find line 57-58 (inside the CommentRow component):
-```ts
-const deleteMutation = useMutation({
-  mutationFn: () => reelsApi.delete(reelId),
-```
-
-Change to:
-```ts
-const deleteMutation = useMutation({
-  mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
-```
-
-This fixes the critical bug where deleting a comment would delete the entire reel.
-
----
-
-## STEP 3: FIX PollResultBar useState MISUSE (mobile)
-
-**File:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
-
-Find lines 364-369 (inside `PollResultBar` function):
-```ts
-// Animate the bar width on mount
-useState(() => {
-  setTimeout(() => {
-    width.value = withSpring(pct, animation.spring.gentle);
-  }, 100);
-});
-```
-
-Replace with:
-```ts
-// Animate the bar width on mount
-useEffect(() => {
-  const timer = setTimeout(() => {
-    width.value = withSpring(pct, animation.spring.gentle);
-  }, 100);
-  return () => clearTimeout(timer);
-}, [pct]);
-```
-
-**Also check imports at the top of the file:**
-- If `useEffect` is not imported from 'react', add it to the existing react import
-- `useState` may become unused after this change — remove it from imports ONLY if no other code in the file uses it (search the file first)
-
----
-
-## STEP 4: ADD DISCARD CONFIRMATION + DRAFT SAVE TO create-thread.tsx
-
-**File:** `apps/mobile/app/(screens)/create-thread.tsx`
-
-### 4.1 Add draft auto-save
-
-Read create-post.tsx to see the existing draft pattern (uses AsyncStorage with a 2-second debounce). Implement the same pattern for threads:
-
-1. Add import at top:
-```ts
-import AsyncStorage from '@react-native-async-storage/async-storage';
-```
-
-2. Add draft key constant near the top of the component:
-```ts
-const THREAD_DRAFT_KEY = 'draft:thread';
-```
-
-3. Add load-draft effect (near other useEffects):
-```ts
-useEffect(() => {
-  AsyncStorage.getItem(THREAD_DRAFT_KEY).then((saved) => {
-    if (saved) {
-      try {
-        const draft = JSON.parse(saved);
-        if (draft.parts) setParts(draft.parts);
-      } catch {}
-    }
-  }).catch(() => {});
-}, []);
-```
-
-4. Add save-draft effect:
-```ts
-useEffect(() => {
-  const timer = setTimeout(() => {
-    const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
-    if (hasContent) {
-      AsyncStorage.setItem(THREAD_DRAFT_KEY, JSON.stringify({ parts })).catch(() => {});
-    }
-  }, 2000);
-  return () => clearTimeout(timer);
-}, [parts]);
-```
-
-5. Clear draft on successful post (in the mutation's onSuccess):
-```ts
-AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
-```
-
-### 4.2 Add discard confirmation
-
-Find the back/cancel button handler. Replace the direct `router.back()` call with:
-
-```ts
-const handleBack = () => {
-  const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
-  if (hasContent) {
-    Alert.alert('Discard thread?', 'You have unsaved content.', [
-      { text: 'Keep editing' },
-      { text: 'Discard', style: 'destructive', onPress: () => {
-        AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
-        router.back();
-      }},
-    ]);
-  } else {
-    router.back();
-  }
+// -- Playlists (Minbar) --
+export const playlistsApi = {
+  create: (data: { channelId: string; title: string; description?: string; isPublic?: boolean }) =>
+    api.post<Playlist>('/playlists', data).then(r => r.data),
+  getById: (id: string) =>
+    api.get<Playlist>(`/playlists/${id}`).then(r => r.data),
+  getByChannel: (channelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Playlist>>(`/playlists/channel/${channelId}${qs({ cursor })}`).then(r => r.data),
+  getItems: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<PlaylistItem>>(`/playlists/${id}/items${qs({ cursor })}`).then(r => r.data),
+  update: (id: string, data: Partial<Playlist>) =>
+    api.patch<Playlist>(`/playlists/${id}`, data).then(r => r.data),
+  delete: (id: string) =>
+    api.delete(`/playlists/${id}`).then(r => r.data),
+  addItem: (id: string, videoId: string) =>
+    api.post(`/playlists/${id}/items/${videoId}`).then(r => r.data),
+  removeItem: (id: string, videoId: string) =>
+    api.delete(`/playlists/${id}/items/${videoId}`).then(r => r.data),
 };
 ```
 
-Make sure `Alert` is imported from `react-native`. Wire `handleBack` to the Cancel/back button's `onPress`.
+### 4.3 Add watch history methods to usersApi
+
+In the same file, find the `usersApi` object. Add:
+
+```ts
+getWatchHistory: (cursor?: string) =>
+  api.get<PaginatedResponse<WatchHistoryItem>>(`/users/me/watch-history${qs({ cursor })}`),
+clearWatchHistory: () =>
+  api.delete('/users/me/watch-history'),
+```
 
 ---
 
-## STEP 5: ADD DISCARD CONFIRMATION TO create-reel.tsx + create-story.tsx
+## STEP 5: CREATE PLAYLIST LIST SCREEN
 
-### 5.1 create-reel.tsx
+### Context
+Create a screen that shows all playlists for a channel. This screen is navigated to from the channel detail page. Follow the exact same patterns as `channel/[handle].tsx` for the layout, loading, error, and empty states.
 
-**File:** `apps/mobile/app/(screens)/create-reel.tsx`
+**File to create:** `apps/mobile/app/(screens)/playlists/[channelId].tsx`
 
-Find the back button handler. Replace direct `router.back()` with:
+**Read first:** `apps/mobile/app/(screens)/channel/[handle].tsx` — use the same imports, style patterns, and component structure.
 
-```ts
-const handleBack = () => {
-  const hasContent = !!video || caption.trim().length > 0;
-  if (hasContent) {
-    Alert.alert('Discard reel?', 'You have unsaved content.', [
-      { text: 'Keep editing' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
-  } else {
-    router.back();
-  }
-};
-```
+**Screen structure:**
+1. Header: back button + "Playlists" title
+2. Query: `useInfiniteQuery` calling `playlistsApi.getByChannel(channelId, cursor)`
+3. Loading: `<Skeleton.Rect />` placeholders (3-4 rows)
+4. Error: `isError` check → EmptyState with "Something went wrong"
+5. Empty: `<EmptyState icon="layers" title="No playlists yet" />`
+6. List: FlatList with `<RefreshControl>`, pagination via `onEndReached`
+7. Each item: Thumbnail (or placeholder icon), title, video count, tap → `/(screens)/playlist/${item.id}`
 
-Read the file first to find the correct state variable names (`video`, `caption`, etc.). Wire `handleBack` to the back button. Make sure `Alert` is imported.
-
-### 5.2 create-story.tsx
-
-**File:** `apps/mobile/app/(screens)/create-story.tsx`
-
-Same pattern:
-
-```ts
-const handleBack = () => {
-  const hasContent = !!mediaUri || (textOverlay?.trim().length ?? 0) > 0;
-  if (hasContent) {
-    Alert.alert('Discard story?', 'You have unsaved content.', [
-      { text: 'Keep editing' },
-      { text: 'Discard', style: 'destructive', onPress: () => router.back() },
-    ]);
-  } else {
-    router.back();
-  }
-};
-```
-
-Read the file first to find the correct state variable names. Wire `handleBack` to the Cancel button.
-
----
-
-## STEP 6: FIX THEME COMPLIANCE IN 5 COMPONENTS
-
-### 6.1 ErrorBoundary.tsx — Replace emoji with Icon
-
-**File:** `apps/mobile/src/components/ErrorBoundary.tsx`
-
-Line 29: Replace `<Text style={styles.emoji}>🕌</Text>` with:
+**Playlist card layout:**
 ```tsx
-<Icon name="slash" size="xl" color={colors.text.secondary} />
+<TouchableOpacity style={styles.playlistCard} onPress={() => router.push(`/(screens)/playlist/${item.id}`)}>
+  {item.thumbnailUrl ? (
+    <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+  ) : (
+    <View style={[styles.thumbnail, styles.placeholderThumb]}>
+      <Icon name="layers" size="lg" color={colors.text.tertiary} />
+    </View>
+  )}
+  <View style={styles.cardInfo}>
+    <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+    <Text style={styles.cardMeta}>{item.videosCount} videos</Text>
+  </View>
+</TouchableOpacity>
 ```
 
-Add imports if not present:
-```ts
-import { Icon } from '@/components/ui/Icon';
-import { colors } from '@/theme';
-```
-
-Remove the `emoji` style from the StyleSheet if it exists (it would have fontSize/textAlign for the emoji).
-
-### 6.2 CharCountRing.tsx — Replace hardcoded colors
-
-**File:** `apps/mobile/src/components/ui/CharCountRing.tsx`
-
-Line 21: Replace:
-```ts
-const color = ratio >= 1 ? '#EF4444' : ratio >= 0.9 ? '#F59E0B' : colors.emerald;
-```
-with:
-```ts
-const color = ratio >= 1 ? colors.error : ratio >= 0.9 ? colors.gold : colors.emerald;
-```
-
-`colors.error` is `#F85149` (close to the original red) and `colors.gold` is `#C8963E` (brand gold, replaces the yellow warning).
-
-### 6.3 PostMedia.tsx — Replace hardcoded colors
-
-**File:** `apps/mobile/src/components/saf/PostMedia.tsx`
-
-These are overlay/carousel UI colors. Replace:
-
-| Line | Old | New |
-|------|-----|-----|
-| 73 | `color="#FFF"` | `color={colors.text.primary}` |
-| 81 | `color="#FFF"` | `color={colors.text.primary}` |
-| 86 | `color="#FFF"` | `color={colors.text.primary}` |
-| 119 (style) | `backgroundColor: 'rgba(255,255,255,0.35)'` | `backgroundColor: 'rgba(255,255,255,0.35)'` (KEEP — this is an overlay dot, not a theme color) |
-| 122 (style) | `backgroundColor: '#fff'` | `backgroundColor: colors.text.primary` |
-| 135 (style) | `backgroundColor: 'rgba(0,0,0,0.5)'` | `backgroundColor: 'rgba(0,0,0,0.5)'` (KEEP — overlay backdrop) |
-| 140 (style) | `color: '#fff'` | `color: colors.text.primary` |
-
-**Import `colors` from `@/theme`** if not already imported.
-
-**NOTE:** Semi-transparent overlays (`rgba(0,0,0,...)` and `rgba(255,255,255,0.35)`) are acceptable as-is — they're opacity variants for media overlays, not theme colors.
-
-### 6.4 Badge.tsx — Fix hardcoded padding
-
-**File:** `apps/mobile/src/components/ui/Badge.tsx`
-
-Find line 65 with `paddingHorizontal: 4`. Replace with:
-```ts
-paddingHorizontal: spacing.xs,
-```
-
-Import `spacing` from `@/theme` if not already imported.
-
-### 6.5 LocationPicker.tsx — Fix hardcoded padding
-
-**File:** `apps/mobile/src/components/ui/LocationPicker.tsx`
-
-Find line 227 with `paddingVertical: 4`. Replace with:
-```ts
-paddingVertical: spacing.xs,
-```
-
-Import `spacing` from `@/theme` if not already imported.
+**Styles:** Use `colors`, `spacing`, `fontSize`, `radius` from `@/theme`. Thumbnail: 120x68 with `radius.sm`, `backgroundColor: colors.dark.bgCard`.
 
 ---
 
-## STEP 7: ADD 3 MISSING SERVICE SPEC FILES (backend)
+## STEP 6: CREATE PLAYLIST DETAIL SCREEN
 
-### 7.1 profile-links.service.spec.ts
+### Context
+Shows videos in a playlist with the playlist title/description header. Navigated from the playlists list screen.
 
-**File to create:** `apps/api/src/modules/profile-links/profile-links.service.spec.ts`
+**File to create:** `apps/mobile/app/(screens)/playlist/[id].tsx`
 
-1. Read `apps/api/src/modules/profile-links/profile-links.service.ts` to see all public methods
-2. Read an existing spec file (e.g., `apps/api/src/modules/blocks/blocks.service.spec.ts`) for the mock pattern
-3. Create spec with tests for each public method:
-   - getLinks — returns user's links ordered by position
-   - addLink — creates a new link
-   - updateLink — updates an existing link (check ownership)
-   - deleteLink — deletes a link (check ownership)
-   - reorderLinks — updates positions
+**Read first:** `apps/mobile/app/(screens)/channel/[handle].tsx` — similar structure with header + video list.
 
-**Mock pattern (use this for all 3 specs):**
+**Screen structure:**
+1. Header: back button + playlist title
+2. Query A: `useQuery` calling `playlistsApi.getById(id)` for playlist metadata
+3. Query B: `useInfiniteQuery` calling `playlistsApi.getItems(id, cursor)` for video list
+4. Loading: Skeleton
+5. Error: EmptyState with back button
+6. Playlist header section: title, description (if any), video count, channel name
+7. Video list: FlatList with each item showing thumbnail, title, channel, duration — same `VideoCard` pattern as minbar.tsx
+8. `<RefreshControl>` on the FlatList
+9. Tap a video → `/(screens)/video/${video.id}`
+
+**Video item layout** (same as minbar.tsx VideoCard):
+```tsx
+<TouchableOpacity style={styles.videoItem} onPress={() => router.push(`/(screens)/video/${item.video.id}`)}>
+  <View style={styles.thumbWrap}>
+    <Image source={{ uri: item.video.thumbnailUrl }} style={styles.videoThumb} />
+    <View style={styles.durationBadge}>
+      <Text style={styles.durationText}>{formatDuration(item.video.duration)}</Text>
+    </View>
+  </View>
+  <View style={styles.videoInfo}>
+    <Text style={styles.videoTitle} numberOfLines={2}>{item.video.title}</Text>
+    <Text style={styles.videoMeta}>{item.video.channel.name} · {formatViews(item.video.viewsCount)} views</Text>
+  </View>
+</TouchableOpacity>
+```
+
+Helper:
 ```ts
-const mockPrisma = {
-  profileLink: { findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn(), updateMany: jest.fn() },
+const formatDuration = (sec: number) => {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
 };
 
-beforeEach(async () => {
-  const module = await Test.createTestingModule({
-    providers: [
-      ProfileLinksService,
-      { provide: PrismaService, useValue: mockPrisma },
-    ],
-  }).compile();
-  service = module.get(ProfileLinksService);
+const formatViews = (n: number) => {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+};
+```
+
+---
+
+## STEP 7: ADD "SAVE TO PLAYLIST" + WIRE CHANNEL PLAYLISTS TAB
+
+### Context
+Two integrations: (A) video detail screen gets a "Save to playlist" option in its more-menu, (B) channel detail screen gets a "Playlists" tab.
+
+### 7.1 Add "Save to playlist" BottomSheet in video/[id].tsx
+
+**File:** `apps/mobile/app/(screens)/video/[id].tsx`
+
+Read the file first. Find the existing BottomSheet/more-menu. Add a new option:
+
+```tsx
+<BottomSheetItem
+  label="Save to playlist"
+  icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+  onPress={() => {
+    setShowMenu(false);
+    router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
+  }}
+/>
+```
+
+### 7.2 Create "Save to playlist" screen
+
+**File to create:** `apps/mobile/app/(screens)/save-to-playlist.tsx`
+
+This screen shows the user's playlists with checkmarks for which ones contain the video. The user can tap to add/remove.
+
+**Structure:**
+1. Get `videoId` from search params
+2. Get user's channels: `useQuery` → `channelsApi.getMyChannels()`
+3. For each channel, get playlists: `useQuery` → `playlistsApi.getByChannel(channelId)`
+4. Show a simple list of playlists with a toggle/checkbox for each
+5. Tap a playlist → call `playlistsApi.addItem(playlistId, videoId)` or `removeItem`
+6. Header: back button + "Save to playlist" title
+7. Footer: "New playlist" button → navigate to create flow or inline create
+
+**Keep it simple** — a FlatList of playlist names with an add/remove toggle. No need for thumbnails here.
+
+```tsx
+// Each row:
+<Pressable style={styles.row} onPress={() => togglePlaylist(playlist.id)}>
+  <Text style={styles.playlistName}>{playlist.title}</Text>
+  <Icon
+    name={isInPlaylist ? 'check-circle' : 'circle-plus'}
+    size="md"
+    color={isInPlaylist ? colors.emerald : colors.text.tertiary}
+  />
+</Pressable>
+```
+
+### 7.3 Add "Playlists" tab to channel/[handle].tsx
+
+**File:** `apps/mobile/app/(screens)/channel/[handle].tsx`
+
+Read the file. Find the `CHANNEL_TABS` array (around line 27):
+```ts
+const CHANNEL_TABS = [
+  { key: 'videos', label: 'Videos' },
+  { key: 'about', label: 'About' },
+];
+```
+
+Add playlists tab:
+```ts
+type Tab = 'videos' | 'playlists' | 'about';
+
+const CHANNEL_TABS = [
+  { key: 'videos', label: 'Videos' },
+  { key: 'playlists', label: 'Playlists' },
+  { key: 'about', label: 'About' },
+];
+```
+
+Add a playlists query:
+```ts
+const playlistsQuery = useInfiniteQuery({
+  queryKey: ['channel-playlists', channelData?.id],
+  queryFn: ({ pageParam }) => playlistsApi.getByChannel(channelData!.id, pageParam),
+  getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor : undefined,
+  initialPageParam: undefined as string | undefined,
+  enabled: !!channelData?.id && activeTab === 'playlists',
 });
 ```
 
-### 7.2 settings.service.spec.ts
-
-**File to create:** `apps/api/src/modules/settings/settings.service.spec.ts`
-
-1. Read `apps/api/src/modules/settings/settings.service.ts`
-2. Create spec with tests for each method (getSettings, updatePrivacy, updateNotifications, etc.)
-3. Mock PrismaService with `userSetting` model methods
-
-### 7.3 upload.service.spec.ts
-
-**File to create:** `apps/api/src/modules/upload/upload.service.spec.ts`
-
-1. Read `apps/api/src/modules/upload/upload.service.ts`
-2. Create spec with tests for presigned URL generation, content type validation
-3. Mock the AWS S3 client
-
-**Run after all 3:** `cd apps/api && npx jest --passWithNoTests`
+Render the playlists tab content with the same card layout as Step 5. Import `playlistsApi` from `@/services/api` and `Playlist` from `@/types`.
 
 ---
 
-## STEP 8: BACKEND CLEANUP (3 files)
+## STEP 8: CREATE WATCH HISTORY SCREEN
 
-### 8.1 Clarify TODO in videos.service.ts
+### Context
+A screen showing the user's recently watched videos. Accessible from the profile/settings area.
 
-**File:** `apps/api/src/modules/videos/videos.service.ts`
+**File to create:** `apps/mobile/app/(screens)/watch-history.tsx`
 
-Find line 97:
-```ts
-// TODO: In future, trigger video processing job here
-```
-Replace with:
-```ts
-// Video processing deferred — mark as PUBLISHED immediately for MVP
-```
+**Read first:** `apps/mobile/app/(screens)/saved.tsx` — similar "user's content list" pattern.
 
-### 8.2 Fix swallowed catch in posts.service.ts
+**Screen structure:**
+1. Header: back button + "Watch History" title + "Clear" button (top-right)
+2. Query: `useInfiniteQuery` calling `usersApi.getWatchHistory(cursor)`
+3. Loading: Skeleton rows
+4. Error: EmptyState
+5. Empty: `<EmptyState icon="clock" title="No watch history" subtitle="Videos you watch will appear here" />`
+6. List: FlatList with RefreshControl, pagination
+7. Each item: same VideoCard layout as playlist detail (thumbnail + title + channel + duration)
+8. "Clear" button: `Alert.alert('Clear history?', ...)` → call `usersApi.clearWatchHistory()` → refetch
 
-**File:** `apps/api/src/modules/posts/posts.service.ts`
-
-Find the catch block around line 290 that looks like:
-```ts
-} catch {
-  throw new ConflictException('Post already saved');
-}
-```
-
-Replace with:
-```ts
-} catch (error) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-    throw new ConflictException('Post already saved');
-  }
-  throw error;
-}
+**Clear button in header:**
+```tsx
+<Pressable onPress={handleClear} hitSlop={8}>
+  <Text style={styles.clearText}>Clear</Text>
+</Pressable>
 ```
 
-Make sure `Prisma` is imported from `@prisma/client`. This catches unique constraint violations specifically while re-throwing unexpected errors.
-
-### 8.3 Fix swallowed catch in threads.service.ts
-
-**File:** `apps/api/src/modules/threads/threads.service.ts`
-
-Find the catch block around line 345:
-```ts
-} catch {
-  throw new ConflictException('Already bookmarked');
-}
+**Progress indicator** (optional but nice): If `item.progress > 0 && !item.completed`, show a thin emerald bar under the thumbnail:
+```tsx
+{item.progress > 0 && !item.completed && (
+  <View style={[styles.progressBar, { width: `${item.progress * 100}%` }]} />
+)}
 ```
 
-Replace with:
-```ts
-} catch (error) {
-  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-    throw new ConflictException('Already bookmarked');
-  }
-  throw error;
-}
-```
-
-Make sure `Prisma` is imported from `@prisma/client`.
-
-**Run after:** `cd apps/api && npx jest --passWithNoTests`
+Styles: `progressBar: { height: 3, backgroundColor: colors.emerald, borderRadius: 1.5 }`
 
 ---
 
@@ -505,134 +874,89 @@ Make sure `Prisma` is imported from `@prisma/client`.
 7. **NEVER suppress errors with `@ts-ignore`**
 8. **NEVER add `console.log/warn/error` to mobile code**
 9. **The `$executeRaw` tagged template literals are SAFE**
-10. **Fix TESTS to match SERVICE logic, never the reverse**
-
----
-
-## PRIORITY QUEUE
-
-```
-STEP 1 — REEL COMMENT DELETE ENDPOINT (backend)
-[ ] 1.1  Add deleteComment to reels.service.ts
-[ ] 1.2  Add DELETE endpoint to reels.controller.ts
-[ ] 1.3  Add tests to reels.service.spec.ts
-[ ] 1.4  Clarify TODO in reels.service.ts
-
-STEP 2 — FIX MOBILE API + REEL COMMENT DELETE
-[ ] 2.1  Add reelsApi.deleteComment to api.ts
-[ ] 2.2  Fix followsApi.getRequests path to /follows/requests/incoming
-[ ] 2.3  Fix reel/[id].tsx to call deleteComment instead of delete
-
-STEP 3 — FIX PollResultBar
-[ ] 3.1  Fix useState -> useEffect in ThreadCard.tsx
-
-STEP 4 — DISCARD + DRAFT SAVE FOR THREADS
-[ ] 4.1  Add draft auto-save to create-thread.tsx
-[ ] 4.2  Add discard confirmation to create-thread.tsx
-
-STEP 5 — DISCARD CONFIRMATION
-[ ] 5.1  Add discard confirmation to create-reel.tsx
-[ ] 5.2  Add discard confirmation to create-story.tsx
-
-STEP 6 — THEME COMPLIANCE
-[ ] 6.1  Fix ErrorBoundary.tsx emoji -> Icon
-[ ] 6.2  Fix CharCountRing.tsx hardcoded colors
-[ ] 6.3  Fix PostMedia.tsx hardcoded colors
-[ ] 6.4  Fix Badge.tsx hardcoded padding
-[ ] 6.5  Fix LocationPicker.tsx hardcoded padding
-
-STEP 7 — MISSING SPEC FILES
-[ ] 7.1  Create profile-links.service.spec.ts
-[ ] 7.2  Create settings.service.spec.ts
-[ ] 7.3  Create upload.service.spec.ts
-
-STEP 8 — BACKEND CLEANUP
-[ ] 8.1  Clarify TODO in videos.service.ts
-[ ] 8.2  Fix swallowed catch in posts.service.ts
-[ ] 8.3  Fix swallowed catch in threads.service.ts
-```
+10. **New screens MUST have: loading skeleton, error state, empty state, back button**
 
 ---
 
 ## 8-AGENT PARALLELIZATION (zero file conflicts)
 
 ```
-Agent 1: Step 1         — reels.controller.ts, reels.service.ts, reels.service.spec.ts
-Agent 2: Step 2         — api.ts, reel/[id].tsx
-Agent 3: Step 3         — ThreadCard.tsx
-Agent 4: Step 4         — create-thread.tsx
-Agent 5: Step 5         — create-reel.tsx, create-story.tsx
-Agent 6: Step 6         — ErrorBoundary.tsx, CharCountRing.tsx, PostMedia.tsx, Badge.tsx, LocationPicker.tsx
-Agent 7: Step 7         — profile-links.service.spec.ts (new), settings.service.spec.ts (new), upload.service.spec.ts (new)
-Agent 8: Step 8         — videos.service.ts, posts.service.ts, threads.service.ts
+Agent 1: Step 1  — playlists.service.ts, playlists.controller.ts, playlists.module.ts, DTOs, app.module.ts
+Agent 2: Step 2  — playlists.service.spec.ts (new)
+Agent 3: Step 3  — users.service.ts, users.controller.ts (watch history endpoint)
+Agent 4: Step 4  — types/index.ts, api.ts (types + API methods)
+Agent 5: Step 5  — playlists/[channelId].tsx (new screen)
+Agent 6: Step 6  — playlist/[id].tsx (new screen)
+Agent 7: Step 7  — video/[id].tsx, save-to-playlist.tsx (new), channel/[handle].tsx
+Agent 8: Step 8  — watch-history.tsx (new screen)
 ```
 
-**File conflict check — every file appears in exactly one agent:**
+**File conflict check:**
+
 | File | Agent |
 |------|-------|
-| reels.controller.ts | 1 |
-| reels.service.ts | 1 |
-| reels.service.spec.ts | 1 |
-| api.ts | 2 |
-| reel/[id].tsx | 2 |
-| ThreadCard.tsx | 3 |
-| create-thread.tsx | 4 |
-| create-reel.tsx | 5 |
-| create-story.tsx | 5 |
-| ErrorBoundary.tsx | 6 |
-| CharCountRing.tsx | 6 |
-| PostMedia.tsx | 6 |
-| Badge.tsx | 6 |
-| LocationPicker.tsx | 6 |
-| profile-links.service.spec.ts | 7 |
-| settings.service.spec.ts | 7 |
-| upload.service.spec.ts | 7 |
-| videos.service.ts | 8 |
-| posts.service.ts | 8 |
-| threads.service.ts | 8 |
+| playlists.service.ts (new) | 1 |
+| playlists.controller.ts (new) | 1 |
+| playlists.module.ts (new) | 1 |
+| dto/create-playlist.dto.ts (new) | 1 |
+| dto/update-playlist.dto.ts (new) | 1 |
+| app.module.ts | 1 |
+| playlists.service.spec.ts (new) | 2 |
+| users.service.ts | 3 |
+| users.controller.ts | 3 |
+| types/index.ts | 4 |
+| api.ts | 4 |
+| playlists/[channelId].tsx (new) | 5 |
+| playlist/[id].tsx (new) | 6 |
+| video/[id].tsx | 7 |
+| save-to-playlist.tsx (new) | 7 |
+| channel/[handle].tsx | 7 |
+| watch-history.tsx (new) | 8 |
+
+All unique per agent. Zero conflicts.
 
 ---
 
 ## VERIFICATION CHECKLIST
 
 ```bash
-# 1. All tests pass (including new reel comment delete tests + 3 new spec files)
+# 1. All tests pass (including new playlists spec)
 cd apps/api && npx jest --passWithNoTests
-# Expected: 210+ tests pass (200 existing + ~10 new), 0 failures
+# Expected: 255+ tests, 0 failures
 
 # 2. Backend compiles
 cd apps/api && npx tsc --noEmit
 # Expected: 0 errors
 
-# 3. No console statements in mobile
+# 3. Playlists endpoints exist
+grep -c "playlists" apps/api/src/modules/playlists/playlists.controller.ts
+# Expected: 8+ (one per endpoint)
+
+# 4. Watch history endpoint exists
+grep "getWatchHistory" apps/api/src/modules/users/users.controller.ts
+# Expected: found
+
+# 5. Mobile API methods exist
+grep -c "playlistsApi" apps/mobile/src/services/api.ts
+# Expected: 1+ (the export object)
+
+# 6. Playlist types exist
+grep "interface Playlist" apps/mobile/src/types/index.ts
+# Expected: found
+
+# 7. New screens exist
+ls apps/mobile/app/\(screens\)/playlists/\[channelId\].tsx apps/mobile/app/\(screens\)/playlist/\[id\].tsx apps/mobile/app/\(screens\)/save-to-playlist.tsx apps/mobile/app/\(screens\)/watch-history.tsx
+# Expected: all 4 files found
+
+# 8. Channel has playlists tab
+grep "playlists" apps/mobile/app/\(screens\)/channel/\[handle\].tsx
+# Expected: found in CHANNEL_TABS
+
+# 9. No console statements
 grep -rn "console\.\(log\|warn\|error\)" apps/mobile/app/ apps/mobile/src/ --include="*.tsx" --include="*.ts" | grep -v node_modules
-# Expected: 0 results
+# Expected: 0
 
-# 4. No dead buttons
-grep -rn "onPress={() => {}}" apps/mobile/app/ --include="*.tsx"
-# Expected: 0 results
-
-# 5. No hardcoded #FFF or #fff in component files (except overlay rgba)
-grep -rn "'#[Ff][Ff][Ff]'" apps/mobile/src/components/ --include="*.tsx"
-# Expected: 0 results
-
-# 6. No emoji in components
-grep -rn "🕌\|🕋\|☪" apps/mobile/src/components/ --include="*.tsx"
-# Expected: 0 results
-
-# 7. Reel comment delete endpoint exists
-grep "deleteComment" apps/api/src/modules/reels/reels.controller.ts
-# Expected: deleteComment method found
-
-# 8. Follow requests path fixed
-grep "requests/incoming" apps/mobile/src/services/api.ts
-# Expected: /follows/requests/incoming
-
-# 9. No useState misuse in PollResultBar
-grep "useState" apps/mobile/src/components/majlis/ThreadCard.tsx
-# Expected: no useState used as side effect (only normal state)
-
-# 10. Discard confirmation exists
-grep -l "Discard" apps/mobile/app/\(screens\)/create-thread.tsx apps/mobile/app/\(screens\)/create-reel.tsx apps/mobile/app/\(screens\)/create-story.tsx
-# Expected: all 3 files listed
+# 10. No as any in new code
+grep -rn "as any" apps/mobile/app/\(screens\)/playlist/ apps/mobile/app/\(screens\)/playlists/ apps/mobile/app/\(screens\)/save-to-playlist.tsx apps/mobile/app/\(screens\)/watch-history.tsx --include="*.tsx"
+# Expected: 0
 ```

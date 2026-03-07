@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   channelAvatar: {
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
   videoDetails: {
     flex: 1,

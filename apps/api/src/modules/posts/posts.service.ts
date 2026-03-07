@@ -13,6 +13,7 @@ import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
 
 const POST_SELECT = {
@@ -121,8 +122,7 @@ export class PostsService {
 
   async create(userId: string, dto: CreatePostDto) {
     // Parse and upsert hashtags
-    const hashtagMatches = (dto.content ?? '').match(/#([a-zA-Z0-9_\u0600-\u06FF]+)/g) ?? [];
-    const hashtagNames = [...new Set(hashtagMatches.map((h) => h.slice(1).toLowerCase()))];
+    const hashtagNames = extractHashtags(dto.content ?? '');
     if (hashtagNames.length > 0) {
       await Promise.all(
         hashtagNames.map((name) =>

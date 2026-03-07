@@ -10,6 +10,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
 
 const THREAD_SELECT = {
@@ -143,8 +144,7 @@ export class ThreadsService {
 
   async create(userId: string, dto: CreateThreadDto) {
     // Parse and upsert hashtags
-    const hashtagMatches = (dto.content ?? '').match(/#([a-zA-Z0-9_\u0600-\u06FF]+)/g) ?? [];
-    const hashtagNames = [...new Set(hashtagMatches.map((h) => h.slice(1).toLowerCase()))];
+    const hashtagNames = extractHashtags(dto.content ?? '');
     if (hashtagNames.length > 0) {
       await Promise.all(
         hashtagNames.map((name) =>
