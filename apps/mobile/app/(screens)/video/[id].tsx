@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
-  RefreshControl, TextInput, KeyboardAvoidingView, Platform,
+  RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -27,6 +27,7 @@ export default function VideoDetailScreen() {
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const videoRef = useRef<Video>(null);
+  const progressRef = useRef(0);
   const [refreshing, setRefreshing] = useState(false);
   const [commentSheetOpen, setCommentSheetOpen] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -97,6 +98,40 @@ export default function VideoDetailScreen() {
       queryClient.invalidateQueries({ queryKey: ['video-comments', id] });
     },
   });
+
+  const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
+    if (status.isLoaded && status.durationMillis && status.durationMillis > 0 && status.positionMillis !== undefined) {
+      const progress = status.positionMillis / status.durationMillis; // ratio 0-1
+      if (Number.isFinite(progress)) {
+        progressRef.current = progress;
+      }
+    }
+  }, []);
+
+  const saveProgress = useCallback(() => {
+    const progress = progressRef.current;
+    if (progress > 0) {
+      const completed = progress > 0.9;
+      videosApi.updateProgress(id, progress, completed).catch(() => {});
+    }
+  }, [id]);
+
+  // Save progress on unmount
+  useEffect(() => {
+    return () => {
+      saveProgress();
+    };
+  }, [saveProgress]);
+
+  // Save progress when app backgrounds
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'background' || state === 'inactive') {
+        saveProgress();
+      }
+    });
+    return () => sub.remove();
+  }, [saveProgress]);
 
   const handleLike = () => {
     haptic.light();
@@ -269,6 +304,7 @@ export default function VideoDetailScreen() {
           useNativeControls
           shouldPlay
           isLooping={false}
+          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
         />
 
         {/* Title & stats */}

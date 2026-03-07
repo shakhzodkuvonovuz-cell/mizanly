@@ -187,6 +187,10 @@ export const usersApi = {
     api.get<PaginatedResponse<WatchHistoryItem>>(`/users/me/watch-history${qs({ cursor })}`),
   clearWatchHistory: () =>
     api.delete('/users/me/watch-history'),
+  getWatchLater: (cursor?: string) =>
+    api.get<PaginatedResponse<Video>>(`/users/me/watch-later${qs({ cursor })}`),
+  addWatchLater: (videoId: string) => api.post(`/users/me/watch-later/${videoId}`),
+  removeWatchLater: (videoId: string) => api.delete(`/users/me/watch-later/${videoId}`),
   report: (userId: string, reason: string) => api.post(`/users/${userId}/report`, { reason }),
 };
 
@@ -323,6 +327,8 @@ export const videosApi = {
     api.delete(`/videos/${id}/bookmark`).then(r => r.data),
   view: (id: string) =>
     api.post(`/videos/${id}/view`).then(r => r.data),
+  updateProgress: (id: string, progress: number, completed: boolean) =>
+    api.patch(`/videos/${id}/progress`, { progress, completed }).then(r => r.data),
   report: (id: string, reason: string) =>
     api.post(`/videos/${id}/report`, { reason }).then(r => r.data),
 };

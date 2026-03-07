@@ -553,6 +553,15 @@ export class VideosService {
     return { viewed: true };
   }
 
+  async updateProgress(videoId: string, userId: string, progress: number) {
+    await this.prisma.watchHistory.upsert({
+      where: { userId_videoId: { userId, videoId } },
+      create: { userId, videoId, progress, completed: progress >= 95, watchedAt: new Date() },
+      update: { progress, completed: progress >= 95, watchedAt: new Date() },
+    });
+    return { updated: true };
+  }
+
   async report(videoId: string, userId: string, reason: string) {
     const reasonMap: Record<string, string> = {
       SPAM: 'SPAM',

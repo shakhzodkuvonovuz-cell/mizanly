@@ -394,6 +394,24 @@ export default function ProfileScreen() {
             ))}
           </View>
         )}
+        {!isOwnProfile && profile.channel && (
+          <>
+            <TouchableOpacity
+              style={styles.channelRow}
+              onPress={() => router.push(`/(screens)/channel/${profile.channel.handle}`)}
+            >
+              <Icon name="video" size={13} color={colors.emerald} />
+              <Text style={styles.channelText}>Videos</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.channelRow}
+              onPress={() => router.push(`/(screens)/playlists/${profile.channel.id}`)}
+            >
+              <Icon name="layers" size={13} color={colors.emerald} />
+              <Text style={styles.channelText}>Playlists</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* Story highlights */}
@@ -441,6 +459,35 @@ export default function ProfileScreen() {
         <View style={styles.statDivider} />
         <StatItem num={profile._count?.posts ?? 0} label="Posts" />
       </View>
+
+      {/* Minbar section (own profile only) */}
+      {isOwnProfile && (
+        <View style={styles.minbarSection}>
+          <Text style={styles.sectionTitle}>Minbar</Text>
+          <View style={styles.linkRow}>
+            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-history')}>
+              <Icon name="clock" size="md" color={colors.text.primary} />
+              <Text style={styles.linkText}>Watch History</Text>
+              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            </Pressable>
+            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-later')}>
+              <Icon name="bookmark" size="md" color={colors.text.primary} />
+              <Text style={styles.linkText}>Watch Later</Text>
+              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            </Pressable>
+            {profile.channel && (
+              <Pressable
+                style={styles.linkItem}
+                onPress={() => router.push(`/(screens)/playlists/${profile.channel.id}`)}
+              >
+                <Icon name="layers" size="md" color={colors.text.primary} />
+                <Text style={styles.linkText}>My Playlists</Text>
+                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+              </Pressable>
+            )}
+          </View>
+        </View>
+      )}
 
       {/* Tabs */}
       <TabSelector
@@ -869,4 +916,32 @@ const styles = StyleSheet.create({
   threadMeta: { flexDirection: 'row', gap: spacing.lg },
   threadMetaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   threadMetaText: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  minbarSection: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.border,
+  },
+  sectionTitle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  linkRow: {
+    gap: spacing.xs,
+  },
+  linkItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  linkText: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+  },
 });

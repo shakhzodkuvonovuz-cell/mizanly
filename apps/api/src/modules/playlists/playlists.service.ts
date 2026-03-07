@@ -3,7 +3,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 
-interface PlaylistItemResponse {
+export interface PlaylistItemResponse {
   id: string;
   position: number;
   createdAt: Date;
@@ -23,7 +23,7 @@ interface PlaylistItemResponse {
   };
 }
 
-interface PlaylistResponse {
+export interface PlaylistResponse {
   id: string;
   channelId: string;
   title: string;
@@ -35,7 +35,7 @@ interface PlaylistResponse {
   updatedAt: Date;
 }
 
-interface PaginatedResponse<T> {
+export interface PaginatedResponse<T> {
   data: T[];
   meta: { cursor: string | null; hasMore: boolean };
 }

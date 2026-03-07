@@ -723,4 +723,54 @@ describe('VideosService', () => {
       });
     });
   });
+
+  describe('updateProgress', () => {
+    it('should create watch history entry if none exists', async () => {
+      const videoId = 'video-123';
+      const userId = 'user-456';
+      const progress = 45;
+      prisma.watchHistory.upsert.mockResolvedValue({ id: 'wh1' });
+
+      const result = await service.updateProgress(videoId, userId, progress);
+
+      expect(result).toEqual({ updated: true });
+      expect(prisma.watchHistory.upsert).toHaveBeenCalledWith({
+        where: { userId_videoId: { userId, videoId } },
+        create: { userId, videoId, progress, completed: false, watchedAt: expect.any(Date) },
+        update: { progress, completed: false, watchedAt: expect.any(Date) },
+      });
+    });
+
+    it('should mark completed when progress >= 95', async () => {
+      const videoId = 'video-123';
+      const userId = 'user-456';
+      const progress = 96;
+      prisma.watchHistory.upsert.mockResolvedValue({ id: 'wh1' });
+
+      const result = await service.updateProgress(videoId, userId, progress);
+
+      expect(result).toEqual({ updated: true });
+      expect(prisma.watchHistory.upsert).toHaveBeenCalledWith({
+        where: { userId_videoId: { userId, videoId } },
+        create: { userId, videoId, progress, completed: true, watchedAt: expect.any(Date) },
+        update: { progress, completed: true, watchedAt: expect.any(Date) },
+      });
+    });
+
+    it('should not mark completed when progress < 95', async () => {
+      const videoId = 'video-123';
+      const userId = 'user-456';
+      const progress = 50;
+      prisma.watchHistory.upsert.mockResolvedValue({ id: 'wh1' });
+
+      const result = await service.updateProgress(videoId, userId, progress);
+
+      expect(result).toEqual({ updated: true });
+      expect(prisma.watchHistory.upsert).toHaveBeenCalledWith({
+        where: { userId_videoId: { userId, videoId } },
+        create: { userId, videoId, progress, completed: false, watchedAt: expect.any(Date) },
+        update: { progress, completed: false, watchedAt: expect.any(Date) },
+      });
+    });
+  });
 });

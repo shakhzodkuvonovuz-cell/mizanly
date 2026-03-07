@@ -2,13 +2,13 @@ import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
-import { videosApi } from '@/services/api';
+import { videosApi, usersApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -128,6 +128,12 @@ export default function MinbarScreen() {
     return unsubscribe;
   }, [router]);
 
+  const continueWatchingQuery = useQuery({
+    queryKey: ['watch-history'],
+    queryFn: () => usersApi.getWatchHistory(),
+    select: (data) => data.data?.filter((v) => v.progress > 0 && !v.completed).slice(0, 10) ?? [],
+  });
+
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
 
@@ -183,6 +189,36 @@ export default function MinbarScreen() {
 
   const listHeader = useMemo(() => (
     <View>
+      {/* Continue Watching */}
+      {continueWatchingQuery.data?.length ? (
+        <View style={styles.continueSection}>
+          <Text style={styles.continueTitle}>Continue Watching</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continueScroll}>
+            {continueWatchingQuery.data.map((item) => (
+              <Pressable
+                key={item.id}
+                style={styles.continueCard}
+                onPress={() => router.push(`/(screens)/video/${item.id}`)}
+              >
+                <View style={styles.continueThumbWrap}>
+                  {item.thumbnailUrl ? (
+                    <Image source={{ uri: item.thumbnailUrl }} style={styles.continueThumb} />
+                  ) : (
+                    <View style={[styles.continueThumb, styles.continueThumbPlaceholder]}>
+                      <Icon name="video" size="lg" color={colors.text.secondary} />
+                    </View>
+                  )}
+                  <View style={styles.progressBarBg}>
+                    <View style={[styles.progressBarFill, { width: `${item.progress * 100}%` }]} />
+                  </View>
+                </View>
+                <Text style={styles.continueCardTitle} numberOfLines={1}>{item.title}</Text>
+                <Text style={styles.continueCardMeta}>{item.channel?.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
       {/* Category chips */}
       <ScrollView
         horizontal
@@ -214,7 +250,7 @@ export default function MinbarScreen() {
         ))}
       </ScrollView>
     </View>
-  ), [selectedCategory, haptic]);
+  ), [selectedCategory, haptic, continueWatchingQuery.data, router]);
 
   const listEmpty = useMemo(() => (
     feedQuery.isLoading ? (
@@ -444,5 +480,61 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.lg,
+  },
+  continueSection: {
+    paddingVertical: spacing.md,
+  },
+  continueTitle: {
+    color: colors.emerald,
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  continueScroll: {
+    paddingHorizontal: spacing.base,
+    gap: spacing.md,
+  },
+  continueCard: {
+    width: 200,
+  },
+  continueThumbWrap: {
+    width: 200,
+    height: 112,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard,
+  },
+  continueThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  continueThumbPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.dark.surface,
+  },
+  progressBarBg: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.emerald,
+  },
+  continueCardTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+    marginTop: spacing.xs,
+  },
+  continueCardMeta: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
 });

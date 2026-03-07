@@ -172,6 +172,18 @@ export class VideosController {
     return { viewed: true };
   }
 
+  @Patch(':id/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update watch progress for a video' })
+  updateProgress(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('progress') progress: number,
+  ) {
+    return this.videosService.updateProgress(id, userId, progress);
+  }
+
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

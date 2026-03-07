@@ -12,13 +12,13 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 | Majlis | المجلس | X/Twitter (threads) | Built |
 | Risalah | رسالة | WhatsApp (DMs + groups) | Built |
 | Bakra | بكرة | TikTok (short video) | Built (V1.1) |
-| Minbar | المنبر | YouTube (long video) | Built (V1.2 MVP) |
+| Minbar | المنبر | YouTube (long video) | Built (V1.3) |
 
 ---
 
-## Status: ~75% Feature Complete (as of 2026-03-07)
-All 5 spaces built and functional. 42 screens, 151 API endpoints, 78+ tests.
-Backend: NestJS with 20 modules, Redis, security headers, rate limiting, observability.
+## Status: ~90% Feature Complete (as of 2026-03-08)
+All 5 spaces built and functional. 46 screens, 163 API endpoints, 78+ tests.
+Backend: NestJS with 21 modules, Redis, security headers, rate limiting, observability.
 Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
 
 ---
@@ -54,7 +54,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - GDPR/CCPA compliance
 - CI/CD pipeline
 - i18n / Arabic translations
-- Playlists, watch history, subtitles (Minbar V1.3)
+- Subtitles, live streaming (Minbar V1.4)
 
 ---
 
@@ -248,4 +248,4 @@ cd apps/api && npx prisma studio                  # DB browser GUI
 ```
 
 ## Deferred
-Minbar V1.3 (playlists, history) | Live streaming V2.0 | E2E encryption V2.0 | Monetization V2.0
+Minbar V1.4 (subtitles, live streaming) | E2E encryption V2.0 | Monetization V2.0
