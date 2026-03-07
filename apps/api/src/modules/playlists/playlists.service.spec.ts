@@ -531,4 +531,40 @@ describe('PlaylistsService', () => {
       await expect(service.addItem(PLAYLIST_ID, VIDEO_ID, USER_ID)).rejects.toThrow(ForbiddenException);
     });
   });
+
+  describe('removeItem', () => {
+    const USER_ID = 'user-123';
+    const PLAYLIST_ID = 'playlist-abc';
+    const VIDEO_ID = 'video-def';
+
+    it('should remove video from playlist', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: USER_ID },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      const result = await service.removeItem(PLAYLIST_ID, VIDEO_ID, USER_ID);
+
+      expect(prisma.playlist.findUnique).toHaveBeenCalledWith({
+        where: { id: PLAYLIST_ID },
+        include: { channel: { select: { userId: true } } },
+      });
+      expect(prisma.playlistItem.delete).toHaveBeenCalledWith({
+        where: { playlistId_videoId: { playlistId: PLAYLIST_ID, videoId: VIDEO_ID } },
+      });
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('should throw ForbiddenException when user is not owner', async () => {
+      const mockPlaylist = {
+        id: PLAYLIST_ID,
+        channel: { userId: 'other-user' },
+      };
+      prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+
+      await expect(service.removeItem(PLAYLIST_ID, VIDEO_ID, USER_ID)).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
