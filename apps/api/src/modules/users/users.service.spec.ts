@@ -51,6 +51,12 @@ describe('UsersService', () => {
             threadBookmark: {
               findMany: jest.fn(),
             },
+            reelInteraction: {
+              findMany: jest.fn(),
+            },
+            videoBookmark: {
+              findMany: jest.fn(),
+            },
             watchLater: {
               findMany: jest.fn(),
             },
@@ -495,6 +501,175 @@ describe('UsersService', () => {
       expect(result.data).toEqual(mockBookmarks.map(b => b.thread));
     });
   });
+
+  describe('getSavedReels', () => {
+    it('should return saved reels with pagination', async () => {
+      const userId = 'user-123';
+      const mockInteractions = [
+        {
+          createdAt: new Date('2026-03-08T10:00:00Z'),
+          reel: {
+            id: 'reel-1',
+            videoUrl: 'https://example.com/video1.mp4',
+            thumbnailUrl: 'https://example.com/thumb1.jpg',
+            caption: 'First reel',
+            likesCount: 100,
+            commentsCount: 20,
+            sharesCount: 5,
+            viewsCount: 1000,
+            createdAt: new Date('2026-03-07T10:00:00Z'),
+            user: {
+              id: 'author-1',
+              username: 'author1',
+              displayName: 'Author One',
+              avatarUrl: 'https://example.com/avatar1.jpg',
+              isVerified: true,
+            },
+          },
+        },
+        {
+          createdAt: new Date('2026-03-08T09:00:00Z'),
+          reel: {
+            id: 'reel-2',
+            videoUrl: 'https://example.com/video2.mp4',
+            thumbnailUrl: 'https://example.com/thumb2.jpg',
+            caption: 'Second reel',
+            likesCount: 50,
+            commentsCount: 10,
+            sharesCount: 2,
+            viewsCount: 500,
+            createdAt: new Date('2026-03-07T09:00:00Z'),
+            user: {
+              id: 'author-2',
+              username: 'author2',
+              displayName: 'Author Two',
+              avatarUrl: 'https://example.com/avatar2.jpg',
+              isVerified: false,
+            },
+          },
+        },
+      ] as any;
+      prisma.reelInteraction.findMany.mockResolvedValue(mockInteractions);
+
+      const result = await service.getSavedReels(userId);
+
+      expect(prisma.reelInteraction.findMany).toHaveBeenCalledWith({
+        where: { userId, saved: true },
+        include: {
+          reel: {
+            select: {
+              id: true,
+              videoUrl: true,
+              thumbnailUrl: true,
+              caption: true,
+              likesCount: true,
+              commentsCount: true,
+              sharesCount: true,
+              viewsCount: true,
+              createdAt: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatarUrl: true,
+                  isVerified: true,
+                },
+              },
+            },
+          },
+        },
+        take: 21, // limit + 1
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.data).toHaveLength(2);
+      expect(result.data[0].id).toBe('reel-1');
+      expect(result.data[0].isBookmarked).toBe(true);
+      expect(result.data[1].id).toBe('reel-2');
+      expect(result.data[1].isBookmarked).toBe(true);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should paginate with cursor', async () => {
+      const userId = 'user-123';
+      const cursor = 'reel-2';
+      const mockInteractions = [
+        {
+          createdAt: new Date('2026-03-08T08:00:00Z'),
+          reel: {
+            id: 'reel-3',
+            videoUrl: 'https://example.com/video3.mp4',
+            thumbnailUrl: 'https://example.com/thumb3.jpg',
+            caption: 'Third reel',
+            likesCount: 30,
+            commentsCount: 5,
+            sharesCount: 1,
+            viewsCount: 300,
+            createdAt: new Date('2026-03-07T08:00:00Z'),
+            user: {
+              id: 'author-3',
+              username: 'author3',
+              displayName: 'Author Three',
+              avatarUrl: 'https://example.com/avatar3.jpg',
+              isVerified: false,
+            },
+          },
+        },
+      ] as any;
+      prisma.reelInteraction.findMany.mockResolvedValue(mockInteractions);
+
+      const result = await service.getSavedReels(userId, cursor, 20);
+
+      expect(prisma.reelInteraction.findMany).toHaveBeenCalledWith({
+        where: { userId, saved: true },
+        include: {
+          reel: {
+            select: {
+              id: true,
+              videoUrl: true,
+              thumbnailUrl: true,
+              caption: true,
+              likesCount: true,
+              commentsCount: true,
+              sharesCount: true,
+              viewsCount: true,
+              createdAt: true,
+              user: {
+                select: {
+                  id: true,
+                  username: true,
+                  displayName: true,
+                  avatarUrl: true,
+                  isVerified: true,
+                },
+              },
+            },
+          },
+        },
+        take: 21,
+        cursor: { userId_reelId: { userId, reelId: cursor } },
+        skip: 1,
+        orderBy: { createdAt: 'desc' },
+      });
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('reel-3');
+      expect(result.data[0].isBookmarked).toBe(true);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  // describe('getSavedVideos', () => {
+  //   it('should return bookmarked videos', async () => {
+  //     const mockBookmarks = [
+  //       { createdAt: new Date(), video: { id: 'v1', title: 'test', channel: { id: 'ch1' } } },
+  //     ];
+  //     prisma.videoBookmark.findMany.mockResolvedValue(mockBookmarks);
+  //     const result = await service.getSavedVideos('u1');
+  //     expect(result.data).toHaveLength(1);
+  //     expect(result.data[0].id).toBe('v1');
+  //     expect(result.meta.hasMore).toBe(false);
+  //   });
+  // });
 
   describe('getQrCode', () => {
     it('should return deeplink and profile URL', async () => {

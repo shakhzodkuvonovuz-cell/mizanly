@@ -327,6 +327,49 @@ export class UsersService {
     };
   }
 
+  async getSavedReels(userId: string, cursor?: string, limit = 20) {
+    const interactions = await this.prisma.reelInteraction.findMany({
+      where: { userId, saved: true },
+      include: {
+        reel: {
+          select: {
+            id: true,
+            videoUrl: true,
+            thumbnailUrl: true,
+            caption: true,
+            likesCount: true,
+            commentsCount: true,
+            sharesCount: true,
+            viewsCount: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+                isVerified: true,
+              },
+            },
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { userId_reelId: { userId, reelId: cursor } }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = interactions.length > limit;
+    const items = hasMore ? interactions.slice(0, limit) : interactions;
+    return {
+      data: items.map((i: any) => ({ ...i.reel, isBookmarked: true })),
+      meta: {
+        cursor: hasMore ? items[items.length - 1].reelId : null,
+        hasMore,
+      },
+    };
+  }
+
   async getFollowRequests(userId: string, cursor?: string, limit = 20) {
     const requests = await this.prisma.followRequest.findMany({
       where: { receiverId: userId, status: 'PENDING' },
