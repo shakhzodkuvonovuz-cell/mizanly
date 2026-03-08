@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Post, Thread, Reel, Video } from '@prisma/client';
 
 export interface ScheduledItem {
   id: string;
@@ -15,6 +16,8 @@ export interface ScheduledItem {
   scheduledAt: Date;
   createdAt: Date;
 }
+
+export type ScheduledContent = Post | Thread | Reel | Video;
 
 @Injectable()
 export class SchedulingService {
@@ -114,7 +117,7 @@ export class SchedulingService {
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
     scheduledAt: Date,
-  ) {
+  ): Promise<ScheduledContent> {
     const minTime = new Date(Date.now() + 15 * 60 * 1000);
     if (scheduledAt < minTime) {
       throw new BadRequestException(
@@ -139,7 +142,7 @@ export class SchedulingService {
     userId: string,
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
-  ) {
+  ): Promise<ScheduledContent> {
     const model = this.getModel(type);
     const content = await this.findContent(model, id);
     if (!content) {
@@ -156,7 +159,7 @@ export class SchedulingService {
     userId: string,
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
-  ) {
+  ): Promise<ScheduledContent> {
     const model = this.getModel(type);
     const content = await this.findContent(model, id);
     if (!content) {
@@ -189,7 +192,7 @@ export class SchedulingService {
     model: keyof PrismaService,
     id: string,
     data: { scheduledAt: Date | null }
-  ): Promise<unknown> {
+  ): Promise<ScheduledContent> {
     switch (model) {
       case 'post':
         return this.prisma.post.update({ where: { id }, data });

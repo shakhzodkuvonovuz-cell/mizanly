@@ -15,7 +15,7 @@ import { IsISO8601, IsNotEmpty } from 'class-validator';
 import { SchedulingService } from './scheduling.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { ScheduledItem } from './scheduling.service';
+import { ScheduledItem, ScheduledContent } from './scheduling.service';
 
 class UpdateScheduleDto {
   @IsISO8601()
@@ -45,7 +45,7 @@ export class SchedulingController {
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
     @Body() dto: UpdateScheduleDto,
-  ): Promise<unknown> {
+  ): Promise<ScheduledContent> {
     return this.schedulingService.updateSchedule(
       userId,
       type,
@@ -63,7 +63,7 @@ export class SchedulingController {
     @CurrentUser('id') userId: string,
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
-  ): Promise<unknown> {
+  ): Promise<ScheduledContent> {
     return this.schedulingService.cancelSchedule(userId, type, id);
   }
 
@@ -76,7 +76,7 @@ export class SchedulingController {
     @CurrentUser('id') userId: string,
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
-  ): Promise<unknown> {
+  ): Promise<ScheduledContent> {
     return this.schedulingService.publishNow(userId, type, id);
   }
 }
