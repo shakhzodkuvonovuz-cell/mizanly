@@ -259,10 +259,10 @@ describe('ReelsService', () => {
       // Expect the high‑engagement older reel first, not the newer low‑engagement one
       expect(result.data[0].id).toBe('reel-1'); // older, high engagement
       expect(result.data[1].id).toBe('reel-2'); // newer, low engagement
-      // Verify the query fetched recent reels (72h window) and did NOT use createdAt order
+      // Verify the query fetched recent reels (72h window) with createdAt order for initial fetch
       expect(prisma.reel.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          orderBy: undefined, // No orderBy because scoring happens in‑memory
+          orderBy: { createdAt: 'desc' }, // Initial fetch by recency before scoring
           take: 200,          // We fetch up to 200 to score
         })
       );
@@ -313,10 +313,11 @@ describe('ReelsService', () => {
           status: ReelStatus.READY,
           isRemoved: false,
           user: { isPrivate: false },
+          createdAt: { gte: expect.any(Date) }, // 72h window
           userId: { notIn: [blockedUser, mutedUser] },
         },
         select: REEL_SELECT,
-        take: 21,
+        take: 200,
         orderBy: { createdAt: 'desc' },
       });
     });

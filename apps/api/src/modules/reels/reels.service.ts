@@ -144,26 +144,45 @@ export class ReelsService {
       status: ReelStatus.READY,
       isRemoved: false,
       user: { isPrivate: false },
+      createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) }, // last 72h
+      ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
       ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
     };
 
-    const reels = await this.prisma.reel.findMany({
+    // Fetch up to 200 recent reels to score and rank
+    const recentReels = await this.prisma.reel.findMany({
       where,
       select: REEL_SELECT,
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { createdAt: 'desc' },
+      take: 200,
+      orderBy: { createdAt: 'desc' }, // initial fetch by recency, will be re‑ordered by score
     });
 
-    const hasMore = reels.length > limit;
-    const data = hasMore ? reels.slice(0, limit) : reels;
-    const nextCursor = hasMore ? data[data.length - 1].id : null;
+    // Score each reel: engagement weighted by recency
+    const scored = recentReels.map(reel => {
+      const ageHours = Math.max(1, (Date.now() - new Date(reel.createdAt).getTime()) / 3600000);
+      const engagement = (reel.likesCount * 2) + (reel.commentsCount * 4) + (reel.sharesCount * 6) + (reel.viewsCount * 0.1);
+      const score = engagement / Math.pow(ageHours, 1.2); // slower decay than posts/threads
+      return { ...reel, _score: score };
+    });
+
+    // Sort by score descending
+    scored.sort((a, b) => b._score - a._score);
+
+    // Paginate using createdAt as cursor (same pattern as step 4)
+    const startIdx = cursor ? scored.findIndex(p => new Date(p.createdAt).toISOString() < cursor) : 0;
+    const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+
+    const hasMore = page.length > limit;
+    const data = hasMore ? page.slice(0, limit) : page;
+
+    // Strip internal _score field
+    const plainData = data.map(({ _score, ...reel }) => reel);
 
     let likedReelIds: string[] = [];
     let bookmarkedReelIds: string[] = [];
 
-    if (userId && data.length > 0) {
-      const reelIds = data.map(r => r.id);
+    if (userId && plainData.length > 0) {
+      const reelIds = plainData.map(r => r.id);
       const [reactions, interactions] = await Promise.all([
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
@@ -178,7 +197,7 @@ export class ReelsService {
       bookmarkedReelIds = interactions.map(i => i.reelId);
     }
 
-    const enhancedData = data.map(reel => ({
+    const enhancedData = plainData.map(reel => ({
       ...reel,
       isLiked: userId ? likedReelIds.includes(reel.id) : false,
       isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
@@ -186,7 +205,10 @@ export class ReelsService {
 
     const result = {
       data: enhancedData,
-      meta: { cursor: nextCursor, hasMore },
+      meta: {
+        cursor: hasMore ? enhancedData[enhancedData.length - 1].createdAt : null,
+        hasMore,
+      },
     };
 
     if (userId) {
