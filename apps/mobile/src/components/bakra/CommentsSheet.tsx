@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -7,7 +7,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { reelsApi } from '@/services/api';
+import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -22,6 +22,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const [newComment, setNewComment] = useState('');
+  const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   const commentsQuery = useInfiniteQuery({
@@ -32,12 +33,13 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   });
 
   const addCommentMutation = useMutation({
-    mutationFn: (content: string) => reelsApi.comment(reel.id, content),
+    mutationFn: (content: string) => api.post(`/reels/${reel.id}/comment`, { content, parentId: replyTo?.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reel-comments', reel.id] });
       queryClient.invalidateQueries({ queryKey: ['reels-feed'] });
       queryClient.invalidateQueries({ queryKey: ['reel', reel.id] });
       setNewComment('');
+      setReplyTo(null);
       inputRef.current?.blur();
       haptic.light();
     },
@@ -85,7 +87,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.commentAction}
-            onPress={() => {/* TODO: Reply */}}
+            onPress={() => setReplyTo(item)}
             hitSlop={8}
           >
             <Icon name="message-circle" size="xs" color={colors.text.secondary} />
@@ -151,6 +153,16 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         />
+
+        {/* Reply banner */}
+        {replyTo && (
+          <View style={styles.replyBanner}>
+            <Text style={styles.replyLabel}>Replying to @{replyTo.user.username}</Text>
+            <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+              <Icon name="x" size="xs" color={colors.text.tertiary} />
+            </Pressable>
+          </View>
+        )}
 
         {/* Input */}
         <View style={styles.inputContainer}>
@@ -284,5 +296,19 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     opacity: 0.5,
+  },
+  replyBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+  },
+  replyLabel: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
   },
 });

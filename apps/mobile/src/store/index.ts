@@ -34,6 +34,12 @@ interface AppState {
   // Create sheet
   isCreateSheetOpen: boolean;
   setCreateSheetOpen: (open: boolean) => void;
+
+  // Hashtags
+  followedHashtags: string[];
+  addFollowedHashtag(tag: string): void;
+  removeFollowedHashtag(tag: string): void;
+
   logout: () => void;
 }
 
@@ -71,6 +77,15 @@ export const useStore = create<AppState>()(
       isCreateSheetOpen: false,
       setCreateSheetOpen: (isCreateSheetOpen) => set({ isCreateSheetOpen }),
 
+      // Hashtags
+      followedHashtags: [],
+      addFollowedHashtag: (tag) => set((s) => ({
+        followedHashtags: [...s.followedHashtags, tag],
+      })),
+      removeFollowedHashtag: (tag) => set((s) => ({
+        followedHashtags: s.followedHashtags.filter(t => t !== tag),
+      })),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -87,6 +102,7 @@ export const useStore = create<AppState>()(
         theme: state.theme,
         safFeedType: state.safFeedType,
         majlisFeedType: state.majlisFeedType,
+        followedHashtags: state.followedHashtags,
       }),
     }
   )
@@ -99,3 +115,4 @@ export const useUnreadNotifications = () => useStore((s) => s.unreadNotification
 export const useUnreadMessages = () => useStore((s) => s.unreadMessages);
 export const useSafFeedType = () => useStore((s) => s.safFeedType);
 export const useMajlisFeedType = () => useStore((s) => s.majlisFeedType);
+export const useFollowedHashtags = () => useStore(s => s.followedHashtags);

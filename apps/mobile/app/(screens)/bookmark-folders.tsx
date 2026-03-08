@@ -1,0 +1,329 @@
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
+  TouchableOpacity, Dimensions, Alert,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { colors, spacing, fontSize, radius } from '@/theme';
+
+const SCREEN_W = Dimensions.get('window').width;
+const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
+
+type Folder = {
+  id: string;
+  name: string;
+  itemIds: string[];
+};
+
+type FolderCardProps = {
+  folder: Folder;
+  onPress: () => void;
+  onLongPress: () => void;
+};
+
+function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
+  const itemCount = folder.itemIds.length;
+  // For now, no cover thumbnail; we could later fetch first item's image
+  return (
+    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} activeOpacity={0.85} style={styles.folderCard}>
+      <View style={styles.folderIcon}>
+        <Icon name="bookmark" size="xl" color={colors.gold} />
+      </View>
+      <Text style={styles.folderName} numberOfLines={1}>{folder.name}</Text>
+      <Text style={styles.folderCount}>
+        {itemCount} {itemCount === 1 ? 'item' : 'items'}
+      </Text>
+    </TouchableOpacity>
+  );
+}
+
+export default function BookmarkFoldersScreen() {
+  const router = useRouter();
+  const [foldersMap, setFoldersMap] = useState<Record<string, { name: string, itemIds: string[] }>>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [createSheetVisible, setCreateSheetVisible] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+
+  const foldersArray: Folder[] = Object.entries(foldersMap).map(([id, val]) => ({
+    id,
+    name: val.name,
+    itemIds: val.itemIds,
+  }));
+
+  const loadFolders = useCallback(async () => {
+    try {
+      const stored = await AsyncStorage.getItem('bookmark-folders');
+      if (stored) {
+        const data = JSON.parse(stored);
+        setFoldersMap(data);
+      } else {
+        setFoldersMap({});
+      }
+    } catch (error) {
+      console.error('Failed to load bookmark folders:', error);
+      Alert.alert('Error', 'Could not load folders');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFolders();
+  }, []);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadFolders();
+  }, [loadFolders]);
+
+  const handleCreateFolder = useCallback(async () => {
+    const trimmed = newFolderName.trim();
+    if (!trimmed) {
+      Alert.alert('Error', 'Folder name cannot be empty');
+      return;
+    }
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    const newMap = { ...foldersMap, [id]: { name: trimmed, itemIds: [] } };
+    try {
+      await AsyncStorage.setItem('bookmark-folders', JSON.stringify(newMap));
+      setFoldersMap(newMap);
+      setNewFolderName('');
+      setCreateSheetVisible(false);
+    } catch (error) {
+      console.error('Failed to create folder:', error);
+      Alert.alert('Error', 'Could not create folder');
+    }
+  }, [foldersMap, newFolderName]);
+
+  const handleDeleteFolder = useCallback(async (folderId: string) => {
+    Alert.alert(
+      'Delete Folder',
+      'Are you sure you want to delete this folder? The saved items will not be removed.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            const updated = { ...foldersMap };
+            delete updated[folderId];
+            await AsyncStorage.setItem('bookmark-folders', JSON.stringify(updated));
+            setFoldersMap(updated);
+          },
+        },
+      ]
+    );
+  }, [foldersMap]);
+
+  const handleFolderPress = useCallback((folderId: string) => {
+    router.push(`/(screens)/saved?folder=${folderId}`);
+  }, [router]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Bookmark Folders</Text>
+          <View style={{ width: 32 }} />
+        </View>
+        <View style={styles.skeletonGrid}>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton.Rect key={i} width={FOLDER_CARD_WIDTH} height={FOLDER_CARD_WIDTH} borderRadius={radius.md} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>Bookmark Folders</Text>
+        <View style={{ width: 32 }} />
+      </View>
+
+      <FlatList
+        data={foldersArray}
+        keyExtractor={(item) => item.id}
+        numColumns={2}
+        columnWrapperStyle={styles.gridRow}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+        }
+        renderItem={({ item }) => (
+          <FolderCard
+            folder={item}
+            onPress={() => handleFolderPress(item.id)}
+            onLongPress={() => handleDeleteFolder(item.id)}
+          />
+        )}
+        ListEmptyComponent={() => (
+          <EmptyState
+            icon="bookmark"
+            title="No folders yet"
+            subtitle="Organize your saved content into folders"
+            actionLabel="Create Folder"
+            onAction={() => setCreateSheetVisible(true)}
+          />
+        )}
+        contentContainerStyle={styles.gridContainer}
+      />
+
+      {/* FAB */}
+      <Pressable
+        style={styles.fab}
+        onPress={() => setCreateSheetVisible(true)}
+        hitSlop={8}
+        accessibilityLabel="Create new folder"
+      >
+        <Icon name="plus" size="lg" color="#fff" />
+      </Pressable>
+
+      {/* Create Folder BottomSheet */}
+      <BottomSheet visible={createSheetVisible} onClose={() => setCreateSheetVisible(false)}>
+        <View style={styles.sheetContent}>
+          <Text style={styles.sheetTitle}>Create Folder</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Folder name"
+            placeholderTextColor={colors.text.tertiary}
+            value={newFolderName}
+            onChangeText={setNewFolderName}
+            autoFocus
+          />
+          <View style={styles.sheetButtons}>
+            <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
+              <Text style={styles.cancelText}>Cancel</Text>
+            </Pressable>
+            <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
+              <Text style={styles.createText}>Create</Text>
+            </Pressable>
+          </View>
+        </View>
+      </BottomSheet>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.dark.bg },
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  backBtn: { width: 32 },
+  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+
+  gridContainer: { paddingBottom: 100, paddingTop: spacing.base },
+  gridRow: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
+  folderCard: {
+    width: FOLDER_CARD_WIDTH,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  folderIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.dark.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  folderName: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    textAlign: 'center',
+    width: '100%',
+  },
+  folderCount: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
+  },
+  skeletonGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+    marginTop: spacing.base,
+  },
+
+  fab: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    right: spacing.xl,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.emerald,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+
+  sheetContent: { padding: spacing.xl },
+  sheetTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '600',
+    marginBottom: spacing.md,
+  },
+  input: {
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+    marginBottom: spacing.lg,
+  },
+  sheetButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.md,
+  },
+  cancelBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  cancelText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+  },
+  createBtn: {
+    backgroundColor: colors.emerald,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  createText: {
+    color: '#fff',
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+});

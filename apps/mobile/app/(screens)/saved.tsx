@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
   FlatList, Dimensions, RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -101,6 +102,10 @@ export default function SavedScreen() {
   const router = useRouter();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>('posts');
+  const params = useLocalSearchParams<{ folder?: string }>();
+  const folderId = params.folder;
+  const [folderItems, setFolderItems] = useState<string[]>([]);
+  const [folderLoading, setFolderLoading] = useState(false);
 
   const savedPostsQuery = useInfiniteQuery({
     queryKey: ['saved-posts'],
@@ -133,6 +138,36 @@ export default function SavedScreen() {
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'videos',
   });
+
+  useEffect(() => {
+    const loadFolder = async () => {
+      if (!folderId) {
+        setFolderItems([]);
+        return;
+      }
+      setFolderLoading(true);
+      try {
+        const stored = await AsyncStorage.getItem('bookmark-folders');
+        if (stored) {
+          const data = JSON.parse(stored);
+          const folder = data[folderId];
+          if (folder) {
+            setFolderItems(folder.itemIds || []);
+          } else {
+            setFolderItems([]);
+          }
+        } else {
+          setFolderItems([]);
+        }
+      } catch (error) {
+        console.error('Failed to load folder:', error);
+        setFolderItems([]);
+      } finally {
+        setFolderLoading(false);
+      }
+    };
+    loadFolder();
+  }, [folderId]);
 
   const posts: Post[] = savedPostsQuery.data?.pages.flatMap((p) => p.data) ?? [];
   const threads: Thread[] = savedThreadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -192,7 +227,7 @@ export default function SavedScreen() {
 
       {activeTab === 'posts' ? (
         <FlatList
-          data={posts}
+          data={filteredPosts}
           keyExtractor={(item) => item.id}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
@@ -228,7 +263,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'threads' ? (
         <FlatList
-          data={threads}
+          data={filteredThreads}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
             if (savedThreadsQuery.hasNextPage && !savedThreadsQuery.isFetchingNextPage) {
@@ -260,7 +295,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'reels' ? (
         <FlatList
-          data={reels}
+          data={filteredReels}
           keyExtractor={(item) => item.id}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
@@ -296,7 +331,7 @@ export default function SavedScreen() {
         />
       ) : (
         <FlatList
-          data={videos}
+          data={filteredVideos}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
             if (savedVideosQuery.hasNextPage && !savedVideosQuery.isFetchingNextPage) {

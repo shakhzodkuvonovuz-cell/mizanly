@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList,
 } from 'react-native';
@@ -26,9 +26,11 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, messagesApi } from '@/services/api';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { useHaptic } from '@/hooks/useHaptic';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const STORY_DURATION = 5000; // ms per story slide for images
+const QUICK_REACTIONS = ['❤️', '🔥', '👏', '😂', '😍', '😢'];
 
 function ProgressSegment({
   index,
@@ -132,6 +134,27 @@ export default function StoryViewerScreen() {
       storiesApi.markViewed(story.id).catch(() => {});
     }
   }, [story?.id]);
+  const { selection } = useHaptic();
+
+function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+  const handlePress = () => {
+    scale.value = withTiming(1.3, { duration: 100 }, () => {
+      scale.value = withTiming(1, { duration: 100 });
+    });
+    onPress();
+  };
+  return (
+    <Pressable onPress={handlePress} style={styles.reactionBtn} activeOpacity={0.7}>
+      <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
+        {emoji}
+      </Animated.Text>
+    </Pressable>
+  );
+}
 
   const replyMutation = useMutation({
     mutationFn: async () => {
@@ -141,6 +164,13 @@ export default function StoryViewerScreen() {
     onSuccess: () => {
       setReplyText('');
       setShowReply(false);
+    },
+    onError: (err: Error) => Alert.alert('Error', err.message),
+  });
+  const reactionMutation = useMutation({
+    mutationFn: async (emoji: string) => {
+      const convo = await messagesApi.createDM(group!.user.id);
+      await messagesApi.sendMessage(convo.id, { content: emoji });
     },
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
@@ -161,6 +191,11 @@ export default function StoryViewerScreen() {
   };
 
   const handleTapRight = () => advance();
+
+  const handleStoryReaction = (emoji: string) => {
+    selection();
+    reactionMutation.mutate(emoji);
+  };
 
   const timeAgo = story.createdAt
     ? formatDistanceToNowStrict(new Date(story.createdAt), { addSuffix: true })
@@ -241,6 +276,19 @@ export default function StoryViewerScreen() {
           </Text>
         </View>
       ) : null}
+
+      {/* Quick reactions */}
+      {!ownStory && (
+        <View style={styles.reactionsRow}>
+          {QUICK_REACTIONS.map(emoji => (
+            <EmojiReactionButton
+              key={emoji}
+              emoji={emoji}
+              onPress={() => handleStoryReaction(emoji)}
+            />
+          ))}
+        </View>
+      )}
 
       {/* Bottom area: reply bar for others, views tap for own */}
       {ownStory ? (
@@ -373,6 +421,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   overlayText: { fontSize: fontSize.xl, fontWeight: '700', textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.8)', textShadowRadius: 4, textShadowOffset: { width: 0, height: 1 } },
+  reactionsRow: {
+    position: 'absolute',
+    zIndex: 1,
+    bottom: 120,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.lg,
+    paddingHorizontal: spacing.base,
+  },
+  reactionBtn: {
+    padding: spacing.sm,
+  },
+  reactionEmoji: {
+    fontSize: fontSize.xl,
+  },
 
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },
   replyPlaceholder: {

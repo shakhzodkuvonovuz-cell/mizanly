@@ -18,7 +18,8 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
-import type { Video as VideoType, VideoComment } from '@/types';
+import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
+
 
 export default function VideoDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -33,6 +34,7 @@ export default function VideoDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyToId, setReplyToId] = useState<string | undefined>();
   const [showMenu, setShowMenu] = useState(false);
+  const [showChapters, setShowChapters] = useState(false);
 
   // Fetch video
   const videoQuery = useQuery({
@@ -50,6 +52,7 @@ export default function VideoDetailScreen() {
 
   const video = videoQuery.data;
   const comments = commentsQuery.data ?? [];
+  const chapters = video?.chapters ?? [];
 
   // Record view on mount
   useEffect(() => {
@@ -107,6 +110,17 @@ export default function VideoDetailScreen() {
       }
     }
   }, []);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const seekToChapter = (startTime: number) => {
+    videoRef.current?.setPositionAsync(startTime * 1000);
+    setShowChapters(false);
+  };
 
   const saveProgress = useCallback(() => {
     const progress = progressRef.current;
@@ -398,6 +412,35 @@ export default function VideoDetailScreen() {
                   ))}
                 </View>
               )}
+            </View>
+          )}
+
+          {/* Chapters */}
+          {chapters.length > 0 && (
+            <View style={styles.chaptersSection}>
+              <TouchableOpacity
+                style={styles.chapterHeader}
+                onPress={() => setShowChapters(!showChapters)}
+              >
+                <Icon name="layers" size="sm" color={colors.text.secondary} />
+                <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
+                <Icon
+                  name={showChapters ? 'chevron-down' : 'chevron-right'}
+                  size="sm"
+                  color={colors.text.tertiary}
+                />
+              </TouchableOpacity>
+              {showChapters &&
+                chapters.map((ch, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={styles.chapterRow}
+                    onPress={() => seekToChapter(ch.startTime)}
+                  >
+                    <Text style={styles.chapterTime}>{formatTime(ch.startTime)}</Text>
+                    <Text style={styles.chapterTitle}>{ch.title}</Text>
+                  </TouchableOpacity>
+                ))}
             </View>
           )}
 
@@ -703,5 +746,37 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: fontSize.xs,
     fontWeight: '600',
+  },
+  chaptersSection: {
+    marginBottom: spacing.lg,
+  },
+  chapterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  chapterHeaderText: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+  chapterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingLeft: spacing.xl,
+  },
+  chapterTime: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    minWidth: 40,
+  },
+  chapterTitle: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
   },
 });

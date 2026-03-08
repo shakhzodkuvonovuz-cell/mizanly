@@ -167,6 +167,16 @@ export default function ProfileScreen() {
   });
   const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
+  const pinnedThreadsQuery = useQuery({
+    queryKey: ['pinned-threads', username],
+    queryFn: async () => {
+      const response = await usersApi.getUserThreads(username);
+      return response.data.filter((thread) => thread.isPinned);
+    },
+    enabled: !!username && !!profile,
+  });
+  const pinnedThreads: Thread[] = pinnedThreadsQuery.data ?? [];
+
   const highlightsQuery = useQuery({
     queryKey: ['highlights', profile?.id],
     queryFn: () => storiesApi.getHighlights(profile!.id),
@@ -460,6 +470,41 @@ export default function ProfileScreen() {
         <StatItem num={profile._count?.posts ?? 0} label="Posts" />
       </View>
 
+      {/* Pinned threads */}
+      {pinnedThreads.length > 0 && (
+        <View style={styles.pinnedSection}>
+          <Text style={styles.sectionTitle}>Pinned</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pinnedScroll}>
+            {pinnedThreads.slice(0, 3).map((thread) => (
+              <Pressable
+                key={thread.id}
+                style={styles.pinnedItem}
+                onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
+              >
+                <View style={styles.pinnedContent}>
+                  {thread.mediaUrls.length > 0 ? (
+                    <Image
+                      source={{ uri: thread.thumbnailUrl ?? thread.mediaUrls[0] }}
+                      style={styles.pinnedImage}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={styles.pinnedText}>
+                      <Text style={styles.pinnedTextContent} numberOfLines={3}>
+                        {thread.content}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.pinBadge}>
+                    <Icon name="bookmark" size={12} color="#fff" />
+                  </View>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Minbar section (own profile only) */}
       {isOwnProfile && (
         <View style={styles.minbarSection}>
@@ -512,6 +557,12 @@ export default function ProfileScreen() {
           <>
             <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
               <Icon name="bookmark" size="sm" color={colors.text.primary} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive')}>
+              <Icon name="clock" size="sm" color={colors.text.primary} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/majlis-lists')}>
+              <Icon name="layers" size="sm" color={colors.text.primary} />
             </Pressable>
             <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
               <Icon name="settings" size="sm" color={colors.text.primary} />
@@ -853,6 +904,49 @@ const styles = StyleSheet.create({
   statNum: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
   statLabel: { color: colors.text.secondary, fontSize: fontSize.xs },
   statDivider: { width: 0.5, height: 30, backgroundColor: colors.dark.border },
+
+  pinnedSection: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.border,
+  },
+  pinnedScroll: {
+    marginHorizontal: -spacing.base,
+    paddingHorizontal: spacing.base,
+  },
+  pinnedItem: {
+    width: 120,
+    marginRight: spacing.md,
+  },
+  pinnedContent: {
+    width: 120,
+    height: 120,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  pinnedImage: {
+    width: '100%',
+    height: '100%',
+  },
+  pinnedText: {
+    flex: 1,
+    padding: spacing.xs,
+    justifyContent: 'center',
+  },
+  pinnedTextContent: {
+    color: colors.text.primary,
+    fontSize: fontSize.xs,
+  },
+  pinBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: radius.sm,
+    padding: 3,
+  },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 2 },

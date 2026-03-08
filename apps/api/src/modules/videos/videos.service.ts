@@ -26,6 +26,7 @@ const VIDEO_SELECT = {
   duration: true,
   category: true,
   tags: true,
+  chapters: true,
   viewsCount: true,
   likesCount: true,
   dislikesCount: true,

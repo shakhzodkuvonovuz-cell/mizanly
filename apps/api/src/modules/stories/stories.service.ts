@@ -150,6 +150,18 @@ export class StoriesService {
     return { deleted: true };
   }
 
+  async unarchive(storyId: string, userId: string) {
+    const story = await this.prisma.story.findUnique({ where: { id: storyId } });
+    if (!story) throw new NotFoundException('Story not found');
+    if (story.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.story.update({
+      where: { id: storyId },
+      data: { isArchived: false },
+    });
+    return { unarchived: true };
+  }
+
   async markViewed(storyId: string, viewerId: string) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story) throw new NotFoundException('Story not found');
@@ -252,6 +264,17 @@ export class StoriesService {
     return this.prisma.story.update({
       where: { id: storyId },
       data: { highlightAlbumId: albumId, isHighlight: true, isArchived: true },
+    });
+  }
+
+  async getArchived(userId: string) {
+    return this.prisma.story.findMany({
+      where: {
+        userId,
+        isArchived: true,
+      },
+      select: STORY_SELECT,
+      orderBy: { createdAt: 'desc' },
     });
   }
 }

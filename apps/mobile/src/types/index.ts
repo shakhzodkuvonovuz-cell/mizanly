@@ -95,6 +95,7 @@ export interface PollOption {
   text: string;
   votesCount: number;
   position: number;
+  percentage?: number;
   _count?: { votes: number };
 }
 
@@ -103,9 +104,11 @@ export interface Poll {
   question: string;
   options: PollOption[];
   endsAt?: string;
+  expiresAt?: string; // alias for endsAt
   totalVotes: number;
   allowMultiple: boolean;
   userVoteId?: string;
+  userVotedOptionId?: string; // alias for userVoteId
 }
 
 export interface Thread {
@@ -202,6 +205,11 @@ export interface Channel {
   isSubscribed?: boolean;
 }
 
+export interface VideoChapter {
+  title: string;
+  startTime: number; // seconds
+}
+
 export interface Video {
   id: string;
   userId: string;
@@ -213,6 +221,7 @@ export interface Video {
   duration: number;
   category: VideoCategory;
   tags: string[];
+  chapters?: VideoChapter[];
   viewsCount: number;
   likesCount: number;
   dislikesCount: number;
@@ -491,6 +500,40 @@ export interface CreatorStat {
   comments: number;
   shares: number;
   followers: number;
+}
+
+// ── New Batch 18 Types ──
+export interface ScheduledItem {
+  id: string;
+  type: 'post' | 'thread' | 'reel' | 'video';
+  title?: string;
+  content?: string;
+  caption?: string;
+  scheduledAt: string;
+  createdAt: string;
+}
+
+export interface MajlisList {
+  id: string;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  membersCount: number;
+  userId: string;
+  createdAt: string;
+}
+
+export interface SubtitleTrack {
+  id: string;
+  label: string;
+  language: string;
+  srtUrl: string;
+  videoId: string;
+}
+
+export interface VideoChapter {
+  title: string;
+  startTime: number; // seconds
 }
 
 // ── Pagination ──

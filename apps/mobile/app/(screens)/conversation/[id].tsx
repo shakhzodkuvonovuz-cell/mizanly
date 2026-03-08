@@ -423,7 +423,16 @@ function MessageBubble({
           )}
           <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>{time}</Text>
           {isOwn && (
-            <Icon name="check-check" size={12} color="rgba(255,255,255,0.6)" />
+            <View style={styles.receiptRow}>
+              <Icon
+                name={readByMembers.length > 0 ? 'check-check' : 'check'}
+                size="xs"
+                color={readByMembers.length > 0 ? colors.emerald : colors.text.tertiary}
+              />
+              {readByMembers.length > 0 && (
+                <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
+              )}
+            </View>
           )}
           {readByMembers.length > 0 && (
             <View style={styles.readReceipts}>
@@ -1597,5 +1606,15 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     fontWeight: '600',
+  },
+  receiptRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  readTime: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    marginLeft: spacing.xs,
   },
 });

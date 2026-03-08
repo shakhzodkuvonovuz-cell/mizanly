@@ -1,965 +1,825 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 17: Platform Intelligence + Creator Tools)
+# ARCHITECT INSTRUCTIONS — Mizanly (Batch 18: The Everything Batch)
 ## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
 
 **Last updated:** 2026-03-08 by Claude Opus 4.6
-**Previous batches:** 1-16 → See `docs/PROJECT_HISTORY.md`
+**Previous batches:** 1-17 → See `docs/PROJECT_HISTORY.md`
 
 ---
 
 ## Context
 
-Batch 16 cleaned the entire codebase — zero stubs, zero violations, zero broken wiring. Now we advance. This batch transforms Mizanly from "working app" to "intelligent platform" by adding:
+The schema has 20 models sitting idle with no service. Features that big platforms ship — post scheduling, pinned posts, story archive, video chapters, Majlis lists, read receipts — all have schema support but zero UI. 21 controllers have zero tests. This batch wires it ALL.
 
-1. **Engagement-scored feeds** — For You feeds ranked by engagement × recency, not just chronological
-2. **Admin moderation** — Review reports, ban users, remove content
-3. **Content recommendations** — People you may know, suggested content
-4. **Creator analytics screen** — Visualize engagement, growth, reach
-5. **Discover screen** — Trending hashtags, hot content across all spaces
-6. **Content preferences** — Filter settings, content sensitivity controls
-7. **Notification quiet hours** — DND schedule
-
-**13 agents. All parallel except Agent 13 (docs) runs last.**
+**25 agents. All parallel except Agent 25 (docs) runs last.**
 
 ---
 
-## Step 1 — Admin Moderation Module (Backend)
-**Agent 1** | NEW files:
-- `apps/api/src/modules/admin/admin.module.ts` (NEW)
-- `apps/api/src/modules/admin/admin.controller.ts` (NEW)
-- `apps/api/src/modules/admin/admin.service.ts` (NEW)
-- `apps/api/src/modules/admin/admin.service.spec.ts` (NEW)
-
-Create a full admin moderation module. Read CLAUDE.md for patterns.
-
-### admin.module.ts
-```ts
-import { Module } from '@nestjs/common';
-import { AdminController } from './admin.controller';
-import { AdminService } from './admin.service';
-
-@Module({
-  controllers: [AdminController],
-  providers: [AdminService],
-})
-export class AdminModule {}
-```
-
-### admin.controller.ts
-
-Create these endpoints (all require ClerkAuthGuard + admin check):
-
-```ts
-@ApiTags('Admin')
-@Controller('admin')
-@UseGuards(ClerkAuthGuard)
-@ApiBearerAuth()
-export class AdminController {
-  constructor(private adminService: AdminService) {}
-
-  // GET /admin/reports?status=PENDING&cursor=...
-  // Returns paginated reports with reporter + reported content
-  @Get('reports')
-  getReports(
-    @CurrentUser('id') adminId: string,
-    @Query('status') status?: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.adminService.getReports(adminId, status, cursor);
-  }
-
-  // GET /admin/reports/:id — Single report with full context
-  @Get('reports/:id')
-  getReport(
-    @CurrentUser('id') adminId: string,
-    @Param('id') reportId: string,
-  ) {
-    return this.adminService.getReport(adminId, reportId);
-  }
-
-  // PATCH /admin/reports/:id — Resolve a report (dismiss / warn / remove content / ban user)
-  @Patch('reports/:id')
-  resolveReport(
-    @CurrentUser('id') adminId: string,
-    @Param('id') reportId: string,
-    @Body() dto: { action: 'DISMISS' | 'WARN' | 'REMOVE_CONTENT' | 'BAN_USER'; note?: string },
-  ) {
-    return this.adminService.resolveReport(adminId, reportId, dto.action, dto.note);
-  }
-
-  // GET /admin/stats — Platform-wide stats (total users, posts, reports, active today)
-  @Get('stats')
-  getStats(@CurrentUser('id') adminId: string) {
-    return this.adminService.getStats(adminId);
-  }
-
-  // POST /admin/users/:id/ban — Ban a user
-  @Post('users/:id/ban')
-  @HttpCode(HttpStatus.OK)
-  banUser(
-    @CurrentUser('id') adminId: string,
-    @Param('id') targetId: string,
-    @Body() dto: { reason: string; duration?: number },
-  ) {
-    return this.adminService.banUser(adminId, targetId, dto.reason, dto.duration);
-  }
-
-  // POST /admin/users/:id/unban — Unban a user
-  @Post('users/:id/unban')
-  @HttpCode(HttpStatus.OK)
-  unbanUser(
-    @CurrentUser('id') adminId: string,
-    @Param('id') targetId: string,
-  ) {
-    return this.adminService.unbanUser(adminId, targetId);
-  }
-}
-```
-
-### admin.service.ts
-
-For the admin check, read the Prisma schema to see if there's a `role` or `isAdmin` field on User. If not, use a hardcoded admin user ID list from environment (`ADMIN_USER_IDS` comma-separated) or check `user.role === 'ADMIN'`.
-
-```ts
-@Injectable()
-export class AdminService {
-  constructor(private prisma: PrismaService) {}
-
-  private async assertAdmin(userId: string) {
-    const adminIds = (process.env.ADMIN_USER_IDS || '').split(',').map(s => s.trim());
-    if (!adminIds.includes(userId)) {
-      throw new ForbiddenException('Admin access required');
-    }
-  }
-
-  async getReports(adminId: string, status?: string, cursor?: string, limit = 20) {
-    await this.assertAdmin(adminId);
-    const where: any = {};
-    if (status) where.status = status;
-    if (cursor) where.createdAt = { lt: new Date(cursor) };
-
-    const reports = await this.prisma.report.findMany({
-      where,
-      include: {
-        reporter: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-        reportedUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: limit + 1,
-    });
-    // Standard pagination pattern — see CLAUDE.md
-    const hasMore = reports.length > limit;
-    const result = hasMore ? reports.slice(0, limit) : reports;
-    return {
-      data: result,
-      meta: {
-        cursor: hasMore ? result[result.length - 1].createdAt.toISOString() : null,
-        hasMore,
-      },
-    };
-  }
-
-  async getReport(adminId: string, reportId: string) {
-    await this.assertAdmin(adminId);
-    const report = await this.prisma.report.findUnique({
-      where: { id: reportId },
-      include: {
-        reporter: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-        reportedUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-      },
-    });
-    if (!report) throw new NotFoundException('Report not found');
-    return report;
-  }
-
-  async resolveReport(adminId: string, reportId: string, action: string, note?: string) {
-    await this.assertAdmin(adminId);
-    // Read the Report model to find the status field name and enum
-    // Update report status to RESOLVED + save action taken
-    return this.prisma.report.update({
-      where: { id: reportId },
-      data: {
-        status: 'RESOLVED',
-        // Add resolution fields if they exist in schema, otherwise use a note/metadata approach
-      },
-    });
-  }
-
-  async getStats(adminId: string) {
-    await this.assertAdmin(adminId);
-    const [users, posts, threads, reels, videos, pendingReports] = await Promise.all([
-      this.prisma.user.count({ where: { isDeactivated: false } }),
-      this.prisma.post.count(),
-      this.prisma.thread.count({ where: { isChainHead: true } }),
-      this.prisma.reel.count(),
-      this.prisma.video.count(),
-      this.prisma.report.count({ where: { status: 'PENDING' } }),
-    ]);
-    return { users, posts, threads, reels, videos, pendingReports };
-  }
-
-  async banUser(adminId: string, targetId: string, reason: string, duration?: number) {
-    await this.assertAdmin(adminId);
-    // Check if User model has isBanned/bannedAt fields
-    // If not, use isDeactivated as a soft-ban mechanism
-    return this.prisma.user.update({
-      where: { id: targetId },
-      data: { isDeactivated: true },
-    });
-  }
-
-  async unbanUser(adminId: string, targetId: string) {
-    await this.assertAdmin(adminId);
-    return this.prisma.user.update({
-      where: { id: targetId },
-      data: { isDeactivated: false },
-    });
-  }
-}
-```
-
-**IMPORTANT:** Read the Prisma schema FIRST to understand:
-- The `Report` model fields (status enum, FK fields)
-- Whether `User` has `role`, `isAdmin`, `isBanned` fields
-- Adapt all queries to match actual schema
-
-### admin.service.spec.ts
-
-Write 6-8 tests:
-- getReports returns paginated data
-- getReports rejects non-admin
-- getReport returns single report
-- getReport 404 for missing report
-- resolveReport updates status
-- getStats returns counts
-- banUser deactivates user
-- unbanUser reactivates user
-
-Follow existing spec patterns (mock PrismaService, use jest.fn()).
-
-**Verification:** All files compile. Tests pass.
+# PART A — NEW MOBILE SCREENS (Agents 1-5)
 
 ---
 
-## Step 2 — Recommendations Module (Backend)
-**Agent 2** | NEW files:
-- `apps/api/src/modules/recommendations/recommendations.module.ts` (NEW)
-- `apps/api/src/modules/recommendations/recommendations.controller.ts` (NEW)
-- `apps/api/src/modules/recommendations/recommendations.service.ts` (NEW)
+## Step 1 — Schedule Post Screen
+**Agent 1** | NEW file: `apps/mobile/app/(screens)/schedule-post.tsx`
 
-### Endpoints:
+The schema has `scheduledAt` on Post, Thread, Reel, and Video. Create a scheduling screen that lets users pick a date/time for their content.
 
-```
-GET /recommendations/people     — People you may know (mutual follows, similar interests)
-GET /recommendations/posts      — Suggested posts (high engagement, not yet seen)
-GET /recommendations/reels      — Suggested reels
-GET /recommendations/channels   — Suggested channels
-```
-
-### recommendations.service.ts
-
-**People you may know** — Friends-of-friends algorithm:
-```ts
-async suggestedPeople(userId: string, limit = 20) {
-  // 1. Get IDs I follow
-  const myFollowing = await this.prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
-  });
-  const myFollowingIds = myFollowing.map(f => f.followingId);
-
-  // 2. Get people my follows also follow (friends-of-friends)
-  const fofFollows = await this.prisma.follow.findMany({
-    where: {
-      followerId: { in: myFollowingIds },
-      followingId: { notIn: [...myFollowingIds, userId] },
-    },
-    select: { followingId: true },
-  });
-
-  // 3. Count mutual connections per suggested user
-  const mutualCount = new Map<string, number>();
-  for (const f of fofFollows) {
-    mutualCount.set(f.followingId, (mutualCount.get(f.followingId) || 0) + 1);
-  }
-
-  // 4. Sort by mutual count, take top N
-  const sortedIds = [...mutualCount.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([id]) => id);
-
-  // 5. Fetch user profiles
-  const users = await this.prisma.user.findMany({
-    where: { id: { in: sortedIds }, isDeactivated: false, isPrivate: false },
-    select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true, bio: true },
-  });
-
-  // Re-sort by mutual count and attach count
-  return users
-    .map(u => ({ ...u, mutualFollowers: mutualCount.get(u.id) || 0 }))
-    .sort((a, b) => b.mutualFollowers - a.mutualFollowers);
-}
-```
-
-**Suggested posts** — High engagement from last 48h that user hasn't interacted with:
-```ts
-async suggestedPosts(userId: string, limit = 20) {
-  const posts = await this.prisma.post.findMany({
-    where: {
-      createdAt: { gte: new Date(Date.now() - 48 * 60 * 60 * 1000) },
-      isRemoved: false,
-      userId: { not: userId },
-      user: { isDeactivated: false, isPrivate: false },
-    },
-    select: POST_SELECT, // reuse from posts module or define inline
-    orderBy: [
-      { likesCount: 'desc' },
-      { commentsCount: 'desc' },
-    ],
-    take: limit,
-  });
-  return posts;
-}
-```
-
-Apply same pattern for suggestedReels and suggestedChannels.
-
-All endpoints use `OptionalClerkAuthGuard` — work without auth but personalize when authenticated.
-
-**Verification:** All files compile.
-
----
-
-## Step 3 — Module Registration + Notification Quiet Hours
-**Agent 3** | Files:
-- `apps/api/src/app.module.ts` (EDIT)
-- `apps/api/src/modules/notifications/notifications.service.ts` (EDIT)
-
-### 3A — Register new modules in app.module.ts
-
-Add imports:
-```ts
-import { AdminModule } from './modules/admin/admin.module';
-import { RecommendationsModule } from './modules/recommendations/recommendations.module';
-```
-
-Add to `imports` array:
-```ts
-AdminModule,
-RecommendationsModule,
-```
-
-### 3B — Notification quiet hours
-
-In `notifications.service.ts`, find the `create` method (~line 96). Before sending push, add quiet hours check:
-
-```ts
-// Check quiet hours before sending push
-const settings = await this.prisma.userSettings.findUnique({
-  where: { userId: params.userId },
-  select: { quietHoursStart: true, quietHoursEnd: true },
-});
-
-if (settings?.quietHoursStart != null && settings?.quietHoursEnd != null) {
-  const now = new Date();
-  const currentHour = now.getUTCHours();
-  const start = settings.quietHoursStart;
-  const end = settings.quietHoursEnd;
-  const isQuiet = start <= end
-    ? (currentHour >= start && currentHour < end)
-    : (currentHour >= start || currentHour < end); // overnight range
-  if (isQuiet) {
-    // Store notification but skip push
-    return notification;
-  }
-}
-```
-
-**IMPORTANT:** Read the Prisma schema first. Check if `UserSettings` has `quietHoursStart` / `quietHoursEnd` fields. If NOT, skip the quiet hours feature — do NOT modify the schema. Just add the module registration (3A).
-
-**Verification:** `npx tsc --noEmit` — 0 errors.
-
----
-
-## Step 4 — Feed Scoring: Posts
-**Agent 4** | File:
-- `apps/api/src/modules/posts/posts.service.ts` (EDIT)
-
-Read the full file. Find the `getFeed` method (~lines 64-121).
-
-Currently the "foryou" feed is `orderBy: { createdAt: 'desc' }` — purely chronological.
-
-Replace the For You feed logic with engagement-weighted scoring:
-
-```ts
-if (type === 'foryou') {
-  // Check cache first (existing Redis cache logic stays)
-  // ...
-
-  // Fetch recent posts from last 72 hours
-  const recentPosts = await this.prisma.post.findMany({
-    where: {
-      createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
-      isRemoved: false,
-      user: { isDeactivated: false },
-      ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
-    },
-    select: POST_SELECT,
-    take: 200, // fetch more to score and rank
-    orderBy: { createdAt: 'desc' },
-  });
-
-  // Score each post: engagement weighted by recency
-  const scored = recentPosts.map(post => {
-    const ageHours = Math.max(1, (Date.now() - new Date(post.createdAt).getTime()) / 3600000);
-    const engagement = (post.likesCount * 3) + (post.commentsCount * 5) + (post.sharesCount * 7);
-    const score = engagement / Math.pow(ageHours, 1.5);
-    return { ...post, _score: score };
-  });
-
-  // Sort by score descending, paginate
-  scored.sort((a, b) => b._score - a._score);
-  const startIdx = cursor ? scored.findIndex(p => new Date(p.createdAt).toISOString() < cursor) : 0;
-  const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
-
-  const hasMore = page.length > limit;
-  const result = hasMore ? page.slice(0, limit) : page;
-
-  // Strip internal score field
-  const data = result.map(({ _score, ...post }) => post);
-
-  return {
-    data,
-    meta: {
-      cursor: hasMore ? data[data.length - 1].createdAt : null,
-      hasMore,
-    },
-  };
-}
-```
-
-**Keep the "following" feed as-is** (chronological from followed users).
-
-**IMPORTANT:** Read the file first. The `POST_SELECT` constant and Redis cache logic must be preserved. Only change the For You branch. Keep the existing `where` filter for blocked/muted users if present.
-
-**Verification:** Compiles. For You feed returns engagement-ranked posts.
-
----
-
-## Step 5 — Feed Scoring: Threads
-**Agent 5** | File:
-- `apps/api/src/modules/threads/threads.service.ts` (EDIT)
-
-Same approach as Step 4, but for threads. Find `getFeed` (~lines 96-143).
-
-Currently "foryou" and "following" are both `createdAt: 'desc'`. The "trending" branch already sorts by `likesCount`.
-
-Update the "foryou" branch with engagement scoring:
-
-```ts
-if (type === 'foryou') {
-  const recentThreads = await this.prisma.thread.findMany({
-    where: {
-      isChainHead: true,
-      isRemoved: false,
-      visibility: 'PUBLIC',
-      createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
-      ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
-    },
-    select: THREAD_SELECT,
-    take: 200,
-    orderBy: { createdAt: 'desc' },
-  });
-
-  const scored = recentThreads.map(thread => {
-    const ageHours = Math.max(1, (Date.now() - new Date(thread.createdAt).getTime()) / 3600000);
-    const engagement = (thread.likesCount * 3) + (thread.repliesCount * 5) + (thread.repostsCount * 4);
-    const score = engagement / Math.pow(ageHours, 1.5);
-    return { ...thread, _score: score };
-  });
-
-  scored.sort((a, b) => b._score - a._score);
-  // ... same pagination as Step 4
-}
-```
-
-Read the file first. Check what engagement fields exist on Thread (`likesCount`, `repliesCount`, `repostsCount`, etc.). Adapt the formula to use actual field names.
-
-**Keep "following" and "trending" feeds as-is.**
-
-**Verification:** Compiles. Threads For You is engagement-ranked.
-
----
-
-## Step 6 — Feed Scoring: Reels
-**Agent 6** | File:
-- `apps/api/src/modules/reels/reels.service.ts` (EDIT)
-
-Same approach. Find `getFeed` method.
-
-Reel engagement formula:
-```ts
-const engagement = (reel.likesCount * 2) + (reel.commentsCount * 4) + (reel.sharesCount * 6) + (reel.viewsCount * 0.1);
-const score = engagement / Math.pow(ageHours, 1.2); // Slower decay for reels (they stay relevant longer)
-```
-
-Reels use viewsCount heavily (TikTok-style), so weight views but lower than active engagement.
-
-**Verification:** Compiles. Reels feed is engagement-ranked.
-
----
-
-## Step 7 — Better Trending Algorithm
-**Agent 7** | File:
-- `apps/api/src/modules/search/search.service.ts` (EDIT)
-
-Find the `trending` method (~lines 339-358) and `suggestedUsers` method (~lines 385-402).
-
-### 7A — Time-decayed trending hashtags
-
-Currently just `orderBy: { postsCount: 'desc' }` (all-time). Replace with velocity-based trending:
-
-```ts
-async trending() {
-  // Trending hashtags: highest growth in last 24h
-  const recentHashtagPosts = await this.prisma.post.findMany({
-    where: {
-      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-      hashtags: { some: {} },
-    },
-    select: { hashtags: { select: { hashtag: { select: { id: true, name: true, postsCount: true } } } } },
-    take: 500,
-  });
-
-  // Count hashtag frequency in last 24h
-  const freq = new Map<string, { name: string; postsCount: number; recentCount: number }>();
-  for (const post of recentHashtagPosts) {
-    for (const ph of post.hashtags) {
-      const h = ph.hashtag;
-      const existing = freq.get(h.id);
-      if (existing) {
-        existing.recentCount++;
-      } else {
-        freq.set(h.id, { name: h.name, postsCount: h.postsCount, recentCount: 1 });
-      }
-    }
-  }
-
-  // Sort by recent count (velocity)
-  const hashtags = [...freq.values()]
-    .sort((a, b) => b.recentCount - a.recentCount)
-    .slice(0, 20);
-
-  // Threads stays the same (already engagement-sorted)
-  const threads = await this.prisma.thread.findMany({
-    where: {
-      visibility: 'PUBLIC',
-      isChainHead: true,
-      isRemoved: false,
-      createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-    },
-    select: THREAD_SEARCH_SELECT,
-    take: 10,
-    orderBy: { likesCount: 'desc' },
-  });
-
-  return { hashtags, threads };
-}
-```
-
-**IMPORTANT:** Read the schema first. Check how Post↔Hashtag relation works (through table? Direct relation?). The query above assumes a `PostHashtag` join model — adapt to actual schema.
-
-If the relation query is too complex, fall back to a simpler approach: just add a time filter to the existing hashtag query:
-```ts
-// Simpler fallback: hashtags with most posts in last 7 days
-const hashtags = await this.prisma.hashtag.findMany({
-  take: 20,
-  orderBy: { postsCount: 'desc' },
-  where: { updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
-});
-```
-
-### 7B — Better suggested users
-
-The existing `suggestedUsers` just sorts by follower count. Add shared-interest logic if possible:
-
-```ts
-async suggestedUsers(userId: string) {
-  // Get user's interests
-  const user = await this.prisma.user.findUnique({
-    where: { id: userId },
-    select: { interests: true },
-  });
-
-  const myFollowing = await this.prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
-  });
-  const myFollowingIds = myFollowing.map(f => f.followingId);
-
-  // Users with similar interests who I don't follow, sorted by followers
-  return this.prisma.user.findMany({
-    where: {
-      id: { notIn: [...myFollowingIds, userId] },
-      isPrivate: false,
-      isDeactivated: false,
-      ...(user?.interests?.length ? { interests: { hasSome: user.interests } } : {}),
-    },
-    select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true, bio: true },
-    take: 20,
-    orderBy: { followers: { _count: 'desc' } },
-  });
-}
-```
-
-**Read the schema** to check if `User.interests` exists and what type it is (String[]? Relation?). Adapt accordingly.
-
-**Verification:** Trending returns velocity-based hashtags. Suggested users considers interests.
-
----
-
-## Step 8 — Creator Analytics Screen
-**Agent 8** | NEW file:
-- `apps/mobile/app/(screens)/analytics.tsx` (NEW)
-
-Create a creator analytics dashboard screen. The backend endpoint `GET /users/me/analytics` already exists — it returns `{ stats: CreatorStat[] }` with up to 30 daily stat records.
-
-Read `apps/api/prisma/schema.prisma` to find the `CreatorStat` model fields (likely: `date`, `views`, `likes`, `followers`, `impressions`, etc.).
+Read the Prisma schema to confirm `Post.scheduledAt`, `Thread.scheduledAt` exist.
 
 ### Screen design:
+- Header: "Schedule Post" with back button
+- Shows a preview of the content being scheduled (title/caption)
+- Date picker (use `@react-native-community/datetimepicker` or a simple custom picker with BottomSheet)
+- Time picker
+- "Schedule" button → calls the create endpoint with `scheduledAt` field
+- "Post Now" button → calls without `scheduledAt`
+- Minimum schedule time: 15 minutes from now
+- Show scheduled time in user-friendly format
 
-```
-┌─────────────────────────────┐
-│ ← Creator Analytics         │
-├─────────────────────────────┤
-│                             │
-│  ┌─────┐ ┌─────┐ ┌─────┐  │
-│  │Views│ │Likes│ │Follows│  │  ← Summary cards (totals from 30d)
-│  │12.4K│ │ 892 │ │  +47 │  │
-│  └─────┘ └─────┘ └─────┘  │
-│                             │
-│  ┌─────────────────────────┐│
-│  │ ▁▂▃▅▇█▇▅▃▂▁▂▃▅▇█▇▅▃  ││  ← 30-day bar chart (simplified)
-│  │ Engagement over time    ││
-│  └─────────────────────────┘│
-│                             │
-│  Top Performing Content     │
-│  ┌──────────────────────┐  │
-│  │ Post: "..." — 1.2K ♥ │  │
-│  │ Reel: "..." — 45K ▶  │  │
-│  │ Thread: "..." — 892 ↻│  │
-│  └──────────────────────┘  │
-│                             │
-└─────────────────────────────┘
-```
+Receive `type` (post/thread/reel/video) and content data via route params. Read existing create screens (create-post.tsx, create-thread.tsx) to understand how they pass data.
 
-### Implementation:
+**If `@react-native-community/datetimepicker` is not installed**, build a simple custom picker using BottomSheet with hour/minute/date scrollable lists. Check `apps/mobile/package.json` for available date picker packages.
 
-```tsx
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@/components/ui/Icon';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
-import { usersApi } from '@/services/api';
-```
+All CLAUDE.md rules: theme tokens, Icon, BottomSheet (not Modal), Skeleton, EmptyState.
 
-Key requirements:
-1. Fetch from `usersApi.getAnalytics()` (add to api.ts if missing — but Agent 12 handles api.ts, so just use it assuming it exists)
-2. Summary cards at top: total views, total likes, follower change (sum of 30 days)
-3. Simple bar chart: Use `View` components with dynamic heights (no chart library needed):
-```tsx
-{stats.map((day, i) => (
-  <View key={i} style={[styles.bar, { height: Math.max(4, (day.views / maxViews) * 120) }]} />
-))}
-```
-4. Top performing content: Fetch user's own posts/reels sorted by engagement
-5. Loading → `Skeleton` patterns, empty → `EmptyState`
-6. ScrollView with `RefreshControl` (it's a dashboard, not a FlatList)
-7. All CLAUDE.md rules apply: theme tokens, Icon components, no hardcoded radius
-
-Read the schema to know exact `CreatorStat` fields before writing the screen.
-
-**Verification:** Screen renders with stats or empty state.
+**Verification:** Screen renders with date/time selection.
 
 ---
 
-## Step 9 — Discover Screen
-**Agent 9** | NEW file:
-- `apps/mobile/app/(screens)/discover.tsx` (NEW)
+## Step 2 — Story Archive Screen
+**Agent 2** | NEW file: `apps/mobile/app/(screens)/archive.tsx`
 
-A dedicated discovery/explore screen showing trending content across all 5 spaces.
-
-### Screen design:
-
-```
-┌─────────────────────────────┐
-│ ← Discover                  │
-├─────────────────────────────┤
-│ 🔥 Trending Hashtags        │
-│ ┌────┐ ┌────┐ ┌────┐ ←→   │  ← Horizontal scroll chips
-│ │#eid│ │#day│ │#dua│       │
-│ └────┘ └────┘ └────┘       │
-│                             │
-│ 📈 Hot Posts                │
-│ ┌──┐ ┌──┐ ┌──┐ ←→        │  ← Horizontal card carousel
-│ │  │ │  │ │  │             │
-│ └──┘ └──┘ └──┘             │
-│                             │
-│ 🎬 Trending Reels           │
-│ ┌──┬──┬──┐                 │  ← 3-column grid
-│ │  │  │  │                 │
-│ └──┴──┴──┘                 │
-│                             │
-│ 👥 Suggested People         │
-│ ┌────────────────────────┐ │
-│ │ @user1  [Follow]       │ │
-│ │ @user2  [Follow]       │ │
-│ └────────────────────────┘ │
-│                             │
-│ 📺 Rising Channels          │
-│ ┌────┐ ┌────┐ ←→          │
-│ │    │ │    │              │
-│ └────┘ └────┘              │
-└─────────────────────────────┘
-```
+Schema has `Story.isArchived`. Create a screen showing the user's archived stories.
 
 ### Implementation:
+- Header: "Archive" with back button
+- Grid layout (3 columns) showing archived story thumbnails
+- Tap → view archived story (navigate to story-viewer with archive flag)
+- Long-press → BottomSheet with "Unarchive" / "Delete" options
+- The API call: read `stories.service.ts` and `stories.controller.ts` to find if there's an archive endpoint. If not, use `GET /stories/me` with a filter param.
+- If no archive endpoint exists, fetch user's stories and filter `isArchived === true` client-side, noting that a proper endpoint should be added.
 
-Use multiple `useQuery` hooks:
-```ts
-const trendingQuery = useQuery({ queryKey: ['trending'], queryFn: () => searchApi.trending() });
-const suggestedPeopleQuery = useQuery({ queryKey: ['recommended-people'], queryFn: () => recommendationsApi.people() });
-const suggestedPostsQuery = useQuery({ queryKey: ['recommended-posts'], queryFn: () => recommendationsApi.posts() });
-const suggestedReelsQuery = useQuery({ queryKey: ['recommended-reels'], queryFn: () => recommendationsApi.reels() });
-const suggestedChannelsQuery = useQuery({ queryKey: ['recommended-channels'], queryFn: () => recommendationsApi.channels() });
-```
+Empty state: `<EmptyState icon="clock" title="No archived stories" subtitle="Stories you archive will appear here" />`
 
-Use a ScrollView (not FlatList — mixed content sections) with RefreshControl.
+All CLAUDE.md rules apply.
 
-Each section:
-- Hashtags → horizontal FlatList of chips, tap → `/(screens)/hashtag/${tag}`
-- Hot Posts → horizontal FlatList of PostCard-style mini cards
-- Trending Reels → 3-column grid (2 rows), tap → `/(screens)/reel/${id}`
-- Suggested People → vertical list, avatar + name + follow button
-- Rising Channels → horizontal cards, tap → `/(screens)/channel/${handle}`
-
-All CLAUDE.md rules: Skeleton loaders, EmptyState per section, theme tokens, Icon components.
-
-**Verification:** Screen renders with trending content sections.
+**Verification:** Screen renders grid or empty state.
 
 ---
 
-## Step 10 — Content Settings Screen
-**Agent 10** | NEW file:
-- `apps/mobile/app/(screens)/content-settings.tsx` (NEW)
+## Step 3 — Bookmark Folders Screen
+**Agent 3** | NEW file: `apps/mobile/app/(screens)/bookmark-folders.tsx`
 
-The settings.tsx has an empty "Content" section (line 192). This screen provides content preference controls.
+Currently bookmarks are a flat list. This screen lets users organize saved content into named folders.
+
+Read the Prisma schema for any BookmarkFolder or Collection model.
+
+### If schema has a folder/collection model:
+- Fetch folders from API
+- Display as a list of folder cards (name, item count, cover thumbnail)
+- Tap → navigate to `/(screens)/saved?folder=${folderId}`
+- "Create Folder" FAB → BottomSheet with name input
+
+### If schema does NOT have folder model:
+- Implement client-side folders using AsyncStorage
+- `AsyncStorage.getItem('bookmark-folders')` → `{ [folderId]: { name, itemIds[] } }`
+- Same UI but backed by local storage
+- Note: This is a client-only solution; server-backed folders need schema migration
+
+All CLAUDE.md rules.
+
+**Verification:** Screen renders with folder management.
+
+---
+
+## Step 4 — Manage Data / Privacy Center Screen
+**Agent 4** | NEW file: `apps/mobile/app/(screens)/manage-data.tsx`
+
+Privacy center for data management:
 
 ### Design:
-
 ```
 ┌─────────────────────────────┐
-│ ← Content Preferences       │
+│ ← Manage Your Data          │
 ├─────────────────────────────┤
-│ Feed Preferences            │
-│ ┌──────────────────────────┐│
-│ │ Saf default: Following ▼ ││  ← Picker: following/foryou
-│ │ Majlis default: ForYou ▼ ││  ← Picker: foryou/following/trending
-│ └──────────────────────────┘│
+│ Download Your Data           │
+│ Request a copy of all your  │
+│ data. We'll notify you      │
+│ when it's ready.            │
+│ [Request Download]          │
 │                             │
-│ Content Filters             │
-│ ┌──────────────────────────┐│
-│ │ ☐ Filter sensitive content││  ← Toggle (from settings API)
-│ │ ☐ Hide reposted content  ││  ← Toggle (local, store in Zustand)
-│ └──────────────────────────┘│
+│ Connected Apps              │
+│ No connected apps           │
 │                             │
-│ Blocked Keywords            │
-│ [Manage →]                  │  ← Navigate to blocked-keywords
+│ Clear Search History        │
+│ [Clear]                     │
 │                             │
-│ Digital Wellbeing           │
-│ ┌──────────────────────────┐│
-│ │ Daily reminder: Off ▼    ││  ← Picker: off/30min/1h/2h
-│ └──────────────────────────┘│
+│ Clear Watch History         │
+│ [Clear]                     │
+│                             │
+│ Delete Account              │
+│ [Delete Account] (red)      │
 └─────────────────────────────┘
 ```
 
-Implementation:
-- Fetch settings via `settingsApi.get()`
-- Feed defaults: read from Zustand store (`safFeedType`, `majlisFeedType`), update via setters
-- Content filters: call `settingsApi.updateWellbeing()` for server-backed settings
-- Local preferences: persist in Zustand (add new fields if needed, but Agent 10 should NOT edit store/index.ts — just use existing fields)
-- Navigate to blocked-keywords via `router.push('/(screens)/blocked-keywords')`
+- "Request Download" → `Alert.alert` confirmation → call a hypothetical `/users/me/export` endpoint (or show "Coming soon" if endpoint doesn't exist — read the backend to check)
+- "Clear Search History" → `AsyncStorage.removeItem('search-history')` (read search.tsx to see the key name)
+- "Clear Watch History" → call `usersApi.clearWatchHistory()` (already exists!)
+- "Delete Account" → Navigate to settings.tsx delete flow or duplicate the delete confirmation logic
 
-All CLAUDE.md rules apply. Use `BottomSheet` for picker dropdowns, not RN `Picker`.
+Use ScrollView with RefreshControl. All CLAUDE.md rules.
 
-**Verification:** Screen renders and all toggles work.
+**Verification:** Screen renders with working buttons.
 
 ---
 
-## Step 11 — Settings Screen Wiring
-**Agent 11** | File:
-- `apps/mobile/app/(screens)/settings.tsx` (EDIT)
+## Step 5 — Majlis Lists (Twitter Lists)
+**Agent 5** | NEW files:
+- `apps/mobile/app/(screens)/majlis-lists.tsx` (NEW)
+- `apps/mobile/app/(screens)/majlis-list/[id].tsx` (NEW)
 
-Read the full file. Make these changes:
+Schema has `MajlisList` and `MajlisListMember` models. Create both screens.
 
-### 11A — Wire the empty Content section
+### majlis-lists.tsx — Lists overview:
+- Header: "Lists" with back button + "Create List" icon button
+- FlatList of user's lists (name, description, member count, privacy)
+- Tap → navigate to `/(screens)/majlis-list/${list.id}`
+- "Create List" → BottomSheet with name input, description, toggle public/private
+- API: Read the schema to understand MajlisList fields. Call the appropriate API (Agent 19 will create the API client methods, so just use `majlisListsApi.getLists()` etc.)
 
-The Content section at ~line 192 is just a header with no items. Add navigation items:
+### majlis-list/[id].tsx — List detail:
+- Header: List name with back button + "Edit" icon
+- Tab selector: Members | Timeline
+- Members tab: FlatList of member profiles with "Remove" option (if owner)
+- Timeline tab: FlatList of threads from list members (fetch threads filtered by member IDs)
+- "Add Members" button → search/select users BottomSheet
+- Long-press member → BottomSheet with "Remove from list"
 
-```tsx
-{/* Content section */}
-<Text style={styles.sectionTitle}>Content</Text>
-<SettingsRow
-  icon="layers"
-  label="Content Preferences"
-  onPress={() => router.push('/(screens)/content-settings')}
-  showChevron
-/>
-```
+Both screens: RefreshControl, Skeleton, EmptyState, all CLAUDE.md rules.
 
-### 11B — Add Analytics navigation
-
-Add a new section above "Account" section:
-
-```tsx
-<Text style={styles.sectionTitle}>Creator</Text>
-<SettingsRow
-  icon="bar-chart-2"
-  label="Analytics"
-  onPress={() => router.push('/(screens)/analytics')}
-  showChevron
-/>
-```
-
-### 11C — Add Discover navigation (optional)
-
-If there's a good place, add a Discovery link. But the discover screen is more likely accessed from search — so this may not be needed. Use your judgment after reading the file.
-
-**Read the file first** to understand the `SettingsRow` component pattern (it might be inline or a reusable component). Match the existing style exactly.
-
-**Verification:** Content section has items. Analytics row visible.
+**Verification:** Both screens render. Lists can be viewed.
 
 ---
 
-## Step 12 — Mobile API Client + Types
-**Agent 12** | Files:
+# PART B — NEW BACKEND MODULES (Agents 6-9)
+
+---
+
+## Step 6 — Scheduling Module
+**Agent 6** | NEW files:
+- `apps/api/src/modules/scheduling/scheduling.module.ts` (NEW)
+- `apps/api/src/modules/scheduling/scheduling.controller.ts` (NEW)
+- `apps/api/src/modules/scheduling/scheduling.service.ts` (NEW)
+
+Read schema to confirm `Post.scheduledAt`, `Thread.scheduledAt`, `Reel.scheduledAt`, `Video.scheduledAt`.
+
+### Endpoints:
+```
+GET  /scheduling/scheduled       — All user's scheduled content (across types)
+PATCH /scheduling/:type/:id      — Update scheduled time (type = post|thread|reel|video)
+DELETE /scheduling/:type/:id     — Cancel scheduled post (revert to draft or delete)
+POST /scheduling/publish-now/:type/:id — Publish immediately
+```
+
+### Service logic:
+- `getScheduled(userId)` → Query posts/threads/reels/videos where `scheduledAt IS NOT NULL` and `scheduledAt > now` and `userId = userId`. Combine into a unified list sorted by scheduledAt.
+- `updateSchedule(userId, type, id, scheduledAt)` → Update the scheduledAt field on the appropriate model. Validate: must be >= 15 min from now.
+- `cancelSchedule(userId, type, id)` → Set scheduledAt to null or delete the item
+- `publishNow(userId, type, id)` → Set scheduledAt to null (makes it live)
+
+All endpoints require ClerkAuthGuard. Verify ownership before update/delete.
+
+**Verification:** Compiles. Endpoints return data.
+
+---
+
+## Step 7 — Majlis Lists Module
+**Agent 7** | NEW files:
+- `apps/api/src/modules/majlis-lists/majlis-lists.module.ts` (NEW)
+- `apps/api/src/modules/majlis-lists/majlis-lists.controller.ts` (NEW)
+- `apps/api/src/modules/majlis-lists/majlis-lists.service.ts` (NEW)
+
+Read schema to understand `MajlisList` and `MajlisListMember` models.
+
+### Endpoints:
+```
+GET    /majlis-lists              — User's lists (owned + subscribed)
+POST   /majlis-lists              — Create list
+GET    /majlis-lists/:id          — List detail with member count
+PATCH  /majlis-lists/:id          — Update list (name, description, isPublic)
+DELETE /majlis-lists/:id          — Delete list (owner only)
+GET    /majlis-lists/:id/members  — List members (paginated)
+POST   /majlis-lists/:id/members  — Add member
+DELETE /majlis-lists/:id/members/:userId — Remove member
+GET    /majlis-lists/:id/timeline — Threads from list members (paginated, cursor)
+```
+
+### Service logic:
+- Timeline: Fetch threads where `userId IN (list member IDs)`, `isChainHead: true`, ordered by `createdAt: 'desc'`
+- Only list owner can add/remove members and update/delete
+- Public lists can be subscribed to by anyone
+- Standard pagination on all list endpoints
+
+**Verification:** Compiles. All CRUD works.
+
+---
+
+## Step 8 — Polls Service Module
+**Agent 8** | NEW files:
+- `apps/api/src/modules/polls/polls.module.ts` (NEW)
+- `apps/api/src/modules/polls/polls.controller.ts` (NEW)
+- `apps/api/src/modules/polls/polls.service.ts` (NEW)
+
+Schema has `Poll`, `PollOption`, `PollVote` models. Currently polls are created inline with threads but have no dedicated service.
+
+### Endpoints:
+```
+GET    /polls/:id           — Get poll with options and vote counts
+POST   /polls/:id/vote      — Vote on a poll option (body: { optionId })
+DELETE /polls/:id/vote      — Retract vote
+GET    /polls/:id/voters    — List voters per option (paginated)
+```
+
+### Service logic:
+- Read the schema to understand Poll ↔ PollOption ↔ PollVote relations
+- Vote: Check if user already voted (prevent double voting). Create PollVote, increment option votesCount.
+- Retract: Delete PollVote, decrement option votesCount.
+- Get poll: Include options with vote counts. If authenticated, include `userVotedOptionId`.
+- Voters: Paginated list of users who voted for a specific option.
+
+Use `OptionalClerkAuthGuard` on GET (show personalized vote status). Use `ClerkAuthGuard` on POST/DELETE.
+
+**Verification:** Compiles. Vote/retract works.
+
+---
+
+## Step 9 — Subtitles Module
+**Agent 9** | NEW files:
+- `apps/api/src/modules/subtitles/subtitles.module.ts` (NEW)
+- `apps/api/src/modules/subtitles/subtitles.controller.ts` (NEW)
+- `apps/api/src/modules/subtitles/subtitles.service.ts` (NEW)
+
+Schema has `SubtitleTrack` model.
+
+### Endpoints:
+```
+GET    /videos/:videoId/subtitles         — List subtitle tracks for a video
+POST   /videos/:videoId/subtitles         — Upload subtitle track (label, language, srtUrl)
+DELETE /videos/:videoId/subtitles/:id     — Delete subtitle track (owner only)
+GET    /videos/:videoId/subtitles/:id/srt — Get SRT file content (redirect to R2 URL)
+```
+
+### Service logic:
+- Create: Validate video exists and user is channel owner. Store subtitle metadata.
+- List: Return all subtitle tracks for a video (language, label, URL).
+- Delete: Owner-only. Remove from DB.
+- SRT content: Redirect to the stored `srtUrl` (Cloudflare R2 presigned URL).
+
+**Verification:** Compiles. Subtitle tracks can be listed.
+
+---
+
+# PART C — EXISTING MOBILE EDITS (Agents 10-17)
+
+---
+
+## Step 10 — Story Viewer: Emoji Reactions
+**Agent 10** | File: `apps/mobile/app/(screens)/story-viewer.tsx` (EDIT)
+
+Read the full file. Add emoji reaction functionality:
+
+1. Add a row of 6 quick-reaction emojis below the story content: ❤️ 🔥 👏 😂 😍 😢
+2. Each emoji is a `Pressable` that:
+   - Calls the stories API to react (check if a react endpoint exists in stories.controller.ts)
+   - Shows a scale animation (emoji bounces) using Reanimated
+   - Haptic feedback on tap
+3. If no backend react endpoint exists, emit a socket event or create a local-only animation (the reaction is the feedback itself, like Instagram's quick reactions that send a DM)
+
+Implementation approach:
+```tsx
+const QUICK_REACTIONS = ['❤️', '🔥', '👏', '😂', '😍', '😢'];
+
+// In the render, add below the story:
+<View style={styles.reactionsRow}>
+  {QUICK_REACTIONS.map(emoji => (
+    <Pressable key={emoji} onPress={() => handleStoryReaction(emoji)} style={styles.reactionBtn}>
+      <Text style={styles.reactionEmoji}>{emoji}</Text>
+    </Pressable>
+  ))}
+</View>
+```
+
+For `handleStoryReaction`: Send as a DM reply with the emoji (using the existing reply mechanism in the file). Read how the reply input currently works and reuse that pattern.
+
+**Verification:** Emoji row visible. Tap sends reaction.
+
+---
+
+## Step 11 — Hashtag: Follow Button
+**Agent 11** | File: `apps/mobile/app/(screens)/hashtag/[tag].tsx` (EDIT)
+
+Read the full file. Read the Prisma schema for any `HashtagFollow` or similar model.
+
+### If schema has HashtagFollow model:
+- Add a "Follow" button next to the hashtag header
+- Call API to follow/unfollow
+- Toggle button state (Following ↔ Follow)
+
+### If schema does NOT have HashtagFollow:
+- Implement client-side hashtag follow using AsyncStorage
+- Key: `followed-hashtags` → `string[]`
+- Button toggles inclusion in the array
+- Show followed state on load
+
+Either way:
+- Use `ActionButton` component or styled Pressable matching the follow button pattern on profile
+- Add haptic feedback on toggle
+
+**Verification:** Follow button visible and toggles state.
+
+---
+
+## Step 12 — Video: Chapters Display
+**Agent 12** | File: `apps/mobile/app/(screens)/video/[id].tsx` (EDIT)
+
+Read the full file. Schema has `Video.chapters` as `Json?`.
+
+Read the backend `videos.service.ts` to understand what format `chapters` uses (likely `[{ title: string, startTime: number }]`).
+
+### Implementation:
+1. Parse chapters from video data
+2. Below the video player, show a "Chapters" section (collapsible):
+```tsx
+{chapters.length > 0 && (
+  <Pressable onPress={() => setShowChapters(!showChapters)} style={styles.chapterHeader}>
+    <Icon name="layers" size="sm" color={colors.text.secondary} />
+    <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
+    <Icon name={showChapters ? 'chevron-down' : 'chevron-right'} size="sm" color={colors.text.tertiary} />
+  </Pressable>
+)}
+{showChapters && chapters.map((ch, i) => (
+  <Pressable key={i} onPress={() => seekToChapter(ch.startTime)} style={styles.chapterRow}>
+    <Text style={styles.chapterTime}>{formatTime(ch.startTime)}</Text>
+    <Text style={styles.chapterTitle}>{ch.title}</Text>
+  </Pressable>
+))}
+```
+3. `seekToChapter`: Find the video ref and call `videoRef.current?.setPositionAsync(ch.startTime * 1000)` (or equivalent for the video player being used).
+
+Read the file to understand which video player component is used (expo-av Video, react-native-video, etc.) and its seek API.
+
+**Verification:** Chapters section visible when video has chapters data.
+
+---
+
+## Step 13 — Profile: Pinned Posts + Archive Link
+**Agent 13** | File: `apps/mobile/app/(screens)/profile/[username].tsx` (EDIT)
+
+Read the full file. Read schema for `Thread.isPinned` or `Post.isPinned` fields.
+
+### 13A — Pinned posts section:
+If schema has isPinned:
+- Above the posts grid, show pinned items (max 3)
+- Query: fetch user's posts/threads where `isPinned: true`
+- Display with a 📌 pin icon badge overlay
+- Tap → navigate to post/thread detail
+
+### 13B — Archive link (own profile only):
+- When viewing own profile, add an "Archive" icon button in the header area
+- `<Pressable onPress={() => router.push('/(screens)/archive')}>`
+- Use `<Icon name="clock" />` for archive
+
+### 13C — Lists link (own profile only):
+- Add a "Lists" row or icon button
+- Navigate to `/(screens)/majlis-lists`
+
+Read the file to understand the profile header layout and where to place these.
+
+**Verification:** Pinned section shows when pins exist. Archive button visible on own profile.
+
+---
+
+## Step 14 — Channel: Fix TODO Stubs
+**Agent 14** | File: `apps/mobile/app/(screens)/channel/[handle].tsx` (EDIT)
+
+Read the full file. Fix 3 TODO stubs:
+
+### Line ~421 — Copy channel link:
+```ts
+import * as Clipboard from 'expo-clipboard';
+// ...
+await Clipboard.setStringAsync(`mizanly://channel/${channel.handle}`);
+Alert.alert('Copied', 'Channel link copied to clipboard');
+```
+
+### Line ~436 — Native share:
+```ts
+import { Share } from 'react-native';
+// ...
+await Share.share({
+  message: `Check out ${channel.name} on Mizanly`,
+  url: `mizanly://channel/${channel.handle}`,
+});
+```
+
+### Line ~444 — Copy link (likely same as 421):
+Same Clipboard implementation.
+
+Check if `expo-clipboard` and `Share` are already imported. Add if missing.
+
+**Verification:** Copy and share buttons work (no more TODO comments).
+
+---
+
+## Step 15 — Conversation: Read Receipts Display
+**Agent 15** | File: `apps/mobile/app/(screens)/conversation/[id].tsx` (EDIT)
+
+Read the full file. Schema has `Message.readAt`.
+
+### Implementation:
+In the message bubble rendering, for sent messages (from current user), add read receipt indicators:
+
+```tsx
+{msg.senderId === user?.id && (
+  <View style={styles.receiptRow}>
+    <Icon
+      name={msg.readAt ? 'check-check' : 'check'}
+      size="xs"
+      color={msg.readAt ? colors.emerald : colors.text.tertiary}
+    />
+    {msg.readAt && (
+      <Text style={styles.readTime}>{format(new Date(msg.readAt), 'HH:mm')}</Text>
+    )}
+  </View>
+)}
+```
+
+Find where individual messages are rendered. It might be a `renderMessage` function or inline in the FlatList `renderItem`. Read the full file to locate it.
+
+Style the receipt row: `flexDirection: 'row'`, `alignItems: 'center'`, small gap, right-aligned below the message bubble.
+
+Double check icon: `check` = sent, `check-check` = read (WhatsApp-style). Verify both icon names exist in CLAUDE.md Icon list. Both `check` and `check-check` are listed.
+
+**Verification:** Read receipts (✓ vs ✓✓) visible on sent messages.
+
+---
+
+## Step 16 — CommentsSheet: Fix Reply Stub
+**Agent 16** | File: `apps/mobile/src/components/bakra/CommentsSheet.tsx` (EDIT)
+
+Read the full file. Line ~88 has a TODO for reply functionality.
+
+### Implementation:
+1. Add state for reply target: `const [replyTo, setReplyTo] = useState<Comment | null>(null);`
+2. Wire the Reply button to set the reply target
+3. Show a reply indicator above the comment input:
+```tsx
+{replyTo && (
+  <View style={styles.replyBanner}>
+    <Text style={styles.replyLabel}>Replying to @{replyTo.user.username}</Text>
+    <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+      <Icon name="x" size="xs" color={colors.text.tertiary} />
+    </Pressable>
+  </View>
+)}
+```
+4. When sending a comment, include `replyToId: replyTo?.id` in the API call
+5. Clear replyTo after sending
+
+Read the existing send comment logic and adapt.
+
+**Verification:** Reply button works. Reply indicator shows. Reply sends with parent ID.
+
+---
+
+## Step 17 — Store: Add Missing State
+**Agent 17** | File: `apps/mobile/src/store/index.ts` (EDIT)
+
+Read the full file. Add missing state fields:
+
+```ts
+// Add to AppState interface:
+followedHashtags: string[];
+addFollowedHashtag(tag: string): void;
+removeFollowedHashtag(tag: string): void;
+
+// Add to create store:
+followedHashtags: [],
+addFollowedHashtag: (tag) => set((s) => ({
+  followedHashtags: [...s.followedHashtags, tag],
+})),
+removeFollowedHashtag: (tag) => set((s) => ({
+  followedHashtags: s.followedHashtags.filter(t => t !== tag),
+})),
+```
+
+Add `followedHashtags` to the `partialize` persist config so it survives app restarts.
+
+Add selector: `export const useFollowedHashtags = () => useStore(s => s.followedHashtags);`
+
+**Verification:** Store compiles. New state accessible.
+
+---
+
+# PART D — BACKEND EDITS (Agent 18)
+
+---
+
+## Step 18 — Register New Modules + Backend Wiring
+**Agent 18** | Files:
+- `apps/api/src/app.module.ts` (EDIT)
+
+Register all 4 new backend modules:
+```ts
+import { SchedulingModule } from './modules/scheduling/scheduling.module';
+import { MajlisListsModule } from './modules/majlis-lists/majlis-lists.module';
+import { PollsModule } from './modules/polls/polls.module';
+import { SubtitlesModule } from './modules/subtitles/subtitles.module';
+```
+
+Add all to `imports` array.
+
+**Verification:** `npx tsc --noEmit` — 0 errors after all backend agents complete.
+
+---
+
+# PART E — MOBILE API + TYPES (Agent 19)
+
+---
+
+## Step 19 — API Client + Types Updates
+**Agent 19** | Files:
 - `apps/mobile/src/services/api.ts` (EDIT)
 - `apps/mobile/src/types/index.ts` (EDIT)
 
-### 12A — api.ts: Add new API groups
-
-Read the full file. Add after existing API groups:
+### api.ts — Add new API groups:
 
 ```ts
-// Admin API
-export const adminApi = {
-  getReports: (status?: string, cursor?: string) =>
-    api.get<PaginatedResponse<Report>>(`/admin/reports${qs({ status, cursor })}`),
-  getReport: (id: string) =>
-    api.get<Report>(`/admin/reports/${id}`),
-  resolveReport: (id: string, action: string, note?: string) =>
-    api.patch(`/admin/reports/${id}`, { action, note }),
-  getStats: () =>
-    api.get<AdminStats>('/admin/stats'),
-  banUser: (id: string, reason: string, duration?: number) =>
-    api.post(`/admin/users/${id}/ban`, { reason, duration }),
-  unbanUser: (id: string) =>
-    api.post(`/admin/users/${id}/unban`),
+// Scheduling API
+export const schedulingApi = {
+  getScheduled: () => api.get<ScheduledItem[]>('/scheduling/scheduled'),
+  updateSchedule: (type: string, id: string, scheduledAt: string) =>
+    api.patch(`/scheduling/${type}/${id}`, { scheduledAt }),
+  cancelSchedule: (type: string, id: string) =>
+    api.delete(`/scheduling/${type}/${id}`),
+  publishNow: (type: string, id: string) =>
+    api.post(`/scheduling/publish-now/${type}/${id}`),
 };
 
-// Recommendations API
-export const recommendationsApi = {
-  people: () => api.get<SuggestedUser[]>('/recommendations/people'),
-  posts: () => api.get<Post[]>('/recommendations/posts'),
-  reels: () => api.get<Reel[]>('/recommendations/reels'),
-  channels: () => api.get<Channel[]>('/recommendations/channels'),
+// Majlis Lists API
+export const majlisListsApi = {
+  getLists: () => api.get<MajlisList[]>('/majlis-lists'),
+  create: (data: { name: string; description?: string; isPublic?: boolean }) =>
+    api.post<MajlisList>('/majlis-lists', data),
+  getById: (id: string) => api.get<MajlisList>(`/majlis-lists/${id}`),
+  update: (id: string, data: Partial<MajlisList>) =>
+    api.patch(`/majlis-lists/${id}`, data),
+  delete: (id: string) => api.delete(`/majlis-lists/${id}`),
+  getMembers: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/majlis-lists/${id}/members${qs({ cursor })}`),
+  addMember: (id: string, userId: string) =>
+    api.post(`/majlis-lists/${id}/members`, { userId }),
+  removeMember: (id: string, userId: string) =>
+    api.delete(`/majlis-lists/${id}/members/${userId}`),
+  getTimeline: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/majlis-lists/${id}/timeline${qs({ cursor })}`),
+};
+
+// Polls API
+export const pollsApi = {
+  get: (id: string) => api.get<Poll>(`/polls/${id}`),
+  vote: (id: string, optionId: string) =>
+    api.post(`/polls/${id}/vote`, { optionId }),
+  retractVote: (id: string) => api.delete(`/polls/${id}/vote`),
+  getVoters: (id: string, optionId: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/polls/${id}/voters${qs({ optionId, cursor })}`),
+};
+
+// Subtitles API
+export const subtitlesApi = {
+  list: (videoId: string) => api.get<SubtitleTrack[]>(`/videos/${videoId}/subtitles`),
+  upload: (videoId: string, data: { label: string; language: string; srtUrl: string }) =>
+    api.post(`/videos/${videoId}/subtitles`, data),
+  delete: (videoId: string, trackId: string) =>
+    api.delete(`/videos/${videoId}/subtitles/${trackId}`),
+};
+
+// Stories reactions (if endpoint exists)
+export const storiesReactionsApi = {
+  react: (storyId: string, emoji: string) =>
+    api.post(`/stories/${storyId}/react`, { emoji }),
 };
 ```
 
-Also verify `usersApi.getAnalytics` exists. If not, add:
+Also add to `usersApi` if missing:
 ```ts
-getAnalytics: () => api.get<{ stats: CreatorStat[] }>('/users/me/analytics'),
+getArchive: () => api.get<Story[]>('/stories/me/archived'),
 ```
 
-### 12B — types/index.ts: Add new types
-
-Read the full file. Add missing types:
+### types/index.ts — Add new types:
 
 ```ts
-export interface Report {
+export interface ScheduledItem {
   id: string;
-  reason: string;
-  status: string;
+  type: 'post' | 'thread' | 'reel' | 'video';
+  title?: string;
+  content?: string;
+  caption?: string;
+  scheduledAt: string;
   createdAt: string;
-  reporter: { id: string; username: string; displayName?: string; avatarUrl?: string };
-  reportedUser?: { id: string; username: string; displayName?: string; avatarUrl?: string };
-  postId?: string;
-  threadId?: string;
-  reelId?: string;
-  videoId?: string;
 }
 
-export interface AdminStats {
-  users: number;
-  posts: number;
-  threads: number;
-  reels: number;
-  videos: number;
-  pendingReports: number;
-}
-
-export interface SuggestedUser {
+export interface MajlisList {
   id: string;
-  username: string;
-  displayName?: string;
-  avatarUrl?: string;
-  isVerified: boolean;
-  bio?: string;
-  mutualFollowers?: number;
+  name: string;
+  description?: string;
+  isPublic: boolean;
+  membersCount: number;
+  userId: string;
+  createdAt: string;
 }
 
-export interface CreatorStat {
+export interface Poll {
   id: string;
-  date: string;
-  views: number;
-  likes: number;
-  followers: number;
-  // Add other fields after reading schema
+  question: string;
+  options: PollOption[];
+  totalVotes: number;
+  userVotedOptionId?: string;
+  expiresAt?: string;
+}
+
+export interface PollOption {
+  id: string;
+  text: string;
+  votesCount: number;
+  percentage: number;
+}
+
+export interface SubtitleTrack {
+  id: string;
+  label: string;
+  language: string;
+  srtUrl: string;
+  videoId: string;
+}
+
+export interface VideoChapter {
+  title: string;
+  startTime: number; // seconds
 }
 ```
 
-**Read the Prisma schema** to get exact `CreatorStat` fields.
+Read the schema to verify field names before writing types.
 
-**Verification:** No TypeScript errors. All new API methods properly typed.
+**Verification:** No TypeScript errors. All API methods typed.
 
 ---
 
-## Step 13 — Docs Update
-**Agent 13** | Files:
+# PART F — TEST SPECS (Agents 20-24)
+
+---
+
+## Step 20 — Recommendations Service Spec
+**Agent 20** | NEW file: `apps/api/src/modules/recommendations/recommendations.service.spec.ts`
+
+Read `recommendations.service.ts` to understand all methods. Write tests:
+
+- suggestedPeople: returns users sorted by mutual followers
+- suggestedPeople: excludes already-followed users
+- suggestedPeople: excludes private/deactivated users
+- suggestedPosts: returns high-engagement posts from last 48h
+- suggestedReels: returns engagement-ranked reels
+- suggestedChannels: returns channels sorted by subscribers
+
+Mock PrismaService. Follow existing spec patterns.
+
+**Verification:** Tests pass.
+
+---
+
+## Step 21 — Controller Specs Batch A
+**Agent 21** | NEW files:
+- `apps/api/src/modules/posts/posts.controller.spec.ts` (NEW)
+- `apps/api/src/modules/users/users.controller.spec.ts` (NEW)
+- `apps/api/src/modules/threads/threads.controller.spec.ts` (NEW)
+- `apps/api/src/modules/reels/reels.controller.spec.ts` (NEW)
+
+For each controller, read the controller file and write tests that:
+1. Mock the service
+2. Test that each endpoint calls the correct service method
+3. Test that guards are applied (verify ClerkAuthGuard is used)
+4. Test parameter extraction (@Param, @Query, @Body, @CurrentUser)
+
+Each spec should have 5-8 tests covering the main CRUD endpoints.
+
+Pattern:
+```ts
+describe('PostsController', () => {
+  let controller: PostsController;
+  let service: { getFeed: jest.Mock; create: jest.Mock; /* ... */ };
+
+  beforeEach(async () => {
+    service = {
+      getFeed: jest.fn(),
+      create: jest.fn(),
+      getById: jest.fn(),
+      delete: jest.fn(),
+      like: jest.fn(),
+    };
+    const module = await Test.createTestingModule({
+      controllers: [PostsController],
+      providers: [{ provide: PostsService, useValue: service }],
+    }).compile();
+    controller = module.get(PostsController);
+  });
+
+  it('should call getFeed with userId and type', async () => {
+    service.getFeed.mockResolvedValue({ data: [], meta: {} });
+    await controller.getFeed('user-1', 'foryou');
+    expect(service.getFeed).toHaveBeenCalledWith('user-1', 'foryou', undefined, undefined);
+  });
+  // ... more tests
+});
+```
+
+Read each controller to understand exact method signatures.
+
+**Verification:** All 4 spec files pass.
+
+---
+
+## Step 22 — Controller Specs Batch B
+**Agent 22** | NEW files:
+- `apps/api/src/modules/messages/messages.controller.spec.ts` (NEW)
+- `apps/api/src/modules/channels/channels.controller.spec.ts` (NEW)
+- `apps/api/src/modules/videos/videos.controller.spec.ts` (NEW)
+- `apps/api/src/modules/stories/stories.controller.spec.ts` (NEW)
+
+Same pattern as Agent 21. 5-8 tests per controller.
+
+**Verification:** All 4 spec files pass.
+
+---
+
+## Step 23 — New Module Specs
+**Agent 23** | NEW files:
+- `apps/api/src/modules/scheduling/scheduling.service.spec.ts` (NEW)
+- `apps/api/src/modules/majlis-lists/majlis-lists.service.spec.ts` (NEW)
+- `apps/api/src/modules/polls/polls.service.spec.ts` (NEW)
+- `apps/api/src/modules/subtitles/subtitles.service.spec.ts` (NEW)
+
+Write 5-8 tests per service:
+
+**Scheduling:** getScheduled, updateSchedule validates future time, cancelSchedule, publishNow
+**Majlis Lists:** create, getById, addMember, removeMember (owner only), timeline returns member threads
+**Polls:** vote, prevent double vote, retract vote, get poll with user vote
+**Subtitles:** list tracks, create track (owner only), delete track
+
+Read each service file (created by Agents 6-9) to understand exact methods.
+
+**Verification:** All 4 spec files pass.
+
+---
+
+## Step 24 — Health Module Spec
+**Agent 24** | NEW file: `apps/api/src/modules/health/health.controller.spec.ts` (NEW)
+
+Read `health.controller.ts` (the health module has no service — logic is in the controller).
+
+Write 3-5 tests:
+- GET /health returns 200 with status "ok"
+- GET /health/metrics returns entity counts
+- Health check tests DB connectivity (mock PrismaService.$queryRaw)
+
+**Verification:** Tests pass.
+
+---
+
+# PART G — DOCS (Agent 25)
+
+---
+
+## Step 25 — Docs Update
+**Agent 25** | Files:
 - `CLAUDE.md` (EDIT)
 - `C:\Users\shakh\.claude\projects\C--Users-shakh\memory\MEMORY.md` (EDIT)
 
 **Runs LAST after all other agents complete.**
 
 ### CLAUDE.md:
-1. Update endpoint count (+8 admin + 4 recommendations = ~203 total)
-2. Update module count (22 → 24: add admin, recommendations)
-3. Update screen count (+3: analytics, discover, content-settings)
-4. Update "Status" line to ~95% feature complete
-5. Under "Still Missing", remove items that are now implemented (admin moderation, content recommendations)
+1. Update module count: 24 → 28 (add scheduling, majlis-lists, polls, subtitles)
+2. Update endpoint count: ~203 → ~230+ (estimate based on new modules)
+3. Update screen count: +5 new screens
+4. Update test count: +40-60 new tests across 10 new spec files
+5. Update "Still Missing" list — remove items now implemented
+6. Add new modules to architecture section
 
 ### MEMORY.md:
-Add batch 17 entry:
+Add batch 18 entry:
 ```
-- **Batch 17 (2026-03-08):** Platform intelligence batch. Engagement-scored For You feeds (posts/threads/reels). Admin moderation module (6 endpoints). Recommendations module (4 endpoints). Creator analytics screen. Discover screen. Content settings screen. Better trending algorithm. Settings wiring.
+- **Batch 18 (2026-03-08):** The Everything Batch. 25 agents. NEW: scheduling module, majlis-lists module, polls module, subtitles module. NEW SCREENS: schedule-post, archive, bookmark-folders, manage-data, majlis-lists, majlis-list detail. FEATURES: story emoji reactions, hashtag follow, video chapters, pinned posts on profile, read receipts, CommentsSheet reply, channel clipboard/share fixes. TESTS: 10 new spec files (recommendations, 8 controller specs, health, 4 new module specs). Store expanded.
 ```
 
-Update current state metrics.
+Update current state to ~97% feature complete.
 
 ---
 
@@ -967,53 +827,70 @@ Update current state metrics.
 
 | File | Agent |
 |------|-------|
-| `apps/api/src/modules/admin/admin.module.ts` (NEW) | 1 |
-| `apps/api/src/modules/admin/admin.controller.ts` (NEW) | 1 |
-| `apps/api/src/modules/admin/admin.service.ts` (NEW) | 1 |
-| `apps/api/src/modules/admin/admin.service.spec.ts` (NEW) | 1 |
-| `apps/api/src/modules/recommendations/recommendations.module.ts` (NEW) | 2 |
-| `apps/api/src/modules/recommendations/recommendations.controller.ts` (NEW) | 2 |
-| `apps/api/src/modules/recommendations/recommendations.service.ts` (NEW) | 2 |
-| `apps/api/src/app.module.ts` | 3 |
-| `apps/api/src/modules/notifications/notifications.service.ts` | 3 |
-| `apps/api/src/modules/posts/posts.service.ts` | 4 |
-| `apps/api/src/modules/threads/threads.service.ts` | 5 |
-| `apps/api/src/modules/reels/reels.service.ts` | 6 |
-| `apps/api/src/modules/search/search.service.ts` | 7 |
-| `apps/mobile/app/(screens)/analytics.tsx` (NEW) | 8 |
-| `apps/mobile/app/(screens)/discover.tsx` (NEW) | 9 |
-| `apps/mobile/app/(screens)/content-settings.tsx` (NEW) | 10 |
-| `apps/mobile/app/(screens)/settings.tsx` | 11 |
-| `apps/mobile/src/services/api.ts` | 12 |
-| `apps/mobile/src/types/index.ts` | 12 |
-| `CLAUDE.md` | 13 |
-| `MEMORY.md` | 13 |
+| `apps/mobile/app/(screens)/schedule-post.tsx` (NEW) | 1 |
+| `apps/mobile/app/(screens)/archive.tsx` (NEW) | 2 |
+| `apps/mobile/app/(screens)/bookmark-folders.tsx` (NEW) | 3 |
+| `apps/mobile/app/(screens)/manage-data.tsx` (NEW) | 4 |
+| `apps/mobile/app/(screens)/majlis-lists.tsx` (NEW) | 5 |
+| `apps/mobile/app/(screens)/majlis-list/[id].tsx` (NEW) | 5 |
+| `apps/api/src/modules/scheduling/*` (3 NEW) | 6 |
+| `apps/api/src/modules/majlis-lists/*` (3 NEW) | 7 |
+| `apps/api/src/modules/polls/*` (3 NEW) | 8 |
+| `apps/api/src/modules/subtitles/*` (3 NEW) | 9 |
+| `apps/mobile/app/(screens)/story-viewer.tsx` | 10 |
+| `apps/mobile/app/(screens)/hashtag/[tag].tsx` | 11 |
+| `apps/mobile/app/(screens)/video/[id].tsx` | 12 |
+| `apps/mobile/app/(screens)/profile/[username].tsx` | 13 |
+| `apps/mobile/app/(screens)/channel/[handle].tsx` | 14 |
+| `apps/mobile/app/(screens)/conversation/[id].tsx` | 15 |
+| `apps/mobile/src/components/bakra/CommentsSheet.tsx` | 16 |
+| `apps/mobile/src/store/index.ts` | 17 |
+| `apps/api/src/app.module.ts` | 18 |
+| `apps/mobile/src/services/api.ts` | 19 |
+| `apps/mobile/src/types/index.ts` | 19 |
+| `recommendations.service.spec.ts` (NEW) | 20 |
+| `posts.controller.spec.ts` (NEW) | 21 |
+| `users.controller.spec.ts` (NEW) | 21 |
+| `threads.controller.spec.ts` (NEW) | 21 |
+| `reels.controller.spec.ts` (NEW) | 21 |
+| `messages.controller.spec.ts` (NEW) | 22 |
+| `channels.controller.spec.ts` (NEW) | 22 |
+| `videos.controller.spec.ts` (NEW) | 22 |
+| `stories.controller.spec.ts` (NEW) | 22 |
+| `scheduling.service.spec.ts` (NEW) | 23 |
+| `majlis-lists.service.spec.ts` (NEW) | 23 |
+| `polls.service.spec.ts` (NEW) | 23 |
+| `subtitles.service.spec.ts` (NEW) | 23 |
+| `health.controller.spec.ts` (NEW) | 24 |
+| `CLAUDE.md` | 25 |
+| `MEMORY.md` | 25 |
 
-**Zero conflicts.** Every file touched by exactly one agent.
+**Zero conflicts.** 37 files across 25 agents. Every file touched by exactly one agent.
 
 ---
 
 ## Dependency Order
 
 ```
-Parallel wave 1: Agents 1-12 (all independent)
-Sequential after: Agent 13 (docs — needs final counts)
+Parallel wave 1: Agents 1-24 (all independent)
+Sequential after: Agent 25 (docs — needs final counts)
 ```
 
-All 12 agents can run simultaneously. Agent 13 runs last.
+**Note:** Agents 20-23 (test specs) technically depend on their corresponding service/module agents (6-9, 2) completing first. But since each test agent creates NEW files and mocks the service, they can run in parallel — they'll read whatever code exists and mock accordingly.
 
 ---
 
 ## Verification Checklist
 
 1. `cd apps/api && npx tsc --noEmit` — 0 errors
-2. `cd apps/api && npx jest` — all tests pass (including new admin specs)
-3. Admin endpoints respond (GET /admin/reports, etc.)
-4. Recommendations endpoints respond (GET /recommendations/people, etc.)
-5. Posts/Threads/Reels For You feeds return engagement-ranked content
-6. Trending shows velocity-based hashtags (not just all-time)
-7. Analytics screen renders with stats
-8. Discover screen shows trending + recommendations
-9. Content settings screen works
-10. Settings → Content Preferences navigates correctly
-11. Settings → Analytics navigates correctly
+2. `cd apps/api && npx jest` — all tests pass
+3. New screens render (schedule, archive, bookmark-folders, manage-data, majlis-lists, majlis-list detail)
+4. Story emoji reactions work
+5. Hashtag follow button toggles
+6. Video chapters display when available
+7. Profile shows pinned posts + archive link
+8. Channel copy/share buttons work
+9. Read receipts visible on sent messages
+10. CommentsSheet reply works
+11. All 10 new spec files pass
+12. Total test count: 400+

@@ -16,9 +16,9 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: ~95% Feature Complete (as of 2026-03-08)
-All 5 spaces built and functional. 50 screens, 203 API endpoints, 78+ tests.
-Backend: NestJS with 23 modules, Redis, security headers, rate limiting, observability.
+## Status: ~97% Feature Complete (as of 2026-03-08)
+All 5 spaces built and functional. 55 screens, ~230+ API endpoints, ~130+ tests.
+Backend: NestJS with 27 modules, Redis, security headers, rate limiting, observability.
 Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
 
 ---
@@ -55,7 +55,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - GDPR/CCPA compliance
 - CI/CD pipeline
 - i18n / Arabic translations
-- Subtitles, live streaming (Minbar V1.4)
+- Live streaming (Minbar V1.4)
 
 ---
 
@@ -98,7 +98,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 20+ feature modules (complete)
+│   │   ├── src/modules/         # 27 feature modules (complete)
 │   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
 │   │   ├── src/gateways/        # Socket.io /chat namespace
 │   │   └── prisma/schema.prisma # v3 schema, 1652 lines
@@ -106,7 +106,7 @@ mizanly/
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, create
 │       │   ├── (auth)/          # sign-in, sign-up
-│       │   ├── (screens)/       # 42+ screens
+│       │   ├── (screens)/       # 55 screens
 │       │   └── onboarding/      # 4 steps
 │       └── src/
 │           ├── components/ui/   # BottomSheet, Skeleton, Icon, Avatar, Badge,
@@ -249,4 +249,4 @@ cd apps/api && npx prisma studio                  # DB browser GUI
 ```
 
 ## Deferred
-Minbar V1.4 (subtitles, live streaming) | E2E encryption V2.0 | Monetization V2.0
+Minbar V1.4 (live streaming) | E2E encryption V2.0 | Monetization V2.0

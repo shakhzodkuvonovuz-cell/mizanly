@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Image,
-  RefreshControl, FlatList, Dimensions, Pressable,
+  RefreshControl, FlatList, Dimensions, Pressable, Alert, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as Clipboard from 'expo-clipboard';
 import { useUser } from '@clerk/clerk-expo';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -187,6 +188,20 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   const handleReport = () => {
     haptic.light();
     router.push(`/(screens)/report?type=channel&id=${channel?.id}`);
+  };
+
+  const handleCopyLink = async () => {
+    haptic.light();
+    await Clipboard.setStringAsync(`mizanly://channel/${channel.handle}`);
+    Alert.alert('Copied', 'Channel link copied to clipboard');
+  };
+
+  const handleNativeShare = async () => {
+    haptic.light();
+    await Share.share({
+      message: `Check out ${channel.name} on Mizanly`,
+      url: `mizanly://channel/${channel.handle}`,
+    });
   };
 
   const renderVideoItem = ({ item }: { item: Video }) => <VideoCard video={item} />;
@@ -418,7 +433,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           icon={<Icon name="link" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowMenu(false);
-            // TODO: copy to clipboard
+            handleCopyLink();
           }}
         />
       </BottomSheet>
@@ -433,7 +448,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           icon={<Icon name="share" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
-            // TODO: native share
+            handleNativeShare();
           }}
         />
         <BottomSheetItem
@@ -441,7 +456,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           icon={<Icon name="link" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
-            // TODO: copy
+            handleCopyLink();
           }}
         />
       </BottomSheet>

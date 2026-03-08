@@ -4,6 +4,7 @@ import type {
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
   BlockedKeyword, Report, AdminStats, SuggestedUser, CreatorStat, Settings,
   Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
+  ScheduledItem, MajlisList, Poll, SubtitleTrack, VideoChapter,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -196,6 +197,7 @@ export const usersApi = {
   addWatchLater: (videoId: string) => api.post(`/users/me/watch-later/${videoId}`),
   removeWatchLater: (videoId: string) => api.delete(`/users/me/watch-later/${videoId}`),
   report: (userId: string, reason: string) => api.post(`/users/${userId}/report`, { reason }),
+  getArchive: () => api.get<Story[]>('/stories/me/archived'),
 };
 
 // ── Follows ──
@@ -262,6 +264,8 @@ export const storiesApi = {
   deleteHighlight: (albumId: string) => api.delete(`/stories/highlights/${albumId}`),
   addToHighlight: (albumId: string, storyId: string) =>
     api.post(`/stories/highlights/${albumId}/stories/${storyId}`),
+  getArchived: () => api.get<Story[]>('/stories/me/archived'),
+  unarchive: (id: string) => api.patch<{ unarchived: boolean }>(`/stories/${id}/unarchive`),
 };
 
 // ── Reels (Bakra) ──
@@ -527,4 +531,61 @@ export const recommendationsApi = {
   posts: () => api.get<Post[]>('/recommendations/posts'),
   reels: () => api.get<Reel[]>('/recommendations/reels'),
   channels: () => api.get<Channel[]>('/recommendations/channels'),
+};
+
+// ── New Batch 18 Modules ──
+
+// Scheduling API
+export const schedulingApi = {
+  getScheduled: () => api.get<ScheduledItem[]>('/scheduling/scheduled'),
+  updateSchedule: (type: string, id: string, scheduledAt: string) =>
+    api.patch(`/scheduling/${type}/${id}`, { scheduledAt }),
+  cancelSchedule: (type: string, id: string) =>
+    api.delete(`/scheduling/${type}/${id}`),
+  publishNow: (type: string, id: string) =>
+    api.post(`/scheduling/publish-now/${type}/${id}`),
+};
+
+// Majlis Lists API
+export const majlisListsApi = {
+  getLists: () => api.get<MajlisList[]>('/majlis-lists'),
+  create: (data: { name: string; description?: string; isPublic?: boolean }) =>
+    api.post<MajlisList>('/majlis-lists', data),
+  getById: (id: string) => api.get<MajlisList>(`/majlis-lists/${id}`),
+  update: (id: string, data: Partial<MajlisList>) =>
+    api.patch(`/majlis-lists/${id}`, data),
+  delete: (id: string) => api.delete(`/majlis-lists/${id}`),
+  getMembers: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/majlis-lists/${id}/members${qs({ cursor })}`),
+  addMember: (id: string, userId: string) =>
+    api.post(`/majlis-lists/${id}/members`, { userId }),
+  removeMember: (id: string, userId: string) =>
+    api.delete(`/majlis-lists/${id}/members/${userId}`),
+  getTimeline: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/majlis-lists/${id}/timeline${qs({ cursor })}`),
+};
+
+// Polls API
+export const pollsApi = {
+  get: (id: string) => api.get<Poll>(`/polls/${id}`),
+  vote: (id: string, optionId: string) =>
+    api.post(`/polls/${id}/vote`, { optionId }),
+  retractVote: (id: string) => api.delete(`/polls/${id}/vote`),
+  getVoters: (id: string, optionId: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/polls/${id}/voters${qs({ optionId, cursor })}`),
+};
+
+// Subtitles API
+export const subtitlesApi = {
+  list: (videoId: string) => api.get<SubtitleTrack[]>(`/videos/${videoId}/subtitles`),
+  upload: (videoId: string, data: { label: string; language: string; srtUrl: string }) =>
+    api.post(`/videos/${videoId}/subtitles`, data),
+  delete: (videoId: string, trackId: string) =>
+    api.delete(`/videos/${videoId}/subtitles/${trackId}`),
+};
+
+// Stories reactions (if endpoint exists)
+export const storiesReactionsApi = {
+  react: (storyId: string, emoji: string) =>
+    api.post(`/stories/${storyId}/react`, { emoji }),
 };

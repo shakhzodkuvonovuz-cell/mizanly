@@ -29,6 +29,9 @@ import { DevicesModule } from './modules/devices/devices.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
 import { SchedulingModule } from './modules/scheduling/scheduling.module';
+import { MajlisListsModule } from './modules/majlis-lists/majlis-lists.module';
+import { PollsModule } from './modules/polls/polls.module';
+import { SubtitlesModule } from './modules/subtitles/subtitles.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -70,6 +73,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     AdminModule,
     RecommendationsModule,
     SchedulingModule,
+    MajlisListsModule,
+    PollsModule,
+    SubtitlesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

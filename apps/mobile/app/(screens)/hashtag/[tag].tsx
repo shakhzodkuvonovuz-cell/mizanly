@@ -10,9 +10,13 @@ import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
 import { searchApi } from '@/services/api';
 import type { Post } from '@/types';
+import { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useHaptic } from '@/hooks/useHaptic';
 
 type HashtagPostsPage = {
   hashtag?: { postsCount: number };
@@ -64,9 +68,60 @@ export default function HashtagScreen() {
   const posts: Post[] = postsQuery.data?.pages.flatMap((p: HashtagPostsPage) => p.data ?? []) ?? [];
   const totalCount = (postsQuery.data?.pages[0] as HashtagPostsPage)?.hashtag?.postsCount ?? posts.length;
 
+  const [followedHashtags, setFollowedHashtags] = useState<string[]>([]);
+  const haptic = useHaptic();
+  const isFollowing = followedHashtags.includes(tag);
+
+  useEffect(() => {
+    AsyncStorage.getItem('followed-hashtags').then((data) => {
+      if (data) {
+        try {
+          setFollowedHashtags(JSON.parse(data));
+        } catch {
+          setFollowedHashtags([]);
+        }
+      }
+    });
+  }, []);
+
+  const toggleFollow = useCallback(() => {
+    haptic.medium();
+    const newFollowed = isFollowing
+      ? followedHashtags.filter(t => t !== tag)
+      : [...followedHashtags, tag];
+    setFollowedHashtags(newFollowed);
+    AsyncStorage.setItem('followed-hashtags', JSON.stringify(newFollowed));
+  }, [isFollowing, followedHashtags, tag, haptic]);
+
   const onEndReached = useCallback(() => {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
   }, [postsQuery]);
+
+  const HashtagFollowButton = () => {
+    const btnScale = useSharedValue(1);
+    const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
+
+    return (
+      <Animated.View style={btnStyle}>
+        <Pressable
+          style={[styles.followBtn, isFollowing && styles.followingBtn]}
+          onPress={() => {
+            btnScale.value = withSequence(
+              withSpring(0.9, animation.spring.bouncy),
+              withSpring(1, animation.spring.bouncy),
+            );
+            toggleFollow();
+          }}
+          accessibilityLabel={isFollowing ? 'Unfollow hashtag' : 'Follow hashtag'}
+          accessibilityRole="button"
+        >
+          <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
+            {isFollowing ? 'Following' : 'Follow'}
+          </Text>
+        </Pressable>
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -78,7 +133,7 @@ export default function HashtagScreen() {
           <Text style={styles.tagName}>#{tag}</Text>
           <Text style={styles.postCount}>{totalCount.toLocaleString()} posts</Text>
         </View>
-        <View style={{ width: 36 }} />
+        <HashtagFollowButton />
       </View>
 
       <FlatList
@@ -159,4 +214,14 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 6, right: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
   },
+  followBtn: {
+    backgroundColor: colors.emerald, borderRadius: radius.md,
+    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
+    minWidth: 90, alignItems: 'center',
+  },
+  followingBtn: {
+    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.dark.border,
+  },
+  followBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
+  followingBtnText: { color: colors.text.primary },
 });

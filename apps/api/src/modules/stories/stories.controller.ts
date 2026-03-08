@@ -129,6 +129,15 @@ export class StoriesController {
     return this.storiesService.delete(id, userId);
   }
 
+  @Patch(':id/unarchive')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unarchive a story' })
+  unarchive(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.storiesService.unarchive(id, userId);
+  }
+
   @Post(':id/view')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -188,6 +197,14 @@ export class StoriesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.storiesService.deleteHighlight(albumId, userId);
+  }
+
+  @Get('me/archived')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get archived stories for current user' })
+  getArchived(@CurrentUser('id') userId: string) {
+    return this.storiesService.getArchived(userId);
   }
 
   @Post('highlights/:albumId/stories/:storyId')
