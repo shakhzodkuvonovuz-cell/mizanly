@@ -1,0 +1,12 @@
+Backend dependencies verified: Sun Mar  8 23:23:28 AUSEST 2026
+Binaries in node_modules/.bin/: 222 files
+create-jest
+create-jest.cmd
+create-jest.ps1
+jest
+jest.cmd
+jest.ps1
+nest
+nest.cmd
+nest.ps1
+prisma
