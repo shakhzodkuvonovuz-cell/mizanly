@@ -7,11 +7,21 @@ import {
   Param,
   Body,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsISO8601, IsNotEmpty } from 'class-validator';
 import { SchedulingService } from './scheduling.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ScheduledItem } from './scheduling.service';
+
+class UpdateScheduleDto {
+  @IsISO8601()
+  @IsNotEmpty()
+  scheduledAt: string;
+}
 
 @ApiTags('Scheduling')
 @Controller('scheduling')
@@ -22,7 +32,7 @@ export class SchedulingController {
 
   @Get('scheduled')
   @ApiOperation({ summary: 'Get all scheduled content' })
-  getScheduled(@CurrentUser('id') userId: string) {
+  getScheduled(@CurrentUser('id') userId: string): Promise<ScheduledItem[]> {
     return this.schedulingService.getScheduled(userId);
   }
 
@@ -32,33 +42,35 @@ export class SchedulingController {
     @CurrentUser('id') userId: string,
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
-    @Body() { scheduledAt }: { scheduledAt: string },
-  ) {
+    @Body() dto: UpdateScheduleDto,
+  ): Promise<unknown> {
     return this.schedulingService.updateSchedule(
       userId,
       type,
       id,
-      new Date(scheduledAt),
+      new Date(dto.scheduledAt),
     );
   }
 
   @Delete(':type/:id')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel scheduled post' })
   cancelSchedule(
     @CurrentUser('id') userId: string,
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
-  ) {
+  ): Promise<unknown> {
     return this.schedulingService.cancelSchedule(userId, type, id);
   }
 
   @Post('publish-now/:type/:id')
+  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Publish scheduled content immediately' })
   publishNow(
     @CurrentUser('id') userId: string,
     @Param('type') type: 'post' | 'thread' | 'reel' | 'video',
     @Param('id') id: string,
-  ) {
+  ): Promise<unknown> {
     return this.schedulingService.publishNow(userId, type, id);
   }
 }
