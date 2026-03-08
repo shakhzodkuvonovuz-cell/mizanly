@@ -25,18 +25,20 @@ class UpdateScheduleDto {
 
 @ApiTags('Scheduling')
 @Controller('scheduling')
-@UseGuards(ClerkAuthGuard)
-@ApiBearerAuth()
 export class SchedulingController {
   constructor(private schedulingService: SchedulingService) {}
 
   @Get('scheduled')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all scheduled content' })
   getScheduled(@CurrentUser('id') userId: string): Promise<ScheduledItem[]> {
     return this.schedulingService.getScheduled(userId);
   }
 
   @Patch(':type/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update scheduled time' })
   updateSchedule(
     @CurrentUser('id') userId: string,
@@ -53,6 +55,8 @@ export class SchedulingController {
   }
 
   @Delete(':type/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cancel scheduled post' })
   cancelSchedule(
@@ -64,6 +68,8 @@ export class SchedulingController {
   }
 
   @Post('publish-now/:type/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Publish scheduled content immediately' })
   publishNow(
