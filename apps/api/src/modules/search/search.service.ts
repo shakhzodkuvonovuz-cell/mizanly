@@ -337,23 +337,54 @@ export class SearchService {
   }
 
   async trending() {
-    const [hashtags, threads] = await Promise.all([
-      this.prisma.hashtag.findMany({
-        take: 20,
-        orderBy: { postsCount: 'desc' },
-      }),
-      this.prisma.thread.findMany({
-        where: {
-          visibility: 'PUBLIC',
-          isChainHead: true,
-          isRemoved: false,
-          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
-        },
-        select: THREAD_SEARCH_SELECT,
-        take: 10,
-        orderBy: { likesCount: 'desc' },
-      }),
-    ]);
+    // Trending hashtags: highest growth in last 24h
+    const recentPosts = await this.prisma.post.findMany({
+      where: {
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        hashtags: { isEmpty: false },
+      },
+      select: { hashtags: true },
+      take: 500,
+    });
+
+    // Count hashtag frequency in last 24h
+    const freq = new Map<string, number>();
+    for (const post of recentPosts) {
+      for (const tag of post.hashtags) {
+        if (tag.trim() === '') continue;
+        freq.set(tag, (freq.get(tag) || 0) + 1);
+      }
+    }
+
+    // Get hashtag records for top tags
+    const topTagNames = [...freq.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([name]) => name);
+
+    const hashtagRecords = await this.prisma.hashtag.findMany({
+      where: { name: { in: topTagNames } },
+    });
+
+    // Merge recent count into records
+    const hashtags = hashtagRecords.map(record => ({
+      ...record,
+      recentCount: freq.get(record.name) || 0,
+    })).sort((a, b) => b.recentCount - a.recentCount);
+
+    // Threads stays the same (already engagement-sorted)
+    const threads = await this.prisma.thread.findMany({
+      where: {
+        visibility: 'PUBLIC',
+        isChainHead: true,
+        isRemoved: false,
+        createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      },
+      select: THREAD_SEARCH_SELECT,
+      take: 10,
+      orderBy: { likesCount: 'desc' },
+    });
+
     return { hashtags, threads };
   }
 
@@ -389,11 +420,22 @@ export class SearchService {
     });
     const myFollowingIds = myFollowing.map((f) => f.followingId);
 
+    // Get user's interests
+    const userInterests = await this.prisma.userInterest.findMany({
+      where: { userId },
+      select: { category: true },
+    });
+    const interestCategories = userInterests.map(ui => ui.category);
+
     return this.prisma.user.findMany({
       where: {
         id: { notIn: [...myFollowingIds, userId] },
         isPrivate: false,
         isDeactivated: false,
+        // If user has interests, filter by shared interests
+        ...(interestCategories.length > 0 ? {
+          interests: { some: { category: { in: interestCategories } } },
+        } : {}),
       },
       select: USER_SEARCH_SELECT,
       take: 20,

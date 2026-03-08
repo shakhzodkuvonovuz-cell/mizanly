@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share,
   RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -161,11 +161,18 @@ export default function VideoDetailScreen() {
     subscribeMutation.mutate();
   };
 
-  const handleShare = () => {
+  const handleShare = useCallback(async () => {
     haptic.light();
-    // TODO: implement share
-    Alert.alert('Share', 'Sharing video...');
-  };
+    if (!video) return;
+    try {
+      await Share.share({
+        message: `${video.title}\n\nWatch on Mizanly`,
+        url: `mizanly://video/${video.id}`,
+      });
+    } catch {
+      // User cancelled — no action needed
+    }
+  }, [video]);
 
   const handleReport = () => {
     haptic.light();

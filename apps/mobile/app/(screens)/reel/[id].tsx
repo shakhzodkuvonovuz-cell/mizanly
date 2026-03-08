@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
+  KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
   Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -213,10 +213,18 @@ export default function ReelDetailScreen() {
     bookmarkMutation.mutate();
   };
 
-  const handleShare = () => {
+  const handleShare = useCallback(async () => {
     haptic.light();
     shareMutation.mutate();
-  };
+    try {
+      await Share.share({
+        message: `Check this out on Mizanly`,
+        url: `mizanly://reel/${id}`,
+      });
+    } catch {
+      // User cancelled
+    }
+  }, [id, shareMutation, haptic]);
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 

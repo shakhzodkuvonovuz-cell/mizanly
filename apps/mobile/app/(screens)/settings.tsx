@@ -190,6 +190,12 @@ export default function SettingsScreen() {
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* Content */}
         <SectionHeader title="Content" />
+        <View style={styles.card}>
+          <Row
+            label="Content Preferences"
+            onPress={() => router.push('/(screens)/content-settings')}
+          />
+        </View>
         {/* Appearance */}
         <SectionHeader title="Appearance" />
         <View style={styles.card}>
@@ -334,6 +340,15 @@ export default function SettingsScreen() {
             label="Circles"
             hint="Manage your close friends groups"
             onPress={() => router.push('/(screens)/circles')}
+          />
+        </View>
+
+        {/* Creator */}
+        <SectionHeader title="Creator" />
+        <View style={styles.card}>
+          <Row
+            label="Analytics"
+            onPress={() => router.push('/(screens)/analytics')}
           />
         </View>
 

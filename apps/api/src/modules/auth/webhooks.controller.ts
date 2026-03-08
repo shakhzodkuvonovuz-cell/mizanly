@@ -15,6 +15,10 @@ import { Webhook } from 'svix';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 
+interface RawBodyRequest extends Request {
+  rawBody?: Buffer;
+}
+
 @ApiTags('Webhooks')
 @Controller('webhooks')
 @SkipThrottle()
@@ -31,7 +35,7 @@ export class WebhooksController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Clerk webhook receiver (user.created / updated / deleted)' })
   async handleClerkWebhook(
-    @Req() req: Request,
+    @Req() req: RawBodyRequest,
     @Headers('svix-id') svixId: string,
     @Headers('svix-timestamp') svixTimestamp: string,
     @Headers('svix-signature') svixSignature: string,
@@ -42,7 +46,7 @@ export class WebhooksController {
     }
 
     // Verify signature using raw body
-    const rawBody = (req as any).rawBody as Buffer;
+    const rawBody = req.rawBody;
     if (!rawBody) {
       throw new BadRequestException('Raw body not available');
     }

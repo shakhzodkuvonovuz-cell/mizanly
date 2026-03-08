@@ -508,6 +508,8 @@ export default function ConversationScreen() {
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   // Context menu
   const [contextMenuMsg, setContextMenuMsg] = useState<Message | null>(null);
+  const [forwardMsg, setForwardMsg] = useState<Message | null>(null);
+  const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [showReactionPicker, setShowReactionPicker] = useState(false);
   // GIF picker
   const [showGifPicker, setShowGifPicker] = useState(false);
@@ -551,6 +553,12 @@ export default function ConversationScreen() {
     getNextPageParam: (last) =>
       last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     select: selectMessagesReversed,
+  });
+
+  const conversationsQuery = useQuery({
+    queryKey: ['conversations'],
+    queryFn: () => messagesApi.getConversations(),
+    enabled: !!forwardMsg,
   });
 
   const messages: Message[] = messagesQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -634,6 +642,17 @@ export default function ConversationScreen() {
 
   const handleSend = useCallback(() => {
     if (!text.trim() || isSending) return;
+    // Edit mode
+    if (editingMsg) {
+      messagesApi.editMessage(id, editingMsg.id, text.trim())
+        .then(() => {
+          queryClient.invalidateQueries({ queryKey: ['messages', id] });
+          setEditingMsg(null);
+          setText('');
+        })
+        .catch(() => Alert.alert('Error', 'Could not edit message.'));
+      return;
+    }
     haptic.medium();
     setIsSending(true);
     const pendingId = `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`;
@@ -662,7 +681,7 @@ export default function ConversationScreen() {
       // Offline or socket not connected: message stays pending
       // Will be retried when network returns (see useEffect below)
     }
-  }, [text, replyTo, id, isSending, haptic, isOffline]);
+  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient]);
 
   // Retry pending messages when network comes back online
   useEffect(() => {
@@ -994,6 +1013,19 @@ export default function ConversationScreen() {
               </Pressable>
             </View>
           )}
+          {editingMsg && (
+            <View style={styles.replyBanner}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>Editing message</Text>
+                <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }} numberOfLines={1}>
+                  {editingMsg.content}
+                </Text>
+              </View>
+              <Pressable onPress={() => { setEditingMsg(null); setText(''); }} hitSlop={8}>
+                <Icon name="x" size="xs" color={colors.text.tertiary} />
+              </Pressable>
+            </View>
+          )}
           <View style={styles.inputRow}>
             <Pressable
               style={styles.attachBtn}
@@ -1133,9 +1165,10 @@ export default function ConversationScreen() {
           label="Forward"
           icon={<Icon name="repeat" size="sm" color={colors.text.secondary} />}
           onPress={() => {
-            // TODO: Implement forward picker
-            Alert.alert('Coming Soon', 'Forward feature will be available soon.');
-            setContextMenuMsg(null);
+            if (contextMenuMsg) {
+              setForwardMsg(contextMenuMsg);
+              setContextMenuMsg(null);
+            }
           }}
         />
         <BottomSheetItem
@@ -1153,9 +1186,10 @@ export default function ConversationScreen() {
                 icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
                 onPress={() => {
                   if (contextMenuMsg) {
-                    // TODO: Implement inline edit mode
-                    Alert.alert('Coming Soon', 'Edit feature will be available soon.');
+                    setEditingMsg(contextMenuMsg);
+                    setText(contextMenuMsg.content);
                     setContextMenuMsg(null);
+                    inputRef.current?.focus();
                   }
                 }}
               />
@@ -1190,6 +1224,40 @@ export default function ConversationScreen() {
               />
             )}
           </>
+        )}
+      </BottomSheet>
+
+      {/* Forward picker */}
+      <BottomSheet visible={!!forwardMsg} onClose={() => setForwardMsg(null)}>
+        <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', padding: spacing.base }}>
+          Forward to...
+        </Text>
+        {conversationsQuery.isLoading ? (
+          <View style={{ padding: spacing.base, gap: spacing.sm }}>
+            {[1,2,3].map(i => <Skeleton.ConversationItem key={i} />)}
+          </View>
+        ) : (
+          (conversationsQuery.data || []).filter(c => c.id !== id).map(conv => (
+            <BottomSheetItem
+              key={conv.id}
+              label={conversationName(conv, user?.id)}
+              icon={<Avatar uri={conversationAvatar(conv, user?.id)} name={conversationName(conv, user?.id)} size="sm" />}
+              onPress={() => {
+                if (forwardMsg && socketRef.current) {
+                  socketRef.current.emit('send_message', {
+                    conversationId: conv.id,
+                    content: forwardMsg.content || '',
+                    messageType: forwardMsg.messageType || 'TEXT',
+                    mediaUrl: forwardMsg.mediaUrl,
+                    mediaType: forwardMsg.mediaType,
+                  });
+                  setForwardMsg(null);
+                  haptic.success();
+                  Alert.alert('Forwarded', `Message sent to ${conversationName(conv, user?.id)}`);
+                }
+              }}
+            />
+          ))
         )}
       </BottomSheet>
 

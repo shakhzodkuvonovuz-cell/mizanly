@@ -331,6 +331,12 @@ export interface Conversation {
   lastMessageAt?: string;
   createdAt: string;
   members: ConversationMember[];
+  otherUser?: {
+    id: string;
+    username: string;
+    displayName?: string;
+    avatarUrl?: string;
+  };
   // From membership row
   isMuted?: boolean;
   isArchived?: boolean;
@@ -440,6 +446,51 @@ export interface Settings {
   notifyMessages: boolean;
   sensitiveContentFilter: boolean;
   reducedMotion: boolean;
+}
+
+// ── Admin & Recommendations ──
+export interface Report {
+  id: string;
+  reason: string;
+  status: string;
+  createdAt: string;
+  reporter: { id: string; username: string; displayName?: string; avatarUrl?: string };
+  reportedUser?: { id: string; username: string; displayName?: string; avatarUrl?: string };
+  postId?: string;
+  threadId?: string;
+  reelId?: string;
+  videoId?: string;
+}
+
+export interface AdminStats {
+  users: number;
+  posts: number;
+  threads: number;
+  reels: number;
+  videos: number;
+  pendingReports: number;
+}
+
+export interface SuggestedUser {
+  id: string;
+  username: string;
+  displayName?: string;
+  avatarUrl?: string;
+  isVerified: boolean;
+  bio?: string;
+  mutualFollowers?: number;
+}
+
+export interface CreatorStat {
+  id: string;
+  userId: string;
+  date: string;
+  space: string;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  followers: number;
 }
 
 // ── Pagination ──

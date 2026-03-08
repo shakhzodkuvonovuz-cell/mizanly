@@ -84,6 +84,28 @@ export class UsersController {
     return this.usersService.getSavedThreads(userId, cursor);
   }
 
+  @Get('me/saved-reels')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bookmarked reels' })
+  getSavedReels(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.usersService.getSavedReels(userId, cursor);
+  }
+
+  @Get('me/saved-videos')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bookmarked videos' })
+  getSavedVideos(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.usersService.getSavedVideos(userId, cursor);
+  }
+
   @Get('me/follow-requests')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

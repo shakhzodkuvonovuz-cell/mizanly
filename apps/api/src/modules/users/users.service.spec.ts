@@ -54,6 +54,9 @@ describe('UsersService', () => {
             reelInteraction: {
               findMany: jest.fn(),
             },
+            reelBookmark: {
+              findMany: jest.fn(),
+            },
             videoBookmark: {
               findMany: jest.fn(),
             },

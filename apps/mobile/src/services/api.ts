@@ -2,7 +2,7 @@ import type {
   Post, Story, StoryGroup, StoryHighlightAlbum, Thread, Reel, ThreadReply, Message, Conversation,
   Comment, Notification, SearchResults, PaginatedResponse, User,
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
-  BlockedKeyword, Settings,
+  BlockedKeyword, Report, AdminStats, SuggestedUser, CreatorStat, Settings,
   Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
 } from '@/types';
 
@@ -181,8 +181,12 @@ export const usersApi = {
     api.get<PaginatedResponse<Post>>(`/users/me/saved-posts${qs({ cursor })}`),
   getSavedThreads: (cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/users/me/saved-threads${qs({ cursor })}`),
+  getSavedReels: (cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/users/me/saved-reels${qs({ cursor })}`),
+  getSavedVideos: (cursor?: string) =>
+    api.get<PaginatedResponse<Video>>(`/users/me/saved-videos${qs({ cursor })}`),
   getFollowRequests: () => api.get('/users/me/follow-requests'),
-  getAnalytics: () => api.get('/users/me/analytics'),
+  getAnalytics: () => api.get<{ stats: CreatorStat[] }>('/users/me/analytics'),
   getWatchHistory: (cursor?: string) =>
     api.get<PaginatedResponse<WatchHistoryItem>>(`/users/me/watch-history${qs({ cursor })}`),
   clearWatchHistory: () =>
@@ -499,4 +503,28 @@ export const settingsApi = {
   getBlockedKeywords: () => api.get<BlockedKeyword[]>('/settings/blocked-keywords'),
   addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { word }),
   deleteBlockedKeyword: (id: string) => api.delete(`/settings/blocked-keywords/${id}`),
+};
+
+// ── Admin ──
+export const adminApi = {
+  getReports: (status?: string, cursor?: string) =>
+    api.get<PaginatedResponse<Report>>(`/admin/reports${qs({ status, cursor })}`),
+  getReport: (id: string) =>
+    api.get<Report>(`/admin/reports/${id}`),
+  resolveReport: (id: string, action: string, note?: string) =>
+    api.patch(`/admin/reports/${id}`, { action, note }),
+  getStats: () =>
+    api.get<AdminStats>('/admin/stats'),
+  banUser: (id: string, reason: string, duration?: number) =>
+    api.post(`/admin/users/${id}/ban`, { reason, duration }),
+  unbanUser: (id: string) =>
+    api.post(`/admin/users/${id}/unban`),
+};
+
+// ── Recommendations ──
+export const recommendationsApi = {
+  people: () => api.get<SuggestedUser[]>('/recommendations/people'),
+  posts: () => api.get<Post[]>('/recommendations/posts'),
+  reels: () => api.get<Reel[]>('/recommendations/reels'),
+  channels: () => api.get<Channel[]>('/recommendations/channels'),
 };

@@ -16,8 +16,8 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: ~90% Feature Complete (as of 2026-03-08)
-All 5 spaces built and functional. 46 screens, 163 API endpoints, 78+ tests.
+## Status: ~93% Feature Complete (as of 2026-03-08)
+All 5 spaces built and functional. 47 screens, 191 API endpoints, 78+ tests.
 Backend: NestJS with 21 modules, Redis, security headers, rate limiting, observability.
 Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
 
@@ -44,6 +44,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Voice messages, swipe-to-reply, long-press context menu, GIF picker
 - Hashtag/mention autocomplete, location picker, story highlights, profile links
 - Lightbox/pinch-zoom, draft auto-save, notification filters, theme selector
+- Message forward, message edit (inline)
 
 ### Still Missing (deferred to V2.0+)
 - Story filters, drawing tools, stickers, music

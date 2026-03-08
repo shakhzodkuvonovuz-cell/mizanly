@@ -74,10 +74,69 @@ export class PostsService {
       if (cached) return JSON.parse(cached);
     }
 
+    if (type === 'foryou') {
+      // Get blocked/muted users to exclude
+      const [blocks, mutes] = await Promise.all([
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      ]);
+      const excludedIds = [
+        ...blocks.map((b) => b.blockedId),
+        ...mutes.map((m) => m.mutedId),
+      ];
+
+      // Fetch recent posts from last 72 hours
+      const recentPosts = await this.prisma.post.findMany({
+        where: {
+          createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+          isRemoved: false,
+          user: { isPrivate: false, isBanned: false },
+          visibility: 'PUBLIC',
+          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+          ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
+        },
+        select: POST_SELECT,
+        take: 200, // fetch more to score and rank
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Score each post: engagement weighted by recency
+      const scored = recentPosts.map(post => {
+        const ageHours = Math.max(1, (Date.now() - new Date(post.createdAt).getTime()) / 3600000);
+        const engagement = (post.likesCount * 3) + (post.commentsCount * 5) + (post.sharesCount * 7) + (post.savesCount * 2) + (post.viewsCount * 0.1);
+        const score = engagement / Math.pow(ageHours, 1.5);
+        return { ...post, _score: score };
+      });
+
+      // Sort by score descending, paginate
+      scored.sort((a, b) => b._score - a._score);
+      const startIdx = cursor ? scored.findIndex(p => new Date(p.createdAt).toISOString() < cursor) : 0;
+      const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+
+      const hasMore = page.length > limit;
+      const result = hasMore ? page.slice(0, limit) : page;
+
+      // Strip internal score field
+      const data = result.map(({ _score, ...post }) => post);
+
+      const finalResult = {
+        data,
+        meta: {
+          cursor: hasMore ? data[data.length - 1].createdAt.toISOString() : null,
+          hasMore,
+        },
+      };
+
+      // Cache "for you" feed for 30 seconds
+      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
+      await this.redis.setex(cacheKey, 30, JSON.stringify(finalResult));
+
+      return finalResult;
+    }
+
+    // Following feed (unchanged)
     const [follows, blocks, mutes] = await Promise.all([
-      type === 'following'
-        ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
-        : Promise.resolve([]),
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } }),
       this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
       this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
     ]);
@@ -91,9 +150,7 @@ export class PostsService {
     const where: any = {
       isRemoved: false,
       scheduledAt: null,
-      ...(type === 'following'
-        ? { userId: { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) } }
-        : { visibility: 'PUBLIC', user: { isPrivate: false }, ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}) }),
+      userId: { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) },
     };
 
     const posts = await this.prisma.post.findMany({
@@ -110,12 +167,6 @@ export class PostsService {
       data: items,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
-
-    // Cache "for you" feed for 30 seconds
-    if (type === 'foryou') {
-      const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
-      await this.redis.setex(cacheKey, 30, JSON.stringify(result));
-    }
 
     return result;
   }

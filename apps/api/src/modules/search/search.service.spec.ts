@@ -26,6 +26,9 @@ describe('SearchService', () => {
               findMany: jest.fn(),
               findUnique: jest.fn(),
             },
+            userInterest: {
+              findMany: jest.fn(),
+            },
             follow: {
               findMany: jest.fn(),
             },
@@ -580,8 +583,14 @@ describe('SearchService', () => {
 
   describe('trending', () => {
     it('should return trending hashtags and threads from last 24h', async () => {
-      const mockHashtags = [
+      const mockPosts = [
+        { hashtags: ['trending', 'news'] },
+        { hashtags: ['trending'] },
+        { hashtags: ['news'] },
+      ];
+      const mockHashtagRecords = [
         { id: 'tag-1', name: 'trending', postsCount: 500 },
+        { id: 'tag-2', name: 'news', postsCount: 300 },
       ];
       const mockThreads = [
         {
@@ -591,14 +600,22 @@ describe('SearchService', () => {
           user: { id: 'user-1', username: 'trendy' },
         },
       ];
-      prisma.hashtag.findMany.mockResolvedValue(mockHashtags);
+      prisma.post.findMany.mockResolvedValue(mockPosts);
+      prisma.hashtag.findMany.mockResolvedValue(mockHashtagRecords);
       prisma.thread.findMany.mockResolvedValue(mockThreads);
 
       const result = await service.trending();
 
+      expect(prisma.post.findMany).toHaveBeenCalledWith({
+        where: {
+          createdAt: { gte: expect.any(Date) },
+          hashtags: { isEmpty: false },
+        },
+        select: { hashtags: true },
+        take: 500,
+      });
       expect(prisma.hashtag.findMany).toHaveBeenCalledWith({
-        take: 20,
-        orderBy: { postsCount: 'desc' },
+        where: { name: { in: ['trending', 'news'] } },
       });
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
         where: {
@@ -611,7 +628,12 @@ describe('SearchService', () => {
         take: 10,
         orderBy: { likesCount: 'desc' },
       });
-      expect(result).toEqual({ hashtags: mockHashtags, threads: mockThreads });
+      // Hashtags should include recentCount and be sorted by it
+      expect(result.hashtags).toEqual([
+        { id: 'tag-1', name: 'trending', postsCount: 500, recentCount: 2 },
+        { id: 'tag-2', name: 'news', postsCount: 300, recentCount: 2 },
+      ]);
+      expect(result.threads).toEqual(mockThreads);
     });
   });
 
@@ -703,6 +725,7 @@ describe('SearchService', () => {
         },
       ];
       prisma.follow.findMany.mockResolvedValue(mockFollowing);
+      prisma.userInterest.findMany.mockResolvedValue([]);
       prisma.user.findMany.mockResolvedValue(mockUsers);
 
       const result = await service.suggestedUsers(userId);
@@ -711,11 +734,58 @@ describe('SearchService', () => {
         where: { followerId: userId },
         select: { followingId: true },
       });
+      expect(prisma.userInterest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        select: { category: true },
+      });
       expect(prisma.user.findMany).toHaveBeenCalledWith({
         where: {
           id: { notIn: ['user-456', userId] },
           isPrivate: false,
           isDeactivated: false,
+        },
+        select: expect.any(Object),
+        take: 20,
+        orderBy: { followers: { _count: 'desc' } },
+      });
+      expect(result).toEqual(mockUsers);
+    });
+
+    it('should filter by shared interests when user has interests', async () => {
+      const userId = 'user-123';
+      const mockFollowing = [{ followingId: 'user-456' }];
+      const mockInterests = [{ category: 'tech' }, { category: 'sports' }];
+      const mockUsers = [
+        {
+          id: 'user-789',
+          username: 'suggested',
+          displayName: 'Suggested User',
+          avatarUrl: null,
+          bio: '',
+          isVerified: false,
+          _count: { followers: 5 },
+        },
+      ];
+      prisma.follow.findMany.mockResolvedValue(mockFollowing);
+      prisma.userInterest.findMany.mockResolvedValue(mockInterests);
+      prisma.user.findMany.mockResolvedValue(mockUsers);
+
+      const result = await service.suggestedUsers(userId);
+
+      expect(prisma.follow.findMany).toHaveBeenCalledWith({
+        where: { followerId: userId },
+        select: { followingId: true },
+      });
+      expect(prisma.userInterest.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        select: { category: true },
+      });
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: {
+          id: { notIn: ['user-456', userId] },
+          isPrivate: false,
+          isDeactivated: false,
+          interests: { some: { category: { in: ['tech', 'sports'] } } },
         },
         select: expect.any(Object),
         take: 20,

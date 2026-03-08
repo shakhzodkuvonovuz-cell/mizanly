@@ -15,12 +15,18 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { useUser } from '@clerk/clerk-expo';
-import type { Post, Thread } from '@/types';
+import type { Post, Thread, Reel, Video } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3;
 
-type Tab = 'posts' | 'threads';
+const formatDuration = (seconds: number) => {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+};
+
+type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   return (
@@ -41,6 +47,52 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
           <Icon name="layers" size={12} color="#fff" />
         </View>
       )}
+    </TouchableOpacity>
+  );
+}
+
+function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
+  const hasThumbnail = reel.thumbnailUrl != null;
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.gridItem}>
+      {hasThumbnail ? (
+        <Image
+          source={{ uri: reel.thumbnailUrl }}
+          style={styles.gridImage}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={[styles.gridImage, styles.placeholder]}>
+          <Icon name="video" size={24} color={colors.text.secondary} />
+        </View>
+      )}
+      <View style={styles.playOverlay}>
+        <Icon name="play" size={16} color="#fff" />
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+  const hasThumbnail = video.thumbnailUrl != null;
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.videoRow}>
+      {hasThumbnail ? (
+        <Image
+          source={{ uri: video.thumbnailUrl }}
+          style={styles.videoThumbnail}
+          contentFit="cover"
+        />
+      ) : (
+        <View style={[styles.videoThumbnail, styles.placeholder]}>
+          <Icon name="video" size={24} color={colors.text.secondary} />
+        </View>
+      )}
+      <View style={styles.videoInfo}>
+        <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
+        <Text style={styles.videoChannel}>{video.channel?.name ?? 'Unknown'}</Text>
+        <Text style={styles.videoDuration}>{formatDuration(video.duration)}</Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -66,11 +118,31 @@ export default function SavedScreen() {
     enabled: activeTab === 'threads',
   });
 
+  const savedReelsQuery = useInfiniteQuery({
+    queryKey: ['saved-reels'],
+    queryFn: ({ pageParam }) => usersApi.getSavedReels(pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: activeTab === 'reels',
+  });
+
+  const savedVideosQuery = useInfiniteQuery({
+    queryKey: ['saved-videos'],
+    queryFn: ({ pageParam }) => usersApi.getSavedVideos(pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: activeTab === 'videos',
+  });
+
   const posts: Post[] = savedPostsQuery.data?.pages.flatMap((p) => p.data) ?? [];
   const threads: Thread[] = savedThreadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const reels: Reel[] = savedReelsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const videos: Video[] = savedVideosQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const [refreshingPosts, setRefreshingPosts] = useState(false);
   const [refreshingThreads, setRefreshingThreads] = useState(false);
+  const [refreshingReels, setRefreshingReels] = useState(false);
+  const [refreshingVideos, setRefreshingVideos] = useState(false);
 
   const onRefreshPosts = async () => {
     setRefreshingPosts(true);
@@ -84,6 +156,18 @@ export default function SavedScreen() {
     setRefreshingThreads(false);
   };
 
+  const onRefreshReels = async () => {
+    setRefreshingReels(true);
+    await savedReelsQuery.refetch();
+    setRefreshingReels(false);
+  };
+
+  const onRefreshVideos = async () => {
+    setRefreshingVideos(true);
+    await savedVideosQuery.refetch();
+    setRefreshingVideos(false);
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
@@ -95,9 +179,14 @@ export default function SavedScreen() {
       </View>
 
       <TabSelector
-        tabs={['Posts', 'Threads']}
-        activeIndex={activeTab === 'posts' ? 0 : 1}
-        onChange={(i) => setActiveTab(i === 0 ? 'posts' : 'threads')}
+        tabs={['Posts', 'Threads', 'Reels', 'Videos']}
+        activeIndex={activeTab === 'posts' ? 0 : activeTab === 'threads' ? 1 : activeTab === 'reels' ? 2 : 3}
+        onChange={(i) => {
+          if (i === 0) setActiveTab('posts');
+          else if (i === 1) setActiveTab('threads');
+          else if (i === 2) setActiveTab('reels');
+          else setActiveTab('videos');
+        }}
         variant="underline"
       />
 
@@ -137,7 +226,7 @@ export default function SavedScreen() {
           }
           contentContainerStyle={styles.gridContainer}
         />
-      ) : (
+      ) : activeTab === 'threads' ? (
         <FlatList
           data={threads}
           keyExtractor={(item) => item.id}
@@ -169,6 +258,74 @@ export default function SavedScreen() {
           }
           contentContainerStyle={{ paddingBottom: 100 }}
         />
+      ) : activeTab === 'reels' ? (
+        <FlatList
+          data={reels}
+          keyExtractor={(item) => item.id}
+          numColumns={3}
+          columnWrapperStyle={styles.gridRow}
+          onEndReached={() => {
+            if (savedReelsQuery.hasNextPage && !savedReelsQuery.isFetchingNextPage) {
+              savedReelsQuery.fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} tintColor={colors.emerald} />
+          }
+          renderItem={({ item }) => (
+            <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
+          )}
+          ListEmptyComponent={() =>
+            !savedReelsQuery.isLoading ? (
+              <EmptyState icon="bookmark" title="No saved reels yet" subtitle="Tap the bookmark icon on any reel to save it" />
+            ) : (
+              <View style={{ padding: spacing.base, gap: spacing.md }}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} />
+                ))}
+              </View>
+            )
+          }
+          ListFooterComponent={() =>
+            savedReelsQuery.isFetchingNextPage ? (
+              <Skeleton.Rect width="100%" height={60} />
+            ) : null
+          }
+          contentContainerStyle={styles.gridContainer}
+        />
+      ) : (
+        <FlatList
+          data={videos}
+          keyExtractor={(item) => item.id}
+          onEndReached={() => {
+            if (savedVideosQuery.hasNextPage && !savedVideosQuery.isFetchingNextPage) {
+              savedVideosQuery.fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} tintColor={colors.emerald} />
+          }
+          renderItem={({ item }) => (
+            <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
+          )}
+          ListEmptyComponent={() =>
+            !savedVideosQuery.isLoading ? (
+              <EmptyState icon="bookmark" title="No saved videos yet" subtitle="Tap the bookmark icon on any video to save it" />
+            ) : (
+              <View style={{ padding: spacing.base }}>
+                <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
+              </View>
+            )
+          }
+          ListFooterComponent={() =>
+            savedVideosQuery.isFetchingNextPage ? (
+              <Skeleton.Rect width="100%" height={60} />
+            ) : null
+          }
+          contentContainerStyle={{ paddingBottom: 100 }}
+        />
       )}
     </SafeAreaView>
   );
@@ -191,4 +348,22 @@ const styles = StyleSheet.create({
   gridTextPost: { flex: 1, padding: spacing.xs, backgroundColor: colors.dark.bgCard, justifyContent: 'center' },
   gridText: { color: colors.text.primary, fontSize: fontSize.xs },
   carouselBadge: { position: 'absolute', top: 6, right: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3 },
+  playOverlay: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center',
+  },
+  placeholder: {
+    backgroundColor: colors.dark.bgCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoRow: {
+    flexDirection: 'row', paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+  videoThumbnail: { width: 120, height: 68, borderRadius: radius.sm },
+  videoInfo: { flex: 1, marginLeft: spacing.base, justifyContent: 'center' },
+  videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
+  videoChannel: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
+  videoDuration: { color: colors.text.tertiary, fontSize: fontSize.xs },
 });

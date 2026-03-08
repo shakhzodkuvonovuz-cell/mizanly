@@ -113,25 +113,94 @@ export class ThreadsService {
       ...mutes.map((m) => m.mutedId),
     ];
 
-    const where: any = { isRemoved: false, isChainHead: true };
-
-    if (type === 'following') {
-      where.userId = { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) };
-    } else {
-      where.visibility = 'PUBLIC';
-      where.user = { isPrivate: false };
+    // For You feed: engagement-weighted scoring
+    if (type === 'foryou') {
+      const where: any = {
+        isChainHead: true,
+        isRemoved: false,
+        visibility: 'PUBLIC',
+        user: { isPrivate: false, isDeactivated: false },
+        createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+      };
       if (excludedIds.length) where.userId = { notIn: excludedIds };
+      if (cursor) {
+        where.createdAt = {
+          lt: new Date(cursor),
+          gte: new Date(Date.now() - 72 * 60 * 60 * 1000)
+        };
+      }
+
+      const recentThreads = await this.prisma.thread.findMany({
+        where,
+        select: THREAD_SELECT,
+        take: 200, // fetch more to score and rank
+        orderBy: { createdAt: 'desc' },
+      });
+
+      // Score each thread: engagement weighted by recency
+      const scored = recentThreads.map(thread => {
+        const ageHours = Math.max(1, (Date.now() - new Date(thread.createdAt).getTime()) / 3600000);
+        const engagement = (thread.likesCount * 3) + (thread.repliesCount * 5) + (thread.repostsCount * 4);
+        const score = engagement / Math.pow(ageHours, 1.5);
+        return { ...thread, _score: score };
+      });
+
+      scored.sort((a, b) => b._score - a._score);
+      const startIdx = cursor ? scored.findIndex(t => new Date(t.createdAt).toISOString() < cursor) : 0;
+      const page = scored.slice(Math.max(0, startIdx), Math.max(0, startIdx) + limit + 1);
+
+      const hasMore = page.length > limit;
+      const result = hasMore ? page.slice(0, limit) : page;
+
+      // Strip internal score field
+      const data = result.map(({ _score, ...thread }) => thread);
+
+      return {
+        data,
+        meta: {
+          cursor: hasMore ? data[data.length - 1].createdAt : null,
+          hasMore,
+        },
+      };
     }
+
+    // Following feed: chronological from followed users
+    if (type === 'following') {
+      const where: any = { isRemoved: false, isChainHead: true };
+      where.userId = { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) };
+      where.user = { isDeactivated: false };
+
+      const threads = await this.prisma.thread.findMany({
+        where,
+        select: THREAD_SELECT,
+        take: limit + 1,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        orderBy: { createdAt: 'desc' },
+      });
+
+      const hasMore = threads.length > limit;
+      const items = hasMore ? threads.slice(0, limit) : threads;
+      return {
+        data: items,
+        meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+      };
+    }
+
+    // Trending feed: sorted by likesCount (already engagement-based)
+    const where: any = {
+      isRemoved: false,
+      isChainHead: true,
+      visibility: 'PUBLIC',
+      user: { isPrivate: false, isDeactivated: false },
+    };
+    if (excludedIds.length) where.userId = { notIn: excludedIds };
 
     const threads = await this.prisma.thread.findMany({
       where,
       select: THREAD_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy:
-        type === 'trending'
-          ? { likesCount: 'desc' }
-          : { createdAt: 'desc' },
+      orderBy: { likesCount: 'desc' },
     });
 
     const hasMore = threads.length > limit;
