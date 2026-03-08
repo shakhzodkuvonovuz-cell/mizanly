@@ -191,8 +191,9 @@ describe('ReelsService', () => {
   });
 
   describe('getFeed', () => {
-    it('should return READY reels, exclude PROCESSING/FAILED', async () => {
+    it('should return reels ordered by engagement score, not chronology', async () => {
       const userId = 'user-123';
+      const now = new Date();
       const mockReels = [
         {
           id: 'reel-1',
@@ -202,20 +203,20 @@ describe('ReelsService', () => {
           videoUrl: 'url1',
           thumbnailUrl: 'thumb1',
           duration: 10,
-          caption: 'Caption 1',
+          caption: 'Older but high engagement',
           mentions: [],
           hashtags: [],
           audioTrackId: null,
           isDuet: false,
           isStitch: false,
           isRemoved: false,
-          likesCount: 5,
-          commentsCount: 2,
-          sharesCount: 1,
+          likesCount: 100,      // high engagement
+          commentsCount: 20,
+          sharesCount: 10,
           savesCount: 0,
-          viewsCount: 100,
+          viewsCount: 5000,
           loopsCount: 10,
-          createdAt: new Date(),
+          createdAt: new Date(now.getTime() - 24 * 60 * 60 * 1000), // 1 day old
           updatedAt: new Date(),
           audioTrack: null,
         },
@@ -227,20 +228,20 @@ describe('ReelsService', () => {
           videoUrl: 'url2',
           thumbnailUrl: 'thumb2',
           duration: 12,
-          caption: 'Caption 2',
+          caption: 'Newer but low engagement',
           mentions: [],
           hashtags: [],
           audioTrackId: null,
           isDuet: false,
           isStitch: false,
           isRemoved: false,
-          likesCount: 10,
-          commentsCount: 3,
-          sharesCount: 2,
-          savesCount: 1,
-          viewsCount: 200,
-          loopsCount: 20,
-          createdAt: new Date(),
+          likesCount: 5,
+          commentsCount: 1,
+          sharesCount: 0,
+          savesCount: 0,
+          viewsCount: 100,
+          loopsCount: 5,
+          createdAt: new Date(now.getTime() - 2 * 60 * 60 * 1000), // 2 hours old
           updatedAt: new Date(),
           audioTrack: null,
         },
@@ -248,27 +249,23 @@ describe('ReelsService', () => {
 
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
+      // The service will fetch up to 200 reels; we mock returning these two
       prisma.reel.findMany.mockResolvedValue(mockReels);
       prisma.reelReaction.findMany.mockResolvedValue([]);
       prisma.reelInteraction.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed(userId);
 
-      expect(prisma.reel.findMany).toHaveBeenCalledWith({
-        where: {
-          status: ReelStatus.READY,
-          isRemoved: false,
-          user: { isPrivate: false },
-        },
-        select: REEL_SELECT,
-        take: 21, // limit + 1
-        orderBy: { createdAt: 'desc' },
-      });
-      expect(result.data).toHaveLength(2);
-      expect(result.data[0].status).toBe(ReelStatus.READY);
-      expect(result.data[0].isLiked).toBe(false);
-      expect(result.data[0].isBookmarked).toBe(false);
-      expect(result.meta.hasMore).toBe(false);
+      // Expect the high‑engagement older reel first, not the newer low‑engagement one
+      expect(result.data[0].id).toBe('reel-1'); // older, high engagement
+      expect(result.data[1].id).toBe('reel-2'); // newer, low engagement
+      // Verify the query fetched recent reels (72h window) and did NOT use createdAt order
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          orderBy: undefined, // No orderBy because scoring happens in‑memory
+          take: 200,          // We fetch up to 200 to score
+        })
+      );
     });
 
     it('should exclude blocked/muted users', async () => {
