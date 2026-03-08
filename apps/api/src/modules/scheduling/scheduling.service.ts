@@ -20,6 +20,18 @@ export interface ScheduledItem {
 export class SchedulingService {
   constructor(private prisma: PrismaService) {}
 
+  private getModel(type: string): keyof PrismaService {
+    const map: Record<string, keyof PrismaService> = {
+      post: 'post',
+      thread: 'thread',
+      reel: 'reel',
+      video: 'video',
+    };
+    if (!(type in map)) {
+      throw new BadRequestException('Invalid content type');
+    }
+    return map[type];
+  }
 
   async getScheduled(userId: string): Promise<ScheduledItem[]> {
     const [posts, threads, reels, videos] = await Promise.all([
@@ -110,25 +122,9 @@ export class SchedulingService {
       );
     }
 
-    // Type-safe model access using switch statement
-    let content: any;
-    switch (type) {
-      case 'post':
-        content = await this.prisma.post.findUnique({ where: { id } });
-        break;
-      case 'thread':
-        content = await this.prisma.thread.findUnique({ where: { id } });
-        break;
-      case 'reel':
-        content = await this.prisma.reel.findUnique({ where: { id } });
-        break;
-      case 'video':
-        content = await this.prisma.video.findUnique({ where: { id } });
-        break;
-      default:
-        throw new BadRequestException('Invalid content type');
-    }
-
+    const model = this.getModel(type);
+    // Type-safe approach: use a helper function to handle the dynamic access
+    const content = await this.findContent(model, id);
     if (!content) {
       throw new NotFoundException(`${type} not found`);
     }
@@ -136,31 +132,7 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    // Type-safe update using switch statement
-    switch (type) {
-      case 'post':
-        return this.prisma.post.update({
-          where: { id },
-          data: { scheduledAt },
-        });
-      case 'thread':
-        return this.prisma.thread.update({
-          where: { id },
-          data: { scheduledAt },
-        });
-      case 'reel':
-        return this.prisma.reel.update({
-          where: { id },
-          data: { scheduledAt },
-        });
-      case 'video':
-        return this.prisma.video.update({
-          where: { id },
-          data: { scheduledAt },
-        });
-      default:
-        throw new BadRequestException('Invalid content type');
-    }
+    return this.updateContent(model, id, { scheduledAt });
   }
 
   async cancelSchedule(
@@ -168,25 +140,8 @@ export class SchedulingService {
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
   ) {
-    // Type-safe model access using switch statement
-    let content: any;
-    switch (type) {
-      case 'post':
-        content = await this.prisma.post.findUnique({ where: { id } });
-        break;
-      case 'thread':
-        content = await this.prisma.thread.findUnique({ where: { id } });
-        break;
-      case 'reel':
-        content = await this.prisma.reel.findUnique({ where: { id } });
-        break;
-      case 'video':
-        content = await this.prisma.video.findUnique({ where: { id } });
-        break;
-      default:
-        throw new BadRequestException('Invalid content type');
-    }
-
+    const model = this.getModel(type);
+    const content = await this.findContent(model, id);
     if (!content) {
       throw new NotFoundException(`${type} not found`);
     }
@@ -194,31 +149,7 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    // Type-safe update using switch statement
-    switch (type) {
-      case 'post':
-        return this.prisma.post.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
-      case 'thread':
-        return this.prisma.thread.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
-      case 'reel':
-        return this.prisma.reel.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
-      case 'video':
-        return this.prisma.video.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
-      default:
-        throw new BadRequestException('Invalid content type');
-    }
+    return this.updateContent(model, id, { scheduledAt: null });
   }
 
   async publishNow(
@@ -226,25 +157,8 @@ export class SchedulingService {
     type: 'post' | 'thread' | 'reel' | 'video',
     id: string,
   ) {
-    // Type-safe model access using switch statement
-    let content: any;
-    switch (type) {
-      case 'post':
-        content = await this.prisma.post.findUnique({ where: { id } });
-        break;
-      case 'thread':
-        content = await this.prisma.thread.findUnique({ where: { id } });
-        break;
-      case 'reel':
-        content = await this.prisma.reel.findUnique({ where: { id } });
-        break;
-      case 'video':
-        content = await this.prisma.video.findUnique({ where: { id } });
-        break;
-      default:
-        throw new BadRequestException('Invalid content type');
-    }
-
+    const model = this.getModel(type);
+    const content = await this.findContent(model, id);
     if (!content) {
       throw new NotFoundException(`${type} not found`);
     }
@@ -252,28 +166,39 @@ export class SchedulingService {
       throw new ForbiddenException('Not authorized');
     }
 
-    // Type-safe update using switch statement
-    switch (type) {
+    return this.updateContent(model, id, { scheduledAt: null });
+  }
+
+  // Helper methods for type-safe dynamic access
+  private async findContent(model: keyof PrismaService, id: string): Promise<{ userId: string } | null> {
+    switch (model) {
       case 'post':
-        return this.prisma.post.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
+        return this.prisma.post.findUnique({ where: { id } });
       case 'thread':
-        return this.prisma.thread.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
+        return this.prisma.thread.findUnique({ where: { id } });
       case 'reel':
-        return this.prisma.reel.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
+        return this.prisma.reel.findUnique({ where: { id } });
       case 'video':
-        return this.prisma.video.update({
-          where: { id },
-          data: { scheduledAt: null },
-        });
+        return this.prisma.video.findUnique({ where: { id } });
+      default:
+        return null;
+    }
+  }
+
+  private async updateContent(
+    model: keyof PrismaService,
+    id: string,
+    data: { scheduledAt: Date | null }
+  ): Promise<unknown> {
+    switch (model) {
+      case 'post':
+        return this.prisma.post.update({ where: { id }, data });
+      case 'thread':
+        return this.prisma.thread.update({ where: { id }, data });
+      case 'reel':
+        return this.prisma.reel.update({ where: { id }, data });
+      case 'video':
+        return this.prisma.video.update({ where: { id }, data });
       default:
         throw new BadRequestException('Invalid content type');
     }
