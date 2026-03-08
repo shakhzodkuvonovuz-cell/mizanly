@@ -1,6 +1,10 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PlaylistsController } from './playlists.controller';
 import { PlaylistsService } from './playlists.service';
+import { PrismaService } from '../../config/prisma.service';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 
 describe('PlaylistsController', () => {
   let controller: PlaylistsController;
@@ -18,9 +22,20 @@ describe('PlaylistsController', () => {
   };
 
   beforeEach(async () => {
+    const mockConfigService = {
+      get: jest.fn((key: string) => key === 'CLERK_SECRET_KEY' ? 'test-secret' : null),
+    };
+    const mockPrismaService = {};
+
     const module = await Test.createTestingModule({
       controllers: [PlaylistsController],
-      providers: [{ provide: PlaylistsService, useValue: mockService }],
+      providers: [
+        { provide: PlaylistsService, useValue: mockService },
+        { provide: ConfigService, useValue: mockConfigService },
+        { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
+        { provide: OptionalClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
+      ],
     }).compile();
 
     controller = module.get(PlaylistsController);
