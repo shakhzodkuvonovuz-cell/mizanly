@@ -17,9 +17,10 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ---
 
 ## Status: ~97% Feature Complete (as of 2026-03-08)
-All 5 spaces built and functional. 55 screens, ~230+ API endpoints, ~130+ tests.
-Backend: NestJS with 27 modules, Redis, security headers, rate limiting, observability.
+All 5 spaces built and functional. 46 screens, 224 API endpoints, 38 test specs.
+Backend: NestJS with 27 modules, 28 controllers, Redis, security headers, rate limiting, observability.
 Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
+Features added in Batch 17-18: engagement-scored feeds, admin moderation, recommendations, analytics, discover, content settings, scheduling, majlis-lists, polls, subtitles, archive, bookmark folders, manage data.
 
 ---
 
