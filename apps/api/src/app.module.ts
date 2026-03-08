@@ -28,6 +28,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { RecommendationsModule } from './modules/recommendations/recommendations.module';
+import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -68,6 +69,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     DevicesModule,
     AdminModule,
     RecommendationsModule,
+    SchedulingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
