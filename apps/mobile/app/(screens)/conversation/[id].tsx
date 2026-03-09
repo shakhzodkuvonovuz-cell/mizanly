@@ -34,6 +34,7 @@ import type { Message, Conversation } from '@/types';
 import { io, Socket } from 'socket.io-client';
 
 const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -311,14 +312,25 @@ function GifPicker({ visible, onClose, onSelect }: {
 function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
   searchQuery = '', onSearchResultPress, readByMembers = [],
+  conversationId,
 }: {
   message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
   onLongPress: (msg: Message) => void; isNew?: boolean;
   searchQuery?: string; onSearchResultPress?: (msgId: string) => void;
   readByMembers?: any[];
+  conversationId: string;
 }) {
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+  const haptic = useHaptic();
+  const [isReacting, setIsReacting] = useState(false);
   const time = messageTimestamp(message.createdAt);
   const AVATAR_SIZE = 28;
+
+  const handleReactionSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: ['messages', conversationId] });
+    haptic.light();
+  };
 
   // Animation for new messages
   const translateY = useSharedValue(isNew ? 100 : 0);
@@ -453,8 +465,38 @@ function MessageBubble({
         </View>
         {message.reactions && message.reactions.length > 0 && (
           <View style={styles.reactions}>
-            {message.reactions.slice(0, 5).map((r) => (
-              <Text key={r.id} style={styles.reactionEmoji}>{r.emoji}</Text>
+            {Object.entries(
+              message.reactions.reduce<Record<string, { count: number; hasOwn: boolean }>>((acc, r) => {
+                if (!acc[r.emoji]) acc[r.emoji] = { count: 0, hasOwn: false };
+                acc[r.emoji].count++;
+                if (r.userId === user?.id) acc[r.emoji].hasOwn = true;
+                return acc;
+              }, {})
+            ).map(([emoji, { count, hasOwn }]) => (
+              <Pressable
+                key={emoji}
+                style={[styles.reactionChip, hasOwn && styles.reactionChipOwn]}
+                disabled={isReacting}
+                onPress={() => {
+                  if (isReacting) return;
+                  setIsReacting(true);
+                  if (hasOwn) {
+                    messagesApi.removeReaction(conversationId, message.id, emoji)
+                      .then(handleReactionSuccess)
+                      .catch(() => Alert.alert('Error', 'Could not remove reaction.'))
+                      .finally(() => setIsReacting(false));
+                  } else {
+                    messagesApi.reactToMessage(conversationId, message.id, emoji)
+                      .then(handleReactionSuccess)
+                      .catch(() => Alert.alert('Error', 'Could not add reaction.'))
+                      .finally(() => setIsReacting(false));
+                  }
+                }}
+                accessibilityLabel={`${emoji} ${count}`}
+              >
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+                {count > 1 && <Text style={styles.reactionCount}>{count}</Text>}
+              </Pressable>
             ))}
           </View>
         )}
@@ -984,6 +1026,7 @@ export default function ConversationScreen() {
                     searchQuery={searchQuery}
                     readByMembers={readByMembers}
                     onSearchResultPress={() => handleSearchResultPress(index)}
+                    conversationId={id}
                   />
                 </Swipeable>
               );
@@ -1145,6 +1188,30 @@ export default function ConversationScreen() {
           setShowReactionPicker(false);
         }}
       >
+        {/* Quick Reaction Bar */}
+        <View style={styles.quickReactions}>
+          {QUICK_REACTION_EMOJIS.map((emoji) => (
+            <Pressable
+              key={emoji}
+              style={styles.quickReactionBtn}
+              onPress={() => {
+                if (contextMenuMsg) {
+                  messagesApi.reactToMessage(id, contextMenuMsg.id, emoji)
+                    .then(() => {
+                      queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                      haptic.light();
+                    })
+                    .catch(() => Alert.alert('Error', 'Could not add reaction.'));
+                }
+                setContextMenuMsg(null);
+              }}
+              accessibilityLabel={`React with ${emoji}`}
+              accessibilityRole="button"
+            >
+              <Text style={styles.quickReactionEmoji}>{emoji}</Text>
+            </Pressable>
+          ))}
+        </View>
         {contextMenuMsg?.content ? (
           <BottomSheetItem
             label="Copy Text"
@@ -1406,8 +1473,33 @@ const styles = StyleSheet.create({
   editedLabelOwn: { color: 'rgba(255,255,255,0.6)' },
   bubbleTime: { color: 'rgba(0,0,0,0.4)', fontSize: 10 },
   bubbleTimeOwn: { color: 'rgba(255,255,255,0.6)' },
-  reactions: { flexDirection: 'row', gap: 2, marginTop: spacing.xs },
+  reactions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  reactionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.xs + 2, // 4 + 2 = 6
+    paddingVertical: 2,
+    marginRight: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  reactionChipOwn: {
+    backgroundColor: colors.active.emerald10,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
   reactionEmoji: { fontSize: 14 },
+  reactionCount: {
+    fontSize: 11,
+    color: colors.text.secondary,
+    marginLeft: 2,
+  },
 
   emptyWrap: { alignItems: 'center', justifyContent: 'center', flex: 1, paddingTop: 80, gap: spacing.md },
   emptyName: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
@@ -1616,5 +1708,25 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginLeft: spacing.xs,
+  },
+  quickReactions: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+    marginBottom: spacing.xs,
+  },
+  quickReactionBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickReactionEmoji: {
+    fontSize: fontSize.xl,
   },
 });
