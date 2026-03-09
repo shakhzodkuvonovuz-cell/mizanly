@@ -136,11 +136,19 @@ export default function ConversationInfoScreen() {
     setDebouncedSearchQuery('');
   };
 
+  const [memberActionSheetOpen, setMemberActionSheetOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<{ id: string; username: string } | null>(null);
+
   const handleRemoveMember = (targetUserId: string) => {
     Alert.alert('Remove member?', 'This member will be removed from the group.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: () => removeMemberMutation.mutate(targetUserId) },
     ]);
+  };
+
+  const handleMemberLongPress = (memberId: string, username: string) => {
+    setSelectedMember({ id: memberId, username });
+    setMemberActionSheetOpen(true);
   };
 
   const handleLeave = () => {
@@ -245,6 +253,8 @@ export default function ConversationInfoScreen() {
                 key={m.user.id}
                 style={styles.memberRow}
                 onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
+                onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
+                delayLongPress={500}
                 activeOpacity={0.7}
               >
                 <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
@@ -255,20 +265,8 @@ export default function ConversationInfoScreen() {
                   </View>
                   <Text style={styles.memberHandle}>@{m.user.username}</Text>
                 </View>
-                {m.user.id === user?.id ? (
+                {m.user.id === user?.id && (
                   <Text style={styles.youLabel}>You</Text>
-                ) : isCreator && (
-                  <Pressable
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      handleRemoveMember(m.user.id);
-                    }}
-                    hitSlop={8}
-                    style={styles.removeMemberBtn}
-                    accessibilityLabel="Remove member"
-                  >
-                    <Icon name="x" size={16} color={colors.text.tertiary} />
-                  </Pressable>
                 )}
               </TouchableOpacity>
             ))}
@@ -277,7 +275,7 @@ export default function ConversationInfoScreen() {
 
         {/* Actions */}
         <View style={styles.section}>
-          {isGroup && (
+          {isGroup && !isCreator && (
             <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
               {leaveGroupMutation.isPending
                 ? <ActivityIndicator color={colors.error} />
@@ -468,6 +466,39 @@ export default function ConversationInfoScreen() {
             )}
           </TouchableOpacity>
         </View>
+      </BottomSheet>
+
+      {/* Member action BottomSheet */}
+      <BottomSheet
+        visible={memberActionSheetOpen}
+        onClose={() => {
+          setMemberActionSheetOpen(false);
+          setSelectedMember(null);
+        }}
+      >
+        {selectedMember && (
+          <>
+            {isCreator && selectedMember.id !== user?.id && (
+              <BottomSheetItem
+                label="Remove from group"
+                icon={<Icon name="x" size="sm" color={colors.error} />}
+                onPress={() => {
+                  setMemberActionSheetOpen(false);
+                  handleRemoveMember(selectedMember.id);
+                }}
+                destructive
+              />
+            )}
+            <BottomSheetItem
+              label="View profile"
+              icon={<Icon name="user" size="sm" color={colors.text.primary} />}
+              onPress={() => {
+                setMemberActionSheetOpen(false);
+                router.push(`/(screens)/profile/${selectedMember.username}`);
+              }}
+            />
+          </>
+        )}
       </BottomSheet>
     </SafeAreaView>
   );
