@@ -32,6 +32,7 @@ import { SchedulingModule } from './modules/scheduling/scheduling.module';
 import { MajlisListsModule } from './modules/majlis-lists/majlis-lists.module';
 import { PollsModule } from './modules/polls/polls.module';
 import { SubtitlesModule } from './modules/subtitles/subtitles.module';
+import { DraftsModule } from './modules/drafts/drafts.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -76,6 +77,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     MajlisListsModule,
     PollsModule,
     SubtitlesModule,
+    DraftsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
