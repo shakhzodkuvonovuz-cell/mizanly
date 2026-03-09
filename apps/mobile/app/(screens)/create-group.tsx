@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  TextInput, FlatList, ActivityIndicator, Alert, ScrollView,
+  TextInput, FlatList, RefreshControl, ActivityIndicator, Alert, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -240,6 +240,7 @@ export default function CreateGroupScreen() {
               data={people}
               scrollEnabled={false}
               keyExtractor={(item) => item.id}
+              refreshControl={<RefreshControl refreshing={searchQuery.isLoading} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.userRow}
