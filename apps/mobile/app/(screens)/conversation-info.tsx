@@ -16,6 +16,7 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { useHaptic } from '@/hooks/useHaptic';
 import type { Conversation, User } from '@/types';
 
 const MAX_GROUP_NAME = 50;
@@ -37,6 +38,7 @@ export default function ConversationInfoScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const haptic = useHaptic();
 
   // Admin state
   const [editNameSheetOpen, setEditNameSheetOpen] = useState(false);
@@ -147,6 +149,7 @@ export default function ConversationInfoScreen() {
   };
 
   const handleMemberLongPress = (memberId: string, username: string) => {
+    haptic.light();
     setSelectedMember({ id: memberId, username });
     setMemberActionSheetOpen(true);
   };
@@ -262,6 +265,11 @@ export default function ConversationInfoScreen() {
                   <View style={styles.memberNameRow}>
                     <Text style={styles.memberName}>{m.user.displayName}</Text>
                     {m.user.isVerified && <VerifiedBadge size={13} />}
+                    {m.user.id === convo.createdById && (
+                      <View style={styles.creatorBadge}>
+                        <Text style={styles.creatorBadgeText}>Creator</Text>
+                      </View>
+                    )}
                   </View>
                   <Text style={styles.memberHandle}>@{m.user.username}</Text>
                 </View>
@@ -541,6 +549,17 @@ const styles = StyleSheet.create({
   memberName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   memberHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   youLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  creatorBadge: {
+    backgroundColor: 'rgba(200, 150, 62, 0.12)', // colors.gold with 12% opacity
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  creatorBadgeText: {
+    color: colors.gold,
+    fontSize: fontSize.xs - 1,
+    fontWeight: '600',
+  },
 
   actionRow: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2,
@@ -569,9 +588,6 @@ const styles = StyleSheet.create({
   },
   adminActionText: {
     color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500',
-  },
-  removeMemberBtn: {
-    padding: spacing.xs,
   },
 
   // BottomSheet styles
