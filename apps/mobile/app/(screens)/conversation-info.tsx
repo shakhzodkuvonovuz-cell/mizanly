@@ -94,6 +94,9 @@ export default function ConversationInfoScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
     },
+    onError: (error) => {
+      Alert.alert('Error', 'Failed to remove member. Please try again.');
+    },
   });
 
   const pickAvatar = async () => {
@@ -259,6 +262,8 @@ export default function ConversationInfoScreen() {
                 onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
                 delayLongPress={500}
                 activeOpacity={0.7}
+                accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
+                accessibilityHint="Press to view profile, long press to view member actions"
               >
                 <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
                 <View style={styles.memberInfo}>
@@ -427,6 +432,8 @@ export default function ConversationInfoScreen() {
               data={searchResults}
               style={styles.resultsList}
               keyExtractor={(item) => item.id}
+              refreshing={memberSearchQuery.isFetching}
+              onRefresh={() => memberSearchQuery.refetch()}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.userRow}
@@ -495,6 +502,7 @@ export default function ConversationInfoScreen() {
                   handleRemoveMember(selectedMember.id);
                 }}
                 destructive
+                disabled={removeMemberMutation.isPending}
               />
             )}
             <BottomSheetItem
