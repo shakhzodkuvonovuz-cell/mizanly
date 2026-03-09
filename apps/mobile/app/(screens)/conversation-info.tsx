@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, Alert,
-  ActivityIndicator, TextInput, FlatList,
+  ActivityIndicator, TextInput, FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -264,6 +264,7 @@ export default function ConversationInfoScreen() {
                 activeOpacity={0.7}
                 accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
                 accessibilityHint="Press to view profile, long press to view member actions"
+                accessibilityRole="button"
               >
                 <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
                 <View style={styles.memberInfo}>
@@ -432,8 +433,7 @@ export default function ConversationInfoScreen() {
               data={searchResults}
               style={styles.resultsList}
               keyExtractor={(item) => item.id}
-              refreshing={memberSearchQuery.isFetching}
-              onRefresh={() => memberSearchQuery.refetch()}
+              refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.userRow}
@@ -558,14 +558,14 @@ const styles = StyleSheet.create({
   memberHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   youLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
   creatorBadge: {
-    backgroundColor: 'rgba(200, 150, 62, 0.12)', // colors.gold with 12% opacity
+    backgroundColor: colors.active.gold10, // gold with 10% opacity
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
   },
   creatorBadgeText: {
     color: colors.gold,
-    fontSize: fontSize.xs - 1,
+    fontSize: fontSize.xs,
     fontWeight: '600',
   },
 
