@@ -27,6 +27,7 @@ export default function CreateGroupScreen() {
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [validationError, setValidationError] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -86,20 +87,27 @@ export default function CreateGroupScreen() {
     onSuccess: (convo) => {
       router.replace(`/(screens)/conversation/${convo.id}`);
     },
-    onError: (err: Error) => Alert.alert('Error', err.message || 'Could not create group'),
+    onError: (err: Error) => {
+      if (err.message.includes(`at least ${MIN_MEMBERS} members`)) {
+        setValidationError(err.message);
+      } else {
+        Alert.alert('Error', err.message || 'Could not create group');
+      }
+    },
   });
 
   const handleAddMember = (user: User) => {
     setSelectedMembers(prev => [...prev, user]);
     setQuery('');
     setDebouncedQuery('');
+    setValidationError('');
   };
 
   const handleRemoveMember = (userId: string) => {
     setSelectedMembers(prev => prev.filter(m => m.id !== userId));
+    setValidationError('');
   };
 
-  const canCreate = groupName.trim().length > 0 && selectedMembers.length >= MIN_MEMBERS;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -110,14 +118,20 @@ export default function CreateGroupScreen() {
         </Pressable>
         <Text style={styles.headerTitle}>New Group</Text>
         <TouchableOpacity
-          onPress={() => createMutation.mutate()}
-          disabled={!canCreate || createMutation.isPending}
+          onPress={() => {
+            if (selectedMembers.length < MIN_MEMBERS) {
+              setValidationError(`Please add at least ${MIN_MEMBERS} members.`);
+              return;
+            }
+            createMutation.mutate();
+          }}
+          disabled={groupName.trim().length === 0 || createMutation.isPending}
           style={styles.createBtn}
         >
           {createMutation.isPending ? (
             <ActivityIndicator color={colors.emerald} size="small" />
           ) : (
-            <Text style={[styles.createBtnText, !canCreate && styles.createBtnDisabled]}>
+            <Text style={[styles.createBtnText, groupName.trim().length === 0 && styles.createBtnDisabled]}>
               Create
             </Text>
           )}
@@ -158,8 +172,17 @@ export default function CreateGroupScreen() {
               </View>
             )}
             <View style={styles.avatarOverlay}>
-              <Icon name="edit" size={16} color=colors.text.primary />
+              <Icon name="edit" size={16} color={colors.text.primary} />
             </View>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setAvatarUri(undefined)}
+            disabled={createMutation.isPending}
+            style={styles.skipBtn}
+          >
+            <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
+              Skip for now
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -226,7 +249,7 @@ export default function CreateGroupScreen() {
                 >
                   <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
                   <View style={styles.userInfo}>
-                    <View style={styles.nameRow}>
+                    <View style={styles.userNameRow}>
                       <Text style={styles.name}>{item.displayName}</Text>
                       {item.isVerified && <VerifiedBadge size={13} />}
                     </View>
@@ -254,6 +277,9 @@ export default function CreateGroupScreen() {
         <Text style={styles.note}>
           At least {MIN_MEMBERS} members (excluding yourself) are required.
         </Text>
+
+        {/* Validation error */}
+        {validationError ? <Text style={styles.error}>{validationError}</Text> : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -296,6 +322,9 @@ const styles = StyleSheet.create({
     width: 32, height: 32, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
   },
+  skipBtn: { marginTop: spacing.sm, alignItems: 'center' },
+  skipText: { color: colors.text.secondary, fontSize: fontSize.sm },
+  skipDisabled: { color: colors.text.tertiary },
 
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
@@ -325,7 +354,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   userInfo: { flex: 1 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 
@@ -334,6 +363,10 @@ const styles = StyleSheet.create({
   hint: { alignItems: 'center', paddingTop: 40 },
   hintText: { color: colors.text.tertiary, fontSize: fontSize.base },
 
+  error: {
+    color: colors.error, fontSize: fontSize.sm, textAlign: 'center',
+    marginTop: spacing.sm, paddingHorizontal: spacing.base,
+  },
   note: {
     color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center',
     marginTop: spacing.xl, paddingHorizontal: spacing.base,
