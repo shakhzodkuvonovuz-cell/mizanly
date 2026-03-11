@@ -9,7 +9,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, radius } from '@/theme';
+import { colors, spacing, radius, animation } from '@/theme';
 
 function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   width: number | string;
@@ -21,14 +21,14 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
 
   useEffect(() => {
     shimmer.value = withRepeat(
-      withTiming(1, { duration: 1200, easing: Easing.linear }),
+      withTiming(1, { duration: animation.timing.shimmer, easing: Easing.inOut(Easing.ease) }),
       -1,
       false,
     );
   }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-200, 200]) }],
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-300, 300]) }],
   }));
 
   return (
@@ -40,16 +40,24 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
           borderRadius,
           backgroundColor: colors.dark.bgElevated,
           overflow: 'hidden',
+          borderWidth: 0.5,
+          borderColor: colors.dark.borderLight,
         },
         style,
       ]}
     >
       <Animated.View style={[StyleSheet.absoluteFill, animatedStyle]}>
         <LinearGradient
-          colors={['transparent', colors.dark.surface, 'transparent']}
+          colors={[
+            'transparent',
+            'rgba(255, 255, 255, 0.05)',
+            'rgba(255, 255, 255, 0.1)',
+            'rgba(255, 255, 255, 0.05)',
+            'transparent',
+          ]}
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
-          style={[StyleSheet.absoluteFill, { width: 200 }]}
+          style={[StyleSheet.absoluteFill, { width: 300 }]}
         />
       </Animated.View>
     </View>
@@ -163,6 +171,7 @@ const skeletonStyles = StyleSheet.create({
     padding: spacing.base,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.dark.border,
+    backgroundColor: colors.dark.bgCard,
   },
   postHeader: {
     flexDirection: 'row',
@@ -181,6 +190,7 @@ const skeletonStyles = StyleSheet.create({
     gap: spacing.md,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.dark.border,
+    backgroundColor: colors.dark.bgCard,
   },
   threadContent: { flex: 1 },
   threadHeader: {

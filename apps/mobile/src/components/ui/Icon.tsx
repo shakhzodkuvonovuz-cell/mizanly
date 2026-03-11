@@ -9,10 +9,11 @@ import {
   VolumeX, Mail, Hash, TrendingUp, MapPin, Link, Clock,
   Check, CheckCheck, Paperclip, Smile, AtSign, Filter,
   Layers, CirclePlus, Edit3, Slash, LogOut, BarChart2, Loader,
-  Maximize, Pause, Rewind, FastForward, Volume1, Volume2,
+  Maximize, Pause, Rewind, FastForward, Volume1, Volume2, Music,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
+import type { StyleProp, ViewStyle } from 'react-native';
 
 export type IconName =
   | 'heart' | 'heart-filled' | 'message-circle' | 'bookmark' | 'bookmark-filled'
@@ -24,7 +25,7 @@ export type IconName =
   | 'trending-up' | 'map-pin' | 'link' | 'clock' | 'check' | 'check-check'
   | 'paperclip' | 'smile' | 'at-sign' | 'filter' | 'layers' | 'circle-plus'
   | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader'
-  | 'maximize';
+  | 'maximize' | 'music';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -34,6 +35,7 @@ interface IconProps {
   color?: string;
   strokeWidth?: number;
   fill?: string;
+  style?: StyleProp<ViewStyle>;
 }
 
 const iconMap: Record<IconName, ComponentType<LucideProps>> = {
@@ -98,13 +100,14 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'fast-forward': FastForward,
   'volume-1': Volume1,
   'volume-2': Volume2,
+  'music': Music,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);
 
 const MIRROR_IN_RTL: Set<IconName> = new Set(['arrow-left', 'chevron-left', 'chevron-right']);
 
-export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill }: IconProps) {
+export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style }: IconProps) {
   const LucideIcon = iconMap[name];
   if (!LucideIcon) return null;
 
@@ -119,12 +122,13 @@ export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill }: Ico
       color={iconColor}
       strokeWidth={strokeWidth}
       fill={isFilled ? (fill ?? iconColor) : 'none'}
+      style={style as any}
     />
   );
 
   if (shouldMirror) {
     return (
-      <View style={{ transform: [{ scaleX: -1 }] }}>
+      <View style={[{ transform: [{ scaleX: -1 }] }, style]}>
         {icon}
       </View>
     );

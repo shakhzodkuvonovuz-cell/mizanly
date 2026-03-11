@@ -139,14 +139,15 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const triggerHeartAnimation = useCallback(() => {
     overlayHeartScale.value = 0;
     overlayHeartOpacity.value = 1;
+    // Burst animation
     overlayHeartScale.value = withSequence(
-      withTiming(1.2, { duration: 200 }),
-      withTiming(1, { duration: 200 }),
-      withTiming(0, { duration: 400 }),
+      withSpring(1.4, animation.spring.bouncy),
+      withSpring(1.2, animation.spring.responsive),
+      withDelay(200, withSpring(0, animation.spring.fluid))
     );
-    overlayHeartOpacity.value = withDelay(
-      600,
-      withTiming(0, { duration: 200 }),
+    overlayHeartOpacity.value = withSequence(
+      withTiming(1, { duration: 100 }),
+      withDelay(400, withTiming(0, { duration: 300 }))
     );
     // Trigger floating hearts effect
     setHeartTrigger((t) => t + 1);
@@ -234,7 +235,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
-        <View>
+        <View style={styles.mediaContainer}>
           <Pressable
             onPress={handleDoubleTap}
             accessibilityLabel="Double-tap to like"
@@ -250,7 +251,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
             />
             {/* Overlay heart for double-tap */}
             <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
-              <Icon name="heart-filled" size={80} color={colors.like} fill={colors.like} />
+              <View style={styles.heartGlow}>
+                <Icon name="heart-filled" size={100} color={colors.like} fill={colors.like} strokeWidth={0} />
+              </View>
             </Animated.View>
             {/* Floating hearts effect */}
             <FloatingHearts trigger={heartTrigger} />
@@ -378,9 +381,12 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.dark.bgCard,
-    marginBottom: spacing.sm,
-    borderRadius: radius.md,
-    marginHorizontal: spacing.xs,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    marginHorizontal: 0, // Edge-to-edge
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: colors.dark.borderLight,
     overflow: 'hidden',
   },
   header: {
@@ -403,11 +409,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.sm,
   },
+  mediaContainer: {
+    backgroundColor: colors.dark.bg, // Black background for pillarboxing if needed
+    width: '100%',
+  },
   overlayHeart: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 10,
+  },
+  heartGlow: {
+    shadowColor: colors.error,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 20,
   },
   actions: {
     flexDirection: 'row',
@@ -419,10 +437,9 @@ const styles = StyleSheet.create({
   spacer: { flex: 1 },
   sensitiveOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: colors.glass.dark,
+    backgroundColor: 'rgba(13, 17, 23, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: radius.md,
     gap: spacing.sm,
   },
   sensitiveText: {

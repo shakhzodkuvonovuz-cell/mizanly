@@ -20,9 +20,10 @@ interface BottomSheetProps {
   onClose: () => void;
   children: React.ReactNode;
   snapPoint?: number; // percentage of screen height (0-1), defaults to auto
+  blurBackdrop?: boolean;
 }
 
-export function BottomSheet({ visible, onClose, children, snapPoint }: BottomSheetProps) {
+export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop }: BottomSheetProps) {
   const haptic = useHaptic();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
@@ -79,7 +80,12 @@ export function BottomSheet({ visible, onClose, children, snapPoint }: BottomShe
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      <Animated.View style={[styles.backdrop, backdropStyle]}>
+      <Animated.View style={[StyleSheet.absoluteFill, backdropStyle]}>
+        {blurBackdrop ? (
+          <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill} />
+        ) : (
+          <View style={styles.backdrop} />
+        )}
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}

@@ -17,8 +17,10 @@ export const colors = {
     bgCard: '#1C2333',
     bgSheet: '#21283B',
     surface: '#2D3548',
+    surfaceHover: '#374151',
     border: '#30363D',
     borderLight: '#484F58',
+    borderHighlight: 'rgba(255, 255, 255, 0.1)',
   },
 
   // Light theme
@@ -28,8 +30,10 @@ export const colors = {
     bgCard: '#FFFFFF',
     bgSheet: '#FFFFFF',
     surface: '#F3F4F6',
+    surfaceHover: '#E5E7EB',
     border: '#D0D7DE',
     borderLight: '#E5E7EB',
+    borderHighlight: 'rgba(0, 0, 0, 0.05)',
   },
 
   // Text
@@ -38,6 +42,7 @@ export const colors = {
     secondary: '#8B949E',
     tertiary: '#6E7781',
     inverse: '#1E293B',
+    onColor: '#FFFFFF',
   },
 
   // Semantic
@@ -54,8 +59,9 @@ export const colors = {
 
   // Glass overlay tints
   glass: {
-    dark: 'rgba(13, 17, 23, 0.7)',
-    light: 'rgba(255, 255, 255, 0.08)',
+    dark: 'rgba(13, 17, 23, 0.75)',
+    darkHeavy: 'rgba(13, 17, 23, 0.90)',
+    light: 'rgba(255, 255, 255, 0.15)',
     border: 'rgba(255, 255, 255, 0.12)',
   },
 
@@ -124,23 +130,30 @@ export const radius = {
 export const shadow = {
   sm: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
-    shadowRadius: 2,
+    shadowRadius: 4,
     elevation: 2,
   },
   md: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowRadius: 10,
+    elevation: 6,
   },
   lg: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: 12 },
     shadowOpacity: 0.25,
-    shadowRadius: 16,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  glow: {
+    shadowColor: '#0A7B4F',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
     elevation: 8,
   },
 } as const;
@@ -152,24 +165,32 @@ export const elevation = {
     backgroundColor: colors.dark.bg,
   },
   raised: {
-    ...shadow.sm,
+    ...shadow.md,
     backgroundColor: colors.dark.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.dark.borderLight,
   },
   overlay: {
     ...shadow.md,
     backgroundColor: colors.dark.bgCard,
+    borderWidth: 1,
+    borderColor: colors.dark.borderLight,
   },
   modal: {
     ...shadow.lg,
     backgroundColor: colors.dark.bgSheet,
+    borderWidth: 1,
+    borderColor: colors.dark.borderLight,
   },
   toast: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 24,
-    elevation: 12,
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.4,
+    shadowRadius: 32,
+    elevation: 16,
     backgroundColor: colors.dark.bgSheet,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
   },
 } as const;
 
@@ -203,15 +224,17 @@ export const avatar = {
 // Animation presets
 export const animation = {
   spring: {
-    responsive: { damping: 15, stiffness: 150, mass: 0.5 },
-    bouncy: { damping: 10, stiffness: 400, mass: 0.5 },
+    responsive: { damping: 14, stiffness: 170, mass: 0.5 },
+    bouncy: { damping: 10, stiffness: 400, mass: 0.6 },
     gentle: { damping: 20, stiffness: 100, mass: 0.8 },
-    snappy: { damping: 12, stiffness: 300, mass: 0.4 },
+    snappy: { damping: 12, stiffness: 350, mass: 0.4 },
+    fluid: { damping: 18, stiffness: 150, mass: 0.9 },
   },
   timing: {
     fast: 150,
     normal: 250,
     slow: 400,
+    shimmer: 1200,
   },
 } as const;
 
@@ -230,9 +253,15 @@ export const glass = {
     borderWidth: 0.5,
   },
   heavy: {
-    blurIntensity: 80,
-    overlayColor: 'rgba(13, 17, 23, 0.7)',
-    borderColor: 'rgba(255, 255, 255, 0.1)',
+    blurIntensity: 85,
+    overlayColor: 'rgba(13, 17, 23, 0.65)',
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     borderWidth: 0.5,
+  },
+  ultra: {
+    blurIntensity: 100,
+    overlayColor: 'rgba(13, 17, 23, 0.85)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
   },
 } as const;

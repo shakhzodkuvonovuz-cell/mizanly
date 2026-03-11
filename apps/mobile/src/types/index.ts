@@ -178,6 +178,8 @@ export interface Reel {
   audioTrackId?: string;
   audioTitle?: string;
   audioArtist?: string;
+  audioCoverUrl?: string;
+  audioTrack?: AudioTrack;
   isDuet: boolean;
   isStitch: boolean;
   likesCount: number;

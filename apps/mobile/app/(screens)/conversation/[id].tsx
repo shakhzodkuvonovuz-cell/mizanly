@@ -46,7 +46,7 @@ const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲']
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // Stable module-level select function — React Query memoizes when reference is stable
-function selectMessagesReversed(data: { pages: Array<{ data: Message[]; meta: { cursor?: string; hasMore: boolean } }>; pageParams: unknown[] }) {
+function selectMessagesReversed(data: { pages: Array<{ data: Message[]; meta: { cursor: string | null; hasMore: boolean } }>; pageParams: unknown[] }) {
   return {
     ...data,
     pages: [...data.pages].reverse().map((p) => ({
@@ -716,7 +716,7 @@ export default function ConversationScreen() {
         if (matchedIndex >= 0) {
           setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
         }
-        queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor?: string; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
+        queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor: string | null; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
           if (!old) return old;
           const pages = [...old.pages];
           const lastPage = { ...pages[pages.length - 1] };
@@ -829,7 +829,6 @@ export default function ConversationScreen() {
       await messagesApi.sendMessage(id, {
         messageType: 'IMAGE',
         mediaUrl: publicUrl,
-        mediaType: 'image',
         replyToId: replyTo?.id,
       });
       haptic.success();
@@ -1077,7 +1076,10 @@ export default function ConversationScreen() {
           <>
             {pinnedMessage && (
               <Pressable
-                onPress={() => scrollToMessage(pinnedMessage.id)}
+                onPress={() => {
+                  const idx = listItems.findIndex(item => item.type === 'msg' && item.message.id === pinnedMessage.id);
+                  if (idx >= 0) scrollToMessageIndex(idx);
+                }}
                 style={{
                   flexDirection: 'row', alignItems: 'center',
                   backgroundColor: colors.dark.bgElevated,
@@ -1304,6 +1306,7 @@ export default function ConversationScreen() {
           setContextMenuMsg(null);
           setShowReactionPicker(false);
         }}
+        blurBackdrop={true}
       >
         {/* Quick Reaction Bar */}
         <View style={styles.quickReactions}>
@@ -1398,19 +1401,17 @@ export default function ConversationScreen() {
             setShowReactionPicker(true);
           }}
         />
-        {contextMenuMsg?.sender.id === user?.id && (
+        {contextMenuMsg && contextMenuMsg.sender.id === user?.id && (
           <>
             {isMessageEditable(contextMenuMsg) && (
               <BottomSheetItem
                 label="Edit"
                 icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
                 onPress={() => {
-                  if (contextMenuMsg) {
-                    setEditingMsg(contextMenuMsg);
-                    setText(contextMenuMsg.content);
-                    setContextMenuMsg(null);
-                    inputRef.current?.focus();
-                  }
+                  setEditingMsg(contextMenuMsg);
+                  setText(contextMenuMsg.content);
+                  setContextMenuMsg(null);
+                  inputRef.current?.focus();
                 }}
               />
             )}
@@ -1420,12 +1421,10 @@ export default function ConversationScreen() {
                 icon={<Icon name="trash" size="sm" color={colors.error} />}
                 destructive
                 onPress={() => {
-                  if (contextMenuMsg) {
-                    messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
-                      queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                    }).catch(() => Alert.alert('Error', 'Could not delete message.'));
-                    setContextMenuMsg(null);
-                  }
+                  messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                  }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                  setContextMenuMsg(null);
                 }}
               />
             ) : (
@@ -1434,12 +1433,10 @@ export default function ConversationScreen() {
                 icon={<Icon name="trash" size="sm" color={colors.error} />}
                 destructive
                 onPress={() => {
-                  if (contextMenuMsg) {
-                    messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
-                      queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                    }).catch(() => Alert.alert('Error', 'Could not delete message.'));
-                    setContextMenuMsg(null);
-                  }
+                  messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
+                    queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                  }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                  setContextMenuMsg(null);
                 }}
               />
             )}
@@ -1596,9 +1593,10 @@ const styles = StyleSheet.create({
   bubbleWrapGrouped: { marginVertical: 1 },
   bubble: {
     maxWidth: '78%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 4, elevation: 2,
   },
   bubbleOwn: { backgroundColor: 'transparent' },
-  bubbleOther: { backgroundColor: colors.dark.bgElevated, borderWidth: 0.5, borderColor: colors.dark.border },
+  bubbleOther: { backgroundColor: colors.dark.surface, borderWidth: 1, borderColor: colors.dark.borderLight },
   deletedMsg: { color: colors.text.tertiary, fontSize: fontSize.sm, fontStyle: 'italic', paddingVertical: spacing.xs },
   replyPreview: {
     borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',

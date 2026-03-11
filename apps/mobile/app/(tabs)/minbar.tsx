@@ -5,7 +5,7 @@ import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
-import { useRouter } from 'expo-router';
+import { useRouter, useNavigation } from 'expo-router';
 import { colors, spacing, fontSize, radius, shadow } from '@/theme';
 import { useStore } from '@/store';
 import { videosApi, usersApi } from '@/services/api';
@@ -138,6 +138,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
 export default function MinbarScreen() {
   const { user } = useUser();
   const router = useRouter();
+  const navigation = useNavigation();
   const haptic = useHaptic();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
@@ -146,15 +147,15 @@ export default function MinbarScreen() {
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
-  const feedRef = useRef<FlashList<Video>>(null);
+  const feedRef = useRef<any>(null);
   useScrollToTop(feedRef);
 
   useEffect(() => {
-    const unsubscribe = router.addListener('focus', () => {
+    const unsubscribe = navigation.addListener('focus', () => {
       feedRef.current?.scrollToOffset({ offset: 0, animated: true });
     });
     return unsubscribe;
-  }, [router]);
+  }, [navigation]);
 
   const continueWatchingQuery = useQuery({
     queryKey: ['watch-history'],
@@ -168,10 +169,9 @@ export default function MinbarScreen() {
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['videos-feed', selectedCategory, feedType],
-    queryFn: ({ pageParam }) => {
+    queryFn: async ({ pageParam }) => {
       if (feedType === 'subscriptions') {
-        // TODO: implement subscribed feed
-        return { data: [], meta: { cursor: null, hasMore: false } };
+        return [];
       }
       return videosApi.getFeed(
         selectedCategory === 'all' ? undefined : selectedCategory,
@@ -179,11 +179,11 @@ export default function MinbarScreen() {
       );
     },
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last) => last.length > 0 ? last[last.length - 1].id : undefined,
     enabled: feedType === 'home',
   });
 
-  const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const videos: Video[] = feedQuery.data?.pages.flat() ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -277,7 +277,7 @@ export default function MinbarScreen() {
           { key: 'subscriptions', label: 'Subscriptions' },
         ]}
         activeKey={feedType}
-        onTabChange={setFeedType}
+        onTabChange={(key) => setFeedType(key as 'home' | 'subscriptions')}
         variant="pill"
         style={{ marginHorizontal: spacing.base, marginVertical: spacing.sm }}
       />
@@ -310,15 +310,24 @@ export default function MinbarScreen() {
           title="No subscribed videos"
           subtitle="Subscribe to channels to see their videos here"
           actionLabel="Explore Channels"
-          onAction={() => router.push('/(screens)/channels')}
+          onAction={() => router.push('/(screens)/channels' as any)}
         />
       );
     }
     return feedQuery.isLoading ? (
-      <View style={styles.skeletonContainer}>
-        <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
-        <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
-        <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+      <View>
+        {[1, 2, 3].map((i) => (
+          <View key={i} style={{ marginBottom: spacing.lg }}>
+            <Skeleton.Rect width="100%" height={210} borderRadius={0} />
+            <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, marginTop: spacing.md, gap: spacing.sm }}>
+              <Skeleton.Circle size={36} />
+              <View style={{ flex: 1, gap: spacing.xs, paddingTop: 4 }}>
+                <Skeleton.Rect width="90%" height={16} borderRadius={4} />
+                <Skeleton.Rect width="60%" height={14} borderRadius={4} />
+              </View>
+            </View>
+          </View>
+        ))}
       </View>
     ) : (
       <EmptyState
@@ -333,8 +342,8 @@ export default function MinbarScreen() {
 
   const listFooter = useMemo(() => (
     feedQuery.isFetchingNextPage ? (
-      <View style={styles.footer}>
-        <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
+      <View style={{ paddingBottom: spacing.lg }}>
+        <Skeleton.Rect width="100%" height={210} borderRadius={0} />
       </View>
     ) : null
   ), [feedQuery.isFetchingNextPage]);
@@ -492,16 +501,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   videoCard: {
-    marginHorizontal: spacing.base,
     marginBottom: spacing.lg,
   },
   thumbnailContainer: {
     position: 'relative',
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
+    width: '100%',
     aspectRatio: 16 / 9,
-    ...shadow.sm,
+    backgroundColor: colors.dark.surface,
   },
   thumbnail: {
     width: '100%',
@@ -526,9 +532,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   infoRow: {
+    paddingHorizontal: spacing.base,
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     gap: spacing.sm,
   },
   channelAvatar: {
@@ -555,12 +562,7 @@ const styles = StyleSheet.create({
   moreButton: {
     padding: spacing.xs,
   },
-  skeletonContainer: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-  },
   footer: {
-    paddingHorizontal: spacing.base,
     paddingBottom: spacing.lg,
   },
   continueSection: {
@@ -611,12 +613,12 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 3,
+    height: 4,
     backgroundColor: 'rgba(255,255,255,0.2)',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.error, // Signature "YouTube" red for progress
   },
   continueCardTitle: {
     color: colors.text.primary,

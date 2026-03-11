@@ -11,6 +11,9 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
+  Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
@@ -78,6 +81,24 @@ const ReelItem = memo(function ReelItem({
     },
   });
 
+  const spin = useSharedValue(0);
+
+  useEffect(() => {
+    if (isActive) {
+      spin.value = withRepeat(
+        withTiming(1, { duration: 4000, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      spin.value = 0;
+    }
+  }, [isActive, spin]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spin.value * 360}deg` }],
+  }));
+
   const handleVideoRef = (ref: Video | null) => {
     localVideoRef.current = ref;
     if (ref) {
@@ -104,13 +125,13 @@ const ReelItem = memo(function ReelItem({
           }}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.8)']}
-          locations={[0.6, 1]}
+          colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
+          locations={[0, 0.4, 0.7, 1]}
           style={styles.bottomGradient}
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.4)', 'transparent']}
-          locations={[0, 0.4]}
+          colors={['rgba(0,0,0,0.5)', 'rgba(0,0,0,0.2)', 'transparent']}
+          locations={[0, 0.5, 1]}
           style={styles.topGradient}
         />
 
@@ -136,15 +157,16 @@ const ReelItem = memo(function ReelItem({
               width: 32, height: 32, borderRadius: radius.full,
               borderWidth: 2, borderColor: '#fff',
               overflow: 'hidden', marginLeft: spacing.sm,
+              backgroundColor: '#1C1C1E', // Vinyl color
             }}
           >
-            {item.audioCoverUrl ? (
-              <Image source={{ uri: item.audioCoverUrl }} style={{ width: 32, height: 32 }} />
-            ) : (
-              <View style={{ width: 32, height: 32, backgroundColor: colors.dark.surface, justifyContent: 'center', alignItems: 'center' }}>
-                <Icon name="volume-x" size={14} color="#fff" />
-              </View>
-            )}
+            <Animated.View style={[{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }, spinStyle]}>
+              {item.audioCoverUrl ? (
+                <Image source={{ uri: item.audioCoverUrl }} style={{ width: 14, height: 14, borderRadius: 7 }} />
+              ) : (
+                <Icon name="music" size={12} color="#fff" />
+              )}
+            </Animated.View>
           </Pressable>
         </View>
 
@@ -252,6 +274,7 @@ const ReelItem = memo(function ReelItem({
               name={item.isLiked ? 'heart-filled' : 'heart'}
               size="lg"
               color={item.isLiked ? colors.error : colors.text.primary}
+              style={item.isLiked ? undefined : styles.iconShadow}
             />
             <Text style={styles.actionCount}>{item.likesCount}</Text>
           </TouchableOpacity>
@@ -262,7 +285,7 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel="Comment on reel"
             accessibilityRole="button"
           >
-            <Icon name="message-circle" size="lg" color={colors.text.primary} />
+            <Icon name="message-circle" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.commentsCount}</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -272,7 +295,7 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel="Share reel"
             accessibilityRole="button"
           >
-            <Icon name="share" size="lg" color={colors.text.primary} />
+            <Icon name="share" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.sharesCount}</Text>
           </TouchableOpacity>
 
@@ -290,9 +313,9 @@ const ReelItem = memo(function ReelItem({
               borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
               justifyContent: 'center', alignItems: 'center',
             }}>
-              <Icon name="layers" size="sm" color="#fff" />
+              <Icon name="layers" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
-            <Text style={{ color: '#fff', fontSize: 10, marginTop: 2 }}>Duet</Text>
+            <Text style={styles.actionCountDuetStitch}>Duet</Text>
           </Pressable>
 
           {/* Stitch button */}
@@ -309,9 +332,9 @@ const ReelItem = memo(function ReelItem({
               borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
               justifyContent: 'center', alignItems: 'center',
             }}>
-              <Icon name="slash" size="sm" color="#fff" />
+              <Icon name="slash" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
-            <Text style={{ color: '#fff', fontSize: 10, marginTop: 2 }}>Stitch</Text>
+            <Text style={styles.actionCountDuetStitch}>Stitch</Text>
           </Pressable>
           <TouchableOpacity
             style={styles.actionButton}
@@ -324,6 +347,7 @@ const ReelItem = memo(function ReelItem({
               name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
               size="lg"
               color={item.isBookmarked ? colors.gold : colors.text.primary}
+              style={item.isBookmarked ? undefined : styles.iconShadow}
             />
           </TouchableOpacity>
           <TouchableOpacity
@@ -333,7 +357,7 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel="Report reel"
             accessibilityRole="button"
           >
-            <Icon name="flag" size="lg" color={colors.text.primary} />
+            <Icon name="flag" size="lg" color={colors.text.primary} style={styles.iconShadow} />
           </TouchableOpacity>
         </View>
         <FloatingHearts trigger={heartTrigger} />
@@ -607,14 +631,17 @@ const styles = StyleSheet.create({
   },
   userText: {
     marginLeft: spacing.sm,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   username: {
     color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '600',
+    fontWeight: '700', // Making it pop more
   },
   time: {
-    color: colors.text.secondary,
+    color: 'rgba(255,255,255,0.85)',
     fontSize: fontSize.sm,
     marginTop: 2,
   },
@@ -623,6 +650,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     marginBottom: spacing.sm,
     lineHeight: fontSize.lg,
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   soundRow: {
     flexDirection: 'row',
@@ -639,15 +669,34 @@ const styles = StyleSheet.create({
     right: spacing.base,
     alignItems: 'center',
     gap: spacing.lg,
+    zIndex: 20,
   },
   actionButton: {
     alignItems: 'center',
     gap: spacing.xs,
   },
+  iconShadow: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.5,
+    shadowRadius: 3,
+  },
   actionCount: {
     color: colors.text.primary,
     fontSize: fontSize.sm,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  actionCountDuetStitch: {
+    color: '#fff',
+    fontSize: 10,
+    marginTop: 2,
     fontWeight: '600',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   skeletonContainer: {
     width: SCREEN_W,

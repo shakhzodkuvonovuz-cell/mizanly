@@ -60,9 +60,9 @@ export function Avatar({
     <>
       {showStoryRing ? (
         <LinearGradient
-          colors={[colors.emerald, colors.gold]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
+          colors={[colors.goldLight, colors.emerald, colors.emeraldDark]}
+          start={{ x: 0.2, y: 1 }}
+          end={{ x: 0.8, y: 0 }}
           style={[
             styles.ringGradient,
             {

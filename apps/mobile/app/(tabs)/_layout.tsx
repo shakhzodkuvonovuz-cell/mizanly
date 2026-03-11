@@ -33,17 +33,22 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: withSpring(focused ? 1.1 : 1, animation.spring.responsive) }],
+  }));
+
+  const activePillStyle = useAnimatedStyle(() => ({
+    opacity: withTiming(focused ? 1 : 0, { duration: 200 }),
+    transform: [{ scale: withSpring(focused ? 1 : 0.8, animation.spring.bouncy) }],
   }));
 
   return (
     <Animated.View style={[styles.iconWrap, animatedStyle]}>
-      {focused && <View style={styles.activePill} />}
+      <Animated.View style={[styles.activePill, activePillStyle]} />
       <Icon
         name={icon}
         size="md"
         color={focused ? colors.emerald : colors.text.secondary}
-        strokeWidth={focused ? 2 : 1.75}
+        strokeWidth={focused ? 2.5 : 2}
       />
       {badge !== undefined && badge > 0 && (
         <Badge
@@ -85,12 +90,12 @@ function CreateButton() {
     <>
       <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress} accessibilityLabel="Create new post" accessibilityRole="button">
         <LinearGradient
-          colors={[colors.emeraldLight, colors.emerald]}
+          colors={[colors.emeraldLight, colors.emeraldDark]}
           style={styles.createGradient}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
-          <Icon name="plus" size="md" color="#FFF" strokeWidth={2.5} />
+          <Icon name="plus" size="md" color="#FFF" strokeWidth={3} />
         </LinearGradient>
       </AnimatedPressable>
 
@@ -139,7 +144,7 @@ export default function TabLayout() {
         tabBarBackground: () => (
           Platform.OS === 'ios' ? (
             <BlurView
-              intensity={glass.heavy.blurIntensity}
+              intensity={glass.ultra.blurIntensity}
               tint="dark"
               style={[StyleSheet.absoluteFill, styles.tabBarBg]}
             />
@@ -203,55 +208,51 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     position: 'absolute',
-    borderTopWidth: 0.5,
-    borderTopColor: colors.glass.border,
+    borderTopWidth: glass.ultra.borderWidth,
+    borderTopColor: glass.ultra.borderColor,
     height: tabBar.height,
-    paddingTop: 6,
+    paddingTop: 8,
     backgroundColor: 'transparent',
     elevation: 0,
   },
   tabBarBg: {
-    borderTopWidth: 0.5,
-    borderTopColor: colors.glass.border,
+    borderTopWidth: 0, // Handled by tabBar
   },
   tabBarBgAndroid: {
-    backgroundColor: 'rgba(13,17,23,0.85)',
-    borderTopWidth: 0.5,
-    borderTopColor: 'rgba(10, 123, 79, 0.15)',
+    backgroundColor: glass.ultra.overlayColor,
+    borderTopWidth: 0, // Handled by tabBar
   },
   tabLabel: { fontSize: 10, fontWeight: '600', marginTop: -2 },
   iconWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 32,
-    height: 32,
+    width: 48,
+    height: 48,
   },
   activePill: {
     position: 'absolute',
     width: 48,
-    height: 28,
-    borderRadius: 9999,
-    backgroundColor: 'rgba(10, 123, 79, 0.15)',
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.active.emerald10,
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -10,
+    top: 4,
+    right: 0,
   },
   createButton: {
     marginTop: spacing.xs,
   },
   createGradient: {
-    width: 44,
-    height: 44,
+    width: 52,
+    height: 52,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.emerald,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
-    elevation: 6,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    ...shadow.glow,
   },
   sheetHeader: {
     alignItems: 'center',

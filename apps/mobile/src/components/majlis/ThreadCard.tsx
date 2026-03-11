@@ -172,7 +172,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
           </TouchableOpacity>
           {thread.repliesCount > 0 && (
             <LinearGradient
-              colors={['rgba(10, 123, 79, 0.3)', 'transparent']}
+              colors={[colors.emerald, 'transparent']}
               style={styles.replyLine}
             />
           )}
@@ -336,6 +336,16 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               accessibilityHint={localBookmarked ? 'Remove from bookmarks' : 'Bookmark this thread'}
             />
           </View>
+
+          {/* Glassmorphic Inline Reply Composer */}
+          <TouchableOpacity
+            style={styles.inlineReply}
+            onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
+            activeOpacity={0.8}
+          >
+            <Avatar uri={undefined} name="You" size="xs" showRing={false} />
+            <Text style={styles.inlineReplyText}>Reply to {thread.user.username}...</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -454,24 +464,26 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   userInfo: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1 },
-  name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm },
-  time: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base, letterSpacing: -0.3 },
+  handle: { color: colors.text.secondary, fontSize: fontSize.sm, letterSpacing: -0.1 },
+  time: { color: colors.text.tertiary, fontSize: fontSize.sm },
   content: {
     color: colors.text.primary,
     fontSize: fontSize.base,
     lineHeight: 22,
+    letterSpacing: -0.2, // Tighter tracking for denser reads
     marginBottom: spacing.sm,
   },
   media: { width: '100%', height: 220, borderRadius: radius.md, marginBottom: spacing.sm },
   repostOf: {
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: colors.dark.borderLight,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.02)',
   },
-  repostOfHandle: { color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: 4 },
+  repostOfHandle: { color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: 4, fontWeight: '600' },
   repostOfContent: { color: colors.text.primary, fontSize: fontSize.sm },
   pollWrap: {
     borderWidth: 1,
@@ -525,6 +537,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xs,
     gap: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   spacer: { flex: 1 },
+  inlineReply: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.full,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.md,
+    marginTop: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  inlineReplyText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
+    marginLeft: spacing.sm,
+  },
 });
