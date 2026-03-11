@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Platform, Alert, Dimensions,
+  ScrollView, Alert, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode } from 'expo-av';
@@ -36,6 +37,7 @@ type AutocompleteType = 'hashtag' | 'mention' | null;
 
 export default function CreateReelScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -116,7 +118,7 @@ export default function CreateReelScreen() {
   };
 
   const uploadMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async () => {
       setIsUploading(true);
       try {
         // Step 1: Upload video to R2
@@ -153,7 +155,7 @@ export default function CreateReelScreen() {
       queryClient.invalidateQueries({ queryKey: ['reel', user?.id] });
       router.back();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       haptic.error();
       Alert.alert('Upload failed', error.message || 'Something went wrong');
     },
@@ -168,7 +170,7 @@ export default function CreateReelScreen() {
       Alert.alert('Caption too long', 'Maximum 500 characters');
       return;
     }
-    uploadMutation.mutate({});
+    uploadMutation.mutate();
   };
 
   const handleBack = () => {
@@ -189,29 +191,14 @@ export default function CreateReelScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} hitSlop={8}>
-          <Icon name="arrow-left" size="sm" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Create Reel</Text>
-        <TouchableOpacity
-          onPress={handleUpload}
-          disabled={isUploading || !video}
-          hitSlop={8}
-        >
-          {isUploading ? (
-            <ActivityIndicator color={colors.emerald} size="small" />
-          ) : (
-            <Text style={[styles.headerAction, (!video || isUploading) && styles.headerActionDisabled]}>
-              Share
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Create Reel"
+        leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: 'Back' }}
+        rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: 'Share' }]}
+      />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
         {/* Video preview */}
         {video ? (
           <View style={styles.videoContainer}>
@@ -329,34 +316,12 @@ export default function CreateReelScreen() {
           />
         )}
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.lg,
-    fontWeight: '700',
-  },
-  headerAction: {
-    color: colors.emerald,
-    fontSize: fontSize.base,
-    fontWeight: '600',
-  },
-  headerActionDisabled: {
-    color: colors.text.tertiary,
-  },
   scroll: {
     flex: 1,
   },

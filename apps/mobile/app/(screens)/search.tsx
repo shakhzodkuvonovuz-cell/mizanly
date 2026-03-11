@@ -374,7 +374,10 @@ export default function SearchScreen() {
                       renderItem={({ item }) => (
                         <Pressable
                           style={styles.reelRow}
-                          onPress={() => router.push(`/(screens)/reel/${item.id}`)}
+                          onPress={() => {
+                          haptic.light();
+                          router.push(`/(screens)/reel/${item.id}`);
+                        }}
                         >
                           <Image
                             source={{ uri: item.thumbnailUrl || item.videoUrl }}
@@ -529,14 +532,20 @@ export default function SearchScreen() {
                   return (
                     <UserRow
                       user={item.data}
-                      onPress={() => router.push(`/(screens)/profile/${item.data.username}`)}
+                      onPress={() => {
+                        haptic.light();
+                        router.push(`/(screens)/profile/${item.data.username}`);
+                      }}
                     />
                   );
                 }
                 return (
                   <Pressable
                     style={styles.hashtagRow}
-                    onPress={() => router.push(`/(screens)/hashtag/${item.data.name}`)}
+                    onPress={() => {
+                      haptic.light();
+                      router.push(`/(screens)/hashtag/${item.data.name}`);
+                    }}
                   >
                     <View style={styles.hashtagIconWrap}>
                       <Icon name="hash" size="sm" color={colors.emerald} />

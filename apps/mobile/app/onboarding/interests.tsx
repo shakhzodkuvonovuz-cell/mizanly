@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 
@@ -30,8 +32,10 @@ export default function InterestsScreen() {
   const { user } = useUser();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const haptic = useHaptic();
 
   const toggle = (id: string) => {
+    haptic.selection();
     setSelected((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -87,14 +91,13 @@ export default function InterestsScreen() {
         <Text style={styles.count}>
           {selected.size} selected {selected.size < 3 ? `(need ${3 - selected.size} more)` : ''}
         </Text>
-        <TouchableOpacity
-          style={[styles.btn, selected.size < 3 && styles.btnDisabled]}
+        <GradientButton
+          label="Continue"
           onPress={handleContinue}
-          disabled={selected.size < 3 || loading}
-          activeOpacity={0.8}
-        >
-          {loading ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>Continue</Text>}
-        </TouchableOpacity>
+          loading={loading}
+          disabled={selected.size < 3}
+          fullWidth
+        />
       </View>
     </SafeAreaView>
   );
@@ -133,12 +136,4 @@ const styles = StyleSheet.create({
   chipLabelOn: { color: colors.emerald, fontWeight: '600' },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, gap: spacing.md },
   count: { color: colors.text.secondary, fontSize: fontSize.sm, textAlign: 'center' },
-  btn: {
-    backgroundColor: colors.emerald,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
 });

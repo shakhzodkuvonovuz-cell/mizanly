@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl } from 'react-native';
 import { useScrollToTop } from '@react-navigation/native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter, useNavigation } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { Swipeable } from 'react-native-gesture-handler';
+import { useUser, useAuth } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { io, Socket } from 'socket.io-client';
 import Animated, {
   useAnimatedStyle,
   withSpring,
@@ -49,10 +51,12 @@ const ConversationRow = memo(function ConversationRow({
   item,
   userId,
   onPress,
+  isOnline,
 }: {
   item: Conversation;
   userId?: string;
   onPress: () => void;
+  isOnline?: boolean;
 }) {
   const name = conversationName(item, userId);
   const avi = conversationAvatar(item, userId);
@@ -60,6 +64,8 @@ const ConversationRow = memo(function ConversationRow({
     ? formatDistanceToNowStrict(new Date(item.lastMessageAt), { addSuffix: false })
     : '';
   const hasUnread = (item.unreadCount ?? 0) > 0;
+  const otherMember = item.members.find(m => m.user.id !== userId);
+  const lastMessageRead = otherMember && item.lastMessageAt && otherMember.lastReadAt && new Date(otherMember.lastReadAt) >= new Date(item.lastMessageAt);
 
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
@@ -68,7 +74,7 @@ const ConversationRow = memo(function ConversationRow({
 
   return (
     <AnimatedPressable
-      style={[styles.chatItem, animStyle]}
+      style={[styles.chatItem, hasUnread && styles.chatItemUnread, animStyle]}
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.98, animation.spring.snappy); }}
       onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
@@ -76,7 +82,7 @@ const ConversationRow = memo(function ConversationRow({
       accessibilityRole="button"
       accessibilityHint="Open conversation"
     >
-      <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup} />
+      <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup && isOnline} />
       <View style={styles.chatInfo}>
         <View style={styles.chatTopRow}>
           <Text style={[styles.chatName, hasUnread && styles.chatNameUnread]} numberOfLines={1}>
@@ -91,6 +97,12 @@ const ConversationRow = memo(function ConversationRow({
           >
             {item.lastMessageText || 'No messages yet'}
           </Text>
+          {!item.isGroup && lastMessageRead && (
+            <Icon name="check-check" size={12} color={colors.emerald} />
+          )}
+          {!item.isGroup && !lastMessageRead && item.lastMessageAt && (
+            <Icon name="check" size={12} color={colors.text.tertiary} />
+          )}
           {item.isMuted && (
             <Icon name="volume-x" size={14} color={colors.text.tertiary} />
           )}
@@ -109,7 +121,11 @@ export default function RisalahScreen() {
   const { user } = useUser();
   const haptic = useHaptic();
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
+  const { getToken } = useAuth();
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const socketRef = useRef<Socket | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
+  const [filterChip, setFilterChip] = useState<'all' | 'unread' | 'groups'>('all');
   const [openNewConvoSheet, setOpenNewConvoSheet] = useState(false);
 
   const listRef = useRef<FlatList<Conversation>>(null);
@@ -123,9 +139,48 @@ export default function RisalahScreen() {
     return unsubscribe;
   }, [navigation]);
 
+  useEffect(() => {
+    let socket: Socket;
+    const connect = async () => {
+      const token = await getToken();
+      if (!token) return;
+
+      const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+      socket = io(SOCKET_URL, {
+        auth: { token },
+        transports: ['websocket'],
+      });
+
+      socket.on('user_online', ({ userId }: { userId: string }) => {
+        setOnlineUsers(prev => new Set(prev).add(userId));
+      });
+
+      socket.on('user_offline', ({ userId }: { userId: string }) => {
+        setOnlineUsers(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+      });
+
+      socketRef.current = socket;
+    };
+
+    connect();
+    return () => { socket?.disconnect(); };
+  }, [getToken]);
+
   const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
+  });
+
+  const queryClient = useQueryClient();
+  const archiveMutation = useMutation({
+    mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
   });
 
   const handleRefresh = useCallback(() => { refetch(); }, [refetch]);
@@ -137,9 +192,15 @@ export default function RisalahScreen() {
     setUnreadMessages(total);
   }, [all, setUnreadMessages]);
 
-  const filtered = all.filter((c) =>
-    activeTab === 'groups' ? c.isGroup : !c.isGroup,
-  );
+  const filtered = all.filter((c) => {
+    if (filterChip === 'groups') return c.isGroup;
+    const tabMatch = activeTab === 'groups' ? c.isGroup : !c.isGroup;
+    if (!tabMatch) return false;
+    if (filterChip === 'unread') return (c.unreadCount ?? 0) > 0;
+    return true;
+  });
+
+  const archivedCount = useStore((s) => s.archivedConversationsCount);
 
   const listEmpty = useMemo(() => (
     isLoading ? (
@@ -152,25 +213,67 @@ export default function RisalahScreen() {
     ) : (
       <EmptyState
         icon="mail"
-        title={activeTab === 'groups' ? 'No groups yet' : 'No conversations'}
+        title={activeTab === 'groups' ? 'No groups yet' : 'Your conversations'}
         subtitle={
           activeTab === 'groups'
             ? 'Create a group to chat with multiple people'
-            : 'Message someone to get started'
+            : 'Messages with friends and groups will appear here'
         }
+        actionLabel="New Message"
+        onAction={() => router.push('/(screens)/new-conversation')}
       />
     )
-  ), [isLoading, activeTab]);
+  ), [isLoading, activeTab, router]);
+
+  const listHeader = useMemo(() => {
+    if (archivedCount === 0) return null;
+    return (
+      <Pressable
+        style={styles.archivedRow}
+        onPress={() => router.push('/(screens)/archive')}
+        accessibilityLabel="Archived conversations"
+        accessibilityRole="button"
+      >
+        <Icon name="layers" size="sm" color={colors.text.secondary} />
+        <Text style={styles.archivedText}>Archived</Text>
+        <Badge count={archivedCount} color={colors.text.tertiary} size="xs" />
+        <View style={{ flex: 1 }} />
+        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+      </Pressable>
+    );
+  }, [archivedCount, router]);
 
   const keyExtractor = useCallback((item: Conversation) => item.id, []);
-  const renderItem = useCallback(({ item }: { item: Conversation }) => (
-    <ConversationRow
-      item={item}
-      userId={user?.id}
-      onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
-    />
-  ), [user?.id, router]);
-  const getItemLayout = useCallback((_: any, index: number) => ({
+  const renderItem = useCallback(({ item }: { item: Conversation }) => {
+    const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
+    const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
+    const renderRightActions = () => (
+      <Pressable
+        style={styles.archiveAction}
+        onPress={() => archiveMutation.mutate(item.id)}
+        accessibilityLabel="Archive conversation"
+        accessibilityRole="button"
+      >
+        <Icon name="archive" size="sm" color={colors.text.primary} />
+      </Pressable>
+    );
+
+    return (
+      <Swipeable
+        renderRightActions={renderRightActions}
+        overshootRight={false}
+        rightThreshold={40}
+      >
+        <ConversationRow
+          item={item}
+          userId={user?.id}
+          onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
+          isOnline={isOnline}
+        />
+      </Swipeable>
+    );
+  }, [user?.id, router, onlineUsers]);
+  const getItemLayout = useCallback((_: ArrayLike<Conversation> | null | undefined, index: number) => ({
     length: 72,
     offset: 72 * index,
     index,
@@ -217,6 +320,23 @@ export default function RisalahScreen() {
         onTabChange={(key) => setActiveTab(key as TabKey)}
       />
 
+      {/* Filter chips */}
+      <View style={styles.filterChipRow}>
+        {(['all', 'unread', 'groups'] as const).map((chip) => (
+          <Pressable
+            key={chip}
+            style={[styles.filterChip, filterChip === chip && styles.filterChipSelected]}
+            onPress={() => setFilterChip(chip)}
+            accessibilityLabel={chip === 'groups' ? 'Groups' : chip === 'unread' ? 'Unread' : 'All'}
+            accessibilityRole="button"
+          >
+            <Text style={[styles.filterChipText, filterChip === chip && styles.filterChipTextSelected]}>
+              {chip === 'groups' ? 'Groups' : chip === 'unread' ? 'Unread' : 'All'}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <FlatList
         ref={listRef}
         data={filtered}
@@ -233,8 +353,18 @@ export default function RisalahScreen() {
             tintColor={colors.emerald}
           />
         }
+        ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
       />
+      {/* Channels FAB */}
+      <Pressable
+        style={styles.fab}
+        onPress={() => router.push('/(screens)/broadcast-channels')}
+        accessibilityLabel="Broadcast channels"
+        accessibilityRole="button"
+      >
+        <Icon name="hash" size="lg" color={colors.text.primary} />
+      </Pressable>
     </SafeAreaView>
   );
 }
@@ -248,13 +378,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: 'PlayfairDisplay-Bold' },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     gap: spacing.md,
+  },
+  chatItemUnread: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.emerald,
   },
   chatInfo: { flex: 1 },
   chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
@@ -275,4 +409,70 @@ const styles = StyleSheet.create({
   },
   chatPreview: { color: colors.text.tertiary, fontSize: fontSize.sm, flex: 1 },
   chatPreviewUnread: { color: colors.text.secondary },
+  filterChipRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  filterChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.surface,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  filterChipSelected: {
+    backgroundColor: colors.emerald,
+    borderColor: colors.emerald,
+  },
+  filterChipText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+  filterChipTextSelected: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  archivedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+  },
+  archivedText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+  archiveAction: {
+    backgroundColor: colors.emerald,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: radius.md,
+    marginVertical: spacing.xs,
+    marginRight: spacing.base,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: spacing['2xl'],
+    right: spacing.base,
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: colors.emerald,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
 });

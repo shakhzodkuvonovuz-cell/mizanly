@@ -10,8 +10,9 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi, threadsApi, reelsApi, videosApi, usersApi } from '@/services/api';
 
@@ -70,15 +71,12 @@ export default function ReportScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Report</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Report"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
+      <View style={styles.headerSpacer} />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.prompt}>
@@ -120,19 +118,16 @@ export default function ReportScreen() {
         </Text>
 
         {/* Submit button */}
-        <Pressable
-          style={[styles.submitBtn, !selectedReason && styles.submitBtnDisabled]}
+        <GradientButton
+          label="Submit Report"
           onPress={handleSubmit}
-          disabled={!selectedReason || reportMutation.isPending}
-        >
-          {reportMutation.isPending ? (
-            <Icon name="loader" size="sm" color={colors.text.primary} />
-          ) : (
-            <Text style={styles.submitBtnText}>Submit Report</Text>
-          )}
-        </Pressable>
+          disabled={!selectedReason}
+          loading={reportMutation.isPending}
+          fullWidth
+          size="lg"
+        />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -141,24 +136,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.dark.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
-    backgroundColor: 'rgba(13, 17, 23, 0.95)',
-  },
-  backBtn: {
-    width: 40,
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '700',
+  headerSpacer: {
+    height: 100,
   },
   content: {
     flex: 1,
@@ -223,20 +202,5 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     textAlign: 'right',
     marginBottom: spacing.xl,
-  },
-  submitBtn: {
-    backgroundColor: colors.emerald,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  submitBtnDisabled: {
-    opacity: 0.5,
-  },
-  submitBtnText: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '700',
   },
 });

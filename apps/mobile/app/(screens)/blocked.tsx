@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert, RefreshControl,
+  View, Text, StyleSheet, TouchableOpacity,
+  FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -10,6 +10,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { blocksApi } from '@/services/api';
 
@@ -24,6 +26,12 @@ interface BlockedUser {
   };
 }
 
+interface BlockedPage {
+  blocks?: BlockedUser[];
+  items?: BlockedUser[];
+  meta?: { cursor?: string; hasMore: boolean };
+}
+
 export default function BlockedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -32,10 +40,10 @@ export default function BlockedScreen() {
     queryKey: ['blocked'],
     queryFn: ({ pageParam }) => blocksApi.getBlocked(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor : undefined,
+    getNextPageParam: (last: BlockedPage) => last.meta?.hasMore ? last.meta.cursor : undefined,
   });
 
-  const blocked: BlockedUser[] = query.data?.pages.flatMap((p: any) => p.blocks ?? p.items ?? []) ?? [];
+  const blocked: BlockedUser[] = query.data?.pages.flatMap((p: BlockedPage) => p.blocks ?? p.items ?? []) ?? [];
 
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
@@ -63,13 +71,10 @@ export default function BlockedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Blocked Accounts</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="Blocked Accounts"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       {query.isLoading ? (
         <View style={styles.skeletonList}>
@@ -104,17 +109,14 @@ export default function BlockedScreen() {
                   <Text style={styles.name}>{u.displayName}</Text>
                   <Text style={styles.username}>@{u.username}</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.unblockBtn}
+                <GradientButton
+                  label="Unblock"
+                  variant="secondary"
+                  size="sm"
                   onPress={() => confirmUnblock(item)}
+                  loading={unblockMutation.isPending && unblockMutation.variables === u.id}
                   disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
-                >
-                  {unblockMutation.isPending && unblockMutation.variables === u.id ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <Text style={styles.unblockText}>Unblock</Text>
-                  )}
-                </TouchableOpacity>
+                />
               </View>
             );
           }}
@@ -133,7 +135,7 @@ export default function BlockedScreen() {
             <EmptyState
               icon="slash"
               title="No blocked accounts"
-              subtitle="Accounts you block will appear here."
+              subtitle="Accounts you block won't be able to see your content"
             />
           )}
         />
@@ -144,14 +146,6 @@ export default function BlockedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
   list: { paddingBottom: 40 },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
@@ -167,11 +161,4 @@ const styles = StyleSheet.create({
   info: { flex: 1 },
   name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
   username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
-  unblockBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
-    minWidth: 80, alignItems: 'center',
-  },
-  unblockText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
-
 });

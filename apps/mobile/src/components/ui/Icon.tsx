@@ -9,20 +9,22 @@ import {
   VolumeX, Mail, Hash, TrendingUp, MapPin, Link, Clock,
   Check, CheckCheck, Paperclip, Smile, AtSign, Filter,
   Layers, CirclePlus, Edit3, Slash, LogOut, BarChart2, Loader,
+  Maximize, Pause, Rewind, FastForward, Volume1, Volume2,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 
 type IconName =
   | 'heart' | 'heart-filled' | 'message-circle' | 'bookmark' | 'bookmark-filled'
-  | 'send' | 'search' | 'home' | 'play' | 'more-horizontal' | 'share'
+  | 'send' | 'search' | 'home' | 'play' | 'pause' | 'rewind' | 'fast-forward' | 'more-horizontal' | 'share'
   | 'check-circle' | 'arrow-left' | 'plus' | 'camera' | 'image' | 'mic'
   | 'phone' | 'video' | 'settings' | 'bell' | 'user' | 'users' | 'globe'
   | 'lock' | 'flag' | 'trash' | 'edit' | 'x' | 'chevron-right' | 'chevron-left'
-  | 'repeat' | 'eye' | 'eye-off' | 'volume-x' | 'mail' | 'hash'
+  | 'repeat' | 'eye' | 'eye-off' | 'volume-x' | 'volume-1' | 'volume-2' | 'mail' | 'hash'
   | 'trending-up' | 'map-pin' | 'link' | 'clock' | 'check' | 'check-check'
   | 'paperclip' | 'smile' | 'at-sign' | 'filter' | 'layers' | 'circle-plus'
-  | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader';
+  | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader'
+  | 'maximize';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -90,6 +92,12 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'bar-chart-2': BarChart2,
   'chevron-down': ChevronDown,
   'loader': Loader,
+  'maximize': Maximize,
+  'pause': Pause,
+  'rewind': Rewind,
+  'fast-forward': FastForward,
+  'volume-1': Volume1,
+  'volume-2': Volume2,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

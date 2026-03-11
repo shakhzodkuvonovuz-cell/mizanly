@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter, useNavigation } from 'expo-router';
@@ -13,9 +13,9 @@ import Animated, {
   withSequence,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { colors, spacing, fontSize, animation, radius, tabBar } from '@/theme';
 import { useStore } from '@/store';
-import { threadsApi } from '@/services/api';
+import { threadsApi, hashtagsApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
@@ -65,6 +65,11 @@ export default function MajlisScreen() {
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
+  const trendingHashtagsQuery = useQuery({
+    queryKey: ['trending-hashtags'],
+    queryFn: () => hashtagsApi.getTrending(),
+  });
+
   const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const listEmpty = useMemo(() => (
@@ -78,19 +83,32 @@ export default function MajlisScreen() {
     ) : (
       <EmptyState
         icon="message-circle"
-        title="No threads yet"
-        subtitle="Start a conversation"
+        title="Be the voice"
+        subtitle="Start a thread and share your thoughts"
+        actionLabel="Write"
+        onAction={() => router.push('/(screens)/create-thread')}
       />
     )
-  ), [feedQuery.isLoading]);
+  ), [feedQuery.isLoading, router]);
 
-  const listFooter = useMemo(() => (
-    feedQuery.isFetchingNextPage ? (
-      <View style={styles.footer}>
-        <Skeleton.ThreadCard />
-      </View>
-    ) : null
-  ), [feedQuery.isFetchingNextPage]);
+  const listFooter = useMemo(() => {
+    if (feedQuery.isFetchingNextPage) {
+      return (
+        <View style={styles.footer}>
+          <Skeleton.ThreadCard />
+        </View>
+      );
+    }
+    if (!feedQuery.hasNextPage && threads.length > 0) {
+      return (
+        <View style={styles.endOfFeed}>
+          <Icon name="check-circle" size="sm" color={colors.emerald} />
+          <Text style={styles.endOfFeedText}>You're all caught up</Text>
+        </View>
+      );
+    }
+    return null;
+  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, threads.length]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -128,6 +146,39 @@ export default function MajlisScreen() {
         activeKey={feedType}
         onTabChange={(key) => setFeedType(key as 'foryou' | 'following' | 'trending')}
       />
+
+      {/* Trending hashtags */}
+      {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0) ? (
+        <View style={styles.trendingHeader}>
+          <Icon name="trending-up" size="sm" color={colors.gold} />
+          <Text style={styles.trendingHeaderText}>Trending</Text>
+        </View>
+      ) : null}
+      {trendingHashtagsQuery.isLoading ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hashtagContainer}>
+          {[...Array(5)].map((_, i) => (
+            <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} />
+          ))}
+        </ScrollView>
+      ) : trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hashtagContainer}>
+          {trendingHashtagsQuery.data.data.map((hashtag) => (
+            <Pressable
+              key={hashtag.name}
+              style={styles.hashtagChip}
+              onPress={() => {
+                haptic.light();
+                router.push(`/(screens)/hashtag/${hashtag.name}`);
+              }}
+              accessibilityLabel={`Hashtag ${hashtag.name}`}
+              accessibilityRole="button"
+              accessibilityHint={`Browse posts tagged ${hashtag.name}`}
+            >
+              <Text style={styles.hashtagText}>#{hashtag.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      ) : null}
 
       <FlashList
         ref={feedRef}
@@ -183,11 +234,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: 'PlayfairDisplay-Bold' },
   footer: { paddingVertical: spacing.sm },
   fab: {
     position: 'absolute',
-    bottom: 100,
+    bottom: tabBar.height + 16,
     right: spacing.lg,
     shadowColor: colors.emerald,
     shadowOffset: { width: 0, height: 4 },
@@ -201,5 +252,45 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  trendingHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+  },
+  trendingHeaderText: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+  hashtagContainer: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  hashtagChip: {
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  hashtagText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+  endOfFeed: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
+  },
+  endOfFeedText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
   },
 });

@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import type { BlockedKeyword } from '@/types';
@@ -18,7 +20,9 @@ export default function BlockedKeywordsScreen() {
   const queryClient = useQueryClient();
   const [newWord, setNewWord] = useState('');
 
-  const { data: keywords = [], isLoading } = useQuery<BlockedKeyword[]>({
+  const [refreshing, setRefreshing] = useState(false);
+
+  const { data: keywords = [], isLoading, refetch } = useQuery<BlockedKeyword[]>({
     queryKey: ['blocked-keywords'],
     queryFn: () => settingsApi.getBlockedKeywords(),
   });
@@ -44,6 +48,12 @@ export default function BlockedKeywordsScreen() {
     addMutation.mutate(word);
   }, [newWord, addMutation]);
 
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
+
   const handleDelete = useCallback((id: string, word: string) => {
     Alert.alert('Remove keyword', `Remove "${word}" from blocked keywords?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -53,14 +63,10 @@ export default function BlockedKeywordsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Blocked Keywords</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <GlassHeader
+        title="Blocked Keywords"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -104,6 +110,9 @@ export default function BlockedKeywordsScreen() {
             data={keywords}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: 40 }}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
             renderItem={({ item }) => (
               <View style={styles.keywordRow}>
                 <Text style={styles.keywordText}>{item.word}</Text>
@@ -133,16 +142,9 @@ export default function BlockedKeywordsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 40, alignItems: 'flex-start' },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   hint: {
     color: colors.text.secondary, fontSize: fontSize.sm,
-    paddingHorizontal: spacing.base, paddingTop: spacing.md, paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.base, paddingTop: 100, paddingBottom: spacing.sm,
     lineHeight: 19,
   },
   addRow: {
@@ -166,7 +168,7 @@ const styles = StyleSheet.create({
   keywordRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    backgroundColor: colors.dark.bgElevated,
+    backgroundColor: colors.dark.bgCard,
   },
   keywordText: { color: colors.text.primary, fontSize: fontSize.base },
   divider: { height: 0.5, backgroundColor: colors.dark.border },

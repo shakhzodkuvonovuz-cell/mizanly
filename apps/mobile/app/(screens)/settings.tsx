@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
-  ScrollView, Switch, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
+  ScrollView, Switch, Alert, Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
+import { useHaptic } from '@/hooks/useHaptic';
 
 function Row({
   label,
   hint,
+  icon,
+  rightText,
   value,
   onToggle,
   onPress,
@@ -23,18 +27,26 @@ function Row({
 }: {
   label: string;
   hint?: string;
+  icon?: React.ReactNode;
+  rightText?: string;
   value?: boolean;
   onToggle?: (v: boolean) => void;
   onPress?: () => void;
   destructive?: boolean;
 }) {
+  const haptic = useHaptic();
+  const handlePress = onPress ? () => {
+    haptic.selection();
+    onPress();
+  } : undefined;
   return (
     <TouchableOpacity
       style={styles.row}
-      onPress={onPress}
-      activeOpacity={onPress ? 0.7 : 1}
-      disabled={!onPress && !onToggle}
+      onPress={handlePress}
+      activeOpacity={handlePress ? 0.7 : 1}
+      disabled={!handlePress && !onToggle}
     >
+      {icon ? <View style={styles.rowIcon}>{icon}</View> : null}
       <View style={styles.rowText}>
         <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
         {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
@@ -46,6 +58,8 @@ function Row({
           trackColor={{ false: colors.dark.border, true: colors.emerald }}
           thumbColor="#fff"
         />
+      ) : rightText ? (
+        <Text style={styles.rowRightText}>{rightText}</Text>
       ) : onPress ? (
         <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
       ) : null}
@@ -61,6 +75,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
   const { theme, setTheme } = useStore();
+  const insets = useSafeAreaInsets();
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -166,28 +181,28 @@ export default function SettingsScreen() {
 
   if (settingsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={{ flex: 1, padding: spacing.base, gap: spacing.lg }}>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Settings"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <View style={{ flex: 1, padding: spacing.base, paddingTop: insets.top + 60, gap: spacing.lg }}>
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton.Rect key={i} width="100%" height={48} />
           ))}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Settings"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+      />
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+      <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
         {/* Content */}
         <SectionHeader title="Content" />
         <View style={styles.card}>
@@ -199,43 +214,28 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <SectionHeader title="Appearance" />
         <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setTheme('dark')}
-          >
-            <View style={styles.rowText}>
-              <Text style={styles.rowLabel}>Dark</Text>
-            </View>
-            {theme === 'dark' && <Icon name="check" size="sm" color={colors.emerald} />}
-          </TouchableOpacity>
+          <Row
+            label="Appearance"
+            icon={<Icon name="eye" size="sm" color={colors.text.secondary} />}
+            hint="Theme, dark mode, and visual settings"
+            onPress={() => router.push('/(screens)/theme-settings')}
+          />
           <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setTheme('light')}
-          >
-            <View style={styles.rowText}>
-              <Text style={styles.rowLabel}>Light</Text>
-            </View>
-            {theme === 'light' && <Icon name="check" size="sm" color={colors.emerald} />}
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setTheme('system')}
-          >
-            <View style={styles.rowText}>
-              <Text style={styles.rowLabel}>System</Text>
-              <Text style={styles.rowHint}>Match device settings</Text>
-            </View>
-            {theme === 'system' && <Icon name="check" size="sm" color={colors.emerald} />}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.card}>
           <Row
             label="Saved"
             hint="Your saved posts and threads"
             onPress={() => router.push('/(screens)/saved')}
+          />
+        </View>
+
+        {/* Profile */}
+        <SectionHeader title="Profile" />
+        <View style={styles.card}>
+          <Row
+            label="Share Profile"
+            icon={<Icon name="share" size="sm" color={colors.text.secondary} />}
+            hint="Share your profile via QR code or link"
+            onPress={() => router.push('/(screens)/share-profile')}
           />
         </View>
 
@@ -355,7 +355,12 @@ export default function SettingsScreen() {
         {/* Account */}
         <SectionHeader title="Account" />
         <View style={styles.card}>
-          <Row label="Sign Out" onPress={handleSignOut} />
+          <Row
+            label="Account"
+            icon={<Icon name="user" size="sm" color={colors.text.secondary} />}
+            hint="Manage account settings"
+            onPress={() => router.push('/(screens)/account-settings')}
+          />
           <View style={styles.divider} />
           <Row
             label="Deactivate Account"
@@ -370,21 +375,41 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <Text style={styles.version}>Mizanly v0.1.0</Text>
+        {/* Sign Out */}
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+          <Icon name="log-out" size="sm" color={colors.error} />
+          <Text style={styles.signOutLabel}>Sign Out</Text>
+        </TouchableOpacity>
+
+        {/* About */}
+        <SectionHeader title="About" />
+        <View style={styles.card}>
+          <Row label="Version" rightText="1.0.0" />
+          <View style={styles.divider} />
+          <Row
+            label="Terms of Service"
+            onPress={() => Linking.openURL('https://mizanly.app/terms')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Privacy Policy"
+            onPress={() => Linking.openURL('https://mizanly.app/privacy')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Licenses"
+            onPress={() => Linking.openURL('https://mizanly.app/licenses')}
+          />
+        </View>
+
+        <Text style={styles.version}>Mizanly v1.0.0</Text>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60 },
 
@@ -392,21 +417,36 @@ const styles = StyleSheet.create({
     color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
     textTransform: 'uppercase', letterSpacing: 0.8,
     paddingHorizontal: spacing.base, paddingTop: spacing.xl, paddingBottom: spacing.sm,
+    borderLeftWidth: 3, borderLeftColor: colors.emerald, paddingLeft: spacing.sm,
+    marginLeft: spacing.base,
   },
   card: {
-    backgroundColor: colors.dark.bgElevated,
-    marginHorizontal: spacing.base, borderRadius: radius.lg, overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard, borderRadius: radius.lg,
+    borderWidth: 0.5, borderColor: colors.dark.border,
+    overflow: 'hidden', marginHorizontal: spacing.base, marginBottom: spacing.md,
   },
 
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
+  rowIcon: { marginRight: spacing.sm },
   rowText: { flex: 1, marginRight: spacing.md },
   rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm },
   destructive: { color: '#FF453A' },
   divider: { height: 0.5, backgroundColor: colors.dark.border, marginLeft: spacing.base },
+
+  signOutButton: {
+    borderWidth: 1.5, borderColor: colors.error, borderRadius: radius.md,
+    padding: spacing.md, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: spacing.sm,
+    marginHorizontal: spacing.base, marginTop: spacing.xl,
+  },
+  signOutLabel: {
+    color: colors.error, fontSize: fontSize.base, fontWeight: '600',
+  },
 
   version: {
     color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,

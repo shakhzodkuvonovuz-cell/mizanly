@@ -4,10 +4,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -87,20 +89,21 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
 
   return (
     <View style={styles.requestActions}>
-      <Pressable
-        style={[styles.acceptBtn, acceptMutation.isPending && { opacity: 0.6 }]}
+      <GradientButton
+        label="Accept"
+        size="sm"
         onPress={() => acceptMutation.mutate()}
-        disabled={acceptMutation.isPending || declineMutation.isPending}
-      >
-        <Text style={styles.acceptBtnText}>Accept</Text>
-      </Pressable>
-      <Pressable
-        style={[styles.declineBtn, declineMutation.isPending && { opacity: 0.6 }]}
+        loading={acceptMutation.isPending}
+        disabled={declineMutation.isPending}
+      />
+      <GradientButton
+        label="Decline"
+        variant="ghost"
+        size="sm"
         onPress={() => declineMutation.mutate()}
-        disabled={acceptMutation.isPending || declineMutation.isPending}
-      >
-        <Text style={styles.declineBtnText}>Decline</Text>
-      </Pressable>
+        loading={declineMutation.isPending}
+        disabled={acceptMutation.isPending}
+      />
     </View>
   );
 }
@@ -120,15 +123,20 @@ function NotificationRow({ notification }: { notification: Notification }) {
     haptic.light();
     if (!notification.isRead) readMutation.mutate();
     const target = notificationTarget(notification);
-    if (target) router.push(target as any);
+    if (target) router.push(target as `/${string}`);
   };
 
   const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true });
 
   return (
     <Pressable
-      style={[styles.row, !notification.isRead && styles.rowUnread]}
+      style={({ pressed }) => [
+        styles.row,
+        !notification.isRead && styles.rowUnread,
+        pressed && styles.rowPressed,
+      ]}
       onPress={handlePress}
+      android_ripple={{ color: colors.active.emerald10 }}
     >
       {/* Unread accent bar */}
       {!notification.isRead && <View style={styles.unreadBar} />}
@@ -210,28 +218,28 @@ export default function NotificationsScreen() {
     await query.refetch();
   }, [query]);
 
-  return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <Pressable
-          onPress={() => markAllMutation.mutate()}
-          disabled={markAllMutation.isPending}
-          hitSlop={8}
-        >
-          <Text style={styles.markAllText}>Mark all read</Text>
-        </Pressable>
-      </View>
+  const insets = useSafeAreaInsets();
+  const headerHeight = insets.top + 44 + spacing.sm;
 
-      <TabSelector
-        tabs={NOTIF_TABS}
-        activeKey={filter}
-        onTabChange={(key) => setFilter(key as NotifFilter)}
+  return (
+    <View style={styles.container}>
+      <GlassHeader
+        title="Notifications"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        rightActions={[{
+          icon: <Text style={{ color: colors.emerald, fontSize: 13, fontWeight: '600' }}>Mark all read</Text>,
+          onPress: () => markAllMutation.mutate(),
+          accessibilityLabel: 'Mark all read',
+        }]}
       />
+
+      <View style={{ paddingTop: headerHeight }}>
+        <TabSelector
+          tabs={NOTIF_TABS}
+          activeKey={filter}
+          onTabChange={(key) => setFilter(key as NotifFilter)}
+        />
+      </View>
 
       <FlatList
         data={notifications}
@@ -269,20 +277,12 @@ export default function NotificationsScreen() {
         }
         contentContainerStyle={{ paddingBottom: 40 }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 40 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  markAllText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
 
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
@@ -294,6 +294,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   rowUnread: { backgroundColor: colors.active.emerald10 },
+  rowPressed: { opacity: 0.7 },
   unreadBar: {
     position: 'absolute',
     left: 0,
@@ -324,15 +325,5 @@ const styles = StyleSheet.create({
   rowTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs },
 
   requestDone: { color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600' },
-  requestActions: { flexDirection: 'row', gap: spacing.xs },
-  acceptBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.sm,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
-  },
-  acceptBtnText: { color: '#fff', fontSize: fontSize.xs, fontWeight: '700' },
-  declineBtn: {
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.sm,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
-  },
-  declineBtnText: { color: colors.text.primary, fontSize: fontSize.xs, fontWeight: '600' },
+  requestActions: { flexDirection: 'row', gap: spacing.xs, alignItems: 'center' },
 });

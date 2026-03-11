@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -194,13 +195,10 @@ export default function ConversationInfoScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back">
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Info</Text>
-        <View style={{ width: 32 }} />
-      </View>
+      <GlassHeader
+        title="Chat Info"
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+      />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
         {/* Avatar + name */}
@@ -252,7 +250,7 @@ export default function ConversationInfoScreen() {
 
         {/* Members list (group only) */}
         {isGroup && (
-          <View style={styles.section}>
+          <View style={[styles.section, styles.optionsCard]}>
             <Text style={styles.sectionTitle}>Members</Text>
             {convo.members.map((m) => (
               <TouchableOpacity
@@ -288,11 +286,13 @@ export default function ConversationInfoScreen() {
         )}
 
         {/* Actions */}
-        <View style={styles.section}>
+        <View style={styles.optionsCard}>
           {isGroup && !isCreator && (
             <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
               {leaveGroupMutation.isPending
-                ? <ActivityIndicator color={colors.error} />
+                ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <ActivityIndicator color={colors.error} />
+                  </View>
                 : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                     <Icon name="log-out" size="sm" color={colors.error} />
                     <Text style={styles.actionDestructive}>Leave group</Text>
@@ -427,7 +427,11 @@ export default function ConversationInfoScreen() {
 
           {/* Search results */}
           {memberSearchQuery.isLoading ? (
-            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+            <View style={styles.loader}>
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+            </View>
           ) : (
             <FlatList
               data={searchResults}
@@ -523,12 +527,15 @@ export default function ConversationInfoScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   loader: { flex: 1, marginTop: 80 },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  optionsCard: {
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+    overflow: 'hidden' as const,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   hero: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
   heroName: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
@@ -661,6 +668,7 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginVertical: spacing.xl,
+    gap: spacing.sm,
   },
   resultsList: {
     maxHeight: 300,

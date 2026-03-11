@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ActivityIndicator,
+import {
   View, Text, StyleSheet, Pressable, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation,
+  KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation, RefreshControl,
 } from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
@@ -16,22 +16,29 @@ import Animated, {
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
 import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { format, isToday, isYesterday, isSameDay, differenceInMinutes } from 'date-fns';
+import { format, isToday, isYesterday, isSameDay, differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
-import type { Message, Conversation } from '@/types';
+import type { Message, Conversation, ConversationMember } from '@/types';
 import { io, Socket } from 'socket.io-client';
+
+interface TenorGifResult {
+  id: string;
+  media_formats: { gif: { url: string } };
+}
 
 const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
 const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
@@ -223,7 +230,7 @@ function GifPicker({ visible, onClose, onSelect }: {
   onSelect: (gifUrl: string) => void;
 }) {
   const [search, setSearch] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<TenorGifResult[]>([]);
   const [loading, setLoading] = useState(false);
 
   const apiKey = process.env.EXPO_PUBLIC_TENOR_API_KEY;
@@ -282,7 +289,8 @@ function GifPicker({ visible, onClose, onSelect }: {
         </View>
         {loading ? (
           <View style={styles.gifLoader}>
-            <ActivityIndicator size="small" color={colors.emerald} />
+            <Skeleton.Rect width={120} height={120} borderRadius={radius.sm} />
+            <Skeleton.Rect width={120} height={120} borderRadius={radius.sm} />
           </View>
         ) : (
           <FlatList
@@ -309,16 +317,35 @@ function GifPicker({ visible, onClose, onSelect }: {
   );
 }
 
+const ReadReceiptIcon = ({ status }: { status: 'sent' | 'delivered' | 'read' }) => {
+  const color = status === 'read' ? colors.emerald : colors.text.tertiary;
+  return (
+    <View style={{ flexDirection: 'row', marginLeft: 4 }}>
+      <Icon name="check" size={12} color={color} />
+      {(status === 'delivered' || status === 'read') && (
+        <Icon name="check" size={12} color={color} style={{ marginLeft: -6 }} />
+      )}
+    </View>
+  );
+};
+
+const getMessageStatus = (msg: Message, readByMembers: ConversationMember[], deliveredMessages: Set<string>): 'sent' | 'delivered' | 'read' => {
+  if (readByMembers && readByMembers.length > 0) return 'read';
+  if (deliveredMessages.has(msg.id)) return 'delivered';
+  return 'sent';
+};
+
 function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
   searchQuery = '', onSearchResultPress, readByMembers = [],
-  conversationId,
+  conversationId, deliveredMessages = new Set<string>(),
 }: {
   message: Message; isOwn: boolean; isGroupStart: boolean; isGroupEnd: boolean;
   onLongPress: (msg: Message) => void; isNew?: boolean;
   searchQuery?: string; onSearchResultPress?: (msgId: string) => void;
-  readByMembers?: any[];
+  readByMembers?: ConversationMember[];
   conversationId: string;
+  deliveredMessages?: Set<string>;
 }) {
   const { user } = useUser();
   const queryClient = useQueryClient();
@@ -386,10 +413,18 @@ function MessageBubble({
         onPress={() => searchQuery.trim() && onSearchResultPress?.(message.id)}
         style={[
           styles.bubble,
-          isOwn ? [styles.bubbleOwn, ownRadius] : [styles.bubbleOther, otherRadius],
+          isOwn ? [styles.bubbleOwn, ownRadius, { overflow: 'hidden' as const }] : [styles.bubbleOther, otherRadius],
         ]}
         delayLongPress={300}
       >
+        {isOwn && (
+          <LinearGradient
+            colors={[colors.emeraldLight, colors.emerald]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={StyleSheet.absoluteFill}
+          />
+        )}
         {/* Sender name in groups (only on group start for others) */}
         {!isOwn && isGroupStart && (
           <Text style={styles.senderName}>{message.sender.displayName}</Text>
@@ -436,11 +471,7 @@ function MessageBubble({
           <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>{time}</Text>
           {isOwn && (
             <View style={styles.receiptRow}>
-              <Icon
-                name={readByMembers.length > 0 ? 'check-check' : 'check'}
-                size="xs"
-                color={readByMembers.length > 0 ? colors.emerald : colors.text.tertiary}
-              />
+              <ReadReceiptIcon status={getMessageStatus(message, readByMembers, deliveredMessages)} />
               {readByMembers.length > 0 && (
                 <Text style={styles.readTime}>{format(new Date(readByMembers[0].lastReadAt), 'HH:mm')}</Text>
               )}
@@ -460,6 +491,14 @@ function MessageBubble({
               {readByMembers.length > 3 && (
                 <Text style={styles.readReceiptMore}>+{readByMembers.length - 3}</Text>
               )}
+            </View>
+          )}
+          {message.expiresAt && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+              <Icon name="clock" size={10} color={colors.text.tertiary} />
+              <Text style={{ color: colors.text.tertiary, fontSize: 10, marginLeft: 2 }}>
+                {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false })}
+              </Text>
             </View>
           )}
         </View>
@@ -521,7 +560,7 @@ function PendingMessageRow({ pending }: { pending: PendingMessage }) {
   return (
     <View style={styles.pendingRow}>
       <Text style={styles.pendingText}>{pending.content}</Text>
-      <ActivityIndicator size="small" color={colors.text.tertiary} />
+      <Skeleton.Circle size={16} />
     </View>
   );
 }
@@ -534,6 +573,7 @@ export default function ConversationScreen() {
   const queryClient = useQueryClient();
   const isOffline = useStore((s) => s.isOffline);
   const haptic = useHaptic();
+  const insets = useSafeAreaInsets();
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -541,6 +581,8 @@ export default function ConversationScreen() {
   const [text, setText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
+  const [deliveredMessages, setDeliveredMessages] = useState<Set<string>>(() => new Set());
+  const [pinnedMessage, setPinnedMessage] = useState<Message | null>(null);
   const pendingMessagesRef = useRef(pendingMessages);
   useEffect(() => {
     pendingMessagesRef.current = pendingMessages;
@@ -565,11 +607,12 @@ export default function ConversationScreen() {
   // GIF picker
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifSearchQuery, setGifSearchQuery] = useState("");
-  const [gifResults, setGifResults] = useState<any[]>([]);
+  const [gifResults, setGifResults] = useState<TenorGifResult[]>([]);
   const [gifLoading, setGifLoading] = useState(false);
   // Message search
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -611,6 +654,20 @@ export default function ConversationScreen() {
     queryFn: () => messagesApi.getConversations(),
     enabled: !!forwardMsg,
   });
+
+  // Pinned messages query (placeholder)
+  // TODO: implement endpoint
+  // const { data: pinnedMessages } = useQuery({
+  //   queryKey: ['pinned-messages', id],
+  //   queryFn: () => messagesApi.get(`/messages/${id}/pinned`),
+  //   enabled: !!id,
+  // });
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([messagesQuery.refetch(), convoQuery.refetch()]);
+    setRefreshing(false);
+  }, [messagesQuery, convoQuery]);
 
   const messages: Message[] = messagesQuery.data?.pages.flatMap((p) => p.data) ?? [];
   const combinedMessages = [...messages, ...pendingMessages.map(p => ({
@@ -660,7 +717,7 @@ export default function ConversationScreen() {
         if (matchedIndex >= 0) {
           setPendingMessages(prev => prev.filter((_, i) => i !== matchedIndex));
         }
-        queryClient.setQueryData(['messages', id], (old: any) => {
+        queryClient.setQueryData<{ pages: { data: Message[]; meta: { cursor?: string; hasMore: boolean } }[]; pageParams: (string | undefined)[] }>(['messages', id], (old) => {
           if (!old) return old;
           const pages = [...old.pages];
           const lastPage = { ...pages[pages.length - 1] };
@@ -673,6 +730,13 @@ export default function ConversationScreen() {
         setTimeout(() => {
           newMessageIdsRef.current.delete(msg.id);
         }, 500);
+      });
+      socket.on('delivery_receipt', ({ messageId, deliveredAt, deliveredTo }: { messageId: string; deliveredAt: string; deliveredTo: string }) => {
+        setDeliveredMessages(prev => {
+          const next = new Set(prev);
+          next.add(messageId);
+          return next;
+        });
       });
       socket.on('user_typing', ({ userId, isTyping: typing }: { userId: string; isTyping: boolean }) => {
         if (userId !== user?.id) setOtherTyping(typing);
@@ -926,59 +990,79 @@ export default function ConversationScreen() {
     });
   });
 
+  const glassHeaderHeight = insets.top + 52;
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       {/* Header */}
       {searchMode ? (
-        <View style={styles.searchHeader}>
-          <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <View style={styles.searchInputWrap}>
-            <Icon name="search" size="sm" color={colors.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search messages…"
-              placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Search messages"
-              autoFocus
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
-              </Pressable>
-            )}
-          </View>
-          <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} style={styles.cancelBtn}>
-            <Text style={styles.cancelText}>Cancel</Text>
-          </Pressable>
-        </View>
-      ) : (
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
-            <Avatar uri={avatarUri} name={name} size="sm" showOnline />
-            <View>
-              <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
-              {otherTyping && <TypingDots />}
-            </View>
-          </Pressable>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-            <Pressable hitSlop={8} onPress={() => setSearchMode(true)}>
+        <SafeAreaView edges={['top']} style={{ backgroundColor: colors.dark.bg }}>
+          <View style={styles.searchHeader}>
+            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} hitSlop={8} style={styles.backBtn}>
+              <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            </Pressable>
+            <View style={styles.searchInputWrap}>
               <Icon name="search" size="sm" color={colors.text.secondary} />
-            </Pressable>
-            <Pressable hitSlop={8} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
-              <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="Search messages..."
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Search messages"
+                autoFocus
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
+              )}
+            </View>
+            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} style={styles.cancelBtn}>
+              <Text style={styles.cancelText}>Cancel</Text>
             </Pressable>
           </View>
-        </View>
+        </SafeAreaView>
+      ) : (
+        <GlassHeader
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back',
+          }}
+          titleComponent={
+            <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
+              <Avatar uri={avatarUri} name={name} size="sm" showOnline />
+              <View>
+                <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
+                {otherTyping && <TypingDots />}
+              </View>
+            </Pressable>
+          }
+          rightActions={[
+            {
+              icon: 'image',
+              onPress: () => router.push(`/(screens)/conversation-media?id=${id}`),
+              accessibilityLabel: 'View media',
+            },
+            {
+              icon: 'search',
+              onPress: () => setSearchMode(true),
+              accessibilityLabel: 'Search messages',
+            },
+            {
+              icon: 'more-horizontal',
+              onPress: () => router.push(`/(screens)/conversation-info?id=${id}`),
+              accessibilityLabel: 'Conversation info',
+            },
+          ]}
+        />
       )}
+
+      {/* Spacer for GlassHeader (absolute positioned) */}
+      {!searchMode && <View style={{ height: glassHeaderHeight }} />}
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -986,12 +1070,37 @@ export default function ConversationScreen() {
       >
         {messagesQuery.isLoading ? (
           <View style={styles.loaderWrap}>
-            <Skeleton.Rect width={200} height={40} borderRadius={18} style={{ alignSelf: 'flex-end' }} />
-            <Skeleton.Rect width={180} height={40} borderRadius={18} style={{ alignSelf: 'flex-start', marginTop: spacing.sm }} />
-            <Skeleton.Rect width={220} height={40} borderRadius={18} style={{ alignSelf: 'flex-end', marginTop: spacing.sm }} />
+            <Skeleton.Rect width={200} height={40} borderRadius={radius.lg} style={{ alignSelf: 'flex-end' }} />
+            <Skeleton.Rect width={180} height={40} borderRadius={radius.lg} style={{ alignSelf: 'flex-start', marginTop: spacing.sm }} />
+            <Skeleton.Rect width={220} height={40} borderRadius={radius.lg} style={{ alignSelf: 'flex-end', marginTop: spacing.sm }} />
           </View>
         ) : (
-          <FlatList
+          <>
+            {pinnedMessage && (
+              <Pressable
+                onPress={() => scrollToMessage(pinnedMessage.id)}
+                style={{
+                  flexDirection: 'row', alignItems: 'center',
+                  backgroundColor: colors.dark.bgElevated,
+                  paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
+                  borderBottomWidth: 1, borderBottomColor: colors.dark.border,
+                }}
+              >
+                <Icon name="map-pin" size="xs" color={colors.emerald} />
+                <View style={{ flex: 1, marginLeft: spacing.sm }}>
+                  <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }}>
+                    Pinned Message
+                  </Text>
+                  <Text numberOfLines={1} style={{ color: colors.text.primary, fontSize: fontSize.sm }}>
+                    {pinnedMessage.content}
+                  </Text>
+                </View>
+                <Pressable onPress={() => setPinnedMessage(null)}>
+                  <Icon name="x" size="xs" color={colors.text.tertiary} />
+                </Pressable>
+              </Pressable>
+            )}
+            <FlatList
             ref={flatListRef}
             data={listItems}
             keyExtractor={(item) => item.key}
@@ -1027,6 +1136,7 @@ export default function ConversationScreen() {
                     readByMembers={readByMembers}
                     onSearchResultPress={() => handleSearchResultPress(index)}
                     conversationId={id}
+                    deliveredMessages={deliveredMessages}
                   />
                 </Swipeable>
               );
@@ -1037,6 +1147,13 @@ export default function ConversationScreen() {
               }
             }}
             onEndReachedThreshold={0.1}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.emerald}
+              />
+            }
             ListEmptyComponent={() => (
               <View style={styles.emptyWrap}>
                 <Avatar uri={avatarUri} name={name} size="2xl" />
@@ -1048,6 +1165,7 @@ export default function ConversationScreen() {
             onScrollToIndexFailed={({ index }) => flatListRef.current?.scrollToOffset({ offset: index * 100 })}
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
+          </>
         )}
 
         {/* Input area */}
@@ -1248,6 +1366,33 @@ export default function ConversationScreen() {
           }}
         />
         <BottomSheetItem
+          label={contextMenuMsg?.isPinned ? 'Unpin Message' : 'Pin Message'}
+          icon={<Icon name="map-pin" size="sm" color={contextMenuMsg?.isPinned ? colors.error : colors.text.primary} />}
+          onPress={() => {
+            if (contextMenuMsg) {
+              if (contextMenuMsg?.isPinned) {
+                // TODO: unpin mutation
+                console.log('Unpin', contextMenuMsg.id);
+              } else {
+                // TODO: pin mutation
+                console.log('Pin', contextMenuMsg.id);
+              }
+              setContextMenuMsg(null);
+            }
+          }}
+        />
+        <BottomSheetItem
+          label={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? 'Unstar' : 'Star Message'}
+          icon={<Icon name="bookmark" size="sm" color={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? colors.gold : colors.text.primary} />}
+          onPress={() => {
+            if (contextMenuMsg) {
+              // TODO: star/unstar mutation
+              console.log('Star toggle', contextMenuMsg.id);
+              setContextMenuMsg(null);
+            }
+          }}
+        />
+        <BottomSheetItem
           label="React"
           icon={<Icon name="smile" size="sm" color={colors.text.secondary} />}
           onPress={() => {
@@ -1389,7 +1534,7 @@ export default function ConversationScreen() {
           setReplyTo(null);
         }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1453,8 +1598,8 @@ const styles = StyleSheet.create({
   bubble: {
     maxWidth: '78%', paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
-  bubbleOwn: { backgroundColor: colors.emerald },
-  bubbleOther: { backgroundColor: colors.dark.bgElevated },
+  bubbleOwn: { backgroundColor: 'transparent' },
+  bubbleOther: { backgroundColor: colors.dark.bgElevated, borderWidth: 0.5, borderColor: colors.dark.border },
   deletedMsg: { color: colors.text.tertiary, fontSize: fontSize.sm, fontStyle: 'italic', paddingVertical: spacing.xs },
   replyPreview: {
     borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',

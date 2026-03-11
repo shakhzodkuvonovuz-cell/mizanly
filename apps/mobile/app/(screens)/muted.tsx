@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
+  FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +10,8 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { mutesApi } from '@/services/api';
 
@@ -23,6 +26,12 @@ interface MutedUser {
   };
 }
 
+interface MutedPage {
+  mutes?: MutedUser[];
+  items?: MutedUser[];
+  meta?: { cursor?: string; hasMore: boolean };
+}
+
 export default function MutedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -31,10 +40,17 @@ export default function MutedScreen() {
     queryKey: ['muted'],
     queryFn: ({ pageParam }) => mutesApi.getMuted(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor : undefined,
+    getNextPageParam: (last: MutedPage) => last.meta?.hasMore ? last.meta.cursor : undefined,
   });
 
-  const muted: MutedUser[] = query.data?.pages.flatMap((p: any) => p.mutes ?? p.items ?? []) ?? [];
+  const muted: MutedUser[] = query.data?.pages.flatMap((p: MutedPage) => p.mutes ?? p.items ?? []) ?? [];
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await query.refetch();
+    setRefreshing(false);
+  };
 
   const unmuteMutation = useMutation({
     mutationFn: (userId: string) => mutesApi.unmute(userId),
@@ -44,13 +60,10 @@ export default function MutedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Muted Accounts</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="Muted Accounts"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       {query.isLoading ? (
         <View style={styles.skeletonList}>
@@ -73,6 +86,9 @@ export default function MutedScreen() {
             if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
           }}
           onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => {
             const u = item.muted;
             return (
@@ -82,17 +98,14 @@ export default function MutedScreen() {
                   <Text style={styles.name}>{u.displayName}</Text>
                   <Text style={styles.username}>@{u.username}</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.unmuteBtn}
+                <GradientButton
+                  label="Unmute"
+                  variant="secondary"
+                  size="sm"
                   onPress={() => unmuteMutation.mutate(u.id)}
+                  loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
                   disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                >
-                  {unmuteMutation.isPending && unmuteMutation.variables === u.id ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <Text style={styles.unmuteText}>Unmute</Text>
-                  )}
-                </TouchableOpacity>
+                />
               </View>
             );
           }}
@@ -111,7 +124,7 @@ export default function MutedScreen() {
             <EmptyState
               icon="volume-x"
               title="No muted accounts"
-              subtitle="Accounts you mute will appear here. You can unmute them at any time."
+              subtitle="Muted accounts won't know they've been muted and you can unmute anytime"
             />
           )}
         />
@@ -122,14 +135,6 @@ export default function MutedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
   list: { paddingBottom: 40 },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {

@@ -1,6 +1,7 @@
 import { Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, fontSize, fonts } from '@/theme';
+import { useHaptic } from '@/hooks/useHaptic';
 
 interface Props {
   text: string;
@@ -11,9 +12,10 @@ interface Props {
 
 export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
+  const haptic = useHaptic();
 
-  const segments: { type: 'text' | 'hashtag' | 'mention' | 'url'; value: string }[] = [];
-  const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+)/g;
+  const segments: { type: 'text' | 'hashtag' | 'mention' | 'url' | 'phone' | 'email'; value: string }[] = [];
+  const TOKEN_RE = /(https?:\/\/[^\s]+|#[\w\u0600-\u06FF]+|@[\w.]+|\+?\d{1,4}[-.\s]?\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g;
 
   let lastIndex = 0;
   let match: RegExpExecArray | null;
@@ -27,8 +29,12 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
       segments.push({ type: 'url', value: token });
     } else if (token.startsWith('#')) {
       segments.push({ type: 'hashtag', value: token.slice(1) });
-    } else {
+    } else if (token.startsWith('@')) {
       segments.push({ type: 'mention', value: token.slice(1) });
+    } else if (token.includes('@')) {
+      segments.push({ type: 'email', value: token });
+    } else {
+      segments.push({ type: 'phone', value: token });
     }
     lastIndex = match.index + token.length;
   }
@@ -45,7 +51,7 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
             <Text
               key={i}
               style={styles.url}
-              onPress={(e) => { e.stopPropagation?.(); Linking.openURL(seg.value); }}
+              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(seg.value); }}
             >
               {seg.value}
             </Text>
@@ -58,6 +64,7 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
               style={styles.hashtag}
               onPress={(e) => {
                 e.stopPropagation?.();
+                haptic.light();
                 router.push(`/(screens)/hashtag/${seg.value}`);
               }}
             >
@@ -72,10 +79,33 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
               style={styles.mention}
               onPress={(e) => {
                 e.stopPropagation?.();
+                haptic.light();
                 router.push(`/(screens)/profile/${seg.value}`);
               }}
             >
               @{seg.value}
+            </Text>
+          );
+        }
+        if (seg.type === 'phone') {
+          return (
+            <Text
+              key={i}
+              style={styles.phone}
+              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(`tel:${seg.value}`); }}
+            >
+              {seg.value}
+            </Text>
+          );
+        }
+        if (seg.type === 'email') {
+          return (
+            <Text
+              key={i}
+              style={styles.email}
+              onPress={(e) => { e.stopPropagation?.(); haptic.light(); Linking.openURL(`mailto:${seg.value}`); }}
+            >
+              {seg.value}
             </Text>
           );
         }
@@ -100,6 +130,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   url: {
+    color: colors.emerald,
+    textDecorationLine: 'underline',
+  },
+  phone: {
+    color: colors.emerald,
+    textDecorationLine: 'underline',
+  },
+  email: {
     color: colors.emerald,
     textDecorationLine: 'underline',
   },

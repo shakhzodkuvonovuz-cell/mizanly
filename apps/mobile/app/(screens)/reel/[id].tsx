@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// GlassHeader handles safe area insets internally
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Video, ResizeMode } from 'expo-av';
@@ -17,6 +17,8 @@ import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -230,22 +232,21 @@ export default function ReelDetailScreen() {
 
   if (reelQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Error</Text>
-          <View style={{ width: 40 }} />
-        </View>
-        <EmptyState
-          icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
-          actionLabel="Go back"
-          onAction={() => router.back()}
+      <View style={styles.container}>
+        <GlassHeader
+          title="Error"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
-      </SafeAreaView>
+        <View style={{ marginTop: 88 }}>
+          <EmptyState
+            icon="slash"
+            title="Something went wrong"
+            subtitle="Could not load this content. Please try again."
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
+        </View>
+      </View>
     );
   }
 
@@ -319,51 +320,41 @@ export default function ReelDetailScreen() {
 
             {/* Action Buttons */}
             <View style={styles.actionButtons}>
-              <TouchableOpacity
+              <ActionButton
+                icon={<Icon name="heart" size={28} color={colors.text.primary} />}
+                activeIcon={<Icon name="heart-filled" size={28} color={colors.like} fill={colors.like} />}
+                isActive={reelQuery.data.isLiked}
+                count={reelQuery.data.likesCount}
                 onPress={handleLike}
-                style={styles.actionButton}
                 disabled={likeMutation.isPending}
-              >
-                <Animated.View style={animatedStyle}>
-                  <Icon
-                    name={reelQuery.data.isLiked ? 'heart-filled' : 'heart'}
-                    size={28}
-                    color={reelQuery.data.isLiked ? colors.like : colors.text.primary}
-                    fill={reelQuery.data.isLiked ? colors.like : undefined}
-                  />
-                </Animated.View>
-                <Text style={styles.actionCount}>{reelQuery.data.likesCount}</Text>
-              </TouchableOpacity>
+                activeColor={colors.like}
+                accessibilityLabel="Like"
+              />
 
-              <TouchableOpacity
+              <ActionButton
+                icon={<Icon name="message-circle" size={28} color={colors.text.primary} />}
+                count={reelQuery.data.commentsCount}
                 onPress={() => inputRef.current?.focus()}
-                style={styles.actionButton}
-              >
-                <Icon name="message-circle" size={28} color={colors.text.primary} />
-                <Text style={styles.actionCount}>{reelQuery.data.commentsCount}</Text>
-              </TouchableOpacity>
+                accessibilityLabel="Comment"
+              />
 
-              <TouchableOpacity
+              <ActionButton
+                icon={<Icon name="share" size={28} color={colors.text.primary} />}
+                count={reelQuery.data.sharesCount}
                 onPress={handleShare}
-                style={styles.actionButton}
                 disabled={shareMutation.isPending}
-              >
-                <Icon name="share" size={28} color={colors.text.primary} />
-                <Text style={styles.actionCount}>{reelQuery.data.sharesCount}</Text>
-              </TouchableOpacity>
+                accessibilityLabel="Share"
+              />
 
-              <TouchableOpacity
+              <ActionButton
+                icon={<Icon name="bookmark" size={28} color={colors.text.primary} />}
+                activeIcon={<Icon name="bookmark-filled" size={28} color={colors.gold} fill={colors.gold} />}
+                isActive={reelQuery.data.isBookmarked}
                 onPress={handleBookmark}
-                style={styles.actionButton}
                 disabled={bookmarkMutation.isPending}
-              >
-                <Icon
-                  name={reelQuery.data.isBookmarked ? 'bookmark-filled' : 'bookmark'}
-                  size={28}
-                  color={reelQuery.data.isBookmarked ? colors.gold : colors.text.primary}
-                  fill={reelQuery.data.isBookmarked ? colors.gold : undefined}
-                />
-              </TouchableOpacity>
+                activeColor={colors.gold}
+                accessibilityLabel="Bookmark"
+              />
             </View>
           </View>
         </View>
@@ -403,15 +394,11 @@ export default function ReelDetailScreen() {
   ), [commentsQuery.isFetchingNextPage]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Reel</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Reel"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -493,25 +480,13 @@ export default function ReelDetailScreen() {
           </View>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-    backgroundColor: 'rgba(13, 17, 23, 0.95)',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-  },
-  backBtn: { width: 40, alignItems: 'flex-start' },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  // Header is now handled by GlassHeader component
   reelContainer: {
     backgroundColor: colors.dark.bg,
   },
@@ -604,15 +579,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.base,
   },
-  actionButton: {
-    alignItems: 'center',
-  },
-  actionCount: {
-    color: colors.text.primary,
-    fontSize: fontSize.xs,
-    marginTop: 2,
-    fontWeight: '600',
-  },
+  // Action buttons now use ActionButton component
   commentsHeader: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,

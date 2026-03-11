@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ActivityIndicator,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 
 export default function SignInScreen() {
@@ -16,6 +17,8 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
 
   const handleSignIn = async () => {
     if (!isLoaded) return;
@@ -50,7 +53,7 @@ export default function SignInScreen() {
         {/* Form */}
         <View style={styles.form}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, emailFocused && styles.inputFocused]}
             placeholder="Email address"
             placeholderTextColor={colors.text.tertiary}
             value={email}
@@ -58,29 +61,30 @@ export default function SignInScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             autoComplete="email"
+            onFocus={() => setEmailFocused(true)}
+            onBlur={() => setEmailFocused(false)}
           />
           <TextInput
-            style={styles.input}
+            style={[styles.input, passwordFocused && styles.inputFocused]}
             placeholder="Password"
             placeholderTextColor={colors.text.tertiary}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             autoComplete="password"
+            onFocus={() => setPasswordFocused(true)}
+            onBlur={() => setPasswordFocused(false)}
           />
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={[styles.btn, loading && styles.btnDisabled]}
+          <GradientButton
+            label="Sign In"
             onPress={handleSignIn}
-            disabled={loading || !email || !password}
-            activeOpacity={0.8}
-          >
-            {loading
-              ? <ActivityIndicator color={colors.text.primary} />
-              : <Text style={styles.btnText}>Sign In</Text>}
-          </TouchableOpacity>
+            loading={loading}
+            disabled={!email || !password}
+            fullWidth
+          />
         </View>
 
         {/* Footer */}
@@ -99,7 +103,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   inner: { flex: 1, paddingHorizontal: spacing.xl, justifyContent: 'center' },
   logoSection: { alignItems: 'center', marginBottom: spacing['3xl'] },
-  logo: { color: colors.emerald, fontSize: 42, fontWeight: '700', letterSpacing: -1 },
+  logo: { color: colors.emerald, fontSize: 42, fontFamily: 'PlayfairDisplay-Bold', letterSpacing: -1 },
   logoArabic: { color: colors.gold, fontSize: fontSize.xl, marginTop: spacing.xs },
   tagline: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.sm },
   form: { gap: spacing.md },
@@ -113,17 +117,11 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.base,
   },
-  error: { color: colors.error, fontSize: fontSize.sm, textAlign: 'center' },
-  btn: {
-    backgroundColor: colors.emerald,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    marginTop: spacing.sm,
+  inputFocused: {
+    borderColor: colors.emerald,
   },
-  btnDisabled: { opacity: 0.5 },
-  btnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
+  error: { color: colors.error, fontSize: fontSize.sm, textAlign: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   footerText: { color: colors.text.secondary, fontSize: fontSize.sm },
-  footerLink: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
+  footerLink: { color: colors.gold, fontSize: fontSize.sm, fontWeight: '600' },
 });

@@ -20,8 +20,10 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { PostMedia } from './PostMedia';
+import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
-import { postsApi } from '@/services/api';
+import { postsApi, feedApi } from '@/services/api';
+import * as Clipboard from 'expo-clipboard';
 import type { Post } from '@/types';
 
 interface Props {
@@ -39,6 +41,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [showFloatingHearts, setShowFloatingHearts] = useState(false);
 
   // Double-tap overlay heart
   const overlayHeartScale = useSharedValue(0);
@@ -72,8 +76,32 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
     },
   });
 
+  const shareAsStoryMutation = useMutation({
+    mutationFn: () => {
+      const api = postsApi as typeof postsApi & { shareAsStory?: (id: string) => Promise<unknown> };
+      if (typeof api.shareAsStory === 'function') {
+        return api.shareAsStory(post.id);
+      }
+      return Promise.reject(new Error('Not implemented'));
+    },
+    onSuccess: () => setShowMenu(false),
+    onError: () => {}, // silent fail for unimplemented feature
+  });
+
+  const getShareLinkMutation = useMutation({
+    mutationFn: () => postsApi.getShareLink(post.id),
+    onSuccess: (data) => {
+      Clipboard.setStringAsync(data.url);
+      haptic.light();
+    },
+    onError: () => {
+      Clipboard.setStringAsync(`mizanly://post/${post.id}`);
+      haptic.light();
+    },
+  });
+
   const dismissMutation = useMutation({
-    mutationFn: () => postsApi.dismiss(post.id),
+    mutationFn: () => feedApi.dismiss({ postId: post.id, reason: 'not_interested' }),
     onSuccess: () => { setShowMenu(false); setDismissed(true); },
   });
 
@@ -93,6 +121,11 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       { text: 'Misinformation', onPress: () => postsApi.report(post.id, 'MISINFORMATION').catch(() => {}) },
       { text: 'Cancel', style: 'cancel' },
     ]);
+  };
+
+  const handleCopyLink = () => {
+    setShowMenu(false);
+    getShareLinkMutation.mutate();
   };
 
   const handleShare = () => {
@@ -115,6 +148,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       600,
       withTiming(0, { duration: 200 }),
     );
+    // Trigger floating hearts effect
+    setShowFloatingHearts(true);
+    setTimeout(() => setShowFloatingHearts(false), 1200);
   }, [overlayHeartScale, overlayHeartOpacity]);
 
   // Handle like button press
@@ -166,6 +202,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
             <View style={styles.nameRow}>
               <Text style={styles.name}>{post.user.displayName}</Text>
               {post.user.isVerified && <VerifiedBadge size={14} />}
+              {post.collaborators?.length > 0 && (
+                <Icon name="users" size="sm" color={colors.text.secondary} style={{ marginLeft: 4 }} />
+              )}
             </View>
             <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
           </View>
@@ -194,23 +233,43 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
 
       {/* Media with double-tap to like */}
       {post.mediaUrls.length > 0 && (
-        <Pressable
-          onPress={handleDoubleTap}
-          accessibilityLabel="Double-tap to like"
-          accessibilityRole="button"
-          accessibilityHint="Double tap to like this post"
-        >
-          <PostMedia
-            mediaUrls={post.mediaUrls}
-            mediaTypes={post.mediaTypes}
-            thumbnailUrl={post.thumbnailUrl}
-            aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
-          />
-          {/* Overlay heart for double-tap */}
-          <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
-            <Icon name="heart-filled" size={80} color={colors.like} fill={colors.like} />
-          </Animated.View>
-        </Pressable>
+        <View>
+          <Pressable
+            onPress={handleDoubleTap}
+            accessibilityLabel="Double-tap to like"
+            accessibilityRole="button"
+            accessibilityHint="Double tap to like this post"
+          >
+            <PostMedia
+              mediaUrls={post.mediaUrls}
+              mediaTypes={post.mediaTypes}
+              thumbnailUrl={post.thumbnailUrl}
+              aspectRatio={post.mediaWidth && post.mediaHeight ? post.mediaWidth / post.mediaHeight : undefined}
+              blurred={post.isSensitive && !revealed}
+            />
+            {/* Overlay heart for double-tap */}
+            <Animated.View style={[styles.overlayHeart, overlayHeartStyle]} pointerEvents="none">
+              <Icon name="heart-filled" size={80} color={colors.like} fill={colors.like} />
+            </Animated.View>
+            {/* Floating hearts effect */}
+            {showFloatingHearts && <FloatingHearts />}
+          </Pressable>
+          {post.isSensitive && !revealed && (
+            <View style={styles.sensitiveOverlay}>
+              <Icon name="eye-off" size="lg" color={colors.text.secondary} />
+              <Text style={styles.sensitiveText}>Sensitive content</Text>
+              <Text style={styles.sensitiveSubtext}>This post may contain sensitive material</Text>
+              <Pressable
+                style={styles.sensitiveRevealBtn}
+                onPress={() => setRevealed(true)}
+                accessibilityLabel="Show sensitive content"
+                accessibilityRole="button"
+              >
+                <Text style={styles.sensitiveRevealText}>View</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
       )}
 
       {/* Actions */}
@@ -262,18 +321,45 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       {/* More menu */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         {isOwn ? (
-          <BottomSheetItem
-            label="Delete post"
-            icon={<Icon name="trash" size="sm" color={colors.error} />}
-            onPress={handleDelete}
-            destructive
-          />
+          <>
+            <BottomSheetItem
+              label="Copy Link"
+              icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+              onPress={handleCopyLink}
+            />
+            <BottomSheetItem
+              label="Share as Story"
+              icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+              onPress={() => shareAsStoryMutation.mutate()}
+            />
+            <BottomSheetItem
+              label="Not interested"
+              icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+              onPress={() => dismissMutation.mutate()}
+            />
+            <BottomSheetItem
+              label="Delete post"
+              icon={<Icon name="trash" size="sm" color={colors.error} />}
+              onPress={handleDelete}
+              destructive
+            />
+          </>
         ) : (
           <>
             <BottomSheetItem
               label="Not interested"
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
+            />
+            <BottomSheetItem
+              label="Copy Link"
+              icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+              onPress={handleCopyLink}
+            />
+            <BottomSheetItem
+              label="Share as Story"
+              icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+              onPress={() => shareAsStoryMutation.mutate()}
             />
             <BottomSheetItem
               label="Report"
@@ -330,4 +416,36 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   spacer: { flex: 1 },
+  sensitiveOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.glass.dark,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
+    gap: spacing.sm,
+  },
+  sensitiveText: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+  sensitiveSubtext: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
+  },
+  sensitiveRevealBtn: {
+    marginTop: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.text.secondary,
+  },
+  sensitiveRevealText: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
 });

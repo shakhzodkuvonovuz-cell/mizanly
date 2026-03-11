@@ -1,11 +1,12 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -16,8 +17,10 @@ export default function SaveToPlaylistScreen() {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingPlaylistIds, setLoadingPlaylistIds] = useState<Set<string>>(new Set());
   const [inPlaylistMap, setInPlaylistMap] = useState<Record<string, boolean>>({});
+  const insets = useSafeAreaInsets();
 
   // Fetch user's channels
   const channelsQuery = useQuery({
@@ -96,8 +99,9 @@ export default function SaveToPlaylistScreen() {
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ['playlist-inclusion', playlist.id, videoId] });
       queryClient.invalidateQueries({ queryKey: ['playlist-items', playlist.id] });
-    } catch (error: any) {
-      const message = error?.response?.data?.message || error.message || 'Unknown error';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      const message = err?.response?.data?.message || err.message || 'Unknown error';
       Alert.alert('Error', `Could not update playlist: ${message}`);
     } finally {
       setLoadingPlaylistIds(prev => {
@@ -146,63 +150,67 @@ export default function SaveToPlaylistScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Save to playlist</Text>
-          <View style={styles.headerRight} />
-        </View>
-        <View style={styles.content}>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Save to playlist"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <View style={[styles.content, { paddingTop: insets.top + 60 }]}>
           <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} style={{ marginBottom: spacing.sm }} />
           <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} style={{ marginBottom: spacing.sm }} />
           <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Save to playlist</Text>
-          <View style={styles.headerRight} />
-        </View>
-        <EmptyState
-          icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load playlists. Please try again."
-          actionLabel="Go back"
-          onAction={() => router.back()}
+      <View style={styles.container}>
+        <GlassHeader
+          title="Save to playlist"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
         />
-      </SafeAreaView>
+        <View style={{ paddingTop: insets.top + 60 }}>
+          <EmptyState
+            icon="slash"
+            title="Something went wrong"
+            subtitle="Could not load playlists. Please try again."
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
+        </View>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Save to playlist</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={handleCreateNew} style={styles.headerAction}>
-            <Text style={styles.createText}>New</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Save to playlist"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        rightActions={[{
+          icon: <Text style={styles.createText}>New</Text>,
+          onPress: handleCreateNew,
+          accessibilityLabel: 'Create new playlist',
+        }]}
+      />
 
       <FlatList
         data={playlists}
         keyExtractor={(item) => item.id}
         renderItem={renderPlaylistItem}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={async () => {
+              setRefreshing(true);
+              await Promise.all([channelsQuery.refetch(), playlistsQuery.refetch()]);
+              setRefreshing(false);
+            }}
+            tintColor={colors.emerald}
+          />
+        }
         ListEmptyComponent={
           <EmptyState
             icon="layers"
@@ -213,37 +221,15 @@ export default function SaveToPlaylistScreen() {
             style={styles.emptyState}
           />
         }
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 }]}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  headerAction: {
-    padding: spacing.xs,
-  },
   createText: {
     color: colors.emerald,
     fontSize: fontSize.base,

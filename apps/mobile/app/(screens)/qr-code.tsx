@@ -1,17 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import QRCode from 'react-native-qrcode-svg';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
 export default function QrCodeScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const qrValue = `mizanly://profile/${username}`;
 
@@ -33,17 +42,22 @@ export default function QrCodeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>QR Code</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader title="QR Code" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
-      <View style={styles.content}>
+      {isLoading ? (
+        <View style={[styles.content, { gap: spacing.lg, paddingTop: insets.top + 52 }]}>
+          <Skeleton.Text width={120} />
+          <Skeleton.Text width={200} />
+          <Skeleton.Rect width={220 + spacing.xl * 2} height={220 + spacing.xl * 2} borderRadius={radius.lg} />
+          <Skeleton.Text width={240} />
+          <View style={{ flexDirection: 'row', gap: spacing.base, width: '100%' }}>
+            <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
+            <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
+          </View>
+        </View>
+      ) : (
+      <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
         <Text style={styles.title}>@{username}</Text>
         <Text style={styles.subtitle}>
           Scan this code to visit this profile directly in Mizanly
@@ -82,7 +96,8 @@ export default function QrCodeScreen() {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+      )}
+    </View>
   );
 }
 
@@ -91,32 +106,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.dark.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
-  },
-  backBtn: {
-    width: 36,
-    alignItems: 'flex-start',
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: '700',
-  },
-  headerRight: {
-    width: 36,
-  },
   content: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
-    paddingTop: spacing['2xl'],
   },
   title: {
     color: colors.text.primary,

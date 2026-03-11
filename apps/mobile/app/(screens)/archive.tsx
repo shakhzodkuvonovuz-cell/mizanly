@@ -1,17 +1,16 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
-  FlatList, Pressable, Alert, ActivityIndicator,
+  View, StyleSheet, FlatList, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { colors, spacing, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
-import { BottomSheet } from '@/components/ui/BottomSheet';
-import { BottomSheetItem } from '@/components/ui/BottomSheetItem';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { storiesApi } from '@/services/api';
@@ -24,6 +23,7 @@ const ITEM_SIZE = (100 / GRID_COLUMNS) + '%';
 
 export default function ArchiveScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const user = useStore((s) => s.user);
   const userId = user?.id;
@@ -134,28 +134,16 @@ export default function ArchiveScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Archive</Text>
-          <View style={styles.headerRight} />
-        </View>
+      <View style={styles.container}>
+        <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
         {renderSkeleton()}
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Archive</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
         data={stories}
@@ -163,7 +151,7 @@ export default function ArchiveScreen() {
         keyExtractor={(item) => item.id}
         numColumns={GRID_COLUMNS}
         columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={styles.gridContainer}
+        contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
         ListEmptyComponent={
           <EmptyState
             icon="clock"
@@ -197,7 +185,7 @@ export default function ArchiveScreen() {
           destructive
         />
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -205,26 +193,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.dark.bg,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  title: {
-    fontSize: fontSize.lg,
-    fontWeight: '600',
-    color: colors.text.primary,
-  },
-  headerRight: {
-    width: 40,
   },
   gridContainer: {
     padding: GRID_GAP,

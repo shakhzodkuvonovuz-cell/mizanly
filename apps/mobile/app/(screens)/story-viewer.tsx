@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
   Dimensions, TextInput, Platform,
-  KeyboardAvoidingView, Alert, FlatList,
+  KeyboardAvoidingView, Alert, FlatList, RefreshControl,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -366,6 +366,13 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           <FlatList
             data={viewersQuery.data?.data ?? []}
             keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl
+                refreshing={viewersQuery.isRefetching}
+                onRefresh={() => viewersQuery.refetch()}
+                tintColor={colors.emerald}
+              />
+            }
             renderItem={({ item }) => (
               <View style={styles.viewerRow}>
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
@@ -402,7 +409,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     flex: 1, height: 2, backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 1, overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: '#fff', borderRadius: 1 },
+  progressFill: { height: '100%', backgroundColor: colors.emerald, borderRadius: 1 },
 
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -442,17 +449,19 @@ const styles = StyleSheet.create({
 
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },
   replyPlaceholder: {
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radius.full,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     marginBottom: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   replyPlaceholderText: { color: 'rgba(255,255,255,0.6)', fontSize: fontSize.base },
 
   replyRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.4)', borderRadius: radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radius.full,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
     marginBottom: spacing.md,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   replyInput: { flex: 1, color: '#fff', fontSize: fontSize.base, paddingVertical: spacing.sm },
   viewsBtn: {

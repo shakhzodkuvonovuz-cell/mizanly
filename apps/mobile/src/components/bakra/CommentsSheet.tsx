@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -11,6 +12,7 @@ import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 
 interface CommentsSheetProps {
   reel: Reel;
@@ -21,6 +23,7 @@ interface CommentsSheetProps {
 export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const haptic = useHaptic();
   const queryClient = useQueryClient();
+  const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const [newComment, setNewComment] = useState('');
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const inputRef = useRef<TextInput>(null);
@@ -59,7 +62,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   };
 
   const renderComment = ({ item }: { item: Comment }) => (
-    <View style={styles.commentItem}>
+    <View style={[styles.commentItem, item.user.id === reel.userId && styles.opComment]}>
       <Avatar
         uri={item.user.avatarUrl}
         name={item.user.username}
@@ -176,18 +179,22 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
             multiline
             maxLength={500}
           />
-          <TouchableOpacity
-            style={[styles.sendButton, newComment.trim().length === 0 && styles.sendButtonDisabled]}
-            onPress={handleSubmit}
-            disabled={newComment.trim().length === 0 || addCommentMutation.isPending}
-            hitSlop={8}
-          >
-            <Icon
-              name="send"
-              size="sm"
-              color={newComment.trim().length === 0 ? colors.text.tertiary : colors.emerald}
-            />
-          </TouchableOpacity>
+          <Animated.View style={sendPress.animatedStyle}>
+            <Pressable
+              style={[styles.sendButton, newComment.trim().length === 0 && styles.sendButtonDisabled]}
+              onPress={handleSubmit}
+              onPressIn={sendPress.onPressIn}
+              onPressOut={sendPress.onPressOut}
+              disabled={newComment.trim().length === 0 || addCommentMutation.isPending}
+              hitSlop={8}
+            >
+              <Icon
+                name="send"
+                size="sm"
+                color={newComment.trim().length === 0 ? colors.text.tertiary : colors.emerald}
+              />
+            </Pressable>
+          </Animated.View>
         </View>
       </KeyboardAvoidingView>
     </BottomSheet>
@@ -222,6 +229,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginBottom: spacing.lg,
+  },
+  opComment: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.emerald,
+    paddingLeft: spacing.sm,
   },
   commentContent: {
     flex: 1,

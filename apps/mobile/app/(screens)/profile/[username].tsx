@@ -8,6 +8,7 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -25,16 +26,18 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
-import type { Post, Thread, StoryHighlightAlbum, Reel } from '@/types';
+import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 4) / 3;
 const COVER_HEIGHT = 160;
 
-type Tab = 'posts' | 'threads' | 'reels';
+type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
 const PROFILE_TABS = [
   { key: 'posts', label: 'Posts' },
@@ -74,17 +77,35 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
             <Icon name="layers" size={12} color="#fff" />
           </View>
         )}
+        {post.collaborators && post.collaborators.length > 0 && (
+          <View style={{
+            position: 'absolute', top: 4, right: 4,
+            backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.full,
+            padding: 3,
+          }}>
+            <Icon name="users" size={10} color="#fff" />
+          </View>
+        )}
       </Pressable>
     </Animated.View>
   );
 }
 
 function StatItem({ num, label, onPress }: { num: number; label: string; onPress?: () => void }) {
+  const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.92 });
   return (
-    <Pressable style={styles.stat} onPress={onPress} disabled={!onPress}>
-      <Text style={styles.statNum}>{num}</Text>
-      <Text style={styles.statLabel}>{label}</Text>
-    </Pressable>
+    <Animated.View style={onPress ? animatedStyle : undefined}>
+      <Pressable
+        style={styles.stat}
+        onPress={onPress}
+        onPressIn={onPress ? onPressIn : undefined}
+        onPressOut={onPress ? onPressOut : undefined}
+        disabled={!onPress}
+      >
+        <Text style={styles.statNum}>{num}</Text>
+        <Text style={styles.statLabel}>{label}</Text>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -95,29 +116,27 @@ interface FollowButtonProps {
 }
 
 function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
-  const btnScale = useSharedValue(1);
-  const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
-
-  return (
-    <Animated.View style={btnStyle}>
-      <Pressable
-        style={[styles.followBtn, isFollowing && styles.followingBtn]}
-        onPress={() => {
-          btnScale.value = withSequence(
-            withSpring(0.9, animation.spring.bouncy),
-            withSpring(1, animation.spring.bouncy),
-          );
-          onPress();
-        }}
+  if (isFollowing) {
+    return (
+      <GradientButton
+        label="Following"
+        onPress={onPress}
+        variant="secondary"
+        size="sm"
+        icon="check"
         disabled={isPending}
-        accessibilityLabel={isFollowing ? 'Unfollow user' : 'Follow user'}
-        accessibilityRole="button"
-      >
-        <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-          {isFollowing ? 'Following' : 'Follow'}
-        </Text>
-      </Pressable>
-    </Animated.View>
+        loading={isPending}
+      />
+    );
+  }
+  return (
+    <GradientButton
+      label="Follow"
+      onPress={onPress}
+      size="sm"
+      disabled={isPending}
+      loading={isPending}
+    />
   );
 }
 
@@ -139,6 +158,12 @@ export default function ProfileScreen() {
   });
   const profile = profileQuery.data;
   const isFollowing = profile?.isFollowing ?? false;
+
+  const { data: mutualFollowers } = useQuery({
+    queryKey: ['mutual-followers', username],
+    queryFn: () => usersApi.getMutualFollowers(username),
+    enabled: !!username && !isOwnProfile,
+  });
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['user-posts', username],
@@ -166,6 +191,15 @@ export default function ProfileScreen() {
     enabled: activeTab === 'reels',
   });
   const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const likedPostsQuery = useInfiniteQuery({
+    queryKey: ['liked-posts', username],
+    queryFn: ({ pageParam }) => postsApi.getLiked({ cursor: pageParam }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.meta?.hasMore ? lastPage.meta.cursor : undefined,
+    enabled: isOwnProfile && activeTab === 'liked',
+  });
+  const likedPosts: Post[] = likedPostsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const pinnedThreadsQuery = useQuery({
     queryKey: ['pinned-threads', username],
@@ -263,7 +297,10 @@ export default function ProfileScreen() {
     if (activeTab === 'reels' && reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) {
       reelsQuery.fetchNextPage();
     }
-  }, [activeTab, postsQuery, threadsQuery, reelsQuery]);
+    if (activeTab === 'liked' && likedPostsQuery.hasNextPage && !likedPostsQuery.isFetchingNextPage) {
+      likedPostsQuery.fetchNextPage();
+    }
+  }, [activeTab, postsQuery, threadsQuery, reelsQuery, likedPostsQuery]);
 
   if (profileQuery.isLoading) {
     return (
@@ -314,7 +351,14 @@ export default function ProfileScreen() {
     <View>
       {/* Cover image */}
       {profile.coverUrl ? (
-        <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+        <View>
+          <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.6)']}
+            locations={[0.4, 1]}
+            style={StyleSheet.absoluteFill}
+          />
+        </View>
       ) : (
         <View style={styles.coverPlaceholder} />
       )}
@@ -323,12 +367,24 @@ export default function ProfileScreen() {
       <View style={styles.avatarRow}>
         <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
         {isOwnProfile ? (
-          <Pressable
-            style={styles.editBtn}
-            onPress={() => router.push('/(screens)/edit-profile')}
-          >
-            <Text style={styles.editBtnText}>Edit Profile</Text>
-          </Pressable>
+          <View style={{ flexDirection: 'row' }}>
+            <Pressable
+              style={styles.editBtn}
+              onPress={() => router.push('/(screens)/edit-profile')}
+            >
+              <Text style={styles.editBtnText}>Edit Profile</Text>
+            </Pressable>
+            <Pressable
+              onPress={() => router.push('/(screens)/archive')}
+              style={{
+                backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+                paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
+                marginLeft: spacing.sm,
+              }}
+            >
+              <Icon name="clock" size="sm" color={colors.text.primary} />
+            </Pressable>
+          </View>
         ) : (
           <View style={styles.actionBtns}>
             <FollowButton
@@ -470,6 +526,30 @@ export default function ProfileScreen() {
         <StatItem num={profile._count?.posts ?? 0} label="Posts" />
       </View>
 
+      {/* Mutual followers */}
+      {!isOwnProfile && mutualFollowers && mutualFollowers.length > 0 && (
+        <Pressable
+          onPress={() => router.push(`/(screens)/mutual-followers?username=${username}`)}
+          style={{
+            flexDirection: 'row', alignItems: 'center',
+            paddingHorizontal: spacing.base, marginTop: spacing.sm,
+          }}
+        >
+          {/* Stacked avatars (up to 3) */}
+          <View style={{ flexDirection: 'row' }}>
+            {mutualFollowers.slice(0, 3).map((u: User, i: number) => (
+              <View key={u.id} style={{ marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }}>
+                <Avatar uri={u.avatarUrl} name={u.displayName} size="xs" />
+              </View>
+            ))}
+          </View>
+          <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginLeft: spacing.sm, flex: 1 }}>
+            Followed by {mutualFollowers[0]?.displayName}
+            {mutualFollowers.length > 1 && ` and ${mutualFollowers.length - 1} others you follow`}
+          </Text>
+        </Pressable>
+      )}
+
       {/* Pinned threads */}
       {pinnedThreads.length > 0 && (
         <View style={styles.pinnedSection}>
@@ -536,7 +616,16 @@ export default function ProfileScreen() {
 
       {/* Tabs */}
       <TabSelector
-        tabs={PROFILE_TABS}
+        tabs={isOwnProfile ? [
+          { key: 'posts', label: 'Posts' },
+          { key: 'threads', label: 'Threads' },
+          { key: 'reels', label: 'Reels' },
+          { key: 'liked', label: 'Liked' },
+        ] : [
+          { key: 'posts', label: 'Posts' },
+          { key: 'threads', label: 'Threads' },
+          { key: 'reels', label: 'Reels' },
+        ]}
         activeKey={activeTab}
         onTabChange={(key) => setActiveTab(key as Tab)}
       />
@@ -768,6 +857,7 @@ export default function ProfileScreen() {
     </Pressable>
   );
 
+  if (activeTab === 'reels') {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
@@ -827,6 +917,92 @@ export default function ProfileScreen() {
       </BottomSheet>
     </SafeAreaView>
   );
+  }
+
+  if (activeTab === 'liked') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {renderHeaderActions()}
+        <FlatList
+          data={likedPosts}
+          keyExtractor={(item) => item.id}
+          numColumns={3}
+          columnWrapperStyle={styles.gridRow}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          ListHeaderComponent={() => ListHeader}
+          renderItem={({ item }) => (
+            <GridItem
+              post={item}
+              onPress={() => router.push(`/(screens)/post/${item.id}`)}
+            />
+          )}
+          ListEmptyComponent={() =>
+            likedPostsQuery.isLoading ? (
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+                ))}
+              </View>
+            ) : (
+              <EmptyState icon='heart' title='No liked posts yet' subtitle='Posts you like will appear here' />
+            )
+          }
+          ListFooterComponent={() =>
+            likedPostsQuery.isFetchingNextPage ? <Skeleton.Rect width='100%' height={GRID_ITEM} /> : null
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={likedPostsQuery.isRefetching}
+              onRefresh={() => {
+                profileQuery.refetch();
+                likedPostsQuery.refetch();
+              }}
+              tintColor={colors.emerald}
+            />
+          }
+          contentContainerStyle={styles.gridContainer}
+        />
+        <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+          <BottomSheetItem
+            label={`Mute @${username}`}
+            icon={<Icon name='volume-x' size='sm' color={colors.text.primary} />}
+            onPress={() => muteMutation.mutate()}
+          />
+          <BottomSheetItem
+            label={`Block @${username}`}
+            icon={<Icon name='lock' size='sm' color={colors.error} />}
+            onPress={handleBlock}
+            destructive
+          />
+          <BottomSheetItem
+            label='Report'
+            icon={<Icon name='flag' size='sm' color={colors.error} />}
+            onPress={handleReport}
+            destructive
+          />
+        </BottomSheet>
+        <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
+          <BottomSheetItem
+            label='Share Profile'
+            icon={<Icon name='share' size='sm' color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              handleShareProfile();
+            }}
+          />
+          <BottomSheetItem
+            label='QR Code'
+            icon={<Icon name='hash' size='sm' color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              router.push(`/(screens)/qr-code?username=${username}`);
+            }}
+          />
+        </BottomSheet>
+      </SafeAreaView>
+    );
+  }
 }
 
 const styles = StyleSheet.create({

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
@@ -14,6 +14,8 @@ import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 
@@ -78,6 +80,12 @@ export default function ManageDataScreen() {
   const router = useRouter();
   const { signOut } = useClerk();
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
@@ -185,15 +193,24 @@ export default function ManageDataScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Manage Your Data</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="Manage Your Data"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
+      {isLoading ? (
+        <View style={{ padding: spacing.base, paddingTop: 100, gap: spacing.lg }}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flex: 1, gap: spacing.xs }}>
+                <Skeleton.Rect width={140} height={14} />
+                <Skeleton.Rect width={200} height={11} />
+              </View>
+              <Skeleton.Rect width={80} height={32} borderRadius={radius.sm} />
+            </View>
+          ))}
+        </View>
+      ) : (
       <ScrollView
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
@@ -255,33 +272,23 @@ export default function ManageDataScreen() {
           page.
         </Text>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '700',
-  },
   body: { flex: 1 },
-  bodyContent: { paddingBottom: 60 },
+  bodyContent: { paddingBottom: 60, paddingTop: 100 },
   card: {
-    backgroundColor: colors.dark.bgElevated,
-    marginHorizontal: spacing.base,
+    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
     overflow: 'hidden',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
   actionRow: {
     flexDirection: 'row',

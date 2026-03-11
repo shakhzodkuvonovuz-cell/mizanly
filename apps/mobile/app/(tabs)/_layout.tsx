@@ -38,13 +38,13 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
 
   return (
     <Animated.View style={[styles.iconWrap, animatedStyle]}>
+      {focused && <View style={styles.activePill} />}
       <Icon
         name={icon}
         size="md"
         color={focused ? colors.emerald : colors.text.secondary}
         strokeWidth={focused ? 2 : 1.75}
       />
-      {focused && <View style={styles.activeDot} />}
       {badge !== undefined && badge > 0 && (
         <Badge
           count={badge}
@@ -78,7 +78,7 @@ function CreateButton() {
   const navigate = (path: string) => {
     haptic.light();
     setOpen(false);
-    router.push(path as any);
+    router.push(path as `/${string}`);
   };
 
   return (
@@ -99,22 +99,22 @@ function CreateButton() {
           <Text style={styles.sheetTitle}>Create</Text>
         </View>
         <BottomSheetItem
-          label="Post"
+          label="Photo or Video Post"
           icon={<Icon name="image" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-post')}
         />
         <BottomSheetItem
-          label="Thread"
+          label="Start a Thread"
           icon={<Icon name="message-circle" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-thread')}
         />
         <BottomSheetItem
-          label="Story"
+          label="Share a Story"
           icon={<Icon name="circle-plus" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-story')}
         />
         <BottomSheetItem
-          label="Short Video"
+          label="Short Video (Reel)"
           icon={<Icon name="video" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-reel')}
         />
@@ -131,6 +131,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarShowLabel: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: colors.emerald,
         tabBarInactiveTintColor: colors.text.secondary,
@@ -214,9 +215,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.glass.border,
   },
   tabBarBgAndroid: {
-    backgroundColor: 'rgba(13,17,23,0.97)',
+    backgroundColor: 'rgba(13,17,23,0.85)',
     borderTopWidth: 0.5,
-    borderTopColor: colors.dark.border,
+    borderTopColor: 'rgba(10, 123, 79, 0.15)',
   },
   tabLabel: { fontSize: 10, fontWeight: '600', marginTop: -2 },
   iconWrap: {
@@ -225,12 +226,12 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
   },
-  activeDot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.emerald,
-    marginTop: 2,
+  activePill: {
+    position: 'absolute',
+    width: 48,
+    height: 28,
+    borderRadius: 9999,
+    backgroundColor: 'rgba(10, 123, 79, 0.15)',
   },
   badge: {
     position: 'absolute',
@@ -241,8 +242,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   createGradient: {
-    width: 48,
-    height: 36,
+    width: 44,
+    height: 44,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

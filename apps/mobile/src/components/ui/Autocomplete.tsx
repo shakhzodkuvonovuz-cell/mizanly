@@ -171,7 +171,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.dark.bgElevated,
-    borderRadius: 12,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.dark.border,
     marginHorizontal: spacing.base,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.md,
     backgroundColor: colors.active.emerald10,
-    borderRadius: 8,
+    borderRadius: radius.sm,
   },
   createTagText: {
     color: colors.emerald,

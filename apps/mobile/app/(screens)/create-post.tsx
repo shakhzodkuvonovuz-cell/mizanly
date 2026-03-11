@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
   ScrollView, ActivityIndicator, Platform, Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,9 +18,11 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
 import { LocationPicker } from '@/components/ui/LocationPicker';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
-import { postsApi, uploadApi, circlesApi } from '@/services/api';
+import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -227,20 +229,16 @@ export default function CreatePostScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Icon name="x" size="md" color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Post</Text>
-        <TouchableOpacity
-          style={[styles.postBtn, !canPost && styles.postBtnDisabled]}
+        <GradientButton
+          label="Share"
+          size="sm"
           onPress={() => canPost && createMutation.mutate()}
+          loading={createMutation.isPending}
           disabled={!canPost}
-        >
-          {createMutation.isPending ? (
-            <ActivityIndicator color={colors.text.primary} size="small" />
-          ) : (
-            <Text style={styles.postBtnText}>Share</Text>
-          )}
-        </TouchableOpacity>
+        />
       </View>
 
       {/* Draft restored banner */}
@@ -410,8 +408,9 @@ export default function CreatePostScreen() {
         ) : circles.length === 0 ? (
           <View style={styles.emptyCircles}>
             <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
-            <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Text style={styles.emptyCirclesLink}>Create a circle</Text>
+              <Icon name="chevron-right" size="sm" color={colors.emerald} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -433,7 +432,7 @@ export default function CreatePostScreen() {
       {/* Upload progress overlay */}
       {uploading && (
         <View style={styles.uploadOverlay}>
-          <ActivityIndicator color={colors.emerald} size="large" />
+          <Skeleton.Circle size={48} />
           <Text style={styles.uploadText}>Uploading media…</Text>
         </View>
       )}
@@ -524,6 +523,27 @@ export default function CreatePostScreen() {
         >
           <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
         </TouchableOpacity>
+        <Pressable
+          style={styles.toolbarBtn}
+          onPress={async () => {
+            try {
+              await draftsApi.save('SAF', {
+                content,
+                mediaUrls: media.map(m => m.uri),
+                mediaTypes: media.map(m => m.type),
+                visibility,
+                circleId,
+              });
+              Alert.alert('Saved', 'Draft saved to your account');
+            } catch {
+              Alert.alert('Error', 'Failed to save draft');
+            }
+          }}
+          accessibilityLabel="Save draft to cloud"
+          accessibilityRole="button"
+        >
+          <Icon name="layers" size="sm" color={colors.text.secondary} />
+        </Pressable>
         <View style={styles.toolbarSpacer} />
         <CharCountRing current={content.length} max={2200} />
       </View>
@@ -538,17 +558,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border,
+    backgroundColor: 'rgba(13, 17, 23, 0.92)',
   },
-  cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  postBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.full,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
-    minWidth: 70, alignItems: 'center',
-  },
-  postBtnDisabled: { backgroundColor: colors.dark.surface },
-  postBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
+  headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
   draftBanner: {
     flexDirection: 'row',
     alignItems: 'center',

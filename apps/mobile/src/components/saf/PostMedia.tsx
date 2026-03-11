@@ -15,9 +15,10 @@ interface Props {
   mediaTypes: string[];
   thumbnailUrl?: string;
   aspectRatio?: number;
+  blurred?: boolean;
 }
 
-export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: Props) {
+export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxVisible, setLightboxVisible] = useState(false);
@@ -39,10 +40,11 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: 
         <Pressable onPress={() => openLightbox(0)} style={styles.fill}>
           <Image
             source={{ uri: mediaUrls[0] }}
-            style={styles.fill}
+            style={[styles.fill, blurred && { opacity: 0.15 }]}
             contentFit="cover"
             placeholder={thumbnailUrl ? { uri: thumbnailUrl } : undefined}
             transition={200}
+            blurRadius={blurred ? 30 : 0}
           />
         </Pressable>
       </View>
@@ -53,9 +55,10 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio }: 
         <Pressable onPress={() => openLightbox(activeIndex)} style={styles.fill}>
           <Image
             source={{ uri: mediaUrls[activeIndex] }}
-            style={styles.fill}
+            style={[styles.fill, blurred && { opacity: 0.15 }]}
             contentFit="cover"
             transition={150}
+            blurRadius={blurred ? 30 : 0}
           />
         </Pressable>
         {/* Dot indicators */}
@@ -115,13 +118,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'center', gap: 6,
   },
   dot: {
-    width: 6, height: 6, borderRadius: 3,
+    width: 6, height: 6, borderRadius: radius.full,
     backgroundColor: 'rgba(255,255,255,0.35)',
   },
   dotActive: {
     backgroundColor: colors.text.primary,
     width: 18,
-    borderRadius: 3,
+    borderRadius: radius.full,
   },
   arrow: {
     position: 'absolute', top: '50%', marginTop: -18,

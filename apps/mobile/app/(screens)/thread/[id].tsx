@@ -14,6 +14,7 @@ import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
@@ -96,16 +97,21 @@ function ReplyRow({
           <TouchableOpacity
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Icon name="message-circle" size={16} color={colors.text.secondary} />
+            <Icon name="message-circle" size={20} color={colors.text.secondary} />
             {(reply._count?.replies ?? 0) > 0 && (
               <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.replyAction} onPress={handleLike}>
+          <TouchableOpacity
+            style={styles.replyAction}
+            onPress={handleLike}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
             <Icon
               name={liked ? 'heart-filled' : 'heart'}
-              size={16}
+              size={20}
               color={liked ? colors.like : colors.text.secondary}
               fill={liked ? colors.like : undefined}
             />
@@ -120,8 +126,9 @@ function ReplyRow({
               style={styles.replyAction}
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Icon name="trash" size={16} color={colors.error} />
+              <Icon name="trash" size={20} color={colors.error} />
             </TouchableOpacity>
           )}
         </View>
@@ -181,13 +188,10 @@ export default function ThreadDetailScreen() {
   if (threadQuery.isError) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Error</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <GlassHeader
+          title="Error"
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        />
         <EmptyState
           icon="slash"
           title="Something went wrong"
@@ -218,7 +222,7 @@ export default function ThreadDetailScreen() {
 
   const listEmpty = useMemo(() => (
     !repliesQuery.isLoading && threadQuery.data ? (
-      <EmptyState icon="message-circle" title="No replies yet" subtitle="Be the first to reply" />
+      <EmptyState icon="message-circle" title="Join the conversation" subtitle="Be the first to share your perspective" />
     ) : null
   ), [repliesQuery.isLoading, threadQuery.data]);
 
@@ -231,13 +235,10 @@ export default function ThreadDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Thread</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <GlassHeader
+        title="Thread"
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+      />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -324,13 +325,6 @@ export default function ThreadDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 40, alignItems: 'flex-start' },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   loader: { marginTop: 60 },
   repliesHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
@@ -344,7 +338,7 @@ const styles = StyleSheet.create({
   },
   replyLeft: { alignItems: 'center', marginRight: spacing.sm, paddingTop: 2 },
   replyLine: {
-    width: 1.5, flex: 1, backgroundColor: colors.dark.border,
+    width: 2, flex: 1, backgroundColor: 'rgba(10, 123, 79, 0.3)',
     marginTop: spacing.xs, borderRadius: 1,
   },
   replyRight: { flex: 1 },
@@ -380,7 +374,8 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
-    maxHeight: 100, paddingVertical: 6,
+    maxHeight: 100, paddingVertical: 8, paddingHorizontal: spacing.base,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.full,
   },
   sendBtn: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
   sendBtnDisabled: { color: colors.text.tertiary },

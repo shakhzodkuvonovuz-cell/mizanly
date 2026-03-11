@@ -4,7 +4,8 @@ import {
   TouchableOpacity, Dimensions, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -45,6 +46,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
 
 export default function BookmarkFoldersScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [foldersMap, setFoldersMap] = useState<Record<string, { name: string, itemIds: string[] }>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -129,32 +131,20 @@ export default function BookmarkFoldersScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Bookmark Folders</Text>
-          <View style={{ width: 32 }} />
-        </View>
-        <View style={styles.skeletonGrid}>
+      <View style={styles.container}>
+        <GlassHeader title="Bookmark Folders" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <View style={[styles.skeletonGrid, { paddingTop: insets.top + 52 }]}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton.Rect key={i} width={FOLDER_CARD_WIDTH} height={FOLDER_CARD_WIDTH} borderRadius={radius.md} />
           ))}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Bookmark Folders</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader title="Bookmark Folders" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
         data={foldersArray}
@@ -180,7 +170,7 @@ export default function BookmarkFoldersScreen() {
             onAction={() => setCreateSheetVisible(true)}
           />
         )}
-        contentContainerStyle={styles.gridContainer}
+        contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
       />
 
       {/* FAB */}
@@ -215,21 +205,14 @@ export default function BookmarkFoldersScreen() {
           </View>
         </View>
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 32 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
-  gridContainer: { paddingBottom: 100, paddingTop: spacing.base },
+  gridContainer: { paddingBottom: 100 },
   gridRow: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
   folderCard: {
     width: FOLDER_CARD_WIDTH,
@@ -242,7 +225,7 @@ const styles = StyleSheet.create({
   folderIcon: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: radius.full,
     backgroundColor: colors.dark.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -272,7 +255,7 @@ const styles = StyleSheet.create({
     right: spacing.xl,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.full,
     backgroundColor: colors.emerald,
     alignItems: 'center',
     justifyContent: 'center',

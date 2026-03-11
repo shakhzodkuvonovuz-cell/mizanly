@@ -11,7 +11,7 @@ import Animated, {
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, animation } from '@/theme';
+import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import type { StoryGroup } from '@/types';
 
 interface Props {
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     right: 4,
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.full,
     backgroundColor: colors.emerald,
     alignItems: 'center',
     justifyContent: 'center',
@@ -109,5 +109,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 4,
   },
-  name: { color: colors.text.secondary, fontSize: fontSize.xs, textAlign: 'center' },
+  name: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
 });

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
 import { CharCountRing } from '@/components/ui/CharCountRing';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 
@@ -107,25 +108,21 @@ export default function OnboardingProfileScreen() {
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <TouchableOpacity
-        style={[styles.btn, (!displayName.trim() || loading) && styles.btnDisabled]}
+      <GradientButton
+        label="Continue"
         onPress={handleContinue}
-        disabled={!displayName.trim() || loading}
-        activeOpacity={0.8}
-      >
-        {loading ? (
-          <ActivityIndicator color={colors.text.primary} />
-        ) : (
-          <Text style={styles.btnText}>Continue</Text>
-        )}
-      </TouchableOpacity>
+        loading={loading}
+        disabled={!displayName.trim()}
+        fullWidth
+      />
 
-      <TouchableOpacity
-        onPress={() => router.push('/onboarding/interests')}
-        style={styles.skipBtn}
-      >
-        <Text style={styles.skipText}>Skip for now</Text>
-      </TouchableOpacity>
+      <View style={styles.skipBtn}>
+        <GradientButton
+          label="Skip for now"
+          onPress={() => router.push('/onboarding/interests')}
+          variant="ghost"
+        />
+      </View>
     </View>
   );
 }
@@ -153,6 +150,9 @@ const styles = StyleSheet.create({
   avatarPlaceholder: {
     backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.emerald,
+    borderStyle: 'dashed',
   },
   avatarInitial: {
     color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700',
@@ -176,14 +176,5 @@ const styles = StyleSheet.create({
     color: colors.error, fontSize: fontSize.sm,
     marginBottom: spacing.md, textAlign: 'center',
   },
-  btn: {
-    width: '100%', height: 52, borderRadius: radius.lg,
-    backgroundColor: colors.emerald,
-    alignItems: 'center', justifyContent: 'center',
-    marginTop: spacing.sm,
-  },
-  btnDisabled: { backgroundColor: colors.dark.surface },
-  btnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
-  skipBtn: { marginTop: spacing.lg },
-  skipText: { color: colors.text.secondary, fontSize: fontSize.sm },
+  skipBtn: { marginTop: spacing.lg, alignItems: 'center' },
 });

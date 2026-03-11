@@ -1,11 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert,
+  View, Text, StyleSheet, TouchableOpacity,
+  FlatList, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -64,6 +65,7 @@ function RequestRow({
 
 export default function FollowRequestsScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
 
   const requestsQuery = useQuery({
@@ -85,20 +87,21 @@ export default function FollowRequestsScreen() {
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await requestsQuery.refetch();
+    setRefreshing(false);
+  };
+
   const pendingId = acceptMutation.variables ?? declineMutation.variables;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Follow Requests</Text>
-        <View style={{ width: 36 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader title="Follow Requests" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       {requestsQuery.isLoading ? (
-        <View style={styles.skeletonList}>
+        <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
           {Array.from({ length: 5 }).map((_, i) => (
             <View key={i} style={styles.skeletonRow}>
               <Skeleton.Circle size={48} />
@@ -113,7 +116,10 @@ export default function FollowRequestsScreen() {
         <FlatList
           data={requests}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => (
             <RequestRow
               request={item}
@@ -133,19 +139,12 @@ export default function FollowRequestsScreen() {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   list: { paddingBottom: 40 },
   skeletonList: { padding: spacing.base, gap: spacing.md },

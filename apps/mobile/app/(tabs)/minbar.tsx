@@ -6,11 +6,12 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, shadow } from '@/theme';
 import { useStore } from '@/store';
 import { videosApi, usersApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { TabSelector } from '@/components/ui/TabSelector';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -24,19 +25,45 @@ import { formatDistanceToNowStrict } from 'date-fns';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
+interface CategoryChipProps {
+  cat: { key: VideoCategory | 'all'; label: string };
+  isActive: boolean;
+  onPress: () => void;
+}
+
+const CategoryChip = memo(function CategoryChip({ cat, isActive, onPress }: CategoryChipProps) {
+  const chipPress = useAnimatedPress();
+  return (
+    <AnimatedPressable
+      key={cat.key}
+      style={[
+        styles.categoryChip,
+        isActive && styles.categoryChipActive,
+        chipPress.animatedStyle,
+      ]}
+      onPress={onPress}
+      onPressIn={chipPress.onPressIn}
+      onPressOut={chipPress.onPressOut}
+    >
+      <Text
+        style={[
+          styles.categoryLabel,
+          isActive && styles.categoryLabelActive,
+        ]}
+      >
+        {cat.label}
+      </Text>
+    </AnimatedPressable>
+  );
+});
+
 const CATEGORIES: { key: VideoCategory | 'all'; label: string }[] = [
   { key: 'all', label: 'All' },
+  { key: 'QURAN', label: 'Islamic' },
   { key: 'EDUCATION', label: 'Education' },
-  { key: 'QURAN', label: 'Quran' },
-  { key: 'LECTURE', label: 'Lecture' },
-  { key: 'VLOG', label: 'Vlog' },
-  { key: 'NEWS', label: 'News' },
-  { key: 'DOCUMENTARY', label: 'Documentary' },
-  { key: 'ENTERTAINMENT', label: 'Entertainment' },
-  { key: 'SPORTS', label: 'Sports' },
-  { key: 'COOKING', label: 'Cooking' },
+  { key: 'VLOG', label: 'Lifestyle' },
   { key: 'TECH', label: 'Tech' },
-  { key: 'OTHER', label: 'Other' },
+  { key: 'ENTERTAINMENT', label: 'Entertainment' },
 ];
 
 interface VideoCardProps {
@@ -115,6 +142,7 @@ export default function MinbarScreen() {
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [feedType, setFeedType] = useState<'home' | 'subscriptions'>('home');
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
@@ -136,15 +164,23 @@ export default function MinbarScreen() {
 
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
+  const watchLaterPress = useAnimatedPress();
 
   const feedQuery = useInfiniteQuery({
-    queryKey: ['videos-feed', selectedCategory],
-    queryFn: ({ pageParam }) => videosApi.getFeed(
-      selectedCategory === 'all' ? undefined : selectedCategory,
-      pageParam as string | undefined
-    ),
+    queryKey: ['videos-feed', selectedCategory, feedType],
+    queryFn: ({ pageParam }) => {
+      if (feedType === 'subscriptions') {
+        // TODO: implement subscribed feed
+        return { data: [], meta: { cursor: null, hasMore: false } };
+      }
+      return videosApi.getFeed(
+        selectedCategory === 'all' ? undefined : selectedCategory,
+        pageParam as string | undefined
+      );
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: feedType === 'home',
   });
 
   const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -176,6 +212,16 @@ export default function MinbarScreen() {
     setSelectedVideoId(video.id);
   };
 
+  const handleSaveToWatchLater = async (videoId: string) => {
+    haptic.light();
+    setSelectedVideoId(null);
+    try {
+      await usersApi.addWatchLater(videoId);
+    } catch {
+      // silently fail — user can retry
+    }
+  };
+
   const renderVideoItem = useCallback(({ item }: { item: Video }) => (
     <VideoCard
       item={item}
@@ -192,7 +238,12 @@ export default function MinbarScreen() {
       {/* Continue Watching */}
       {continueWatchingQuery.data?.length ? (
         <View style={styles.continueSection}>
-          <Text style={styles.continueTitle}>Continue Watching</Text>
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.continueTitle}>Continue Watching</Text>
+            <Pressable onPress={() => router.push('/(screens)/watch-history')} hitSlop={8}>
+              <Text style={styles.seeAllText}>See all</Text>
+            </Pressable>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continueScroll}>
             {continueWatchingQuery.data.map((item) => (
               <Pressable
@@ -219,6 +270,17 @@ export default function MinbarScreen() {
           </ScrollView>
         </View>
       ) : null}
+      {/* Feed type toggle */}
+      <TabSelector
+        tabs={[
+          { key: 'home', label: 'Home' },
+          { key: 'subscriptions', label: 'Subscriptions' },
+        ]}
+        activeKey={feedType}
+        onTabChange={setFeedType}
+        variant="pill"
+        style={{ marginHorizontal: spacing.base, marginVertical: spacing.sm }}
+      />
       {/* Category chips */}
       <ScrollView
         horizontal
@@ -226,34 +288,33 @@ export default function MinbarScreen() {
         contentContainerStyle={styles.categoriesContainer}
       >
         {CATEGORIES.map((cat) => (
-          <TouchableOpacity
+          <CategoryChip
             key={cat.key}
-            style={[
-              styles.categoryChip,
-              selectedCategory === cat.key && styles.categoryChipActive,
-            ]}
+            cat={cat}
+            isActive={selectedCategory === cat.key}
             onPress={() => {
               haptic.light();
               setSelectedCategory(cat.key);
             }}
-            activeOpacity={0.7}
-          >
-            <Text
-              style={[
-                styles.categoryLabel,
-                selectedCategory === cat.key && styles.categoryLabelActive,
-              ]}
-            >
-              {cat.label}
-            </Text>
-          </TouchableOpacity>
+          />
         ))}
       </ScrollView>
     </View>
-  ), [selectedCategory, haptic, continueWatchingQuery.data, router]);
+  ), [selectedCategory, haptic, continueWatchingQuery.data, router, feedType]);
 
-  const listEmpty = useMemo(() => (
-    feedQuery.isLoading ? (
+  const listEmpty = useMemo(() => {
+    if (feedType === 'subscriptions') {
+      return (
+        <EmptyState
+          icon="users"
+          title="No subscribed videos"
+          subtitle="Subscribe to channels to see their videos here"
+          actionLabel="Explore Channels"
+          onAction={() => router.push('/(screens)/channels')}
+        />
+      );
+    }
+    return feedQuery.isLoading ? (
       <View style={styles.skeletonContainer}>
         <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
         <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
@@ -267,8 +328,8 @@ export default function MinbarScreen() {
         actionLabel="Upload"
         onAction={() => router.push('/(screens)/create-video')}
       />
-    )
-  ), [feedQuery.isLoading, router]);
+    );
+  }, [feedQuery.isLoading, feedType, router]);
 
   const listFooter = useMemo(() => (
     feedQuery.isFetchingNextPage ? (
@@ -295,6 +356,18 @@ export default function MinbarScreen() {
             accessibilityHint="Search for videos and channels"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
+          </AnimatedPressable>
+          <AnimatedPressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/watch-history'); }}
+            onPressIn={watchLaterPress.onPressIn}
+            onPressOut={watchLaterPress.onPressOut}
+            style={watchLaterPress.animatedStyle}
+            accessibilityLabel="Watch Later"
+            accessibilityRole="button"
+            accessibilityHint="View your watch later list"
+          >
+            <Icon name="clock" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
@@ -354,6 +427,13 @@ export default function MinbarScreen() {
           }}
         />
         <BottomSheetItem
+          label="Save to Watch Later"
+          icon={<Icon name="clock" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            if (selectedVideoId) handleSaveToWatchLater(selectedVideoId);
+          }}
+        />
+        <BottomSheetItem
           label="Not interested"
           icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
           onPress={() => setSelectedVideoId(null)}
@@ -376,6 +456,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontSize: fontSize.xl,
     fontWeight: '700',
+    fontFamily: 'PlayfairDisplay-Bold',
     letterSpacing: -0.5,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
@@ -407,7 +488,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   categoryLabelActive: {
-    color: colors.text.primary,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   videoCard: {
@@ -420,6 +501,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.dark.surface,
     aspectRatio: 16 / 9,
+    ...shadow.sm,
   },
   thumbnail: {
     width: '100%',
@@ -433,7 +515,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.sm,
     right: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    backgroundColor: 'rgba(0,0,0,0.7)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -484,12 +566,22 @@ const styles = StyleSheet.create({
   continueSection: {
     paddingVertical: spacing.md,
   },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  seeAllText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
   continueTitle: {
     color: colors.emerald,
     fontSize: fontSize.md,
     fontWeight: '700',
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
   },
   continueScroll: {
     paddingHorizontal: spacing.base,

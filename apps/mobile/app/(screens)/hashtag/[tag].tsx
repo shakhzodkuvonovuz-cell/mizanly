@@ -5,11 +5,12 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
 import { searchApi } from '@/services/api';
@@ -97,43 +98,28 @@ export default function HashtagScreen() {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
   }, [postsQuery]);
 
-  const HashtagFollowButton = () => {
-    const btnScale = useSharedValue(1);
-    const btnStyle = useAnimatedStyle(() => ({ transform: [{ scale: btnScale.value }] }));
-
-    return (
-      <Animated.View style={btnStyle}>
-        <Pressable
-          style={[styles.followBtn, isFollowing && styles.followingBtn]}
-          onPress={() => {
-            btnScale.value = withSequence(
-              withSpring(0.9, animation.spring.bouncy),
-              withSpring(1, animation.spring.bouncy),
-            );
-            toggleFollow();
-          }}
-          accessibilityLabel={isFollowing ? 'Unfollow hashtag' : 'Follow hashtag'}
-          accessibilityRole="button"
-        >
-          <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-            {isFollowing ? 'Following' : 'Follow'}
-          </Text>
-        </Pressable>
-      </Animated.View>
-    );
-  };
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <View style={styles.headerInfo}>
-          <Text style={styles.tagName}>#{tag}</Text>
-          <Text style={styles.postCount}>{totalCount.toLocaleString()} posts</Text>
-        </View>
-        <HashtagFollowButton />
+    <View style={styles.container}>
+      <GlassHeader
+        titleComponent={
+          <View style={styles.headerInfo}>
+            <Text style={styles.tagName}>#{tag}</Text>
+            <Text style={styles.postCount}>{totalCount.toLocaleString()} posts</Text>
+          </View>
+        }
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        rightActions={[]}
+      />
+      <View style={styles.headerSpacer} />
+
+      {/* Follow hashtag bar */}
+      <View style={styles.followBar}>
+        <GradientButton
+          label={isFollowing ? 'Following' : 'Follow'}
+          onPress={toggleFollow}
+          variant={isFollowing ? 'secondary' : 'primary'}
+          size="sm"
+        />
       </View>
 
       <FlatList
@@ -167,7 +153,7 @@ export default function HashtagScreen() {
             <EmptyState
               icon="hash"
               title={`No posts with #${tag} yet`}
-              subtitle="Be the first to post with this hashtag"
+              subtitle="Be the first to share something with this hashtag -- your voice matters!"
             />
           )
         }
@@ -182,21 +168,20 @@ export default function HashtagScreen() {
         }
         contentContainerStyle={{ paddingBottom: 40 }}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
+  headerSpacer: { height: 100 },
   headerInfo: { alignItems: 'center' },
   tagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   postCount: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  followBar: {
+    alignItems: 'center', paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
 
   skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 1 },
   gridRow: { gap: 1 },
@@ -214,14 +199,4 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 6, right: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
   },
-  followBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.md,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
-    minWidth: 90, alignItems: 'center',
-  },
-  followingBtn: {
-    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.dark.border,
-  },
-  followBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
-  followingBtnText: { color: colors.text.primary },
 });

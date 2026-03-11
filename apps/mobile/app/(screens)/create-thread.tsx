@@ -16,6 +16,8 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Autocomplete } from '@/components/ui/Autocomplete';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
@@ -386,20 +388,16 @@ export default function CreateThreadScreen() {
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} hitSlop={8}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Icon name="x" size="md" color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>New Thread</Text>
-        <TouchableOpacity
-          style={[styles.postBtn, !canPost && styles.postBtnDisabled]}
+        <GradientButton
+          label="Post"
+          size="sm"
           onPress={() => canPost && createMutation.mutate()}
-          disabled={!canPost || createMutation.isPending}
-        >
-          {createMutation.isPending ? (
-            <ActivityIndicator color={colors.text.primary} size="small" />
-          ) : (
-            <Text style={styles.postBtnText}>Post</Text>
-          )}
-        </TouchableOpacity>
+          loading={createMutation.isPending}
+          disabled={!canPost}
+        />
       </View>
 
       {/* Visibility bar */}
@@ -459,8 +457,9 @@ export default function CreateThreadScreen() {
         ) : circles.length === 0 ? (
           <View style={styles.emptyCircles}>
             <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
-            <TouchableOpacity onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>Create a circle →</Text>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Text style={styles.emptyCirclesLink}>Create a circle</Text>
+              <Icon name="chevron-right" size="sm" color={colors.emerald} />
             </TouchableOpacity>
           </View>
         ) : (
@@ -619,17 +618,10 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border,
+    backgroundColor: 'rgba(13, 17, 23, 0.92)',
   },
-  cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  postBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.full,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
-    minWidth: 60, alignItems: 'center',
-  },
-  postBtnDisabled: { backgroundColor: colors.dark.surface },
-  postBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
+  headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 },
 
   body: { flex: 1 },
 
@@ -638,7 +630,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row', paddingHorizontal: spacing.base, paddingTop: spacing.md,
   },
   partLeft: { alignItems: 'center', marginRight: spacing.sm, width: 42 },
-  chainLine: { width: 2, flex: 1, backgroundColor: colors.dark.border, marginTop: spacing.xs, borderRadius: 1 },
+  chainLine: { width: 2, flex: 1, backgroundColor: colors.active.emerald20, marginTop: spacing.xs, borderRadius: 1 },
   partRight: { flex: 1, paddingBottom: spacing.md },
   partUser: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700', marginBottom: spacing.xs },
   partInput: {
@@ -734,7 +726,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.sm,
   },
   addPartLine: {
-    width: 2, height: 20, backgroundColor: colors.dark.border,
+    width: 2, height: 20, backgroundColor: colors.active.emerald20,
     borderRadius: 1, marginLeft: spacing.lg, marginRight: spacing.xs,
   },
   addPartText: { color: colors.text.tertiary, fontSize: fontSize.base },

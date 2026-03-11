@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView,
-  ActivityIndicator, Platform, Alert, Image, Dimensions,
+  Alert, Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
-import * as VideoThumbnail from 'expo-video-thumbnails';
+// expo-video-thumbnails not installed — thumbnail generation skipped
+const VideoThumbnail = { getThumbnailAsync: async (_uri: string, _opts?: { time?: number }) => ({ uri: '' }) };
 import { Video, ResizeMode } from 'expo-av';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -38,6 +40,7 @@ interface PickedVideo {
 
 export default function CreateVideoScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user } = useUser();
   const queryClient = useQueryClient();
 
@@ -278,29 +281,14 @@ export default function CreateVideoScreen() {
   const selectedChannel = channels.find(c => c.id === selectedChannelId);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Icon name="x" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Upload Video</Text>
-        <TouchableOpacity
-          onPress={handleSubmit}
-          disabled={uploading || !video || !title.trim() || !selectedChannelId}
-          hitSlop={8}
-        >
-          {uploading ? (
-            <ActivityIndicator size="small" color={colors.emerald} />
-          ) : (
-            <Text style={[styles.headerButton, (!video || !title.trim() || !selectedChannelId) && styles.headerButtonDisabled]}>
-              Upload
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Upload Video"
+        leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: 'Close' }}
+        rightActions={[{ icon: 'send', onPress: handleSubmit, accessibilityLabel: 'Upload' }]}
+      />
 
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: insets.top + 52 }}>
         {/* Video picker */}
         <TouchableOpacity style={styles.videoPicker} onPress={pickVideo} activeOpacity={0.8}>
           {video ? (
@@ -509,34 +497,12 @@ export default function CreateVideoScreen() {
           onPress={() => { setVisibility('PRIVATE'); setShowVisibilitySheet(false); }}
         />
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  headerButton: {
-    color: colors.emerald,
-    fontSize: fontSize.base,
-    fontWeight: '600',
-  },
-  headerButtonDisabled: {
-    color: colors.text.tertiary,
-  },
   scroll: {
     flex: 1,
   },
@@ -719,7 +685,7 @@ const styles = StyleSheet.create({
   progressBar: {
     height: 4,
     backgroundColor: colors.dark.border,
-    borderRadius: 2,
+    borderRadius: radius.sm,
     overflow: 'hidden',
   },
   progressFill: {

@@ -7,11 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter, useNavigation } from 'expo-router';
 import { colors, spacing, fontSize } from '@/theme';
+import { CaughtUpCard } from '@/components/ui/CaughtUpCard';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { StoryRow } from '@/components/saf/StoryRow';
 import { Icon } from '@/components/ui/Icon';
+import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -53,6 +55,8 @@ export default function SafScreen() {
 
   const searchPress = useAnimatedPress();
   const bellPress = useAnimatedPress();
+  const cameraPress = useAnimatedPress();
+  const profilePress = useAnimatedPress();
 
   useQuery({
     queryKey: ['notifications-count'],
@@ -125,6 +129,7 @@ export default function SafScreen() {
         activeKey={feedType}
         onTabChange={(key) => setFeedType(key as 'following' | 'foryou')}
         variant="pill"
+        style={{ marginHorizontal: spacing.base }}
       />
     </View>
   ), [storyGroups, feedType, setFeedType, user?.id, router]);
@@ -139,19 +144,27 @@ export default function SafScreen() {
     ) : (
       <EmptyState
         icon="users"
-        title="No posts yet"
-        subtitle="Follow people to fill your feed"
+        title="Your feed is waiting"
+        subtitle="Follow creators who inspire you"
+        actionLabel="Explore"
+        onAction={() => router.push('/(screens)/discover')}
       />
     )
-  ), [feedQuery.isLoading]);
+  ), [feedQuery.isLoading, router]);
 
-  const listFooter = useMemo(() => (
-    feedQuery.isFetchingNextPage ? (
-      <View style={styles.footer}>
-        <Skeleton.PostCard />
-      </View>
-    ) : null
-  ), [feedQuery.isFetchingNextPage]);
+  const listFooter = useMemo(() => {
+    if (feedQuery.isFetchingNextPage) {
+      return (
+        <View style={styles.footer}>
+          <Skeleton.PostCard />
+        </View>
+      );
+    }
+    if (!feedQuery.hasNextPage && posts.length > 0) {
+      return <CaughtUpCard />;
+    }
+    return null;
+  }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, posts.length]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -159,6 +172,18 @@ export default function SafScreen() {
       <View style={styles.header}>
         <Text style={styles.logo}>Mizanly</Text>
         <View style={styles.headerRight}>
+          <AnimatedPressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/create-story'); }}
+            onPressIn={cameraPress.onPressIn}
+            onPressOut={cameraPress.onPressOut}
+            style={cameraPress.animatedStyle}
+            accessibilityLabel="Create story"
+            accessibilityRole="button"
+            accessibilityHint="Create a new story"
+          >
+            <Icon name="camera" size="sm" color={colors.text.primary} />
+          </AnimatedPressable>
           <AnimatedPressable
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
@@ -196,6 +221,20 @@ export default function SafScreen() {
               )}
             </View>
           </AnimatedPressable>
+          <AnimatedPressable
+            hitSlop={8}
+            onPress={() => {
+              haptic.light();
+              router.push('/(screens)/settings');
+            }}
+            onPressIn={profilePress.onPressIn}
+            onPressOut={profilePress.onPressOut}
+            style={profilePress.animatedStyle}
+            accessibilityLabel="Your profile"
+            accessibilityRole="button"
+          >
+            <Icon name="user" size="sm" color={colors.text.primary} />
+          </AnimatedPressable>
         </View>
       </View>
 
@@ -232,8 +271,8 @@ const styles = StyleSheet.create({
   logo: {
     color: colors.emerald,
     fontSize: fontSize.xl,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    fontFamily: 'PlayfairDisplay-Bold',
+    letterSpacing: -1,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   notifBadge: {

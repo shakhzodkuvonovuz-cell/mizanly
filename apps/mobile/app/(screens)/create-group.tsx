@@ -10,10 +10,14 @@ import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { CharCountRing } from '@/components/ui/CharCountRing';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
+import { useHaptic } from '@/hooks/useHaptic';
 import type { User } from '@/types';
 
 const MAX_GROUP_NAME = 50;
@@ -22,6 +26,7 @@ const MIN_MEMBERS = 2;
 export default function CreateGroupScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const haptic = useHaptic();
   const [groupName, setGroupName] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
@@ -97,6 +102,7 @@ export default function CreateGroupScreen() {
   });
 
   const handleAddMember = (user: User) => {
+    haptic.light();
     setSelectedMembers(prev => [...prev, user]);
     setQuery('');
     setDebouncedQuery('');
@@ -104,6 +110,7 @@ export default function CreateGroupScreen() {
   };
 
   const handleRemoveMember = (userId: string) => {
+    haptic.light();
     setSelectedMembers(prev => prev.filter(m => m.id !== userId));
     setValidationError('');
   };
@@ -112,31 +119,10 @@ export default function CreateGroupScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>New Group</Text>
-        <TouchableOpacity
-          onPress={() => {
-            if (selectedMembers.length < MIN_MEMBERS) {
-              setValidationError(`Please add at least ${MIN_MEMBERS} members.`);
-              return;
-            }
-            createMutation.mutate();
-          }}
-          disabled={groupName.trim().length === 0 || createMutation.isPending}
-          style={styles.createBtn}
-        >
-          {createMutation.isPending ? (
-            <ActivityIndicator color={colors.emerald} size="small" />
-          ) : (
-            <Text style={[styles.createBtnText, groupName.trim().length === 0 && styles.createBtnDisabled]}>
-              Create
-            </Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      <GlassHeader
+        title="Create Group"
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Group name */}
@@ -163,7 +149,7 @@ export default function CreateGroupScreen() {
         {/* Avatar picker */}
         <View style={styles.section}>
           <Text style={styles.label}>Group avatar (optional)</Text>
-          <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar}>
+          <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel="Choose group avatar" accessibilityRole="button">
             {avatarUri ? (
               <Avatar uri={avatarUri} name={groupName || 'Group'} size="2xl" />
             ) : (
@@ -179,6 +165,8 @@ export default function CreateGroupScreen() {
             onPress={() => setAvatarUri(undefined)}
             disabled={createMutation.isPending}
             style={styles.skipBtn}
+            accessibilityLabel="Skip group avatar"
+            accessibilityRole="button"
           >
             <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
               Skip for now
@@ -203,6 +191,8 @@ export default function CreateGroupScreen() {
                     onPress={() => handleRemoveMember(member.id)}
                     hitSlop={4}
                     style={styles.chipRemove}
+                    accessibilityLabel={`Remove ${member.displayName}`}
+                    accessibilityRole="button"
                   >
                     <Icon name="x" size={12} color={colors.text.secondary} />
                   </Pressable>
@@ -227,26 +217,32 @@ export default function CreateGroupScreen() {
               autoCorrect={false}
             />
             {query.length > 0 && (
-              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel="Clear search" accessibilityRole="button">
                 <Icon name="x" size="xs" color={colors.text.secondary} />
               </Pressable>
             )}
           </View>
 
           {searchQuery.isLoading ? (
-            <ActivityIndicator color={colors.emerald} style={styles.loader} />
+            <View style={styles.loader}>
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+            </View>
           ) : (
             <FlatList
               data={people}
-              scrollEnabled={false}
+              scrollEnabled={true}
               keyExtractor={(item) => item.id}
-              refreshControl={<RefreshControl refreshing={searchQuery.isLoading} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
+              refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.userRow}
                   onPress={() => handleAddMember(item)}
                   disabled={createMutation.isPending}
                   activeOpacity={0.7}
+                  accessibilityLabel={`Add ${item.displayName}`}
+                  accessibilityRole="button"
                 >
                   <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
                   <View style={styles.userInfo}>
@@ -279,6 +275,22 @@ export default function CreateGroupScreen() {
           At least {MIN_MEMBERS} members (excluding yourself) are required.
         </Text>
 
+        {/* Create button */}
+        <View style={{ marginTop: spacing.lg, marginHorizontal: spacing.base }}>
+          <GradientButton
+            label="Create"
+            onPress={() => {
+              if (selectedMembers.length < MIN_MEMBERS) {
+                setValidationError(`Please add at least ${MIN_MEMBERS} members.`);
+                return;
+              }
+              createMutation.mutate();
+            }}
+            loading={createMutation.isPending}
+            disabled={groupName.trim().length === 0}
+          />
+        </View>
+
         {/* Validation error */}
         {validationError ? <Text style={styles.error}>{validationError}</Text> : null}
       </ScrollView>
@@ -288,17 +300,6 @@ export default function CreateGroupScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  createBtn: { width: 64, alignItems: 'center', paddingVertical: 4 },
-  createBtnText: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
-  createBtnDisabled: { color: colors.text.tertiary },
-
   content: { paddingVertical: spacing.lg, paddingHorizontal: spacing.base },
 
   section: { marginBottom: spacing.xl },
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
 
-  loader: { marginVertical: spacing.xl },
+  loader: { marginVertical: spacing.xl, gap: spacing.sm },
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.sm, paddingVertical: spacing.md,

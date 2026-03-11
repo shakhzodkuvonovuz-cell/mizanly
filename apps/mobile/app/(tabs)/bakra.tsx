@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Pressable, Image, type ViewToken } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
   runOnJS,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
@@ -22,9 +22,13 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { CommentsSheet } from '@/components/bakra/CommentsSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { Platform } from 'react-native';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { followsApi } from '@/services/api';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -43,7 +47,8 @@ interface ReelItemProps {
   onProfilePress: (username: string) => void;
   onReport: (reel: Reel) => void;
   setVideoRef: (id: string, ref: Video) => void;
-  doubleTapGesture: any;
+  doubleTapGesture: TapGesture;
+  heartTrigger: number;
 }
 
 const ReelItem = memo(function ReelItem({
@@ -58,8 +63,20 @@ const ReelItem = memo(function ReelItem({
   onReport,
   setVideoRef,
   doubleTapGesture,
+  heartTrigger,
 }: ReelItemProps) {
   const localVideoRef = useRef<Video | null>(null);
+  const { user } = useUser();
+  const [captionExpanded, setCaptionExpanded] = useState(false);
+  const queryClient = useQueryClient();
+  const haptic = useHaptic();
+  const router = useRouter();
+  const followMutation = useMutation({
+    mutationFn: (userId: string) => followsApi.follow(userId),
+    onSuccess: (_, userId) => {
+      queryClient.invalidateQueries({ queryKey: ['reels'] });
+    },
+  });
 
   const handleVideoRef = (ref: Video | null) => {
     localVideoRef.current = ref;
@@ -97,6 +114,53 @@ const ReelItem = memo(function ReelItem({
           style={styles.topGradient}
         />
 
+        {/* Audio info bar */}
+        <View style={{
+          position: 'absolute', bottom: Platform.OS === 'ios' ? 90 : 70, left: 0, right: 60,
+          flexDirection: 'row', alignItems: 'center',
+          paddingHorizontal: spacing.base,
+        }}>
+          <Icon name="volume-x" size="xs" color="#fff" />
+          <Animated.View style={{ flex: 1, marginLeft: spacing.xs, overflow: 'hidden' }}>
+            <Text numberOfLines={1} style={{ color: '#fff', fontSize: fontSize.xs }}>
+              {item.audioTitle || 'Original Audio'} — {item.audioArtist || item.user?.displayName || 'Unknown'}
+            </Text>
+          </Animated.View>
+          <Pressable
+            onPress={() => {
+              if (item.audioTrackId) {
+                router.push(`/(screens)/sound/${item.audioTrackId}`);
+              }
+            }}
+            style={{
+              width: 32, height: 32, borderRadius: radius.full,
+              borderWidth: 2, borderColor: '#fff',
+              overflow: 'hidden', marginLeft: spacing.sm,
+            }}
+          >
+            {item.audioCoverUrl ? (
+              <Image source={{ uri: item.audioCoverUrl }} style={{ width: 32, height: 32 }} />
+            ) : (
+              <View style={{ width: 32, height: 32, backgroundColor: colors.dark.surface, justifyContent: 'center', alignItems: 'center' }}>
+                <Icon name="volume-x" size={14} color="#fff" />
+              </View>
+            )}
+          </Pressable>
+        </View>
+
+        {/* Trending sound indicator */}
+        {item.audioTrack?.isTrending && (
+          <View style={{
+            position: 'absolute', bottom: Platform.OS === 'ios' ? 110 : 90, left: spacing.base,
+            flexDirection: 'row', alignItems: 'center',
+            backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full,
+            paddingHorizontal: spacing.sm, paddingVertical: 2,
+          }}>
+            <Icon name="trending-up" size={10} color="#fff" />
+            <Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>Trending</Text>
+          </View>
+        )}
+
         {/* User info & caption */}
         <View style={styles.infoContainer}>
           <TouchableOpacity
@@ -106,12 +170,42 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel={`View ${item.user.username}'s profile`}
             accessibilityRole="button"
           >
-            <Avatar
-              uri={item.user.avatarUrl}
-              name={item.user.username}
-              size="sm"
-              showRing={false}
-            />
+            <View style={{ position: 'relative' }}>
+              <Avatar
+                uri={item.user.avatarUrl}
+                name={item.user.username}
+                size="sm"
+                showRing={false}
+              />
+              {/* Follow button on creator avatar */}
+              {!item.user?.isFollowing && item.user.id !== user?.id && (
+                <Pressable
+                  onPress={() => {
+                    followMutation.mutate(item.user.id);
+                    haptic('medium');
+                  }}
+                  style={{
+                    position: 'absolute',
+                    bottom: -6, alignSelf: 'center',
+                    width: 26, height: 26, borderRadius: radius.full,
+                    overflow: 'hidden',
+                    borderWidth: 1.5, borderColor: colors.dark.bg,
+                  }}
+                >
+                  <LinearGradient
+                    colors={[colors.emerald, '#05593A']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={{
+                      width: 26, height: 26,
+                      justifyContent: 'center', alignItems: 'center',
+                    }}
+                  >
+                    <Icon name="plus" size={14} color="#fff" />
+                  </LinearGradient>
+                </Pressable>
+              )}
+            </View>
             <View style={styles.userText}>
               <Text style={styles.username}>{item.user.username}</Text>
               <Text style={styles.time}>
@@ -120,9 +214,19 @@ const ReelItem = memo(function ReelItem({
             </View>
           </TouchableOpacity>
           {item.caption && (
-            <Text style={styles.caption} numberOfLines={3}>
-              {item.caption}
-            </Text>
+            <>
+              <Text style={styles.caption} numberOfLines={captionExpanded ? undefined : 3}>
+                {item.caption}
+              </Text>
+              {!captionExpanded && (
+                <Text
+                  onPress={() => setCaptionExpanded(true)}
+                  style={{ color: colors.text.secondary, fontSize: fontSize.sm }}
+                >
+                  more
+                </Text>
+              )}
+            </>
           )}
           {item.audioTitle && (
             <View style={styles.soundRow}>
@@ -171,6 +275,44 @@ const ReelItem = memo(function ReelItem({
             <Icon name="share" size="lg" color={colors.text.primary} />
             <Text style={styles.actionCount}>{item.sharesCount}</Text>
           </TouchableOpacity>
+
+          {/* Duet button */}
+          <Pressable
+            onPress={() => {
+              haptic('light');
+              router.push(`/(screens)/create-reel?duetWith=${item.id}`);
+            }}
+            style={{ alignItems: 'center', marginTop: spacing.md }}
+          >
+            <View style={{
+              width: 36, height: 36, borderRadius: radius.full,
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
+              justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Icon name="layers" size="sm" color="#fff" />
+            </View>
+            <Text style={{ color: '#fff', fontSize: 10, marginTop: 2 }}>Duet</Text>
+          </Pressable>
+
+          {/* Stitch button */}
+          <Pressable
+            onPress={() => {
+              haptic('light');
+              router.push(`/(screens)/create-reel?stitchFrom=${item.id}`);
+            }}
+            style={{ alignItems: 'center', marginTop: spacing.md }}
+          >
+            <View style={{
+              width: 36, height: 36, borderRadius: radius.full,
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
+              justifyContent: 'center', alignItems: 'center',
+            }}>
+              <Icon name="slash" size="sm" color="#fff" />
+            </View>
+            <Text style={{ color: '#fff', fontSize: 10, marginTop: 2 }}>Stitch</Text>
+          </Pressable>
           <TouchableOpacity
             style={styles.actionButton}
             onPress={() => onBookmark(item)}
@@ -194,6 +336,7 @@ const ReelItem = memo(function ReelItem({
             <Icon name="flag" size="lg" color={colors.text.primary} />
           </TouchableOpacity>
         </View>
+        <FloatingHearts trigger={heartTrigger} />
       </View>
     </GestureDetector>
   );
@@ -206,6 +349,7 @@ export default function BakraScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
+  const [heartTrigger, setHeartTrigger] = useState(0);
   const videoRefs = useRef<{ [key: string]: Video }>({});
   const setVideoRef = useCallback((id: string, ref: Video) => {
     videoRefs.current[id] = ref;
@@ -234,7 +378,7 @@ export default function BakraScreen() {
     }
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
-  const handleViewableItemsChanged = useCallback(({ viewableItems }: any) => {
+  const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
     if (viewableItems.length > 0) {
       const index = viewableItems[0].index;
       if (index !== undefined && index !== currentIndex) {
@@ -300,6 +444,7 @@ export default function BakraScreen() {
       if (reel && !reel.isLiked) {
         handleLike(reel);
       }
+      setHeartTrigger((prev) => prev + 1);
     });
 
   const renderItem = useCallback(({ item, index }: { item: Reel; index: number }) => (
@@ -315,11 +460,12 @@ export default function BakraScreen() {
       onReport={handleReport}
       setVideoRef={setVideoRef}
       doubleTapGesture={doubleTapGesture}
+      heartTrigger={heartTrigger}
     />
-  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, setVideoRef, doubleTapGesture]);
+  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
-  const getItemLayout = useCallback((_: any, index: number) => ({
+  const getItemLayout = useCallback((_: ArrayLike<Reel> | null | undefined, index: number) => ({
     length: SCREEN_H,
     offset: SCREEN_H * index,
     index,

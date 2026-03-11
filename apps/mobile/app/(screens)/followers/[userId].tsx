@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, Pressable, RefreshControl,
+  FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,9 +12,11 @@ import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
-import type { User } from '@/types';
+import type { User, PaginatedResponse } from '@/types';
 
 function UserRow({ user, isMe, onPress, onFollow }: {
   user: User;
@@ -33,15 +35,12 @@ function UserRow({ user, isMe, onPress, onFollow }: {
         <Text style={styles.handle}>@{user.username}</Text>
       </View>
       {!isMe && (
-        <TouchableOpacity
-          style={[styles.followBtn, user.isFollowing && styles.followingBtn]}
+        <GradientButton
+          label={user.isFollowing ? 'Following' : 'Follow'}
+          variant={user.isFollowing ? 'secondary' : 'primary'}
+          size="sm"
           onPress={onFollow}
-          hitSlop={8}
-        >
-          <Text style={[styles.followBtnText, user.isFollowing && styles.followingBtnText]}>
-            {user.isFollowing ? 'Following' : 'Follow'}
-          </Text>
-        </TouchableOpacity>
+        />
       )}
     </TouchableOpacity>
   );
@@ -57,10 +56,10 @@ export default function FollowersScreen() {
     queryKey: ['followers', userId],
     queryFn: ({ pageParam }) => followsApi.getFollowers(userId, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last: PaginatedResponse<User>) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
-  const followers: User[] = followersQuery.data?.pages.flatMap((p: any) => p.data) ?? [];
+  const followers: User[] = followersQuery.data?.pages.flatMap((p: PaginatedResponse<User>) => p.data) ?? [];
 
   const followMutation = useMutation({
     mutationFn: (user: User) =>
@@ -85,13 +84,10 @@ export default function FollowersScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Followers</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="Followers"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       <FlatList
         data={followers}
@@ -123,7 +119,7 @@ export default function FollowersScreen() {
               ))}
             </View>
           ) : (
-            <EmptyState icon="users" title="No followers yet" />
+            <EmptyState icon="users" title="No followers yet" subtitle="Share your profile to grow your community" />
           )
         }
         ListFooterComponent={() =>
@@ -146,14 +142,6 @@ export default function FollowersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
@@ -167,11 +155,4 @@ const styles = StyleSheet.create({
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 
-  followBtn: {
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.full,
-    paddingHorizontal: spacing.md, paddingVertical: 6,
-  },
-  followingBtn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
-  followBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
-  followingBtnText: { color: '#fff' },
 });

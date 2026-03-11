@@ -6,7 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
 
 // Local type for CreatorStat (will be added to types/index.ts in Step 12)
@@ -129,29 +130,29 @@ export default function AnalyticsScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} onPress={() => router.back()} />
-          <Text style={styles.headerTitle}>Creator Analytics</Text>
-          <View style={{ width: 24 }} />
-        </View>
-        <EmptyState
-          icon="flag"
-          title="Failed to load analytics"
-          subtitle="Please try again later"
-          actionLabel="Retry"
-          onAction={() => refetch()}
+        <GlassHeader
+          title="Creator Analytics"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
+        <View style={{ paddingTop: 100 }}>
+          <EmptyState
+            icon="flag"
+            title="Failed to load analytics"
+            subtitle="Please try again later"
+            actionLabel="Retry"
+            onAction={() => refetch()}
+          />
+        </View>
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Icon name="arrow-left" size="md" color={colors.text.primary} onPress={() => router.back()} />
-        <Text style={styles.headerTitle}>Creator Analytics</Text>
-        <View style={{ width: 24 }} />
-      </View>
+      <GlassHeader
+        title="Creator Analytics"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -224,18 +225,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.dark.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-  },
   headerTitle: {
     fontSize: fontSize.md,
-    fontFamily: 'DMSans-SemiBold',
+    fontFamily: fonts.bodySemiBold,
     color: colors.text.primary,
   },
   scroll: {
@@ -243,6 +235,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.base,
+    paddingTop: 100,
   },
   cards: {
     flexDirection: 'row',
@@ -260,18 +253,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: fonts.bodyMedium,
     marginBottom: spacing.xs,
   },
   cardValue: {
     fontSize: fontSize.lg,
     color: colors.text.primary,
-    fontFamily: 'DMSans-Bold',
+    fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
   cardChange: {
     fontSize: fontSize.xs,
-    fontFamily: 'DMSans-Medium',
+    fontFamily: fonts.bodyMedium,
   },
   positive: {
     color: colors.success,
@@ -285,7 +278,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: fontSize.base,
     color: colors.text.primary,
-    fontFamily: 'DMSans-SemiBold',
+    fontFamily: fonts.bodySemiBold,
     marginBottom: spacing.md,
   },
   chartContainer: {

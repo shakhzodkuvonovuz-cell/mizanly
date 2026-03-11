@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
@@ -157,14 +158,10 @@ export default function ContentSettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Content Preferences</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="Content Preferences"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* Feed Preferences */}
@@ -293,15 +290,9 @@ export default function ContentSettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   body: { flex: 1 },
-  bodyContent: { paddingBottom: 60 },
+  bodyContent: { paddingBottom: 60, paddingTop: 100 },
 
   sectionHeader: {
     color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
@@ -309,8 +300,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base, paddingTop: spacing.xl, paddingBottom: spacing.sm,
   },
   card: {
-    backgroundColor: colors.dark.bgElevated,
-    marginHorizontal: spacing.base, borderRadius: radius.lg, overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+    overflow: 'hidden',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
 
   row: {

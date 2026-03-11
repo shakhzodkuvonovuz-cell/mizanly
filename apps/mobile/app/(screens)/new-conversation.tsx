@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  TextInput, FlatList, ActivityIndicator, Alert,
+  TextInput, FlatList, ActivityIndicator, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -9,6 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize } from '@/theme';
 import { searchApi, messagesApi } from '@/services/api';
 import type { User } from '@/types';
@@ -48,13 +50,10 @@ export default function NewConversationScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>New Message</Text>
-        <View style={{ width: 36 }} />
-      </View>
+      <GlassHeader
+        title="New Message"
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+      />
 
       {/* Search box */}
       <View style={styles.searchWrap}>
@@ -77,11 +76,28 @@ export default function NewConversationScreen() {
       </View>
 
       {searchQuery.isLoading ? (
-        <ActivityIndicator color={colors.emerald} style={styles.loader} />
+        <View style={styles.skeletonList}>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <View key={i} style={styles.skeletonRow}>
+              <Skeleton.Circle size={40} />
+              <View style={{ flex: 1, gap: 6 }}>
+                <Skeleton.Rect width={120} height={14} />
+                <Skeleton.Rect width={80} height={11} />
+              </View>
+            </View>
+          ))}
+        </View>
       ) : (
         <FlatList
           data={people}
           keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl
+              refreshing={false}
+              onRefresh={() => searchQuery.refetch()}
+              tintColor={colors.emerald}
+            />
+          }
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.userRow}
@@ -123,14 +139,6 @@ export default function NewConversationScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
@@ -138,7 +146,11 @@ const styles = StyleSheet.create({
   },
   toLabel: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
-  loader: { marginTop: 60 },
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: {
+    flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.md,
+    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+  },
 
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,

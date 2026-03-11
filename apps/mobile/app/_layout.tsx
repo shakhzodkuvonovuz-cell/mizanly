@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { I18nManager, Alert, AppState, AppStateStatus } from 'react-native';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
@@ -59,6 +59,7 @@ function AuthGuard() {
   const { user } = useUser();
   const segments = useSegments();
   const router = useRouter();
+  const navigationState = useRootNavigationState();
 
   // Wire Clerk token into the API client
   useEffect(() => {
@@ -70,6 +71,7 @@ function AuthGuard() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    if (!navigationState?.key) return;
 
     const inAuthGroup = segments[0] === '(auth)';
     const inOnboarding = segments[0] === 'onboarding';
@@ -86,7 +88,7 @@ function AuthGuard() {
         router.replace('/(tabs)/saf');
       }
     }
-  }, [isSignedIn, isLoaded, segments, user]);
+  }, [isSignedIn, isLoaded, segments, user, navigationState?.key]);
 
   return null;
 }

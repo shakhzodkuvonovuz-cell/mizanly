@@ -5,9 +5,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -130,17 +130,17 @@ export default function WatchHistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Watch History</Text>
-        <Pressable onPress={handleClear} hitSlop={8} style={styles.clearBtn}>
-          <Text style={styles.clearText}>Clear</Text>
-        </Pressable>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Watch History"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        rightActions={[{
+          icon: <Text style={styles.clearText}>Clear</Text>,
+          onPress: handleClear,
+          accessibilityLabel: 'Clear watch history',
+        }]}
+      />
+      <View style={styles.headerSpacer} />
 
       <FlatList
         data={items}
@@ -157,8 +157,8 @@ export default function WatchHistoryScreen() {
           !watchHistoryQuery.isLoading ? (
             <EmptyState
               icon="clock"
-              title="No watch history"
-              subtitle="Videos you watch will appear here"
+              title="Your watch history is empty"
+              subtitle="Videos you watch will show up here so you can easily find them again"
             />
           ) : (
             <View style={styles.skeletonContainer}>
@@ -181,28 +181,13 @@ export default function WatchHistoryScreen() {
         }
         contentContainerStyle={styles.listContainer}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 32 },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '700',
-  },
-  clearBtn: { width: 32 },
+  headerSpacer: { height: 100 },
   clearText: {
     color: colors.error,
     fontSize: fontSize.sm,

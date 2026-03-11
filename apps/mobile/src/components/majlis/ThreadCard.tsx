@@ -20,6 +20,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
+import * as Clipboard from 'expo-clipboard';
 import type { Thread } from '@/types';
 
 interface Props {
@@ -97,8 +98,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
   const handleShare = () => {
     Share.share({
-      message: `${thread.content ?? ''}\n\nmizanly://thread/${thread.id}`,
-      url: `mizanly://thread/${thread.id}`,
+      message: `mizanly.app/thread/${thread.id}`,
     });
   };
 
@@ -133,6 +133,13 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
     ]);
   };
 
+  const handleCopyLink = async () => {
+    setShowMenu(false);
+    haptic.light();
+    await Clipboard.setStringAsync(`https://mizanly.app/thread/${thread.id}`);
+    // Optionally show a toast? Not needed.
+  };
+
   const timeAgo = formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true });
 
   if (dismissed) return null;
@@ -165,7 +172,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
           </TouchableOpacity>
           {thread.repliesCount > 0 && (
             <LinearGradient
-              colors={[colors.dark.borderLight, 'transparent']}
+              colors={['rgba(10, 123, 79, 0.3)', 'transparent']}
               style={styles.replyLine}
             />
           )}
@@ -186,6 +193,9 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               <Text style={styles.name}>{thread.user.displayName}</Text>
               {thread.user.isVerified && <VerifiedBadge size={13} />}
               <Text style={styles.handle}>@{thread.user.username}</Text>
+              {thread.replyPermission && thread.replyPermission !== 'everyone' && (
+                <Icon name="lock" size="xs" color={colors.text.tertiary} />
+              )}
             </TouchableOpacity>
             <Text style={styles.time}>{timeAgo}</Text>
             <TouchableOpacity
@@ -331,6 +341,21 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
       {/* More menu */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+        <BottomSheetItem
+          label="Share"
+          icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+          onPress={() => { setShowMenu(false); handleShare(); }}
+        />
+        <BottomSheetItem
+          label="Copy Link"
+          icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+          onPress={handleCopyLink}
+        />
+        <BottomSheetItem
+          label={localBookmarked ? 'Unbookmark' : 'Bookmark'}
+          icon={<Icon name={localBookmarked ? 'bookmark-filled' : 'bookmark'} size="sm" color={colors.text.primary} />}
+          onPress={() => { setShowMenu(false); bookmarkMutation.mutate(); }}
+        />
         {isOwn ? (
           <BottomSheetItem
             label="Delete thread"

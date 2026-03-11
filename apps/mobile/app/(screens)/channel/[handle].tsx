@@ -15,6 +15,8 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
@@ -219,15 +221,14 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       <View style={styles.avatarRow}>
         <Avatar uri={channel?.avatarUrl} name={channel?.name || ''} size="2xl" />
         <View style={styles.subscribeContainer}>
-          <TouchableOpacity
-            style={[styles.subscribeButton, channel?.isSubscribed && styles.subscribedButton]}
+          <GradientButton
+            label={channel?.isSubscribed ? 'Subscribed' : 'Subscribe'}
+            variant={channel?.isSubscribed ? 'secondary' : 'primary'}
+            size="sm"
             onPress={handleSubscribe}
             disabled={subscribeMutation.isPending}
-          >
-            <Text style={[styles.subscribeText, channel?.isSubscribed && styles.subscribedText]}>
-              {channel?.isSubscribed ? 'Subscribed' : 'Subscribe'}
-            </Text>
-          </TouchableOpacity>
+            loading={subscribeMutation.isPending}
+          />
         </View>
       </View>
 
@@ -276,13 +277,11 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   if (channelQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-        </View>
-        <Skeleton.Rect width="100%" height={BANNER_HEIGHT} borderRadius={0} />
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <Skeleton.Rect width="100%" height={BANNER_HEIGHT} borderRadius={0} style={{ marginTop: 88 }} />
         <View style={styles.skeletonContent}>
           <Skeleton.Rect width={96} height={96} borderRadius={radius.full} style={{ marginTop: -48 }} />
           <Skeleton.Rect width="60%" height={24} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />

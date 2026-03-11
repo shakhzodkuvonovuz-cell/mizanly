@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ActivityIndicator,
+  View, Text, TextInput, StyleSheet,
 } from 'react-native';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 
@@ -88,7 +89,7 @@ export default function UsernameScreen() {
             autoCorrect={false}
             maxLength={30}
           />
-          {checking && <ActivityIndicator size="small" color={colors.text.secondary} />}
+          {checking && <Skeleton.Circle size={20} />}
         </View>
 
         {status && (
@@ -98,14 +99,15 @@ export default function UsernameScreen() {
           </View>
         )}
 
-        <TouchableOpacity
-          style={[styles.btn, !isValid && styles.btnDisabled]}
-          onPress={handleContinue}
-          disabled={!isValid || loading}
-          activeOpacity={0.8}
-        >
-          {loading ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>Continue</Text>}
-        </TouchableOpacity>
+        <View style={styles.btnWrap}>
+          <GradientButton
+            label="Continue"
+            onPress={handleContinue}
+            loading={loading}
+            disabled={!isValid}
+            fullWidth
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -115,8 +117,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   inner: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing['2xl'] },
   progress: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing['3xl'] },
-  dot: { flex: 1, height: 3, borderRadius: 2, backgroundColor: colors.dark.border },
-  dotActive: { backgroundColor: colors.emerald },
+  dot: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.dark.border },
+  dotActive: { backgroundColor: colors.emerald, height: 8, borderRadius: 4 },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', marginBottom: spacing.sm },
   subtitle: { color: colors.text.secondary, fontSize: fontSize.base, marginBottom: spacing['2xl'] },
   inputWrap: {
@@ -133,14 +135,8 @@ const styles = StyleSheet.create({
   input: { flex: 1, paddingVertical: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   status: { fontSize: fontSize.sm },
-  btn: {
-    backgroundColor: colors.emerald,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
+  btnWrap: {
     marginTop: 'auto',
     marginBottom: spacing.xl,
   },
-  btnDisabled: { opacity: 0.4 },
-  btnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
 });

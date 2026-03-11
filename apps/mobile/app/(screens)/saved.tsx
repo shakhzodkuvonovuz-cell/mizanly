@@ -5,13 +5,13 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
@@ -204,14 +204,12 @@ export default function SavedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Saved</Text>
-        <View style={{ width: 32 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Saved"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+      />
+      <View style={styles.headerSpacer} />
 
       <TabSelector
         tabs={['Posts', 'Threads', 'Reels', 'Videos']}
@@ -227,7 +225,7 @@ export default function SavedScreen() {
 
       {activeTab === 'posts' ? (
         <FlatList
-          data={filteredPosts}
+          data={posts}
           keyExtractor={(item) => item.id}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
@@ -245,7 +243,7 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedPostsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="No saved posts yet" subtitle="Tap the bookmark icon on any post to save it" />
+              <EmptyState icon="bookmark" title="Your saved posts will appear here" subtitle="Tap the bookmark icon on any post you love to keep it close" />
             ) : (
               <View style={{ padding: spacing.base, gap: spacing.md }}>
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -263,7 +261,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'threads' ? (
         <FlatList
-          data={filteredThreads}
+          data={threads}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
             if (savedThreadsQuery.hasNextPage && !savedThreadsQuery.isFetchingNextPage) {
@@ -279,7 +277,7 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedThreadsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="No saved threads yet" subtitle="Tap the bookmark icon on any thread to save it" />
+              <EmptyState icon="bookmark" title="Your saved threads will appear here" subtitle="Bookmark threads that inspire you to revisit anytime" />
             ) : (
               <View style={{ padding: spacing.base }}>
                 <Skeleton.ThreadCard />
@@ -295,7 +293,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'reels' ? (
         <FlatList
-          data={filteredReels}
+          data={reels}
           keyExtractor={(item) => item.id}
           numColumns={3}
           columnWrapperStyle={styles.gridRow}
@@ -313,7 +311,7 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedReelsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="No saved reels yet" subtitle="Tap the bookmark icon on any reel to save it" />
+              <EmptyState icon="bookmark" title="Your saved reels will appear here" subtitle="Save reels you enjoy and watch them again later" />
             ) : (
               <View style={{ padding: spacing.base, gap: spacing.md }}>
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -331,7 +329,7 @@ export default function SavedScreen() {
         />
       ) : (
         <FlatList
-          data={filteredVideos}
+          data={videos}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
             if (savedVideosQuery.hasNextPage && !savedVideosQuery.isFetchingNextPage) {
@@ -347,7 +345,7 @@ export default function SavedScreen() {
           )}
           ListEmptyComponent={() =>
             !savedVideosQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="No saved videos yet" subtitle="Tap the bookmark icon on any video to save it" />
+              <EmptyState icon="bookmark" title="Your saved videos will appear here" subtitle="Bookmark videos to build your personal collection" />
             ) : (
               <View style={{ padding: spacing.base }}>
                 <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
@@ -362,19 +360,13 @@ export default function SavedScreen() {
           contentContainerStyle={{ paddingBottom: 100 }}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 32 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  headerSpacer: { height: 100 },
 
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 1 },

@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, RefreshControl, Pressable,
+  FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
-import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
-import type { Playlist, PlaylistItem } from '@/types';
+import type { PlaylistItem } from '@/types';
 
 const formatDuration = (sec: number) => {
   const m = Math.floor(sec / 60);
@@ -25,6 +25,7 @@ export default function PlaylistDetailScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
+  const insets = useSafeAreaInsets();
   const playlistId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const playlistQuery = useQuery({
@@ -107,48 +108,42 @@ export default function PlaylistDetailScreen() {
 
   if (!playlistId) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <EmptyState icon="layers" title="Playlist not found" />
-      </SafeAreaView>
+      <View style={styles.container}>
+        <GlassHeader title="Playlist" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
+          <EmptyState icon="layers" title="Playlist not found" />
+        </View>
+      </View>
     );
   }
 
   // Error state
   if (playlistQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Playlist</Text>
-          <View style={{ width: 24 }} />
+      <View style={styles.container}>
+        <GlassHeader title="Playlist" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
+          <EmptyState
+            icon="slash"
+            title="Something went wrong"
+            subtitle="Could not load playlist. Please try again."
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
         </View>
-        <EmptyState
-          icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load playlist. Please try again."
-          actionLabel="Go back"
-          onAction={() => router.back()}
-        />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>
-          {playlist?.title ?? 'Playlist'}
-        </Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title={playlist?.title ?? 'Playlist'}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
 
       {playlistQuery.isLoading ? (
-        <View style={styles.skeletonWrap}>
+        <View style={[styles.skeletonWrap, { paddingTop: insets.top + 56 }]}>
           <Skeleton.Rect width="100%" height={200} borderRadius={radius.md} />
           <Skeleton.Text width="60%" />
           <Skeleton.Text width="40%" />
@@ -183,20 +178,15 @@ export default function PlaylistDetailScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingTop: insets.top + 56 }]}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.md,
-  },
-  headerTitle: { flex: 1, color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600', textAlign: 'center' },
   list: { paddingBottom: spacing.xl },
   playlistHeader: { padding: spacing.base, gap: spacing.sm },
   playlistThumb: { width: '100%', height: 200, borderRadius: radius.md },
@@ -204,7 +194,7 @@ const styles = StyleSheet.create({
   playlistDesc: { color: colors.text.secondary, fontSize: fontSize.sm },
   videoCount: { color: colors.text.tertiary, fontSize: fontSize.xs },
   videoRow: { flexDirection: 'row', padding: spacing.base, gap: spacing.md },
-  thumbWrap: { width: 160, height: 90, borderRadius: radius.sm, overflow: 'hidden' },
+  thumbWrap: { width: 160, height: 90, borderRadius: radius.md, overflow: 'hidden' },
   thumb: { width: '100%', height: '100%' },
   durationBadge: {
     position: 'absolute', bottom: 4, right: 4,

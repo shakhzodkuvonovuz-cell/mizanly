@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert, TextInput,
+  View, Text, StyleSheet, TouchableOpacity,
+  FlatList, ActivityIndicator, Alert, TextInput, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet } from '@/components/ui/BottomSheet';
@@ -90,8 +91,15 @@ function CreateSheet({
 
 export default function CirclesScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await circlesQuery.refetch();
+    setRefreshing(false);
+  };
 
   const circlesQuery = useQuery({
     queryKey: ['my-circles'],
@@ -121,18 +129,14 @@ export default function CirclesScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Circles</Text>
-        <Pressable onPress={() => setShowCreate(true)} hitSlop={8}>
-          <Icon name="plus" size="md" color={colors.emerald} />
-        </Pressable>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Circles"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: 'Create circle' }]}
+      />
 
-      <Text style={styles.subtitle}>
+      <Text style={[styles.subtitle, { marginTop: insets.top + 52 }]}>
         Share posts with specific groups of people
       </Text>
 
@@ -153,6 +157,9 @@ export default function CirclesScreen() {
           data={circles}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
           renderItem={({ item }) => (
             <View style={styles.circleRow}>
               <View style={styles.circleIcon}>
@@ -190,19 +197,12 @@ export default function CirclesScreen() {
         onClose={() => setShowCreate(false)}
         onCreated={() => queryClient.invalidateQueries({ queryKey: ['my-circles'] })}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 36 },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 
   subtitle: {
     color: colors.text.secondary, fontSize: fontSize.sm,

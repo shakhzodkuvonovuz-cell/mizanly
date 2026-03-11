@@ -5,16 +5,30 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
-import type { ProfileLink } from '@/types';
+import type { ProfileLink, User } from '@/types';
+
+type UpdateProfilePayload = {
+  displayName?: string;
+  bio?: string;
+  website?: string;
+  location?: string;
+  pronouns?: string;
+  birthday?: string;
+  isPrivate?: boolean;
+  avatarUrl?: string;
+  coverUrl?: string;
+};
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -29,10 +43,15 @@ export default function EditProfileScreen() {
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
   const [website, setWebsite] = useState('');
+  const [location, setLocation] = useState('');
+  const [pronouns, setPronouns] = useState('');
+  const [birthday, setBirthday] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [coverUri, setCoverUri] = useState<string | undefined>();
   const [uploading, setUploading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   // Profile links
   const linksQuery = useQuery({
@@ -65,9 +84,13 @@ export default function EditProfileScreen() {
   // Seed form from loaded profile
   useEffect(() => {
     if (me) {
+      const profile = me as User & { location?: string; pronouns?: string; birthday?: string };
       setDisplayName(me.displayName ?? '');
       setBio(me.bio ?? '');
       setWebsite(me.website ?? '');
+      setLocation(profile.location ?? '');
+      setPronouns(profile.pronouns ?? '');
+      setBirthday(profile.birthday ?? '');
       setIsPrivate(me.isPrivate ?? false);
     }
   }, [me]);
@@ -116,14 +139,18 @@ export default function EditProfileScreen() {
       if (coverUri) coverUrl = await uploadImage(coverUri, 'covers');
       setUploading(false);
 
-      return usersApi.updateMe({
+      const payload: UpdateProfilePayload = {
         displayName: displayName.trim() || undefined,
         bio: bio.trim() || undefined,
         website: website.trim() || undefined,
+        location: location.trim() || undefined,
+        pronouns: pronouns.trim() || undefined,
+        birthday: birthday.trim() || undefined,
         isPrivate,
         ...(avatarUrl ? { avatarUrl } : {}),
         ...(coverUrl ? { coverUrl } : {}),
-      });
+      };
+      return usersApi.updateMe(payload as Parameters<typeof usersApi.updateMe>[0]);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
@@ -138,41 +165,50 @@ export default function EditProfileScreen() {
 
   if (meQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <Skeleton.ProfileHeader />
-      </SafeAreaView>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Edit Profile"
+          leftAction={{ icon: 'x', onPress: () => router.back() }}
+        />
+        <View style={{ marginTop: insets.top + 44 }}>
+          <Skeleton.ProfileHeader />
+        </View>
+      </View>
     );
   }
 
   const currentAvatar = avatarUri ?? me?.avatarUrl;
   const currentCover = coverUri ?? me?.coverUrl;
 
+  const HEADER_HEIGHT = insets.top + 44;
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Profile</Text>
-        <TouchableOpacity
+    <View style={styles.container}>
+      <GlassHeader
+        title="Edit Profile"
+        leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: 'Cancel' }}
+      />
+      {/* Save button overlay on GlassHeader right area */}
+      <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">
+        <GradientButton
+          label="Save"
+          size="sm"
           onPress={() => saveMutation.mutate()}
+          loading={saveMutation.isPending || uploading}
           disabled={saveMutation.isPending || uploading}
-          hitSlop={8}
-        >
-          {saveMutation.isPending || uploading ? (
-            <ActivityIndicator color={colors.emerald} size="small" />
-          ) : (
-            <Text style={styles.saveText}>Save</Text>
-          )}
-        </TouchableOpacity>
+        />
       </View>
 
-      <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
         {/* Cover photo */}
         <TouchableOpacity onPress={pickCover} activeOpacity={0.8}>
           {currentCover ? (
-            <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
+            <View>
+              <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
+              <View style={styles.coverOverlay}>
+                <Icon name="camera" size="md" color="#fff" />
+              </View>
+            </View>
           ) : (
             <View style={styles.coverPlaceholder}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
@@ -187,7 +223,7 @@ export default function EditProfileScreen() {
         <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} activeOpacity={0.8}>
           <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
           <View style={styles.avatarEdit}>
-            <Icon name="camera" size={14} color={colors.text.primary} />
+            <Icon name="camera" size="md" color="#fff" />
           </View>
         </TouchableOpacity>
 
@@ -196,12 +232,14 @@ export default function EditProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Display Name</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.inputBorder, focusedField === 'displayName' && styles.inputFocused]}
               value={displayName}
               onChangeText={setDisplayName}
               placeholder="Your name"
               placeholderTextColor={colors.text.tertiary}
               maxLength={50}
+              onFocus={() => setFocusedField('displayName')}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
 
@@ -217,7 +255,7 @@ export default function EditProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Bio</Text>
             <TextInput
-              style={[styles.input, styles.multiline]}
+              style={[styles.input, styles.inputBorder, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
               value={bio}
               onChangeText={setBio}
               placeholder="Tell people about yourself"
@@ -225,6 +263,8 @@ export default function EditProfileScreen() {
               multiline
               maxLength={150}
               textAlignVertical="top"
+              onFocus={() => setFocusedField('bio')}
+              onBlur={() => setFocusedField(null)}
             />
             <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
           </View>
@@ -234,7 +274,7 @@ export default function EditProfileScreen() {
           <View style={styles.field}>
             <Text style={styles.label}>Website</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.inputBorder, focusedField === 'website' && styles.inputFocused]}
               value={website}
               onChangeText={setWebsite}
               placeholder="https://yoursite.com"
@@ -242,6 +282,59 @@ export default function EditProfileScreen() {
               autoCapitalize="none"
               keyboardType="url"
               maxLength={100}
+              onFocus={() => setFocusedField('website')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Location</Text>
+            <View style={styles.iconInputRow}>
+              <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+              <TextInput
+                style={[styles.input, styles.inputBorder, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Add location"
+                placeholderTextColor={colors.text.tertiary}
+                maxLength={100}
+                onFocus={() => setFocusedField('location')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Pronouns</Text>
+            <TextInput
+              style={[styles.input, styles.inputBorder, focusedField === 'pronouns' && styles.inputFocused]}
+              value={pronouns}
+              onChangeText={setPronouns}
+              placeholder="Add pronouns"
+              placeholderTextColor={colors.text.tertiary}
+              maxLength={30}
+              onFocus={() => setFocusedField('pronouns')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Birthday</Text>
+            <TextInput
+              style={[styles.input, styles.inputBorder, focusedField === 'birthday' && styles.inputFocused]}
+              value={birthday}
+              onChangeText={setBirthday}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.text.tertiary}
+              maxLength={10}
+              onFocus={() => setFocusedField('birthday')}
+              onBlur={() => setFocusedField(null)}
             />
           </View>
 
@@ -343,27 +436,28 @@ export default function EditProfileScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
 
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  saveButtonWrap: {
+    position: 'absolute', right: spacing.base, zIndex: 101,
+    alignItems: 'flex-end',
   },
-  cancelText: { color: colors.text.secondary, fontSize: fontSize.base },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  saveText: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
 
   body: { flex: 1 },
 
   cover: { width: '100%', height: 140 },
   coverPlaceholder: {
     width: '100%', height: 140, backgroundColor: colors.dark.bgElevated,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     alignItems: 'center', justifyContent: 'center',
   },
   coverPlaceholderText: { color: colors.text.secondary, fontSize: fontSize.base },
@@ -374,8 +468,8 @@ const styles = StyleSheet.create({
   },
   avatarEdit: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 28, height: 28, borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgElevated,
+    width: 32, height: 32, borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.4)',
     borderWidth: 2, borderColor: colors.dark.bg,
     alignItems: 'center', justifyContent: 'center',
   },
@@ -392,7 +486,17 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.base,
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
   },
+  inputBorder: {
+    borderWidth: 1, borderColor: colors.dark.border,
+    borderRadius: radius.sm, paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+  },
+  inputFocused: {
+    borderColor: colors.emerald,
+  },
   multiline: { minHeight: 80, lineHeight: 22 },
+  iconInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  iconInput: { flex: 1 },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
   usernameText: { color: colors.text.secondary, fontSize: fontSize.base },
 

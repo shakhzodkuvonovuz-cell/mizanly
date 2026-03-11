@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  RefreshControl, FlatList, Pressable,
+  RefreshControl, FlatList,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,27 +19,24 @@ export default function ChannelPlaylistsScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
+  const insets = useSafeAreaInsets();
   const channelId = Array.isArray(params.channelId) ? params.channelId[0] : params.channelId;
 
   // If channelId is missing, show error
   if (!channelId) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Playlists</Text>
-          <View style={styles.headerRight} />
+      <View style={styles.container}>
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
+          <EmptyState
+            icon="slash"
+            title="Invalid channel"
+            subtitle="Channel ID is missing"
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
         </View>
-        <EmptyState
-          icon="slash"
-          title="Invalid channel"
-          subtitle="Channel ID is missing"
-          actionLabel="Go back"
-          onAction={() => router.back()}
-        />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -89,18 +87,12 @@ export default function ChannelPlaylistsScreen() {
   // Loading skeleton
   if (playlistsQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Playlists</Text>
-          <View style={styles.headerRight} />
-        </View>
-        <View style={styles.skeletonContainer}>
+      <View style={styles.container}>
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={[styles.skeletonContainer, { paddingTop: insets.top + 56 }]}>
           {[...Array(4)].map((_, i) => (
             <View key={i} style={styles.skeletonRow}>
-              <Skeleton.Rect width={120} height={68} borderRadius={radius.sm} />
+              <Skeleton.Rect width={120} height={68} borderRadius={radius.md} />
               <View style={styles.skeletonText}>
                 <Skeleton.Rect width="60%" height={16} borderRadius={radius.sm} />
                 <Skeleton.Rect width="30%" height={14} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
@@ -108,49 +100,41 @@ export default function ChannelPlaylistsScreen() {
             </View>
           ))}
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Error state
   if (playlistsQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Playlists</Text>
-          <View style={styles.headerRight} />
+      <View style={styles.container}>
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
+          <EmptyState
+            icon="slash"
+            title="Something went wrong"
+            subtitle="Could not load playlists. Please try again."
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
         </View>
-        <EmptyState
-          icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load playlists. Please try again."
-          actionLabel="Go back"
-          onAction={() => router.back()}
-        />
-      </SafeAreaView>
+      </View>
     );
   }
 
   // Empty state
   if (!playlistsQuery.isFetching && playlists.length === 0) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Playlists</Text>
-          <View style={styles.headerRight} />
+      <View style={styles.container}>
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
+          <EmptyState
+            icon="layers"
+            title="No playlists yet"
+            subtitle="This channel hasn't created any playlists"
+          />
         </View>
-        <EmptyState
-          icon="layers"
-          title="No playlists yet"
-          subtitle="This channel hasn't created any playlists"
-        />
-      </SafeAreaView>
+      </View>
     );
   }
 

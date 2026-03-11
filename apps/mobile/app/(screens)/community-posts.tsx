@@ -1,0 +1,428 @@
+import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  FlatList, TextInput, Alert, KeyboardAvoidingView, Platform,
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { Image } from 'expo-image';
+import { RefreshControl } from 'react-native-gesture-handler';
+import { useUser } from '@clerk/clerk-expo';
+import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { Avatar } from '@/components/ui/Avatar';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { RichText } from '@/components/ui/RichText';
+import { colors, spacing, fontSize, radius } from '@/theme';
+import { channelsApi, channelPostsApi } from '@/services/api';
+import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
+import { formatDistanceToNow } from 'date-fns';
+
+const POST_MAX_LENGTH = 5000;
+
+function CommunityPostItem({ post, isOwnChannel, onLike }: {
+  post: ChannelPost;
+  isOwnChannel: boolean;
+  onLike: (postId: string, liked: boolean) => void;
+}) {
+  const router = useRouter();
+  const [liked, setLiked] = useState(post.isLiked ?? false);
+  const [likeCount, setLikeCount] = useState(post.likesCount);
+
+  useEffect(() => {
+    setLiked(post.isLiked ?? false);
+    setLikeCount(post.likesCount);
+  }, [post.isLiked, post.likesCount]);
+
+  const handleLike = useCallback(() => {
+    const newLiked = !liked;
+    setLiked(newLiked);
+    setLikeCount(prev => newLiked ? prev + 1 : prev - 1);
+    onLike(post.id, newLiked);
+  }, [liked, onLike, post.id]);
+
+  const handlePressUser = useCallback(() => {
+    router.push(`/(screens)/profile/${post.user.username}`);
+  }, [router, post.user.username]);
+
+  const handleLongPress = useCallback(() => {
+    // TODO: show bottom sheet for delete/pin etc.
+  }, []);
+
+  return (
+    <Pressable
+      style={styles.postCard}
+      onLongPress={isOwnChannel ? handleLongPress : undefined}
+      delayLongPress={500}
+    >
+      <View style={styles.postHeader}>
+        <TouchableOpacity style={styles.postUser} onPress={handlePressUser}>
+          <Avatar
+            uri={post.user.avatarUrl}
+            name={post.user.displayName}
+            size="sm"
+            showRing={false}
+          />
+          <View style={styles.postUserInfo}>
+            <Text style={styles.postUserName} numberOfLines={1}>
+              {post.user.displayName}
+            </Text>
+            <Text style={styles.postTime}>
+              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+            </Text>
+          </View>
+        </TouchableOpacity>
+        {post.isPinned && (
+          <View style={styles.pinBadge}>
+            <Icon name="map-pin" size="xs" color={colors.emerald} />
+          </View>
+        )}
+      </View>
+
+      {post.content ? (
+        <RichText content={post.content} style={styles.postContent} />
+      ) : null}
+
+      {post.mediaUrls.length > 0 && (
+        <View style={styles.postMedia}>
+          <Image
+            source={{ uri: post.mediaUrls[0] }}
+            style={styles.postImage}
+            contentFit="cover"
+            transition={200}
+          />
+        </View>
+      )}
+
+      <View style={styles.postActions}>
+        <TouchableOpacity style={styles.postAction} onPress={handleLike}>
+          <Icon
+            name={liked ? 'heart-filled' : 'heart'}
+            size="sm"
+            color={liked ? colors.error : colors.text.secondary}
+          />
+          <Text style={[styles.postActionCount, liked && styles.likedCount]}>
+            {likeCount}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.postAction}>
+          <Icon name="message-circle" size="sm" color={colors.text.secondary} />
+          <Text style={styles.postActionCount}>{post.commentsCount}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.postAction}>
+          <Icon name="share" size="sm" color={colors.text.secondary} />
+        </TouchableOpacity>
+      </View>
+    </Pressable>
+  );
+}
+
+export default function CommunityPostsScreen() {
+  const { channelId: handle } = useLocalSearchParams<{ channelId: string }>();
+  const router = useRouter();
+  const { user } = useUser();
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const [composeText, setComposeText] = useState('');
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const composeInputRef = useRef<TextInput>(null);
+
+  // Fetch channel details
+  const channelQuery = useQuery({
+    queryKey: ['channel', handle],
+    queryFn: () => channelsApi.getByHandle(handle),
+    enabled: !!handle,
+  });
+
+  const channel = channelQuery.data;
+  const channelId = channel?.id;
+  const isOwnChannel = !!user && !!channel && channel.userId === user.id;
+
+  // Fetch community posts (infinite scroll)
+  const postsQuery = useInfiniteQuery({
+    queryKey: ['channel-posts', handle],
+    queryFn: ({ pageParam }) => channelPostsApi.list(handle, pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    enabled: !!handle,
+  });
+
+  const posts: ChannelPost[] = postsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const createMutation = useMutation({
+    mutationFn: (data: { content: string; mediaUrls?: string[] }) =>
+      channelPostsApi.create(handle, { content: data.content, postType: 'text' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
+      setComposeText('');
+      setShowCreateSheet(false);
+    },
+    onError: (error) => {
+      Alert.alert('Error', 'Failed to create post. Please try again.');
+      console.error('Create post error:', error);
+    },
+  });
+
+  const likeMutation = useMutation({
+    mutationFn: ({ postId, liked }: { postId: string; liked: boolean }) =>
+      liked ? channelPostsApi.like(handle, postId) : channelPostsApi.unlike(handle, postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
+    },
+  });
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([channelQuery.refetch(), postsQuery.refetch()]);
+    setRefreshing(false);
+  }, [channelQuery, postsQuery]);
+
+  const handleCreatePost = useCallback(() => {
+    if (!composeText.trim()) return;
+    createMutation.mutate({ content: composeText.trim() });
+  }, [composeText, createMutation]);
+
+  const handleLike = useCallback((postId: string, liked: boolean) => {
+    likeMutation.mutate({ postId, liked });
+  }, [likeMutation]);
+
+  const renderPostItem = useCallback(({ item }: { item: ChannelPost }) => (
+    <CommunityPostItem
+      post={item}
+      isOwnChannel={isOwnChannel}
+      onLike={handleLike}
+    />
+  ), [isOwnChannel, handleLike]);
+
+  const renderSkeleton = useCallback(() => (
+    <View style={styles.skeletonContainer}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton.PostCard key={i} />
+      ))}
+    </View>
+  ), []);
+
+  if (channelQuery.isLoading || postsQuery.isLoading) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Community Posts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        {renderSkeleton()}
+      </View>
+    );
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <View style={styles.container}>
+        <GlassHeader
+          title="Community Posts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+
+        {isOwnChannel && (
+          <View style={styles.composeContainer}>
+            <TextInput
+              ref={composeInputRef}
+              style={styles.composeInput}
+              placeholder="Share something with your community..."
+              placeholderTextColor={colors.text.tertiary}
+              value={composeText}
+              onChangeText={setComposeText}
+              multiline
+              maxLength={POST_MAX_LENGTH}
+            />
+            <TouchableOpacity
+              style={[styles.composeButton, !composeText.trim() && styles.composeButtonDisabled]}
+              onPress={handleCreatePost}
+              disabled={!composeText.trim() || createMutation.isPending}
+            >
+              {createMutation.isPending ? (
+                <Icon name="loader" size="sm" color={colors.text.secondary} />
+              ) : (
+                <Icon name="send" size="sm" color={colors.emerald} />
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <FlatList
+          data={posts}
+          renderItem={renderPostItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.emerald}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="message-circle"
+              title="It's quiet here... for now"
+              subtitle={isOwnChannel ? "Share your first thought and spark a conversation with your community" : "No posts yet — check back soon for updates"}
+              style={styles.emptyState}
+            />
+          }
+          onEndReached={() => postsQuery.hasNextPage && postsQuery.fetchNextPage()}
+          onEndReachedThreshold={0.5}
+        />
+
+        <BottomSheet
+          visible={showCreateSheet}
+          onClose={() => setShowCreateSheet(false)}
+          snapPoint={0.6}
+        >
+          <BottomSheetItem
+            label="Add Image"
+            icon={<Icon name="image" size="md" color={colors.text.primary} />}
+            onPress={() => {/* TODO */}}
+          />
+          <BottomSheetItem
+            label="Add Video"
+            icon={<Icon name="video" size="md" color={colors.text.primary} />}
+            onPress={() => {/* TODO */}}
+          />
+          <BottomSheetItem
+            label="Add Poll"
+            icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
+            onPress={() => {/* TODO */}}
+          />
+        </BottomSheet>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg,
+  },
+  headerSpacer: {
+    height: 100,
+  },
+  composeContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+  },
+  composeInput: {
+    flex: 1,
+    minHeight: 40,
+    maxHeight: 120,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    marginRight: spacing.sm,
+  },
+  composeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xs,
+  },
+  composeButtonDisabled: {
+    opacity: 0.5,
+  },
+  listContent: {
+    paddingVertical: spacing.sm,
+  },
+  postCard: {
+    backgroundColor: colors.dark.bgCard,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.base,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  postUser: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  postUserInfo: {
+    marginLeft: spacing.sm,
+    flex: 1,
+  },
+  postUserName: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  postTime: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: 2,
+  },
+  pinBadge: {
+    padding: spacing.xs,
+  },
+  postContent: {
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+    lineHeight: 20,
+    marginBottom: spacing.sm,
+  },
+  postMedia: {
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  postImage: {
+    width: '100%',
+    aspectRatio: 1.5,
+    borderRadius: radius.sm,
+  },
+  postActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.borderLight,
+    paddingTop: spacing.sm,
+  },
+  postAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: spacing.xl,
+  },
+  postActionCount: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    marginLeft: spacing.xs,
+  },
+  likedCount: {
+    color: colors.error,
+  },
+  skeletonContainer: {
+    padding: spacing.base,
+  },
+  emptyState: {
+    marginTop: spacing['2xl'],
+  },
+});

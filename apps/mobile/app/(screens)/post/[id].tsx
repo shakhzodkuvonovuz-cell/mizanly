@@ -3,21 +3,25 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
 } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
 import { RichText } from '@/components/ui/RichText';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { PostCard } from '@/components/saf/PostCard';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function CommentRow({
   comment,
@@ -83,7 +87,12 @@ function CommentRow({
     <View style={styles.commentRow}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
-        <View style={styles.commentBubble}>
+        <View style={[
+          styles.commentBubble,
+          !!postAuthorId && comment.user.id === postAuthorId
+            ? styles.commentBubbleOP
+            : styles.commentBubbleDefault,
+        ]}>
           <Text style={styles.commentUser}>{comment.user.displayName}</Text>
           {editing ? (
             <TextInput
@@ -159,6 +168,7 @@ export default function PostDetailScreen() {
   const inputRef = useRef<TextInput>(null);
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const sendPress = useAnimatedPress({ scaleTo: 0.85 });
 
   const postQuery = useQuery({
     queryKey: ['post', id],
@@ -201,14 +211,12 @@ export default function PostDetailScreen() {
 
   if (postQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-          <Text style={styles.headerTitle}>Error</Text>
-          <View style={{ width: 40 }} />
-        </View>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Error"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={styles.headerSpacer} />
         <EmptyState
           icon="slash"
           title="Something went wrong"
@@ -216,7 +224,7 @@ export default function PostDetailScreen() {
           actionLabel="Go back"
           onAction={() => router.back()}
         />
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -241,8 +249,8 @@ export default function PostDetailScreen() {
     !commentsQuery.isLoading && postQuery.data ? (
       <EmptyState
         icon="message-circle"
-        title="No comments yet"
-        subtitle="Be the first to comment!"
+        title="Start the conversation"
+        subtitle="Be the first to share your thoughts"
       />
     ) : null
   ), [commentsQuery.isLoading, postQuery.data]);
@@ -254,15 +262,12 @@ export default function PostDetailScreen() {
   ), [commentsQuery.isFetchingNextPage]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Post</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Post"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+      />
+      <View style={styles.headerSpacer} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -329,35 +334,31 @@ export default function PostDetailScreen() {
                 multiline
                 maxLength={500}
               />
-              <TouchableOpacity
+              <AnimatedPressable
                 onPress={() => canSend && sendMutation.mutate()}
+                onPressIn={sendPress.onPressIn}
+                onPressOut={sendPress.onPressOut}
                 disabled={!canSend}
+                style={[styles.sendButton, sendPress.animatedStyle]}
+                hitSlop={8}
               >
-                {sendMutation.isPending ? (
-                  <Icon name="loader" size="sm" color={colors.emerald} />
-                ) : (
-                  <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
-                    Send
-                  </Text>
-                )}
-              </TouchableOpacity>
+                <Icon
+                  name={sendMutation.isPending ? 'loader' : 'send'}
+                  size="sm"
+                  color={canSend ? colors.emerald : colors.text.tertiary}
+                />
+              </AnimatedPressable>
             </View>
           </View>
         )}
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  backBtn: { width: 40, alignItems: 'flex-start' },
-  headerTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  headerSpacer: { height: 100 },
   loader: { marginTop: 60 },
   commentsHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
@@ -370,8 +371,14 @@ const styles = StyleSheet.create({
   },
   commentBody: { flex: 1 },
   commentBubble: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.lg,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+  },
+  commentBubbleOP: {
+    borderLeftWidth: 2, borderLeftColor: colors.emerald,
+  },
+  commentBubbleDefault: {
+    borderLeftWidth: 2, borderLeftColor: 'transparent',
   },
   commentUser: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: 2 },
   commentText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
@@ -402,6 +409,9 @@ const styles = StyleSheet.create({
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
     maxHeight: 100, paddingVertical: 6,
   },
-  sendBtn: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '700' },
-  sendBtnDisabled: { color: colors.text.tertiary },
+  sendButton: {
+    width: 36, height: 36, borderRadius: radius.full,
+    alignItems: 'center', justifyContent: 'center',
+    backgroundColor: colors.active.emerald10,
+  },
 });

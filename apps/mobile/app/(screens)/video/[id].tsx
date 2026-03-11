@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// GlassHeader handles safe area insets internally
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -15,6 +15,8 @@ import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
@@ -234,83 +236,73 @@ export default function VideoDetailScreen() {
 
   if (videoQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-        <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} />
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} style={{ marginTop: 88 }} />
         <View style={styles.skeletonContent}>
           <Skeleton.Rect width="80%" height={24} borderRadius={radius.sm} />
           <Skeleton.Rect width="40%" height={16} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
           <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
           <Skeleton.Rect width="100%" height={80} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (videoQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-        <EmptyState
-          icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
-          actionLabel="Go back"
-          onAction={() => router.back()}
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
-      </SafeAreaView>
+        <View style={{ marginTop: 88 }}>
+          <EmptyState
+            icon="slash"
+            title="Something went wrong"
+            subtitle="Could not load this content. Please try again."
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
+        </View>
+      </View>
     );
   }
 
   if (!video) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-        <EmptyState
-          icon="video"
-          title="Video not found"
-          subtitle="This video may have been removed or is unavailable"
-          actionLabel="Go back"
-          onAction={() => router.back()}
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
-      </SafeAreaView>
+        <View style={{ marginTop: 88 }}>
+          <EmptyState
+            icon="video"
+            title="Video not found"
+            subtitle="This video may have been removed or is unavailable"
+            actionLabel="Go back"
+            onAction={() => router.back()}
+          />
+        </View>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header with back button */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Video</Text>
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={handleShare} style={styles.headerAction}>
-            <Icon name="share" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleReport} style={styles.headerAction}>
-            <Icon name="flag" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setShowMenu(true)} style={styles.headerAction}>
-            <Icon name="more-horizontal" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <View style={styles.container}>
+      <GlassHeader
+        title="Video"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        rightActions={[
+          { icon: 'share', onPress: handleShare, accessibilityLabel: 'Share' },
+          { icon: 'flag', onPress: handleReport, accessibilityLabel: 'Report' },
+          { icon: 'more-horizontal', onPress: () => setShowMenu(true), accessibilityLabel: 'More options' },
+        ]}
+      />
 
       <ScrollView
+        style={{ marginTop: 88 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
         }
@@ -337,36 +329,43 @@ export default function VideoDetailScreen() {
 
           {/* Action row */}
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-              <Icon
-                name={video.isLiked ? 'heart-filled' : 'heart'}
-                size="md"
-                color={video.isLiked ? colors.error : colors.text.primary}
-              />
-              <Text style={styles.actionCount}>{video.likesCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleDislike}>
-              <Icon
-                name={video.isDisliked ? 'thumbs-down' : 'thumbs-down'}
-                size="md"
-                color={video.isDisliked ? colors.error : colors.text.primary}
-              />
-              <Text style={styles.actionCount}>{video.dislikesCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setCommentSheetOpen(true)}>
-              <Icon name="message-circle" size="md" color={colors.text.primary} />
-              <Text style={styles.actionCount}>{video.commentsCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
-              <Icon
-                name={video.isBookmarked ? 'bookmark-filled' : 'bookmark'}
-                size="md"
-                color={video.isBookmarked ? colors.gold : colors.text.primary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Icon name="share" size="md" color={colors.text.primary} />
-            </TouchableOpacity>
+            <ActionButton
+              icon={<Icon name="heart" size="md" color={colors.text.primary} />}
+              activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
+              isActive={video.isLiked}
+              count={video.likesCount}
+              onPress={handleLike}
+              activeColor={colors.error}
+              accessibilityLabel="Like"
+            />
+            <ActionButton
+              icon={<Icon name="thumbs-down" size="md" color={colors.text.primary} />}
+              activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
+              isActive={video.isDisliked}
+              count={video.dislikesCount}
+              onPress={handleDislike}
+              activeColor={colors.error}
+              accessibilityLabel="Dislike"
+            />
+            <ActionButton
+              icon={<Icon name="message-circle" size="md" color={colors.text.primary} />}
+              count={video.commentsCount}
+              onPress={() => setCommentSheetOpen(true)}
+              accessibilityLabel="Comments"
+            />
+            <ActionButton
+              icon={<Icon name="bookmark" size="md" color={colors.text.primary} />}
+              activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
+              isActive={video.isBookmarked}
+              onPress={handleBookmark}
+              activeColor={colors.gold}
+              accessibilityLabel="Bookmark"
+            />
+            <ActionButton
+              icon={<Icon name="share" size="md" color={colors.text.primary} />}
+              onPress={handleShare}
+              accessibilityLabel="Share"
+            />
           </View>
 
           {/* Channel row */}
@@ -512,34 +511,12 @@ export default function VideoDetailScreen() {
           }}
         />
       </BottomSheet>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    padding: spacing.xs,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  headerAction: {
-    padding: spacing.xs,
-  },
   videoPlayer: {
     width: '100%',
     aspectRatio: 16 / 9,
@@ -568,15 +545,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.dark.border,
     paddingVertical: spacing.sm,
-  },
-  actionButton: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  actionCount: {
-    color: colors.text.secondary,
-    fontSize: fontSize.sm,
-    fontWeight: '500',
   },
   channelRow: {
     flexDirection: 'row',
