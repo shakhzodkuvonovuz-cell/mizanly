@@ -3,6 +3,7 @@ import type {
   Comment, Notification, SearchResults, PaginatedResponse, User,
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
   BlockedKeyword, Report, AdminStats, SuggestedUser, CreatorStat, Settings,
+  BlockedUser, MutedUser,
   Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
   ScheduledItem, MajlisList, Poll, SubtitleTrack, VideoChapter,
   BroadcastChannel, BroadcastMessage, LiveSession, LiveParticipant,
@@ -212,6 +213,7 @@ export const usersApi = {
     api.post('/users/me/delete-account'),
   cancelAccountDeletion: () =>
     api.post('/users/me/cancel-deletion'),
+  updateDailyReminder: (enabled: boolean, time?: string) => api.patch('/users/settings/daily-reminder', { enabled, time }),
 };
 
 // ── Follows ──
@@ -579,14 +581,14 @@ export const profileLinksApi = {
 
 // ── Blocks ──
 export const blocksApi = {
-  getBlocked: (cursor?: string) => api.get<PaginatedResponse<User>>(`/blocks${qs({ cursor })}`),
+  getBlocked: (cursor?: string) => api.get<PaginatedResponse<BlockedUser>>(`/blocks${qs({ cursor })}`),
   block: (userId: string) => api.post(`/blocks/${userId}`),
   unblock: (userId: string) => api.delete(`/blocks/${userId}`),
 };
 
 // ── Mutes ──
 export const mutesApi = {
-  getMuted: (cursor?: string) => api.get<PaginatedResponse<User>>(`/mutes${qs({ cursor })}`),
+  getMuted: (cursor?: string) => api.get<PaginatedResponse<MutedUser>>(`/mutes${qs({ cursor })}`),
   mute: (userId: string) => api.post(`/mutes/${userId}`),
   unmute: (userId: string) => api.delete(`/mutes/${userId}`),
 };

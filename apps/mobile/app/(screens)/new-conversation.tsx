@@ -53,7 +53,11 @@ export default function NewConversationScreen() {
       {/* Header */}
       <GlassHeader
         title="New Message"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        leftAction={{ 
+          icon: 'arrow-left', 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
 
       {/* Search box */}
@@ -68,9 +72,15 @@ export default function NewConversationScreen() {
           autoFocus
           autoCapitalize="none"
           autoCorrect={false}
+          accessibilityLabel="Search people input"
         />
         {query.length > 0 && (
-          <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+          <Pressable 
+            onPress={() => { setQuery(''); setDebouncedQuery(''); }} 
+            hitSlop={8}
+            accessibilityLabel="Clear search query"
+            accessibilityRole="button"
+          >
             <Icon name="x" size="xs" color={colors.text.secondary} />
           </Pressable>
         )}
@@ -98,7 +108,7 @@ export default function NewConversationScreen() {
         />
       ) : (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={people}
           keyExtractor={(item) => item.id}
           refreshControl={
@@ -114,6 +124,8 @@ export default function NewConversationScreen() {
               onPress={() => dmMutation.mutate(item.id)}
               disabled={dmMutation.isPending}
               activeOpacity={0.7}
+              accessibilityLabel={`Chat with ${item.displayName}`}
+              accessibilityRole="button"
             >
               <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
               <View style={styles.userInfo}>
@@ -158,7 +170,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.md,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
   },
 

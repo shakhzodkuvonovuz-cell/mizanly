@@ -16,7 +16,6 @@ import Animated, {
   interpolate,
   Extrapolation,
   withSpring,
-  withSequence,
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -58,6 +57,8 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
         onPressIn={() => { scale.value = withSpring(0.96, animation.spring.snappy); }}
         onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
         style={styles.gridItem}
+        accessibilityLabel={`View post ${post.id}`}
+        accessibilityRole="button"
       >
         {post.mediaUrls.length > 0 ? (
           <Image
@@ -101,6 +102,8 @@ function StatItem({ num, label, onPress }: { num: number; label: string; onPress
         onPressIn={onPress ? onPressIn : undefined}
         onPressOut={onPress ? onPressOut : undefined}
         disabled={!onPress}
+        accessibilityLabel={`${num} ${label}`}
+        accessibilityRole={onPress ? "button" : "text"}
       >
         <Text style={styles.statNum}>{num}</Text>
         <Text style={styles.statLabel}>{label}</Text>
@@ -126,6 +129,7 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
         icon="check"
         disabled={isPending}
         loading={isPending}
+        accessibilityLabel="Unfollow user"
       />
     );
   }
@@ -136,6 +140,7 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
       size="sm"
       disabled={isPending}
       loading={isPending}
+      accessibilityLabel="Follow user"
     />
   );
 }
@@ -159,11 +164,12 @@ export default function ProfileScreen() {
   const profile = profileQuery.data;
   const isFollowing = profile?.isFollowing ?? false;
 
-  const { data: mutualFollowers } = useQuery({
+  const { data: mutualFollowersResponse } = useQuery({
     queryKey: ['mutual-followers', username],
     queryFn: () => usersApi.getMutualFollowers(username),
     enabled: !!username && !isOwnProfile,
   });
+  const mutualFollowers = mutualFollowersResponse?.data ?? [];
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['user-posts', username],
@@ -194,7 +200,7 @@ export default function ProfileScreen() {
 
   const likedPostsQuery = useInfiniteQuery({
     queryKey: ['liked-posts', username],
-    queryFn: ({ pageParam }) => postsApi.getLiked({ cursor: pageParam }),
+    queryFn: ({ pageParam }) => postsApi.getLiked({ cursor: pageParam as string | undefined }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.meta?.hasMore ? lastPage.meta.cursor : undefined,
     enabled: isOwnProfile && activeTab === 'liked',
@@ -279,6 +285,7 @@ export default function ProfileScreen() {
       setLoadingHighlightId(null);
     }
   }, [loadingHighlightId, profile, router]);
+
   const handleShareProfile = () => {
     const profileUrl = `https://mizanly.app/@${username}`;
     Share.share({
@@ -306,7 +313,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
@@ -319,7 +326,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
@@ -338,7 +345,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
@@ -371,6 +378,8 @@ export default function ProfileScreen() {
             <Pressable
               style={styles.editBtn}
               onPress={() => router.push('/(screens)/edit-profile')}
+              accessibilityLabel="Edit Profile"
+              accessibilityRole="button"
             >
               <Text style={styles.editBtnText}>Edit Profile</Text>
             </Pressable>
@@ -381,6 +390,8 @@ export default function ProfileScreen() {
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
                 marginLeft: spacing.sm,
               }}
+              accessibilityLabel="Archive"
+              accessibilityRole="button"
             >
               <Icon name="clock" size="sm" color={colors.text.primary} />
             </Pressable>
@@ -404,6 +415,8 @@ export default function ProfileScreen() {
                   router.push('/(screens)/new-conversation');
                 }
               }}
+              accessibilityLabel="Send message"
+              accessibilityRole="button"
             >
               <Icon name="mail" size="xs" color={colors.text.primary} />
             </Pressable>
@@ -426,6 +439,8 @@ export default function ProfileScreen() {
               const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
               Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
             }}
+            accessibilityLabel={`Visit website: ${profile.website}`}
+            accessibilityRole="link"
           >
             <Icon name="link" size={13} color={colors.emerald} />
             <Text style={styles.websiteLink}>{profile.website}</Text>
@@ -434,7 +449,9 @@ export default function ProfileScreen() {
         {profile.channel && (
           <TouchableOpacity
             style={styles.channelRow}
-            onPress={() => router.push(`/(screens)/channel/${profile.channel.handle}`)}
+            onPress={() => router.push(`/(screens)/channel/${profile.channel!.handle}`)}
+            accessibilityLabel="View channel"
+            accessibilityRole="link"
           >
             <Icon name="video" size={13} color={colors.emerald} />
             <Text style={styles.channelText}>View Channel</Text>
@@ -442,7 +459,7 @@ export default function ProfileScreen() {
         )}
         {profile.profileLinks && profile.profileLinks.length > 0 && (
           <View style={styles.profileLinksSection}>
-            {profile.profileLinks.map((link) => (
+            {profile.profileLinks.map((link: any) => (
               <Pressable
                 key={link.id}
                 style={styles.profileLinkRow}
@@ -450,6 +467,8 @@ export default function ProfileScreen() {
                   const url = link.url.startsWith('http') ? link.url : `https://${link.url}`;
                   Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
                 }}
+                accessibilityLabel={`Open ${link.title}`}
+                accessibilityRole="link"
               >
                 <Icon name="link" size={13} color={colors.emerald} />
                 <Text style={styles.profileLinkTitle}>{link.title}</Text>
@@ -459,24 +478,6 @@ export default function ProfileScreen() {
               </Pressable>
             ))}
           </View>
-        )}
-        {!isOwnProfile && profile.channel && (
-          <>
-            <TouchableOpacity
-              style={styles.channelRow}
-              onPress={() => router.push(`/(screens)/channel/${profile.channel.handle}`)}
-            >
-              <Icon name="video" size={13} color={colors.emerald} />
-              <Text style={styles.channelText}>Videos</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.channelRow}
-              onPress={() => router.push(`/(screens)/playlists/${profile.channel.id}`)}
-            >
-              <Icon name="layers" size={13} color={colors.emerald} />
-              <Text style={styles.channelText}>Playlists</Text>
-            </TouchableOpacity>
-          </>
         )}
       </View>
 
@@ -495,6 +496,8 @@ export default function ProfileScreen() {
               activeOpacity={0.75}
               onPress={() => handleHighlightPress(album.id)}
               disabled={loadingHighlightId !== null}
+              accessibilityLabel={`View highlight: ${album.title}`}
+              accessibilityRole="button"
             >
               <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
                 {album.coverUrl ? (
@@ -514,13 +517,13 @@ export default function ProfileScreen() {
         <StatItem
           num={profile._count?.followers ?? 0}
           label="Followers"
-          onPress={() => router.push(`/(screens)/followers/${profile.id}`)}
+          onPress={() => router.push(`/(screens)/followers/${profile.id}` as never)}
         />
         <View style={styles.statDivider} />
         <StatItem
           num={profile._count?.following ?? 0}
           label="Following"
-          onPress={() => router.push(`/(screens)/following/${profile.id}`)}
+          onPress={() => router.push(`/(screens)/following/${profile.id}` as never)}
         />
         <View style={styles.statDivider} />
         <StatItem num={profile._count?.posts ?? 0} label="Posts" />
@@ -529,11 +532,13 @@ export default function ProfileScreen() {
       {/* Mutual followers */}
       {!isOwnProfile && mutualFollowers && mutualFollowers.length > 0 && (
         <Pressable
-          onPress={() => router.push(`/(screens)/mutual-followers?username=${username}`)}
+          onPress={() => router.push(`/(screens)/mutual-followers?username=${username}` as never)}
           style={{
             flexDirection: 'row', alignItems: 'center',
             paddingHorizontal: spacing.base, marginTop: spacing.sm,
           }}
+          accessibilityLabel="View mutual followers"
+          accessibilityRole="link"
         >
           {/* Stacked avatars (up to 3) */}
           <View style={{ flexDirection: 'row' }}>
@@ -559,12 +564,14 @@ export default function ProfileScreen() {
               <Pressable
                 key={thread.id}
                 style={styles.pinnedItem}
-                onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
+                onPress={() => router.push(`/(screens)/thread/${thread.id}` as never)}
+                accessibilityLabel="View pinned thread"
+                accessibilityRole="button"
               >
                 <View style={styles.pinnedContent}>
                   {thread.mediaUrls.length > 0 ? (
                     <Image
-                      source={{ uri: thread.thumbnailUrl ?? thread.mediaUrls[0] }}
+                      source={{ uri: thread.mediaUrls[0] }}
                       style={styles.pinnedImage}
                       contentFit="cover"
                     />
@@ -585,55 +592,12 @@ export default function ProfileScreen() {
         </View>
       )}
 
-      {/* Minbar section (own profile only) */}
-      {isOwnProfile && (
-        <View style={styles.minbarSection}>
-          <Text style={styles.sectionTitle}>Minbar</Text>
-          <View style={styles.linkRow}>
-            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-history')}>
-              <Icon name="clock" size="md" color={colors.text.primary} />
-              <Text style={styles.linkText}>Watch History</Text>
-              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-            </Pressable>
-            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-history')}>
-              <Icon name="bookmark" size="md" color={colors.text.primary} />
-              <Text style={styles.linkText}>Watch History</Text>
-              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-            </Pressable>
-            {profile.channel && (
-              <Pressable
-                style={styles.linkItem}
-                onPress={() => router.push(`/(screens)/playlists/${profile.channel!.id}`)}
-              >
-                <Icon name="layers" size="md" color={colors.text.primary} />
-                <Text style={styles.linkText}>My Playlists</Text>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </Pressable>
-            )}
-            <Pressable
-              style={styles.linkItem}
-              onPress={() => router.push('/(screens)/majlis-lists')}
-            >
-              <Icon name="filter" size="md" color={colors.text.primary} />
-              <Text style={styles.linkText}>Majlis Lists</Text>
-              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* Tabs */}
       <TabSelector
         tabs={isOwnProfile ? [
-          { key: 'posts', label: 'Posts' },
-          { key: 'threads', label: 'Threads' },
-          { key: 'reels', label: 'Reels' },
+          ...PROFILE_TABS,
           { key: 'liked', label: 'Liked' },
-        ] : [
-          { key: 'posts', label: 'Posts' },
-          { key: 'threads', label: 'Threads' },
-          { key: 'reels', label: 'Reels' },
-        ]}
+        ] : PROFILE_TABS}
         activeKey={activeTab}
         onTabChange={(key) => setActiveTab(key as Tab)}
       />
@@ -642,29 +606,29 @@ export default function ProfileScreen() {
 
   const renderHeaderActions = () => (
     <View style={styles.header}>
-      <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+      <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
         <Icon name="arrow-left" size="md" color={colors.text.primary} />
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
       <View style={styles.headerActions}>
-        <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)}>
+        <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)} accessibilityLabel="Share profile" accessibilityRole="button">
           <Icon name="share" size="sm" color={colors.text.primary} />
         </Pressable>
         {isOwnProfile ? (
           <>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved')}>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved' as never)} accessibilityLabel="Saved posts" accessibilityRole="link">
               <Icon name="bookmark" size="sm" color={colors.text.primary} />
             </Pressable>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive')}>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive' as never)} accessibilityLabel="Archive" accessibilityRole="link">
               <Icon name="clock" size="sm" color={colors.text.primary} />
             </Pressable>
 
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel="Settings" accessibilityRole="link">
               <Icon name="settings" size="sm" color={colors.text.primary} />
             </Pressable>
           </>
         ) : (
-          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }}>
+          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }} accessibilityLabel="Profile options" accessibilityRole="button">
             <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
           </Pressable>
         )}
@@ -672,239 +636,136 @@ export default function ProfileScreen() {
     </View>
   );
 
-  if (activeTab === 'posts') {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        {renderHeaderActions()}
-        <FlatList
-            removeClippedSubviews={true}
-          data={posts}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={styles.gridRow}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.4}
-          ListHeaderComponent={() => ListHeader}
-          renderItem={({ item }) => (
-            <GridItem
-              post={item}
-              onPress={() => router.push(`/(screens)/post/${item.id}`)}
-            />
-          )}
-          ListEmptyComponent={() =>
-            postsQuery.isLoading ? (
-              <View style={styles.skeletonGrid}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-                ))}
-              </View>
-            ) : (
-              <EmptyState icon="image" title="No posts yet" />
-            )
-          }
-          ListFooterComponent={() =>
-            postsQuery.isFetchingNextPage ? <Skeleton.Rect width="100%" height={GRID_ITEM} /> : null
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={postsQuery.isRefetching}
-              onRefresh={() => {
-                profileQuery.refetch();
-                postsQuery.refetch();
-              }}
-              tintColor={colors.emerald}
-            />
-          }
-          contentContainerStyle={styles.gridContainer}
-        />
-        <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-          <BottomSheetItem
-            label={`Mute @${username}`}
-            icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
-            onPress={() => muteMutation.mutate()}
-          />
-          <BottomSheetItem
-            label={`Block @${username}`}
-            icon={<Icon name="lock" size="sm" color={colors.error} />}
-            onPress={handleBlock}
-            destructive
-          />
-          <BottomSheetItem
-            label="Report"
-            icon={<Icon name="flag" size="sm" color={colors.error} />}
-            onPress={handleReport}
-            destructive
-          />
-        </BottomSheet>
-        <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
-          <BottomSheetItem
-            label="Share Profile"
-            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
-            onPress={() => {
-              setShowShareSheet(false);
-              handleShareProfile();
-            }}
-          />
-          <BottomSheetItem
-            label="QR Code"
-            icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
-            onPress={() => {
-              setShowShareSheet(false);
-              router.push(`/(screens)/qr-code?username=${username}`);
-            }}
-          />
-        </BottomSheet>
-      </SafeAreaView>
-    );
-  }
+  const renderItem = ({ item }: { item: Post | Thread | Reel }) => {
+    if (activeTab === 'threads') {
+      const thread = item as Thread;
+      return (
+        <Pressable
+          style={styles.threadRow}
+          onPress={() => router.push(`/(screens)/thread/${thread.id}` as never)}
+          accessibilityLabel={`View thread by ${thread.user?.username}`}
+          accessibilityRole="button"
+        >
+          <Text style={styles.threadContent} numberOfLines={3}>{thread.content}</Text>
+          <View style={styles.threadMeta}>
+            <View style={styles.threadMetaItem}>
+              <Icon name="heart" size={12} color={colors.text.tertiary} />
+              <Text style={styles.threadMetaText}>{thread.likesCount}</Text>
+            </View>
+            <View style={styles.threadMetaItem}>
+              <Icon name="message-circle" size={12} color={colors.text.tertiary} />
+              <Text style={styles.threadMetaText}>{thread.repliesCount}</Text>
+            </View>
+          </View>
+        </Pressable>
+      );
+    }
 
-  if (activeTab === 'threads') {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-      {renderHeaderActions()}
-      <FlatList
-            removeClippedSubviews={true}
-        data={threads}
-        keyExtractor={(item) => item.id}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.4}
-        ListHeaderComponent={() => ListHeader}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.threadRow}
-            onPress={() => router.push(`/(screens)/thread/${item.id}`)}
-          >
-            <Text style={styles.threadContent} numberOfLines={3}>{item.content}</Text>
-            <View style={styles.threadMeta}>
-              <View style={styles.threadMetaItem}>
-                <Icon name="heart" size={12} color={colors.text.tertiary} />
-                <Text style={styles.threadMetaText}>{item.likesCount}</Text>
-              </View>
-              <View style={styles.threadMetaItem}>
-                <Icon name="message-circle" size={12} color={colors.text.tertiary} />
-                <Text style={styles.threadMetaText}>{item.repliesCount}</Text>
-              </View>
-            </View>
-          </Pressable>
-        )}
-        ListEmptyComponent={() =>
-          threadsQuery.isLoading ? (
-            <View>
-              <Skeleton.ThreadCard />
-              <Skeleton.ThreadCard />
-            </View>
+    if (activeTab === 'reels') {
+      const reel = item as Reel;
+      return (
+        <Pressable
+          style={styles.gridItem}
+          onPress={() => router.push(`/(screens)/reel/${reel.id}` as never)}
+          accessibilityLabel={`View reel ${reel.id}`}
+          accessibilityRole="button"
+        >
+          {reel.thumbnailUrl ? (
+            <Image
+              source={{ uri: reel.thumbnailUrl }}
+              style={styles.gridImage}
+              contentFit="cover"
+            />
           ) : (
-            <EmptyState icon="message-circle" title="No threads yet" />
-          )
-        }
-        ListFooterComponent={() =>
-          threadsQuery.isFetchingNextPage ? <Skeleton.ThreadCard /> : null
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={threadsQuery.isRefetching}
-            onRefresh={() => {
-              profileQuery.refetch();
-              threadsQuery.refetch();
-            }}
-            tintColor={colors.emerald}
-          />
-        }
-        contentContainerStyle={{ paddingBottom: 100 }}
+            <View style={styles.gridTextPost}>
+              <Icon name="video" size={24} color={colors.text.secondary} />
+            </View>
+          )}
+          <View style={styles.reelOverlay}>
+            <Icon name="play" size={16} color="#fff" />
+            <Text style={styles.reelDuration}>
+              {Math.floor(reel.duration / 60)}:{String(Math.floor(reel.duration % 60)).padStart(2, '0')}
+            </Text>
+          </View>
+          <View style={styles.reelStats}>
+            <Icon name="heart" size={12} color="#fff" />
+            <Text style={styles.reelStatText}>{reel.likesCount}</Text>
+          </View>
+        </Pressable>
+      );
+    }
+
+    return (
+      <GridItem
+        post={item as Post}
+        onPress={() => router.push(`/(screens)/post/${item.id}` as never)}
       />
-      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-        <BottomSheetItem
-          label={`Mute @${username}`}
-          icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
-          onPress={() => muteMutation.mutate()}
-        />
-        <BottomSheetItem
-          label={`Block @${username}`}
-          icon={<Icon name="lock" size="sm" color={colors.error} />}
-          onPress={handleBlock}
-          destructive
-        />
-        <BottomSheetItem
-          label="Report"
-          icon={<Icon name="flag" size="sm" color={colors.error} />}
-          onPress={handleReport}
-          destructive
-        />
-      </BottomSheet>
-    </SafeAreaView>
-  );
-  }
+    );
+  };
 
-  // Reels tab
-  const renderReelItem = ({ item }: { item: Reel }) => (
-    <Pressable
-      style={styles.gridItem}
-      onPress={() => router.push(`/(screens)/reel/${item.id}`)}
-    >
-      {item.thumbnailUrl ? (
-        <Image
-          source={{ uri: item.thumbnailUrl }}
-          style={styles.gridImage}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={styles.gridTextPost}>
-          <Icon name="video" size={24} color={colors.text.secondary} />
-        </View>
-      )}
-      <View style={styles.reelOverlay}>
-        <Icon name="play" size={16} color="#fff" />
-        <Text style={styles.reelDuration}>
-          {Math.floor(item.duration / 60)}:{String(Math.floor(item.duration % 60)).padStart(2, '0')}
-        </Text>
-      </View>
-      <View style={styles.reelStats}>
-        <Icon name="heart" size={12} color="#fff" />
-        <Text style={styles.reelStatText}>{item.likesCount}</Text>
-      </View>
-    </Pressable>
-  );
+  const currentData = activeTab === 'posts' ? posts
+    : activeTab === 'threads' ? threads
+    : activeTab === 'reels' ? reels
+    : likedPosts;
 
-  if (activeTab === 'reels') {
+  const currentQuery = activeTab === 'posts' ? postsQuery
+    : activeTab === 'threads' ? threadsQuery
+    : activeTab === 'reels' ? reelsQuery
+    : likedPostsQuery;
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <FlatList
-            removeClippedSubviews={true}
-        data={reels}
+        removeClippedSubviews={true}
+        data={currentData}
         keyExtractor={(item) => item.id}
-        numColumns={3}
-        columnWrapperStyle={styles.gridRow}
+        numColumns={activeTab === 'threads' ? 1 : 3}
+        columnWrapperStyle={activeTab === 'threads' ? undefined : styles.gridRow}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
-        ListHeaderComponent={() => ListHeader}
-        renderItem={renderReelItem}
+        ListHeaderComponent={ListHeader}
+        renderItem={renderItem}
         ListEmptyComponent={() =>
-          reelsQuery.isLoading ? (
-            <View style={styles.skeletonGrid}>
-              {Array.from({ length: 9 }).map((_, i) => (
-                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-              ))}
-            </View>
+          currentQuery.isLoading ? (
+            activeTab === 'threads' ? (
+              <View>
+                <Skeleton.ThreadCard />
+                <Skeleton.ThreadCard />
+              </View>
+            ) : (
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+                ))}
+              </View>
+            )
           ) : (
-            <EmptyState icon="video" title="No reels yet" />
+            <EmptyState
+              icon={activeTab === 'posts' ? "image" : activeTab === 'threads' ? "message-circle" : activeTab === 'reels' ? "video" : "heart"}
+              title={activeTab === 'liked' ? "No liked posts yet" : "No content yet"}
+            />
           )
         }
         ListFooterComponent={() =>
-          reelsQuery.isFetchingNextPage ? <Skeleton.Rect width="100%" height={GRID_ITEM} /> : null
+          currentQuery.isFetchingNextPage ? (
+            activeTab === 'threads' ? <Skeleton.ThreadCard /> : <Skeleton.Rect width="100%" height={GRID_ITEM} />
+          ) : null
         }
         refreshControl={
           <RefreshControl
-            refreshing={reelsQuery.isRefetching}
+            refreshing={currentQuery.isRefetching}
             onRefresh={() => {
               profileQuery.refetch();
-              reelsQuery.refetch();
+              currentQuery.refetch();
             }}
             tintColor={colors.emerald}
           />
         }
-        contentContainerStyle={styles.gridContainer}
+        contentContainerStyle={activeTab === 'threads' ? { paddingBottom: 100 } : styles.gridContainer}
       />
+
+      {/* Bottom Sheets */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         <BottomSheetItem
           label={`Mute @${username}`}
@@ -924,100 +785,31 @@ export default function ProfileScreen() {
           destructive
         />
       </BottomSheet>
+
+      <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
+        <BottomSheetItem
+          label="Share Profile"
+          icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setShowShareSheet(false);
+            handleShareProfile();
+          }}
+        />
+        <BottomSheetItem
+          label="QR Code"
+          icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setShowShareSheet(false);
+            router.push(`/(screens)/qr-code?username=${username}` as never);
+          }}
+        />
+      </BottomSheet>
     </SafeAreaView>
   );
-  }
-
-  if (activeTab === 'liked') {
-    return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        {renderHeaderActions()}
-        <FlatList
-            removeClippedSubviews={true}
-          data={likedPosts}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={styles.gridRow}
-          onEndReached={handleEndReached}
-          onEndReachedThreshold={0.4}
-          ListHeaderComponent={() => ListHeader}
-          renderItem={({ item }) => (
-            <GridItem
-              post={item}
-              onPress={() => router.push(`/(screens)/post/${item.id}`)}
-            />
-          )}
-          ListEmptyComponent={() =>
-            likedPostsQuery.isLoading ? (
-              <View style={styles.skeletonGrid}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-                ))}
-              </View>
-            ) : (
-              <EmptyState icon='heart' title='No liked posts yet' subtitle='Posts you like will appear here' />
-            )
-          }
-          ListFooterComponent={() =>
-            likedPostsQuery.isFetchingNextPage ? <Skeleton.Rect width='100%' height={GRID_ITEM} /> : null
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={likedPostsQuery.isRefetching}
-              onRefresh={() => {
-                profileQuery.refetch();
-                likedPostsQuery.refetch();
-              }}
-              tintColor={colors.emerald}
-            />
-          }
-          contentContainerStyle={styles.gridContainer}
-        />
-        <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-          <BottomSheetItem
-            label={`Mute @${username}`}
-            icon={<Icon name='volume-x' size='sm' color={colors.text.primary} />}
-            onPress={() => muteMutation.mutate()}
-          />
-          <BottomSheetItem
-            label={`Block @${username}`}
-            icon={<Icon name='lock' size='sm' color={colors.error} />}
-            onPress={handleBlock}
-            destructive
-          />
-          <BottomSheetItem
-            label='Report'
-            icon={<Icon name='flag' size='sm' color={colors.error} />}
-            onPress={handleReport}
-            destructive
-          />
-        </BottomSheet>
-        <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
-          <BottomSheetItem
-            label='Share Profile'
-            icon={<Icon name='share' size='sm' color={colors.text.primary} />}
-            onPress={() => {
-              setShowShareSheet(false);
-              handleShareProfile();
-            }}
-          />
-          <BottomSheetItem
-            label='QR Code'
-            icon={<Icon name='hash' size='sm' color={colors.text.primary} />}
-            onPress={() => {
-              setShowShareSheet(false);
-              router.push(`/(screens)/qr-code?username=${username}`);
-            }}
-          />
-        </BottomSheet>
-      </SafeAreaView>
-    );
-  }
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
@@ -1025,203 +817,106 @@ const styles = StyleSheet.create({
   backBtn: { width: 40 },
   headerUsername: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
   headerActions: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
-
   cover: { width: '100%', height: COVER_HEIGHT },
-  coverPlaceholder: { height: 100, backgroundColor: colors.dark.bgElevated },
-
+  coverPlaceholder: { width: '100%', height: COVER_HEIGHT, backgroundColor: colors.dark.bgElevated },
   avatarRow: {
-    flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, marginTop: -36, marginBottom: spacing.md,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    paddingHorizontal: spacing.base, marginTop: -40,
   },
   editBtn: {
-    borderWidth: 1.5, borderColor: colors.dark.border, borderRadius: radius.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.xs + 2,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
   },
   editBtnText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
-  actionBtns: { flexDirection: 'row', gap: spacing.sm, alignItems: 'flex-end' },
-  followBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.md,
-    paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
-    minWidth: 90, alignItems: 'center',
-  },
-  followingBtn: {
-    backgroundColor: 'transparent', borderWidth: 1.5, borderColor: colors.dark.border,
-  },
-  followBtnText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
-  followingBtnText: { color: colors.text.primary },
+  actionBtns: { flexDirection: 'row', gap: spacing.sm, alignItems: 'center' },
   msgBtn: {
-    borderWidth: 1.5, borderColor: colors.dark.border, borderRadius: radius.md,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2,
+    width: 36, height: 36, borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
   },
-
-  nameSection: { paddingHorizontal: spacing.base, marginBottom: spacing.md },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: 2 },
+  nameSection: { paddingHorizontal: spacing.base, marginTop: spacing.md },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   displayName: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.sm },
-  bio: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22 },
-  websiteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
-  websiteLink: { color: colors.emerald, fontSize: fontSize.sm },
-  channelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.xs },
-  channelText: { color: colors.emerald, fontSize: fontSize.sm },
-  profileLinksSection: { marginTop: spacing.xs },
-  profileLinkRow: { flexDirection: "row", alignItems: "center", gap: spacing.xs, marginTop: spacing.xs },
-  profileLinkTitle: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: "600" },
-  profileLinkUrl: { color: colors.text.secondary, fontSize: fontSize.sm, flex: 1 },
-
-  highlightsRow: { marginBottom: spacing.md },
-  highlightItem: { alignItems: 'center', width: 68 },
+  handle: { color: colors.text.tertiary, fontSize: fontSize.sm, marginTop: 2 },
+  bio: { marginTop: spacing.sm },
+  websiteRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  websiteLink: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500' },
+  channelRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  channelText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500' },
+  profileLinksSection: { marginTop: spacing.sm, gap: spacing.xs },
+  profileLinkRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  profileLinkTitle: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  profileLinkUrl: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  highlightsRow: { marginTop: spacing.lg },
+  highlightItem: { alignItems: 'center', width: 72 },
   highlightCircle: {
-    width: 62, height: 62, borderRadius: radius.full,
-    borderWidth: 2, borderColor: colors.dark.borderLight,
-    overflow: 'hidden', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.dark.bgElevated, marginBottom: spacing.xs,
-  },
-  highlightImg: { width: '100%', height: '100%' },
-  highlightLabel: { color: colors.text.secondary, fontSize: fontSize.xs, textAlign: 'center' },
-
-  stats: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: spacing.md, gap: spacing.xl,
-    borderTopWidth: 0.5, borderTopColor: colors.dark.border,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
-  },
-  stat: { alignItems: 'center', gap: 2 },
-  statNum: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700' },
-  statLabel: { color: colors.text.secondary, fontSize: fontSize.xs },
-  statDivider: { width: 0.5, height: 30, backgroundColor: colors.dark.border },
-
-  pinnedSection: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-  },
-  pinnedScroll: {
-    marginHorizontal: -spacing.base,
-    paddingHorizontal: spacing.base,
-  },
-  pinnedItem: {
-    width: 120,
-    marginRight: spacing.md,
-  },
-  pinnedContent: {
-    width: 120,
-    height: 120,
+    width: 64, height: 64, borderRadius: radius.full,
+    borderWidth: 1, borderColor: colors.dark.border,
+    alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.dark.bgElevated,
-    borderRadius: radius.md,
     overflow: 'hidden',
   },
-  pinnedImage: {
-    width: '100%',
-    height: '100%',
+  highlightImg: { width: '100%', height: '100%' },
+  highlightLabel: { color: colors.text.primary, fontSize: fontSize.xs, marginTop: 4, width: '100%', textAlign: 'center' },
+  stats: {
+    flexDirection: 'row', paddingHorizontal: spacing.base,
+    marginTop: spacing.xl, gap: spacing.xl,
   },
-  pinnedText: {
-    flex: 1,
-    padding: spacing.xs,
-    justifyContent: 'center',
+  stat: { gap: 2 },
+  statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '800' },
+  statLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
+  statDivider: { width: 1, height: 24, backgroundColor: colors.dark.border, alignSelf: 'center' },
+  pinnedSection: { marginTop: spacing.xl },
+  sectionTitle: {
+    color: colors.text.primary, fontSize: fontSize.sm,
+    fontWeight: '700', paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
   },
-  pinnedTextContent: {
-    color: colors.text.primary,
-    fontSize: fontSize.xs,
+  pinnedScroll: { paddingLeft: spacing.base },
+  pinnedItem: {
+    width: 140, height: 180, borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated, marginRight: spacing.sm,
+    overflow: 'hidden',
   },
+  pinnedContent: { flex: 1 },
+  pinnedImage: { width: '100%', height: '100%' },
+  pinnedText: { flex: 1, padding: spacing.sm },
+  pinnedTextContent: { color: colors.text.primary, fontSize: fontSize.xs },
   pinBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: radius.sm,
-    padding: 3,
+    position: 'absolute', top: 8, right: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: radius.full,
+    padding: 4,
   },
-
   gridContainer: { paddingBottom: 100 },
   gridRow: { gap: 2 },
-  gridItem: {
-    width: GRID_ITEM, height: GRID_ITEM,
-    backgroundColor: colors.dark.bgElevated,
-    marginBottom: 2,
-  },
+  gridItem: { width: GRID_ITEM, height: GRID_ITEM, marginBottom: 2 },
   gridImage: { width: '100%', height: '100%' },
   gridTextPost: {
-    flex: 1, padding: spacing.xs,
-    backgroundColor: colors.dark.bgCard, justifyContent: 'center',
+    flex: 1, backgroundColor: colors.dark.bgElevated,
+    padding: spacing.sm, alignItems: 'center', justifyContent: 'center',
   },
-  gridTextContent: { color: colors.text.primary, fontSize: fontSize.xs },
-  carouselBadge: {
-    position: 'absolute', top: 6, right: 6,
-    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.sm, padding: 3,
-  },
+  gridTextContent: { color: colors.text.primary, fontSize: 10, textAlign: 'center' },
+  carouselBadge: { position: 'absolute', top: 8, right: 8 },
   reelOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    position: 'absolute', bottom: 8, left: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  reelDuration: {
-    color: '#fff',
-    fontSize: fontSize.xs,
-    fontWeight: '600',
-  },
+  reelDuration: { color: '#fff', fontSize: 10, fontWeight: '600' },
   reelStats: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    position: 'absolute', bottom: 8, right: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  reelStatText: {
-    color: '#fff',
-    fontSize: fontSize.xs,
-    marginLeft: 2,
-  },
-  skeletonGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: 2,
-  },
-
+  reelStatText: { color: '#fff', fontSize: 10, fontWeight: '600' },
   threadRow: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  threadContent: { color: colors.text.primary, fontSize: fontSize.base, lineHeight: 22, marginBottom: spacing.xs },
-  threadMeta: { flexDirection: 'row', gap: spacing.lg },
-  threadMetaItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  threadContent: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 20 },
+  threadMeta: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm },
+  threadMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   threadMetaText: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  minbarSection: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.dark.border,
-  },
-  sectionTitle: {
-    color: colors.text.secondary,
-    fontSize: fontSize.sm,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  linkRow: {
-    gap: spacing.xs,
-  },
-  linkItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
-  },
-  linkText: {
-    flex: 1,
-    color: colors.text.primary,
-    fontSize: fontSize.base,
+  skeletonGrid: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: 2,
+    paddingHorizontal: 0,
   },
 });

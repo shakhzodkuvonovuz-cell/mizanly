@@ -25,6 +25,9 @@ function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioP
       style={[styles.radio, isActive && styles.radioActive]}
       onPress={onPress}
       activeOpacity={0.7}
+      accessibilityLabel={`Select ${label} theme`}
+      accessibilityRole="radio"
+      accessibilityState={{ selected: isActive }}
     >
       <View style={styles.radioIcon}>{icon}</View>
       <View style={styles.radioText}>
@@ -101,7 +104,11 @@ export default function ThemeSettingsScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Appearance"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
         <View style={{ paddingTop: 100 }}>
           <ThemeSettingsSkeleton />
@@ -114,7 +121,11 @@ export default function ThemeSettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Appearance"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ 
+          icon: 'arrow-left', 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>

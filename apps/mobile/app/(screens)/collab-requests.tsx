@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, ActivityIndicator, Alert, RefreshControl, Image,
+  FlatList, Alert, RefreshControl, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

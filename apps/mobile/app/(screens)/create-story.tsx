@@ -358,7 +358,7 @@ export default function CreateStoryScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark.bg }}>
       {/* ── Header ── */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border }}>
-        <Pressable onPress={handleClose} hitSlop={8}>
+        <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close" accessibilityRole="button">
           <Icon name="x" size="md" color={colors.text.primary} />
         </Pressable>
         <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 }}>New Story</Text>
@@ -366,18 +366,24 @@ export default function CreateStoryScreen() {
           <Pressable
             onPress={() => setActiveTool(activeTool === 'text' ? null : 'text')}
             style={{ padding: spacing.xs, backgroundColor: activeTool === 'text' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            accessibilityLabel="Add text"
+            accessibilityRole="button"
           >
             <Icon name="edit" size="sm" color={activeTool === 'text' ? colors.emerald : colors.text.primary} />
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'sticker' ? null : 'sticker')}
             style={{ padding: spacing.xs, backgroundColor: activeTool === 'sticker' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            accessibilityLabel="Add sticker"
+            accessibilityRole="button"
           >
             <Icon name="smile" size="sm" color={activeTool === 'sticker' ? colors.emerald : colors.text.primary} />
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'filter' ? null : 'filter')}
             style={{ padding: spacing.xs, backgroundColor: activeTool === 'filter' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            accessibilityLabel="Add filter"
+            accessibilityRole="button"
           >
             <Icon name="layers" size="sm" color={activeTool === 'filter' ? colors.emerald : colors.text.primary} />
           </Pressable>
@@ -430,11 +436,11 @@ export default function CreateStoryScreen() {
         {/* No media: pick or shoot */}
         {!mediaUri && activeTool === null && (
           <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
-            <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]}>
+            <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel="Pick from gallery" accessibilityRole="button">
               <Icon name="image" size="sm" color={colors.emerald} />
               <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Gallery</Text>
             </Pressable>
-            <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]}>
+            <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel="Take photo" accessibilityRole="button">
               <Icon name="camera" size="sm" color={colors.emerald} />
               <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Camera</Text>
             </Pressable>
@@ -462,7 +468,7 @@ export default function CreateStoryScreen() {
         )}
 
         {mediaUri && activeTool === null && (
-          <Pressable onPress={pickMedia} style={toolBtnStyle}>
+          <Pressable onPress={pickMedia} style={toolBtnStyle} accessibilityLabel="Change media" accessibilityRole="button">
             <Icon name="image" size="sm" color={colors.text.secondary} />
             <Text style={{ color: colors.text.secondary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Change Media</Text>
           </Pressable>
@@ -490,7 +496,7 @@ export default function CreateStoryScreen() {
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: textBgEnabled ? colors.active.emerald10 : colors.dark.surface,
                 paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
-              }}>
+              }} accessibilityLabel="Toggle text background" accessibilityRole="button">
                 <Text style={{ color: textBgEnabled ? colors.emerald : colors.text.secondary, fontSize: fontSize.xs }}>
                   BG
                 </Text>

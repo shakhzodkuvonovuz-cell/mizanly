@@ -71,7 +71,11 @@ export default function StarredMessagesScreen() {
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <Pressable style={styles.messageCard}>
+    <Pressable 
+      style={styles.messageCard}
+      accessibilityLabel={`Starred message from ${item.sender.displayName}: ${item.content || 'Media'}`}
+      accessibilityRole="none"
+    >
       <Avatar
         uri={item.sender.avatarUrl}
         name={item.sender.displayName}
@@ -99,6 +103,8 @@ export default function StarredMessagesScreen() {
                 key={reaction.id}
                 style={styles.reactionChip}
                 onPress={() => handleUnstar(item.id)}
+                accessibilityLabel="Unstar message"
+                accessibilityRole="button"
               >
                 <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
                 <Text style={styles.reactionCount}>Starred</Text>
@@ -120,7 +126,11 @@ export default function StarredMessagesScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
           title="Starred Messages"
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
         <View style={styles.skeletonContainer}>
           {Array.from({ length: 5 }).map((_, i) => (
@@ -136,7 +146,11 @@ export default function StarredMessagesScreen() {
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
           title="Starred Messages"
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
         <EmptyState
           icon="slash"
@@ -153,7 +167,11 @@ export default function StarredMessagesScreen() {
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <GlassHeader
         title="Starred Messages"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        leftAction={{ 
+          icon: 'arrow-left', 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
 
       {conversation && (
@@ -167,7 +185,7 @@ export default function StarredMessagesScreen() {
       )}
 
       <FlatList
-            removeClippedSubviews={true}
+        removeClippedSubviews={true}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}

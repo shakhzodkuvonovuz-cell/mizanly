@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  FlatList, TextInput, Alert, KeyboardAvoidingView, Platform,
+  FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -85,7 +85,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress }: {
       </View>
 
       {post.content ? (
-        <RichText content={post.content} style={styles.postContent} />
+        <RichText text={post.content} style={styles.postContent} />
       ) : null}
 
       {post.mediaUrls.length > 0 && (
@@ -131,7 +131,7 @@ export default function CommunityPostsScreen() {
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<ChannelPost | null>(null);
-  const [selectedMedia, setSelectedMedia] = useState<{ uri: string; type: 'image' | 'video' } | null>(null);
+  const [selectedMediaList, setSelectedMediaList] = useState<{ uri: string; type: 'image' | 'video' }[]>([]);
   const composeInputRef = useRef<TextInput>(null);
 
   // Fetch channel details
@@ -158,10 +158,15 @@ export default function CommunityPostsScreen() {
 
   const createMutation = useMutation({
     mutationFn: (data: { content: string; mediaUrls?: string[] }) =>
-      channelPostsApi.create(handle, { content: data.content, postType: 'text' }),
+      channelPostsApi.create(handle, {
+        content: data.content,
+        mediaUrls: data.mediaUrls,
+        postType: data.mediaUrls && data.mediaUrls.length > 0 ? (selectedMediaList[0]?.type === 'image' ? 'image' : 'video') : 'text'
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
       setComposeText('');
+      setSelectedMediaList([]);
       setShowCreateSheet(false);
     },
     onError: (error) => {
@@ -185,9 +190,12 @@ export default function CommunityPostsScreen() {
   }, [channelQuery, postsQuery]);
 
   const handleCreatePost = useCallback(() => {
-    if (!composeText.trim()) return;
-    createMutation.mutate({ content: composeText.trim() });
-  }, [composeText, createMutation]);
+    if (!composeText.trim() && selectedMediaList.length === 0) return;
+    createMutation.mutate({
+      content: composeText.trim(),
+      mediaUrls: selectedMediaList.map(m => m.uri) // In a real app, these would be uploaded URLs
+    });
+  }, [composeText, selectedMediaList, createMutation]);
 
   const handleLike = useCallback((postId: string, liked: boolean) => {
     likeMutation.mutate({ postId, liked });
@@ -280,7 +288,35 @@ export default function CommunityPostsScreen() {
         <View style={styles.headerSpacer} />
 
         {isOwnChannel && (
-          <View style={styles.composeContainer}>
+          <View style={styles.composeContainerOuter}>
+            {selectedMediaList.length > 0 && (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.mediaPreviewScroll}
+                contentContainerStyle={styles.mediaPreviewContent}
+              >
+                {selectedMediaList.map((media, index) => (
+                  <View key={index} style={styles.mediaPreviewItem}>
+                    <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
+                    <Pressable
+                      style={styles.mediaPreviewClose}
+                      onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== index))}
+                      accessibilityLabel="Remove selected media"
+                      accessibilityRole="button"
+                    >
+                      <Icon name="x" size="xs" color={colors.text.primary} />
+                    </Pressable>
+                    {media.type === 'video' && (
+                      <View style={styles.videoBadge}>
+                        <Icon name="play" size={10} color="#fff" />
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <View style={styles.composeContainer}>
             <TextInput
               ref={composeInputRef}
               style={styles.composeInput}
@@ -303,9 +339,10 @@ export default function CommunityPostsScreen() {
               )}
             </TouchableOpacity>
           </View>
-        )}
+        </View>
+      )}
 
-        <FlatList
+      <FlatList
           removeClippedSubviews={true}
           data={posts}
           renderItem={renderPostItem}
@@ -319,12 +356,13 @@ export default function CommunityPostsScreen() {
             />
           }
           ListEmptyComponent={
-            <EmptyState
-              icon="message-circle"
-              title="It's quiet here... for now"
-              subtitle={isOwnChannel ? "Share your first thought and spark a conversation with your community" : "No posts yet — check back soon for updates"}
-              style={styles.emptyState}
-            />
+            <View style={styles.emptyState}>
+              <EmptyState
+                icon="message-circle"
+                title="It's quiet here... for now"
+                subtitle={isOwnChannel ? "Share your first thought and spark a conversation with your community" : "No posts yet — check back soon for updates"}
+              />
+            </View>
           }
           onEndReached={() => postsQuery.hasNextPage && postsQuery.fetchNextPage()}
           onEndReachedThreshold={0.5}
@@ -339,9 +377,10 @@ export default function CommunityPostsScreen() {
             label="Add Image"
             icon={<Icon name="image" size="md" color={colors.text.primary} />}
             onPress={async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
-              if (!result.canceled && result.assets[0]) {
-                setSelectedMedia({ uri: result.assets[0].uri, type: 'image' });
+              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
+              if (!result.canceled && result.assets) {
+                const newMedia = result.assets.map(asset => ({ uri: asset.uri, type: 'image' as const }));
+                setSelectedMediaList(prev => [...prev, ...newMedia]);
                 setShowCreateSheet(false);
               }
             }}
@@ -352,7 +391,7 @@ export default function CommunityPostsScreen() {
             onPress={async () => {
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
               if (!result.canceled && result.assets[0]) {
-                setSelectedMedia({ uri: result.assets[0].uri, type: 'video' });
+                setSelectedMediaList(prev => [...prev, { uri: result.assets[0].uri, type: 'video' }]);
                 setShowCreateSheet(false);
               }
             }}
@@ -404,6 +443,45 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.dark.border,
+  },
+  composeContainerOuter: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+    paddingVertical: spacing.sm,
+  },
+  mediaPreviewScroll: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  mediaPreviewContent: {
+    gap: spacing.sm,
+    paddingRight: spacing.base,
+  },
+  mediaPreviewItem: {
+    width: 120,
+    height: 120,
+    position: 'relative',
+  },
+  mediaPreview: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.md,
+  },
+  mediaPreviewClose: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: radius.full,
+    padding: 2,
+  },
+  videoBadge: {
+    position: 'absolute',
+    bottom: 4,
+    left: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: radius.sm,
+    padding: 2,
   },
   composeInput: {
     flex: 1,

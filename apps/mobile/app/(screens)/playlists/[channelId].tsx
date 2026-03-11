@@ -26,7 +26,7 @@ export default function ChannelPlaylistsScreen() {
   if (!channelId) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
@@ -45,11 +45,11 @@ export default function ChannelPlaylistsScreen() {
     queryKey: ['channel-playlists', channelId],
     queryFn: ({ pageParam }) => playlistsApi.getByChannel(channelId, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!channelId,
   });
 
-  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p: any) => p.data) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -68,6 +68,8 @@ export default function ChannelPlaylistsScreen() {
       style={styles.playlistCard}
       activeOpacity={0.8}
       onPress={() => router.push(`/(screens)/playlist/${item.id}`)}
+      accessibilityLabel={`Playlist: ${item.title}, ${item.videosCount} videos`}
+      accessibilityRole="button"
     >
       {/* Thumbnail */}
       {item.thumbnailUrl ? (
@@ -88,7 +90,7 @@ export default function ChannelPlaylistsScreen() {
   if (playlistsQuery.isLoading) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
         <View style={[styles.skeletonContainer, { paddingTop: insets.top + 56 }]}>
           {[...Array(4)].map((_, i) => (
             <View key={i} style={styles.skeletonRow}>
@@ -108,7 +110,7 @@ export default function ChannelPlaylistsScreen() {
   if (playlistsQuery.isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
@@ -126,7 +128,7 @@ export default function ChannelPlaylistsScreen() {
   if (!playlistsQuery.isFetching && playlists.length === 0) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="layers"
@@ -140,10 +142,10 @@ export default function ChannelPlaylistsScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+      <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
 
       <FlatList
-            removeClippedSubviews={true}
+        removeClippedSubviews={true}
         data={playlists}
         keyExtractor={(item) => item.id}
         renderItem={renderPlaylistItem}

@@ -98,6 +98,8 @@ function ReplyRow({
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={`Reply to ${reply.user.displayName}`}
+            accessibilityRole="button"
           >
             <Icon name="message-circle" size={20} color={colors.text.secondary} />
             {(reply._count?.replies ?? 0) > 0 && (
@@ -108,6 +110,8 @@ function ReplyRow({
             style={styles.replyAction}
             onPress={handleLike}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={liked ? "Unlike reply" : "Like reply"}
+            accessibilityRole="button"
           >
             <Icon
               name={liked ? 'heart-filled' : 'heart'}
@@ -127,6 +131,8 @@ function ReplyRow({
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              accessibilityLabel="Delete reply"
+              accessibilityRole="button"
             >
               <Icon name="trash" size={20} color={colors.error} />
             </TouchableOpacity>
@@ -190,7 +196,11 @@ export default function ThreadDetailScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Error"
-          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+          leftAction={{ 
+            icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
         <EmptyState
           icon="slash"
@@ -237,7 +247,11 @@ export default function ThreadDetailScreen() {
       {/* Header */}
       <GlassHeader
         title="Thread"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        leftAction={{ 
+          icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
 
       <KeyboardAvoidingView
@@ -287,7 +301,12 @@ export default function ThreadDetailScreen() {
                 <Text style={styles.replyBannerText}>
                   Replying to @{replyTo.username}
                 </Text>
-                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                <Pressable 
+                  onPress={() => setReplyTo(null)} 
+                  hitSlop={8}
+                  accessibilityLabel="Cancel reply to user"
+                  accessibilityRole="button"
+                >
                   <Icon name="x" size="xs" color={colors.text.secondary} />
                 </Pressable>
               </View>
@@ -303,10 +322,13 @@ export default function ThreadDetailScreen() {
                 onChangeText={setReplyText}
                 multiline
                 maxLength={500}
+                accessibilityLabel="Reply input field"
               />
               <TouchableOpacity
                 onPress={() => canSend && sendMutation.mutate()}
                 disabled={!canSend}
+                accessibilityLabel="Send reply"
+                accessibilityRole="button"
               >
                 {sendMutation.isPending ? (
                   <Icon name="loader" size="sm" color={colors.emerald} />

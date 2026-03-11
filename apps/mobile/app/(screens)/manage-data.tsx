@@ -65,6 +65,8 @@ function ActionRow({
         style={[styles.actionButton, buttonColor && { backgroundColor: buttonColor }]}
         onPress={onPress}
         disabled={loading}
+        accessibilityLabel={buttonLabel}
+        accessibilityRole="button"
       >
         {loading ? (
           <Icon name="loader" size="sm" color="#fff" />
@@ -199,7 +201,7 @@ export default function ManageDataScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Manage Your Data"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       {isLoading ? (
@@ -270,7 +272,7 @@ export default function ManageDataScreen() {
 
         <Text style={styles.footerNote}>
           For more privacy settings, visit the{' '}
-          <Text style={styles.link} onPress={() => router.push('/(screens)/settings')}>
+          <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel="Go to settings" accessibilityRole="link">
             Settings
           </Text>{' '}
           page.

@@ -64,12 +64,16 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
       onPress={item.type === 'image' ? onImagePress : onVideoPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
+      accessibilityLabel={item.type === 'image' ? 'View image' : 'Play video'}
+      accessibilityRole="button"
     >
       <Image
         source={{ uri: item.url }}
         style={styles.mediaThumbnail}
         contentFit="cover"
         transition={200}
+        accessibilityLabel={item.type === 'image' ? 'Image shared in conversation' : 'Video thumbnail'}
+        accessibilityRole="image"
       />
       {item.type === 'video' && (
         <View style={styles.videoOverlay}>
@@ -230,6 +234,8 @@ export default function ConversationMediaScreen() {
       style={styles.linkItem}
       onPress={() => handleOpenLink(item.url)}
       activeOpacity={0.7}
+      accessibilityLabel={`Open link: ${item.url}`}
+      accessibilityRole="link"
     >
       <View style={styles.linkIcon}>
         <Icon name="link" size="md" color={colors.text.secondary} />
@@ -251,6 +257,8 @@ export default function ConversationMediaScreen() {
       style={styles.docItem}
       onPress={() => handleOpenLink(item.url)}
       activeOpacity={0.7}
+      accessibilityLabel={`Open document: ${item.fileName}`}
+      accessibilityRole="link"
     >
       <View style={styles.docIcon}>
         <Icon name="paperclip" size="md" color={colors.text.secondary} />
@@ -317,10 +325,9 @@ export default function ConversationMediaScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
       <GlassHeader
         title="Media"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       {/* Tabs */}

@@ -38,7 +38,7 @@ export default function PlaylistDetailScreen() {
     queryKey: ['playlist-items', playlistId],
     queryFn: ({ pageParam }) => playlistsApi.getItems(playlistId!, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last: { meta?: { hasMore?: boolean; cursor?: string } }) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!playlistId,
   });
 
@@ -63,6 +63,8 @@ export default function PlaylistDetailScreen() {
       style={styles.videoRow}
       activeOpacity={0.7}
       onPress={() => router.push(`/(screens)/video/${item.video.id}`)}
+      accessibilityLabel={`Watch video: ${item.video.title}`}
+      accessibilityRole="button"
     >
       <View style={styles.thumbWrap}>
         {item.video.thumbnailUrl && (
@@ -109,7 +111,14 @@ export default function PlaylistDetailScreen() {
   if (!playlistId) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlist" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader 
+          title="Playlist" 
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }} 
+        />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState icon="layers" title="Playlist not found" />
         </View>
@@ -121,7 +130,14 @@ export default function PlaylistDetailScreen() {
   if (playlistQuery.isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlist" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
+        <GlassHeader 
+          title="Playlist" 
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }} 
+        />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
@@ -139,7 +155,11 @@ export default function PlaylistDetailScreen() {
     <View style={styles.container}>
       <GlassHeader
         title={playlist?.title ?? 'Playlist'}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ 
+          icon: 'arrow-left', 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
 
       {playlistQuery.isLoading ? (
@@ -150,7 +170,7 @@ export default function PlaylistDetailScreen() {
         </View>
       ) : (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={items}
           keyExtractor={(item, i) => item.id ?? String(i)}
           renderItem={renderItem}

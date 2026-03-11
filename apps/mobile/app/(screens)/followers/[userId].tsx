@@ -25,7 +25,7 @@ function UserRow({ user, isMe, onPress, onFollow }: {
   onFollow: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7} accessibilityLabel={`View ${user.displayName}'s profile`} accessibilityRole="link">
       <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
       <View style={styles.info}>
         <View style={styles.nameRow}>

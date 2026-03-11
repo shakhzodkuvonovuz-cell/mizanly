@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  TextInput, FlatList, RefreshControl, ActivityIndicator, Alert, ScrollView,
+  TextInput, FlatList, RefreshControl, Alert, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';

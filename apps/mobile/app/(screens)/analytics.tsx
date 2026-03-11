@@ -9,18 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
-
-// Local type for CreatorStat (will be added to types/index.ts in Step 12)
-interface CreatorStat {
-  id: string;
-  date: string;
-  space: 'SAF' | 'BAKRA' | 'MAJLIS' | 'MINBAR';
-  views: number;
-  likes: number;
-  comments: number;
-  shares: number;
-  followers: number;
-}
+import type { CreatorStat } from '@/types';
 
 interface AnalyticsResponse {
   stats: CreatorStat[];
@@ -132,7 +121,7 @@ export default function AnalyticsScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Creator Analytics"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <View style={{ paddingTop: 100 }}>
           <EmptyState
@@ -151,7 +140,7 @@ export default function AnalyticsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Creator Analytics"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       <ScrollView

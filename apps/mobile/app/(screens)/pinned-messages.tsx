@@ -65,7 +65,11 @@ export default function PinnedMessagesScreen() {
   };
 
   const renderMessage = ({ item }: { item: Message }) => (
-    <Pressable style={styles.messageCard}>
+    <Pressable
+      style={styles.messageCard}
+      accessibilityLabel={`Pinned message from ${item.sender.displayName}`}
+      accessibilityRole="button"
+    >
       <Avatar
         uri={item.sender.avatarUrl}
         name={item.sender.displayName}
@@ -73,22 +77,6 @@ export default function PinnedMessagesScreen() {
         showOnline={false}
       />
       <View style={styles.messageContent}>
-        <View style={styles.messageHeader}>
-          <Text style={styles.senderName}>{item.sender.displayName}</Text>
-          <View style={styles.messageHeaderRight}>
-            <Text style={styles.timestamp}>
-              {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </Text>
-            <Pressable
-              onPress={() => handleUnpin(item.id)}
-              style={styles.unpinButton}
-              hitSlop={8}
-            >
-              <Icon name="x" size={16} color={colors.text.tertiary} />
-            </Pressable>
-          </View>
-        </View>
-        {item.content && <Text style={styles.content}>{item.content}</Text>}
         {item.mediaUrl && (
           <View style={styles.mediaPlaceholder}>
             <Icon name="image" size={20} color={colors.text.secondary} />

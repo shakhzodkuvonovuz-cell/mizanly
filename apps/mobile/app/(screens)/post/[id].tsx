@@ -109,12 +109,14 @@ function CommentRow({
         </View>
         {editing ? (
           <View style={styles.commentMeta}>
-            <TouchableOpacity onPress={() => setEditing(false)}>
+            <TouchableOpacity onPress={() => setEditing(false)} accessibilityLabel="Cancel editing" accessibilityRole="button">
               <Text style={styles.commentAction}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => editMutation.mutate(editText.trim())}
               disabled={!editText.trim() || editMutation.isPending}
+              accessibilityLabel="Save comment"
+              accessibilityRole="button"
             >
               <Text style={[styles.commentAction, { color: colors.emerald }]}>Save</Text>
             </TouchableOpacity>
@@ -125,16 +127,16 @@ function CommentRow({
             {localLikes > 0 && (
               <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
             )}
-            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
+            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)} accessibilityLabel="Reply to comment" accessibilityRole="button">
               <Text style={styles.commentAction}>Reply</Text>
             </TouchableOpacity>
             {canEdit && (
-              <TouchableOpacity onPress={() => setEditing(true)}>
+              <TouchableOpacity onPress={() => setEditing(true)} accessibilityLabel="Edit comment" accessibilityRole="button">
                 <Text style={styles.commentAction}>Edit</Text>
               </TouchableOpacity>
             )}
             {canDelete && (
-              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
+              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending} accessibilityLabel="Delete comment" accessibilityRole="button">
                 <Text style={styles.commentActionDestructive}>Delete</Text>
               </TouchableOpacity>
             )}
@@ -147,6 +149,8 @@ function CommentRow({
           disabled={!viewerId}
           hitSlop={8}
           style={styles.commentLike}
+          accessibilityLabel={localLiked ? "Unlike comment" : "Like comment"}
+          accessibilityRole="button"
         >
           <Icon
             name={localLiked ? 'heart-filled' : 'heart'}
@@ -275,7 +279,7 @@ export default function PostDetailScreen() {
         keyboardVerticalOffset={0}
       >
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={comments}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
@@ -318,7 +322,7 @@ export default function PostDetailScreen() {
                 <Text style={styles.replyBannerText}>
                   Replying to @{replyTo.username}
                 </Text>
-                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8} accessibilityLabel="Cancel reply" accessibilityRole="button">
                   <Icon name="x" size="xs" color={colors.text.secondary} />
                 </Pressable>
               </View>
@@ -334,6 +338,7 @@ export default function PostDetailScreen() {
                 onChangeText={setCommentText}
                 multiline
                 maxLength={500}
+                accessibilityLabel="Comment text input"
               />
               <AnimatedPressable
                 onPress={() => canSend && sendMutation.mutate()}
@@ -342,6 +347,8 @@ export default function PostDetailScreen() {
                 disabled={!canSend}
                 style={[styles.sendButton, sendPress.animatedStyle]}
                 hitSlop={8}
+                accessibilityLabel="Send comment"
+                accessibilityRole="button"
               >
                 <Icon
                   name={sendMutation.isPending ? 'loader' : 'send'}

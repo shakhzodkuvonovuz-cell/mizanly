@@ -5,7 +5,6 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// GlassHeader handles safe area insets internally
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -59,7 +58,7 @@ export default function VideoDetailScreen() {
   // Record view on mount
   useEffect(() => {
     if (video?.id && user?.id) {
-      videosApi.view(video.id).catch(() => {});
+       videosApi.view(video.id).catch(() => {});
     }
   }, [video?.id, user?.id]);
 
@@ -226,7 +225,11 @@ export default function VideoDetailScreen() {
           <Text style={styles.commentTime}>
             {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
           </Text>
-          <TouchableOpacity onPress={() => setReplyToId(item.id)}>
+          <TouchableOpacity 
+            onPress={() => setReplyToId(item.id)}
+            accessibilityLabel={`Reply to ${item.user.username}`}
+            accessibilityRole="button"
+          >
             <Text style={styles.commentAction}>Reply</Text>
           </TouchableOpacity>
         </View>
@@ -369,7 +372,12 @@ export default function VideoDetailScreen() {
           </View>
 
           {/* Channel row */}
-          <TouchableOpacity style={styles.channelRow} onPress={handleChannelPress}>
+          <TouchableOpacity 
+            style={styles.channelRow} 
+            onPress={handleChannelPress}
+            accessibilityLabel={`Go to ${video.channel.name}'s channel`}
+            accessibilityRole="button"
+          >
             <Avatar
               uri={video.channel.avatarUrl}
               name={video.channel.name}
@@ -388,6 +396,8 @@ export default function VideoDetailScreen() {
                 video.isSubscribed && styles.subscribedButton,
               ]}
               onPress={handleSubscribe}
+              accessibilityLabel={video.isSubscribed ? "Unsubscribe" : "Subscribe"}
+              accessibilityRole="button"
             >
               <Text style={[
                 styles.subscribeText,
@@ -420,6 +430,8 @@ export default function VideoDetailScreen() {
               <TouchableOpacity
                 style={styles.chapterHeader}
                 onPress={() => setShowChapters(!showChapters)}
+                accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
+                accessibilityRole="button"
               >
                 <Icon name="layers" size="sm" color={colors.text.secondary} />
                 <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
@@ -435,6 +447,8 @@ export default function VideoDetailScreen() {
                     key={i}
                     style={styles.chapterRow}
                     onPress={() => seekToChapter(ch.startTime)}
+                    accessibilityLabel={`Go to chapter: ${ch.title} at ${formatTime(ch.startTime)}`}
+                    accessibilityRole="button"
                   >
                     <Text style={styles.chapterTime}>{formatTime(ch.startTime)}</Text>
                     <Text style={styles.chapterTitle}>{ch.title}</Text>
@@ -447,7 +461,11 @@ export default function VideoDetailScreen() {
           <View style={styles.commentsSection}>
             <View style={styles.commentsHeader}>
               <Text style={styles.commentsTitle}>Comments ({video.commentsCount})</Text>
-              <TouchableOpacity onPress={() => setCommentSheetOpen(true)}>
+              <TouchableOpacity 
+                onPress={() => setCommentSheetOpen(true)}
+                accessibilityLabel="View all comments"
+                accessibilityRole="button"
+              >
                 <Text style={styles.viewAll}>View all</Text>
               </TouchableOpacity>
             </View>
@@ -490,8 +508,14 @@ export default function VideoDetailScreen() {
             value={commentText}
             onChangeText={setCommentText}
             multiline
+            accessibilityLabel="Comment input field"
           />
-          <TouchableOpacity onPress={handleCommentSubmit} disabled={!commentText.trim()}>
+          <TouchableOpacity 
+            onPress={handleCommentSubmit} 
+            disabled={!commentText.trim()}
+            accessibilityLabel="Send comment"
+            accessibilityRole="button"
+          >
             <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
           </TouchableOpacity>
         </View>
@@ -509,6 +533,8 @@ export default function VideoDetailScreen() {
             setShowMenu(false);
             router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
           }}
+          accessibilityLabel="Save to playlist"
+          accessibilityRole="button"
         />
       </BottomSheet>
     </View>

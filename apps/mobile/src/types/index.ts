@@ -55,6 +55,19 @@ export interface Post {
   isSaved?: boolean;
 }
 
+export interface BlockedUser {
+  id: string;
+  blockedId: string;
+  blocked: User;
+}
+
+export interface MutedUser {
+  id: string;
+  mutedId: string;
+  muted: User;
+}
+
+
 // ── Saf: Stories ──
 export interface Story {
   id: string;
@@ -472,6 +485,7 @@ export interface Settings {
   notifyMessages: boolean;
   sensitiveContentFilter: boolean;
   reducedMotion: boolean;
+  dailyTimeLimit?: number;
 }
 
 // ── Admin & Recommendations ──
@@ -523,7 +537,7 @@ export interface CreatorStat {
   id: string;
   userId: string;
   date: string;
-  space: string;
+  space: 'SAF' | 'BAKRA' | 'MAJLIS' | 'MINBAR';
   views: number;
   likes: number;
   comments: number;

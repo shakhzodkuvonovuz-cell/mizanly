@@ -26,11 +26,9 @@ interface BlockedUser {
   };
 }
 
-interface BlockedPage {
-  blocks?: BlockedUser[];
-  items?: BlockedUser[];
-  meta?: { cursor?: string; hasMore: boolean };
-}
+import type { User, PaginatedResponse } from '@/types';
+
+type BlockedPage = PaginatedResponse<User>;
 
 export default function BlockedScreen() {
   const router = useRouter();
@@ -40,10 +38,10 @@ export default function BlockedScreen() {
     queryKey: ['blocked'],
     queryFn: ({ pageParam }) => blocksApi.getBlocked(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: BlockedPage) => last.meta?.hasMore ? last.meta.cursor : undefined,
+    getNextPageParam: (last: PaginatedResponse<BlockedUser>) => last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
   });
 
-  const blocked: BlockedUser[] = query.data?.pages.flatMap((p: BlockedPage) => p.blocks ?? p.items ?? []) ?? [];
+  const blocked = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
@@ -74,7 +72,7 @@ export default function BlockedScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Blocked Accounts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <EmptyState
           icon="flag"
@@ -91,7 +89,7 @@ export default function BlockedScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Blocked Accounts"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       {query.isLoading ? (
@@ -135,6 +133,8 @@ export default function BlockedScreen() {
                   onPress={() => confirmUnblock(item)}
                   loading={unblockMutation.isPending && unblockMutation.variables === u.id}
                   disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
+                  accessibilityLabel={`Unblock ${u.displayName}`}
+                  accessibilityRole="button"
                 />
               </View>
             );

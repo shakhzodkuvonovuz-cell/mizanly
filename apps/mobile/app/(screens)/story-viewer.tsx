@@ -149,11 +149,17 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     onPress();
   };
   return (
-    <Pressable onPress={handlePress} style={styles.reactionBtn} activeOpacity={0.7}>
+    <TouchableOpacity 
+      onPress={handlePress} 
+      style={styles.reactionBtn} 
+      activeOpacity={0.7}
+      accessibilityLabel={`React with ${emoji}`}
+      accessibilityRole="button"
+    >
       <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
         {emoji}
       </Animated.Text>
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
@@ -215,7 +221,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
   return (
     <View style={styles.container}>
       {/* Story media */}
-      {story.mediaType?.startsWith('video') ? (
+      {story?.mediaType?.startsWith('video') ? (
         <Video
           source={{ uri: story.mediaUrl }}
           style={styles.media}
@@ -229,13 +235,13 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
             }
           }}
         />
-      ) : (
+      ) : story ? (
         <Image
           source={{ uri: story.mediaUrl }}
           style={styles.media}
           contentFit="cover"
         />
-      )}
+      ) : null}
 
       {/* Gradient overlay (top) */}
       <LinearGradient
@@ -254,7 +260,13 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
             <Avatar uri={group.user.avatarUrl} name={group.user.displayName} size="sm" />
             <Text style={styles.userName}>{group.user.displayName}</Text>
             <Text style={styles.timeAgo}>{timeAgo}</Text>
-            <TouchableOpacity onPress={() => router.back()} hitSlop={12} style={styles.closeBtn}>
+            <TouchableOpacity 
+              onPress={() => router.back()} 
+              hitSlop={12} 
+              style={styles.closeBtn}
+              accessibilityLabel="Close story"
+              accessibilityRole="button"
+            >
               <Icon name="x" size="sm" color="#fff" />
             </TouchableOpacity>
           </View>
@@ -269,6 +281,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           onPressIn={() => setPaused(true)}
           onPressOut={() => setPaused(false)}
           activeOpacity={1}
+          accessibilityLabel="Previous story slide"
+          accessibilityRole="button"
         />
         <TouchableOpacity
           style={styles.tapRight}
@@ -276,11 +290,13 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           onPressIn={() => setPaused(true)}
           onPressOut={() => setPaused(false)}
           activeOpacity={1}
+          accessibilityLabel="Next story slide"
+          accessibilityRole="button"
         />
       </View>
 
       {/* Text overlay */}
-      {story.textOverlay ? (
+      {story?.textOverlay ? (
         <View style={styles.textOverlay}>
           <Text style={[styles.overlayText, { color: story.textColor ?? '#fff' }]}>
             {story.textOverlay}
@@ -308,10 +324,12 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
             style={styles.viewsBtn}
             onPress={() => setShowViewers(true)}
             activeOpacity={0.8}
+            accessibilityLabel={`View ${story?.viewsCount} viewers`}
+            accessibilityRole="button"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="eye" size="sm" color="#fff" />
-              <Text style={styles.viewsBtnText}>{story.viewsCount} views</Text>
+              <Text style={styles.viewsBtnText}>{story?.viewsCount} views</Text>
             </View>
           </TouchableOpacity>
         </SafeAreaView>
@@ -332,12 +350,15 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                   autoFocus
                   maxLength={200}
                   onBlur={() => setShowReply(false)}
+                  accessibilityLabel="Story reply input"
                 />
                 <TouchableOpacity
                   onPress={() => replyMutation.mutate()}
                   disabled={!replyText.trim() || replyMutation.isPending}
                   hitSlop={8}
                   style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
+                  accessibilityLabel="Send reply"
+                  accessibilityRole="button"
                 >
                   <Icon name="send" size="sm" color="#fff" />
                 </TouchableOpacity>
@@ -346,6 +367,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
               <TouchableOpacity
                 style={styles.replyPlaceholder}
                 onPress={() => { setShowReply(true); setPaused(true); }}
+                accessibilityLabel="Tap to reply"
+                accessibilityRole="button"
               >
                 <Text style={styles.replyPlaceholderText}>
                   Reply to {group.user.displayName}…
@@ -359,7 +382,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
       {/* Viewers bottom sheet (own stories) */}
       <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
         <Text style={styles.viewersTitle}>
-          {story.viewsCount} {story.viewsCount === 1 ? 'view' : 'views'}
+          {story?.viewsCount} {story?.viewsCount === 1 ? 'view' : 'views'}
         </Text>
         {viewersQuery.isLoading ? (
           <View style={styles.viewersSkeleton}>

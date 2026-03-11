@@ -252,6 +252,8 @@ export default function SavedScreen() {
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
           variant="underline"
+          accessibilityLabel="Saved categories tabs"
+          accessibilityRole="tablist"
         />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
@@ -284,11 +286,13 @@ export default function SavedScreen() {
         activeKey={activeTab}
         onTabChange={(key) => setActiveTab(key as typeof activeTab)}
         variant="underline"
+        accessibilityLabel="Saved categories tabs"
+        accessibilityRole="tablist"
       />
 
       {activeTab === 'posts' ? (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={posts}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -325,7 +329,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'threads' ? (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={threads}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
@@ -358,7 +362,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'reels' ? (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={reels}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -395,7 +399,7 @@ export default function SavedScreen() {
         />
       ) : (
         <FlatList
-            removeClippedSubviews={true}
+          removeClippedSubviews={true}
           data={videos}
           keyExtractor={(item) => item.id}
           onEndReached={() => {

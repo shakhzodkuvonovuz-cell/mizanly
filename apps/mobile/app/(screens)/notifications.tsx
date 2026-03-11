@@ -123,7 +123,7 @@ function NotificationRow({ notification }: { notification: Notification }) {
     haptic.light();
     if (!notification.isRead) readMutation.mutate();
     const target = notificationTarget(notification);
-    if (target) router.push(target as `/${string}`);
+    if (target) router.push(target as never);
   };
 
   const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true });
@@ -228,7 +228,7 @@ export default function NotificationsScreen() {
       <View style={styles.container}>
         <GlassHeader
           title="Notifications"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <View style={{ paddingTop: headerHeight, flex: 1, justifyContent: 'center' }}>
           <EmptyState
@@ -247,11 +247,11 @@ export default function NotificationsScreen() {
     <View style={styles.container}>
       <GlassHeader
         title="Notifications"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         rightActions={[{
           icon: <Text style={{ color: colors.emerald, fontSize: 13, fontWeight: '600' }}>Mark all read</Text>,
           onPress: () => markAllMutation.mutate(),
-          accessibilityLabel: 'Mark all read',
+          accessibilityLabel: 'Mark all notifications as read',
         }]}
       />
 

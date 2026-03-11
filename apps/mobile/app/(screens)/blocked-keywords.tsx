@@ -66,7 +66,7 @@ export default function BlockedKeywordsScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Blocked Keywords"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <EmptyState
           icon="flag"
@@ -83,7 +83,7 @@ export default function BlockedKeywordsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Blocked Keywords"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       <KeyboardAvoidingView
@@ -105,12 +105,15 @@ export default function BlockedKeywordsScreen() {
             onSubmitEditing={handleAdd}
             returnKeyType="done"
             autoCapitalize="none"
+            accessibilityLabel="Add a keyword"
             maxLength={50}
           />
           <TouchableOpacity
             style={[styles.addBtn, (!newWord.trim() || addMutation.isPending) && styles.addBtnDisabled]}
             onPress={handleAdd}
             disabled={!newWord.trim() || addMutation.isPending}
+            accessibilityLabel="Add keyword"
+            accessibilityRole="button"
           >
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
@@ -139,6 +142,8 @@ export default function BlockedKeywordsScreen() {
                   onPress={() => handleDelete(item.id, item.word)}
                   hitSlop={8}
                   disabled={deleteMutation.isPending}
+                  accessibilityLabel="Remove keyword"
+                  accessibilityRole="button"
                 >
                   <Icon name="x" size="sm" color={colors.text.tertiary} />
                 </TouchableOpacity>

@@ -74,7 +74,11 @@ export default function ReportScreen() {
     <View style={styles.container}>
       <GlassHeader
         title="Report"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ 
+          icon: 'arrow-left', 
+          onPress: () => router.back(),
+          accessibilityLabel: 'Go back'
+        }}
       />
       <View style={styles.headerSpacer} />
 
@@ -86,18 +90,21 @@ export default function ReportScreen() {
         {/* Reason list */}
         <View style={styles.reasonList}>
           {REASONS.map((reason) => (
-            <Pressable
-              key={reason.value}
-              style={styles.reasonItem}
-              onPress={() => setSelectedReason(reason.value)}
-            >
-              <View style={styles.radioOuter}>
-                {selectedReason === reason.value && (
-                  <View style={styles.radioInner} />
-                )}
-              </View>
-              <Text style={styles.reasonLabel}>{reason.label}</Text>
-            </Pressable>
+              <Pressable
+                key={reason.value}
+                style={styles.reasonItem}
+                onPress={() => setSelectedReason(reason.value)}
+                accessibilityLabel={reason.label}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: selectedReason === reason.value }}
+              >
+                <View style={styles.radioOuter}>
+                  {selectedReason === reason.value && (
+                    <View style={styles.radioInner} />
+                  )}
+                </View>
+                <Text style={styles.reasonLabel}>{reason.label}</Text>
+              </Pressable>
           ))}
         </View>
 
@@ -112,6 +119,7 @@ export default function ReportScreen() {
           multiline
           maxLength={500}
           textAlignVertical="top"
+          accessibilityLabel="Additional details input"
         />
         <Text style={styles.charCount}>
           {details.length}/500

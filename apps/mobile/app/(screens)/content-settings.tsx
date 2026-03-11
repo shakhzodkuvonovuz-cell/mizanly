@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { settingsApi } from '@/services/api';
+import { usersApi, settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
 
@@ -39,6 +39,8 @@ function Row({
       onPress={onPress}
       activeOpacity={onPress ? 0.7 : 1}
       disabled={!onPress && !onToggle}
+      accessibilityLabel={label}
+      accessibilityRole={onToggle !== undefined ? 'switch' : 'button'}
     >
       <View style={styles.rowText}>
         <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
@@ -50,6 +52,8 @@ function Row({
           onValueChange={onToggle}
           trackColor={{ false: colors.dark.border, true: colors.emerald }}
           thumbColor="#fff"
+          accessibilityLabel={label}
+          accessibilityRole="switch"
         />
       ) : onPress ? (
         <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -106,9 +110,19 @@ export default function ContentSettingsScreen() {
     wellbeingMutation.mutate({ sensitiveContentFilter: v });
   };
 
-  const handleUpdateDailyReminder = (option: DailyReminderOption) => {
+  const handleUpdateDailyReminder = async (option: DailyReminderOption) => {
     setDailyReminder(option);
-    // TODO: send to backend if endpoint exists; currently not in schema
+    const timeMap: Record<DailyReminderOption, string | undefined> = {
+      'off': undefined,
+      '30min': '30',
+      '1h': '60',
+      '2h': '120',
+    };
+    try {
+      await usersApi.updateDailyReminder(option !== 'off', timeMap[option]);
+    } catch {
+      // Silently fail — setting is persisted locally regardless
+    }
   };
 
   const safOptions: { label: string; value: SafFeedType }[] = [
@@ -160,14 +174,19 @@ export default function ContentSettingsScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Content Preferences"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* Feed Preferences */}
         <SectionHeader title="Feed Preferences" />
         <View style={styles.card}>
-          <TouchableOpacity style={styles.row} onPress={() => setSafPickerVisible(true)}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setSafPickerVisible(true)}
+            accessibilityLabel="Saf default feed"
+            accessibilityRole="button"
+          >
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>Saf default</Text>
               <Text style={styles.rowHint}>Choose default feed for Saf</Text>
@@ -180,7 +199,12 @@ export default function ContentSettingsScreen() {
             </View>
           </TouchableOpacity>
           <View style={styles.divider} />
-          <TouchableOpacity style={styles.row} onPress={() => setMajlisPickerVisible(true)}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setMajlisPickerVisible(true)}
+            accessibilityLabel="Majlis default feed"
+            accessibilityRole="button"
+          >
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>Majlis default</Text>
               <Text style={styles.rowHint}>Choose default feed for Majlis</Text>
@@ -225,7 +249,12 @@ export default function ContentSettingsScreen() {
         {/* Digital Wellbeing */}
         <SectionHeader title="Digital Wellbeing" />
         <View style={styles.card}>
-          <TouchableOpacity style={styles.row} onPress={() => setDailyReminderPickerVisible(true)}>
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setDailyReminderPickerVisible(true)}
+            accessibilityLabel="Daily reminder"
+            accessibilityRole="button"
+          >
             <View style={styles.rowText}>
               <Text style={styles.rowLabel}>Daily reminder</Text>
               <Text style={styles.rowHint}>Get a reminder after using app for a while</Text>

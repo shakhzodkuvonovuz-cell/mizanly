@@ -109,7 +109,7 @@ export default function ShareProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
+        <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
           <Icon name="arrow-left" size="md" color={colors.text.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>Share Profile</Text>
@@ -138,17 +138,32 @@ export default function ShareProfileScreen() {
         <Text style={styles.shareHint}>Scan this QR code to visit your profile</Text>
 
         <View style={styles.buttonRow}>
-          <Pressable style={[styles.button, styles.copyButton]} onPress={handleCopyLink}>
+          <Pressable 
+            style={[styles.button, styles.copyButton]} 
+            onPress={handleCopyLink}
+            accessibilityLabel={copied ? "Link copied" : "Copy profile link"}
+            accessibilityRole="button"
+          >
             <Icon name={copied ? 'check' : 'link'} size="md" color={colors.text.primary} />
             <Text style={styles.buttonLabel}>{copied ? 'Copied!' : 'Copy Link'}</Text>
           </Pressable>
 
-          <Pressable style={[styles.button, styles.shareButton]} onPress={handleShare}>
+          <Pressable 
+            style={[styles.button, styles.shareButton]} 
+            onPress={handleShare}
+            accessibilityLabel="Share profile"
+            accessibilityRole="button"
+          >
             <Icon name="share" size="md" color={colors.text.primary} />
             <Text style={styles.buttonLabel}>Share</Text>
           </Pressable>
 
-          <Pressable style={[styles.button, styles.scanButton]} onPress={handleScanQR}>
+          <Pressable 
+            style={[styles.button, styles.scanButton]} 
+            onPress={handleScanQR}
+            accessibilityLabel="Scan QR code"
+            accessibilityRole="button"
+          >
             <Icon name="camera" size="md" color={colors.text.primary} />
             <Text style={styles.buttonLabel}>Scan QR</Text>
           </Pressable>
@@ -168,6 +183,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 0.5,
     borderBottomColor: colors.dark.border,
+  },
+  headerSpacer: {
+    height: 100,
   },
   headerTitle: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700' },
   content: { flex: 1, alignItems: 'center', padding: spacing.xl },

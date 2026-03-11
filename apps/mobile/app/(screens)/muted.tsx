@@ -26,11 +26,9 @@ interface MutedUser {
   };
 }
 
-interface MutedPage {
-  mutes?: MutedUser[];
-  items?: MutedUser[];
-  meta?: { cursor?: string; hasMore: boolean };
-}
+import type { User, PaginatedResponse } from '@/types';
+
+type MutedPage = PaginatedResponse<User>;
 
 export default function MutedScreen() {
   const router = useRouter();
@@ -40,10 +38,10 @@ export default function MutedScreen() {
     queryKey: ['muted'],
     queryFn: ({ pageParam }) => mutesApi.getMuted(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: MutedPage) => last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
+    getNextPageParam: (last: PaginatedResponse<MutedUser>) => last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
   });
 
-  const muted: MutedUser[] = query.data?.pages.flatMap((p: MutedPage) => p.mutes ?? p.items ?? []) ?? [];
+  const muted = query.data?.pages.flatMap((p) => p.data) ?? [];
 
   const [refreshing, setRefreshing] = useState(false);
   const onRefresh = async () => {
@@ -63,7 +61,7 @@ export default function MutedScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
           title="Muted Accounts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <EmptyState
           icon="flag"
@@ -80,7 +78,7 @@ export default function MutedScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title="Muted Accounts"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
 
       {query.isLoading ? (
