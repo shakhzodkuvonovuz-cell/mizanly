@@ -113,8 +113,7 @@ export default function SaveToPlaylistScreen() {
   }, [videoId, inPlaylistMap, addMutation, removeMutation, queryClient]);
 
   const handleCreateNew = () => {
-    // TODO: navigate to create playlist screen
-    Alert.alert('Coming soon', 'Create playlist feature will be added later');
+    router.push('/(screens)/create-playlist');
   };
 
   const renderPlaylistItem = ({ item }: { item: Playlist }) => {

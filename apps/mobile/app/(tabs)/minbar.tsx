@@ -310,7 +310,7 @@ export default function MinbarScreen() {
           title="No subscribed videos"
           subtitle="Subscribe to channels to see their videos here"
           actionLabel="Explore Channels"
-          onAction={() => router.push('/(screens)/channels' as any)}
+          onAction={() => router.push('/(screens)/channels' as never)}
         />
       );
     }

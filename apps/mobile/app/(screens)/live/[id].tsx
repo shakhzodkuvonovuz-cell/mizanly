@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
-  RefreshControl, FlatList, TextInput, Platform,
+  RefreshControl, FlatList, TextInput, Platform, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -131,6 +131,20 @@ export default function LiveViewerScreen() {
       sendChatMutation.mutate();
     }
   };
+
+  const handleShare = useCallback(async () => {
+    if (!live?.id) return;
+    try {
+      await Share.share({
+        message: `Join the live stream "${live.title}" on Mizanly!`,
+        url: `https://mizanly.app/live/${live.id}`,
+      });
+    } catch (error: any) {
+      if (error.message) {
+        Alert.alert('Error sharing', error.message);
+      }
+    }
+  }, [live?.id, live?.title]);
 
   const handleInviteSpeaker = (participantId: string) => {
     Alert.alert('Invite to speak', 'This would send an invite to the user to become a speaker.', [
@@ -348,7 +362,7 @@ export default function LiveViewerScreen() {
               <Icon name="message-circle" size="md" color={colors.text.primary} />
               <Text style={styles.actionLabel}>Chat</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
               <Icon name="share" size="md" color={colors.text.primary} />
               <Text style={styles.actionLabel}>Share</Text>
             </TouchableOpacity>

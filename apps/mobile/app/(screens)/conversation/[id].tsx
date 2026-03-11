@@ -1394,11 +1394,13 @@ export default function ConversationScreen() {
           onPress={() => {
             if (contextMenuMsg) {
               if (contextMenuMsg?.isPinned) {
-                // TODO: unpin mutation
-                console.log('Unpin', contextMenuMsg.id);
+                messagesApi.unpin(id as string, contextMenuMsg.id).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                });
               } else {
-                // TODO: pin mutation
-                console.log('Pin', contextMenuMsg.id);
+                messagesApi.pin(id as string, contextMenuMsg.id).then(() => {
+                  queryClient.invalidateQueries({ queryKey: ['messages', id] });
+                });
               }
               setContextMenuMsg(null);
             }
@@ -1409,8 +1411,9 @@ export default function ConversationScreen() {
           icon={<Icon name="bookmark" size="sm" color={contextMenuMsg?.starredBy?.includes(user?.id ?? '') ? colors.gold : colors.text.primary} />}
           onPress={() => {
             if (contextMenuMsg) {
-              // TODO: star/unstar mutation
-              console.log('Star toggle', contextMenuMsg.id);
+              messagesApi.toggleStar(id as string, contextMenuMsg.id).then(() => {
+                queryClient.invalidateQueries({ queryKey: ['messages', id] });
+              });
               setContextMenuMsg(null);
             }
           }}

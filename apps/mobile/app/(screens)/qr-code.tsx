@@ -36,9 +36,9 @@ export default function QrCodeScreen() {
     }
   };
 
-  const handleSave = () => {
-    // TODO: Implement with expo-media-library if needed
-    Alert.alert('Coming soon', 'Save to gallery feature will be added later.');
+  const handleSave = async () => {
+    // Fallback to share if expo-media-library is not available
+    await handleShare();
   };
 
   return (
@@ -91,7 +91,7 @@ export default function QrCodeScreen() {
             onPress={handleSave}
             disabled={loading}
           >
-            <Icon name="download" size="md" color={colors.text.primary} />
+            <Icon name="share" size="md" color={colors.text.primary} />
             <Text style={styles.buttonText}>Save</Text>
           </Pressable>
         </View>

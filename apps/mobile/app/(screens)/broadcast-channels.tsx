@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -98,8 +98,8 @@ export default function BroadcastChannelsScreen() {
   }, [activeTab, discoverHasMore, discoverLoading, loadDiscoverChannels]);
 
   const handleSearchSubmit = useCallback((e: NativeSyntheticEvent<TextInputSubmitEditingEventData>) => {
-    // TODO: implement search
-    console.log('Search query:', searchQuery);
+    // Client-side search is handled by the filteredData memo
+    setIsSearching(!!searchQuery.trim());
   }, [searchQuery]);
 
   const handleChannelPress = useCallback((channel: BroadcastChannelWithSubscription) => {
@@ -204,7 +204,17 @@ export default function BroadcastChannelsScreen() {
     ))
   ), []);
 
-  const data = activeTab === 'discover' ? discoverChannels : myChannels;
+  const filteredData = useMemo(() => {
+    const source = activeTab === 'discover' ? discoverChannels : myChannels;
+    if (!searchQuery.trim()) return source;
+    const lowerQuery = searchQuery.trim().toLowerCase();
+    return source.filter(
+      c =>
+        c.name.toLowerCase().includes(lowerQuery) ||
+        c.description?.toLowerCase().includes(lowerQuery)
+    );
+  }, [activeTab, discoverChannels, myChannels, searchQuery]);
+
   const loading = activeTab === 'discover' ? discoverLoading : myChannelsLoading;
 
   return (
@@ -248,12 +258,12 @@ export default function BroadcastChannelsScreen() {
 
         <FlatList
           removeClippedSubviews={true}
-          data={data}
+          data={filteredData}
           renderItem={renderChannelItem}
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           ListEmptyComponent={loading ? null : renderEmptyState}
-          ListFooterComponent={loading && data.length > 0 ? renderSkeleton : null}
+          ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}

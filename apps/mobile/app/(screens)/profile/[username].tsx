@@ -603,13 +603,21 @@ export default function ProfileScreen() {
             {profile.channel && (
               <Pressable
                 style={styles.linkItem}
-                onPress={() => router.push(`/(screens)/playlists/${profile.channel.id}`)}
+                onPress={() => router.push(`/(screens)/playlists/${profile.channel!.id}`)}
               >
                 <Icon name="layers" size="md" color={colors.text.primary} />
                 <Text style={styles.linkText}>My Playlists</Text>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
               </Pressable>
             )}
+            <Pressable
+              style={styles.linkItem}
+              onPress={() => router.push('/(screens)/majlis-lists')}
+            >
+              <Icon name="filter" size="md" color={colors.text.primary} />
+              <Text style={styles.linkText}>Majlis Lists</Text>
+              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            </Pressable>
           </View>
         </View>
       )}

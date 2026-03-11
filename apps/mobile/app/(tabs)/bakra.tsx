@@ -162,7 +162,7 @@ const ReelItem = memo(function ReelItem({
           >
             <Animated.View style={[{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }, spinStyle]}>
               {item.audioCoverUrl ? (
-                <Image source={{ uri: item.audioCoverUrl }} style={{ width: 14, height: 14, borderRadius: 7 }} />
+                <Image source={{ uri: item.audioCoverUrl }} style={{ width: 14, height: 14, borderRadius: radius.full }} />
               ) : (
                 <Icon name="music" size={12} color="#fff" />
               )}

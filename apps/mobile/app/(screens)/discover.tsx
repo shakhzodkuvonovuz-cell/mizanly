@@ -62,7 +62,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         renderItem={({ item }) => (
           <Pressable
             style={styles.hashtagChip}
-            onPress={() => router.push(`/(screens)/search?q=${encodeURIComponent(item.name)}` as any)}
+            onPress={() => router.push(`/(screens)/search?q=${encodeURIComponent(item.name)}` as never)}
             accessibilityRole="button"
             accessibilityLabel={`Search for hashtag ${item.name}`}
           >
@@ -204,7 +204,7 @@ export default function DiscoverScreen() {
       <View style={styles.container}>
         <GlassHeader
           title="Discover"
-          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as any), accessibilityLabel: 'Search' }]}
+          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: 'Search' }]}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
@@ -222,7 +222,7 @@ export default function DiscoverScreen() {
     <View style={styles.container}>
       <GlassHeader
         title="Discover"
-        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as any), accessibilityLabel: 'Search' }]}
+        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: 'Search' }]}
       />
 
       <View style={styles.headerSpacer} />
@@ -246,7 +246,7 @@ export default function DiscoverScreen() {
               title="Nothing to discover yet"
               subtitle="Follow more creators or check back later"
               actionLabel="Find people"
-              onAction={() => router.push('/(screens)/search' as any)}
+              onAction={() => router.push('/(screens)/search' as never)}
             />
           ) : null
         }

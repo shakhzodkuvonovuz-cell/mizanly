@@ -210,6 +210,21 @@ export default function SettingsScreen() {
             label="Content Preferences"
             onPress={() => router.push('/(screens)/content-settings')}
           />
+          <View style={styles.divider} />
+          <Row
+            label="Drafts"
+            onPress={() => router.push('/(screens)/drafts')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Archive"
+            onPress={() => router.push('/(screens)/archive')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Watch History"
+            onPress={() => router.push('/(screens)/watch-history')}
+          />
         </View>
         {/* Appearance */}
         <SectionHeader title="Appearance" />
@@ -349,6 +364,16 @@ export default function SettingsScreen() {
           <Row
             label="Analytics"
             onPress={() => router.push('/(screens)/analytics')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="Broadcast Channels"
+            onPress={() => router.push('/(screens)/broadcast-channels')}
+          />
+          <View style={styles.divider} />
+          <Row
+            label="My Reports"
+            onPress={() => router.push('/(screens)/my-reports')}
           />
         </View>
 

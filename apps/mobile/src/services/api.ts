@@ -497,6 +497,9 @@ export const messagesApi = {
     api.post<Message>(`/messages/conversations/${conversationId}/schedule`, { content, scheduledAt, messageType }),
   getStarredMessages: (cursor?: string) =>
     api.get<PaginatedResponse<Message>>(`/messages/starred${qs({ cursor })}`),
+  pin: (conversationId: string, messageId: string) => api.post(`/messages/${conversationId}/${messageId}/pin`),
+  unpin: (conversationId: string, messageId: string) => api.delete(`/messages/${conversationId}/${messageId}/pin`),
+  toggleStar: (conversationId: string, messageId: string) => api.post(`/messages/${conversationId}/${messageId}/star`),
 };
 
 // ── Notifications ──

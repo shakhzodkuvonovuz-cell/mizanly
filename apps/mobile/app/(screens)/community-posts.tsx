@@ -19,13 +19,15 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, channelPostsApi } from '@/services/api';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import * as Clipboard from 'expo-clipboard';
 
 const POST_MAX_LENGTH = 5000;
 
-function CommunityPostItem({ post, isOwnChannel, onLike }: {
+function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress }: {
   post: ChannelPost;
   isOwnChannel: boolean;
   onLike: (postId: string, liked: boolean) => void;
+  onLongPress: (post: ChannelPost) => void;
 }) {
   const router = useRouter();
   const [liked, setLiked] = useState(post.isLiked ?? false);
@@ -48,13 +50,13 @@ function CommunityPostItem({ post, isOwnChannel, onLike }: {
   }, [router, post.user.username]);
 
   const handleLongPress = useCallback(() => {
-    // TODO: show bottom sheet for delete/pin etc.
-  }, []);
+    onLongPress(post);
+  }, [onLongPress, post]);
 
   return (
     <Pressable
       style={styles.postCard}
-      onLongPress={isOwnChannel ? handleLongPress : undefined}
+      onLongPress={handleLongPress}
       delayLongPress={500}
     >
       <View style={styles.postHeader}>
@@ -127,6 +129,7 @@ export default function CommunityPostsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<ChannelPost | null>(null);
   const composeInputRef = useRef<TextInput>(null);
 
   // Fetch channel details
@@ -188,13 +191,39 @@ export default function CommunityPostsScreen() {
     likeMutation.mutate({ postId, liked });
   }, [likeMutation]);
 
+  const deleteMutation = useMutation({
+    mutationFn: (postId: string) => channelPostsApi.delete(handle, postId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
+    },
+    onError: (error) => {
+      Alert.alert('Error', 'Failed to delete post. Please try again.');
+      console.error('Delete post error:', error);
+    },
+  });
+
+  const handleDeletePost = useCallback((postId: string) => {
+    deleteMutation.mutate(postId);
+    setSelectedPost(null);
+  }, [deleteMutation]);
+
+  const handleCopyText = useCallback(async (content: string) => {
+    await Clipboard.setStringAsync(content);
+    setSelectedPost(null);
+  }, []);
+
+  const handleLongPress = useCallback((post: ChannelPost) => {
+    setSelectedPost(post);
+  }, []);
+
   const renderPostItem = useCallback(({ item }: { item: ChannelPost }) => (
     <CommunityPostItem
       post={item}
       isOwnChannel={isOwnChannel}
       onLike={handleLike}
+      onLongPress={handleLongPress}
     />
-  ), [isOwnChannel, handleLike]);
+  ), [isOwnChannel, handleLike, handleLongPress]);
 
   const renderSkeleton = useCallback(() => (
     <View style={styles.skeletonContainer}>
@@ -319,6 +348,27 @@ export default function CommunityPostsScreen() {
             icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
             onPress={() => {/* TODO */}}
           />
+        </BottomSheet>
+
+        <BottomSheet
+          visible={!!selectedPost}
+          onClose={() => setSelectedPost(null)}
+          snapPoint={selectedPost?.content && isOwnChannel ? 0.3 : 0.2}
+        >
+          {isOwnChannel && selectedPost && (
+            <BottomSheetItem
+              label="Delete Post"
+              icon={<Icon name="trash" size="sm" color={colors.error} />}
+              onPress={() => handleDeletePost(selectedPost.id)}
+            />
+          )}
+          {selectedPost?.content && (
+            <BottomSheetItem
+              label="Copy Text"
+              icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+              onPress={() => handleCopyText(selectedPost.content!)}
+            />
+          )}
         </BottomSheet>
       </View>
     </KeyboardAvoidingView>
