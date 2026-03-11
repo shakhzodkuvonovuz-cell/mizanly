@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -136,7 +135,7 @@ export default function DraftsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -323,7 +323,7 @@ const ReadReceiptIcon = ({ status }: { status: 'sent' | 'delivered' | 'read' }) 
     <View style={{ flexDirection: 'row', marginLeft: 4 }}>
       <Icon name="check" size={12} color={color} />
       {(status === 'delivered' || status === 'read') && (
-        <Icon name="check" size={12} color={color} style={{ marginLeft: -6 }} />
+        <View style={{ marginLeft: -6 }}><Icon name="check" size={12} color={color} /></View>
       )}
     </View>
   );
@@ -485,7 +485,6 @@ function MessageBubble({
                   uri={member.user.avatarUrl}
                   name={member.user.displayName}
                   size="xs"
-                  style={styles.readReceiptAvatar}
                 />
               ))}
               {readByMembers.length > 3 && (

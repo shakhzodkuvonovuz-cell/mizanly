@@ -49,6 +49,7 @@ export function VideoPlayer({
 
   const haptic = useHaptic();
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const seekBarWidthRef = useRef<number>(1);
 
   const resetControlsTimeout = useCallback(() => {
     if (controlsTimeoutRef.current) {
@@ -83,7 +84,7 @@ export function VideoPlayer({
         }
       }
     }
-    if (newStatus.error) {
+    if (!newStatus.isLoaded && newStatus.error) {
       setError(`Playback error: ${newStatus.error}`);
     }
   }, [onProgress, onComplete]);
@@ -104,7 +105,7 @@ export function VideoPlayer({
     haptic.light();
     const currentPosition = status.positionMillis;
     const newPosition = currentPosition + 10000; // 10 seconds forward
-    await videoRef.current.setPositionAsync(Math.min(newPosition, status.durationMillis));
+    await videoRef.current.setPositionAsync(Math.min(newPosition, status.durationMillis ?? 0));
     resetControlsTimeout();
   }, [status, haptic, resetControlsTimeout]);
 
@@ -119,7 +120,7 @@ export function VideoPlayer({
 
   const handleSeek = useCallback(async (value: number) => {
     if (!videoRef.current || !status?.isLoaded) return;
-    const newPosition = value * status.durationMillis;
+    const newPosition = value * (status.durationMillis ?? 0);
     await videoRef.current.setPositionAsync(newPosition);
     resetControlsTimeout();
   }, [status, resetControlsTimeout]);
@@ -144,8 +145,7 @@ export function VideoPlayer({
   const toggleFullscreen = useCallback(async () => {
     if (!videoRef.current) return;
     haptic.light();
-    // @ts-expect-error expo-av fullscreen method exists but not typed
-    await videoRef.current.presentFullscreenPlayer();
+    await (videoRef.current as unknown as { presentFullscreenPlayer: () => Promise<void> }).presentFullscreenPlayer();
     resetControlsTimeout();
   }, [haptic, resetControlsTimeout]);
 
@@ -158,7 +158,7 @@ export function VideoPlayer({
   };
 
   const position = status?.isLoaded ? status.positionMillis : 0;
-  const durationMillis = status?.isLoaded ? status.durationMillis : (duration ? duration * 1000 : 0);
+  const durationMillis = status?.isLoaded ? (status.durationMillis ?? 0) : (duration ? duration * 1000 : 0);
   const progress = durationMillis > 0 ? position / durationMillis : 0;
 
   const handleVideoPress = () => {
@@ -200,7 +200,7 @@ export function VideoPlayer({
         {/* Loading skeleton */}
         {isLoading && (
           <View style={styles.loadingContainer}>
-            <Skeleton.Rect width="100%" height="100%" borderRadius={0} />
+            <Skeleton.Rect width={Dimensions.get('window').width} height={Dimensions.get('window').width * (9 / 16)} borderRadius={0} />
           </View>
         )}
 
@@ -234,7 +234,7 @@ export function VideoPlayer({
                 <Icon name="rewind" size="xl" color={colors.text.primary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
-                <Icon name={isPlaying ? 'pause' : 'play'} size="3xl" color={colors.text.primary} />
+                <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
               </TouchableOpacity>
               <TouchableOpacity onPress={skipForward} style={styles.skipButton}>
                 <Icon name="fast-forward" size="xl" color={colors.text.primary} />
@@ -252,14 +252,17 @@ export function VideoPlayer({
               </TouchableOpacity>
               <Text style={styles.timeText}>{formatTime(position)}</Text>
               {/* Seek bar */}
-              <View style={styles.seekBarContainer}>
+              <View
+                style={styles.seekBarContainer}
+                onLayout={(e) => { seekBarWidthRef.current = e.nativeEvent.layout.width || 1; }}
+              >
                 <View style={styles.seekBarBackground}>
                   <View style={[styles.seekBarProgress, { width: `${progress * 100}%` }]} />
                   {status?.isLoaded && status.playableDurationMillis && (
                     <View
                       style={[
                         styles.seekBarBuffered,
-                        { width: `${(status.playableDurationMillis / durationMillis) * 100}%` },
+                        { width: `${(status.playableDurationMillis / (durationMillis || 1)) * 100}%` },
                       ]}
                     />
                   )}
@@ -267,8 +270,8 @@ export function VideoPlayer({
                 <Pressable
                   style={styles.seekBarTouchable}
                   onPress={(e) => {
-                    const { locationX, width } = e.nativeEvent;
-                    const ratio = locationX / width;
+                    const { locationX } = e.nativeEvent;
+                    const ratio = locationX / seekBarWidthRef.current;
                     handleSeek(ratio);
                   }}
                 />

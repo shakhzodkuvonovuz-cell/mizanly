@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, FlatList, Alert,
+  View, StyleSheet, FlatList, Alert, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';

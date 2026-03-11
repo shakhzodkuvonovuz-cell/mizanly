@@ -62,7 +62,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   };
 
   const renderComment = ({ item }: { item: Comment }) => (
-    <View style={[styles.commentItem, item.user.id === reel.userId && styles.opComment]}>
+    <View style={[styles.commentItem, item.user.id === reel.user?.id && styles.opComment]}>
       <Avatar
         uri={item.user.avatarUrl}
         name={item.user.username}
@@ -114,7 +114,6 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
       icon="message-circle"
       title="No comments yet"
       subtitle="Be the first to comment"
-      compact
     />
   );
 

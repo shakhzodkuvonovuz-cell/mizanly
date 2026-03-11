@@ -42,7 +42,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [showFloatingHearts, setShowFloatingHearts] = useState(false);
+  const [heartTrigger, setHeartTrigger] = useState(0);
 
   // Double-tap overlay heart
   const overlayHeartScale = useSharedValue(0);
@@ -149,8 +149,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
       withTiming(0, { duration: 200 }),
     );
     // Trigger floating hearts effect
-    setShowFloatingHearts(true);
-    setTimeout(() => setShowFloatingHearts(false), 1200);
+    setHeartTrigger((t) => t + 1);
   }, [overlayHeartScale, overlayHeartOpacity]);
 
   // Handle like button press
@@ -202,8 +201,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
             <View style={styles.nameRow}>
               <Text style={styles.name}>{post.user.displayName}</Text>
               {post.user.isVerified && <VerifiedBadge size={14} />}
-              {post.collaborators?.length > 0 && (
-                <Icon name="users" size="sm" color={colors.text.secondary} style={{ marginLeft: 4 }} />
+              {(post.collaborators?.length ?? 0) > 0 && (
+                <View style={{ marginLeft: 4 }}>
+                  <Icon name="users" size="sm" color={colors.text.secondary} />
+                </View>
               )}
             </View>
             <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
@@ -252,7 +253,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
               <Icon name="heart-filled" size={80} color={colors.like} fill={colors.like} />
             </Animated.View>
             {/* Floating hearts effect */}
-            {showFloatingHearts && <FloatingHearts />}
+            <FloatingHearts trigger={heartTrigger} />
           </Pressable>
           {post.isSensitive && !revealed && (
             <View style={styles.sensitiveOverlay}>

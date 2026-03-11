@@ -139,15 +139,8 @@ export default function ChannelPlaylistsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Playlists</Text>
-        <View style={styles.headerRight} />
-      </View>
+    <View style={styles.container}>
+      <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
 
       <FlatList
         data={playlists}
@@ -159,9 +152,9 @@ export default function ChannelPlaylistsScreen() {
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 56 }]}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -89,7 +89,7 @@ export default function ShareProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={8}>
           <Icon name="arrow-left" size="md" color={colors.text.primary} />
@@ -136,7 +136,7 @@ export default function ShareProfileScreen() {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

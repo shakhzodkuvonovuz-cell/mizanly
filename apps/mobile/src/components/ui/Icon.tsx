@@ -14,7 +14,7 @@ import {
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 
-type IconName =
+export type IconName =
   | 'heart' | 'heart-filled' | 'message-circle' | 'bookmark' | 'bookmark-filled'
   | 'send' | 'search' | 'home' | 'play' | 'pause' | 'rewind' | 'fast-forward' | 'more-horizontal' | 'share'
   | 'check-circle' | 'arrow-left' | 'plus' | 'camera' | 'image' | 'mic'

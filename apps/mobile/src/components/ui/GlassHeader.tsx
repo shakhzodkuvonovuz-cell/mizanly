@@ -13,6 +13,7 @@ import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useHaptic } from '@/hooks/useHaptic';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -51,7 +52,7 @@ function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction
       hitSlop={8}
     >
       {typeof icon === 'string' ? (
-        <Icon name={icon} size={22} color={colors.text.primary} />
+        <Icon name={icon as IconName} size={22} color={colors.text.primary} />
       ) : (
         icon
       )}

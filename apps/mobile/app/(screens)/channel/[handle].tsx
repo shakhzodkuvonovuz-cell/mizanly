@@ -288,18 +288,16 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <Skeleton.Rect width="40%" height={16} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
           <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (channelQuery.isError) {
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </Pressable>
-        </View>
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
         <EmptyState
           icon="slash"
           title="Something went wrong"
@@ -307,7 +305,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           actionLabel="Go back"
           onAction={() => router.back()}
         />
-      </SafeAreaView>
+      </View>
     );
   }
 

@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fontSize, fonts, spacing, radius, animation } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -25,7 +26,7 @@ interface GradientButtonProps {
   label: string;
   onPress: () => void;
   variant?: ButtonVariant;
-  icon?: string;
+  icon?: IconName;
   loading?: boolean;
   disabled?: boolean;
   fullWidth?: boolean;
