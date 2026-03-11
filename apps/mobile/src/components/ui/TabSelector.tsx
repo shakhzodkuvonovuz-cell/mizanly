@@ -130,13 +130,19 @@ const styles = StyleSheet.create({
   },
   underlineLabelActive: {
     color: colors.text.primary,
+    fontWeight: '700',
   },
   underlineIndicator: {
     position: 'absolute',
     bottom: -0.5,
-    height: 2.5,
+    height: 3,
     backgroundColor: colors.emerald,
-    borderRadius: 1.25,
+    borderRadius: 1.5,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 6,
+    elevation: 3,
   },
 
   // Pill variant
@@ -157,6 +163,8 @@ const styles = StyleSheet.create({
     bottom: 3,
     backgroundColor: colors.dark.surface,
     borderRadius: radius.full,
+    borderWidth: 0.5,
+    borderColor: colors.glass.border,
   },
   pillTab: {
     flex: 1,
@@ -171,5 +179,6 @@ const styles = StyleSheet.create({
   },
   pillLabelActive: {
     color: colors.text.primary,
+    fontWeight: '700',
   },
 });

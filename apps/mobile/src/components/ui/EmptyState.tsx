@@ -1,6 +1,9 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import Animated from 'react-native-reanimated';
 import { Icon } from './Icon';
-import { colors, spacing, fontSize } from '@/theme';
+import { GradientButton } from './GradientButton';
+import { useEntranceAnimation } from '@/hooks/useEntranceAnimation';
+import { colors, spacing, fontSize, radius } from '@/theme';
 
 interface EmptyStateProps {
   icon?: React.ComponentProps<typeof Icon>['name'];
@@ -11,8 +14,10 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, subtitle, actionLabel, onAction }: EmptyStateProps) {
+  const { animatedStyle: entranceStyle } = useEntranceAnimation();
+
   return (
-    <View style={styles.container}>
+    <Animated.View style={[styles.container, entranceStyle]}>
       {icon && (
         <View style={styles.iconWrap}>
           <Icon name={icon} size="xl" color={colors.text.tertiary} />
@@ -21,11 +26,11 @@ export function EmptyState({ icon, title, subtitle, actionLabel, onAction }: Emp
       <Text style={styles.title}>{title}</Text>
       {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       {actionLabel && onAction && (
-        <TouchableOpacity style={styles.actionBtn} onPress={onAction} activeOpacity={0.8}>
-          <Text style={styles.actionText}>{actionLabel}</Text>
-        </TouchableOpacity>
+        <View style={styles.actionWrap}>
+          <GradientButton label={actionLabel} onPress={onAction} size="sm" />
+        </View>
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -39,7 +44,9 @@ const styles = StyleSheet.create({
   iconWrap: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.active.emerald20,
     backgroundColor: colors.dark.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -57,16 +64,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
   },
-  actionBtn: {
-    backgroundColor: colors.emerald,
-    borderRadius: 12,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.sm + 2,
+  actionWrap: {
     marginTop: spacing.md,
-  },
-  actionText: {
-    color: '#fff',
-    fontSize: fontSize.base,
-    fontWeight: '600',
   },
 });

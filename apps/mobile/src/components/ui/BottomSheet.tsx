@@ -9,7 +9,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, radius, spacing, animation } from '@/theme';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface BottomSheetProps {
   visible: boolean;
@@ -19,6 +23,7 @@ interface BottomSheetProps {
 }
 
 export function BottomSheet({ visible, onClose, children, snapPoint }: BottomSheetProps) {
+  const haptic = useHaptic();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -32,10 +37,11 @@ export function BottomSheet({ visible, onClose, children, snapPoint }: BottomShe
   }, [translateY, backdropOpacity]);
 
   const close = useCallback(() => {
+    haptic.light();
     backdropOpacity.value = withTiming(0, { duration: animation.timing.fast });
     translateY.value = withSpring(SCREEN_HEIGHT, animation.spring.responsive);
     setTimeout(onClose, 250);
-  }, [translateY, backdropOpacity, onClose, SCREEN_HEIGHT]);
+  }, [haptic, translateY, backdropOpacity, onClose, SCREEN_HEIGHT]);
 
   useEffect(() => {
     if (visible) open();
@@ -87,7 +93,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint }: BottomShe
           {Platform.OS === 'ios' ? (
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.dark.bgSheet }]} />
+            <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(33, 40, 59, 0.92)', borderTopWidth: 0.5, borderTopColor: colors.glass.border }]} />
           )}
           <View style={styles.handleContainer}>
             <View style={styles.handle} />
@@ -107,14 +113,24 @@ export function BottomSheetItem({ label, icon, onPress, destructive, disabled }:
   destructive?: boolean;
   disabled?: boolean;
 }) {
+  const haptic = useHaptic();
+  const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.98 });
+
+  const handlePress = () => {
+    haptic.selection();
+    onPress();
+  };
+
   return (
-    <Pressable
-      style={({ pressed }) => [
+    <AnimatedPressable
+      style={[
         styles.menuItem,
-        pressed && styles.menuItemPressed,
+        animatedStyle,
         disabled && styles.menuItemDisabled,
       ]}
-      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      onPress={handlePress}
       disabled={disabled}
       accessibilityLabel={label}
       accessibilityRole="button"
@@ -128,7 +144,7 @@ export function BottomSheetItem({ label, icon, onPress, destructive, disabled }:
       >
         {label}
       </Animated.Text>
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
@@ -167,9 +183,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md + 2,
-  },
-  menuItemPressed: {
-    backgroundColor: colors.active.white5,
   },
   menuItemDisabled: {
     opacity: 0.4,
