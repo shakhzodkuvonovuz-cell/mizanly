@@ -163,6 +163,7 @@ export default function SoundScreen() {
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
       />
       <FlatList
+            removeClippedSubviews={true}
         data={reels}
         renderItem={renderGridItem}
         keyExtractor={(item) => item.id}

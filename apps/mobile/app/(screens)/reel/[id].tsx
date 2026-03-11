@@ -406,6 +406,7 @@ export default function ReelDetailScreen() {
         keyboardVerticalOffset={0}
       >
         <FlatList
+            removeClippedSubviews={true}
           data={comments}
           keyExtractor={(item) => item.id}
           onEndReached={() => {

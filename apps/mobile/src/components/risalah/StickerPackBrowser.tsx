@@ -331,6 +331,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
           </View>
         ) : (
           <FlatList
+            removeClippedSubviews={true}
             data={filteredPacks}
             renderItem={renderPackCard}
             keyExtractor={item => item.id}
@@ -351,6 +352,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                   <View style={styles.featuredSection}>
                     <Text style={styles.sectionTitle}>Featured</Text>
                     <FlatList
+            removeClippedSubviews={true}
                       data={featuredPacks}
                       renderItem={renderFeaturedPack}
                       horizontal
@@ -409,6 +411,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                 </TouchableOpacity>
               </View>
               <FlatList
+            removeClippedSubviews={true}
                 data={selectedPack.stickers}
                 numColumns={4}
                 renderItem={({ item }) => (

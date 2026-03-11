@@ -196,6 +196,7 @@ export default function SaveToPlaylistScreen() {
       />
 
       <FlatList
+            removeClippedSubviews={true}
         data={playlists}
         keyExtractor={(item) => item.id}
         renderItem={renderPlaylistItem}

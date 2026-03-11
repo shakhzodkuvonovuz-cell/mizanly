@@ -288,6 +288,7 @@ export default function SavedScreen() {
 
       {activeTab === 'posts' ? (
         <FlatList
+            removeClippedSubviews={true}
           data={posts}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -324,6 +325,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'threads' ? (
         <FlatList
+            removeClippedSubviews={true}
           data={threads}
           keyExtractor={(item) => item.id}
           onEndReached={() => {
@@ -356,6 +358,7 @@ export default function SavedScreen() {
         />
       ) : activeTab === 'reels' ? (
         <FlatList
+            removeClippedSubviews={true}
           data={reels}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -392,6 +395,7 @@ export default function SavedScreen() {
         />
       ) : (
         <FlatList
+            removeClippedSubviews={true}
           data={videos}
           keyExtractor={(item) => item.id}
           onEndReached={() => {

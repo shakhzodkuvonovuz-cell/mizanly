@@ -17,7 +17,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { usersApi } from '@/services/api';
+import { usersApi, accountApi } from '@/services/api';
 
 
 function InfoRow({
@@ -113,9 +113,13 @@ export default function ManageDataScreen() {
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Request',
-          onPress: () => {
-            // Hypothetical endpoint — show coming soon
-            Alert.alert('Coming Soon', 'Data export functionality is under development.');
+          onPress: async () => {
+            try {
+              await accountApi.requestDataExport();
+              Alert.alert('Request Sent', 'You will be notified when your data is ready for download.');
+            } catch {
+              Alert.alert('Error', 'Failed to submit data export request. Please try again.');
+            }
           },
         },
       ],

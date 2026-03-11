@@ -224,6 +224,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
               />
             ) : (
               <FlatList
+            removeClippedSubviews={true}
                 data={recentStickers}
                 renderItem={renderStickerItem}
                 numColumns={GRID_COLUMNS}
@@ -247,6 +248,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
             {/* Pack tabs */}
             <View style={styles.packTabsContainer}>
               <FlatList
+            removeClippedSubviews={true}
                 data={filteredPacks}
                 renderItem={renderPackTab}
                 horizontal
@@ -290,6 +292,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
                 />
               ) : (
                 <FlatList
+            removeClippedSubviews={true}
                   data={stickers}
                   renderItem={renderStickerItem}
                   numColumns={GRID_COLUMNS}

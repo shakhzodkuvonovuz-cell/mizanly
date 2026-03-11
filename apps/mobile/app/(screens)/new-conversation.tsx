@@ -98,6 +98,7 @@ export default function NewConversationScreen() {
         />
       ) : (
         <FlatList
+            removeClippedSubviews={true}
           data={people}
           keyExtractor={(item) => item.id}
           refreshControl={

@@ -270,6 +270,7 @@ export const postsApi = {
     api.delete(`/posts/${postId}/comments/${commentId}/pin`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/posts/${id}/share-link`),
+  shareAsStory: (id: string) => api.post(`/posts/${id}/share-as-story`),
 };
 
 // ── Stories (Saf) ──
@@ -327,6 +328,8 @@ export const reelsApi = {
     api.post(`/reels/${reelId}/unarchive`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/reels/${id}/share-link`),
+  likeComment: (reelId: string, commentId: string) => api.post(`/reels/${reelId}/comments/${commentId}/like`),
+  unlikeComment: (reelId: string, commentId: string) => api.delete(`/reels/${reelId}/comments/${commentId}/like`),
 };
 
 // ── Channels (Minbar) ──
@@ -500,6 +503,7 @@ export const messagesApi = {
   pin: (conversationId: string, messageId: string) => api.post(`/messages/${conversationId}/${messageId}/pin`),
   unpin: (conversationId: string, messageId: string) => api.delete(`/messages/${conversationId}/${messageId}/pin`),
   toggleStar: (conversationId: string, messageId: string) => api.post(`/messages/${conversationId}/${messageId}/star`),
+  getPinned: (conversationId: string) => api.get<Message[]>(`/messages/${conversationId}/pinned`),
 };
 
 // ── Notifications ──
@@ -949,4 +953,9 @@ export const watchHistoryApi = {
     api.delete(`/watch-history/${videoId}`),
   clearHistory: () =>
     api.delete('/watch-history'),
+};
+
+// ── Account ──
+export const accountApi = {
+  requestDataExport: () => api.post('/account/export'),
 };

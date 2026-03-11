@@ -141,6 +141,7 @@ export default function PinnedMessagesScreen() {
       />
 
       <FlatList
+            removeClippedSubviews={true}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}

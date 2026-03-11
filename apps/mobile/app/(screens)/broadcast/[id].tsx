@@ -260,6 +260,7 @@ export default function BroadcastChannelScreen() {
           keyExtractor={item => item.id}
           contentContainerStyle={styles.listContent}
           inverted
+          removeClippedSubviews={true}
           ListEmptyComponent={loading ? null : renderEmptyState}
           ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
           refreshControl={

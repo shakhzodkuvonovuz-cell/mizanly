@@ -155,6 +155,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
         </View>
       ) : (
         <FlatList
+            removeClippedSubviews={true}
           data={results}
           keyExtractor={(item) =>
             type === 'hashtag' ? (item as HashtagResult).id : (item as User).id

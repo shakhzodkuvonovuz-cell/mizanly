@@ -458,6 +458,7 @@ export default function ConversationInfoScreen() {
               data={searchResults}
               style={styles.resultsList}
               keyExtractor={(item) => item.id}
+              removeClippedSubviews={true}
               refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
               renderItem={({ item }) => (
                 <TouchableOpacity

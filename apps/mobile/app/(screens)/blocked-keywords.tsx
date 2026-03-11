@@ -128,6 +128,7 @@ export default function BlockedKeywordsScreen() {
             data={keywords}
             keyExtractor={(item) => item.id}
             contentContainerStyle={{ paddingBottom: 40 }}
+            removeClippedSubviews={true}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
             }

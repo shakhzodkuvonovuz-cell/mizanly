@@ -677,6 +677,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         {renderHeaderActions()}
         <FlatList
+            removeClippedSubviews={true}
           data={posts}
           keyExtractor={(item) => item.id}
           numColumns={3}
@@ -762,6 +763,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <FlatList
+            removeClippedSubviews={true}
         data={threads}
         keyExtractor={(item) => item.id}
         onEndReached={handleEndReached}
@@ -868,6 +870,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <FlatList
+            removeClippedSubviews={true}
         data={reels}
         keyExtractor={(item) => item.id}
         numColumns={3}
@@ -930,6 +933,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         {renderHeaderActions()}
         <FlatList
+            removeClippedSubviews={true}
           data={likedPosts}
           keyExtractor={(item) => item.id}
           numColumns={3}

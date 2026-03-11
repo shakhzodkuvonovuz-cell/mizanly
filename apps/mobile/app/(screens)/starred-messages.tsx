@@ -167,6 +167,7 @@ export default function StarredMessagesScreen() {
       )}
 
       <FlatList
+            removeClippedSubviews={true}
         data={messages}
         renderItem={renderMessage}
         keyExtractor={(item) => item.id}

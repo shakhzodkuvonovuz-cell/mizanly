@@ -20,6 +20,7 @@ import { channelsApi, channelPostsApi } from '@/services/api';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
 
 const POST_MAX_LENGTH = 5000;
 
@@ -130,6 +131,7 @@ export default function CommunityPostsScreen() {
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
   const [selectedPost, setSelectedPost] = useState<ChannelPost | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<{ uri: string; type: 'image' | 'video' } | null>(null);
   const composeInputRef = useRef<TextInput>(null);
 
   // Fetch channel details
@@ -336,17 +338,29 @@ export default function CommunityPostsScreen() {
           <BottomSheetItem
             label="Add Image"
             icon={<Icon name="image" size="md" color={colors.text.primary} />}
-            onPress={() => {/* TODO */}}
+            onPress={async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+              if (!result.canceled && result.assets[0]) {
+                setSelectedMedia({ uri: result.assets[0].uri, type: 'image' });
+                setShowCreateSheet(false);
+              }
+            }}
           />
           <BottomSheetItem
             label="Add Video"
             icon={<Icon name="video" size="md" color={colors.text.primary} />}
-            onPress={() => {/* TODO */}}
+            onPress={async () => {
+              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
+              if (!result.canceled && result.assets[0]) {
+                setSelectedMedia({ uri: result.assets[0].uri, type: 'video' });
+                setShowCreateSheet(false);
+              }
+            }}
           />
           <BottomSheetItem
             label="Add Poll"
             icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
-            onPress={() => {/* TODO */}}
+            onPress={() => Alert.alert('Polls', 'Poll creation is coming in the next update.')}
           />
         </BottomSheet>
 

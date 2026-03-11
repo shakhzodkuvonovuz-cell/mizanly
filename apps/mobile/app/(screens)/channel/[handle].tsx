@@ -351,6 +351,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         keyExtractor={(item) => item.id}
         renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
         ListHeaderComponent={ListHeader}
+        removeClippedSubviews={true}
         ListEmptyComponent={
           activeTab === 'videos' ? (
             videosQuery.isLoading ? (

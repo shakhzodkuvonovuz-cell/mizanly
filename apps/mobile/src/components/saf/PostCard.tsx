@@ -77,15 +77,14 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   });
 
   const shareAsStoryMutation = useMutation({
-    mutationFn: () => {
-      const api = postsApi as typeof postsApi & { shareAsStory?: (id: string) => Promise<unknown> };
-      if (typeof api.shareAsStory === 'function') {
-        return api.shareAsStory(post.id);
-      }
-      return Promise.reject(new Error('Not implemented'));
+    mutationFn: () => postsApi.shareAsStory(post.id),
+    onSuccess: () => {
+      setShowMenu(false);
+      haptic.success();
     },
-    onSuccess: () => setShowMenu(false),
-    onError: () => {}, // silent fail for unimplemented feature
+    onError: () => {
+      Alert.alert('Error', 'Could not share as story. Please try again.');
+    },
   });
 
   const getShareLinkMutation = useMutation({

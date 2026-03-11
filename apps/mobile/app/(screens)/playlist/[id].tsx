@@ -150,6 +150,7 @@ export default function PlaylistDetailScreen() {
         </View>
       ) : (
         <FlatList
+            removeClippedSubviews={true}
           data={items}
           keyExtractor={(item, i) => item.id ?? String(i)}
           renderItem={renderItem}

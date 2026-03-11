@@ -234,6 +234,7 @@ export default function CreateGroupScreen() {
               data={people}
               scrollEnabled={true}
               keyExtractor={(item) => item.id}
+              removeClippedSubviews={true}
               refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
               renderItem={({ item }) => (
                 <TouchableOpacity

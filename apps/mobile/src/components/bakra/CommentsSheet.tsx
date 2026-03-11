@@ -140,6 +140,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
 
         {/* Comments list */}
         <FlatList
+            removeClippedSubviews={true}
           data={comments}
           keyExtractor={(item) => item.id}
           renderItem={renderComment}

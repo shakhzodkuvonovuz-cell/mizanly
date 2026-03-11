@@ -7,9 +7,11 @@ import {
   Pressable,
   TextInput,
   RefreshControl,
+  Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
 } from 'react-native';
+import { useMutation } from '@tanstack/react-query';
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
@@ -17,6 +19,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { TabSelector } from '@/components/ui/TabSelector';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -35,6 +38,21 @@ export default function BroadcastChannelsScreen() {
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [showCreateSheet, setShowCreateSheet] = useState(false);
+  const [newChannelName, setNewChannelName] = useState('');
+  const [newChannelDesc, setNewChannelDesc] = useState('');
+
+  const createMutation = useMutation({
+    mutationFn: () => broadcastApi.create({ name: newChannelName, slug: newChannelName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''), description: newChannelDesc }),
+    onSuccess: (data) => {
+      setShowCreateSheet(false);
+      setNewChannelName('');
+      setNewChannelDesc('');
+      loadMyChannels(true);
+      router.push(`/(screens)/broadcast/${data.id}` as never);
+    },
+    onError: () => Alert.alert('Error', 'Failed to create channel'),
+  });
   const [discoverChannels, setDiscoverChannels] = useState<BroadcastChannelWithSubscription[]>([]);
   const [myChannels, setMyChannels] = useState<BroadcastChannelWithSubscription[]>([]);
   const [discoverCursor, setDiscoverCursor] = useState<string | null>(null);
@@ -223,7 +241,7 @@ export default function BroadcastChannelsScreen() {
       <GlassHeader
         title="Channels"
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        rightAction={{ icon: 'plus', onPress: () => {}, accessibilityLabel: 'Create channel' }}
+        rightAction={{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: 'Create channel' }}
       />
       <View style={styles.container}>
         <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
@@ -276,6 +294,34 @@ export default function BroadcastChannelsScreen() {
           showsVerticalScrollIndicator={false}
         />
       </View>
+      <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
+        <View style={{ padding: spacing.base, gap: spacing.md }}>
+          <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>Create Channel</Text>
+          <TextInput
+            style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
+            placeholder="Channel name"
+            placeholderTextColor={colors.text.tertiary}
+            value={newChannelName}
+            onChangeText={setNewChannelName}
+            maxLength={50}
+          />
+          <TextInput
+            style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
+            placeholder="Description (optional)"
+            placeholderTextColor={colors.text.tertiary}
+            value={newChannelDesc}
+            onChangeText={setNewChannelDesc}
+            maxLength={200}
+            multiline
+          />
+          <GradientButton
+            label="Create"
+            onPress={() => createMutation.mutate()}
+            loading={createMutation.isPending}
+            disabled={!newChannelName.trim()}
+          />
+        </View>
+      </BottomSheet>
     </>
   );
 }

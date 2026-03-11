@@ -74,6 +74,7 @@ export default function SuggestedScreen() {
         </View>
       ) : (
         <FlatList
+            removeClippedSubviews={true}
           data={suggested || []}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

@@ -245,6 +245,7 @@ export default function ThreadDetailScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <FlatList
+            removeClippedSubviews={true}
           data={replies}
           keyExtractor={(item) => item.id}
           onEndReached={() => {

@@ -54,6 +54,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         <Text style={styles.sectionTitle}>Trending now</Text>
       </View>
       <FlatList
+            removeClippedSubviews={true}
         horizontal
         data={hashtags}
         keyExtractor={(item) => item.id}
@@ -228,6 +229,7 @@ export default function DiscoverScreen() {
       <View style={styles.headerSpacer} />
 
       <FlatList
+            removeClippedSubviews={true}
         data={exploreItems}
         keyExtractor={(item, index) => `${item.id ?? index}`}
         numColumns={3}

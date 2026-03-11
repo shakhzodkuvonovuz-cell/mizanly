@@ -143,6 +143,7 @@ export default function ChannelPlaylistsScreen() {
       <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back() }} />
 
       <FlatList
+            removeClippedSubviews={true}
         data={playlists}
         keyExtractor={(item) => item.id}
         renderItem={renderPlaylistItem}

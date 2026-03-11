@@ -31,7 +31,8 @@ export interface ImageLightboxProps {
 export function ImageLightbox({ visible, images, initialIndex = 0, onClose }: ImageLightboxProps) {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
-  const flatListRef = useRef<FlatList<string>>(null);
+  const flatListRef = useRef<FlatList
+            removeClippedSubviews={true}<string>>(null);
 
   // Close/share button press animations
   const closePress = useAnimatedPress({ scaleTo: 0.85 });
@@ -231,6 +232,7 @@ export function ImageLightbox({ visible, images, initialIndex = 0, onClose }: Im
       <GestureDetector gesture={verticalDismissGesture}>
         <Animated.View style={[StyleSheet.absoluteFill, dismissAnimatedStyle]}>
           <FlatList
+            removeClippedSubviews={true}
             ref={flatListRef}
             data={images}
             keyExtractor={(item, index) => `${item}-${index}`}

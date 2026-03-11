@@ -406,6 +406,7 @@ export default function LiveViewerScreen() {
           <Text style={styles.sheetTitle}>Participants ({participants.length})</Text>
         </View>
         <FlatList
+            removeClippedSubviews={true}
           data={participants}
           renderItem={renderParticipantItem}
           keyExtractor={(item) => item.id}

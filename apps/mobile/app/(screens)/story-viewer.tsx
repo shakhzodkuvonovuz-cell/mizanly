@@ -375,6 +375,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           </View>
         ) : (
           <FlatList
+            removeClippedSubviews={true}
             data={viewersQuery.data?.data ?? []}
             keyExtractor={(item) => item.id}
             refreshControl={

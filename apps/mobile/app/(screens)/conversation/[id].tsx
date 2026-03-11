@@ -655,13 +655,18 @@ export default function ConversationScreen() {
     enabled: !!forwardMsg,
   });
 
-  // Pinned messages query (placeholder)
-  // TODO: implement endpoint
-  // const { data: pinnedMessages } = useQuery({
-  //   queryKey: ['pinned-messages', id],
-  //   queryFn: () => messagesApi.get(`/messages/${id}/pinned`),
-  //   enabled: !!id,
-  // });
+  // Pinned messages query
+  const pinnedQuery = useQuery({
+    queryKey: ['pinned-messages', id],
+    queryFn: () => messagesApi.getPinned(id as string),
+    enabled: !!id,
+  });
+
+  useEffect(() => {
+    if (pinnedQuery.data && Array.isArray(pinnedQuery.data) && pinnedQuery.data.length > 0) {
+      setPinnedMessage(pinnedQuery.data[0]);
+    }
+  }, [pinnedQuery.data]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -1126,6 +1131,7 @@ export default function ConversationScreen() {
             ref={flatListRef}
             data={listItems}
             keyExtractor={(item) => item.key}
+            removeClippedSubviews={true}
             renderItem={({ item, index }) => {
               if (item.type === 'date') return <DateSeparator label={item.label} />;
               if (item.type === 'pending') {

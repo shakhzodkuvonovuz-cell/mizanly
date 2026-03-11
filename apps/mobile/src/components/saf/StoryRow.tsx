@@ -33,6 +33,7 @@ export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
 
   return (
     <FlatList
+            removeClippedSubviews={true}
       data={items}
       keyExtractor={(item) => item.user.id}
       horizontal
