@@ -11,6 +11,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -169,6 +170,26 @@ export default function ConversationInfoScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <Skeleton.ProfileHeader />
+      </SafeAreaView>
+    );
+  }
+
+  if (convoQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Chat Info"
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load chat info"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => convoQuery.refetch()}
+          />
+        </View>
       </SafeAreaView>
     );
   }

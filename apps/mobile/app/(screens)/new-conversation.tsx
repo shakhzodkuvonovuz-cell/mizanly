@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize } from '@/theme';
 import { searchApi, messagesApi } from '@/services/api';
@@ -87,6 +88,14 @@ export default function NewConversationScreen() {
             </View>
           ))}
         </View>
+      ) : searchQuery.isError ? (
+        <EmptyState
+          icon="flag"
+          title="Search failed"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => searchQuery.refetch()}
+        />
       ) : (
         <FlatList
           data={people}

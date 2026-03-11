@@ -196,6 +196,26 @@ export default function CollabRequestsScreen() {
   const data = activeTab === 'pending' ? pendingCollabs : acceptedCollabs;
   const renderItem = activeTab === 'pending' ? renderPendingItem : renderAcceptedItem;
 
+  const isError = activeTab === 'pending' ? pendingQuery.isError : acceptedQuery.isError;
+
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Collaboration Requests"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => activeTab === 'pending' ? pendingQuery.refetch() : acceptedQuery.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
@@ -225,6 +245,7 @@ export default function CollabRequestsScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={data}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

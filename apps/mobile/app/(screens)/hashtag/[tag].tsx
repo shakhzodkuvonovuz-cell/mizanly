@@ -98,6 +98,25 @@ export default function HashtagScreen() {
     if (postsQuery.hasNextPage && !postsQuery.isFetchingNextPage) postsQuery.fetchNextPage();
   }, [postsQuery]);
 
+  if (postsQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title={`#${tag}`}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => postsQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -123,6 +142,7 @@ export default function HashtagScreen() {
       </View>
 
       <FlatList
+        removeClippedSubviews={true}
         data={posts}
         keyExtractor={(item) => item.id}
         numColumns={3}

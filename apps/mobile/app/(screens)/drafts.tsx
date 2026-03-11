@@ -37,7 +37,7 @@ export default function DraftsScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: drafts, isLoading } = useQuery({
+  const { data: drafts, isLoading, isError, refetch } = useQuery({
     queryKey: ['drafts'],
     queryFn: () => draftsApi.getAll(),
   });
@@ -104,6 +104,25 @@ export default function DraftsScreen() {
     );
   };
 
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Drafts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -126,6 +145,7 @@ export default function DraftsScreen() {
         />
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={drafts}
           keyExtractor={(item) => item.id}
           renderItem={renderDraft}

@@ -151,6 +151,30 @@ export default function MutualFollowersScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
 
+  if (mutualFollowersQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Followers you know"
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back',
+          }}
+        />
+        <View style={{ paddingTop: headerHeight, flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load content"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => mutualFollowersQuery.refetch()}
+          />
+        </View>
+      </View>
+    );
+  }
+
   if (mutualFollowersQuery.isLoading && !mutualFollowersQuery.data) {
     return (
       <View style={styles.container}>
@@ -182,6 +206,7 @@ export default function MutualFollowersScreen() {
 
       {/* List */}
       <FlatList
+          removeClippedSubviews={true}
         contentContainerStyle={{ paddingTop: headerHeight }}
         data={mutualFollowers}
         keyExtractor={(item) => item.id}
@@ -201,12 +226,13 @@ export default function MutualFollowersScreen() {
         }
         ListEmptyComponent={() =>
           mutualFollowersQuery.isLoading ? null : (
-            <EmptyState
-              icon="users"
-              title="No shared connections yet"
-              subtitle="When you and this person follow the same people, they will show up here"
-              style={styles.emptyState}
-            />
+            <View style={styles.emptyState}>
+              <EmptyState
+                icon="users"
+                title="No shared connections yet"
+                subtitle="When you and this person follow the same people, they will show up here"
+              />
+            </View>
           )
         }
         ListFooterComponent={() =>

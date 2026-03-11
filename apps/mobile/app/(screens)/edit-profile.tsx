@@ -13,6 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
@@ -172,6 +173,26 @@ export default function EditProfileScreen() {
         />
         <View style={{ marginTop: insets.top + 44 }}>
           <Skeleton.ProfileHeader />
+        </View>
+      </View>
+    );
+  }
+
+  if (meQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Edit Profile"
+          leftAction={{ icon: 'x', onPress: () => router.back() }}
+        />
+        <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 44 }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load profile"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => meQuery.refetch()}
+          />
         </View>
       </View>
     );

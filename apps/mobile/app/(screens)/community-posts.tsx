@@ -204,6 +204,25 @@ export default function CommunityPostsScreen() {
     </View>
   ), []);
 
+  if (postsQuery.isError || channelQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Community Posts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => handleRefresh()}
+        />
+      </View>
+    );
+  }
+
   if (channelQuery.isLoading || postsQuery.isLoading) {
     return (
       <View style={styles.container}>
@@ -256,6 +275,7 @@ export default function CommunityPostsScreen() {
         )}
 
         <FlatList
+          removeClippedSubviews={true}
           data={posts}
           renderItem={renderPostItem}
           keyExtractor={(item) => item.id}

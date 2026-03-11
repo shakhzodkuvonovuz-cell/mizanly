@@ -40,7 +40,9 @@ export default function BroadcastChannelsScreen() {
   const [discoverCursor, setDiscoverCursor] = useState<string | null>(null);
   const [discoverHasMore, setDiscoverHasMore] = useState(true);
   const [discoverLoading, setDiscoverLoading] = useState(false);
+  const [discoverError, setDiscoverError] = useState(false);
   const [myChannelsLoading, setMyChannelsLoading] = useState(false);
+  const [myChannelsError, setMyChannelsError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const searchInputRef = useRef<TextInput>(null);
@@ -48,6 +50,7 @@ export default function BroadcastChannelsScreen() {
   const loadDiscoverChannels = useCallback(async (refresh = false) => {
     if (discoverLoading && !refresh) return;
     setDiscoverLoading(true);
+    setDiscoverError(false);
     try {
       const cursor = refresh ? undefined : discoverCursor ?? undefined;
       const response = await broadcastApi.discover(cursor);
@@ -56,6 +59,7 @@ export default function BroadcastChannelsScreen() {
       setDiscoverHasMore(response.meta.hasMore);
     } catch (error) {
       console.error('Failed to load discover channels', error);
+      setDiscoverError(true);
     } finally {
       setDiscoverLoading(false);
       if (refresh) setRefreshing(false);
@@ -65,11 +69,13 @@ export default function BroadcastChannelsScreen() {
   const loadMyChannels = useCallback(async (refresh = false) => {
     if (myChannelsLoading && !refresh) return;
     setMyChannelsLoading(true);
+    setMyChannelsError(false);
     try {
       const channels = await broadcastApi.getMyChannels();
       setMyChannels(channels);
     } catch (error) {
       console.error('Failed to load my channels', error);
+      setMyChannelsError(true);
     } finally {
       setMyChannelsLoading(false);
       if (refresh) setRefreshing(false);
@@ -141,13 +147,35 @@ export default function BroadcastChannelsScreen() {
 
   const renderEmptyState = useCallback(() => {
     if (activeTab === 'discover') {
+      if (discoverError) {
+        return (
+          <EmptyState
+            icon="flag"
+            title="Couldn't load content"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => loadDiscoverChannels(true)}
+          />
+        );
+      }
       return (
         <EmptyState
           icon="users"
           title="No channels found"
           subtitle="Try again later or search for something else"
           actionLabel="Refresh"
-          onAction={handleRefresh}
+          onAction={() => handleRefresh()}
+        />
+      );
+    }
+    if (myChannelsError) {
+      return (
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => loadMyChannels(true)}
         />
       );
     }
@@ -160,7 +188,7 @@ export default function BroadcastChannelsScreen() {
         onAction={() => setActiveTab('discover')}
       />
     );
-  }, [activeTab, handleRefresh]);
+  }, [activeTab, handleRefresh, discoverError, myChannelsError, loadDiscoverChannels, loadMyChannels]);
 
   const renderSkeleton = useCallback(() => (
     Array.from({ length: 5 }).map((_, i) => (
@@ -219,6 +247,7 @@ export default function BroadcastChannelsScreen() {
         />
 
         <FlatList
+          removeClippedSubviews={true}
           data={data}
           renderItem={renderChannelItem}
           keyExtractor={item => item.id}

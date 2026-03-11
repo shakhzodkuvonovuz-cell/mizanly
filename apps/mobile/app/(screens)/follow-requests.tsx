@@ -96,6 +96,21 @@ export default function FollowRequestsScreen() {
 
   const pendingId = acceptMutation.variables ?? declineMutation.variables;
 
+  if (requestsQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader title="Follow Requests" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => requestsQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader title="Follow Requests" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
@@ -114,6 +129,7 @@ export default function FollowRequestsScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={requests}
           keyExtractor={(item) => item.id}
           contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}

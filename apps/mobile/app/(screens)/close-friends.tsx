@@ -191,6 +191,28 @@ export default function CloseFriendsScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 52;
 
+  if (followersQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Close Friends"
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back',
+          }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => followersQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -265,6 +287,7 @@ export default function CloseFriendsScreen() {
 
       {/* List */}
       <FlatList
+          removeClippedSubviews={true}
         data={filteredFollowers}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

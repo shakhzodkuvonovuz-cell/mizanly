@@ -40,7 +40,7 @@ export default function MutedScreen() {
     queryKey: ['muted'],
     queryFn: ({ pageParam }) => mutesApi.getMuted(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: MutedPage) => last.meta?.hasMore ? last.meta.cursor : undefined,
+    getNextPageParam: (last: MutedPage) => last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
   });
 
   const muted: MutedUser[] = query.data?.pages.flatMap((p: MutedPage) => p.mutes ?? p.items ?? []) ?? [];
@@ -57,6 +57,24 @@ export default function MutedScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['muted'] }),
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
+
+  if (query.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Muted Accounts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => query.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -79,6 +97,7 @@ export default function MutedScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={muted}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

@@ -35,7 +35,12 @@ type SearchTab = typeof SEARCH_TABS[number]['key'];
 
 function HashtagRow({ hashtag, onPress }: { hashtag: Hashtag; onPress: () => void }) {
   return (
-    <Pressable style={styles.hashtagRow} onPress={onPress}>
+    <Pressable
+      style={styles.hashtagRow}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`View hashtag ${hashtag.name}`}
+    >
       <View style={styles.hashtagIconWrap}>
         <Icon name="hash" size="sm" color={colors.emerald} />
       </View>
@@ -49,7 +54,12 @@ function HashtagRow({ hashtag, onPress }: { hashtag: Hashtag; onPress: () => voi
 
 function ReelGridItem({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   return (
-    <Pressable style={styles.reelGridItem} onPress={onPress}>
+    <Pressable
+      style={styles.reelGridItem}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="View reel"
+    >
       <Image
         source={{ uri: reel.thumbnailUrl || reel.videoUrl }}
         style={styles.reelGridThumbnail}
@@ -208,6 +218,16 @@ export default function SearchResultsScreen() {
     hashtags: hashtagsQuery.isRefetching || combinedSearchQuery.isRefetching,
   };
 
+  const isError = {
+    people: combinedSearchQuery.isError,
+    posts: postsQuery.isError,
+    threads: threadsQuery.isError,
+    reels: reelsQuery.isError,
+    hashtags: hashtagsQuery.isError || combinedSearchQuery.isError,
+  };
+
+  const hasError = isError[activeTab];
+
   const queryClient = useQueryClient();
   const followMutation = useMutation({
     mutationFn: ({ userId, follow }: { userId: string; follow: boolean }) =>
@@ -223,7 +243,12 @@ export default function SearchResultsScreen() {
     };
     return (
       <View style={styles.userRow}>
-        <Pressable onPress={onPress} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+        <Pressable
+          onPress={onPress}
+          style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+          accessibilityRole="button"
+          accessibilityLabel={`View profile of ${user.displayName}`}
+        >
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
           <View style={styles.userInfo}>
             <View style={styles.userNameRow}>
@@ -297,6 +322,16 @@ export default function SearchResultsScreen() {
           title="Enter a search term"
           subtitle="Type at least 2 characters to see results"
         />
+      ) : hasError ? (
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load content"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={handleRefresh}
+          />
+        </View>
       ) : (
         <>
           {/* People Tab */}
@@ -316,6 +351,7 @@ export default function SearchResultsScreen() {
                 </View>
               ) : (
                 <FlatList
+          removeClippedSubviews={true}
                   data={people}
                   keyExtractor={(item) => item.id}
                   renderItem={({ item }) => (
@@ -355,6 +391,7 @@ export default function SearchResultsScreen() {
                 </View>
               ) : (
                 <FlatList
+          removeClippedSubviews={true}
                   data={posts}
                   keyExtractor={(item) => item.id}
                   renderItem={({ item }) => <PostCard post={item} />}
@@ -391,6 +428,7 @@ export default function SearchResultsScreen() {
                 </View>
               ) : (
                 <FlatList
+          removeClippedSubviews={true}
                   data={threads}
                   keyExtractor={(item) => item.id}
                   renderItem={({ item }) => <ThreadCard thread={item} />}
@@ -421,6 +459,7 @@ export default function SearchResultsScreen() {
             <>
               {isLoading.reels ? (
                 <FlatList
+          removeClippedSubviews={true}
                   data={Array.from({ length: 9 })}
                   keyExtractor={(_, i) => `skeleton-${i}`}
                   renderItem={() => (
@@ -433,6 +472,7 @@ export default function SearchResultsScreen() {
                 />
               ) : (
                 <FlatList
+          removeClippedSubviews={true}
                   data={reels}
                   keyExtractor={(item) => item.id}
                   renderItem={({ item }) => (
@@ -482,6 +522,7 @@ export default function SearchResultsScreen() {
                 </View>
               ) : (
                 <FlatList
+          removeClippedSubviews={true}
                   data={hashtags}
                   keyExtractor={(item) => item.id || `ht-${item.name}`}
                   renderItem={({ item }) => (

@@ -69,6 +69,24 @@ export default function BlockedScreen() {
     );
   };
 
+  if (query.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Blocked Accounts"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => query.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
@@ -90,6 +108,7 @@ export default function BlockedScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={blocked}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

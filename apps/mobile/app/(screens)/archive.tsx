@@ -32,7 +32,7 @@ export default function ArchiveScreen() {
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: stories = [], isLoading, refetch } = useQuery({
+  const { data: stories = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['stories', 'archive', userId],
     queryFn: () => storiesApi.getArchived(),
     enabled: !!userId,
@@ -132,6 +132,21 @@ export default function ArchiveScreen() {
     );
   }, []);
 
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => refetch()}
+        />
+      </View>
+    );
+  }
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -146,6 +161,7 @@ export default function ArchiveScreen() {
       <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
+          removeClippedSubviews={true}
         data={stories}
         renderItem={renderGridItem}
         keyExtractor={(item) => item.id}

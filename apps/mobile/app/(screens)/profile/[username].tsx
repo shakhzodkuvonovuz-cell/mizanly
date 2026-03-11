@@ -595,9 +595,9 @@ export default function ProfileScreen() {
               <Text style={styles.linkText}>Watch History</Text>
               <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
             </Pressable>
-            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-later')}>
+            <Pressable style={styles.linkItem} onPress={() => router.push('/(screens)/watch-history')}>
               <Icon name="bookmark" size="md" color={colors.text.primary} />
-              <Text style={styles.linkText}>Watch Later</Text>
+              <Text style={styles.linkText}>Watch History</Text>
               <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
             </Pressable>
             {profile.channel && (
@@ -650,9 +650,7 @@ export default function ProfileScreen() {
             <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive')}>
               <Icon name="clock" size="sm" color={colors.text.primary} />
             </Pressable>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/majlis-lists')}>
-              <Icon name="layers" size="sm" color={colors.text.primary} />
-            </Pressable>
+
             <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings')}>
               <Icon name="settings" size="sm" color={colors.text.primary} />
             </Pressable>

@@ -128,6 +128,24 @@ export default function CirclesScreen() {
     );
   };
 
+  if (circlesQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Circles"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => circlesQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -154,6 +172,7 @@ export default function CirclesScreen() {
         </View>
       ) : (
         <FlatList
+          removeClippedSubviews={true}
           data={circles}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}

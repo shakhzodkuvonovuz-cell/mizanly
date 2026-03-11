@@ -171,7 +171,7 @@ export default function MinbarScreen() {
     queryKey: ['videos-feed', selectedCategory, feedType],
     queryFn: async ({ pageParam }) => {
       if (feedType === 'subscriptions') {
-        return [];
+        return { data: [] as Video[], meta: { hasMore: false, cursor: undefined } };
       }
       return videosApi.getFeed(
         selectedCategory === 'all' ? undefined : selectedCategory,
@@ -179,11 +179,11 @@ export default function MinbarScreen() {
       );
     },
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.length > 0 ? last[last.length - 1].id : undefined,
+    getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: feedType === 'home',
   });
 
-  const videos: Video[] = feedQuery.data?.pages.flat() ?? [];
+  const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -618,7 +618,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.error, // Signature "YouTube" red for progress
+    backgroundColor: colors.emerald,
   },
   continueCardTitle: {
     color: colors.text.primary,

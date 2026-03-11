@@ -82,6 +82,24 @@ export default function FollowersScreen() {
     }
   }, [followersQuery]);
 
+  if (followersQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Followers"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => followersQuery.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
@@ -90,6 +108,7 @@ export default function FollowersScreen() {
       />
 
       <FlatList
+        removeClippedSubviews={true}
         data={followers}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

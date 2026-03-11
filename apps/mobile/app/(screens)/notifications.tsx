@@ -137,6 +137,8 @@ function NotificationRow({ notification }: { notification: Notification }) {
       ]}
       onPress={handlePress}
       android_ripple={{ color: colors.active.emerald10 }}
+      accessibilityRole="button"
+      accessibilityLabel={`View notification from ${notification.actor?.displayName ?? 'Someone'}`}
     >
       {/* Unread accent bar */}
       {!notification.isRead && <View style={styles.unreadBar} />}
@@ -221,6 +223,26 @@ export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
   const headerHeight = insets.top + 44 + spacing.sm;
 
+  if (query.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Notifications"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={{ paddingTop: headerHeight, flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load content"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => query.refetch()}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -242,6 +264,7 @@ export default function NotificationsScreen() {
       </View>
 
       <FlatList
+          removeClippedSubviews={true}
         data={notifications}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <NotificationRow notification={item} />}

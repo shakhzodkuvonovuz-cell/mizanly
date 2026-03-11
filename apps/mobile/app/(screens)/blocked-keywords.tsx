@@ -22,7 +22,7 @@ export default function BlockedKeywordsScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
-  const { data: keywords = [], isLoading, refetch } = useQuery<BlockedKeyword[]>({
+  const { data: keywords = [], isLoading, isError, refetch } = useQuery<BlockedKeyword[]>({
     queryKey: ['blocked-keywords'],
     queryFn: () => settingsApi.getBlockedKeywords(),
   });
@@ -60,6 +60,24 @@ export default function BlockedKeywordsScreen() {
       { text: 'Remove', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
     ]);
   }, [deleteMutation]);
+
+  if (isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Blocked Keywords"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

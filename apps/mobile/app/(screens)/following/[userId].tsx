@@ -82,6 +82,24 @@ export default function FollowingScreen() {
     }
   }, [followingQuery]);
 
+  if (followingQuery.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Following"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => followingQuery.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
@@ -90,6 +108,7 @@ export default function FollowingScreen() {
       />
 
       <FlatList
+        removeClippedSubviews={true}
         data={following}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (

@@ -8,7 +8,9 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk, useUser } from '@clerk/clerk-expo';
 import { Icon } from '@/components/ui/Icon';
+import { Switch } from 'react-native-gesture-handler';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
@@ -169,6 +171,26 @@ export default function AccountSettingsScreen() {
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton.Rect key={i} width="100%" height={48} />
           ))}
+        </View>
+      </View>
+    );
+  }
+
+  if (userQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Account"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 60 }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load account"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={() => userQuery.refetch()}
+          />
         </View>
       </View>
     );

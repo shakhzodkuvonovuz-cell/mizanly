@@ -62,7 +62,9 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         renderItem={({ item }) => (
           <Pressable
             style={styles.hashtagChip}
-            onPress={() => router.push(`/search?q=${encodeURIComponent(item.name)}`)}
+            onPress={() => router.push(`/(screens)/search?q=${encodeURIComponent(item.name)}` as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`Search for hashtag ${item.name}`}
           >
             <Text style={styles.hashtagText}>#{item.name}</Text>
             <Text style={styles.hashtagCount}>
@@ -116,6 +118,8 @@ function ExploreGridItem({ item }: { item: ExploreItem }) {
       onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
+      accessibilityRole="button"
+      accessibilityLabel="View post"
     >
       {thumbnailUrl ? (
         <Image source={{ uri: thumbnailUrl }} style={styles.gridImage} />
@@ -200,7 +204,7 @@ export default function DiscoverScreen() {
       <View style={styles.container}>
         <GlassHeader
           title="Discover"
-          rightActions={[{ icon: 'search', onPress: () => router.push('/search'), accessibilityLabel: 'Search' }]}
+          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as any), accessibilityLabel: 'Search' }]}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
@@ -218,7 +222,7 @@ export default function DiscoverScreen() {
     <View style={styles.container}>
       <GlassHeader
         title="Discover"
-        rightActions={[{ icon: 'search', onPress: () => router.push('/search'), accessibilityLabel: 'Search' }]}
+        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as any), accessibilityLabel: 'Search' }]}
       />
 
       <View style={styles.headerSpacer} />
@@ -238,11 +242,11 @@ export default function DiscoverScreen() {
         ListEmptyComponent={
           isEmpty ? (
             <EmptyState
-              icon="compass"
+              icon="globe"
               title="Nothing to discover yet"
               subtitle="Follow more creators or check back later"
               actionLabel="Find people"
-              onAction={() => router.push('/search')}
+              onAction={() => router.push('/(screens)/search' as any)}
             />
           ) : null
         }

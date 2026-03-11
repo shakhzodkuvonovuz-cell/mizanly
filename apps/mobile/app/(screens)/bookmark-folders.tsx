@@ -147,6 +147,7 @@ export default function BookmarkFoldersScreen() {
       <GlassHeader title="Bookmark Folders" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
+          removeClippedSubviews={true}
         data={foldersArray}
         keyExtractor={(item) => item.id}
         numColumns={2}

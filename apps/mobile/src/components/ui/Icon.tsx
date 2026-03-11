@@ -122,7 +122,7 @@ export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style
       color={iconColor}
       strokeWidth={strokeWidth}
       fill={isFilled ? (fill ?? iconColor) : 'none'}
-      style={style as any}
+      style={style as LucideProps['style']}
     />
   );
 

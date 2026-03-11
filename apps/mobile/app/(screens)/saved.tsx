@@ -31,7 +31,13 @@ type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.gridItem}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={styles.gridItem}
+      accessibilityRole="button"
+      accessibilityLabel="View post"
+    >
       {post.mediaUrls.length > 0 ? (
         <Image
           source={{ uri: post.thumbnailUrl ?? post.mediaUrls[0] }}
@@ -55,7 +61,13 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const hasThumbnail = reel.thumbnailUrl != null;
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.gridItem}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={styles.gridItem}
+      accessibilityRole="button"
+      accessibilityLabel="View reel"
+    >
       {hasThumbnail ? (
         <Image
           source={{ uri: reel.thumbnailUrl }}
@@ -77,7 +89,13 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const hasThumbnail = video.thumbnailUrl != null;
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85} style={styles.videoRow}>
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.85}
+      style={styles.videoRow}
+      accessibilityRole="button"
+      accessibilityLabel={`View video: ${video.title}`}
+    >
       {hasThumbnail ? (
         <Image
           source={{ uri: video.thumbnailUrl }}
@@ -203,6 +221,51 @@ export default function SavedScreen() {
     setRefreshingVideos(false);
   };
 
+  const isError =
+    (activeTab === 'posts' && savedPostsQuery.isError) ||
+    (activeTab === 'threads' && savedThreadsQuery.isError) ||
+    (activeTab === 'reels' && savedReelsQuery.isError) ||
+    (activeTab === 'videos' && savedVideosQuery.isError);
+
+  const refetchCurrent = () => {
+    if (activeTab === 'posts') savedPostsQuery.refetch();
+    if (activeTab === 'threads') savedThreadsQuery.refetch();
+    if (activeTab === 'reels') savedReelsQuery.refetch();
+    if (activeTab === 'videos') savedVideosQuery.refetch();
+  };
+
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Saved"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        <TabSelector
+          tabs={[
+            { key: 'posts', label: 'Posts' },
+            { key: 'threads', label: 'Threads' },
+            { key: 'reels', label: 'Reels' },
+            { key: 'videos', label: 'Videos' },
+          ]}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as typeof activeTab)}
+          variant="underline"
+        />
+        <View style={{ flex: 1, justifyContent: 'center' }}>
+          <EmptyState
+            icon="flag"
+            title="Couldn't load content"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={refetchCurrent}
+          />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -212,14 +275,14 @@ export default function SavedScreen() {
       <View style={styles.headerSpacer} />
 
       <TabSelector
-        tabs={['Posts', 'Threads', 'Reels', 'Videos']}
-        activeIndex={activeTab === 'posts' ? 0 : activeTab === 'threads' ? 1 : activeTab === 'reels' ? 2 : 3}
-        onChange={(i) => {
-          if (i === 0) setActiveTab('posts');
-          else if (i === 1) setActiveTab('threads');
-          else if (i === 2) setActiveTab('reels');
-          else setActiveTab('videos');
-        }}
+        tabs={[
+          { key: 'posts', label: 'Posts' },
+          { key: 'threads', label: 'Threads' },
+          { key: 'reels', label: 'Reels' },
+          { key: 'videos', label: 'Videos' },
+        ]}
+        activeKey={activeTab}
+        onTabChange={(key) => setActiveTab(key as typeof activeTab)}
         variant="underline"
       />
 

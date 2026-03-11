@@ -16,7 +16,7 @@ export default function ShareProfileScreen() {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading, isError, refetch } = useQuery({
     queryKey: ['profile', 'me'],
     queryFn: () => usersApi.getMe(),
   });
@@ -65,6 +65,24 @@ export default function ShareProfileScreen() {
             <Skeleton.Rect width={100} height={48} borderRadius={radius.md} />
           </View>
         </View>
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Share Profile"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load profile"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => refetch()}
+        />
       </View>
     );
   }

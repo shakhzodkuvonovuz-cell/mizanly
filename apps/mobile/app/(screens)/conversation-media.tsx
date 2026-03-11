@@ -336,6 +336,7 @@ export default function ConversationMediaScreen() {
       <View style={styles.content}>
         {activeTab === 'media' && (
           <FlatList
+          removeClippedSubviews={true}
             data={mediaItems}
             renderItem={renderMediaItem}
             keyExtractor={item => item.id}
@@ -351,6 +352,7 @@ export default function ConversationMediaScreen() {
         )}
         {activeTab === 'links' && (
           <FlatList
+          removeClippedSubviews={true}
             data={linkItems}
             renderItem={renderLinkItem}
             keyExtractor={item => item.id}
@@ -364,6 +366,7 @@ export default function ConversationMediaScreen() {
         )}
         {activeTab === 'docs' && (
           <FlatList
+          removeClippedSubviews={true}
             data={docItems}
             renderItem={renderDocItem}
             keyExtractor={item => item.id}

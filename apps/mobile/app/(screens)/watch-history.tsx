@@ -129,6 +129,25 @@ export default function WatchHistoryScreen() {
     router.push(`/(screens)/video/${item.id}`);
   };
 
+  if (watchHistoryQuery.isError) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title="Watch History"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        />
+        <View style={styles.headerSpacer} />
+        <EmptyState
+          icon="flag"
+          title="Couldn't load content"
+          subtitle="Check your connection and try again"
+          actionLabel="Retry"
+          onAction={() => watchHistoryQuery.refetch()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -143,6 +162,7 @@ export default function WatchHistoryScreen() {
       <View style={styles.headerSpacer} />
 
       <FlatList
+          removeClippedSubviews={true}
         data={items}
         keyExtractor={(item) => item.id}
         onEndReached={onEndReached}

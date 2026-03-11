@@ -22,6 +22,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, messagesApi } from '@/services/api';
 import type { StoryGroup } from '@/types';
@@ -177,7 +178,17 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
 
   // Guard: must be after all hooks
   if (!group || group.stories.length === 0) {
-    return null;
+    return (
+      <View style={styles.container}>
+        <EmptyState
+          icon="flag"
+          title="Story unavailable"
+          subtitle="This story may have been removed or expired"
+          actionLabel="Go back"
+          onAction={() => router.back()}
+        />
+      </View>
+    );
   }
 
   const handleTapLeft = () => {

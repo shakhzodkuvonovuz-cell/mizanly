@@ -337,15 +337,6 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             />
           </View>
 
-          {/* Glassmorphic Inline Reply Composer */}
-          <TouchableOpacity
-            style={styles.inlineReply}
-            onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
-            activeOpacity={0.8}
-          >
-            <Avatar uri={undefined} name="You" size="xs" showRing={false} />
-            <Text style={styles.inlineReplyText}>Reply to {thread.user.username}...</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -540,20 +531,4 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.sm,
   },
   spacer: { flex: 1 },
-  inlineReply: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.full,
-    padding: spacing.sm,
-    paddingHorizontal: spacing.md,
-    marginTop: spacing.xs,
-    borderWidth: 1,
-    borderColor: colors.dark.border,
-  },
-  inlineReplyText: {
-    color: colors.text.tertiary,
-    fontSize: fontSize.sm,
-    marginLeft: spacing.sm,
-  },
 });
