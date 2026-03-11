@@ -295,10 +295,11 @@ describe('PollsService', () => {
 
       expect(prisma.pollVote.findMany).toHaveBeenCalledWith({
         where: { optionId },
-        include: expect.any(Object),
+        include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
         orderBy: { createdAt: 'desc' },
         take: 21,
         cursor: { userId_optionId: { userId: 'user-1', optionId: 'opt1' } },
+        skip: 1,
       });
     });
   });

@@ -44,6 +44,8 @@ export interface Post {
   commentsDisabled: boolean;
   isSensitive: boolean;
   isRemoved: boolean;
+  isArchived?: boolean;
+  collaborators?: User[];
   createdAt: string;
   updatedAt: string;
   user: User;
@@ -117,6 +119,7 @@ export interface Thread {
   mediaUrls: string[];
   mediaTypes: string[];
   visibility: Visibility;
+  replyPermission?: 'everyone' | 'following' | 'mentioned' | 'none';
   isChainHead: boolean;
   chainId?: string;
   chainPosition: number;
@@ -169,6 +172,9 @@ export interface Reel {
   hashtags: string[];
   status: 'PROCESSING' | 'READY' | 'FAILED';
   isRemoved: boolean;
+  isArchived?: boolean;
+  duetOfId?: string;
+  stitchOfId?: string;
   audioTrackId?: string;
   audioTitle?: string;
   audioArtist?: string;
@@ -282,6 +288,8 @@ export interface PlaylistItem {
 
 export interface WatchHistoryItem {
   id: string;
+  videoId: string;
+  userId: string;
   title: string;
   thumbnailUrl?: string;
   duration: number;
@@ -314,14 +322,20 @@ export interface Message {
   replyToId?: string;
   isForwarded: boolean;
   isDeleted: boolean;
+  isScheduled?: boolean;
+  scheduledAt?: string;
+  starredBy?: string[];
   editedAt?: string;
   createdAt: string;
   sender: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl'>;
   replyTo?: { id: string; content?: string; senderId: string; sender: { username: string } };
   reactions?: MessageReaction[];
+  isPinned?: boolean;
+  expiresAt?: string;
 }
 
 export interface ConversationMember {
+  userId?: string;
   user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
   lastReadAt: string;
   unreadCount: number;
@@ -336,6 +350,7 @@ export interface Conversation {
   createdById?: string;
   groupName?: string;
   groupAvatarUrl?: string;
+  disappearingDuration?: number;
   lastMessageText?: string;
   lastMessageAt?: string;
   createdAt: string;
@@ -458,17 +473,29 @@ export interface Settings {
 }
 
 // ── Admin & Recommendations ──
+export type ReportStatus = 'PENDING' | 'REVIEWING' | 'RESOLVED' | 'DISMISSED';
+export type ReportReason = 'HATE_SPEECH' | 'HARASSMENT' | 'VIOLENCE' | 'SPAM' | 'MISINFORMATION' | 'NUDITY' | 'SELF_HARM' | 'TERRORISM' | 'DOXXING' | 'COPYRIGHT' | 'IMPERSONATION' | 'OTHER';
+export type ModerationAction = 'WARNING' | 'CONTENT_REMOVED' | 'TEMP_MUTE' | 'TEMP_BAN' | 'PERMANENT_BAN' | 'NONE';
+
 export interface Report {
   id: string;
-  reason: string;
-  status: string;
-  createdAt: string;
+  reporterId: string;
   reporter: { id: string; username: string; displayName?: string; avatarUrl?: string };
+  reportedUserId?: string;
   reportedUser?: { id: string; username: string; displayName?: string; avatarUrl?: string };
-  postId?: string;
-  threadId?: string;
-  reelId?: string;
-  videoId?: string;
+  reportedPostId?: string;
+  reportedCommentId?: string;
+  reportedMessageId?: string;
+  reason: ReportReason;
+  description?: string;
+  status: ReportStatus;
+  reviewedById?: string;
+  reviewedAt?: string;
+  actionTaken: ModerationAction;
+  moderatorNotes?: string;
+  explanationToReporter?: string;
+  explanationToReported?: string;
+  createdAt: string;
 }
 
 export interface AdminStats {
@@ -531,13 +558,201 @@ export interface SubtitleTrack {
   videoId: string;
 }
 
-export interface VideoChapter {
-  title: string;
-  startTime: number; // seconds
-}
-
 // ── Pagination ──
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { cursor: string | null; hasMore: boolean };
+}
+
+// ── Broadcast Channels ──
+export interface BroadcastChannel {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  avatarUrl?: string;
+  coverUrl?: string;
+  subscribersCount: number;
+  postsCount: number;
+  userId: string;
+  user?: User;
+  role?: 'owner' | 'admin' | 'subscriber';
+  isMuted?: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BroadcastMessage {
+  id: string;
+  content: string;
+  mediaUrls: string[];
+  mediaTypes: string[];
+  isPinned: boolean;
+  viewsCount: number;
+  channelId: string;
+  userId: string;
+  user?: User;
+  createdAt: string;
+}
+
+// ── Live Sessions ──
+export interface LiveSession {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnailUrl?: string;
+  status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  scheduledAt?: string;
+  startedAt?: string;
+  endedAt?: string;
+  viewersCount: number;
+  peakViewers: number;
+  recordingUrl?: string;
+  userId: string;
+  user?: User;
+  createdAt: string;
+}
+
+export interface LiveParticipant {
+  id: string;
+  userId: string;
+  user?: User;
+  role: 'host' | 'speaker' | 'viewer';
+  joinedAt: string;
+  handRaised: boolean;
+}
+
+// ── Calls ──
+export interface CallSession {
+  id: string;
+  callType: 'voice' | 'video';
+  status: 'ringing' | 'active' | 'ended' | 'missed' | 'declined';
+  callerId: string;
+  caller?: User;
+  receiverId: string;
+  receiver?: User;
+  startedAt?: string;
+  endedAt?: string;
+  duration?: number;
+  createdAt: string;
+}
+
+// ── Stickers ──
+export interface StickerPack {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  coverUrl?: string;
+  stickers: StickerItem[];
+  userId: string;
+  user?: User;
+  isOfficial: boolean;
+  downloadCount: number;
+  createdAt: string;
+}
+
+export interface StickerItem {
+  id: string;
+  imageUrl: string;
+  emoji?: string;
+  packId: string;
+}
+
+// ── Post Collabs ──
+export interface PostCollab {
+  id: string;
+  postId: string;
+  post?: Post;
+  userId: string;
+  user?: User;
+  status: 'pending' | 'accepted' | 'declined';
+  invitedBy: string;
+  createdAt: string;
+}
+
+// ── Channel Posts (Community) ──
+export interface ChannelPost {
+  id: string;
+  content: string;
+  mediaUrls: string[];
+  mediaTypes: string[];
+  postType: 'text' | 'image' | 'poll' | 'quiz';
+  likesCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isPinned: boolean;
+  channelId: string;
+  userId: string;
+  user: User;
+  createdAt: string;
+}
+
+// ── Audio Tracks ──
+export interface AudioTrack {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl?: string;
+  audioUrl: string;
+  duration: number;
+  usageCount: number;
+  isTrending: boolean;
+  genre?: string;
+  userId: string;
+  user?: User;
+  createdAt: string;
+}
+
+// ── Feed Dismissal ──
+export interface FeedDismissal {
+  id: string;
+  postId?: string;
+  reelId?: string;
+  threadId?: string;
+  reason: string;
+  userId: string;
+  createdAt: string;
+}
+
+// ── New Batch 22 Types ──
+export interface HashtagInfo {
+  id: string;
+  name: string;
+  postsCount: number;
+  reelsCount: number;
+  threadsCount: number;
+  videosCount: number;
+  createdAt: string;
+}
+
+export interface BookmarkCollection {
+  name: string;
+  count: number;
+  thumbnailUrl?: string;
+}
+
+export interface WatchLaterItem {
+  id: string;
+  videoId: string;
+  userId: string;
+  title: string;
+  thumbnailUrl?: string;
+  duration: number;
+  viewsCount: number;
+  createdAt: string;
+  channel: { id: string; handle: string; name: string; avatarUrl?: string };
+  addedAt: string;
+}
+
+export type SearchSuggestionType = 'user' | 'hashtag' | 'post' | 'thread' | 'reel' | 'video';
+
+export interface SearchSuggestion {
+  type: SearchSuggestionType;
+  id: string;
+  name: string;
+  avatarUrl?: string;
+  displayName?: string;
+  count?: number;
+  extra?: string;
 }

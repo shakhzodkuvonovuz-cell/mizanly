@@ -37,6 +37,7 @@ const THREAD_SELECT = {
   isPinned: true,
   isSensitive: true,
   isRemoved: true,
+  replyPermission: true,
   createdAt: true,
   updatedAt: true,
   user: {
@@ -263,6 +264,25 @@ export class ThreadsService {
         data: { threadsCount: { increment: 1 } },
       }),
     ]);
+    // Mention notifications
+    if (dto.mentions?.length) {
+      const [mentionedUsers, actor] = await Promise.all([
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+      ]);
+      for (const mentioned of mentionedUsers) {
+        if (mentioned.id !== userId) {
+          this.notifications.create({
+            userId: mentioned.id,
+            actorId: userId,
+            type: 'MENTION',
+            threadId: thread.id,
+            title: 'Mentioned you',
+            body: `@${actor?.username ?? 'Someone'} mentioned you in a thread`,
+          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+        }
+      }
+    }
     return thread;
   }
 
@@ -621,5 +641,72 @@ export class ThreadsService {
       update: {},
     });
     return { dismissed: true };
+  }
+
+  async setReplyPermission(threadId: string, userId: string, permission: 'everyone' | 'following' | 'mentioned' | 'none') {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    if (thread.userId !== userId) throw new ForbiddenException();
+
+    const validPermissions = ['everyone', 'following', 'mentioned', 'none'] as const;
+    if (!validPermissions.includes(permission)) {
+      throw new BadRequestException('Invalid permission value');
+    }
+
+    await this.prisma.thread.update({
+      where: { id: threadId },
+      data: { replyPermission: permission },
+    });
+    return { updated: true, permission };
+  }
+
+  async canReply(threadId: string, userId?: string) {
+    const thread = await this.prisma.thread.findUnique({
+      where: { id: threadId },
+      select: { userId: true, replyPermission: true, mentions: true, isRemoved: true, user: { select: { username: true } } },
+    });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    // Author can always reply (if authenticated)
+    if (userId && thread.userId === userId) return { canReply: true, reason: 'author' };
+
+    const permission = thread.replyPermission ?? 'everyone';
+    if (permission === 'none') return { canReply: false, reason: 'none' };
+    if (permission === 'everyone') return { canReply: true, reason: 'everyone' };
+
+    // Following check requires authenticated user
+    if (permission === 'following') {
+      if (!userId) return { canReply: false, reason: 'not_following' };
+      const follow = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: userId, followingId: thread.userId } },
+      });
+      if (follow) return { canReply: true, reason: 'following' };
+      return { canReply: false, reason: 'not_following' };
+    }
+
+    // Mentioned check requires authenticated user
+    if (permission === 'mentioned') {
+      if (!userId) return { canReply: false, reason: 'not_mentioned' };
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } });
+      if (user && thread.mentions.includes(user.username)) {
+        return { canReply: true, reason: 'mentioned' };
+      }
+      return { canReply: false, reason: 'not_mentioned' };
+    }
+
+    return { canReply: false, reason: 'unknown' };
+  }
+
+  async getShareLink(threadId: string) {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: { id: true, isRemoved: true } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+    return { url: `https://mizanly.app/thread/${threadId}` };
+  }
+
+  async isBookmarked(threadId: string, userId: string) {
+    const bookmark = await this.prisma.threadBookmark.findUnique({
+      where: { userId_threadId: { userId, threadId } },
+    });
+    return { bookmarked: !!bookmark };
   }
 }

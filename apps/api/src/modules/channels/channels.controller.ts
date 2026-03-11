@@ -108,4 +108,39 @@ export class ChannelsController {
   getMyChannels(@CurrentUser('id') userId: string) {
     return this.channelsService.getMyChannels(userId);
   }
+
+  @Get(':handle/analytics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get channel analytics (owner only)' })
+  getAnalytics(
+    @Param('handle') handle: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.channelsService.getAnalytics(handle, userId);
+  }
+
+  @Get(':handle/subscribers')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get channel subscribers (owner only, paginated)' })
+  getSubscribers(
+    @Param('handle') handle: string,
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.channelsService.getSubscribers(handle, userId, cursor);
+  }
+
+  @Get('recommended')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get recommended channels (excludes subscribed)' })
+  getRecommended(
+    @CurrentUser('id') userId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.channelsService.getRecommended(userId, limitNum);
+  }
 }

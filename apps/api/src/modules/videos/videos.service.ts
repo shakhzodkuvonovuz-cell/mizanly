@@ -54,6 +54,8 @@ const VIDEO_SELECT = {
   },
 };
 
+type VideoWithRelations = Prisma.VideoGetPayload<{ select: typeof VIDEO_SELECT }>;
+
 @Injectable()
 export class VideosService {
   private readonly logger = new Logger(VideosService.name);
@@ -63,6 +65,30 @@ export class VideosService {
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
   ) {}
+
+  private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
+    if (!userId || videos.length === 0) return videos;
+    const videoIds = videos.map(v => v.id);
+    const [reactions, bookmarks] = await Promise.all([
+      this.prisma.videoReaction.findMany({
+        where: { userId, videoId: { in: videoIds } },
+        select: { videoId: true, isLike: true },
+      }),
+      this.prisma.videoBookmark.findMany({
+        where: { userId, videoId: { in: videoIds } },
+        select: { videoId: true },
+      }),
+    ]);
+    const likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
+    const dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
+    const bookmarkedVideoIds = bookmarks.map(b => b.videoId);
+    return videos.map(video => ({
+      ...video,
+      isLiked: likedVideoIds.includes(video.id),
+      isDisliked: dislikedVideoIds.includes(video.id),
+      isBookmarked: bookmarkedVideoIds.includes(video.id),
+    }));
+  }
 
   async create(userId: string, dto: CreateVideoDto) {
     // Verify channel exists and user owns it
@@ -582,5 +608,82 @@ export class VideosService {
       },
     });
     return { reported: true };
+  }
+
+  async getRecommended(videoId: string, limit = 10, userId?: string) {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { channelId: true, category: true, tags: true },
+    });
+    if (!video) throw new NotFoundException('Video not found');
+
+    const where: Prisma.VideoWhereInput = {
+      id: { not: videoId },
+      status: VideoStatus.PUBLISHED,
+      OR: [
+        { channelId: video.channelId },
+        { category: video.category },
+        ...(video.tags.length > 0 ? [{ tags: { hasSome: video.tags } }] : []),
+      ],
+    };
+
+    const videos = await this.prisma.video.findMany({
+      where,
+      select: VIDEO_SELECT,
+      take: limit,
+      orderBy: { viewsCount: 'desc' },
+    });
+
+    const enhanced = await this.enhanceVideos(videos, userId);
+    return enhanced;
+  }
+
+  async getCommentReplies(commentId: string, cursor?: string, limit = 20) {
+    const comment = await this.prisma.videoComment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+
+    const replies = await this.prisma.videoComment.findMany({
+      where: { parentId: commentId },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        likesCount: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            isVerified: true,
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'asc' },
+    });
+
+    const hasMore = replies.length > limit;
+    const data = hasMore ? replies.slice(0, limit) : replies;
+    return {
+      data,
+      meta: { cursor: hasMore ? data[data.length - 1].id : null, hasMore },
+    };
+  }
+
+  async recordProgress(videoId: string, userId: string, progress: number) {
+    return this.updateProgress(videoId, userId, progress);
+  }
+
+  async getShareLink(videoId: string) {
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { id: true },
+    });
+    if (!video) throw new NotFoundException('Video not found');
+    return { url: `https://mizanly.app/video/${videoId}` };
   }
 }

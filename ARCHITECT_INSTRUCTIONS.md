@@ -1,896 +1,1059 @@
-# ARCHITECT INSTRUCTIONS — Mizanly (Batch 18: The Everything Batch)
-## For Sonnet/Haiku: Read CLAUDE.md first, then this file top to bottom.
+# BATCH 22: Production Hardening + Missing Screens + Platform Parity
 
-**Last updated:** 2026-03-08 by Claude Opus 4.6
-**Previous batches:** 1-17 → See `docs/PROJECT_HISTORY.md`
-
----
-
-## Context
-
-The schema has 20 models sitting idle with no service. Features that big platforms ship — post scheduling, pinned posts, story archive, video chapters, Majlis lists, read receipts — all have schema support but zero UI. 21 controllers have zero tests. This batch wires it ALL.
-
-**25 agents. All parallel except Agent 25 (docs) runs last.**
+**Date:** 2026-03-10
+**Theme:** Complete failed batch 21 screens, add missing platform-level features, harden quality, add missing backend modules, deep UX polish across all 5 spaces.
+**Agent Count:** 45
+**Predecessor:** Batch 21 (24/30 completed — 6 mobile agents failed)
 
 ---
 
-# PART A — NEW MOBILE SCREENS (Agents 1-5)
+## MANDATORY RULES FOR ALL AGENTS
+
+1. Read `CLAUDE.md` in project root FIRST — it contains mandatory code quality rules
+2. Find YOUR section below by "## Agent N:" — execute ONLY that section
+3. Do NOT touch any file not listed in your section
+4. Follow ALL component rules: BottomSheet (never Modal), Skeleton (never ActivityIndicator), EmptyState (never bare text), Icon (never emoji), radius.* (never hardcoded)
+5. Use `@CurrentUser('id')` in all backend controllers (never `@CurrentUser()`)
+6. No `any` in non-test code. `as any` allowed ONLY in `*.spec.ts` files for mocks
+7. All FlatLists MUST have `<RefreshControl tintColor={colors.emerald} />`
+8. Cursor-based pagination: `{ data: T[], meta: { cursor: string | null, hasMore: boolean } }`
+9. When done, list every file you created or modified
 
 ---
 
-## Step 1 — Schedule Post Screen
-**Agent 1** | NEW file: `apps/mobile/app/(screens)/schedule-post.tsx`
+## CONFLICT MAP — 45 AGENTS
 
-The schema has `scheduledAt` on Post, Thread, Reel, and Video. Create a scheduling screen that lets users pick a date/time for their content.
+Each file has exactly ONE owner. Zero conflicts guaranteed.
 
-Read the Prisma schema to confirm `Post.scheduledAt`, `Thread.scheduledAt` exist.
+### Backend New Modules (Agents 1-4)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 1 | `modules/reports/` (all files) |
+| 2 | `modules/hashtags/` (all files) |
+| 3 | `modules/bookmarks/` (all files) |
+| 4 | `modules/watch-history/` (all files) |
 
-### Screen design:
-- Header: "Schedule Post" with back button
-- Shows a preview of the content being scheduled (title/caption)
-- Date picker (use `@react-native-community/datetimepicker` or a simple custom picker with BottomSheet)
-- Time picker
-- "Schedule" button → calls the create endpoint with `scheduledAt` field
-- "Post Now" button → calls without `scheduledAt`
-- Minimum schedule time: 15 minutes from now
-- Show scheduled time in user-friendly format
+### Backend Modifications (Agents 5-10)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 5 | `modules/users/users.service.ts`, `users.controller.ts` |
+| 6 | `modules/posts/posts.service.ts`, `posts.controller.ts` |
+| 7 | `modules/threads/threads.service.ts`, `threads.controller.ts` |
+| 8 | `modules/reels/reels.service.ts`, `reels.controller.ts` |
+| 9 | `modules/notifications/notifications.service.ts`, `notifications.controller.ts` |
+| 10 | `modules/search/search.service.ts`, `search.controller.ts` |
 
-Receive `type` (post/thread/reel/video) and content data via route params. Read existing create screens (create-post.tsx, create-thread.tsx) to understand how they pass data.
+### Backend Enhancement (Agents 11-14)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 11 | `modules/stories/stories.service.ts`, `stories.controller.ts` |
+| 12 | `modules/channels/channels.service.ts`, `channels.controller.ts` |
+| 13 | `modules/videos/videos.service.ts`, `videos.controller.ts` |
+| 14 | `modules/messages/messages.service.ts`, `messages.controller.ts` |
 
-**If `@react-native-community/datetimepicker` is not installed**, build a simple custom picker using BottomSheet with hour/minute/date scrollable lists. Check `apps/mobile/package.json` for available date picker packages.
+### New Mobile Screens — Batch 21 Failures (Agents 15-20)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 15 | `(screens)/broadcast-channels.tsx`, `(screens)/broadcast/[id].tsx` |
+| 16 | `(screens)/close-friends.tsx` |
+| 17 | `(screens)/pinned-messages.tsx`, `(screens)/starred-messages.tsx` |
+| 18 | `(screens)/community-posts.tsx` |
+| 19 | `components/risalah/StickerPicker.tsx` — REWRITE |
+| 20 | `components/risalah/StickerPackBrowser.tsx` — REWRITE |
 
-All CLAUDE.md rules: theme tokens, Icon, BottomSheet (not Modal), Skeleton, EmptyState.
+### New Mobile Screens — New (Agents 21-32)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 21 | `(screens)/sound/[id].tsx` |
+| 22 | `(screens)/mutual-followers.tsx` |
+| 23 | `(screens)/conversation-media.tsx` |
+| 24 | `(screens)/theme-settings.tsx` |
+| 25 | `(screens)/account-settings.tsx` |
+| 26 | `(screens)/share-profile.tsx`, `(screens)/qr-scanner.tsx` |
+| 27 | `(screens)/reports/[id].tsx` |
+| 28 | `(screens)/discover.tsx` |
+| 29 | `(screens)/search-results.tsx` |
+| 30 | `(screens)/voice-recorder.tsx` |
+| 31 | `(screens)/create-broadcast.tsx` |
+| 32 | `(screens)/schedule-live.tsx` |
 
-**Verification:** Screen renders with date/time selection.
+### Mobile Screen Enhancements (Agents 33-38)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 33 | `(tabs)/saf.tsx` |
+| 34 | `(tabs)/majlis.tsx` |
+| 35 | `(tabs)/risalah.tsx` |
+| 36 | `(tabs)/minbar.tsx` |
+| 37 | `(screens)/settings.tsx` |
+| 38 | `(screens)/edit-profile.tsx` |
 
----
+### Component Enhancements (Agents 39-41)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 39 | `components/saf/PostCard.tsx` |
+| 40 | `components/majlis/ThreadCard.tsx` |
+| 41 | `components/ui/RichText.tsx` |
 
-## Step 2 — Story Archive Screen
-**Agent 2** | NEW file: `apps/mobile/app/(screens)/archive.tsx`
-
-Schema has `Story.isArchived`. Create a screen showing the user's archived stories.
-
-### Implementation:
-- Header: "Archive" with back button
-- Grid layout (3 columns) showing archived story thumbnails
-- Tap → view archived story (navigate to story-viewer with archive flag)
-- Long-press → BottomSheet with "Unarchive" / "Delete" options
-- The API call: read `stories.service.ts` and `stories.controller.ts` to find if there's an archive endpoint. If not, use `GET /stories/me` with a filter param.
-- If no archive endpoint exists, fetch user's stories and filter `isArchived === true` client-side, noting that a proper endpoint should be added.
-
-Empty state: `<EmptyState icon="clock" title="No archived stories" subtitle="Stories you archive will appear here" />`
-
-All CLAUDE.md rules apply.
-
-**Verification:** Screen renders grid or empty state.
-
----
-
-## Step 3 — Bookmark Folders Screen
-**Agent 3** | NEW file: `apps/mobile/app/(screens)/bookmark-folders.tsx`
-
-Currently bookmarks are a flat list. This screen lets users organize saved content into named folders.
-
-Read the Prisma schema for any BookmarkFolder or Collection model.
-
-### If schema has a folder/collection model:
-- Fetch folders from API
-- Display as a list of folder cards (name, item count, cover thumbnail)
-- Tap → navigate to `/(screens)/saved?folder=${folderId}`
-- "Create Folder" FAB → BottomSheet with name input
-
-### If schema does NOT have folder model:
-- Implement client-side folders using AsyncStorage
-- `AsyncStorage.getItem('bookmark-folders')` → `{ [folderId]: { name, itemIds[] } }`
-- Same UI but backed by local storage
-- Note: This is a client-only solution; server-backed folders need schema migration
-
-All CLAUDE.md rules.
-
-**Verification:** Screen renders with folder management.
-
----
-
-## Step 4 — Manage Data / Privacy Center Screen
-**Agent 4** | NEW file: `apps/mobile/app/(screens)/manage-data.tsx`
-
-Privacy center for data management:
-
-### Design:
-```
-┌─────────────────────────────┐
-│ ← Manage Your Data          │
-├─────────────────────────────┤
-│ Download Your Data           │
-│ Request a copy of all your  │
-│ data. We'll notify you      │
-│ when it's ready.            │
-│ [Request Download]          │
-│                             │
-│ Connected Apps              │
-│ No connected apps           │
-│                             │
-│ Clear Search History        │
-│ [Clear]                     │
-│                             │
-│ Clear Watch History         │
-│ [Clear]                     │
-│                             │
-│ Delete Account              │
-│ [Delete Account] (red)      │
-└─────────────────────────────┘
-```
-
-- "Request Download" → `Alert.alert` confirmation → call a hypothetical `/users/me/export` endpoint (or show "Coming soon" if endpoint doesn't exist — read the backend to check)
-- "Clear Search History" → `AsyncStorage.removeItem('search-history')` (read search.tsx to see the key name)
-- "Clear Watch History" → call `usersApi.clearWatchHistory()` (already exists!)
-- "Delete Account" → Navigate to settings.tsx delete flow or duplicate the delete confirmation logic
-
-Use ScrollView with RefreshControl. All CLAUDE.md rules.
-
-**Verification:** Screen renders with working buttons.
+### Integration & Infrastructure (Agents 42-45)
+| Agent | Exclusive Files |
+|-------|----------------|
+| 42 | `services/api.ts` |
+| 43 | `types/index.ts` |
+| 44 | `store/index.ts` |
+| 45 | `app.module.ts` + 4 new `.module.ts` files |
 
 ---
 
-## Step 5 — Majlis Lists (Twitter Lists)
-**Agent 5** | NEW files:
-- `apps/mobile/app/(screens)/majlis-lists.tsx` (NEW)
-- `apps/mobile/app/(screens)/majlis-list/[id].tsx` (NEW)
+## Agent 1: Reports Module
 
-Schema has `MajlisList` and `MajlisListMember` models. Create both screens.
+**Goal:** Full NestJS module for user content reporting. Schema has `Report` model (line 1124) with `ReportStatus`, `ReportReason`, `ModerationAction` enums. Currently NO dedicated module — reports are unhandled.
 
-### majlis-lists.tsx — Lists overview:
-- Header: "Lists" with back button + "Create List" icon button
-- FlatList of user's lists (name, description, member count, privacy)
-- Tap → navigate to `/(screens)/majlis-list/${list.id}`
-- "Create List" → BottomSheet with name input, description, toggle public/private
-- API: Read the schema to understand MajlisList fields. Call the appropriate API (Agent 19 will create the API client methods, so just use `majlisListsApi.getLists()` etc.)
+**Files to CREATE:**
+- `apps/api/src/modules/reports/reports.service.ts`
+- `apps/api/src/modules/reports/reports.controller.ts`
+- `apps/api/src/modules/reports/reports.module.ts`
+- `apps/api/src/modules/reports/dto/create-report.dto.ts`
+- `apps/api/src/modules/reports/reports.service.spec.ts`
 
-### majlis-list/[id].tsx — List detail:
-- Header: List name with back button + "Edit" icon
-- Tab selector: Members | Timeline
-- Members tab: FlatList of member profiles with "Remove" option (if owner)
-- Timeline tab: FlatList of threads from list members (fetch threads filtered by member IDs)
-- "Add Members" button → search/select users BottomSheet
-- Long-press member → BottomSheet with "Remove from list"
+### Service Methods:
 
-Both screens: RefreshControl, Skeleton, EmptyState, all CLAUDE.md rules.
+```typescript
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
+import { CreateReportDto } from './dto/create-report.dto';
 
-**Verification:** Both screens render. Lists can be viewed.
+@Injectable()
+export class ReportsService {
+  constructor(private prisma: PrismaService) {}
 
----
+  // Submit a report — any user can report content
+  async create(userId: string, dto: CreateReportDto) {
+    // Prevent duplicate reports from same user on same target
+    const existing = await this.prisma.report.findFirst({
+      where: {
+        reporterId: userId,
+        ...(dto.reportedPostId && { reportedPostId: dto.reportedPostId }),
+        ...(dto.reportedUserId && { reportedUserId: dto.reportedUserId }),
+        ...(dto.reportedCommentId && { reportedCommentId: dto.reportedCommentId }),
+        ...(dto.reportedMessageId && { reportedMessageId: dto.reportedMessageId }),
+        status: { in: ['PENDING', 'REVIEWING'] },
+      },
+    });
+    if (existing) throw new ConflictException('You already reported this');
 
-# PART B — NEW BACKEND MODULES (Agents 6-9)
+    return this.prisma.report.create({
+      data: {
+        reporterId: userId,
+        reason: dto.reason,
+        description: dto.description,
+        reportedPostId: dto.reportedPostId,
+        reportedUserId: dto.reportedUserId,
+        reportedCommentId: dto.reportedCommentId,
+        reportedMessageId: dto.reportedMessageId,
+      },
+    });
+  }
 
----
+  // Get user's own reports (track status)
+  async getMyReports(userId: string, cursor?: string, limit = 20) {
+    const reports = await this.prisma.report.findMany({
+      where: { reporterId: userId },
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: 'desc' },
+      include: {
+        reportedUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+    const hasMore = reports.length > limit;
+    const data = hasMore ? reports.slice(0, limit) : reports;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
 
-## Step 6 — Scheduling Module
-**Agent 6** | NEW files:
-- `apps/api/src/modules/scheduling/scheduling.module.ts` (NEW)
-- `apps/api/src/modules/scheduling/scheduling.controller.ts` (NEW)
-- `apps/api/src/modules/scheduling/scheduling.service.ts` (NEW)
+  // Get single report by id (own report only)
+  async getById(reportId: string, userId: string) {
+    const report = await this.prisma.report.findUnique({
+      where: { id: reportId },
+      include: {
+        reportedUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+    if (!report) throw new NotFoundException('Report not found');
+    if (report.reporterId !== userId) throw new ForbiddenException();
+    return report;
+  }
 
-Read schema to confirm `Post.scheduledAt`, `Thread.scheduledAt`, `Reel.scheduledAt`, `Video.scheduledAt`.
+  // Admin: get all pending reports
+  async getPending(cursor?: string, limit = 20) {
+    const reports = await this.prisma.report.findMany({
+      where: { status: 'PENDING' },
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      orderBy: { createdAt: 'asc' },
+      include: {
+        reporter: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        reportedUser: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+      },
+    });
+    const hasMore = reports.length > limit;
+    const data = hasMore ? reports.slice(0, limit) : reports;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
 
-### Endpoints:
-```
-GET  /scheduling/scheduled       — All user's scheduled content (across types)
-PATCH /scheduling/:type/:id      — Update scheduled time (type = post|thread|reel|video)
-DELETE /scheduling/:type/:id     — Cancel scheduled post (revert to draft or delete)
-POST /scheduling/publish-now/:type/:id — Publish immediately
-```
+  // Admin: resolve a report
+  async resolve(reportId: string, adminId: string, actionTaken: string) {
+    const report = await this.prisma.report.findUnique({ where: { id: reportId } });
+    if (!report) throw new NotFoundException('Report not found');
 
-### Service logic:
-- `getScheduled(userId)` → Query posts/threads/reels/videos where `scheduledAt IS NOT NULL` and `scheduledAt > now` and `userId = userId`. Combine into a unified list sorted by scheduledAt.
-- `updateSchedule(userId, type, id, scheduledAt)` → Update the scheduledAt field on the appropriate model. Validate: must be >= 15 min from now.
-- `cancelSchedule(userId, type, id)` → Set scheduledAt to null or delete the item
-- `publishNow(userId, type, id)` → Set scheduledAt to null (makes it live)
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.report.update({
+        where: { id: reportId },
+        data: { status: 'RESOLVED', actionTaken, reviewedAt: new Date() },
+      }),
+      this.prisma.moderationLog.create({
+        data: {
+          moderatorId: adminId,
+          action: actionTaken,
+          targetUserId: report.reportedUserId,
+          targetPostId: report.reportedPostId,
+          reason: `Report ${reportId}: ${report.reason}`,
+        },
+      }),
+    ]);
+    return updated;
+  }
 
-All endpoints require ClerkAuthGuard. Verify ownership before update/delete.
+  // Admin: dismiss a report
+  async dismiss(reportId: string) {
+    return this.prisma.report.update({
+      where: { id: reportId },
+      data: { status: 'DISMISSED', reviewedAt: new Date() },
+    });
+  }
 
-**Verification:** Compiles. Endpoints return data.
-
----
-
-## Step 7 — Majlis Lists Module
-**Agent 7** | NEW files:
-- `apps/api/src/modules/majlis-lists/majlis-lists.module.ts` (NEW)
-- `apps/api/src/modules/majlis-lists/majlis-lists.controller.ts` (NEW)
-- `apps/api/src/modules/majlis-lists/majlis-lists.service.ts` (NEW)
-
-Read schema to understand `MajlisList` and `MajlisListMember` models.
-
-### Endpoints:
-```
-GET    /majlis-lists              — User's lists (owned + subscribed)
-POST   /majlis-lists              — Create list
-GET    /majlis-lists/:id          — List detail with member count
-PATCH  /majlis-lists/:id          — Update list (name, description, isPublic)
-DELETE /majlis-lists/:id          — Delete list (owner only)
-GET    /majlis-lists/:id/members  — List members (paginated)
-POST   /majlis-lists/:id/members  — Add member
-DELETE /majlis-lists/:id/members/:userId — Remove member
-GET    /majlis-lists/:id/timeline — Threads from list members (paginated, cursor)
-```
-
-### Service logic:
-- Timeline: Fetch threads where `userId IN (list member IDs)`, `isChainHead: true`, ordered by `createdAt: 'desc'`
-- Only list owner can add/remove members and update/delete
-- Public lists can be subscribed to by anyone
-- Standard pagination on all list endpoints
-
-**Verification:** Compiles. All CRUD works.
-
----
-
-## Step 8 — Polls Service Module
-**Agent 8** | NEW files:
-- `apps/api/src/modules/polls/polls.module.ts` (NEW)
-- `apps/api/src/modules/polls/polls.controller.ts` (NEW)
-- `apps/api/src/modules/polls/polls.service.ts` (NEW)
-
-Schema has `Poll`, `PollOption`, `PollVote` models. Currently polls are created inline with threads but have no dedicated service.
-
-### Endpoints:
-```
-GET    /polls/:id           — Get poll with options and vote counts
-POST   /polls/:id/vote      — Vote on a poll option (body: { optionId })
-DELETE /polls/:id/vote      — Retract vote
-GET    /polls/:id/voters    — List voters per option (paginated)
-```
-
-### Service logic:
-- Read the schema to understand Poll ↔ PollOption ↔ PollVote relations
-- Vote: Check if user already voted (prevent double voting). Create PollVote, increment option votesCount.
-- Retract: Delete PollVote, decrement option votesCount.
-- Get poll: Include options with vote counts. If authenticated, include `userVotedOptionId`.
-- Voters: Paginated list of users who voted for a specific option.
-
-Use `OptionalClerkAuthGuard` on GET (show personalized vote status). Use `ClerkAuthGuard` on POST/DELETE.
-
-**Verification:** Compiles. Vote/retract works.
-
----
-
-## Step 9 — Subtitles Module
-**Agent 9** | NEW files:
-- `apps/api/src/modules/subtitles/subtitles.module.ts` (NEW)
-- `apps/api/src/modules/subtitles/subtitles.controller.ts` (NEW)
-- `apps/api/src/modules/subtitles/subtitles.service.ts` (NEW)
-
-Schema has `SubtitleTrack` model.
-
-### Endpoints:
-```
-GET    /videos/:videoId/subtitles         — List subtitle tracks for a video
-POST   /videos/:videoId/subtitles         — Upload subtitle track (label, language, srtUrl)
-DELETE /videos/:videoId/subtitles/:id     — Delete subtitle track (owner only)
-GET    /videos/:videoId/subtitles/:id/srt — Get SRT file content (redirect to R2 URL)
+  // Admin: get report stats
+  async getStats() {
+    const [pending, reviewing, resolved, dismissed] = await Promise.all([
+      this.prisma.report.count({ where: { status: 'PENDING' } }),
+      this.prisma.report.count({ where: { status: 'REVIEWING' } }),
+      this.prisma.report.count({ where: { status: 'RESOLVED' } }),
+      this.prisma.report.count({ where: { status: 'DISMISSED' } }),
+    ]);
+    return { pending, reviewing, resolved, dismissed, total: pending + reviewing + resolved + dismissed };
+  }
+}
 ```
 
-### Service logic:
-- Create: Validate video exists and user is channel owner. Store subtitle metadata.
-- List: Return all subtitle tracks for a video (language, label, URL).
-- Delete: Owner-only. Remove from DB.
-- SRT content: Redirect to the stored `srtUrl` (Cloudflare R2 presigned URL).
+### Controller:
+```typescript
+import { Controller, Post, Get, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { ReportsService } from './reports.service';
+import { CreateReportDto } from './dto/create-report.dto';
 
-**Verification:** Compiles. Subtitle tracks can be listed.
+@ApiTags('Reports')
+@ApiBearerAuth()
+@UseGuards(ClerkAuthGuard)
+@Controller('api/v1/reports')
+export class ReportsController {
+  constructor(private service: ReportsService) {}
 
----
+  @Post()
+  create(@CurrentUser('id') userId: string, @Body() dto: CreateReportDto) {
+    return this.service.create(userId, dto);
+  }
 
-# PART C — EXISTING MOBILE EDITS (Agents 10-17)
+  @Get('mine')
+  getMyReports(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.service.getMyReports(userId, cursor);
+  }
 
----
+  @Get('pending')
+  getPending(@Query('cursor') cursor?: string) {
+    return this.service.getPending(cursor);
+  }
 
-## Step 10 — Story Viewer: Emoji Reactions
-**Agent 10** | File: `apps/mobile/app/(screens)/story-viewer.tsx` (EDIT)
+  @Get('stats')
+  getStats() {
+    return this.service.getStats();
+  }
 
-Read the full file. Add emoji reaction functionality:
+  @Get(':id')
+  getById(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.service.getById(id, userId);
+  }
 
-1. Add a row of 6 quick-reaction emojis below the story content: ❤️ 🔥 👏 😂 😍 😢
-2. Each emoji is a `Pressable` that:
-   - Calls the stories API to react (check if a react endpoint exists in stories.controller.ts)
-   - Shows a scale animation (emoji bounces) using Reanimated
-   - Haptic feedback on tap
-3. If no backend react endpoint exists, emit a socket event or create a local-only animation (the reaction is the feedback itself, like Instagram's quick reactions that send a DM)
+  @Patch(':id/resolve')
+  resolve(@CurrentUser('id') adminId: string, @Param('id') id: string, @Body('actionTaken') actionTaken: string) {
+    return this.service.resolve(id, adminId, actionTaken);
+  }
 
-Implementation approach:
-```tsx
-const QUICK_REACTIONS = ['❤️', '🔥', '👏', '😂', '😍', '😢'];
-
-// In the render, add below the story:
-<View style={styles.reactionsRow}>
-  {QUICK_REACTIONS.map(emoji => (
-    <Pressable key={emoji} onPress={() => handleStoryReaction(emoji)} style={styles.reactionBtn}>
-      <Text style={styles.reactionEmoji}>{emoji}</Text>
-    </Pressable>
-  ))}
-</View>
+  @Patch(':id/dismiss')
+  dismiss(@Param('id') id: string) {
+    return this.service.dismiss(id);
+  }
+}
 ```
 
-For `handleStoryReaction`: Send as a DM reply with the emoji (using the existing reply mechanism in the file). Read how the reply input currently works and reuse that pattern.
-
-**Verification:** Emoji row visible. Tap sends reaction.
-
----
-
-## Step 11 — Hashtag: Follow Button
-**Agent 11** | File: `apps/mobile/app/(screens)/hashtag/[tag].tsx` (EDIT)
-
-Read the full file. Read the Prisma schema for any `HashtagFollow` or similar model.
-
-### If schema has HashtagFollow model:
-- Add a "Follow" button next to the hashtag header
-- Call API to follow/unfollow
-- Toggle button state (Following ↔ Follow)
-
-### If schema does NOT have HashtagFollow:
-- Implement client-side hashtag follow using AsyncStorage
-- Key: `followed-hashtags` → `string[]`
-- Button toggles inclusion in the array
-- Show followed state on load
-
-Either way:
-- Use `ActionButton` component or styled Pressable matching the follow button pattern on profile
-- Add haptic feedback on toggle
-
-**Verification:** Follow button visible and toggles state.
-
----
-
-## Step 12 — Video: Chapters Display
-**Agent 12** | File: `apps/mobile/app/(screens)/video/[id].tsx` (EDIT)
-
-Read the full file. Schema has `Video.chapters` as `Json?`.
-
-Read the backend `videos.service.ts` to understand what format `chapters` uses (likely `[{ title: string, startTime: number }]`).
-
-### Implementation:
-1. Parse chapters from video data
-2. Below the video player, show a "Chapters" section (collapsible):
-```tsx
-{chapters.length > 0 && (
-  <Pressable onPress={() => setShowChapters(!showChapters)} style={styles.chapterHeader}>
-    <Icon name="layers" size="sm" color={colors.text.secondary} />
-    <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
-    <Icon name={showChapters ? 'chevron-down' : 'chevron-right'} size="sm" color={colors.text.tertiary} />
-  </Pressable>
-)}
-{showChapters && chapters.map((ch, i) => (
-  <Pressable key={i} onPress={() => seekToChapter(ch.startTime)} style={styles.chapterRow}>
-    <Text style={styles.chapterTime}>{formatTime(ch.startTime)}</Text>
-    <Text style={styles.chapterTitle}>{ch.title}</Text>
-  </Pressable>
-))}
-```
-3. `seekToChapter`: Find the video ref and call `videoRef.current?.setPositionAsync(ch.startTime * 1000)` (or equivalent for the video player being used).
-
-Read the file to understand which video player component is used (expo-av Video, react-native-video, etc.) and its seek API.
-
-**Verification:** Chapters section visible when video has chapters data.
-
----
-
-## Step 13 — Profile: Pinned Posts + Archive Link
-**Agent 13** | File: `apps/mobile/app/(screens)/profile/[username].tsx` (EDIT)
-
-Read the full file. Read schema for `Thread.isPinned` or `Post.isPinned` fields.
-
-### 13A — Pinned posts section:
-If schema has isPinned:
-- Above the posts grid, show pinned items (max 3)
-- Query: fetch user's posts/threads where `isPinned: true`
-- Display with a 📌 pin icon badge overlay
-- Tap → navigate to post/thread detail
-
-### 13B — Archive link (own profile only):
-- When viewing own profile, add an "Archive" icon button in the header area
-- `<Pressable onPress={() => router.push('/(screens)/archive')}>`
-- Use `<Icon name="clock" />` for archive
-
-### 13C — Lists link (own profile only):
-- Add a "Lists" row or icon button
-- Navigate to `/(screens)/majlis-lists`
-
-Read the file to understand the profile header layout and where to place these.
-
-**Verification:** Pinned section shows when pins exist. Archive button visible on own profile.
-
----
-
-## Step 14 — Channel: Fix TODO Stubs
-**Agent 14** | File: `apps/mobile/app/(screens)/channel/[handle].tsx` (EDIT)
-
-Read the full file. Fix 3 TODO stubs:
-
-### Line ~421 — Copy channel link:
-```ts
-import * as Clipboard from 'expo-clipboard';
-// ...
-await Clipboard.setStringAsync(`mizanly://channel/${channel.handle}`);
-Alert.alert('Copied', 'Channel link copied to clipboard');
-```
-
-### Line ~436 — Native share:
-```ts
-import { Share } from 'react-native';
-// ...
-await Share.share({
-  message: `Check out ${channel.name} on Mizanly`,
-  url: `mizanly://channel/${channel.handle}`,
-});
-```
-
-### Line ~444 — Copy link (likely same as 421):
-Same Clipboard implementation.
-
-Check if `expo-clipboard` and `Share` are already imported. Add if missing.
-
-**Verification:** Copy and share buttons work (no more TODO comments).
-
----
-
-## Step 15 — Conversation: Read Receipts Display
-**Agent 15** | File: `apps/mobile/app/(screens)/conversation/[id].tsx` (EDIT)
-
-Read the full file. Schema has `Message.readAt`.
-
-### Implementation:
-In the message bubble rendering, for sent messages (from current user), add read receipt indicators:
-
-```tsx
-{msg.senderId === user?.id && (
-  <View style={styles.receiptRow}>
-    <Icon
-      name={msg.readAt ? 'check-check' : 'check'}
-      size="xs"
-      color={msg.readAt ? colors.emerald : colors.text.tertiary}
-    />
-    {msg.readAt && (
-      <Text style={styles.readTime}>{format(new Date(msg.readAt), 'HH:mm')}</Text>
-    )}
-  </View>
-)}
-```
-
-Find where individual messages are rendered. It might be a `renderMessage` function or inline in the FlatList `renderItem`. Read the full file to locate it.
-
-Style the receipt row: `flexDirection: 'row'`, `alignItems: 'center'`, small gap, right-aligned below the message bubble.
-
-Double check icon: `check` = sent, `check-check` = read (WhatsApp-style). Verify both icon names exist in CLAUDE.md Icon list. Both `check` and `check-check` are listed.
-
-**Verification:** Read receipts (✓ vs ✓✓) visible on sent messages.
-
----
-
-## Step 16 — CommentsSheet: Fix Reply Stub
-**Agent 16** | File: `apps/mobile/src/components/bakra/CommentsSheet.tsx` (EDIT)
-
-Read the full file. Line ~88 has a TODO for reply functionality.
-
-### Implementation:
-1. Add state for reply target: `const [replyTo, setReplyTo] = useState<Comment | null>(null);`
-2. Wire the Reply button to set the reply target
-3. Show a reply indicator above the comment input:
-```tsx
-{replyTo && (
-  <View style={styles.replyBanner}>
-    <Text style={styles.replyLabel}>Replying to @{replyTo.user.username}</Text>
-    <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-      <Icon name="x" size="xs" color={colors.text.tertiary} />
-    </Pressable>
-  </View>
-)}
-```
-4. When sending a comment, include `replyToId: replyTo?.id` in the API call
-5. Clear replyTo after sending
-
-Read the existing send comment logic and adapt.
-
-**Verification:** Reply button works. Reply indicator shows. Reply sends with parent ID.
-
----
-
-## Step 17 — Store: Add Missing State
-**Agent 17** | File: `apps/mobile/src/store/index.ts` (EDIT)
-
-Read the full file. Add missing state fields:
-
-```ts
-// Add to AppState interface:
-followedHashtags: string[];
-addFollowedHashtag(tag: string): void;
-removeFollowedHashtag(tag: string): void;
-
-// Add to create store:
-followedHashtags: [],
-addFollowedHashtag: (tag) => set((s) => ({
-  followedHashtags: [...s.followedHashtags, tag],
-})),
-removeFollowedHashtag: (tag) => set((s) => ({
-  followedHashtags: s.followedHashtags.filter(t => t !== tag),
-})),
-```
-
-Add `followedHashtags` to the `partialize` persist config so it survives app restarts.
-
-Add selector: `export const useFollowedHashtags = () => useStore(s => s.followedHashtags);`
-
-**Verification:** Store compiles. New state accessible.
-
----
-
-# PART D — BACKEND EDITS (Agent 18)
-
----
-
-## Step 18 — Register New Modules + Backend Wiring
-**Agent 18** | Files:
-- `apps/api/src/app.module.ts` (EDIT)
-
-Register all 4 new backend modules:
-```ts
-import { SchedulingModule } from './modules/scheduling/scheduling.module';
-import { MajlisListsModule } from './modules/majlis-lists/majlis-lists.module';
-import { PollsModule } from './modules/polls/polls.module';
-import { SubtitlesModule } from './modules/subtitles/subtitles.module';
-```
-
-Add all to `imports` array.
-
-**Verification:** `npx tsc --noEmit` — 0 errors after all backend agents complete.
-
----
-
-# PART E — MOBILE API + TYPES (Agent 19)
-
----
-
-## Step 19 — API Client + Types Updates
-**Agent 19** | Files:
-- `apps/mobile/src/services/api.ts` (EDIT)
-- `apps/mobile/src/types/index.ts` (EDIT)
-
-### api.ts — Add new API groups:
-
-```ts
-// Scheduling API
-export const schedulingApi = {
-  getScheduled: () => api.get<ScheduledItem[]>('/scheduling/scheduled'),
-  updateSchedule: (type: string, id: string, scheduledAt: string) =>
-    api.patch(`/scheduling/${type}/${id}`, { scheduledAt }),
-  cancelSchedule: (type: string, id: string) =>
-    api.delete(`/scheduling/${type}/${id}`),
-  publishNow: (type: string, id: string) =>
-    api.post(`/scheduling/publish-now/${type}/${id}`),
-};
-
-// Majlis Lists API
-export const majlisListsApi = {
-  getLists: () => api.get<MajlisList[]>('/majlis-lists'),
-  create: (data: { name: string; description?: string; isPublic?: boolean }) =>
-    api.post<MajlisList>('/majlis-lists', data),
-  getById: (id: string) => api.get<MajlisList>(`/majlis-lists/${id}`),
-  update: (id: string, data: Partial<MajlisList>) =>
-    api.patch(`/majlis-lists/${id}`, data),
-  delete: (id: string) => api.delete(`/majlis-lists/${id}`),
-  getMembers: (id: string, cursor?: string) =>
-    api.get<PaginatedResponse<User>>(`/majlis-lists/${id}/members${qs({ cursor })}`),
-  addMember: (id: string, userId: string) =>
-    api.post(`/majlis-lists/${id}/members`, { userId }),
-  removeMember: (id: string, userId: string) =>
-    api.delete(`/majlis-lists/${id}/members/${userId}`),
-  getTimeline: (id: string, cursor?: string) =>
-    api.get<PaginatedResponse<Thread>>(`/majlis-lists/${id}/timeline${qs({ cursor })}`),
-};
-
-// Polls API
-export const pollsApi = {
-  get: (id: string) => api.get<Poll>(`/polls/${id}`),
-  vote: (id: string, optionId: string) =>
-    api.post(`/polls/${id}/vote`, { optionId }),
-  retractVote: (id: string) => api.delete(`/polls/${id}/vote`),
-  getVoters: (id: string, optionId: string, cursor?: string) =>
-    api.get<PaginatedResponse<User>>(`/polls/${id}/voters${qs({ optionId, cursor })}`),
-};
-
-// Subtitles API
-export const subtitlesApi = {
-  list: (videoId: string) => api.get<SubtitleTrack[]>(`/videos/${videoId}/subtitles`),
-  upload: (videoId: string, data: { label: string; language: string; srtUrl: string }) =>
-    api.post(`/videos/${videoId}/subtitles`, data),
-  delete: (videoId: string, trackId: string) =>
-    api.delete(`/videos/${videoId}/subtitles/${trackId}`),
-};
-
-// Stories reactions (if endpoint exists)
-export const storiesReactionsApi = {
-  react: (storyId: string, emoji: string) =>
-    api.post(`/stories/${storyId}/react`, { emoji }),
-};
-```
-
-Also add to `usersApi` if missing:
-```ts
-getArchive: () => api.get<Story[]>('/stories/me/archived'),
-```
-
-### types/index.ts — Add new types:
-
-```ts
-export interface ScheduledItem {
-  id: string;
-  type: 'post' | 'thread' | 'reel' | 'video';
-  title?: string;
-  content?: string;
-  caption?: string;
-  scheduledAt: string;
-  createdAt: string;
+### DTO:
+```typescript
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+
+enum ReportReason {
+  HATE_SPEECH = 'HATE_SPEECH', HARASSMENT = 'HARASSMENT', VIOLENCE = 'VIOLENCE',
+  SPAM = 'SPAM', MISINFORMATION = 'MISINFORMATION', NUDITY = 'NUDITY',
+  SELF_HARM = 'SELF_HARM', TERRORISM = 'TERRORISM', DOXXING = 'DOXXING',
+  COPYRIGHT = 'COPYRIGHT', IMPERSONATION = 'IMPERSONATION', OTHER = 'OTHER',
 }
 
-export interface MajlisList {
-  id: string;
-  name: string;
+export class CreateReportDto {
+  @IsEnum(ReportReason)
+  reason: ReportReason;
+
+  @IsOptional() @IsString()
   description?: string;
-  isPublic: boolean;
-  membersCount: number;
-  userId: string;
-  createdAt: string;
-}
 
-export interface Poll {
-  id: string;
-  question: string;
-  options: PollOption[];
-  totalVotes: number;
-  userVotedOptionId?: string;
-  expiresAt?: string;
-}
+  @IsOptional() @IsString()
+  reportedPostId?: string;
 
-export interface PollOption {
-  id: string;
-  text: string;
-  votesCount: number;
-  percentage: number;
-}
+  @IsOptional() @IsString()
+  reportedUserId?: string;
 
-export interface SubtitleTrack {
-  id: string;
-  label: string;
-  language: string;
-  srtUrl: string;
-  videoId: string;
-}
+  @IsOptional() @IsString()
+  reportedCommentId?: string;
 
-export interface VideoChapter {
-  title: string;
-  startTime: number; // seconds
+  @IsOptional() @IsString()
+  reportedMessageId?: string;
 }
 ```
 
-Read the schema to verify field names before writing types.
+### Module:
+```typescript
+import { Module } from '@nestjs/common';
+import { ReportsService } from './reports.service';
+import { ReportsController } from './reports.controller';
+import { PrismaModule } from '../../config/prisma.module';
 
-**Verification:** No TypeScript errors. All API methods typed.
-
----
-
-# PART F — TEST SPECS (Agents 20-24)
-
----
-
-## Step 20 — Recommendations Service Spec
-**Agent 20** | NEW file: `apps/api/src/modules/recommendations/recommendations.service.spec.ts`
-
-Read `recommendations.service.ts` to understand all methods. Write tests:
-
-- suggestedPeople: returns users sorted by mutual followers
-- suggestedPeople: excludes already-followed users
-- suggestedPeople: excludes private/deactivated users
-- suggestedPosts: returns high-engagement posts from last 48h
-- suggestedReels: returns engagement-ranked reels
-- suggestedChannels: returns channels sorted by subscribers
-
-Mock PrismaService. Follow existing spec patterns.
-
-**Verification:** Tests pass.
-
----
-
-## Step 21 — Controller Specs Batch A
-**Agent 21** | NEW files:
-- `apps/api/src/modules/posts/posts.controller.spec.ts` (NEW)
-- `apps/api/src/modules/users/users.controller.spec.ts` (NEW)
-- `apps/api/src/modules/threads/threads.controller.spec.ts` (NEW)
-- `apps/api/src/modules/reels/reels.controller.spec.ts` (NEW)
-
-For each controller, read the controller file and write tests that:
-1. Mock the service
-2. Test that each endpoint calls the correct service method
-3. Test that guards are applied (verify ClerkAuthGuard is used)
-4. Test parameter extraction (@Param, @Query, @Body, @CurrentUser)
-
-Each spec should have 5-8 tests covering the main CRUD endpoints.
-
-Pattern:
-```ts
-describe('PostsController', () => {
-  let controller: PostsController;
-  let service: { getFeed: jest.Mock; create: jest.Mock; /* ... */ };
-
-  beforeEach(async () => {
-    service = {
-      getFeed: jest.fn(),
-      create: jest.fn(),
-      getById: jest.fn(),
-      delete: jest.fn(),
-      like: jest.fn(),
-    };
-    const module = await Test.createTestingModule({
-      controllers: [PostsController],
-      providers: [{ provide: PostsService, useValue: service }],
-    }).compile();
-    controller = module.get(PostsController);
-  });
-
-  it('should call getFeed with userId and type', async () => {
-    service.getFeed.mockResolvedValue({ data: [], meta: {} });
-    await controller.getFeed('user-1', 'foryou');
-    expect(service.getFeed).toHaveBeenCalledWith('user-1', 'foryou', undefined, undefined);
-  });
-  // ... more tests
-});
+@Module({
+  imports: [PrismaModule],
+  controllers: [ReportsController],
+  providers: [ReportsService],
+  exports: [ReportsService],
+})
+export class ReportsModule {}
 ```
 
-Read each controller to understand exact method signatures.
-
-**Verification:** All 4 spec files pass.
+### Spec: Standard NestJS test with mocked PrismaService. Test create, getMyReports, getById, getPending, resolve, dismiss, getStats.
 
 ---
 
-## Step 22 — Controller Specs Batch B
-**Agent 22** | NEW files:
-- `apps/api/src/modules/messages/messages.controller.spec.ts` (NEW)
-- `apps/api/src/modules/channels/channels.controller.spec.ts` (NEW)
-- `apps/api/src/modules/videos/videos.controller.spec.ts` (NEW)
-- `apps/api/src/modules/stories/stories.controller.spec.ts` (NEW)
+## Agent 2: Hashtags Module
 
-Same pattern as Agent 21. 5-8 tests per controller.
+**Goal:** Full NestJS module for hashtag management. Schema has `Hashtag` model (line 1205) with name, postsCount, reelsCount, threadsCount, videosCount.
 
-**Verification:** All 4 spec files pass.
+**Files to CREATE:**
+- `apps/api/src/modules/hashtags/hashtags.service.ts`
+- `apps/api/src/modules/hashtags/hashtags.controller.ts`
+- `apps/api/src/modules/hashtags/hashtags.module.ts`
+- `apps/api/src/modules/hashtags/hashtags.service.spec.ts`
 
----
+### Service: getTrendingRaw (raw SQL for sum ordering), search (prefix match), getByName, getPostsByHashtag, getReelsByHashtag, getThreadsByHashtag, incrementCount, decrementCount. All with cursor pagination where applicable.
 
-## Step 23 — New Module Specs
-**Agent 23** | NEW files:
-- `apps/api/src/modules/scheduling/scheduling.service.spec.ts` (NEW)
-- `apps/api/src/modules/majlis-lists/majlis-lists.service.spec.ts` (NEW)
-- `apps/api/src/modules/polls/polls.service.spec.ts` (NEW)
-- `apps/api/src/modules/subtitles/subtitles.service.spec.ts` (NEW)
+### Controller: 6 endpoints with OptionalClerkAuthGuard for public access: `GET /hashtags/trending`, `GET /hashtags/search?q=`, `GET /hashtags/:name`, `GET /hashtags/:name/posts`, `GET /hashtags/:name/reels`, `GET /hashtags/:name/threads`.
 
-Write 5-8 tests per service:
-
-**Scheduling:** getScheduled, updateSchedule validates future time, cancelSchedule, publishNow
-**Majlis Lists:** create, getById, addMember, removeMember (owner only), timeline returns member threads
-**Polls:** vote, prevent double vote, retract vote, get poll with user vote
-**Subtitles:** list tracks, create track (owner only), delete track
-
-Read each service file (created by Agents 6-9) to understand exact methods.
-
-**Verification:** All 4 spec files pass.
+Use `$queryRaw` for trending (sum of all count fields). Use `startsWith` + `mode: 'insensitive'` for search. Include user select in content queries.
 
 ---
 
-## Step 24 — Health Module Spec
-**Agent 24** | NEW file: `apps/api/src/modules/health/health.controller.spec.ts` (NEW)
+## Agent 3: Bookmarks Module
 
-Read `health.controller.ts` (the health module has no service — logic is in the controller).
+**Goal:** Full NestJS module for unified bookmarking across SavedPost (line 852), ThreadBookmark (line 1313), VideoBookmark (line 1324).
 
-Write 3-5 tests:
-- GET /health returns 200 with status "ok"
-- GET /health/metrics returns entity counts
-- Health check tests DB connectivity (mock PrismaService.$queryRaw)
+**Files to CREATE:**
+- `apps/api/src/modules/bookmarks/bookmarks.service.ts`
+- `apps/api/src/modules/bookmarks/bookmarks.controller.ts`
+- `apps/api/src/modules/bookmarks/bookmarks.module.ts`
+- `apps/api/src/modules/bookmarks/dto/bookmark.dto.ts`
+- `apps/api/src/modules/bookmarks/bookmarks.service.spec.ts`
 
-**Verification:** Tests pass.
+### Service: savePost (with collectionName), unsavePost, saveThread, unsaveThread, saveVideo, unsaveVideo, getSavedPosts (with collection filter), getSavedThreads, getSavedVideos, getCollections (groupBy), moveToCollection, isPostSaved, isThreadSaved, isVideoSaved. All with cursor pagination.
+
+### Controller: 12+ endpoints covering save/unsave for all content types, list saved items, collection management.
 
 ---
 
-# PART G — DOCS (Agent 25)
+## Agent 4: Watch History Module
+
+**Goal:** Full NestJS module using WatchHistory (line 1335) and WatchLater (line 1349) models.
+
+**Files to CREATE:**
+- `apps/api/src/modules/watch-history/watch-history.service.ts`
+- `apps/api/src/modules/watch-history/watch-history.controller.ts`
+- `apps/api/src/modules/watch-history/watch-history.module.ts`
+- `apps/api/src/modules/watch-history/watch-history.service.spec.ts`
+
+### Service: recordWatch (upsert with progress), getHistory, removeFromHistory, clearHistory, addToWatchLater, removeFromWatchLater, getWatchLater, isInWatchLater. Include video + channel info in queries.
+
+### Controller: 8 endpoints.
 
 ---
 
-## Step 25 — Docs Update
-**Agent 25** | Files:
-- `CLAUDE.md` (EDIT)
-- `C:\Users\shakh\.claude\projects\C--Users-shakh\memory\MEMORY.md` (EDIT)
+## Agent 5: Users Service Enhancements
 
-**Runs LAST after all other agents complete.**
+**Goal:** Add mutual followers, liked posts, account deletion, data export.
 
-### CLAUDE.md:
-1. Update module count: 24 → 28 (add scheduling, majlis-lists, polls, subtitles)
-2. Update endpoint count: ~203 → ~230+ (estimate based on new modules)
-3. Update screen count: +5 new screens
-4. Update test count: +40-60 new tests across 10 new spec files
-5. Update "Still Missing" list — remove items now implemented
-6. Add new modules to architecture section
+**Files to MODIFY:** `apps/api/src/modules/users/users.service.ts`, `users.controller.ts`
 
-### MEMORY.md:
-Add batch 18 entry:
+### Add methods:
+- `getMutualFollowers(currentUserId, targetUsername, limit)` — raw SQL join on Follow table
+- `getLikedPosts(userId, cursor, limit)` — via PostReaction with post include
+- `requestAccountDeletion(userId)` — set deletionRequestedAt + isDeactivated
+- `cancelAccountDeletion(userId)` — clear deletionRequestedAt + reactivate
+- `exportData(userId)` — parallel fetch all user content as JSON
+
+### Add 5 controller endpoints: `GET /users/:username/mutual-followers`, `GET /users/me/liked-posts`, `POST /users/me/delete-account`, `POST /users/me/cancel-deletion`, `GET /users/me/export-data`.
+
+---
+
+## Agent 6: Posts Service Enhancements
+
+**Goal:** Add post archiving, comment pinning, share link.
+
+**Files to MODIFY:** `apps/api/src/modules/posts/posts.service.ts`, `posts.controller.ts`
+
+### Add methods:
+- `archivePost(postId, userId)` / `unarchivePost(postId, userId)` — ownership check + isArchived toggle
+- `getArchived(userId, cursor, limit)` — user's archived posts
+- `pinComment(postId, commentId, userId)` / `unpinComment` — ownership check, unpin existing first
+- `getShareLink(postId)` — returns `{ url: 'https://mizanly.app/post/${postId}' }`
+
+### Add 6 endpoints.
+
+---
+
+## Agent 7: Threads Service Enhancements
+
+**Goal:** Add reply permission control, bookmark status, share link.
+
+**Files to MODIFY:** `apps/api/src/modules/threads/threads.service.ts`, `threads.controller.ts`
+
+### Add methods:
+- `setReplyPermission(threadId, userId, permission)` — ownership check, update replyPermission field
+- `canReply(threadId, userId)` — check permission logic (everyone/following/mentioned/none)
+- `getShareLink(threadId)` — returns URL
+- `isBookmarked(threadId, userId)` — check ThreadBookmark
+
+### Add 4 endpoints.
+
+---
+
+## Agent 8: Reels Service Enhancements
+
+**Goal:** Add sound page content, duets/stitches listing, reel archiving, share link.
+
+**Files to MODIFY:** `apps/api/src/modules/reels/reels.service.ts`, `reels.controller.ts`
+
+### Add methods:
+- `getByAudioTrack(audioTrackId, cursor, limit)` — reels using specific audio
+- `getDuets(reelId, cursor, limit)` — reels that are duets of this reel
+- `getStitches(reelId, cursor, limit)` — reels that stitch from this reel
+- `archive(reelId, userId)` / `unarchive(reelId, userId)`
+- `getShareLink(reelId)` — returns URL
+
+### Add 6 endpoints.
+
+---
+
+## Agent 9: Notifications Enhancements
+
+**Goal:** Add mark-all-read, delete notification, unread counts by type.
+
+**Files to MODIFY:** `apps/api/src/modules/notifications/notifications.service.ts`, `notifications.controller.ts`
+
+### Add methods:
+- `markAllRead(userId)` — updateMany where userId + isRead false
+- `delete(notificationId, userId)` — deleteMany with ownership check
+- `getUnreadCounts(userId)` — groupBy type where isRead false
+- `notifyLiveStarted(hostId, liveSessionId)` — create notifications for all followers
+
+### Add 3 endpoints: `POST /notifications/mark-all-read`, `DELETE /notifications/:id`, `GET /notifications/unread-counts`.
+
+---
+
+## Agent 10: Search Enhancements
+
+**Goal:** Add content search (posts, threads, reels), explore feed, search suggestions.
+
+**Files to MODIFY:** `apps/api/src/modules/search/search.service.ts`, `search.controller.ts`
+
+### Add methods:
+- `searchPosts(query, userId?, cursor, limit)` — content contains (case insensitive)
+- `searchThreads(query, cursor, limit)` — content contains
+- `searchReels(query, cursor, limit)` — caption contains OR hashtags has
+- `getExploreFeed(cursor, limit)` — top posts by likesCount in last 7 days
+- `getSuggestions(query, limit)` — parallel user + hashtag prefix search
+
+### Add 5 endpoints: `GET /search/posts?q=`, `GET /search/threads?q=`, `GET /search/reels?q=`, `GET /search/explore`, `GET /search/suggestions?q=`.
+
+---
+
+## Agent 11: Stories Enhancements
+
+**Goal:** Add story viewers list, story reply (creates DM), reaction summary.
+
+**Files to MODIFY:** `apps/api/src/modules/stories/stories.service.ts`, `stories.controller.ts`
+
+### Add methods:
+- `getViewers(storyId, userId, cursor, limit)` — ownership check, return StoryView with user data
+- `replyToStory(storyId, senderId, content)` — find/create DM conversation, create message with type STORY_REPLY
+- `getReactionSummary(storyId, userId)` — raw SQL groupBy emoji with counts
+
+### Add 3 endpoints.
+
+---
+
+## Agent 12: Channels Enhancements
+
+**Goal:** Add channel analytics, subscriber list, recommended channels.
+
+**Files to MODIFY:** `apps/api/src/modules/channels/channels.service.ts`, `channels.controller.ts`
+
+### Add methods:
+- `getAnalytics(channelId, userId)` — ownership check, aggregate views/subs/videos/recent subs
+- `getSubscribers(channelId, userId, cursor, limit)` — ownership check, paginated subscriber list
+- `getRecommended(userId, limit)` — raw SQL: popular channels user isn't subscribed to
+
+### Add 3 endpoints.
+
+---
+
+## Agent 13: Videos Enhancements
+
+**Goal:** Add video recommendations, comment replies, progress tracking, share link.
+
+**Files to MODIFY:** `apps/api/src/modules/videos/videos.service.ts`, `videos.controller.ts`
+
+### Add methods:
+- `getRecommended(videoId, limit)` — same channel/category/tags, ordered by views
+- `getCommentReplies(commentId, cursor, limit)` — nested VideoComment replies
+- `recordProgress(videoId, userId, progress)` — upsert WatchHistory
+- `getShareLink(videoId)` — returns URL
+
+### Add 4 endpoints.
+
+---
+
+## Agent 14: Messages Enhancements
+
+**Goal:** Add disappearing messages, conversation archiving, message scheduling, starred messages.
+
+**Files to MODIFY:** `apps/api/src/modules/messages/messages.service.ts`, `messages.controller.ts`
+
+### Add methods:
+- `setDisappearingTimer(conversationId, userId, duration)` — membership check, update conversation
+- `archiveConversation(conversationId, userId)` / `unarchiveConversation` — update ConversationMember.isArchived
+- `getArchivedConversations(userId, cursor, limit)` — paginated archived list
+- `scheduleMessage(conversationId, userId, content, scheduledAt, messageType?)` — create with isScheduled flag
+- `getStarredMessages(userId, cursor, limit)` — messages where starredBy has userId
+
+### Add 6 endpoints.
+
+---
+
+## Agent 15: Broadcast Channels Mobile (Batch 21 Retry)
+
+**Goal:** Create two screens for Telegram-style broadcast channels.
+
+**Files to CREATE:**
+- `apps/mobile/app/(screens)/broadcast-channels.tsx` (~300 lines)
+- `apps/mobile/app/(screens)/broadcast/[id].tsx` (~350 lines)
+
+### `broadcast-channels.tsx`
+Full discovery + subscription management. Two tabs: "Discover" and "My Channels".
+- Header with back button + "Channels" title + "+" create button
+- Search bar
+- TabSelector for Discover/My Channels
+- Discover: infinite scroll channel list with subscribe buttons, uses `broadcastApi.discover(cursor)`
+- My Channels: list of subscribed channels, uses `broadcastApi.getMyChannels()`
+- Each row: Avatar + channel name + subscriber count + description
+- Skeleton loading (5 rows), EmptyState, RefreshControl
+
+### `broadcast/[id].tsx`
+Channel detail with message feed.
+- Header: channel avatar + name + subscriber count + mute toggle
+- Message feed (FlatList, newest at bottom)
+- If admin/owner: compose bar at bottom
+- Each message: sender avatar + name + content + media + timestamp + pin indicator
+- BottomSheet for message options (pin/unpin, delete)
+- Uses `broadcastApi.getById(id)`, `broadcastApi.getMessages(id, cursor)`, `broadcastApi.sendMessage()`
+- Skeleton loading, RefreshControl
+
+**CRITICAL:** Follow ALL CLAUDE.md rules. Use Icon (not emoji), BottomSheet (not Modal), Skeleton (not ActivityIndicator), EmptyState (not bare text).
+
+---
+
+## Agent 16: Close Friends Screen (Batch 21 Retry)
+
+**File to CREATE:** `apps/mobile/app/(screens)/close-friends.tsx` (~250 lines)
+
+- Header: "Close Friends" + back button
+- Search bar to filter contacts
+- FlatList of followers with green toggle (in/out of close friends circle)
+- Uses `circlesApi` to manage circle named "Close Friends" — auto-create if not exists
+- Each row: Avatar + name + username + toggle indicator
+- Skeleton loading, EmptyState, RefreshControl
+
+---
+
+## Agent 17: Pinned & Starred Messages (Batch 21 Retry)
+
+**Files to CREATE:**
+- `apps/mobile/app/(screens)/pinned-messages.tsx` (~200 lines)
+- `apps/mobile/app/(screens)/starred-messages.tsx` (~220 lines)
+
+### `pinned-messages.tsx`
+- Route param: `conversationId`
+- Header: "Pinned Messages" + back
+- FlatList of pinned messages with sender info, content, timestamp, unpin button
+- Skeleton, EmptyState "No pinned messages", RefreshControl
+
+### `starred-messages.tsx`
+- Fetches all starred messages across conversations
+- FlatList with conversation name header sections
+- Each: message content + sender + timestamp + unstar button
+- Skeleton, EmptyState "No starred messages", RefreshControl
+
+---
+
+## Agent 18: Community Posts (Batch 21 Retry)
+
+**File to CREATE:** `apps/mobile/app/(screens)/community-posts.tsx` (~300 lines)
+
+- Route param: `channelId`
+- Header: "Community" + back + compose button (if channel owner)
+- FlatList of community posts (text/image/poll)
+- Each post: avatar + name + timestamp + content + media + like/comment row
+- Compose form (inline at top if owner)
+- Like/unlike with optimistic update
+- Uses `channelPostsApi`
+- Skeleton, EmptyState, RefreshControl
+
+---
+
+## Agent 19: StickerPicker Quality Rewrite
+
+**File to MODIFY:** `apps/mobile/src/components/risalah/StickerPicker.tsx`
+
+Review existing 414-line file. Ensure:
+1. `<Skeleton>` for loading (not ActivityIndicator)
+2. `<EmptyState>` for empty states
+3. `<Icon>` for all icons (no emoji text)
+4. `radius.*` from theme (no hardcoded borderRadius)
+5. No `any` types
+6. Tabs: Recent | My Packs (horizontal pack covers)
+7. Grid: 4 columns of stickers, Pressable → onSelect callback
+8. Search bar for sticker search
+9. Uses `stickersApi` methods
+
+Fix any violations found.
+
+---
+
+## Agent 20: StickerPackBrowser Quality Rewrite
+
+**File to MODIFY:** `apps/mobile/src/components/risalah/StickerPackBrowser.tsx`
+
+Review existing 544-line file. Ensure all CLAUDE.md rules followed:
+1. Browse/search packs via `stickersApi`
+2. Featured packs at top
+3. Pack preview with sticker grid + add/remove button
+4. Uses BottomSheet for preview (not Modal)
+5. Skeleton loading, EmptyState, no `any` types
+
+Fix any violations found.
+
+---
+
+## Agent 21: Sound Page
+
+**File to CREATE:** `apps/mobile/app/(screens)/sound/[id].tsx` (~300 lines)
+
+- Route param: audio track ID
+- Header: cover art + title + artist + usage count
+- "Use this sound" button → navigate to create-reel with audioTrackId
+- Trending badge if `isTrending`
+- FlatList grid (3 columns) of reels using this audio
+- Each reel: thumbnail + view count overlay, tap → reel/[id]
+- Uses `audioTracksApi.getById()`, `audioTracksApi.getReelsUsing()`
+- Skeleton, EmptyState, RefreshControl
+
+---
+
+## Agent 22: Mutual Followers
+
+**File to CREATE:** `apps/mobile/app/(screens)/mutual-followers.tsx` (~200 lines)
+
+- Route param: `username`
+- Header: "Followers you know" + back
+- FlatList of mutual followers with Avatar + name + follow/unfollow button
+- Uses `usersApi.getMutualFollowers()` (Agent 5 adds endpoint)
+- Skeleton, EmptyState, RefreshControl
+
+---
+
+## Agent 23: Conversation Media Gallery
+
+**File to CREATE:** `apps/mobile/app/(screens)/conversation-media.tsx` (~280 lines)
+
+- Route param: `conversationId`
+- Header: "Media" + back
+- TabSelector: "Media" | "Links" | "Docs"
+- Media tab: 3-column grid of images/videos
+- Links tab: list of URLs from messages
+- Docs tab: file attachments list
+- Tap image → ImageLightbox, tap video → VideoPlayer
+- Skeleton, EmptyState per tab, RefreshControl
+
+---
+
+## Agent 24: Theme Settings
+
+**File to CREATE:** `apps/mobile/app/(screens)/theme-settings.tsx` (~150 lines)
+
+- Header: "Appearance" + back
+- Three radio options: Dark (moon icon), Light (sun icon), System (settings icon)
+- Active option highlighted with emerald
+- Preview swatch showing theme colors
+- Uses `useStore` for theme state
+- `useColorScheme()` for system option preview
+
+---
+
+## Agent 25: Account Settings
+
+**File to CREATE:** `apps/mobile/app/(screens)/account-settings.tsx` (~250 lines)
+
+Sections:
+- Account Info: email, phone, joined date (read-only)
+- Data & Privacy: "Download My Data" button, "Manage Data" link
+- Account Actions: "Deactivate" (reversible), "Delete Account" (30-day grace, Alert confirmation)
+- Uses `usersApi.exportData()`, `usersApi.requestAccountDeletion()`
+
+---
+
+## Agent 26: Share Profile & QR Scanner
+
+**Files to CREATE:**
+- `apps/mobile/app/(screens)/share-profile.tsx` (~180 lines)
+- `apps/mobile/app/(screens)/qr-scanner.tsx` (~170 lines)
+
+### `share-profile.tsx`
+- QR code display (use simple View-based QR or `react-native-qrcode-svg`)
+- Profile card preview: avatar + name + username
+- "Copy Link" → clipboard `mizanly.app/@username`
+- "Share" → native share sheet
+- "Scan QR" → navigate to qr-scanner
+
+### `qr-scanner.tsx`
+- Camera with QR overlay
+- On scan: parse mizanly.app URL → navigate to profile
+- Close button
+
+---
+
+## Agent 27: Report Screen
+
+**File to CREATE:** `apps/mobile/app/(screens)/reports/[id].tsx` (~220 lines)
+
+- Route params: contentType, contentId
+- Header: "Report" + back
+- Radio reason selection (12 reasons from ReportReason enum)
+- Optional description TextInput
+- Submit → `reportsApi.create(data)`
+- Success state: "Thank you" message
+
+---
+
+## Agent 28: Discover Screen
+
+**File to CREATE:** `apps/mobile/app/(screens)/discover.tsx` (~350 lines)
+
+- Header: "Discover" + search icon
+- Trending hashtags horizontal scroll
+- Content grid (3 columns, mixed posts + reels)
+- Type indicator overlay (play icon for video)
+- Tap → post/[id] or reel/[id]
+- Uses `searchApi.getExploreFeed()`, `hashtagsApi.getTrending()`
+- Infinite scroll, Skeleton grid, RefreshControl
+
+---
+
+## Agent 29: Search Results
+
+**File to CREATE:** `apps/mobile/app/(screens)/search-results.tsx` (~400 lines)
+
+- Route param: `query`
+- Header: editable search input
+- TabSelector: People | Posts | Threads | Reels | Hashtags
+- Each tab fetches from search endpoint, renders appropriate list
+- People: user rows + follow button
+- Posts: PostCard list
+- Threads: ThreadCard list
+- Reels: 3-column thumbnail grid
+- Hashtags: name + post count
+- Skeleton per tab, EmptyState per tab, RefreshControl
+
+---
+
+## Agent 30: Voice Recorder
+
+**File to CREATE:** `apps/mobile/app/(screens)/voice-recorder.tsx` (~280 lines)
+
+- Full-screen recording UI
+- Large circular record/stop button (red when recording)
+- Timer showing elapsed time
+- Amplitude visualization bars
+- Playback preview after recording
+- Send/cancel buttons
+- Uses `expo-av` Audio.Recording
+- Max 5 minutes, m4a format
+
+---
+
+## Agent 31: Create Broadcast
+
+**File to CREATE:** `apps/mobile/app/(screens)/create-broadcast.tsx` (~250 lines)
+
+- Header: "Create Channel" + back
+- Avatar picker
+- Name input (required, CharCountRing max 50)
+- Slug input (auto from name, editable)
+- Description textarea (CharCountRing max 200)
+- Create button → `broadcastApi.create()` → navigate to channel
+- Validation
+
+---
+
+## Agent 32: Schedule Live
+
+**File to CREATE:** `apps/mobile/app/(screens)/schedule-live.tsx` (~250 lines)
+
+- Header: "Schedule Live" + back
+- Title input (required, max 100)
+- Description textarea
+- Thumbnail picker
+- Date/time picker
+- Schedule button → `liveApi.create({ scheduledAt })` → navigate to live
+
+---
+
+## Agent 33: Saf Tab Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(tabs)/saf.tsx`
+
+Add:
+1. "Your Story" bubble with "+" overlay at start of StoryRow → create-story
+2. End-of-feed "You're all caught up" indicator with check-circle icon
+3. "Not interested" in post long-press → `feedApi.dismiss()`
+4. Camera icon in header → create-story
+
+---
+
+## Agent 34: Majlis Tab Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(tabs)/majlis.tsx`
+
+Add:
+1. Trending hashtag chips (horizontal scroll) between tab selector and feed
+2. Reply permission lock icon on restricted threads
+3. "Share" option in thread long-press
+4. End-of-feed indicator
+
+---
+
+## Agent 35: Risalah Tab Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(tabs)/risalah.tsx`
+
+Add:
+1. Filter chips: All | Unread | Groups
+2. "Archived" row at top → archived conversations
+3. "Channels" FAB → broadcast-channels screen
+4. Swipe-left to archive conversation
+5. Read receipt icons (check/check-check) on last message
+
+---
+
+## Agent 36: Minbar Tab Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(tabs)/minbar.tsx`
+
+Add:
+1. Category chips: All, Islamic, Education, Lifestyle, Tech, Entertainment
+2. "Watch Later" header button → watch-history screen
+3. Subscription feed toggle (Home/Subscriptions tabs)
+4. Video duration overlay on thumbnails
+5. "Save to Watch Later" in video long-press
+
+---
+
+## Agent 37: Settings Screen Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(screens)/settings.tsx`
+
+Add rows:
+1. "Appearance" → theme-settings (Agent 24)
+2. "Account" → account-settings (Agent 25)
+3. "Share Profile" → share-profile (Agent 26)
+4. "About" section: version, terms, privacy, licenses
+
+---
+
+## Agent 38: Edit Profile Enhancements
+
+**File to MODIFY:** `apps/mobile/app/(screens)/edit-profile.tsx`
+
+Add fields:
+1. Pronouns dropdown
+2. Location TextInput
+3. Birthday date picker
+4. All optional, save via `usersApi.updateProfile()`
+
+---
+
+## Agent 39: PostCard Enhancements
+
+**File to MODIFY:** `apps/mobile/src/components/saf/PostCard.tsx`
+
+Add:
+1. Collab indicator (users icon) when `post.collaborators?.length > 0`
+2. In action menu: "Copy Link", "Share as Story", "Not Interested"
+3. Copy Link → `Clipboard.setStringAsync()`
+4. Not Interested → `feedApi.dismiss()`
+
+---
+
+## Agent 40: ThreadCard Enhancements
+
+**File to MODIFY:** `apps/mobile/src/components/majlis/ThreadCard.tsx`
+
+Add:
+1. Lock icon if `thread.replyPermission !== 'everyone'`
+2. Bookmark icon (filled state) in action row
+3. In long-press menu: "Copy Link", "Bookmark/Unbookmark"
+
+---
+
+## Agent 41: RichText Enhancements
+
+**File to MODIFY:** `apps/mobile/src/components/ui/RichText.tsx`
+
+Add detection for:
+1. Phone numbers → `Linking.openURL('tel:...')`
+2. Email addresses → `Linking.openURL('mailto:...')`
+3. Extend existing regex chain (already handles #hashtags, @mentions, https:// URLs)
+
+---
+
+## Agent 42: API Client Integration
+
+**File to MODIFY:** `apps/mobile/src/services/api.ts`
+
+Add new export groups at bottom: `reportsApi`, `hashtagsApi`, `bookmarksApi`, `watchHistoryApi`.
+
+Also extend existing groups with new methods from Agents 5-14:
+- `usersApi`: getMutualFollowers, getLikedPosts, exportData, requestAccountDeletion, cancelAccountDeletion
+- `postsApi`: archive, unarchive, getArchived, pinComment, unpinComment, getShareLink
+- `threadsApi`: setReplyPermission, canReply, getShareLink, isBookmarked
+- `reelsApi`: getByAudioTrack, getDuets, getStitches, archive, unarchive, getShareLink
+- `notificationsApi`: markAllRead, delete, getUnreadCounts
+- `searchApi`: searchPosts, searchThreads, searchReels, getExploreFeed, getSuggestions
+- `storiesApi`: getViewers, replyToStory, getReactionSummary
+- `channelsApi`: getAnalytics, getSubscribers, getRecommended
+- `videosApi`: getRecommended, getCommentReplies, recordProgress, getShareLink
+- `messagesApi`: setDisappearingTimer, archiveConversation, unarchiveConversation, getArchivedConversations, scheduleMessage, getStarredMessages
+
+---
+
+## Agent 43: Types Integration
+
+**File to MODIFY:** `apps/mobile/src/types/index.ts`
+
+Add new interfaces: `Report`, `HashtagInfo`, `BookmarkCollection`, `WatchHistoryItem`, `WatchLaterItem`, `SearchSuggestion`.
+
+Update existing:
+- `Thread`: add `replyPermission?: 'everyone' | 'following' | 'mentioned' | 'none'`
+- `Post`: add `isArchived?: boolean`, `collaborators?: User[]`
+- `Reel`: add `isArchived?: boolean`, `duetOfId?: string`, `stitchOfId?: string`
+- `Conversation`: add `disappearingDuration?: number`
+- `Message`: add `isScheduled?: boolean`, `scheduledAt?: string`, `starredBy?: string[]`
+
+---
+
+## Agent 44: Store Enhancements
+
+**File to MODIFY:** `apps/mobile/src/store/index.ts`
+
+Add state:
+- `searchHistory: string[]` + `addSearchHistory(query)` + `clearSearchHistory()`
+- `archivedConversationsCount: number` + setter
+- `isRecording: boolean` + setter
+
+Persist `searchHistory` (max 20). Add selectors.
+
+---
+
+## Agent 45: Backend Module Registration
+
+**File to MODIFY:** `apps/api/src/app.module.ts`
+
+**Files to CREATE:** Module files for hashtags, bookmarks, watch-history (reports module created by Agent 1).
+
+Add imports + register in imports array:
+```typescript
+import { ReportsModule } from './modules/reports/reports.module';
+import { HashtagsModule } from './modules/hashtags/hashtags.module';
+import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
+import { WatchHistoryModule } from './modules/watch-history/watch-history.module';
 ```
-- **Batch 18 (2026-03-08):** The Everything Batch. 25 agents. NEW: scheduling module, majlis-lists module, polls module, subtitles module. NEW SCREENS: schedule-post, archive, bookmark-folders, manage-data, majlis-lists, majlis-list detail. FEATURES: story emoji reactions, hashtag follow, video chapters, pinned posts on profile, read receipts, CommentsSheet reply, channel clipboard/share fixes. TESTS: 10 new spec files (recommendations, 8 controller specs, health, 4 new module specs). Store expanded.
-```
 
-Update current state to ~97% feature complete.
+Create `hashtags.module.ts`, `bookmarks.module.ts`, `watch-history.module.ts` with standard NestJS pattern (PrismaModule import, controller + service providers).
 
 ---
 
-## File-to-Agent Conflict Map
+## Post-Batch 22 Verification Checklist
 
-| File | Agent |
-|------|-------|
-| `apps/mobile/app/(screens)/schedule-post.tsx` (NEW) | 1 |
-| `apps/mobile/app/(screens)/archive.tsx` (NEW) | 2 |
-| `apps/mobile/app/(screens)/bookmark-folders.tsx` (NEW) | 3 |
-| `apps/mobile/app/(screens)/manage-data.tsx` (NEW) | 4 |
-| `apps/mobile/app/(screens)/majlis-lists.tsx` (NEW) | 5 |
-| `apps/mobile/app/(screens)/majlis-list/[id].tsx` (NEW) | 5 |
-| `apps/api/src/modules/scheduling/*` (3 NEW) | 6 |
-| `apps/api/src/modules/majlis-lists/*` (3 NEW) | 7 |
-| `apps/api/src/modules/polls/*` (3 NEW) | 8 |
-| `apps/api/src/modules/subtitles/*` (3 NEW) | 9 |
-| `apps/mobile/app/(screens)/story-viewer.tsx` | 10 |
-| `apps/mobile/app/(screens)/hashtag/[tag].tsx` | 11 |
-| `apps/mobile/app/(screens)/video/[id].tsx` | 12 |
-| `apps/mobile/app/(screens)/profile/[username].tsx` | 13 |
-| `apps/mobile/app/(screens)/channel/[handle].tsx` | 14 |
-| `apps/mobile/app/(screens)/conversation/[id].tsx` | 15 |
-| `apps/mobile/src/components/bakra/CommentsSheet.tsx` | 16 |
-| `apps/mobile/src/store/index.ts` | 17 |
-| `apps/api/src/app.module.ts` | 18 |
-| `apps/mobile/src/services/api.ts` | 19 |
-| `apps/mobile/src/types/index.ts` | 19 |
-| `recommendations.service.spec.ts` (NEW) | 20 |
-| `posts.controller.spec.ts` (NEW) | 21 |
-| `users.controller.spec.ts` (NEW) | 21 |
-| `threads.controller.spec.ts` (NEW) | 21 |
-| `reels.controller.spec.ts` (NEW) | 21 |
-| `messages.controller.spec.ts` (NEW) | 22 |
-| `channels.controller.spec.ts` (NEW) | 22 |
-| `videos.controller.spec.ts` (NEW) | 22 |
-| `stories.controller.spec.ts` (NEW) | 22 |
-| `scheduling.service.spec.ts` (NEW) | 23 |
-| `majlis-lists.service.spec.ts` (NEW) | 23 |
-| `polls.service.spec.ts` (NEW) | 23 |
-| `subtitles.service.spec.ts` (NEW) | 23 |
-| `health.controller.spec.ts` (NEW) | 24 |
-| `CLAUDE.md` | 25 |
-| `MEMORY.md` | 25 |
+### Backend
+- [ ] `npm run build` compiles clean
+- [ ] 4 new modules registered
+- [ ] All 10 enhanced services have new methods
+- [ ] Swagger shows all new endpoints
+- [ ] No `any` in non-test code
 
-**Zero conflicts.** 37 files across 25 agents. Every file touched by exactly one agent.
+### Mobile
+- [ ] `npx expo start` launches clean
+- [ ] All 18 new screens render
+- [ ] All 6 tab/screen enhancements work
+- [ ] All 3 component enhancements work
+- [ ] StickerPicker + StickerPackBrowser pass quality rules
+- [ ] api.ts has all new + extended groups
+- [ ] types/index.ts has all new interfaces
+- [ ] store has new state
+- [ ] All CLAUDE.md rules followed everywhere
 
 ---
 
-## Dependency Order
+## Batch 23 Preview
 
-```
-Parallel wave 1: Agents 1-24 (all independent)
-Sequential after: Agent 25 (docs — needs final counts)
-```
-
-**Note:** Agents 20-23 (test specs) technically depend on their corresponding service/module agents (6-9, 2) completing first. But since each test agent creates NEW files and mocks the service, they can run in parallel — they'll read whatever code exists and mock accordingly.
-
----
-
-## Verification Checklist
-
-1. `cd apps/api && npx tsc --noEmit` — 0 errors
-2. `cd apps/api && npx jest` — all tests pass
-3. New screens render (schedule, archive, bookmark-folders, manage-data, majlis-lists, majlis-list detail)
-4. Story emoji reactions work
-5. Hashtag follow button toggles
-6. Video chapters display when available
-7. Profile shows pinned posts + archive link
-8. Channel copy/share buttons work
-9. Read receipts visible on sent messages
-10. CommentsSheet reply works
-11. All 10 new spec files pass
-12. Total test count: 400+
+1. E2E Testing — Detox for critical flows
+2. i18n / Arabic RTL — Full translation
+3. Push Notifications — FCM/APNs via Expo
+4. Deep Linking — Universal links
+5. Offline Mode — SQLite + sync
+6. Performance — Image caching, memo, virtualization
+7. CI/CD — GitHub Actions
+8. Accessibility — Screen reader, contrast
+9. Content Moderation AI
+10. Monetization — Tips, subscriptions

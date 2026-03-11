@@ -72,7 +72,7 @@ describe('SubtitlesService', () => {
       const videoId = 'video-123';
       const userId = 'owner-1';
       const mockVideo = { id: videoId, userId, status: VideoStatus.DRAFT };
-      const mockTracks = [];
+      const mockTracks = [] as any;
       prisma.video.findUnique.mockResolvedValue(mockVideo);
       prisma.subtitleTrack.findMany.mockResolvedValue(mockTracks);
 

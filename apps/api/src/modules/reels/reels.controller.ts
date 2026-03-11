@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete } from '@nestjs/common';
+import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete, Patch } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -7,6 +7,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReelsService } from './reels.service';
 import { CreateReelDto } from './dto/create-reel.dto';
 import { CreateCommentDto } from './dto/create-comment.dto';
+import { ReportDto } from './dto/report.dto';
 
 @ApiTags('reels')
 @ApiBearerAuth()
@@ -140,8 +141,67 @@ export class ReelsController {
   report(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('reason') reason: string,
+    @Body() dto: ReportDto,
   ) {
-    return this.reelsService.report(id, userId, reason);
+    return this.reelsService.report(id, userId, dto.reason);
+  }
+
+  @Get('audio/:audioTrackId')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get reels using specific audio track' })
+  getByAudioTrack(
+    @Param('audioTrackId') audioTrackId: string,
+    @CurrentUser('id') userId?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getByAudioTrack(audioTrackId, cursor, 20, userId);
+  }
+
+  @Get(':id/duets')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get duets of a reel' })
+  getDuets(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getDuets(id, cursor, 20, userId);
+  }
+
+  @Get(':id/stitches')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get stitches of a reel' })
+  getStitches(
+    @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getStitches(id, cursor, 20, userId);
+  }
+
+  @Patch(':id/archive')
+  @ApiOperation({ summary: 'Archive a reel' })
+  archive(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.archive(id, userId);
+  }
+
+  @Patch(':id/unarchive')
+  @ApiOperation({ summary: 'Unarchive a reel' })
+  unarchive(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.reelsService.unarchive(id, userId);
+  }
+
+  @Get(':id/share-link')
+  @ApiOperation({ summary: 'Get shareable link for a reel' })
+  getShareLink(
+    @Param('id') id: string,
+  ) {
+    return this.reelsService.getShareLink(id);
   }
 }

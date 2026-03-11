@@ -215,6 +215,27 @@ export class PostsService {
         data: { postsCount: { increment: 1 } },
       }),
     ]);
+    // Mention notifications
+    if (dto.mentions?.length) {
+      const [mentionedUsers, actor] = await Promise.all([
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+      ]);
+      for (const mentioned of mentionedUsers) {
+        if (mentioned.id !== userId) {
+          this.notifications.create({
+            userId: mentioned.id,
+            actorId: userId,
+            type: 'MENTION',
+            postId: post.id,
+            title: 'Mentioned you',
+            body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
+          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+        }
+      }
+    }
+    // Invalidate for-you feed cache for the author
+    await this.redis.del(`feed:foryou:${userId}:first`);
     return post;
   }
 
@@ -278,6 +299,8 @@ export class PostsService {
       }),
       this.prisma.$executeRaw`UPDATE "User" SET "postsCount" = GREATEST("postsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
+    // Invalidate for-you feed cache for the author
+    await this.redis.del(`feed:foryou:${userId}:first`);
     return { deleted: true };
   }
 
@@ -567,5 +590,95 @@ export class PostsService {
       update: {},
     });
     return { dismissed: true };
+  }
+
+  async archivePost(postId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.savedPost.upsert({
+      where: { userId_postId: { userId, postId } },
+      update: { collectionName: 'archive' },
+      create: { userId, postId, collectionName: 'archive' },
+    });
+    return { archived: true };
+  }
+
+  async unarchivePost(postId: string, userId: string) {
+    const existing = await this.prisma.savedPost.findUnique({
+      where: { userId_postId: { userId, postId } },
+    });
+    if (!existing || existing.collectionName !== 'archive') {
+      throw new NotFoundException('Post not archived');
+    }
+    await this.prisma.savedPost.delete({
+      where: { userId_postId: { userId, postId } },
+    });
+    return { archived: false };
+  }
+
+  async getArchived(userId: string, cursor?: string, limit = 20) {
+    const saved = await this.prisma.savedPost.findMany({
+      where: { userId, collectionName: 'archive' },
+      include: { post: { select: POST_SELECT } },
+      take: limit + 1,
+      ...(cursor
+        ? { cursor: { userId_postId: { userId, postId: cursor } }, skip: 1 }
+        : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+    const hasMore = saved.length > limit;
+    const items = hasMore ? saved.slice(0, limit) : saved;
+    const data = items.map((s) => s.post);
+    return {
+      data,
+      meta: { cursor: hasMore ? items[items.length - 1].postId : null, hasMore },
+    };
+  }
+
+  async pinComment(postId: string, commentId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException();
+
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment || comment.postId !== postId) throw new NotFoundException('Comment not found');
+
+    await this.prisma.comment.updateMany({
+      where: { postId, isPinned: true },
+      data: { isPinned: false },
+    });
+
+    const updated = await this.prisma.comment.update({
+      where: { id: commentId },
+      data: { isPinned: true },
+    });
+    return updated;
+  }
+
+  async unpinComment(postId: string, commentId: string, userId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException();
+
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+    if (!comment || comment.postId !== postId) throw new NotFoundException('Comment not found');
+
+    const updated = await this.prisma.comment.update({
+      where: { id: commentId },
+      data: { isPinned: false },
+    });
+    return updated;
+  }
+
+  async getShareLink(postId: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post || post.isRemoved) throw new NotFoundException('Post not found');
+    return { url: `https://mizanly.app/post/${postId}` };
   }
 }

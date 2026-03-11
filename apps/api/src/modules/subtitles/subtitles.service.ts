@@ -56,9 +56,9 @@ export class SubtitlesService {
     if (!video) throw new NotFoundException('Video not found');
     if (video.userId !== userId) throw new ForbiddenException();
 
-    // Validate language format (ISO 639-1, 2-10 chars)
-    if (!/^[a-z]{2,10}$/i.test(dto.language)) {
-      throw new BadRequestException('Language must be a 2-10 letter code');
+    // Validate language format (ISO 639-1/639-2, 2-3 chars)
+    if (!/^[a-z]{2,3}$/i.test(dto.language)) {
+      throw new BadRequestException('Language must be a 2-3 letter ISO code');
     }
     if (dto.label.length > 50) {
       throw new BadRequestException('Label too long (max 50 chars)');

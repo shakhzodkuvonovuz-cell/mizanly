@@ -18,6 +18,8 @@ import { VideosService } from './videos.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
 import { CreateVideoCommentDto } from './dto/create-video-comment.dto';
+import { ReportDto } from './dto/report.dto';
+import { VideoProgressDto } from './dto/video-progress.dto';
 
 @ApiTags('Videos (Minbar)')
 @Controller('videos')
@@ -179,9 +181,9 @@ export class VideosController {
   updateProgress(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('progress') progress: number,
+    @Body() dto: VideoProgressDto,
   ) {
-    return this.videosService.updateProgress(id, userId, progress);
+    return this.videosService.updateProgress(id, userId, dto.progress);
   }
 
   @Post(':id/report')
@@ -192,8 +194,51 @@ export class VideosController {
   report(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('reason') reason: string,
+    @Body() dto: ReportDto,
   ) {
-    return this.videosService.report(id, userId, reason);
+    return this.videosService.report(id, userId, dto.reason);
+  }
+
+  @Get(':id/recommended')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get recommended videos based on this video' })
+  getRecommended(
+    @Param('id') id: string,
+    @Query('limit') limit?: string,
+    @CurrentUser('id') userId?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.videosService.getRecommended(id, limitNum, userId);
+  }
+
+  @Get('comments/:commentId/replies')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get replies to a video comment' })
+  getCommentReplies(
+    @Param('commentId') commentId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.videosService.getCommentReplies(commentId, cursor, limitNum);
+  }
+
+  @Post(':id/record-progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Record watch progress for a video' })
+  recordProgress(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: VideoProgressDto,
+  ) {
+    return this.videosService.recordProgress(id, userId, dto.progress);
+  }
+
+  @Get(':id/share-link')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get shareable link for a video' })
+  getShareLink(@Param('id') id: string) {
+    return this.videosService.getShareLink(id);
   }
 }

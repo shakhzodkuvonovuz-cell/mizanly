@@ -12,6 +12,7 @@ describe('UsersController', () => {
 
   const mockService = {
     getMe: jest.fn(),
+    touchLastSeen: jest.fn(),
     updateProfile: jest.fn(),
     deactivate: jest.fn(),
     deleteAccount: jest.fn(),
@@ -64,9 +65,10 @@ describe('UsersController', () => {
   });
 
   describe('getMe', () => {
-    it('should call service.getMe with userId', async () => {
+    it('should call service.touchLastSeen and service.getMe with userId', async () => {
       mockService.getMe.mockResolvedValue({ id: 'user-1' });
       const result = await controller.getMe('user-1');
+      expect(mockService.touchLastSeen).toHaveBeenCalledWith('user-1');
       expect(mockService.getMe).toHaveBeenCalledWith('user-1');
     });
   });
@@ -243,7 +245,7 @@ describe('UsersController', () => {
   describe('report', () => {
     it('should call service.report with reporterId, reportedId, and reason', async () => {
       mockService.report.mockResolvedValue({ reported: true });
-      await controller.report('reported-1', 'reporter-1', 'spam');
+      await controller.report('reported-1', 'reporter-1', { reason: 'spam' });
       expect(mockService.report).toHaveBeenCalledWith('reporter-1', 'reported-1', 'spam');
     });
   });

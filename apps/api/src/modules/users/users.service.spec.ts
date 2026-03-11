@@ -287,14 +287,21 @@ describe('UsersService', () => {
   describe('deactivate', () => {
     it('should set isDeactivated flag', async () => {
       const userId = 'user-123';
+      const mockUser = { username: 'testuser' };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.user.update.mockResolvedValue({});
 
       const result = await service.deactivate(userId);
 
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: userId },
+        select: { username: true },
+      });
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: { isDeactivated: true, deactivatedAt: expect.any(Date) },
       });
+      expect(redis.del).toHaveBeenCalledWith('user:testuser');
       expect(result).toEqual({ message: 'Account deactivated' });
     });
   });
@@ -302,11 +309,17 @@ describe('UsersService', () => {
   describe('deleteAccount', () => {
     it('should anonymize user data and delete devices', async () => {
       const userId = 'user-123';
+      const mockUser = { username: 'testuser' };
+      prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.user.update.mockResolvedValue({});
       prisma.device.deleteMany.mockResolvedValue({ count: 5 });
 
       const result = await service.deleteAccount(userId);
 
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({
+        where: { id: userId },
+        select: { username: true },
+      });
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: userId },
         data: {
@@ -321,6 +334,7 @@ describe('UsersService', () => {
         },
       });
       expect(prisma.device.deleteMany).toHaveBeenCalledWith({ where: { userId } });
+      expect(redis.del).toHaveBeenCalledWith('user:testuser');
       expect(result).toEqual({ deleted: true });
     });
   });

@@ -17,6 +17,7 @@ import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
+import { ReportDto } from './dto/report.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -237,9 +238,9 @@ export class PostsController {
   report(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('reason') reason: string,
+    @Body() dto: ReportDto,
   ) {
-    return this.postsService.report(id, userId, reason);
+    return this.postsService.report(id, userId, dto.reason);
   }
 
   @Post(':id/dismiss')
@@ -252,5 +253,65 @@ export class PostsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.postsService.dismiss(id, userId);
+  }
+
+  @Post(':id/archive')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Archive a post' })
+  archive(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.postsService.archivePost(id, userId);
+  }
+
+  @Delete(':id/archive')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unarchive a post' })
+  unarchive(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.postsService.unarchivePost(id, userId);
+  }
+
+  @Get('archived')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get archived posts (cursor paginated)' })
+  getArchived(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.postsService.getArchived(userId, cursor);
+  }
+
+  @Post(':id/comments/:commentId/pin')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Pin a comment on a post' })
+  pinComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.pinComment(id, commentId, userId);
+  }
+
+  @Delete(':id/comments/:commentId/pin')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unpin a comment' })
+  unpinComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.unpinComment(id, commentId, userId);
+  }
+
+  @Get(':id/share-link')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get shareable link for a post' })
+  getShareLink(@Param('id') id: string) {
+    return this.postsService.getShareLink(id);
   }
 }

@@ -5,6 +5,10 @@ import type {
   BlockedKeyword, Report, AdminStats, SuggestedUser, CreatorStat, Settings,
   Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
   ScheduledItem, MajlisList, Poll, SubtitleTrack, VideoChapter,
+  BroadcastChannel, BroadcastMessage, LiveSession, LiveParticipant,
+  CallSession, StickerPack, StickerItem, PostCollab,
+  ChannelPost, AudioTrack, FeedDismissal,
+  HashtagInfo, BookmarkCollection, SearchSuggestion,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -198,6 +202,16 @@ export const usersApi = {
   removeWatchLater: (videoId: string) => api.delete(`/users/me/watch-later/${videoId}`),
   report: (userId: string, reason: string) => api.post(`/users/${userId}/report`, { reason }),
   getArchive: () => api.get<Story[]>('/stories/me/archived'),
+  getMutualFollowers: (username: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/users/${username}/mutual-followers${qs({ cursor })}`),
+  getLikedPosts: (cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/users/me/liked-posts${qs({ cursor })}`),
+  exportData: () =>
+    api.get<Record<string, unknown>>('/users/me/export-data'),
+  requestAccountDeletion: () =>
+    api.post('/users/me/delete-account'),
+  cancelAccountDeletion: () =>
+    api.post('/users/me/cancel-deletion'),
 };
 
 // ── Follows ──
@@ -244,6 +258,18 @@ export const postsApi = {
     api.delete(`/posts/${postId}/comments/${commentId}/like`),
   getCommentReplies: (postId: string, commentId: string, cursor?: string) =>
     api.get<PaginatedResponse<Comment>>(`/posts/${postId}/comments/${commentId}/replies${qs({ cursor })}`),
+  archive: (id: string) =>
+    api.post(`/posts/${id}/archive`),
+  unarchive: (id: string) =>
+    api.post(`/posts/${id}/unarchive`),
+  getArchived: (cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/posts/archived${qs({ cursor })}`),
+  pinComment: (postId: string, commentId: string) =>
+    api.post(`/posts/${postId}/comments/${commentId}/pin`),
+  unpinComment: (postId: string, commentId: string) =>
+    api.delete(`/posts/${postId}/comments/${commentId}/pin`),
+  getShareLink: (id: string) =>
+    api.get<{ url: string }>(`/posts/${id}/share-link`),
 };
 
 // ── Stories (Saf) ──
@@ -266,6 +292,10 @@ export const storiesApi = {
     api.post(`/stories/highlights/${albumId}/stories/${storyId}`),
   getArchived: () => api.get<Story[]>('/stories/me/archived'),
   unarchive: (id: string) => api.patch<{ unarchived: boolean }>(`/stories/${id}/unarchive`),
+  replyToStory: (storyId: string, content: string) =>
+    api.post<Message>(`/stories/${storyId}/reply`, { content }),
+  getReactionSummary: (storyId: string) =>
+    api.get<Record<string, number>>(`/stories/${storyId}/reactions/summary`),
 };
 
 // ── Reels (Bakra) ──
@@ -285,6 +315,18 @@ export const reelsApi = {
   view: (id: string) => api.post(`/reels/${id}/view`),
   getUserReels: (username: string, cursor?: string) => api.get<PaginatedResponse<Reel>>(`/reels/user/${username}${qs({ cursor })}`),
   report: (id: string, reason: string) => api.post(`/reels/${id}/report`, { reason }),
+  getByAudioTrack: (audioTrackId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/reels/audio/${audioTrackId}${qs({ cursor })}`),
+  getDuets: (reelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/reels/${reelId}/duets${qs({ cursor })}`),
+  getStitches: (reelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/reels/${reelId}/stitches${qs({ cursor })}`),
+  archive: (reelId: string) =>
+    api.post(`/reels/${reelId}/archive`),
+  unarchive: (reelId: string) =>
+    api.post(`/reels/${reelId}/unarchive`),
+  getShareLink: (id: string) =>
+    api.get<{ url: string }>(`/reels/${id}/share-link`),
 };
 
 // ── Channels (Minbar) ──
@@ -305,6 +347,12 @@ export const channelsApi = {
     api.get<PaginatedResponse<Video>>(`/channels/${handle}/videos${qs({ cursor })}`).then(r => r.data),
   getMyChannels: () =>
     api.get<Channel[]>('/channels/me/channels').then(r => r.data),
+  getAnalytics: (channelId: string) =>
+    api.get<{ views: number; subscribers: number; videos: number; recentSubscribers: number[] }>(`/channels/${channelId}/analytics`).then(r => r.data),
+  getSubscribers: (channelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<User>>(`/channels/${channelId}/subscribers${qs({ cursor })}`).then(r => r.data),
+  getRecommended: (limit?: number) =>
+    api.get<Channel[]>(`/channels/recommended${qs({ limit })}`).then(r => r.data),
 };
 
 // ── Videos (Minbar) ──
@@ -339,6 +387,14 @@ export const videosApi = {
     api.patch(`/videos/${id}/progress`, { progress, completed }).then(r => r.data),
   report: (id: string, reason: string) =>
     api.post(`/videos/${id}/report`, { reason }).then(r => r.data),
+  getRecommended: (videoId: string, limit?: number) =>
+    api.get<Video[]>(`/videos/${videoId}/recommended${qs({ limit })}`).then(r => r.data),
+  getCommentReplies: (commentId: string, cursor?: string) =>
+    api.get<PaginatedResponse<VideoComment>>(`/videos/comments/${commentId}/replies${qs({ cursor })}`).then(r => r.data),
+  recordProgress: (videoId: string, progress: number) =>
+    api.patch(`/videos/${videoId}/progress`, { progress, completed: false }).then(r => r.data),
+  getShareLink: (id: string) =>
+    api.get<{ url: string }>(`/videos/${id}/share-link`).then(r => r.data),
 };
 // ── Playlists (Minbar) ──
 export const playlistsApi = {
@@ -388,6 +444,14 @@ export const threadsApi = {
   votePoll: (optionId: string) => api.post(`/threads/polls/${optionId}/vote`),
   getUserThreads: (username: string, cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/user/${username}${qs({ cursor })}`),
+  setReplyPermission: (threadId: string, permission: 'everyone' | 'following' | 'mentioned' | 'none') =>
+    api.patch(`/threads/${threadId}/reply-permission`, { permission }),
+  canReply: (threadId: string) =>
+    api.get<{ canReply: boolean }>(`/threads/${threadId}/can-reply`),
+  getShareLink: (id: string) =>
+    api.get<{ url: string }>(`/threads/${id}/share-link`),
+  isBookmarked: (threadId: string) =>
+    api.get<{ bookmarked: boolean }>(`/threads/${threadId}/bookmarked`),
 };
 
 // ── Messages (Risalah) ──
@@ -421,6 +485,18 @@ export const messagesApi = {
   removeMember: (id: string, userId: string) =>
     api.delete(`/messages/groups/${id}/members/${userId}`),
   leaveGroup: (id: string) => api.delete(`/messages/groups/${id}/members/me`),
+  setDisappearingTimer: (conversationId: string, duration: number) =>
+    api.patch(`/messages/conversations/${conversationId}/disappearing-timer`, { duration }),
+  archiveConversation: (conversationId: string) =>
+    api.post(`/messages/conversations/${conversationId}/archive`),
+  unarchiveConversation: (conversationId: string) =>
+    api.delete(`/messages/conversations/${conversationId}/archive`),
+  getArchivedConversations: (cursor?: string) =>
+    api.get<PaginatedResponse<Conversation>>(`/messages/conversations/archived${qs({ cursor })}`),
+  scheduleMessage: (conversationId: string, content: string, scheduledAt: string, messageType?: string) =>
+    api.post<Message>(`/messages/conversations/${conversationId}/schedule`, { content, scheduledAt, messageType }),
+  getStarredMessages: (cursor?: string) =>
+    api.get<PaginatedResponse<Message>>(`/messages/starred${qs({ cursor })}`),
 };
 
 // ── Notifications ──
@@ -428,6 +504,7 @@ export const notificationsApi = {
   get: (filter?: 'all' | 'mentions' | 'verified', cursor?: string) =>
     api.get<PaginatedResponse<Notification>>(`/notifications${qs({ filter, cursor })}`),
   getUnreadCount: () => api.get<{ unread: number }>('/notifications/unread'),
+  getUnreadCounts: () => api.get<Record<string, number>>('/notifications/unread-counts'),
   markRead: (id: string) => api.post(`/notifications/${id}/read`),
   markAllRead: () => api.post('/notifications/read-all'),
   delete: (id: string) => api.delete(`/notifications/${id}`),
@@ -441,6 +518,16 @@ export const searchApi = {
   suggestions: () => api.get<User[]>('/search/suggestions'),
   hashtagPosts: (tag: string, cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/search/hashtag/${encodeURIComponent(tag)}${qs({ cursor })}`),
+  searchPosts: (query: string, cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/search/posts${qs({ q: query, cursor })}`),
+  searchThreads: (query: string, cursor?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/search/threads${qs({ q: query, cursor })}`),
+  searchReels: (query: string, cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/search/reels${qs({ q: query, cursor })}`),
+  getExploreFeed: (cursor?: string) =>
+    api.get<PaginatedResponse<any>>(`/search/explore${qs({ cursor })}`),
+  getSearchSuggestions: (query: string, limit?: number) =>
+    api.get<SearchSuggestion[]>(`/search/suggestions${qs({ q: query, limit })}`),
 };
 
 // ── Upload ──
@@ -588,4 +675,275 @@ export const subtitlesApi = {
 export const storiesReactionsApi = {
   react: (storyId: string, emoji: string) =>
     api.post(`/stories/${storyId}/react`, { emoji }),
+};
+
+// ── Drafts ──
+export const draftsApi = {
+  getAll: (space?: string) =>
+    api.get<Array<{ id: string; space: string; data: Record<string, unknown>; createdAt: string; updatedAt: string }>>(
+      `/drafts${space ? `?space=${space}` : ''}`
+    ),
+  get: (id: string) =>
+    api.get<{ id: string; space: string; data: Record<string, unknown> }>(`/drafts/${id}`),
+  save: (space: string, data: Record<string, unknown>) =>
+    api.post(`/drafts`, { space, data }),
+  update: (id: string, data: Record<string, unknown>) =>
+    api.patch(`/drafts/${id}`, { data }),
+  delete: (id: string) => api.delete(`/drafts/${id}`),
+};
+
+// ── Broadcast Channels ──
+export const broadcastApi = {
+  discover: (cursor?: string) =>
+    api.get<PaginatedResponse<BroadcastChannel>>(`/broadcast-channels/discover${cursor ? `?cursor=${cursor}` : ''}`),
+  getMyChannels: () =>
+    api.get<BroadcastChannel[]>('/broadcast-channels/mine'),
+  getBySlug: (slug: string) =>
+    api.get<BroadcastChannel>(`/broadcast-channels/slug/${slug}`),
+  getById: (id: string) =>
+    api.get<BroadcastChannel>(`/broadcast-channels/${id}`),
+  create: (data: { name: string; slug: string; description?: string; avatarUrl?: string }) =>
+    api.post<BroadcastChannel>('/broadcast-channels', data),
+  subscribe: (id: string) =>
+    api.post(`/broadcast-channels/${id}/subscribe`),
+  unsubscribe: (id: string) =>
+    api.delete(`/broadcast-channels/${id}/subscribe`),
+  mute: (id: string) =>
+    api.post(`/broadcast-channels/${id}/mute`),
+  unmute: (id: string) =>
+    api.delete(`/broadcast-channels/${id}/mute`),
+  getMessages: (id: string, cursor?: string) =>
+    api.get<PaginatedResponse<BroadcastMessage>>(`/broadcast-channels/${id}/messages${cursor ? `?cursor=${cursor}` : ''}`),
+  sendMessage: (id: string, data: { content: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
+    api.post<BroadcastMessage>(`/broadcast-channels/${id}/messages`, data),
+  pinMessage: (channelId: string, messageId: string) =>
+    api.post(`/broadcast-channels/${channelId}/messages/${messageId}/pin`),
+  unpinMessage: (channelId: string, messageId: string) =>
+    api.delete(`/broadcast-channels/${channelId}/messages/${messageId}/pin`),
+  deleteMessage: (channelId: string, messageId: string) =>
+    api.delete(`/broadcast-channels/${channelId}/messages/${messageId}`),
+  getPinnedMessages: (id: string) =>
+    api.get<BroadcastMessage[]>(`/broadcast-channels/${id}/messages/pinned`),
+  promoteToAdmin: (channelId: string, userId: string) =>
+    api.post(`/broadcast-channels/${channelId}/admins/${userId}`),
+  demoteFromAdmin: (channelId: string, userId: string) =>
+    api.delete(`/broadcast-channels/${channelId}/admins/${userId}`),
+  removeSubscriber: (channelId: string, userId: string) =>
+    api.delete(`/broadcast-channels/${channelId}/subscribers/${userId}`),
+};
+
+// ── Live Sessions ──
+export const liveApi = {
+  create: (data: { title: string; description?: string; thumbnailUrl?: string; scheduledAt?: string }) =>
+    api.post<LiveSession>('/live', data),
+  getById: (id: string) =>
+    api.get<LiveSession>(`/live/${id}`),
+  getActive: () =>
+    api.get<LiveSession[]>('/live/active'),
+  getScheduled: () =>
+    api.get<LiveSession[]>('/live/scheduled'),
+  startLive: (id: string) =>
+    api.post(`/live/${id}/start`),
+  endLive: (id: string) =>
+    api.post(`/live/${id}/end`),
+  cancelLive: (id: string) =>
+    api.post(`/live/${id}/cancel`),
+  join: (id: string) =>
+    api.post<LiveParticipant>(`/live/${id}/join`),
+  leave: (id: string) =>
+    api.post(`/live/${id}/leave`),
+  raiseHand: (id: string) =>
+    api.post(`/live/${id}/raise-hand`),
+  promoteToSpeaker: (id: string, userId: string) =>
+    api.post(`/live/${id}/promote/${userId}`),
+  demoteToViewer: (id: string, userId: string) =>
+    api.post(`/live/${id}/demote/${userId}`),
+  getParticipants: (id: string) =>
+    api.get<LiveParticipant[]>(`/live/${id}/participants`),
+  getHostSessions: (userId: string) =>
+    api.get<LiveSession[]>(`/live/host/${userId}`),
+};
+
+// ── Calls ──
+export const callsApi = {
+  initiate: (data: { receiverId: string; callType: 'voice' | 'video' }) =>
+    api.post<CallSession>('/calls', data),
+  answer: (id: string) =>
+    api.post(`/calls/${id}/answer`),
+  decline: (id: string) =>
+    api.post(`/calls/${id}/decline`),
+  end: (id: string) =>
+    api.post(`/calls/${id}/end`),
+  getHistory: (cursor?: string) =>
+    api.get<PaginatedResponse<CallSession>>(`/calls/history${cursor ? `?cursor=${cursor}` : ''}`),
+  getActiveCall: () =>
+    api.get<CallSession | null>('/calls/active'),
+};
+
+// ── Stickers ──
+export const stickersApi = {
+  browsePacks: (cursor?: string) =>
+    api.get<PaginatedResponse<StickerPack>>(`/stickers/browse${cursor ? `?cursor=${cursor}` : ''}`),
+  searchPacks: (query: string) =>
+    api.get<StickerPack[]>(`/stickers/search?q=${encodeURIComponent(query)}`),
+  getPack: (id: string) =>
+    api.get<StickerPack>(`/stickers/packs/${id}`),
+  getFeaturedPacks: () =>
+    api.get<StickerPack[]>('/stickers/featured'),
+  getMyPacks: () =>
+    api.get<StickerPack[]>('/stickers/mine'),
+  getRecentStickers: () =>
+    api.get<StickerItem[]>('/stickers/recent'),
+  addToCollection: (packId: string) =>
+    api.post(`/stickers/packs/${packId}/collect`),
+  removeFromCollection: (packId: string) =>
+    api.delete(`/stickers/packs/${packId}/collect`),
+  createPack: (data: { name: string; slug: string; description?: string; coverUrl?: string; stickers: { imageUrl: string; emoji?: string }[] }) =>
+    api.post<StickerPack>('/stickers/packs', data),
+  deletePack: (id: string) =>
+    api.delete(`/stickers/packs/${id}`),
+};
+
+// ── Post Collabs ──
+export const collabsApi = {
+  invite: (postId: string, userId: string) =>
+    api.post<PostCollab>(`/collabs/invite`, { postId, userId }),
+  accept: (id: string) =>
+    api.post(`/collabs/${id}/accept`),
+  decline: (id: string) =>
+    api.post(`/collabs/${id}/decline`),
+  remove: (id: string) =>
+    api.delete(`/collabs/${id}`),
+  getMyPending: () =>
+    api.get<PostCollab[]>('/collabs/pending'),
+  getPostCollabs: (postId: string) =>
+    api.get<PostCollab[]>(`/collabs/post/${postId}`),
+};
+
+// ── Channel Posts (Community) ──
+export const channelPostsApi = {
+  list: (channelId: string, cursor?: string) =>
+    api.get<PaginatedResponse<ChannelPost>>(`/channels/${channelId}/posts${cursor ? `?cursor=${cursor}` : ''}`),
+  create: (channelId: string, data: { content: string; postType?: string; mediaUrls?: string[]; mediaTypes?: string[] }) =>
+    api.post<ChannelPost>(`/channels/${channelId}/posts`, data),
+  like: (channelId: string, postId: string) =>
+    api.post(`/channels/${channelId}/posts/${postId}/like`),
+  unlike: (channelId: string, postId: string) =>
+    api.delete(`/channels/${channelId}/posts/${postId}/like`),
+  delete: (channelId: string, postId: string) =>
+    api.delete(`/channels/${channelId}/posts/${postId}`),
+  getComments: (channelId: string, postId: string, cursor?: string) =>
+    api.get<PaginatedResponse<any>>(`/channels/${channelId}/posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
+  addComment: (channelId: string, postId: string, content: string) =>
+    api.post(`/channels/${channelId}/posts/${postId}/comments`, { content }),
+};
+
+// ── Audio Tracks ──
+export const audioTracksApi = {
+  browse: (cursor?: string) =>
+    api.get<PaginatedResponse<AudioTrack>>(`/audio-tracks${cursor ? `?cursor=${cursor}` : ''}`),
+  search: (query: string) =>
+    api.get<AudioTrack[]>(`/audio-tracks/search?q=${encodeURIComponent(query)}`),
+  getById: (id: string) =>
+    api.get<AudioTrack>(`/audio-tracks/${id}`),
+  getTrending: () =>
+    api.get<AudioTrack[]>('/audio-tracks/trending'),
+  getByGenre: (genre: string) =>
+    api.get<AudioTrack[]>(`/audio-tracks/genre/${genre}`),
+  getReelsUsing: (trackId: string, cursor?: string) =>
+    api.get<PaginatedResponse<any>>(`/audio-tracks/${trackId}/reels${cursor ? `?cursor=${cursor}` : ''}`),
+  upload: (data: { title: string; artist: string; audioUrl: string; coverUrl?: string; duration: number; genre?: string }) =>
+    api.post<AudioTrack>('/audio-tracks', data),
+  delete: (id: string) =>
+    api.delete(`/audio-tracks/${id}`),
+};
+
+// ── Feed Intelligence ──
+export const feedApi = {
+  dismiss: (data: { postId?: string; reelId?: string; threadId?: string; reason: string }) =>
+    api.post('/feed/dismiss', data),
+  getPersonalized: (cursor?: string) =>
+    api.get<PaginatedResponse<any>>(`/feed/personalized${cursor ? `?cursor=${cursor}` : ''}`),
+  getExplore: (cursor?: string) =>
+    api.get<PaginatedResponse<any>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
+  reportNotInterested: (contentId: string, contentType: string) =>
+    api.post('/feed/not-interested', { contentId, contentType }),
+};
+
+// ── Reports ──
+export const reportsApi = {
+  create: (data: { reason: string; description?: string; reportedPostId?: string; reportedUserId?: string; reportedCommentId?: string; reportedMessageId?: string }) =>
+    api.post<Report>('/reports', data),
+  getMine: (cursor?: string) =>
+    api.get<PaginatedResponse<Report>>(`/reports/mine${qs({ cursor })}`),
+  getPending: (cursor?: string) =>
+    api.get<PaginatedResponse<Report>>(`/reports/pending${qs({ cursor })}`),
+  getStats: () =>
+    api.get<{ pending: number; reviewing: number; resolved: number; dismissed: number; total: number }>('/reports/stats'),
+  getById: (id: string) =>
+    api.get<Report>(`/reports/${id}`),
+  resolve: (id: string, actionTaken: string) =>
+    api.patch<Report>(`/reports/${id}/resolve`, { actionTaken }),
+  dismiss: (id: string) =>
+    api.patch<Report>(`/reports/${id}/dismiss`),
+};
+
+// ── Hashtags ──
+export const hashtagsApi = {
+  getTrending: () =>
+    api.get<HashtagInfo[]>('/hashtags/trending'),
+  search: (query: string) =>
+    api.get<HashtagInfo[]>(`/hashtags/search${qs({ q: query })}`),
+  getByName: (name: string) =>
+    api.get<HashtagInfo>(`/hashtags/${name}`),
+  getPosts: (name: string, cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/hashtags/${name}/posts${qs({ cursor })}`),
+  getReels: (name: string, cursor?: string) =>
+    api.get<PaginatedResponse<Reel>>(`/hashtags/${name}/reels${qs({ cursor })}`),
+  getThreads: (name: string, cursor?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/hashtags/${name}/threads${qs({ cursor })}`),
+};
+
+// ── Bookmarks ──
+export const bookmarksApi = {
+  savePost: (postId: string, collectionName?: string) =>
+    api.post(`/bookmarks/posts/${postId}`, { collectionName }),
+  unsavePost: (postId: string) =>
+    api.delete(`/bookmarks/posts/${postId}`),
+  saveThread: (threadId: string, collectionName?: string) =>
+    api.post(`/bookmarks/threads/${threadId}`, { collectionName }),
+  unsaveThread: (threadId: string) =>
+    api.delete(`/bookmarks/threads/${threadId}`),
+  saveVideo: (videoId: string, collectionName?: string) =>
+    api.post(`/bookmarks/videos/${videoId}`, { collectionName }),
+  unsaveVideo: (videoId: string) =>
+    api.delete(`/bookmarks/videos/${videoId}`),
+  getSavedPosts: (collectionName?: string, cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/bookmarks/posts${qs({ collectionName, cursor })}`),
+  getSavedThreads: (collectionName?: string, cursor?: string) =>
+    api.get<PaginatedResponse<Thread>>(`/bookmarks/threads${qs({ collectionName, cursor })}`),
+  getSavedVideos: (collectionName?: string, cursor?: string) =>
+    api.get<PaginatedResponse<Video>>(`/bookmarks/videos${qs({ collectionName, cursor })}`),
+  getCollections: () =>
+    api.get<BookmarkCollection[]>('/bookmarks/collections'),
+  moveToCollection: (bookmarkId: string, collectionName: string) =>
+    api.patch(`/bookmarks/${bookmarkId}/collection`, { collectionName }),
+  isPostSaved: (postId: string) =>
+    api.get<{ saved: boolean }>(`/bookmarks/posts/${postId}/saved`),
+  isThreadSaved: (threadId: string) =>
+    api.get<{ saved: boolean }>(`/bookmarks/threads/${threadId}/saved`),
+  isVideoSaved: (videoId: string) =>
+    api.get<{ saved: boolean }>(`/bookmarks/videos/${videoId}/saved`),
+};
+
+// ── Watch History ──
+export const watchHistoryApi = {
+  recordWatch: (videoId: string, progress: number, duration: number) =>
+    api.post(`/watch-history/${videoId}`, { progress, duration }),
+  getHistory: (cursor?: string) =>
+    api.get<PaginatedResponse<WatchHistoryItem>>(`/watch-history${qs({ cursor })}`),
+  removeFromHistory: (videoId: string) =>
+    api.delete(`/watch-history/${videoId}`),
+  clearHistory: () =>
+    api.delete('/watch-history'),
 };

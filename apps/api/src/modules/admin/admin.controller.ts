@@ -12,6 +12,8 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
+import { ResolveReportDto } from './dto/resolve-report.dto';
+import { BanUserDto } from './dto/ban-user.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -46,7 +48,7 @@ export class AdminController {
   resolveReport(
     @CurrentUser('id') adminId: string,
     @Param('id') reportId: string,
-    @Body() dto: { action: 'DISMISS' | 'WARN' | 'REMOVE_CONTENT' | 'BAN_USER'; note?: string },
+    @Body() dto: ResolveReportDto,
   ) {
     return this.adminService.resolveReport(adminId, reportId, dto.action, dto.note);
   }
@@ -63,7 +65,7 @@ export class AdminController {
   banUser(
     @CurrentUser('id') adminId: string,
     @Param('id') targetId: string,
-    @Body() dto: { reason: string; duration?: number },
+    @Body() dto: BanUserDto,
   ) {
     return this.adminService.banUser(adminId, targetId, dto.reason, dto.duration);
   }

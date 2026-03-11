@@ -202,7 +202,7 @@ describe('ThreadsController', () => {
   describe('report', () => {
     it('should call service.report with id, userId, and reason', async () => {
       mockService.report.mockResolvedValue({ reported: true });
-      await controller.report('thread-1', 'user-1', 'spam');
+      await controller.report('thread-1', 'user-1', { reason: 'spam' });
       expect(mockService.report).toHaveBeenCalledWith('thread-1', 'user-1', 'spam');
     });
   });

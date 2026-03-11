@@ -307,4 +307,120 @@ export class ChannelsService {
     // No need for isSubscribed flag (own channels)
     return channels.map(ch => ({ ...ch, isSubscribed: false }));
   }
+
+  async getAnalytics(handle: string, userId: string) {
+    const channel = await this.prisma.channel.findUnique({
+      where: { handle },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException();
+
+    const [recentSubs, topVideos] = await Promise.all([
+      // Subscribers in last 7 days
+      this.prisma.subscription.count({
+        where: {
+          channelId: channel.id,
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
+      }),
+      // Top 5 videos by views
+      this.prisma.video.findMany({
+        where: { channelId: channel.id },
+        select: {
+          id: true,
+          title: true,
+          thumbnailUrl: true,
+          viewsCount: true,
+          likesCount: true,
+          commentsCount: true,
+          publishedAt: true,
+        },
+        take: 5,
+        orderBy: { viewsCount: 'desc' },
+      }),
+    ]);
+
+    return {
+      subscribersCount: channel.subscribersCount,
+      videosCount: channel.videosCount,
+      totalViews: channel.totalViews,
+      recentSubs,
+      averageViewsPerVideo: channel.videosCount > 0 ? channel.totalViews / channel.videosCount : 0,
+      topVideos,
+    };
+  }
+
+  async getSubscribers(handle: string, userId: string, cursor?: string, limit = 20) {
+    const channel = await this.prisma.channel.findUnique({
+      where: { handle },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException();
+
+    const subscribers = await this.prisma.subscription.findMany({
+      where: { channelId: channel.id },
+      select: {
+        userId: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            displayName: true,
+            avatarUrl: true,
+            isVerified: true,
+          },
+        },
+        createdAt: true,
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { userId_channelId: { userId: cursor, channelId: channel.id } }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = subscribers.length > limit;
+    const data = hasMore ? subscribers.slice(0, limit) : subscribers;
+    const nextCursor = hasMore ? data[data.length - 1]?.userId : null;
+
+    return {
+      data: data.map(sub => ({
+        user: sub.user,
+        subscribedAt: sub.createdAt,
+      })),
+      meta: { cursor: nextCursor, hasMore },
+    };
+  }
+
+  async getRecommended(userId: string, limit = 10) {
+    // Raw SQL to get recommended channel IDs with proper ordering
+    const channelIds = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT c.id
+      FROM "Channel" c
+      WHERE c."userId" != ${userId}
+        AND NOT EXISTS (
+          SELECT 1 FROM "Subscription" s
+          WHERE s."channelId" = c.id AND s."userId" = ${userId}
+        )
+      ORDER BY c."subscribersCount" DESC, c."totalViews" DESC
+      LIMIT ${limit}
+    `;
+
+    if (channelIds.length === 0) {
+      return [];
+    }
+
+    const ids = channelIds.map(row => row.id);
+    const channels = await this.prisma.channel.findMany({
+      where: { id: { in: ids } },
+      select: CHANNEL_SELECT,
+    });
+
+    // Preserve order from raw SQL query
+    const channelMap = new Map(channels.map(ch => [ch.id, ch]));
+    const orderedChannels = ids.map(id => channelMap.get(id)).filter(Boolean);
+
+    return orderedChannels.map(ch => ({
+      ...ch,
+      isSubscribed: false, // already excluded subscribed channels
+    }));
+  }
 }

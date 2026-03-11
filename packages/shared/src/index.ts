@@ -63,3 +63,21 @@ export function validateUsername(username: string): string | null {
   if (!USERNAME_REGEX.test(username)) return 'Letters, numbers, dots and underscores only';
   return null;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  meta: { cursor?: string; hasMore: boolean };
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  success: boolean;
+  timestamp: string;
+}
+
+export type ContentSpace = 'SAF' | 'BAKRA' | 'MAJLIS' | 'RISALAH' | 'MINBAR';
+
+export const REPORT_REASONS = [
+  'SPAM', 'HARASSMENT', 'HATE_SPEECH', 'VIOLENCE', 'NUDITY',
+  'FALSE_INFO', 'IMPERSONATION', 'INTELLECTUAL_PROPERTY', 'OTHER',
+] as const;

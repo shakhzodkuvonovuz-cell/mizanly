@@ -177,6 +177,7 @@ enum MessageType {
   FILE
   SYSTEM
   GIF
+  STORY_REPLY
 }
 
 enum CircleRole {
@@ -413,7 +414,7 @@ model Post {
   removedReason String?
   removedAt     DateTime?
   removedById   String?
-  removedBy     User?     @relation("PostRemover", fields: [removedById], references: [id])
+  removedBy     User?     @relation("PostRemover", fields: [removedById], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   comments         Comment[]
@@ -496,6 +497,10 @@ model Reel {
   audioArtist String?
   audioTrackId String?
   audioTrack   AudioTrack? @relation(fields: [audioTrackId], references: [id], onDelete: SetNull)
+  duetOfId     String?
+  duetOf       Reel?       @relation("DuetOf", fields: [duetOfId], references: [id], onDelete: SetNull)
+  stitchOfId   String?
+  stitchOf     Reel?       @relation("StitchOf", fields: [stitchOfId], references: [id], onDelete: SetNull)
   isDuet       Boolean @default(false)
   isStitch     Boolean @default(false)
   scheduledAt  DateTime?
@@ -507,6 +512,7 @@ model Reel {
   loopsCount    Int @default(0)
   isFeatureWorthy Boolean @default(false)
   isSensitive     Boolean @default(false)
+  isArchived      Boolean @default(false)
   isRemoved     Boolean   @default(false)
   removedReason String?
   createdAt DateTime @default(now())
@@ -515,6 +521,8 @@ model Reel {
   comments      ReelComment[]
   interactions  ReelInteraction[]
   notifications Notification[]
+  duets         Reel[]         @relation("DuetOf")
+  stitches      Reel[]         @relation("StitchOf")
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
   @@index([viewsCount(sort: Desc)])
@@ -589,6 +597,7 @@ model Thread {
   scheduledAt    DateTime?
   hideLikesCount Boolean @default(false)
   isRemoved Boolean @default(false)
+  replyPermission String @default("everyone")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   reactions     ThreadReaction[]

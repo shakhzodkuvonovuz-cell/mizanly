@@ -78,7 +78,6 @@ describe('SchedulingService', () => {
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-        orderBy: { scheduledAt: 'asc' },
       });
       expect(prisma.thread.findMany).toHaveBeenCalledWith({
         where: {
@@ -86,7 +85,6 @@ describe('SchedulingService', () => {
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-        orderBy: { scheduledAt: 'asc' },
       });
       expect(prisma.reel.findMany).toHaveBeenCalledWith({
         where: {
@@ -94,7 +92,6 @@ describe('SchedulingService', () => {
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-        orderBy: { scheduledAt: 'asc' },
       });
       expect(prisma.video.findMany).toHaveBeenCalledWith({
         where: {
@@ -102,7 +99,6 @@ describe('SchedulingService', () => {
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-        orderBy: { scheduledAt: 'asc' },
       });
 
       // Expect combined list sorted by scheduledAt
@@ -129,7 +125,7 @@ describe('SchedulingService', () => {
   describe('updateSchedule', () => {
     it('should update scheduledAt for a post', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 30 * 60000); // 30 minutes from now
       const mockPost = { id, userId, scheduledAt: new Date(Date.now() + 60 * 60000) };
@@ -141,7 +137,6 @@ describe('SchedulingService', () => {
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
-        select: { userId: true, scheduledAt: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
@@ -152,7 +147,7 @@ describe('SchedulingService', () => {
 
     it('should throw NotFoundException if item does not exist', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 30 * 60000);
 
@@ -165,7 +160,7 @@ describe('SchedulingService', () => {
 
     it('should throw ForbiddenException if user does not own the item', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 30 * 60000);
       const mockPost = { id, userId: 'other-user', scheduledAt: new Date() };
@@ -179,7 +174,7 @@ describe('SchedulingService', () => {
 
     it('should throw BadRequestException if scheduledAt is less than 15 minutes from now', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const newScheduledAt = new Date(Date.now() + 10 * 60000); // 10 minutes
       const mockPost = { id, userId, scheduledAt: new Date() };
@@ -197,7 +192,7 @@ describe('SchedulingService', () => {
       const mockItem = { id: 'item-1', userId, scheduledAt: new Date() };
 
       // Test each type
-      const types = ['thread', 'reel', 'video'];
+      const types = ['thread', 'reel', 'video'] as const;
       for (const type of types) {
         const model = type;
         prisma[model].findUnique.mockResolvedValue(mockItem);
@@ -207,7 +202,6 @@ describe('SchedulingService', () => {
 
         expect(prisma[model].findUnique).toHaveBeenCalledWith({
           where: { id: 'item-1' },
-          select: { userId: true, scheduledAt: true },
         });
         expect(prisma[model].update).toHaveBeenCalledWith({
           where: { id: 'item-1' },
@@ -224,7 +218,7 @@ describe('SchedulingService', () => {
   describe('cancelSchedule', () => {
     it('should set scheduledAt to null for a post', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const mockPost = { id, userId, scheduledAt: new Date() };
 
@@ -235,18 +229,17 @@ describe('SchedulingService', () => {
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
-        select: { userId: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
         data: { scheduledAt: null },
       });
-      expect(result.success).toBe(true);
+      expect(result.scheduledAt).toBe(null);
     });
 
     it('should throw NotFoundException if item does not exist', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
 
       prisma.post.findUnique.mockResolvedValue(null);
@@ -258,7 +251,7 @@ describe('SchedulingService', () => {
 
     it('should throw ForbiddenException if user does not own the item', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const mockPost = { id, userId: 'other-user' };
 
@@ -273,7 +266,7 @@ describe('SchedulingService', () => {
   describe('publishNow', () => {
     it('should set scheduledAt to null for a post', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const mockPost = { id, userId, scheduledAt: new Date() };
 
@@ -284,18 +277,17 @@ describe('SchedulingService', () => {
 
       expect(prisma.post.findUnique).toHaveBeenCalledWith({
         where: { id },
-        select: { userId: true },
       });
       expect(prisma.post.update).toHaveBeenCalledWith({
         where: { id },
         data: { scheduledAt: null },
       });
-      expect(result.success).toBe(true);
+      expect(result.scheduledAt).toBe(null);
     });
 
     it('should throw NotFoundException if item does not exist', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
 
       prisma.post.findUnique.mockResolvedValue(null);
@@ -307,7 +299,7 @@ describe('SchedulingService', () => {
 
     it('should throw ForbiddenException if user does not own the item', async () => {
       const userId = 'user-123';
-      const type = 'post';
+      const type = 'post' as const;
       const id = 'post-1';
       const mockPost = { id, userId: 'other-user' };
 

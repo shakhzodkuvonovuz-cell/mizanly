@@ -1,5 +1,6 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { RecommendationsService } from './recommendations.service';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -10,6 +11,7 @@ export class RecommendationsController {
   constructor(private recommendationsService: RecommendationsService) {}
 
   @Get('people')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'People you may know (mutual follows, similar interests)' })
   suggestedPeople(
@@ -20,6 +22,7 @@ export class RecommendationsController {
   }
 
   @Get('posts')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Suggested posts (high engagement, not yet seen)' })
   suggestedPosts(
@@ -30,6 +33,7 @@ export class RecommendationsController {
   }
 
   @Get('reels')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Suggested reels' })
   suggestedReels(
@@ -40,6 +44,7 @@ export class RecommendationsController {
   }
 
   @Get('channels')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Suggested channels' })
   suggestedChannels(

@@ -15,7 +15,9 @@
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
     "prisma:push": "npm run prisma:push --workspace=apps/api",
     "prisma:studio": "npm run prisma:studio --workspace=apps/api",
-    "prisma:seed": "npm run prisma:seed --workspace=apps/api"
+    "prisma:seed": "npm run prisma:seed --workspace=apps/api",
+    "format": "prettier --write \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx}\" \"packages/**/*.ts\""
   },
   "engines": {
     "node": ">=20.0.0",

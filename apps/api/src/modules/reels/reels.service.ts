@@ -107,6 +107,26 @@ export class ReelsService {
       }),
     ]);
 
+    // Mention notifications
+    if (dto.mentions?.length) {
+      const [mentionedUsers, actor] = await Promise.all([
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
+      ]);
+      for (const mentioned of mentionedUsers) {
+        if (mentioned.id !== userId) {
+          this.notifications.create({
+            userId: mentioned.id,
+            actorId: userId,
+            type: 'MENTION',
+            reelId: reel.id,
+            title: 'Mentioned you',
+            body: `@${actor?.username ?? 'Someone'} mentioned you in a reel`,
+          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+        }
+      }
+    }
+
     // Video processing deferred — mark as READY immediately for MVP
     const updatedReel = await this.prisma.reel.update({
       where: { id: reel.id },
@@ -542,5 +562,172 @@ export class ReelsService {
       },
     });
     return { reported: true };
+  }
+
+  async getByAudioTrack(audioTrackId: string, cursor?: string, limit = 20, userId?: string) {
+    const reels = await this.prisma.reel.findMany({
+      where: { audioTrackId, status: ReelStatus.READY, isRemoved: false },
+      select: REEL_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = reels.length > limit;
+    const items = hasMore ? reels.slice(0, limit) : reels;
+
+    let likedReelIds: string[] = [];
+    let bookmarkedReelIds: string[] = [];
+
+    if (userId && items.length > 0) {
+      const reelIds = items.map(r => r.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.reelReaction.findMany({
+          where: { userId, reelId: { in: reelIds } },
+          select: { reelId: true },
+        }),
+        this.prisma.reelInteraction.findMany({
+          where: { userId, reelId: { in: reelIds }, saved: true },
+          select: { reelId: true },
+        }),
+      ]);
+      likedReelIds = reactions.map(r => r.reelId);
+      bookmarkedReelIds = interactions.map(i => i.reelId);
+    }
+
+    const data = items.map((reel) => ({
+      ...reel,
+      isLiked: userId ? likedReelIds.includes(reel.id) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+    }));
+
+    return {
+      data,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  async getDuets(reelId: string, cursor?: string, limit = 20, userId?: string) {
+    const parent = await this.prisma.reel.findUnique({
+      where: { id: reelId, status: ReelStatus.READY, isRemoved: false },
+    });
+    if (!parent) throw new NotFoundException('Reel not found');
+
+    const reels = await this.prisma.reel.findMany({
+      where: { duetOfId: reelId, status: ReelStatus.READY, isRemoved: false },
+      select: REEL_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = reels.length > limit;
+    const items = hasMore ? reels.slice(0, limit) : reels;
+
+    let likedReelIds: string[] = [];
+    let bookmarkedReelIds: string[] = [];
+
+    if (userId && items.length > 0) {
+      const reelIds = items.map(r => r.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.reelReaction.findMany({
+          where: { userId, reelId: { in: reelIds } },
+          select: { reelId: true },
+        }),
+        this.prisma.reelInteraction.findMany({
+          where: { userId, reelId: { in: reelIds }, saved: true },
+          select: { reelId: true },
+        }),
+      ]);
+      likedReelIds = reactions.map(r => r.reelId);
+      bookmarkedReelIds = interactions.map(i => i.reelId);
+    }
+
+    const data = items.map((reel) => ({
+      ...reel,
+      isLiked: userId ? likedReelIds.includes(reel.id) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+    }));
+
+    return {
+      data,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  async getStitches(reelId: string, cursor?: string, limit = 20, userId?: string) {
+    const parent = await this.prisma.reel.findUnique({
+      where: { id: reelId, status: ReelStatus.READY, isRemoved: false },
+    });
+    if (!parent) throw new NotFoundException('Reel not found');
+
+    const reels = await this.prisma.reel.findMany({
+      where: { stitchOfId: reelId, status: ReelStatus.READY, isRemoved: false },
+      select: REEL_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = reels.length > limit;
+    const items = hasMore ? reels.slice(0, limit) : reels;
+
+    let likedReelIds: string[] = [];
+    let bookmarkedReelIds: string[] = [];
+
+    if (userId && items.length > 0) {
+      const reelIds = items.map(r => r.id);
+      const [reactions, interactions] = await Promise.all([
+        this.prisma.reelReaction.findMany({
+          where: { userId, reelId: { in: reelIds } },
+          select: { reelId: true },
+        }),
+        this.prisma.reelInteraction.findMany({
+          where: { userId, reelId: { in: reelIds }, saved: true },
+          select: { reelId: true },
+        }),
+      ]);
+      likedReelIds = reactions.map(r => r.reelId);
+      bookmarkedReelIds = interactions.map(i => i.reelId);
+    }
+
+    const data = items.map((reel) => ({
+      ...reel,
+      isLiked: userId ? likedReelIds.includes(reel.id) : false,
+      isBookmarked: userId ? bookmarkedReelIds.includes(reel.id) : false,
+    }));
+
+    return {
+      data,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  async archive(reelId: string, userId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel) throw new NotFoundException('Reel not found');
+    if (reel.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.reel.update({
+      where: { id: reelId },
+      data: { isArchived: true },
+    });
+    return { archived: true };
+  }
+
+  async unarchive(reelId: string, userId: string) {
+    const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
+    if (!reel) throw new NotFoundException('Reel not found');
+    if (reel.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.reel.update({
+      where: { id: reelId },
+      data: { isArchived: false },
+    });
+    return { archived: false };
+  }
+
+  getShareLink(reelId: string) {
+    return { url: `https://mizanly.app/reel/${reelId}` };
   }
 }

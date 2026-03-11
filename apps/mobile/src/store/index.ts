@@ -40,6 +40,41 @@ interface AppState {
   addFollowedHashtag(tag: string): void;
   removeFollowedHashtag(tag: string): void;
 
+  // Active call
+  activeCallId: string | null;
+  setActiveCallId: (id: string | null) => void;
+
+  // Live session
+  activeLiveSessionId: string | null;
+  setActiveLiveSessionId: (id: string | null) => void;
+  isLiveStreaming: boolean;
+  setIsLiveStreaming: (v: boolean) => void;
+
+  // Sticker recent
+  recentStickerPackIds: string[];
+  addRecentStickerPack: (packId: string) => void;
+
+  // Muted broadcast channels
+  mutedChannelIds: string[];
+  toggleMutedChannel: (channelId: string) => void;
+
+  // Feed preferences
+  feedDismissedIds: string[];
+  addFeedDismissed: (contentId: string) => void;
+
+  // Search history
+  searchHistory: string[];
+  addSearchHistory: (query: string) => void;
+  clearSearchHistory: () => void;
+
+  // Conversation archive
+  archivedConversationsCount: number;
+  setArchivedConversationsCount: (count: number) => void;
+
+  // Recording state
+  isRecording: boolean;
+  setIsRecording: (v: boolean) => void;
+
   logout: () => void;
 }
 
@@ -86,6 +121,51 @@ export const useStore = create<AppState>()(
         followedHashtags: s.followedHashtags.filter(t => t !== tag),
       })),
 
+      // Active call
+      activeCallId: null,
+      setActiveCallId: (activeCallId) => set({ activeCallId }),
+
+      // Live session
+      activeLiveSessionId: null,
+      setActiveLiveSessionId: (activeLiveSessionId) => set({ activeLiveSessionId }),
+      isLiveStreaming: false,
+      setIsLiveStreaming: (isLiveStreaming) => set({ isLiveStreaming }),
+
+      // Sticker recent
+      recentStickerPackIds: [],
+      addRecentStickerPack: (packId) => set((s) => ({
+        recentStickerPackIds: [packId, ...s.recentStickerPackIds.filter(id => id !== packId)].slice(0, 20),
+      })),
+
+      // Muted broadcast channels
+      mutedChannelIds: [],
+      toggleMutedChannel: (channelId) => set((s) => ({
+        mutedChannelIds: s.mutedChannelIds.includes(channelId)
+          ? s.mutedChannelIds.filter(id => id !== channelId)
+          : [...s.mutedChannelIds, channelId],
+      })),
+
+      // Feed preferences
+      feedDismissedIds: [],
+      addFeedDismissed: (contentId) => set((s) => ({
+        feedDismissedIds: [...s.feedDismissedIds, contentId].slice(-200),
+      })),
+
+      // Search history
+      searchHistory: [],
+      addSearchHistory: (query) => set((s) => ({
+        searchHistory: [query, ...s.searchHistory.filter(q => q !== query)].slice(0, 20),
+      })),
+      clearSearchHistory: () => set({ searchHistory: [] }),
+
+      // Conversation archive
+      archivedConversationsCount: 0,
+      setArchivedConversationsCount: (archivedConversationsCount) => set({ archivedConversationsCount }),
+
+      // Recording state
+      isRecording: false,
+      setIsRecording: (isRecording) => set({ isRecording }),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -93,6 +173,14 @@ export const useStore = create<AppState>()(
         unreadNotifications: 0,
         unreadMessages: 0,
         isCreateSheetOpen: false,
+        activeCallId: null,
+        activeLiveSessionId: null,
+        isLiveStreaming: false,
+        recentStickerPackIds: [],
+        feedDismissedIds: [],
+        searchHistory: [],
+        archivedConversationsCount: 0,
+        isRecording: false,
       }),
     }),
     {
@@ -103,6 +191,9 @@ export const useStore = create<AppState>()(
         safFeedType: state.safFeedType,
         majlisFeedType: state.majlisFeedType,
         followedHashtags: state.followedHashtags,
+        recentStickerPackIds: state.recentStickerPackIds,
+        searchHistory: state.searchHistory,
+        mutedChannelIds: state.mutedChannelIds,
       }),
     }
   )
@@ -116,3 +207,12 @@ export const useUnreadMessages = () => useStore((s) => s.unreadMessages);
 export const useSafFeedType = () => useStore((s) => s.safFeedType);
 export const useMajlisFeedType = () => useStore((s) => s.majlisFeedType);
 export const useFollowedHashtags = () => useStore(s => s.followedHashtags);
+export const useActiveCallId = () => useStore((s) => s.activeCallId);
+export const useActiveLiveSessionId = () => useStore((s) => s.activeLiveSessionId);
+export const useIsLiveStreaming = () => useStore((s) => s.isLiveStreaming);
+export const useRecentStickerPackIds = () => useStore((s) => s.recentStickerPackIds);
+export const useMutedChannelIds = () => useStore((s) => s.mutedChannelIds);
+export const useFeedDismissedIds = () => useStore((s) => s.feedDismissedIds);
+export const useSearchHistory = () => useStore((s) => s.searchHistory);
+export const useArchivedConversationsCount = () => useStore((s) => s.archivedConversationsCount);
+export const useIsRecording = () => useStore((s) => s.isRecording);

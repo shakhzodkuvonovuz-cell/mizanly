@@ -29,6 +29,11 @@
       },
       "package": "app.mizanly.mobile"
     },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/images/icon.png"
+    },
     "plugins": [
       "expo-router",
       "expo-image-picker",

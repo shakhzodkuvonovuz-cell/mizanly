@@ -442,4 +442,101 @@ export class SearchService {
       orderBy: { followers: { _count: 'desc' } },
     });
   }
+
+  async searchPosts(query: string, userId?: string, cursor?: string, limit = 20) {
+    const take = limit + 1;
+    const posts = await this.prisma.post.findMany({
+      where: {
+        content: { contains: query, mode: 'insensitive' },
+        visibility: 'PUBLIC',
+        isRemoved: false,
+      },
+      select: POST_SEARCH_SELECT,
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { likesCount: 'desc' },
+    });
+    const hasMore = posts.length > limit;
+    const data = hasMore ? posts.slice(0, limit) : posts;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async searchThreads(query: string, cursor?: string, limit = 20) {
+    const take = limit + 1;
+    const threads = await this.prisma.thread.findMany({
+      where: {
+        content: { contains: query, mode: 'insensitive' },
+        visibility: 'PUBLIC',
+        isChainHead: true,
+        isRemoved: false,
+      },
+      select: THREAD_SEARCH_SELECT,
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { likesCount: 'desc' },
+    });
+    const hasMore = threads.length > limit;
+    const data = hasMore ? threads.slice(0, limit) : threads;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async searchReels(query: string, cursor?: string, limit = 20) {
+    const take = limit + 1;
+    const reels = await this.prisma.reel.findMany({
+      where: {
+        OR: [
+          { caption: { contains: query, mode: 'insensitive' } },
+          { hashtags: { has: query.toLowerCase() } },
+        ],
+        status: 'READY',
+      },
+      select: REEL_SEARCH_SELECT,
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+    const hasMore = reels.length > limit;
+    const data = hasMore ? reels.slice(0, limit) : reels;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async getExploreFeed(cursor?: string, limit = 20) {
+    const take = limit + 1;
+    const posts = await this.prisma.post.findMany({
+      where: {
+        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        visibility: 'PUBLIC',
+        isRemoved: false,
+      },
+      select: POST_SEARCH_SELECT,
+      take,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { likesCount: 'desc' },
+    });
+    const hasMore = posts.length > limit;
+    const data = hasMore ? posts.slice(0, limit) : posts;
+    return { data, meta: { cursor: data[data.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async getSuggestions(query: string, limit = 10) {
+    const [users, hashtags] = await Promise.all([
+      this.prisma.user.findMany({
+        where: {
+          OR: [
+            { username: { startsWith: query, mode: 'insensitive' } },
+            { displayName: { startsWith: query, mode: 'insensitive' } },
+          ],
+        },
+        select: USER_SEARCH_SELECT,
+        take: Math.ceil(limit / 2),
+        orderBy: { followers: { _count: 'desc' } },
+      }),
+      this.prisma.hashtag.findMany({
+        where: { name: { startsWith: query, mode: 'insensitive' } },
+        take: Math.ceil(limit / 2),
+        orderBy: { postsCount: 'desc' },
+      }),
+    ]);
+    return { users, hashtags };
+  }
 }

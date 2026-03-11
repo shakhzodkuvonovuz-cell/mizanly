@@ -189,6 +189,15 @@ export class PollsService {
     }
 
     const limit = 20;
+    let cursorObj;
+    if (cursor) {
+      if (cursor.includes('_')) {
+        const [userId] = cursor.split('_');
+        cursorObj = { userId, optionId };
+      } else {
+        cursorObj = { userId: cursor, optionId };
+      }
+    }
     const votes = await this.prisma.pollVote.findMany({
       where: { optionId },
       include: {
@@ -202,9 +211,9 @@ export class PollsService {
         },
       },
       take: limit + 1,
-      ...(cursor
+      ...(cursorObj
         ? {
-            cursor: { userId_optionId: { userId: cursor, optionId } },
+            cursor: { userId_optionId: cursorObj },
             skip: 1,
           }
         : {}),

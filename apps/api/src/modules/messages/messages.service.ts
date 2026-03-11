@@ -361,4 +361,160 @@ export class MessagesService {
     if (!member) throw new ForbiddenException('Not a member of this conversation');
     return member;
   }
+
+  async searchMessages(conversationId: string, userId: string, query: string, cursor?: string, limit = 20) {
+    await this.requireMembership(conversationId, userId);
+    const messages = await this.prisma.message.findMany({
+      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+    return { data: messages, meta: { cursor: messages[messages.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async forwardMessage(messageId: string, userId: string, targetConversationIds: string[]) {
+    const original = await this.prisma.message.findUnique({ where: { id: messageId }, select: { content: true, messageType: true, mediaUrl: true, mediaType: true, voiceDuration: true, fileName: true, fileSize: true } });
+    if (!original) throw new NotFoundException('Message not found');
+    const results = [];
+    for (const convId of targetConversationIds) {
+      await this.requireMembership(convId, userId);
+      const msg = await this.prisma.message.create({
+        data: { conversationId: convId, senderId: userId, content: original.content, messageType: original.messageType, mediaUrl: original.mediaUrl, mediaType: original.mediaType, voiceDuration: original.voiceDuration, fileName: original.fileName, fileSize: original.fileSize, isForwarded: true, forwardedFromId: messageId },
+      });
+      results.push(msg);
+      await this.prisma.conversation.update({ where: { id: convId }, data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: new Date(), lastMessageById: userId } });
+    }
+    return results;
+  }
+
+  async markDelivered(messageId: string, userId: string) {
+    return this.prisma.message.update({ where: { id: messageId }, data: { deliveredAt: new Date() } });
+  }
+
+  async getMediaGallery(conversationId: string, userId: string, cursor?: string, limit = 30) {
+    await this.requireMembership(conversationId, userId);
+    const messages = await this.prisma.message.findMany({
+      where: { conversationId, isDeleted: false, messageType: { in: ['IMAGE', 'VIDEO'] }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      select: { id: true, mediaUrl: true, mediaType: true, messageType: true, createdAt: true, senderId: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+    const hasMore = messages.length > limit;
+    if (hasMore) messages.pop();
+    return { data: messages, meta: { cursor: messages[messages.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async setDisappearingTimer(conversationId: string, userId: string, duration: number | null) {
+    await this.requireMembership(conversationId, userId);
+    // Validate duration: null or positive integer (seconds)
+    if (duration !== null && (duration <= 0 || !Number.isInteger(duration))) {
+      throw new BadRequestException('Duration must be null or a positive integer in seconds');
+    }
+    // Update conversation with disappearingDuration (field must exist in schema)
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { disappearingDuration: duration } as any, // TODO: Add field to schema
+    });
+    return { success: true, duration };
+  }
+
+  async archiveConversationForUser(conversationId: string, userId: string) {
+    await this.requireMembership(conversationId, userId);
+    await this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { isArchived: true },
+    });
+    return { archived: true };
+  }
+
+  async unarchiveConversationForUser(conversationId: string, userId: string) {
+    await this.requireMembership(conversationId, userId);
+    await this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { isArchived: false },
+    });
+    return { archived: false };
+  }
+
+  async getArchivedConversations(userId: string, cursor?: string, limit = 20) {
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { userId, isArchived: true },
+      select: {
+        conversation: { select: CONVERSATION_SELECT },
+        isMuted: true,
+        isArchived: true,
+        unreadCount: true,
+        lastReadAt: true,
+        conversationId: true,
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { conversationId_userId: { conversationId: cursor, userId } }, skip: 1 } : {}),
+      orderBy: { conversation: { lastMessageAt: 'desc' } },
+    });
+    const hasMore = memberships.length > limit;
+    const data = hasMore ? memberships.slice(0, limit) : memberships;
+    const items = data.map((m) => ({
+      ...m.conversation,
+      isMuted: m.isMuted,
+      isArchived: m.isArchived,
+      unreadCount: m.unreadCount,
+      lastReadAt: m.lastReadAt,
+    }));
+    return {
+      data: items,
+      meta: { cursor: hasMore ? data[data.length - 1].conversationId : null, hasMore },
+    };
+  }
+
+  async scheduleMessage(
+    conversationId: string,
+    userId: string,
+    content: string,
+    scheduledAt: Date,
+    messageType?: string,
+  ) {
+    await this.requireMembership(conversationId, userId);
+    if (!content?.trim()) {
+      throw new BadRequestException('Message content is required');
+    }
+    if (scheduledAt <= new Date()) {
+      throw new BadRequestException('Scheduled time must be in the future');
+    }
+    // Create message with isScheduled flag (field must exist in schema)
+    const message = await this.prisma.message.create({
+      data: {
+        conversationId,
+        senderId: userId,
+        content,
+        messageType: (messageType as MessageType) ?? 'TEXT',
+        isScheduled: true,
+        scheduledAt,
+      } as any, // TODO: Add fields to schema
+      select: MESSAGE_SELECT,
+    });
+    return message;
+  }
+
+  async getStarredMessages(userId: string, cursor?: string, limit = 20) {
+    // starredBy field must exist in Message model
+    const messages = await this.prisma.message.findMany({
+      where: {
+        isDeleted: false,
+        starredBy: { has: userId },
+      } as any,
+      select: MESSAGE_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+    const hasMore = messages.length > limit;
+    const data = hasMore ? messages.slice(0, limit) : messages;
+    return {
+      data,
+      meta: { cursor: hasMore ? data[data.length - 1].id : null, hasMore },
+    };
+  }
 }

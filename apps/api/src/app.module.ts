@@ -34,6 +34,18 @@ import { PollsModule } from './modules/polls/polls.module';
 import { SubtitlesModule } from './modules/subtitles/subtitles.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
 import { DraftsModule } from './modules/drafts/drafts.module';
+import { BroadcastModule } from './modules/broadcast/broadcast.module';
+import { LiveModule } from './modules/live/live.module';
+import { CallsModule } from './modules/calls/calls.module';
+import { StickersModule } from './modules/stickers/stickers.module';
+import { CollabsModule } from './modules/collabs/collabs.module';
+import { ChannelPostsModule } from './modules/channel-posts/channel-posts.module';
+import { AudioTracksModule } from './modules/audio-tracks/audio-tracks.module';
+import { FeedModule } from './modules/feed/feed.module';
+import { ReportsModule } from './modules/reports/reports.module';
+import { HashtagsModule } from './modules/hashtags/hashtags.module';
+import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
+import { WatchHistoryModule } from './modules/watch-history/watch-history.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -80,6 +92,18 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     SubtitlesModule,
     PrivacyModule,
     DraftsModule,
+    BroadcastModule,
+    LiveModule,
+    CallsModule,
+    StickersModule,
+    CollabsModule,
+    ChannelPostsModule,
+    AudioTracksModule,
+    FeedModule,
+    ReportsModule,
+    HashtagsModule,
+    BookmarksModule,
+    WatchHistoryModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

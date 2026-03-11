@@ -27,6 +27,7 @@ const PUBLIC_USER_FIELDS = {
   postsCount: true,
   role: true,
   createdAt: true,
+  lastSeenAt: true,
 };
 
 const CHANNEL_SELECT = {
@@ -50,6 +51,13 @@ export class UsersService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
   ) {}
+
+  touchLastSeen(userId: string) {
+    this.prisma.user.update({
+      where: { id: userId },
+      data: { lastSeenAt: new Date() },
+    }).catch(() => {}); // Non-critical, fire-and-forget
+  }
 
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -85,14 +93,28 @@ export class UsersService {
   }
 
   async deactivate(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
     await this.prisma.user.update({
       where: { id: userId },
       data: { isDeactivated: true, deactivatedAt: new Date() },
     });
+
+    await this.redis.del(`user:${user.username}`);
     return { message: 'Account deactivated' };
   }
 
   async deleteAccount(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
     // Soft delete: anonymize user data, mark as deleted
     await this.prisma.user.update({
       where: { id: userId },
@@ -111,6 +133,7 @@ export class UsersService {
     // Delete all device tokens (stop push notifications)
     await this.prisma.device.deleteMany({ where: { userId } });
 
+    await this.redis.del(`user:${user.username}`);
     return { deleted: true };
   }
 
@@ -664,5 +687,100 @@ export class UsersService {
       data: { reporterId, reportedUserId, reason: mappedReason },
     }).catch((err: unknown) => this.logger.error('Failed to save report', err));
     return { reported: true };
+  }
+
+  async getMutualFollowers(currentUserId: string, targetUsername: string, limit = 20) {
+    const target = await this.prisma.user.findUnique({
+      where: { username: targetUsername },
+      select: { id: true },
+    });
+    if (!target) throw new NotFoundException("User not found");
+
+    const mutual = await this.prisma.$queryRaw<Array<{id: string, username: string, displayName: string, avatarUrl: string | null}>>`
+      SELECT u.id, u.username, u.displayName, u.avatarUrl
+      FROM follows f1
+      INNER JOIN follows f2 ON f1.followerId = f2.followerId
+      INNER JOIN users u ON f1.followerId = u.id
+      WHERE f1.followingId = ${currentUserId} AND f2.followingId = ${target.id}
+      LIMIT ${limit}
+    `;
+    return {
+      data: mutual,
+      meta: { cursor: null, hasMore: false },
+    };
+  }
+
+  async getLikedPosts(userId: string, cursor?: string, limit = 20) {
+    const reactions = await this.prisma.postReaction.findMany({
+      where: { userId, reaction: "LIKE" },
+      include: {
+        post: {
+          select: {
+            id: true,
+            content: true,
+            postType: true,
+            mediaUrls: true,
+            thumbnailUrl: true,
+            likesCount: true,
+            commentsCount: true,
+            createdAt: true,
+            user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+          },
+        },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { userId_postId: { userId, postId: cursor } }, skip: 1 } : {}),
+      orderBy: { createdAt: "desc" },
+    });
+
+    const hasMore = reactions.length > limit;
+    const items = hasMore ? reactions.slice(0, limit) : reactions;
+    return {
+      data: items.map(r => r.post),
+      meta: {
+        cursor: hasMore ? items[items.length - 1].postId : null,
+        hasMore,
+      },
+    };
+  }
+
+  async requestAccountDeletion(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: new Date(), isDeactivated: true },
+    });
+    return { requested: true };
+  }
+
+  async cancelAccountDeletion(userId: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { deletedAt: null, isDeactivated: false },
+    });
+    return { cancelled: true };
+  }
+
+  async exportData(userId: string) {
+    const [posts, threads, reels, videos, messages, comments, reelComments, videoComments] = await Promise.all([
+      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, postType: true, mediaUrls: true, createdAt: true } }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true } }),
+      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true } }),
+      this.prisma.video.findMany({ where: { userId }, select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true } }),
+      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, createdAt: true, conversationId: true } }),
+      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, postId: true } }),
+      this.prisma.reelComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, reelId: true } }),
+      this.prisma.videoComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, videoId: true } }),
+    ]);
+    return {
+      posts,
+      threads,
+      reels,
+      videos,
+      messages,
+      comments,
+      reelComments,
+      videoComments,
+      exportedAt: new Date().toISOString(),
+    };
   }
 }

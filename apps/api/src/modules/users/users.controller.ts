@@ -15,6 +15,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ReportDto } from './dto/report.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -29,6 +30,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own full profile' })
   getMe(@CurrentUser('id') userId: string) {
+    this.usersService.touchLastSeen(userId);
     return this.usersService.getMe(userId);
   }
 
@@ -244,6 +246,53 @@ export class UsersController {
     return this.usersService.getFollowing(username, cursor);
   }
 
+  @Get(':username/mutual-followers')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mutual followers with target user' })
+  getMutualFollowers(
+    @Param('username') targetUsername: string,
+    @CurrentUser('id') currentUserId: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.usersService.getMutualFollowers(currentUserId, targetUsername, limit ?? 20);
+  }
+
+  @Get('me/liked-posts')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Posts liked by current user' })
+  getLikedPosts(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.usersService.getLikedPosts(userId, cursor);
+  }
+
+  @Post('me/delete-account')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request account deletion (30-day grace)' })
+  requestAccountDeletion(@CurrentUser('id') userId: string) {
+    return this.usersService.requestAccountDeletion(userId);
+  }
+
+  @Post('me/cancel-deletion')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel pending account deletion' })
+  cancelAccountDeletion(@CurrentUser('id') userId: string) {
+    return this.usersService.cancelAccountDeletion(userId);
+  }
+
+  @Get('me/export-data')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export all user data (GDPR)' })
+  exportData(@CurrentUser('id') userId: string) {
+    return this.usersService.exportData(userId);
+  }
+
   @Post(':id/report')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -253,8 +302,8 @@ export class UsersController {
   report(
     @Param('id') reportedId: string,
     @CurrentUser('id') reporterId: string,
-    @Body('reason') reason: string,
+    @Body() dto: ReportDto,
   ) {
-    return this.usersService.report(reporterId, reportedId, reason);
+    return this.usersService.report(reporterId, reportedId, dto.reason);
   }
 }

@@ -11,86 +11,14 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsString, IsOptional, IsBoolean, IsUrl, IsObject, IsNumber, MaxLength } from 'class-validator';
 import { StoriesService } from './stories.service';
+import { CreateStoryDto } from './dto/create-story.dto';
+import { CreateHighlightDto } from './dto/create-highlight.dto';
+import { UpdateHighlightDto } from './dto/update-highlight.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-
-class CreateStoryDto {
-  @ApiProperty({ description: 'URL of the story media' })
-  @IsUrl()
-  mediaUrl: string;
-
-  @ApiProperty({ description: 'Media type (e.g., IMAGE, VIDEO)', maxLength: 20 })
-  @IsString()
-  @MaxLength(20)
-  mediaType: string;
-
-  @ApiProperty({ required: false, description: 'Thumbnail URL for video stories' })
-  @IsOptional()
-  @IsUrl()
-  thumbnailUrl?: string;
-
-  @ApiProperty({ required: false, description: 'Duration in seconds for video stories' })
-  @IsOptional()
-  @IsNumber()
-  duration?: number;
-
-  @ApiProperty({ required: false, description: 'Text overlay content', maxLength: 200 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200)
-  textOverlay?: string;
-
-  @ApiProperty({ required: false, description: 'Text color hex code', maxLength: 7 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(7)
-  textColor?: string;
-
-  @ApiProperty({ required: false, description: 'Background color hex code', maxLength: 7 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(7)
-  bgColor?: string;
-
-  @ApiProperty({ required: false, description: 'Sticker data as JSON object' })
-  @IsOptional()
-  @IsObject()
-  stickerData?: object;
-
-  @ApiProperty({ required: false, description: 'Whether story is for close friends only' })
-  @IsOptional()
-  @IsBoolean()
-  closeFriendsOnly?: boolean;
-}
-
-class CreateHighlightDto {
-  @ApiProperty({ description: 'Highlight album title', maxLength: 50 })
-  @IsString()
-  @MaxLength(50)
-  title: string;
-
-  @ApiProperty({ required: false, description: 'Cover image URL for the highlight album' })
-  @IsOptional()
-  @IsUrl()
-  coverUrl?: string;
-}
-
-class UpdateHighlightDto {
-  @ApiProperty({ required: false, description: 'Highlight album title', maxLength: 50 })
-  @IsOptional()
-  @IsString()
-  @MaxLength(50)
-  title?: string;
-
-  @ApiProperty({ required: false, description: 'Cover image URL for the highlight album' })
-  @IsOptional()
-  @IsUrl()
-  coverUrl?: string;
-}
 
 @ApiTags('Stories (Saf)')
 @Controller('stories')
@@ -158,6 +86,29 @@ export class StoriesController {
     return this.storiesService.getViewers(id, userId, cursor);
   }
 
+  @Post(':id/reply')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Reply to a story (creates DM)' })
+  replyToStory(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('content') content: string,
+  ) {
+    return this.storiesService.replyToStory(id, userId, content);
+  }
+
+  @Get(':id/reaction-summary')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get story emoji reaction summary (owner only)' })
+  getReactionSummary(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.storiesService.getReactionSummary(id, userId);
+  }
+
   @Get('highlights/:userId')
   @ApiOperation({ summary: "Get user's highlight albums" })
   getHighlights(@Param('userId') userId: string) {
@@ -217,5 +168,26 @@ export class StoriesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.storiesService.addStoryToHighlight(storyId, albumId, userId);
+  }
+
+  @Post(':id/sticker-response')
+  @UseGuards(ClerkAuthGuard) @ApiBearerAuth() @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Submit sticker response' })
+  async submitStickerResponse(@Param('id') id: string, @CurrentUser('id') userId: string, @Body() body: { stickerType: string; responseData: Record<string, unknown> }) {
+    return this.storiesService.submitStickerResponse(id, userId, body.stickerType, body.responseData);
+  }
+
+  @Get(':id/sticker-responses')
+  @UseGuards(ClerkAuthGuard) @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get sticker responses' })
+  async getStickerResponses(@Param('id') id: string, @CurrentUser('id') userId: string, @Query('type') type?: string) {
+    return this.storiesService.getStickerResponses(id, userId, type);
+  }
+
+  @Get(':id/sticker-summary')
+  @UseGuards(ClerkAuthGuard) @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get sticker summary' })
+  async getStickerSummary(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.storiesService.getStickerSummary(id, userId);
   }
 }

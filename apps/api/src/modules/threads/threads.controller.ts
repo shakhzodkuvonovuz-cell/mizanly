@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Delete,
   Body,
   Param,
@@ -12,22 +13,14 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsString, MaxLength, IsOptional } from 'class-validator';
 import { ThreadsService } from './threads.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
+import { ReportDto } from './dto/report.dto';
+import { AddReplyDto } from './dto/add-reply.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-class AddReplyDto {
-  @IsString()
-  @MaxLength(500)
-  content: string;
-
-  @IsOptional()
-  @IsString()
-  parentId?: string;
-}
 
 @ApiTags('Threads (Majlis)')
 @Controller('threads')
@@ -211,9 +204,9 @@ export class ThreadsController {
   report(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('reason') reason: string,
+    @Body() dto: ReportDto,
   ) {
-    return this.threadsService.report(id, userId, reason);
+    return this.threadsService.report(id, userId, dto.reason);
   }
 
   @Post(':id/dismiss')
@@ -226,5 +219,44 @@ export class ThreadsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.threadsService.dismiss(id, userId);
+  }
+
+  @Put(':id/reply-permission')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set who can reply to this thread' })
+  setReplyPermission(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('permission') permission: 'everyone' | 'following' | 'mentioned' | 'none',
+  ) {
+    return this.threadsService.setReplyPermission(id, userId, permission);
+  }
+
+  @Get(':id/can-reply')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Check if current user can reply to this thread' })
+  canReply(
+    @Param('id') id: string,
+    @CurrentUser('id') viewerId?: string,
+  ) {
+    return this.threadsService.canReply(id, viewerId);
+  }
+
+  @Get(':id/share-link')
+  @ApiOperation({ summary: 'Get shareable URL for this thread' })
+  getShareLink(@Param('id') id: string) {
+    return this.threadsService.getShareLink(id);
+  }
+
+  @Get(':id/bookmarked')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check if current user has bookmarked this thread' })
+  isBookmarked(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.isBookmarked(id, userId);
   }
 }

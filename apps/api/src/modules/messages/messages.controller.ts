@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Delete,
   Body,
@@ -14,9 +15,12 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
-  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize,
+  IsString, IsOptional, IsArray, MaxLength, IsBoolean, IsEnum, IsUrl, IsUUID, ArrayMaxSize, IsNumber, IsISO8601,
 } from 'class-validator';
 import { MessagesService } from './messages.service';
+import { MuteConversationDto } from './dto/mute-conversation.dto';
+import { ArchiveConversationDto } from './dto/archive-conversation.dto';
+import { CreateDmDto } from './dto/create-dm.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -94,6 +98,33 @@ class EditMessageDto {
   @IsString()
   @MaxLength(5000)
   content: string;
+}
+
+class SetDisappearingTimerDto {
+  @ApiProperty({ required: false, description: 'Duration in seconds (null to turn off)', nullable: true })
+  @IsOptional()
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  duration?: number | null;
+}
+
+class ScheduleMessageDto {
+  @ApiProperty({ description: 'Conversation ID' })
+  @IsString()
+  conversationId: string;
+
+  @ApiProperty({ description: 'Message content', maxLength: 5000 })
+  @IsString()
+  @MaxLength(5000)
+  content: string;
+
+  @ApiProperty({ description: 'ISO 8601 scheduled date-time' })
+  @IsISO8601()
+  scheduledAt: string;
+
+  @ApiProperty({ required: false, description: 'Message type', enum: ['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'VOICE', 'FILE', 'GIF', 'STICKER', 'LOCATION'] })
+  @IsOptional()
+  @IsEnum(['TEXT', 'IMAGE', 'VIDEO', 'AUDIO', 'VOICE', 'FILE', 'GIF', 'STICKER', 'LOCATION'])
+  messageType?: string;
 }
 
 @ApiTags('Messages (Risalah)')
@@ -189,9 +220,9 @@ export class MessagesController {
   mute(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('muted') muted: boolean,
+    @Body() dto: MuteConversationDto,
   ) {
-    return this.messagesService.muteConversation(id, userId, muted ?? true);
+    return this.messagesService.muteConversation(id, userId, dto.muted);
   }
 
   @Post('conversations/:id/archive')
@@ -199,18 +230,18 @@ export class MessagesController {
   archive(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body('archived') archived: boolean,
+    @Body() dto: ArchiveConversationDto,
   ) {
-    return this.messagesService.archiveConversation(id, userId, archived ?? true);
+    return this.messagesService.archiveConversation(id, userId, dto.archived);
   }
 
   @Post('dm')
   @ApiOperation({ summary: 'Create or retrieve a DM conversation' })
   createDM(
     @CurrentUser('id') userId: string,
-    @Body('targetUserId') targetUserId: string,
+    @Body() dto: CreateDmDto,
   ) {
-    return this.messagesService.createDM(userId, targetUserId);
+    return this.messagesService.createDM(userId, dto.targetUserId);
   }
 
   @Post('groups')
@@ -256,5 +287,92 @@ export class MessagesController {
   @ApiOperation({ summary: 'Leave a group' })
   leaveGroup(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.messagesService.leaveGroup(id, userId);
+  }
+
+  @Get(':conversationId/search')
+  @ApiOperation({ summary: 'Search messages' })
+  async searchMessages(@Param('conversationId') cid: string, @CurrentUser('id') uid: string, @Query('q') q: string, @Query('cursor') cursor?: string) {
+    return this.messagesService.searchMessages(cid, uid, q, cursor);
+  }
+
+  @Post('forward/:messageId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Forward message' })
+  async forward(@Param('messageId') mid: string, @CurrentUser('id') uid: string, @Body('conversationIds') cids: string[]) {
+    return this.messagesService.forwardMessage(mid, uid, cids);
+  }
+
+  @Post(':messageId/delivered')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Mark delivered' })
+  async delivered(@Param('messageId') mid: string, @CurrentUser('id') uid: string) {
+    return this.messagesService.markDelivered(mid, uid);
+  }
+
+  @Get(':conversationId/media')
+  @ApiOperation({ summary: 'Media gallery' })
+  async media(@Param('conversationId') cid: string, @CurrentUser('id') uid: string, @Query('cursor') cursor?: string) {
+    return this.messagesService.getMediaGallery(cid, uid, cursor);
+  }
+
+  @Put('conversations/:id/disappearing')
+  @ApiOperation({ summary: 'Set disappearing message timer for conversation' })
+  async setDisappearingTimer(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: SetDisappearingTimerDto,
+  ) {
+    return this.messagesService.setDisappearingTimer(id, userId, dto.duration ?? null);
+  }
+
+  @Put('conversations/:id/archive')
+  @ApiOperation({ summary: 'Archive conversation' })
+  async archiveConversation(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.archiveConversationForUser(id, userId);
+  }
+
+  @Delete('conversations/:id/archive')
+  @ApiOperation({ summary: 'Unarchive conversation' })
+  async unarchiveConversation(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.unarchiveConversationForUser(id, userId);
+  }
+
+  @Get('conversations/archived')
+  @ApiOperation({ summary: 'Get archived conversations' })
+  async getArchivedConversations(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.messagesService.getArchivedConversations(userId, cursor);
+  }
+
+  @Post('messages/scheduled')
+  @ApiOperation({ summary: 'Schedule a message' })
+  async scheduleMessage(
+    @CurrentUser('id') userId: string,
+    @Body() dto: ScheduleMessageDto,
+  ) {
+    return this.messagesService.scheduleMessage(
+      dto.conversationId,
+      userId,
+      dto.content,
+      new Date(dto.scheduledAt),
+      dto.messageType,
+    );
+  }
+
+  @Get('messages/starred')
+  @ApiOperation({ summary: 'Get starred messages' })
+  async getStarredMessages(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.messagesService.getStarredMessages(userId, cursor);
   }
 }

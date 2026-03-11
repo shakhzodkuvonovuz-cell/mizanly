@@ -7,6 +7,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 import { initSentry } from './config/sentry';
 import * as express from 'express';
 import helmet from 'helmet';
+import * as compression from 'compression';
 
 async function bootstrap() {
   // Initialize Sentry before creating the app
@@ -21,7 +22,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',') || ['http://localhost:8081'],
+    origin: process.env.CORS_ORIGINS?.split(',').filter(Boolean) || ['http://localhost:8081'],
     credentials: true,
   });
 
@@ -32,6 +33,7 @@ async function bootstrap() {
       includeSubDomains: true,
     },
   }));
+  app.use(compression());
 
   // Request body size limits
   app.use(express.json({ limit: '1mb' }));
@@ -62,9 +64,6 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, document);
   }
-
-  // Pino Logger
-  app.useLogger(app.get(Logger));
 
   app.enableShutdownHooks();
 

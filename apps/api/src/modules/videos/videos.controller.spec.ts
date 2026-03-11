@@ -184,7 +184,7 @@ describe('VideosController', () => {
   describe('updateProgress', () => {
     it('should call service.updateProgress with id, userId, progress', async () => {
       mockService.updateProgress.mockResolvedValue({ updated: true });
-      await controller.updateProgress('vid-1', 'user-1', 120);
+      await controller.updateProgress('vid-1', 'user-1', { progress: 120 });
       expect(mockService.updateProgress).toHaveBeenCalledWith('vid-1', 'user-1', 120);
     });
   });
@@ -192,7 +192,7 @@ describe('VideosController', () => {
   describe('report', () => {
     it('should call service.report with id, userId, reason', async () => {
       mockService.report.mockResolvedValue({ reported: true });
-      await controller.report('vid-1', 'user-1', 'spam');
+      await controller.report('vid-1', 'user-1', { reason: 'spam' });
       expect(mockService.report).toHaveBeenCalledWith('vid-1', 'user-1', 'spam');
     });
   });

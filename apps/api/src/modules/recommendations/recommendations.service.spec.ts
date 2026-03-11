@@ -259,6 +259,17 @@ describe('RecommendationsService', () => {
         take: 20,
       });
     });
+
+    it('should return empty array when no posts found', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([]);
+
+      const result = await service.suggestedPosts(undefined, 20);
+
+      expect(prisma.post.findMany).toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
   });
 
   describe('suggestedReels', () => {
@@ -325,6 +336,17 @@ describe('RecommendationsService', () => {
         take: 20,
       });
     });
+
+    it('should return empty array when no reels found', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.reel.findMany.mockResolvedValue([]);
+
+      const result = await service.suggestedReels(undefined, 20);
+
+      expect(prisma.reel.findMany).toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
   });
 
   describe('suggestedChannels', () => {
@@ -379,6 +401,17 @@ describe('RecommendationsService', () => {
         orderBy: expect.any(Array),
         take: 20,
       });
+    });
+
+    it('should return empty array when no channels found', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.channel.findMany.mockResolvedValue([]);
+
+      const result = await service.suggestedChannels(undefined, 20);
+
+      expect(prisma.channel.findMany).toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
   });
 });
