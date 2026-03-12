@@ -4,6 +4,9 @@ import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict, format } from 'date-fns';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -61,24 +64,39 @@ export default function MyReportsScreen() {
     return 'Content';
   };
 
-  const renderItem = ({ item }: { item: Report }) => {
+  const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const statusColor = getStatusColor(item.status);
-    
+    const statusIcon = item.status === 'RESOLVED' ? 'check' : item.status === 'PENDING' ? 'clock' : 'flag';
+
     return (
-      <View style={styles.card}>
-        <View style={styles.headerRow}>
-          <Text style={styles.reason} numberOfLines={1}>
-            {item.reason.replace(/_/g, ' ')}
-          </Text>
-          <View style={[styles.badge, { backgroundColor: statusColor + '20' }]}>
-            <Text style={[styles.badgeText, { color: statusColor }]}>{item.status}</Text>
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.card}
+        >
+          <View style={styles.headerRow}>
+            <LinearGradient
+              colors={[statusColor + '33', statusColor + '1A']}
+              style={styles.statusIconBg}
+            >
+              <Icon name={statusIcon as any} size="xs" color={statusColor} />
+            </LinearGradient>
+            <Text style={styles.reason} numberOfLines={1}>
+              {item.reason.replace(/_/g, ' ')}
+            </Text>
+            <LinearGradient
+              colors={[statusColor + '33', statusColor + '1A']}
+              style={styles.badge}
+            >
+              <Text style={[styles.badgeText, { color: statusColor }]}>{item.status}</Text>
+            </LinearGradient>
           </View>
-        </View>
-        <Text style={styles.target} numberOfLines={1}>{getTargetText(item)}</Text>
-        <Text style={styles.date}>
-          {format(new Date(item.createdAt), 'MMM d, yyyy')} • {formatDistanceToNowStrict(new Date(item.createdAt))} ago
-        </Text>
-      </View>
+          <Text style={styles.target} numberOfLines={1}>{getTargetText(item)}</Text>
+          <Text style={styles.date}>
+            {format(new Date(item.createdAt), 'MMM d, yyyy')} • {formatDistanceToNowStrict(new Date(item.createdAt))} ago
+          </Text>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
@@ -168,16 +186,25 @@ const styles = StyleSheet.create({
     marginTop: spacing['2xl'],
   },
   card: {
-    backgroundColor: colors.dark.surface,
     borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: spacing.md,
     gap: spacing.xs,
+    marginBottom: spacing.sm,
   },
   headerRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 4,
+    gap: spacing.sm,
+  },
+  statusIconBg: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   reason: {
     flex: 1,
@@ -199,10 +226,12 @@ const styles = StyleSheet.create({
   target: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+    marginLeft: 32,
   },
   date: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     marginTop: 4,
+    marginLeft: 32,
   },
 });

@@ -1,11 +1,13 @@
 import { useCallback, useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ActivityIndicator, Alert, RefreshControl,
+  FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -20,46 +22,63 @@ function RequestRow({
   onAccept,
   onDecline,
   loading,
+  index,
 }: {
   request: FollowRequest;
   onAccept: () => void;
   onDecline: () => void;
   loading: boolean;
+  index: number;
 }) {
   const router = useRouter();
   const { follower } = request;
 
   return (
-    <View style={styles.row}>
-      <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
-        <Avatar uri={follower.avatarUrl} name={follower.displayName} size="md" />
-      </TouchableOpacity>
-
-      <View style={styles.info}>
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.row}
+      >
         <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
-          <Text style={styles.name}>{follower.displayName}</Text>
-          <Text style={styles.username}>@{follower.username}</Text>
-          {follower.bio ? (
-            <Text style={styles.bio} numberOfLines={1}>{follower.bio}</Text>
-          ) : null}
+          <Avatar uri={follower.avatarUrl} name={follower.displayName} size="md" />
         </TouchableOpacity>
-      </View>
 
-      <View style={styles.actions}>
-        {loading ? (
-          <ActivityIndicator color={colors.emerald} size="small" />
-        ) : (
-          <>
-            <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
-              <Text style={styles.acceptText}>Confirm</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.declineBtn} onPress={onDecline}>
-              <Text style={styles.declineText}>Delete</Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
-    </View>
+        <View style={styles.info}>
+          <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
+            <Text style={styles.name}>{follower.displayName}</Text>
+            <Text style={styles.username}>@{follower.username}</Text>
+            {follower.bio ? (
+              <Text style={styles.bio} numberOfLines={1}>{follower.bio}</Text>
+            ) : null}
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.actions}>
+          {loading ? (
+            <Skeleton.Circle size={32} />
+          ) : (
+            <>
+              <TouchableOpacity onPress={onAccept}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                  style={styles.acceptBtn}
+                >
+                  <Text style={styles.acceptText}>Confirm</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={onDecline}>
+                <LinearGradient
+                  colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                  style={styles.declineBtn}
+                >
+                  <Text style={styles.declineText}>Delete</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -136,9 +155,10 @@ export default function FollowRequestsScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <RequestRow
               request={item}
+              index={index}
               loading={
                 (acceptMutation.isPending || declineMutation.isPending) && pendingId === item.id
               }
@@ -162,18 +182,20 @@ export default function FollowRequestsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
 
-  list: { paddingBottom: 40 },
+  list: { paddingBottom: 40, paddingHorizontal: spacing.base },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
 
   row: {
     flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   info: { flex: 1 },
   name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
@@ -182,14 +204,14 @@ const styles = StyleSheet.create({
 
   actions: { alignItems: 'center', gap: spacing.xs },
   acceptBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
   },
   acceptText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
   declineBtn: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
+    borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,
   },
-  declineText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
+  declineText: { color: colors.error, fontSize: fontSize.sm, fontWeight: '600' },
 
 });
