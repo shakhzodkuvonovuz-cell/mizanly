@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput,
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -87,33 +89,53 @@ export default function MajlisListsScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: MajlisList }) => (
-    <Pressable
-      style={styles.card}
-      onPress={() => router.push(`/(screens)/majlis-list/${item.id}` as never)}
-    >
-      <View style={styles.cardInfo}>
-        <View style={styles.titleRow}>
-          {!item.isPublic && (
-            <Icon name="lock" size={14} color={colors.text.tertiary} />
-          )}
-          <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-        </View>
-        {!!item.description && (
-          <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
-        )}
-        <Text style={styles.members}>
-          {item.membersCount || 0} members
-        </Text>
-      </View>
-      <Pressable 
-        style={styles.deleteButton} 
-        hitSlop={8}
-        onPress={() => confirmDelete(item.id, item.name)}
-      >
-        <Icon name="trash" size={18} color={colors.error} />
+  const renderItem = ({ item, index }: { item: MajlisList; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Pressable onPress={() => router.push(`/(screens)/majlis-list/${item.id}` as never)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.card}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.iconBg}
+          >
+            <Icon name="users" size="md" color={colors.emerald} />
+          </LinearGradient>
+          <View style={styles.cardInfo}>
+            <View style={styles.titleRow}>
+              {!item.isPublic && (
+                <Icon name="lock" size={14} color={colors.text.tertiary} />
+              )}
+              <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            </View>
+            {!!item.description && (
+              <Text style={styles.desc} numberOfLines={2}>{item.description}</Text>
+            )}
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+              style={styles.membersBadge}
+            >
+              <Icon name="users" size="xs" color={colors.gold} />
+              <Text style={styles.membersText}>
+                {item.membersCount || 0} members
+              </Text>
+            </LinearGradient>
+          </View>
+          <Pressable
+            hitSlop={8}
+            onPress={() => confirmDelete(item.id, item.name)}
+          >
+            <LinearGradient
+              colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+              style={styles.deleteButton}
+            >
+              <Icon name="trash" size={18} color={colors.error} />
+            </LinearGradient>
+          </Pressable>
+        </LinearGradient>
       </Pressable>
-    </Pressable>
+    </Animated.View>
   );
 
   if (isError) {
@@ -232,9 +254,9 @@ export default function MajlisListsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   listContent: {
     paddingBottom: spacing['2xl'],
@@ -247,10 +269,18 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surface,
     padding: spacing.base,
     borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
+  },
+  iconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardInfo: {
     flex: 1,
@@ -270,14 +300,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.text.secondary,
   },
-  members: {
+  membersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    marginTop: 4,
+  },
+  membersText: {
     fontSize: fontSize.xs,
-    color: colors.text.tertiary,
-    marginTop: 2,
+    color: colors.gold,
+    fontWeight: '600',
   },
   deleteButton: {
     padding: spacing.sm,
-    backgroundColor: colors.active.error10,
     borderRadius: radius.full,
   },
   sheetContent: {

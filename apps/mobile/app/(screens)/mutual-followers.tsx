@@ -5,6 +5,8 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useInfiniteQuery, useMutation, useQueryClient, InfiniteData } from '@tanstack/react-query';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -17,32 +19,45 @@ import { usersApi, followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 import { useStore } from '@/store';
 
-function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress }: {
+function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
   user: User;
   isMe: boolean;
   isFollowing: boolean;
   onToggleFollow: (userId: string, follow: boolean) => void;
   onPress: () => void;
+  index: number;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
-      <View style={styles.info}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{user.displayName}</Text>
-          {user.isVerified && <VerifiedBadge size={13} />}
-        </View>
-        <Text style={styles.handle}>@{user.username}</Text>
-      </View>
-      {!isMe && (
-        <GradientButton
-          label={isFollowing ? 'Following' : 'Follow'}
-          onPress={() => onToggleFollow(user.id, !isFollowing)}
-          variant={isFollowing ? 'secondary' : 'primary'}
-          size="sm"
-        />
-      )}
-    </TouchableOpacity>
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.row}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.iconBg}
+          >
+            <Icon name="user" size="sm" color={colors.emerald} />
+          </LinearGradient>
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={styles.name}>{user.displayName}</Text>
+              {user.isVerified && <VerifiedBadge size={13} />}
+            </View>
+            <Text style={styles.handle}>@{user.username}</Text>
+          </View>
+          {!isMe && (
+            <GradientButton
+              label={isFollowing ? 'Following' : 'Follow'}
+              onPress={() => onToggleFollow(user.id, !isFollowing)}
+              variant={isFollowing ? 'secondary' : 'primary'}
+              size="sm"
+            />
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -210,13 +225,14 @@ export default function MutualFollowersScreen() {
         contentContainerStyle={{ paddingTop: headerHeight }}
         data={mutualFollowers}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <UserRow
             user={item}
             isMe={currentUserId === item.id}
             isFollowing={item.isFollowing ?? false}
             onToggleFollow={handleToggleFollow}
             onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+            index={index}
           />
         )}
         onEndReached={handleEndReached}
@@ -262,14 +278,23 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: spacing.sm,
+  },
+  iconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
-  skeletonList: { padding: spacing.base, gap: spacing.lg },
+  skeletonList: { padding: spacing.base, gap: spacing.lg, paddingTop: spacing.lg },
   skeletonRow: {
     flexDirection: 'row',
     alignItems: 'center',

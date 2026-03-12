@@ -6,6 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -112,77 +114,110 @@ export default function CollabRequestsScreen() {
     );
   };
 
-  const renderPendingItem = ({ item }: { item: CollabItem }) => {
+  const renderPendingItem = ({ item, index }: { item: CollabItem; index: number }) => {
     const post = item.post;
     const thumbnail = post.mediaUrls?.[0];
     return (
-      <View style={styles.row}>
-        <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
-        <View style={styles.info}>
-          <View style={styles.userRow}>
-            <Text style={styles.name}>{post.user.displayName}</Text>
-            <Text style={styles.username}>@{post.user.username}</Text>
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.row}
+        >
+          <Avatar uri={post.user.avatarUrl} name={post.user.displayName} size="md" />
+          <View style={styles.info}>
+            <View style={styles.userRow}>
+              <Text style={styles.name}>{post.user.displayName}</Text>
+              <Text style={styles.username}>@{post.user.username}</Text>
+            </View>
+            <View style={styles.postPreview}>
+              {thumbnail ? (
+                <Image source={{ uri: thumbnail }} style={styles.thumbnail} resizeMode="cover" />
+              ) : (
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                  style={[styles.thumbnail, styles.noThumbnail]}
+                >
+                  <Icon name="paperclip" size="sm" color={colors.text.secondary} />
+                </LinearGradient>
+              )}
+              <Text style={styles.postContent} numberOfLines={2}>
+                {post.content || 'No caption'}
+              </Text>
+            </View>
+            <View style={styles.actionRow}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                style={styles.actionBtn}
+              >
+                <Pressable
+                  onPress={() => confirmAccept(item)}
+                  disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
+                >
+                  <Text style={styles.actionBtnText}>Accept</Text>
+                </Pressable>
+              </LinearGradient>
+              <LinearGradient
+                colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                style={styles.actionBtn}
+              >
+                <Pressable
+                  onPress={() => confirmDecline(item)}
+                  disabled={declineMutation.isPending && declineMutation.variables === item.id}
+                >
+                  <Text style={[styles.actionBtnText, { color: colors.error }]}>Decline</Text>
+                </Pressable>
+              </LinearGradient>
+            </View>
           </View>
-          <View style={styles.postPreview}>
-            {thumbnail ? (
-              <Image source={{ uri: thumbnail }} style={styles.thumbnail} resizeMode="cover" />
-            ) : (
-              <View style={[styles.thumbnail, styles.noThumbnail]}>
-                <Icon name="paperclip" size="sm" color={colors.text.secondary} />
-              </View>
-            )}
-            <Text style={styles.postContent} numberOfLines={2}>
-              {post.content || 'No caption'}
-            </Text>
-          </View>
-          <View style={styles.actionRow}>
-            <GradientButton
-              label={acceptMutation.isPending && acceptMutation.variables === item.id ? '…' : 'Accept'}
-              onPress={() => confirmAccept(item)}
-              disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
-            />
-            <GradientButton
-              label={declineMutation.isPending && declineMutation.variables === item.id ? '…' : 'Decline'}
-              onPress={() => confirmDecline(item)}
-              variant="secondary"
-              disabled={declineMutation.isPending && declineMutation.variables === item.id}
-            />
-          </View>
-        </View>
-      </View>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
-  const renderAcceptedItem = ({ item }: { item: CollabItem }) => {
+  const renderAcceptedItem = ({ item, index }: { item: CollabItem; index: number }) => {
     const post = item.post;
     const thumbnail = post.mediaUrls?.[0];
     return (
-      <View style={styles.row}>
-        {thumbnail ? (
-          <Image source={{ uri: thumbnail }} style={styles.thumbnailLarge} resizeMode="cover" />
-        ) : (
-          <View style={[styles.thumbnailLarge, styles.noThumbnail]}>
-            <Icon name="paperclip" size="md" color={colors.text.secondary} />
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.row}
+        >
+          {thumbnail ? (
+            <Image source={{ uri: thumbnail }} style={styles.thumbnailLarge} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={[styles.thumbnailLarge, styles.noThumbnail]}
+            >
+              <Icon name="paperclip" size="md" color={colors.text.secondary} />
+            </LinearGradient>
+          )}
+          <View style={styles.info}>
+            <Text style={styles.postContent} numberOfLines={3}>
+              {post.content || 'No caption'}
+            </Text>
+            <View style={styles.postMeta}>
+              <Icon name="user" size="xs" color={colors.text.secondary} />
+              <Text style={styles.metaText}>by @{post.user.username}</Text>
+              <Text style={styles.metaDot}>•</Text>
+              <Text style={styles.metaText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
+            </View>
+            <Pressable
+              style={styles.removeBtn}
+              onPress={() => confirmRemove(item)}
+              disabled={removeMutation.isPending && removeMutation.variables === item.id}
+            >
+              <LinearGradient
+                colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                style={styles.removeBtnGradient}
+              >
+                <Text style={styles.removeBtnText}>Remove</Text>
+              </LinearGradient>
+            </Pressable>
           </View>
-        )}
-        <View style={styles.info}>
-          <Text style={styles.postContent} numberOfLines={3}>
-            {post.content || 'No caption'}
-          </Text>
-          <View style={styles.postMeta}>
-            <Icon name="user" size="xs" color={colors.text.secondary} />
-            <Text style={styles.metaText}>by @{post.user.username}</Text>
-            <Text style={styles.metaDot}>•</Text>
-            <Text style={styles.metaText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
-          </View>
-          <GradientButton
-            label={removeMutation.isPending && removeMutation.variables === item.id ? '…' : 'Remove'}
-            onPress={() => confirmRemove(item)}
-            variant="ghost"
-            disabled={removeMutation.isPending && removeMutation.variables === item.id}
-          />
-        </View>
-      </View>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
@@ -291,8 +326,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   tabSelector: { marginHorizontal: spacing.base, marginTop: spacing.sm },
 
-  list: { paddingBottom: 40 },
-  skeletonList: { padding: spacing.base, gap: spacing.md },
+  list: { paddingBottom: 40, paddingHorizontal: spacing.base, gap: spacing.md },
+  skeletonList: { padding: spacing.base, gap: spacing.md, paddingTop: spacing.lg },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
@@ -301,7 +336,10 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: spacing.sm,
   },
   info: { flex: 1, gap: spacing.sm },
   userRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -310,11 +348,11 @@ const styles = StyleSheet.create({
   postPreview: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   thumbnail: {
     width: 50, height: 50, borderRadius: radius.sm,
-    backgroundColor: colors.dark.bgElevated, justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
   thumbnailLarge: {
     width: 70, height: 70, borderRadius: radius.md,
-    backgroundColor: colors.dark.bgElevated, justifyContent: 'center', alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
   noThumbnail: { borderWidth: 0.5, borderColor: colors.dark.border },
   postContent: {
@@ -327,4 +365,27 @@ const styles = StyleSheet.create({
   metaDot: { color: colors.text.tertiary, fontSize: fontSize.xs, marginHorizontal: 2 },
 
   actionRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.xs },
+  actionBtn: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  actionBtnText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  removeBtn: {
+    alignSelf: 'flex-start',
+  },
+  removeBtnGradient: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  removeBtnText: {
+    color: colors.error,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
 });

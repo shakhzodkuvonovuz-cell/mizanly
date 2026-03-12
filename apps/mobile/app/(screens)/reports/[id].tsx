@@ -11,6 +11,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
@@ -133,50 +135,81 @@ export default function ReportScreen() {
         style={styles.content}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 + spacing.base }]}
       >
-        <Text style={styles.prompt}>
-          Why are you reporting this {contentType}?
-        </Text>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
+            style={styles.promptCard}
+          >
+            <Icon name="flag" size="lg" color={colors.error} />
+            <Text style={styles.prompt}>
+              Why are you reporting this {contentType}?
+            </Text>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Reason list */}
         <View style={styles.reasonList}>
-          {REASONS.map((reason) => (
-            <Pressable
-              key={reason.value}
-              style={styles.reasonItem}
-              onPress={() => setSelectedReason(reason.value)}
-            >
-              <View style={styles.radioOuter}>
-                {selectedReason === reason.value && (
-                  <View style={styles.radioInner} />
-                )}
-              </View>
-              <Text style={styles.reasonLabel}>{reason.label}</Text>
-            </Pressable>
+          {REASONS.map((reason, index) => (
+            <Animated.View key={reason.value} entering={FadeInUp.delay(100 + index * 40).duration(400)}>
+              <Pressable
+                style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
+                onPress={() => setSelectedReason(reason.value)}
+              >
+                <LinearGradient
+                  colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.reasonGradient}
+                >
+                  <LinearGradient
+                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)'] : ['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                    style={styles.radioOuter}
+                  >
+                    {selectedReason === reason.value && (
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.4)']}
+                        style={styles.radioInner}
+                      />
+                    )}
+                  </LinearGradient>
+                  <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
+                    {reason.label}
+                  </Text>
+                </LinearGradient>
+              </Pressable>
+            </Animated.View>
           ))}
         </View>
 
         {/* Additional details */}
-        <Text style={styles.detailsLabel}>Additional details (optional)</Text>
-        <TextInput
-          style={styles.detailsInput}
-          placeholder="Provide more information..."
-          placeholderTextColor={colors.text.tertiary}
-          value={details}
-          onChangeText={setDetails}
-          multiline
-          maxLength={1000}
-          textAlignVertical="top"
-        />
-        <View style={styles.charCount}>
-          <CharCountRing current={details.length} max={1000} size={24} />
-        </View>
+        <Animated.View entering={FadeInUp.delay(600).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.detailsCard}
+          >
+            <Text style={styles.detailsLabel}>Additional details (optional)</Text>
+            <TextInput
+              style={styles.detailsInput}
+              placeholder="Provide more information..."
+              placeholderTextColor={colors.text.tertiary}
+              value={details}
+              onChangeText={setDetails}
+              multiline
+              maxLength={1000}
+              textAlignVertical="top"
+            />
+            <View style={styles.charCount}>
+              <CharCountRing current={details.length} max={1000} size={24} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Submit button */}
-        <GradientButton
-          label={reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
-          onPress={handleSubmit}
-          disabled={!isValid || reportMutation.isPending}
-        />
+        <Animated.View entering={FadeInUp.delay(700).duration(400)}>
+          <GradientButton
+            label={reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
+            onPress={handleSubmit}
+            disabled={!isValid || reportMutation.isPending}
+          />
+        </Animated.View>
       </ScrollView>
       )}
     </View>
@@ -195,27 +228,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.base,
   },
+  promptCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(248,81,73,0.2)',
+    marginBottom: spacing.xl,
+  },
   prompt: {
     color: colors.text.primary,
     fontSize: fontSize.lg,
     fontWeight: '700',
-    marginBottom: spacing.xl,
+    flex: 1,
   },
   reasonList: {
     gap: spacing.md,
     marginBottom: spacing.xl,
   },
   reasonItem: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  reasonItemSelected: {
+    borderColor: 'rgba(10,123,79,0.3)',
+  },
+  reasonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    padding: spacing.md,
   },
   radioOuter: {
     width: 20,
     height: 20,
     borderRadius: radius.full,
-    borderWidth: 1.5,
-    borderColor: colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -223,11 +274,22 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: radius.full,
-    backgroundColor: colors.emerald,
   },
   reasonLabel: {
     color: colors.text.primary,
     fontSize: fontSize.base,
+    flex: 1,
+  },
+  reasonLabelSelected: {
+    color: colors.emerald,
+    fontWeight: '600',
+  },
+  detailsCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.md,
+    marginBottom: spacing.xl,
   },
   detailsLabel: {
     color: colors.text.primary,
