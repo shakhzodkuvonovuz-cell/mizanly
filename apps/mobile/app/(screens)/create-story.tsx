@@ -292,6 +292,7 @@ export default function CreateStoryScreen() {
       location: { backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
       mention: { backgroundColor: 'rgba(10,123,79,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
       hashtag: { backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+      slider: { backgroundColor: colors.dark.bgSheet, borderRadius: radius.md, padding: spacing.md, minWidth: 200 },
     };
 
     return (
@@ -383,6 +384,16 @@ export default function CreateStoryScreen() {
           <Text style={{ color: '#fff', fontSize: fontSize.sm, fontWeight: '600' }}>
             #{String(sticker.data.tag)}
           </Text>
+        )}
+        {sticker.type === 'slider' && (
+          <View>
+            <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: spacing.sm }}>
+              {String(sticker.data.emoji)} {String(sticker.data.question)}
+            </Text>
+            <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs }}>
+              {String(sticker.data.minValue || 0)} – {String(sticker.data.maxValue || 100)}
+            </Text>
+          </View>
         )}
       </Pressable>
     );
@@ -847,6 +858,32 @@ export default function CreateStoryScreen() {
               </Pressable>
               <Pressable onPress={submitHashtag} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
                 <Text style={{ color: '#fff', fontWeight: '600' }}>Add Hashtag</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
+        {activeStickerEditor === 'slider' && (
+          <View>
+            <Text style={editorTitle}>Create Slider</Text>
+            <TextInput value={sliderQuestion} onChangeText={setSliderQuestion} placeholder="Ask a question..."
+              placeholderTextColor={colors.text.tertiary} maxLength={100} style={editorInput} />
+            <TextInput value={sliderEmoji} onChangeText={setSliderEmoji} placeholder="Emoji (optional)"
+              placeholderTextColor={colors.text.tertiary} maxLength={2} style={[editorInput, { marginTop: spacing.sm }]} />
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
+              <TextInput value={sliderMin} onChangeText={setSliderMin} placeholder="Min"
+                placeholderTextColor={colors.text.tertiary} keyboardType="numeric"
+                style={[editorInput, { flex: 1 }]} />
+              <TextInput value={sliderMax} onChangeText={setSliderMax} placeholder="Max"
+                placeholderTextColor={colors.text.tertiary} keyboardType="numeric"
+                style={[editorInput, { flex: 1 }]} />
+            </View>
+            <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
+              <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
+                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+              </Pressable>
+              <Pressable onPress={submitSlider} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Slider</Text>
               </Pressable>
             </View>
           </View>
