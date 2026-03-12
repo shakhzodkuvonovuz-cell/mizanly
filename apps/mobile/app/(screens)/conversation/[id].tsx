@@ -148,7 +148,7 @@ type ListItem =
   | { type: 'msg'; message: Message; isGroupStart: boolean; isGroupEnd: boolean; key: string }
   | { type: 'pending'; pending: PendingMessage; key: string };
 
-function buildMessageList(messages: Message[]): ListItem[] {
+function buildMessageList(messages: Message[], t: (key: string) => string): ListItem[] {
   const items: ListItem[] = [];
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
@@ -158,7 +158,7 @@ function buildMessageList(messages: Message[]): ListItem[] {
     // Date separator when day changes
     if (!prev || !isSameDay(new Date(msg.createdAt), new Date(prev.createdAt))) {
       const d = new Date(msg.createdAt);
-      const label = isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'MMMM d, yyyy');
+      const label = isToday(d) ? t('common.today') : isYesterday(d) ? t('common.yesterday') : format(d, 'MMMM d, yyyy');
       items.push({ type: 'date', label, key: `date-${msg.id}` });
     }
 
@@ -240,12 +240,13 @@ function GifPicker({ visible, onClose, onSelect }: {
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<TenorGifResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const apiKey = process.env.EXPO_PUBLIC_TENOR_API_KEY;
 
   const fetchGifs = useCallback(async (query: string) => {
     if (!apiKey) {
-      Alert.alert('Error', 'GIF service not configured.');
+      Alert.alert(t('common.error'), t('errors.gifServiceNotConfigured'));
       return;
     }
     setLoading(true);
@@ -257,7 +258,7 @@ function GifPicker({ visible, onClose, onSelect }: {
       const data = await resp.json();
       setResults(data.results || []);
     } catch (err) {
-      Alert.alert('Error', 'Failed to load GIFs.');
+      Alert.alert(t('common.error'), t('errors.gifLoadFailed'));
     } finally {
       setLoading(false);
     }
@@ -283,9 +284,9 @@ function GifPicker({ visible, onClose, onSelect }: {
         <View style={styles.gifSearchRow}>
           <TextInput
             style={styles.gifSearchInput}
-            placeholder="Search GIFs..."
+            placeholder={t('gif.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel="Search GIFs"
+            accessibilityLabel={t('gif.search')}
             value={search}
             onChangeText={setSearch}
             onSubmitEditing={handleSearch}
@@ -358,6 +359,7 @@ function MessageBubble({
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
   const time = messageTimestamp(message.createdAt);
   const AVATAR_SIZE = 28;
@@ -449,7 +451,7 @@ function MessageBubble({
               {message.replyTo.sender.username}
             </Text>
             <Text style={[styles.replyPreviewText, !isOwn && styles.replyPreviewTextOther]} numberOfLines={1}>
-              {message.replyTo.content ?? 'Media'}
+              {message.replyTo.content ?? t('common.media')}
             </Text>
           </View>
         )}
@@ -480,7 +482,7 @@ function MessageBubble({
         )}
         <View style={styles.bubbleMeta}>
           {message.editedAt && (
-            <Text style={[styles.editedLabel, isOwn && styles.editedLabelOwn]}>edited</Text>
+            <Text style={[styles.editedLabel, isOwn && styles.editedLabelOwn]}>{t('messages.edited')}</Text>
           )}
           <Text style={[styles.bubbleTime, isOwn && styles.bubbleTimeOwn]}>{time}</Text>
           {isOwn && (
@@ -535,12 +537,12 @@ function MessageBubble({
                   if (hasOwn) {
                     messagesApi.removeReaction(conversationId, message.id, emoji)
                       .then(handleReactionSuccess)
-                      .catch(() => Alert.alert('Error', 'Could not remove reaction.'))
+                      .catch(() => Alert.alert(t('common.error'), t('errors.removeReactionFailed')))
                       .finally(() => setIsReacting(false));
                   } else {
                     messagesApi.reactToMessage(conversationId, message.id, emoji)
                       .then(handleReactionSuccess)
-                      .catch(() => Alert.alert('Error', 'Could not add reaction.'))
+                      .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')))
                       .finally(() => setIsReacting(false));
                   }
                 }}
@@ -784,7 +786,7 @@ export default function ConversationScreen() {
           setEditingMsg(null);
           setText('');
         })
-        .catch(() => Alert.alert('Error', 'Could not edit message.'));
+        .catch(() => Alert.alert(t('common.error'), t('errors.editMessageFailed')));
       return;
     }
     haptic.medium();
@@ -855,7 +857,7 @@ export default function ConversationScreen() {
       setReplyTo(null);
       queryClient.invalidateQueries({ queryKey: ['messages', id] });
     } catch {
-      Alert.alert('Error', 'Failed to send image.');
+      Alert.alert(t('common.error'), t('errors.sendImageFailed'));
     } finally {
       setUploadingMedia(false);
     }
@@ -863,7 +865,7 @@ export default function ConversationScreen() {
 
   const handleVoiceStart = useCallback(async () => {
     const { granted } = await Audio.requestPermissionsAsync();
-    if (!granted) { Alert.alert('Permission needed', 'Microphone access is required.'); return; }
+    if (!granted) { Alert.alert(t('common.permissionNeeded'), t('errors.microphoneAccessRequired')); return; }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const recording = new Audio.Recording();
     await recording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
@@ -936,7 +938,7 @@ export default function ConversationScreen() {
       setReplyTo(null);
       haptic.success();
     } catch {
-      Alert.alert('Error', 'Failed to send voice message.');
+      Alert.alert(t('common.error'), t('errors.sendVoiceFailed'));
     } finally {
       setUploadingVoice(false);
       await Audio.setAudioModeAsync({ allowsRecordingIOS: false });
@@ -999,7 +1001,7 @@ export default function ConversationScreen() {
   const filteredRealMessages = searchQuery.trim()
     ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
     : messages;
-  const listItems = buildMessageList(filteredRealMessages);
+  const listItems = buildMessageList(filteredRealMessages, t);
   pendingMessages.forEach(pending => {
     listItems.push({
       type: 'pending',
@@ -1014,15 +1016,15 @@ export default function ConversationScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Chat"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('common.chat')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load conversation"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('errors.conversationLoadFailed')}
+            subtitle={t('errors.checkConnection')}
+            actionLabel={t('common.retry')}
             onAction={() => convoQuery.refetch()}
           />
         </View>
@@ -1045,9 +1047,9 @@ export default function ConversationScreen() {
                 style={styles.searchInput}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder="Search messages..."
+                placeholder={t('messages.searchPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
-                accessibilityLabel="Search messages"
+                accessibilityLabel={t('messages.search')}
                 autoFocus
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -1059,7 +1061,7 @@ export default function ConversationScreen() {
               )}
             </View>
             <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }} style={styles.cancelBtn}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
           </View>
         </SafeAreaView>
@@ -1068,7 +1070,7 @@ export default function ConversationScreen() {
           leftAction={{
             icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.goBack'),
           }}
           titleComponent={
             <Pressable style={styles.headerCenter} onPress={() => router.push(`/(screens)/conversation-info?id=${id}`)}>
@@ -1077,7 +1079,7 @@ export default function ConversationScreen() {
                 <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
                 {otherTyping && (
                   <View style={styles.typingRow}>
-                    <Text style={styles.typingText}>typing</Text>
+                    <Text style={styles.typingText}>{t('messages.typing')}</Text>
                     <TypingDots />
                   </View>
                 )}
@@ -1088,17 +1090,17 @@ export default function ConversationScreen() {
             {
               icon: 'image',
               onPress: () => router.push(`/(screens)/conversation-media?id=${id}`),
-              accessibilityLabel: 'View media',
+              accessibilityLabel: t('common.viewMedia'),
             },
             {
               icon: 'search',
               onPress: () => setSearchMode(true),
-              accessibilityLabel: 'Search messages',
+              accessibilityLabel: t('messages.search'),
             },
             {
               icon: 'more-horizontal',
               onPress: () => router.push(`/(screens)/conversation-info?id=${id}`),
-              accessibilityLabel: 'Conversation info',
+              accessibilityLabel: t('common.conversationInfo'),
             },
           ]}
         />
@@ -1222,7 +1224,7 @@ export default function ConversationScreen() {
               <View style={styles.replyBannerContent}>
                 <Text style={styles.replyBannerUser}>@{replyTo.username}</Text>
                 <Text style={styles.replyBannerText} numberOfLines={1}>
-                  {replyTo.content ?? 'Media'}
+                  {replyTo.content ?? t('common.media')}
                 </Text>
               </View>
               <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
@@ -1472,7 +1474,7 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                  }).catch(() => Alert.alert(t('common.error'), t('errors.deleteMessageFailed')));
                   setContextMenuMsg(null);
                 }}
               />
@@ -1484,7 +1486,7 @@ export default function ConversationScreen() {
                 onPress={() => {
                   messagesApi.deleteMessage(id, contextMenuMsg.id).then(() => {
                     queryClient.invalidateQueries({ queryKey: ['messages', id] });
-                  }).catch(() => Alert.alert('Error', 'Could not delete message.'));
+                  }).catch(() => Alert.alert(t('common.error'), t('errors.deleteMessageFailed')));
                   setContextMenuMsg(null);
                 }}
               />
@@ -1519,7 +1521,7 @@ export default function ConversationScreen() {
                   });
                   setForwardMsg(null);
                   haptic.success();
-                  Alert.alert('Forwarded', `Message sent to ${conversationName(conv, user?.id)}`);
+                  Alert.alert(t('messages.forwarded'), t('messages.forwardedSuccess', { name: conversationName(conv, user?.id) }));
                 }
               }}
             />
@@ -1549,7 +1551,7 @@ export default function ConversationScreen() {
                       .then(() => {
                         queryClient.invalidateQueries({ queryKey: ['messages', id] });
                       })
-                      .catch(() => Alert.alert('Error', 'Could not add reaction.'));
+                      .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')));
                   }
                   setShowReactionPicker(false);
                   setContextMenuMsg(null);

@@ -23,6 +23,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
 import * as Location from 'expo-location';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -58,10 +59,11 @@ const FACILITY_LABELS: Record<string, string> = {
 };
 
 function FacilityBadge({ facility }: { facility: string }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.facilityBadge}>
       <Icon name={FACILITY_ICONS[facility]} size="xs" color={colors.text.tertiary} />
-      <Text style={styles.facilityText}>{FACILITY_LABELS[facility] || facility}</Text>
+      <Text style={styles.facilityText}>{t(`islamic.facilities.${facility}`) || facility}</Text>
     </View>
   );
 }
@@ -125,7 +127,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
             style={styles.directionsGradient}
           >
             <Icon name="map-pin" size="xs" color={colors.text.primary} />
-            <Text style={styles.directionsText}>Directions</Text>
+            <Text style={styles.directionsText}>{t('islamic.directions')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -136,6 +138,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
 export default function MosqueFinderScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -148,7 +151,7 @@ export default function MosqueFinderScreen() {
       setError(null);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setError('Location permission required to find nearby mosques');
+        setError(t('islamic.errors.locationPermissionMosques'));
         setLoading(false);
         setRefreshing(false);
         return;
@@ -170,7 +173,7 @@ export default function MosqueFinderScreen() {
       }));
       setMosques(mappedMosques);
     } catch (err) {
-      setError('Failed to load mosques');
+      setError(t('islamic.errors.failedToLoadMosques'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -200,7 +203,7 @@ export default function MosqueFinderScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Nearby Mosques"
+          title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
@@ -216,15 +219,15 @@ export default function MosqueFinderScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Nearby Mosques"
+          title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
           <EmptyState
             icon="map-pin"
-            title="Failed to load mosques"
+            title={t('islamic.errors.failedToLoadMosques')}
             subtitle={error}
-            actionLabel="Retry"
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -236,15 +239,15 @@ export default function MosqueFinderScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Nearby Mosques"
+          title={t('islamic.mosqueFinder')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
           <EmptyState
             icon="map-pin"
-            title="No mosques nearby"
-            subtitle="Try again in a different location"
-            actionLabel="Retry"
+            title={t('islamic.errors.noMosquesNearby')}
+            subtitle={t('islamic.errors.tryDifferentLocation')}
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -277,7 +280,7 @@ export default function MosqueFinderScreen() {
                   style={styles.searchInput}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
-                  placeholder="Search mosques..."
+                  placeholder={t('islamic.searchMosquesPlaceholder')}
                   placeholderTextColor={colors.text.tertiary}
                 />
                 {searchQuery.length > 0 && (
@@ -300,7 +303,7 @@ export default function MosqueFinderScreen() {
                 >
                   <Icon name="map-pin" size="xl" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.mapPlaceholderText}>Map view coming soon</Text>
+                <Text style={styles.mapPlaceholderText}>{t('islamic.mapViewComingSoon')}</Text>
               </LinearGradient>
             </Animated.View>
 
@@ -318,8 +321,8 @@ export default function MosqueFinderScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="map-pin"
-            title="No mosques found"
-            subtitle={searchQuery ? 'Try a different search term' : 'No mosques in this area'}
+            title={t('islamic.noMosquesFound')}
+            subtitle={searchQuery ? t('islamic.tryDifferentSearchTerm') : t('islamic.noMosquesInArea')}
           />
         }
         ListFooterComponent={
@@ -338,9 +341,9 @@ export default function MosqueFinderScreen() {
                 </LinearGradient>
 
                 <View style={styles.qiblaContent}>
-                  <Text style={styles.qiblaTitle}>Qibla Direction</Text>
+                  <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
                   <Text style={styles.qiblaDirection}>118° Southeast</Text>
-                  <Text style={styles.qiblaHint}>Point your phone towards the Qibla</Text>
+                  <Text style={styles.qiblaHint}>{t('islamic.qiblaHint')}</Text>
                 </View>
 
                 {/* Arrow Indicator */}

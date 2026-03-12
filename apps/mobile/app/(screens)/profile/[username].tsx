@@ -126,18 +126,18 @@ function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
         icon="check"
         disabled={isPending}
         loading={isPending}
-        accessibilityLabel="Unfollow user"
+        accessibilityLabel={t('profile.unfollowUser')}
       />
     );
   }
   return (
     <GradientButton
-      label="Follow"
+      label={t('profile.follow')}
       onPress={onPress}
       size="sm"
       disabled={isPending}
       loading={isPending}
-      accessibilityLabel="Follow user"
+      accessibilityLabel={t('profile.followUser')}
     />
   );
 }
@@ -249,7 +249,7 @@ export default function ProfileScreen() {
     mutationFn: () => blocksApi.block(profile!.id),
     onSuccess: () => {
       setShowMenu(false);
-      Alert.alert('Blocked', `@${username} has been blocked.`);
+      Alert.alert(t('profile.blockedTitle'), t('profile.blockedMessage', { username }));
       router.back();
     },
   });
@@ -258,15 +258,15 @@ export default function ProfileScreen() {
     mutationFn: () => mutesApi.mute(profile!.id),
     onSuccess: () => {
       setShowMenu(false);
-      Alert.alert('Muted', `@${username} has been muted.`);
+      Alert.alert(t('profile.mutedTitle'), t('profile.mutedMessage', { username }));
     },
   });
 
   const handleBlock = () => {
     setShowMenu(false);
-    Alert.alert('Block user?', `Posts from @${username} will not appear in your feed.`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Block', style: 'destructive', onPress: () => blockMutation.mutate() },
+    Alert.alert(t('profile.blockConfirmTitle'), t('profile.blockConfirmMessage', { username }), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('profile.block'), style: 'destructive', onPress: () => blockMutation.mutate() },
     ]);
   };
 
@@ -274,13 +274,13 @@ export default function ProfileScreen() {
     setShowMenu(false);
     const sendReport = (reason: string) => {
       usersApi.report(profile!.id, reason).catch(() => {});
-      Alert.alert('Report sent', 'Thank you for your report.');
+      Alert.alert(t('profile.reportSentTitle'), t('profile.reportSentMessage'));
     };
-    Alert.alert('Report account', 'Why are you reporting this account?', [
-      { text: 'Spam', onPress: () => sendReport('spam') },
-      { text: 'Impersonation', onPress: () => sendReport('impersonation') },
-      { text: 'Inappropriate', onPress: () => sendReport('inappropriate') },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('profile.reportAccountTitle'), t('profile.reportAccountMessage'), [
+      { text: t('profile.reportSpam'), onPress: () => sendReport('spam') },
+      { text: t('profile.reportImpersonation'), onPress: () => sendReport('impersonation') },
+      { text: t('profile.reportInappropriate'), onPress: () => sendReport('inappropriate') },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -329,7 +329,7 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
@@ -342,15 +342,15 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
         <EmptyState
           icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
-          actionLabel="Go back"
+          title={t('common.error')}
+          subtitle={t('common.errorSubtitle')}
+          actionLabel={t('common.back')}
           onAction={() => router.back()}
         />
       </SafeAreaView>
@@ -361,11 +361,11 @@ export default function ProfileScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
         </View>
-        <EmptyState icon="user" title="User not found" />
+        <EmptyState icon="user" title={t('profile.userNotFound')} />
       </SafeAreaView>
     );
   }
@@ -402,10 +402,10 @@ export default function ProfileScreen() {
             <Pressable
               style={styles.editBtn}
               onPress={() => router.push('/(screens)/edit-profile')}
-              accessibilityLabel="Edit Profile"
+              accessibilityLabel={t('profile.editProfile')}
               accessibilityRole="button"
             >
-              <Text style={styles.editBtnText}>Edit Profile</Text>
+              <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
             </Pressable>
             <Pressable
               onPress={() => router.push('/(screens)/archive')}
@@ -414,7 +414,7 @@ export default function ProfileScreen() {
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
                 marginLeft: spacing.sm,
               }}
-              accessibilityLabel="Archive"
+              accessibilityLabel={t('profile.archive')}
               accessibilityRole="button"
             >
               <Icon name="clock" size="sm" color={colors.text.primary} />
@@ -439,7 +439,7 @@ export default function ProfileScreen() {
                   router.push('/(screens)/new-conversation');
                 }
               }}
-              accessibilityLabel="Send message"
+              accessibilityLabel={t('profile.sendMessage')}
               accessibilityRole="button"
             >
               <Icon name="mail" size="xs" color={colors.text.primary} />
@@ -461,7 +461,7 @@ export default function ProfileScreen() {
             style={styles.websiteRow}
             onPress={() => {
               const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
-              Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
+              Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
             }}
             accessibilityLabel={`Visit website: ${profile.website}`}
             accessibilityRole="link"
@@ -478,7 +478,7 @@ export default function ProfileScreen() {
             accessibilityRole="link"
           >
             <Icon name="video" size={13} color={colors.emerald} />
-            <Text style={styles.channelText}>View Channel</Text>
+            <Text style={styles.channelText}>{t('profile.viewChannel')}</Text>
           </TouchableOpacity>
         )}
         {profile.profileLinks && profile.profileLinks.length > 0 && (
@@ -489,9 +489,9 @@ export default function ProfileScreen() {
                 style={styles.profileLinkRow}
                 onPress={() => {
                   const url = link.url.startsWith('http') ? link.url : `https://${link.url}`;
-                  Linking.openURL(url).catch(() => Alert.alert('Error', 'Could not open link'));
+                  Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
                 }}
-                accessibilityLabel={`Open ${link.title}`}
+                accessibilityLabel={t('profile.openLink', { title: link.title })}
                 accessibilityRole="link"
               >
                 <Icon name="link" size={13} color={colors.emerald} />
@@ -520,7 +520,7 @@ export default function ProfileScreen() {
               activeOpacity={0.75}
               onPress={() => handleHighlightPress(album.id)}
               disabled={loadingHighlightId !== null}
-              accessibilityLabel={`View highlight: ${album.title}`}
+              accessibilityLabel={t('profile.viewHighlight', { title: album.title })}
               accessibilityRole="button"
             >
               <View style={styles.highlightRing}>
@@ -542,17 +542,17 @@ export default function ProfileScreen() {
       <View style={styles.statsCard}>
         <StatItem
           num={profile._count?.followers ?? 0}
-          label="Followers"
+          label={t('profile.followers')}
           onPress={() => router.push(`/(screens)/followers/${profile.id}` as never)}
         />
         <View style={styles.statDivider} />
         <StatItem
           num={profile._count?.following ?? 0}
-          label="Following"
+          label={t('profile.following')}
           onPress={() => router.push(`/(screens)/following/${profile.id}` as never)}
         />
         <View style={styles.statDivider} />
-        <StatItem num={profile._count?.posts ?? 0} label="Posts" />
+        <StatItem num={profile._count?.posts ?? 0} label={t('profile.posts')} />
       </View>
 
       {/* Mutual followers */}
@@ -575,8 +575,12 @@ export default function ProfileScreen() {
             ))}
           </View>
           <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginLeft: spacing.sm, flex: 1 }}>
-            Followed by {mutualFollowers[0]?.displayName}
-            {mutualFollowers.length > 1 && ` and ${mutualFollowers.length - 1} others you follow`}
+            {mutualFollowers.length === 1
+              ? t('profile.followedByOne', { displayName: mutualFollowers[0]?.displayName })
+              : t('profile.followedByMany', {
+                  displayName: mutualFollowers[0]?.displayName,
+                  otherCount: mutualFollowers.length - 1,
+                })}
           </Text>
         </Pressable>
       )}
@@ -584,14 +588,14 @@ export default function ProfileScreen() {
       {/* Pinned threads */}
       {pinnedThreads.length > 0 && (
         <View style={styles.pinnedSection}>
-          <Text style={styles.sectionTitle}>Pinned</Text>
+          <Text style={styles.sectionTitle}>{t('profile.pinned')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pinnedScroll}>
             {pinnedThreads.slice(0, 3).map((thread) => (
               <Pressable
                 key={thread.id}
                 style={styles.pinnedItem}
                 onPress={() => router.push(`/(screens)/thread/${thread.id}` as never)}
-                accessibilityLabel="View pinned thread"
+                accessibilityLabel={t('profile.viewPinnedThread')}
                 accessibilityRole="button"
               >
                 <View style={styles.pinnedContent}>
@@ -622,7 +626,7 @@ export default function ProfileScreen() {
       <TabSelector
         tabs={isOwnProfile ? [
           ...PROFILE_TABS,
-          { key: 'liked', label: 'Liked' },
+          { key: 'liked', label: t('profile.liked') },
         ] : PROFILE_TABS}
         activeKey={activeTab}
         onTabChange={(key) => setActiveTab(key as Tab)}
@@ -632,29 +636,29 @@ export default function ProfileScreen() {
 
   const renderHeaderActions = () => (
     <View style={styles.header}>
-      <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityLabel="Go back" accessibilityRole="button">
+      <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityLabel={t('common.back')} accessibilityRole="button">
         <Icon name="arrow-left" size="md" color={colors.text.primary} />
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
       <View style={styles.headerActions}>
-        <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)} accessibilityLabel="Share profile" accessibilityRole="button">
+        <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)} accessibilityLabel={t('profile.shareProfile')} accessibilityRole="button">
           <Icon name="share" size="sm" color={colors.text.primary} />
         </Pressable>
         {isOwnProfile ? (
           <>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved' as never)} accessibilityLabel="Saved posts" accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/saved' as never)} accessibilityLabel={t('profile.savedPosts')} accessibilityRole="link">
               <Icon name="bookmark" size="sm" color={colors.text.primary} />
             </Pressable>
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive' as never)} accessibilityLabel="Archive" accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/archive' as never)} accessibilityLabel={t('profile.archive')} accessibilityRole="link">
               <Icon name="clock" size="sm" color={colors.text.primary} />
             </Pressable>
 
-            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel="Settings" accessibilityRole="link">
+            <Pressable hitSlop={8} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('common.settings')} accessibilityRole="link">
               <Icon name="settings" size="sm" color={colors.text.primary} />
             </Pressable>
           </>
         ) : (
-          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }} accessibilityLabel="Profile options" accessibilityRole="button">
+          <Pressable hitSlop={8} onPress={() => { haptic.light(); setShowMenu(true); }} accessibilityLabel={t('profile.options')} accessibilityRole="button">
             <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
           </Pressable>
         )}
@@ -771,7 +775,7 @@ export default function ProfileScreen() {
           ) : (
             <EmptyState
               icon={activeTab === 'posts' ? "image" : activeTab === 'threads' ? "message-circle" : activeTab === 'reels' ? "video" : "heart"}
-              title={activeTab === 'liked' ? "No liked posts yet" : "No content yet"}
+              title={activeTab === 'liked' ? t('profile.noLikedPosts') : t('profile.noContent')}
             />
           )
         }
@@ -796,18 +800,18 @@ export default function ProfileScreen() {
       {/* Bottom Sheets */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         <BottomSheetItem
-          label={`Mute @${username}`}
+          label={t('profile.muteUser', { username })}
           icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
           onPress={() => muteMutation.mutate()}
         />
         <BottomSheetItem
-          label={`Block @${username}`}
+          label={t('profile.blockUser', { username })}
           icon={<Icon name="lock" size="sm" color={colors.error} />}
           onPress={handleBlock}
           destructive
         />
         <BottomSheetItem
-          label="Report"
+          label={t('common.report')}
           icon={<Icon name="flag" size="sm" color={colors.error} />}
           onPress={handleReport}
           destructive
@@ -816,7 +820,7 @@ export default function ProfileScreen() {
 
       <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
         <BottomSheetItem
-          label="Share Profile"
+          label={t('profile.shareProfile')}
           icon={<Icon name="share" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);
@@ -824,7 +828,7 @@ export default function ProfileScreen() {
           }}
         />
         <BottomSheetItem
-          label="QR Code"
+          label={t('profile.qrCode')}
           icon={<Icon name="hash" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);

@@ -69,13 +69,13 @@ function CommentRow({
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.deleteComment(postId, comment.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const editMutation = useMutation({
     mutationFn: (content: string) => postsApi.editComment(postId, comment.id, content),
     onSuccess: () => setEditing(false),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleDelete = () => {
@@ -111,35 +111,35 @@ function CommentRow({
         </View>
         {editing ? (
           <View style={styles.commentMeta}>
-            <TouchableOpacity onPress={() => setEditing(false)} accessibilityLabel="Cancel editing" accessibilityRole="button">
-              <Text style={styles.commentAction}>Cancel</Text>
+            <TouchableOpacity onPress={() => setEditing(false)} accessibilityLabel={t('accessibility.cancelEditing')} accessibilityRole="button">
+              <Text style={styles.commentAction}>{t('common.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => editMutation.mutate(editText.trim())}
               disabled={!editText.trim() || editMutation.isPending}
-              accessibilityLabel="Save comment"
+              accessibilityLabel={t('accessibility.saveComment')}
               accessibilityRole="button"
             >
-              <Text style={[styles.commentAction, { color: colors.emerald }]}>Save</Text>
+              <Text style={[styles.commentAction, { color: colors.emerald }]}>{t('common.save')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.commentMeta}>
             <Text style={styles.commentTime}>{timeAgo}</Text>
             {localLikes > 0 && (
-              <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
+              <Text style={styles.commentLikesLabel}>{t('saf.likes', { count: localLikes })}</Text>
             )}
-            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)} accessibilityLabel="Reply to comment" accessibilityRole="button">
-              <Text style={styles.commentAction}>Reply</Text>
+            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)} accessibilityLabel={t('accessibility.replyToComment')} accessibilityRole="button">
+              <Text style={styles.commentAction}>{t('common.reply')}</Text>
             </TouchableOpacity>
             {canEdit && (
-              <TouchableOpacity onPress={() => setEditing(true)} accessibilityLabel="Edit comment" accessibilityRole="button">
-                <Text style={styles.commentAction}>Edit</Text>
+              <TouchableOpacity onPress={() => setEditing(true)} accessibilityLabel={t('accessibility.editComment')} accessibilityRole="button">
+                <Text style={styles.commentAction}>{t('common.edit')}</Text>
               </TouchableOpacity>
             )}
             {canDelete && (
-              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending} accessibilityLabel="Delete comment" accessibilityRole="button">
-                <Text style={styles.commentActionDestructive}>Delete</Text>
+              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending} accessibilityLabel={t('accessibility.deleteComment')} accessibilityRole="button">
+                <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -151,7 +151,7 @@ function CommentRow({
           disabled={!viewerId}
           hitSlop={8}
           style={styles.commentLike}
-          accessibilityLabel={localLiked ? "Unlike comment" : "Like comment"}
+          accessibilityLabel={localLiked ? t('accessibility.unlikeComment') : t('accessibility.likeComment')}
           accessibilityRole="button"
         >
           <Icon
@@ -220,15 +220,15 @@ export default function PostDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Error"
+          title={t('common.error')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
-          actionLabel="Go back"
+          title={t('common.error')}
+          subtitle={t('saf.couldNotLoadContent')}
+          actionLabel={t('saf.goBack')}
           onAction={() => router.back()}
         />
       </View>
@@ -241,7 +241,7 @@ export default function PostDetailScreen() {
         <PostCard post={postQuery.data} viewerId={user?.id} />
         <View style={styles.commentsHeader}>
           <Text style={styles.commentsTitle}>
-            {postQuery.data.commentsCount} Comments
+            {t('saf.comments', { count: postQuery.data.commentsCount })}
           </Text>
         </View>
       </View>
@@ -256,8 +256,8 @@ export default function PostDetailScreen() {
     !commentsQuery.isLoading && postQuery.data ? (
       <EmptyState
         icon="message-circle"
-        title="Start the conversation"
-        subtitle="Be the first to share your thoughts"
+        title={t('saf.startConversation')}
+        subtitle={t('saf.firstToShare')}
       />
     ) : null
   ), [commentsQuery.isLoading, postQuery.data]);
@@ -271,7 +271,7 @@ export default function PostDetailScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Post"
+        title={t('saf.post')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
       <View style={styles.headerSpacer} />
@@ -323,25 +323,25 @@ export default function PostDetailScreen() {
             {replyTo && (
               <View style={styles.replyBanner}>
                 <Text style={styles.replyBannerText}>
-                  Replying to @{replyTo.username}
+                  {t('saf.replyingTo', { username: replyTo.username })}
                 </Text>
-                <Pressable onPress={() => setReplyTo(null)} hitSlop={8} accessibilityLabel="Cancel reply" accessibilityRole="button">
+                <Pressable onPress={() => setReplyTo(null)} hitSlop={8} accessibilityLabel={t('accessibility.cancelReply')} accessibilityRole="button">
                   <Icon name="x" size="xs" color={colors.text.secondary} />
                 </Pressable>
               </View>
             )}
             <View style={styles.inputRow}>
-              <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
+              <Avatar uri={user.imageUrl} name={user.fullName ?? t('common.me')} size="sm" />
               <TextInput
                 ref={inputRef}
                 style={styles.input}
-                placeholder={replyTo ? `Reply to @${replyTo.username}…` : 'Add a comment…'}
+                placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('saf.addComment')}
                 placeholderTextColor={colors.text.tertiary}
                 value={commentText}
                 onChangeText={setCommentText}
                 multiline
                 maxLength={500}
-                accessibilityLabel="Comment text input"
+                accessibilityLabel={t('accessibility.commentTextInput')}
               />
               <AnimatedPressable
                 onPress={() => canSend && sendMutation.mutate()}
@@ -350,7 +350,7 @@ export default function PostDetailScreen() {
                 disabled={!canSend}
                 style={[styles.sendButton, sendPress.animatedStyle]}
                 hitSlop={8}
-                accessibilityLabel="Send comment"
+                accessibilityLabel={t('accessibility.sendComment')}
                 accessibilityRole="button"
               >
                 <Icon

@@ -19,6 +19,7 @@ import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function ReplyRow({
   reply,
@@ -60,13 +61,13 @@ function ReplyRow({
   const deleteMutation = useMutation({
     mutationFn: () => threadsApi.deleteReply(threadId, reply.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleDelete = useCallback(() => {
-    Alert.alert('Delete Reply', 'Delete this reply?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    Alert.alert(t('majlis.deleteReplyTitle'), t('majlis.deleteReplyMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   }, [deleteMutation]);
 
@@ -98,7 +99,7 @@ function ReplyRow({
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel={`Reply to ${reply.user.displayName}`}
+            accessibilityLabel={t('accessibility.replyToUser', { username: reply.user.displayName })}
             accessibilityRole="button"
           >
             <Icon name="message-circle" size={20} color={colors.text.secondary} />
@@ -110,7 +111,7 @@ function ReplyRow({
             style={styles.replyAction}
             onPress={handleLike}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            accessibilityLabel={liked ? "Unlike reply" : "Like reply"}
+            accessibilityLabel={liked ? t('accessibility.unlikeReply') : t('accessibility.likeReply')}
             accessibilityRole="button"
           >
             <Icon
@@ -131,7 +132,7 @@ function ReplyRow({
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel="Delete reply"
+              accessibilityLabel={t('accessibility.deleteReply')}
               accessibilityRole="button"
             >
               <Icon name="trash" size={20} color={colors.error} />
@@ -151,6 +152,7 @@ export default function ThreadDetailScreen() {
   const inputRef = useRef<TextInput>(null);
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
+  const { t } = useTranslation();
 
   const threadQuery = useQuery({
     queryKey: ['thread', id],
@@ -195,7 +197,7 @@ export default function ThreadDetailScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Error"
+          title={t('common.error')}
           leftAction={{ 
             icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
             onPress: () => router.back(),
@@ -204,9 +206,9 @@ export default function ThreadDetailScreen() {
         />
         <EmptyState
           icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
-          actionLabel="Go back"
+          title={t('common.error')}
+          subtitle={t('majlis.loadContentError')}
+          actionLabel={t('saf.goBack')}
           onAction={() => router.back()}
         />
       </SafeAreaView>
@@ -219,7 +221,7 @@ export default function ThreadDetailScreen() {
         <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
         <View style={styles.repliesHeader}>
           <Text style={styles.repliesTitle}>
-            {threadQuery.data.repliesCount} Replies
+            {t('majlis.replies', { count: threadQuery.data.repliesCount })}
           </Text>
         </View>
       </View>
@@ -246,7 +248,7 @@ export default function ThreadDetailScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <GlassHeader
-        title="Thread"
+        title={t('majlis.thread')}
         leftAction={{ 
           icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, 
           onPress: () => router.back(),

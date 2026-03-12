@@ -34,6 +34,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { Platform } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { followsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -113,6 +114,7 @@ const ReelItem = memo(function ReelItem({
   doubleTapGesture,
   heartTrigger,
 }: ReelItemProps) {
+  const { t } = useTranslation();
   const localVideoRef = useRef<Video | null>(null);
   const { user } = useUser();
   const [captionExpanded, setCaptionExpanded] = useState(false);
@@ -202,7 +204,7 @@ const ReelItem = memo(function ReelItem({
           <Icon name="volume-x" size="xs" color="#fff" />
           <Animated.View style={{ flex: 1, marginLeft: spacing.xs, overflow: 'hidden' }}>
             <Text numberOfLines={1} style={{ color: '#fff', fontSize: fontSize.xs }}>
-              {item.audioTitle || 'Original Audio'} — {item.audioArtist || item.user?.displayName || 'Unknown'}
+              {item.audioTitle || t('bakra.originalAudio')} — {item.audioArtist || item.user?.displayName || t('bakra.unknown')}
             </Text>
           </Animated.View>
           <Pressable
@@ -242,7 +244,7 @@ const ReelItem = memo(function ReelItem({
             paddingHorizontal: spacing.sm, paddingVertical: 2,
           }}>
             <Icon name="trending-up" size={10} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>Trending</Text>
+            <Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>{t('bakra.trending')}</Text>
           </View>
         )}
 
@@ -252,7 +254,7 @@ const ReelItem = memo(function ReelItem({
             style={styles.userRow}
             onPress={() => onProfilePress(item.user.username)}
             activeOpacity={0.7}
-            accessibilityLabel={`View ${item.user.username}'s profile`}
+            accessibilityLabel={t('accessibility.viewProfile', { username: item.user.username })}
             accessibilityRole="button"
           >
             <View style={{ position: 'relative' }}>
@@ -322,7 +324,7 @@ const ReelItem = memo(function ReelItem({
                   onPress={() => setCaptionExpanded(true)}
                   style={{ color: colors.text.secondary, fontSize: fontSize.sm }}
                 >
-                  more
+                  {t('common.more')}
                 </Text>
               )}
             </>
@@ -342,7 +344,7 @@ const ReelItem = memo(function ReelItem({
         <View style={styles.actionColumn}>
           <ActionButton
             onPress={() => onLike(item)}
-            accessibilityLabel={item.isLiked ? "Unlike reel" : "Like reel"}
+            accessibilityLabel={item.isLiked ? t('accessibility.unlikeReel') : t('accessibility.likeReel')}
           >
             <Icon
               name={item.isLiked ? 'heart-filled' : 'heart'}
@@ -354,14 +356,14 @@ const ReelItem = memo(function ReelItem({
           </ActionButton>
           <ActionButton
             onPress={() => onComment(item)}
-            accessibilityLabel="Comment on reel"
+            accessibilityLabel={t('accessibility.commentReel')}
           >
             <Icon name="message-circle" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.commentsCount}</Text>
           </ActionButton>
           <ActionButton
             onPress={() => onShare(item)}
-            accessibilityLabel="Share reel"
+            accessibilityLabel={t('accessibility.shareReel')}
           >
             <Icon name="share" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.sharesCount}</Text>
@@ -383,7 +385,7 @@ const ReelItem = memo(function ReelItem({
             }}>
               <Icon name="layers" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
-            <Text style={styles.actionCountDuetStitch}>Duet</Text>
+            <Text style={styles.actionCountDuetStitch}>{t('bakra.duet')}</Text>
           </Pressable>
 
           {/* Stitch button */}
@@ -402,11 +404,11 @@ const ReelItem = memo(function ReelItem({
             }}>
               <Icon name="slash" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
-            <Text style={styles.actionCountDuetStitch}>Stitch</Text>
+            <Text style={styles.actionCountDuetStitch}>{t('bakra.stitch')}</Text>
           </Pressable>
           <ActionButton
             onPress={() => onBookmark(item)}
-            accessibilityLabel={item.isSaved ? "Remove bookmark" : "Bookmark reel"}
+            accessibilityLabel={item.isSaved ? t('accessibility.removeBookmark') : t('accessibility.bookmarkReel')}
           >
             <Icon
               name={item.isSaved ? 'bookmark-filled' : 'bookmark'}
@@ -419,7 +421,7 @@ const ReelItem = memo(function ReelItem({
           </ActionButton>
           <ActionButton
             onPress={() => setShowMoreMenu(true)}
-            accessibilityLabel="More options"
+            accessibilityLabel={t('accessibility.moreOptions')}
           >
             <Icon name="more-horizontal" size="lg" color={colors.text.primary} style={styles.iconShadow} />
           </ActionButton>
@@ -428,23 +430,23 @@ const ReelItem = memo(function ReelItem({
         {/* More menu BottomSheet */}
         <BottomSheet visible={showMoreMenu} onClose={() => setShowMoreMenu(false)}>
           <BottomSheetItem
-            label="Not interested"
+            label={t('bakra.notInterested')}
             icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
             onPress={() => { onNotInterested(item); setShowMoreMenu(false); }}
           />
           <BottomSheetItem
-            label="Report"
+            label={t('common.report')}
             icon={<Icon name="flag" size="sm" color={colors.error} />}
             onPress={() => { onReport(item); setShowMoreMenu(false); }}
             destructive
           />
           <BottomSheetItem
-            label="Copy link"
+            label={t('common.copyLink')}
             icon={<Icon name="link" size="sm" color={colors.text.primary} />}
             onPress={() => { onCopyLink(item); setShowMoreMenu(false); }}
           />
           <BottomSheetItem
-            label="Save to collection"
+            label={t('bakra.saveToCollection')}
             icon={<Icon name="bookmark" size="sm" color={colors.text.primary} />}
             onPress={() => { onBookmark(item); setShowMoreMenu(false); }}
           />
@@ -456,6 +458,7 @@ const ReelItem = memo(function ReelItem({
 });
 
 export default function BakraScreen() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const haptic = useHaptic();
@@ -565,12 +568,12 @@ export default function BakraScreen() {
 
   const handleNotInterested = (reel: Reel) => {
     haptic.light();
-    Alert.alert('Not Interested', 'We\'ll show you fewer reels like this.');
+    Alert.alert(t('bakra.notInterestedAlert.title'), t('bakra.notInterestedAlert.message'));
   };
 
   const handleCopyLink = (reel: Reel) => {
     haptic.light();
-    Alert.alert('Link Copied', 'Reel link copied to clipboard.');
+    Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
   };
 
   const doubleTapGesture = Gesture.Tap()
@@ -617,9 +620,9 @@ export default function BakraScreen() {
   ) : (
     <EmptyState
       icon="video"
-      title="No reels yet"
-      subtitle="Be the first to upload a short video"
-      actionLabel="Upload"
+      title={t('bakra.emptyFeed.title')}
+      subtitle={t('bakra.emptyFeed.subtitle')}
+      actionLabel={t('bakra.emptyFeed.actionLabel')}
       onAction={() => router.push('/(screens)/create-reel')}
     />
   );
@@ -639,7 +642,7 @@ export default function BakraScreen() {
           <TouchableOpacity
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
-            accessibilityLabel="Search"
+            accessibilityLabel={t('accessibility.search')}
             accessibilityRole="button"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
@@ -647,7 +650,7 @@ export default function BakraScreen() {
           <TouchableOpacity
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/create-reel'); }}
-            accessibilityLabel="Upload reel"
+            accessibilityLabel={t('accessibility.uploadReel')}
             accessibilityRole="button"
           >
             <Icon name="circle-plus" size="sm" color={colors.text.primary} />

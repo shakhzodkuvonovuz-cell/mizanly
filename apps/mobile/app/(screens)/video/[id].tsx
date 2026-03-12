@@ -31,6 +31,7 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/components/ui/VideoControls';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useStore } from '@/store';
@@ -44,6 +45,7 @@ export default function VideoDetailScreen() {
   const router = useRouter();
   const { user } = useUser();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const videoRef = useRef<Video>(null);
   const progressRef = useRef(0);
@@ -403,7 +405,7 @@ export default function VideoDetailScreen() {
         </View>
         {isCurrent && (
           <Animated.View entering={FadeIn} style={styles.nowPlayingBadge}>
-            <Text style={styles.nowPlayingText}>NOW PLAYING</Text>
+            <Text style={styles.nowPlayingText}>{t('video.nowPlaying')}</Text>
           </Animated.View>
         )}
       </TouchableOpacity>
@@ -427,10 +429,10 @@ export default function VideoDetailScreen() {
           </Text>
           <TouchableOpacity 
             onPress={() => setReplyToId(item.id)}
-            accessibilityLabel={`Reply to ${item.user.username}`}
+            accessibilityLabel={t('comments.replyTo', { username: item.user.username })}
             accessibilityRole="button"
           >
-            <Text style={styles.commentAction}>Reply</Text>
+            <Text style={styles.commentAction}>{t('common.reply')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -441,7 +443,7 @@ export default function VideoDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} style={{ marginTop: 88 }} />
         <View style={styles.skeletonContent}>
@@ -458,14 +460,14 @@ export default function VideoDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <View style={{ marginTop: 88 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load this content. Please try again."
-            actionLabel="Go back"
+            title={t('common.error')}
+            subtitle={t('errors.loadContentFailed')}
+            actionLabel={t('common.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -477,14 +479,14 @@ export default function VideoDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <View style={{ marginTop: 88 }}>
           <EmptyState
             icon="video"
-            title="Video not found"
-            subtitle="This video may have been removed or is unavailable"
-            actionLabel="Go back"
+            title={t('video.notFound')}
+            subtitle={t('video.notFoundSubtitle')}
+            actionLabel={t('common.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -495,12 +497,12 @@ export default function VideoDetailScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Video"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('video.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         rightActions={[
-          { icon: 'share', onPress: handleShare, accessibilityLabel: 'Share' },
-          { icon: 'flag', onPress: handleReport, accessibilityLabel: 'Report' },
-          { icon: 'more-horizontal', onPress: () => setShowMenu(true), accessibilityLabel: 'More options' },
+          { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
+          { icon: 'flag', onPress: handleReport, accessibilityLabel: t('common.report') },
+          { icon: 'more-horizontal', onPress: () => setShowMenu(true), accessibilityLabel: t('common.moreOptions') },
         ]}
       />
 
@@ -668,7 +670,7 @@ export default function VideoDetailScreen() {
             <View style={styles.channelInfo}>
               <Text style={styles.channelName}>{video.channel.name}</Text>
               <Text style={styles.channelSubscribers}>
-                {video.channel.subscribersCount.toLocaleString()} subscribers
+                {video.channel.subscribersCount.toLocaleString()} {t('channel.subscribers')}
               </Text>
             </View>
             <TouchableOpacity
@@ -757,13 +759,13 @@ export default function VideoDetailScreen() {
           {/* Comments preview */}
           <View style={styles.commentsSection}>
             <View style={styles.commentsHeader}>
-              <Text style={styles.commentsTitle}>Comments ({video.commentsCount})</Text>
+              <Text style={styles.commentsTitle}>{t('saf.comments')} ({video.commentsCount})</Text>
               <TouchableOpacity 
                 onPress={() => setCommentSheetOpen(true)}
-                accessibilityLabel="View all comments"
+                accessibilityLabel={t('comments.viewAll')}
                 accessibilityRole="button"
               >
-                <Text style={styles.viewAll}>View all</Text>
+                <Text style={styles.viewAll}>{t('common.viewAll')}</Text>
               </TouchableOpacity>
             </View>
             {comments.slice(0, 2).map(comment => (
@@ -783,7 +785,7 @@ export default function VideoDetailScreen() {
               </View>
             ))}
             {comments.length === 0 && (
-              <Text style={styles.noComments}>No comments yet. Be the first!</Text>
+              <Text style={styles.noComments}>{t('comments.emptyCombined')}</Text>
             )}
           </View>
         </View>
@@ -826,7 +828,7 @@ export default function VideoDetailScreen() {
         <View style={styles.sheetInputRow}>
           <TextInput
             style={styles.commentInput}
-            placeholder="Add a comment..."
+            placeholder={t('comments.addCommentPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={commentText}
             onChangeText={setCommentText}
@@ -847,16 +849,16 @@ export default function VideoDetailScreen() {
       {/* More menu bottom sheet */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Video options</Text>
+          <Text style={styles.sheetTitle}>{t('video.options')}</Text>
         </View>
         <BottomSheetItem
-          label="Save to playlist"
+          label={t('video.saveToPlaylist')}
           icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowMenu(false);
             router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
           }}
-          accessibilityLabel="Save to playlist"
+          accessibilityLabel={t('video.saveToPlaylist')}
           accessibilityRole="button"
         />
       </BottomSheet>

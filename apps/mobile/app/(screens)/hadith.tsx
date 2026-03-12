@@ -23,6 +23,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { islamicApi } from '@/services/islamicApi';
 import type { Hadith as ApiHadith } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -115,6 +116,7 @@ function PreviousHadithCard({
 export default function HadithScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +153,7 @@ export default function HadithScreen() {
       setCurrentHadith(dailyHadith);
       setHadiths([dailyHadith, ...listHadiths]);
     } catch (err) {
-      setError('Failed to load hadiths');
+      setError(t('islamic.errors.failedToLoadHadiths'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -209,7 +211,7 @@ export default function HadithScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Daily Hadith"
+          title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.loadingContainer}>
@@ -225,15 +227,15 @@ export default function HadithScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Daily Hadith"
+          title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.loadingContainer}>
           <EmptyState
             icon="book-open"
-            title="Failed to load hadiths"
+            title={t('islamic.errors.failedToLoadHadiths')}
             subtitle={error}
-            actionLabel="Retry"
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -245,15 +247,15 @@ export default function HadithScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Daily Hadith"
+          title={t('islamic.hadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.loadingContainer}>
           <EmptyState
             icon="book-open"
-            title="No hadith available"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('islamic.errors.noHadithAvailable')}
+            subtitle={t('islamic.errors.checkConnection')}
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -306,21 +308,21 @@ export default function HadithScreen() {
                   <Animated.View style={animatedBookmarkStyle}>
                     <ActionButton
                       icon={currentHadith.isBookmarked ? 'bookmark-filled' : 'bookmark'}
-                      label="Save"
+                      label={t('common.save')}
                       onPress={handleBookmark}
                       isActive={currentHadith.isBookmarked}
                       activeColor={colors.gold}
                     />
                   </Animated.View>
-                  <ActionButton icon="share" label="Share" onPress={handleShare} />
-                  <ActionButton icon="check-check" label="Copy" onPress={handleCopy} />
+                  <ActionButton icon="share" label={t('common.share')} onPress={handleShare} />
+                  <ActionButton icon="check-check" label={t('common.copy')} onPress={handleCopy} />
                 </View>
               </LinearGradient>
             </Animated.View>
 
             {/* Section Title */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Previous Hadith</Text>
+              <Text style={styles.sectionTitle}>{t('islamic.previousHadith')}</Text>
             </View>
           </>
         }
@@ -334,8 +336,8 @@ export default function HadithScreen() {
         ListEmptyComponent={
           <EmptyState
             icon="book-open"
-            title="No previous hadith"
-            subtitle="Check back tomorrow for more authentic narrations"
+            title={t('islamic.noPreviousHadith')}
+            subtitle={t('islamic.checkBackTomorrow')}
           />
         }
         ListFooterComponent={
@@ -349,7 +351,7 @@ export default function HadithScreen() {
                 <View style={styles.infoRow}>
                   <Icon name="check-circle" size="sm" color={colors.emerald} />
                   <Text style={styles.infoText}>
-                    Hadith are sourced from authentic collections verified by scholars
+                    {t('islamic.hadithSourceInfo')}
                   </Text>
                 </View>
               </LinearGradient>

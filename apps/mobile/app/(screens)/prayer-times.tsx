@@ -179,12 +179,12 @@ function PrayerCard({
             </Text>
             {isCurrent && (
               <View style={styles.currentBadge}>
-                <Text style={styles.currentBadgeText}>NOW</Text>
+                <Text style={styles.currentBadgeText}>{t('islamic.now')}</Text>
               </View>
             )}
             {isNext && (
               <View style={styles.nextBadge}>
-                <Text style={styles.nextBadgeText}>NEXT</Text>
+                <Text style={styles.nextBadgeText}>{t('islamic.next')}</Text>
               </View>
             )}
           </View>
@@ -230,7 +230,7 @@ export default function PrayerTimesScreen() {
       if (!refreshing) setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
-        setError('Location permission required for accurate prayer times');
+        setError(t('islamic.errors.locationPermission'));
         setLoading(false);
         setRefreshing(false);
         return;
@@ -250,7 +250,7 @@ export default function PrayerTimesScreen() {
       const currentIndex = getCurrentPrayerIndex(prayerList);
       setCurrentPrayerIndex(currentIndex);
     } catch (err) {
-      setError('Failed to load prayer times');
+      setError(t('islamic.errors.failedToLoad'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -272,7 +272,7 @@ export default function PrayerTimesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Prayer Times"
+          title={t('islamic.prayerTimes')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
@@ -288,15 +288,15 @@ export default function PrayerTimesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Prayer Times"
+          title={t('islamic.prayerTimes')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
           <EmptyState
             icon="clock"
-            title="Failed to load prayer times"
+            title={t('islamic.errors.failedToLoad')}
             subtitle={error}
-            actionLabel="Retry"
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -308,15 +308,15 @@ export default function PrayerTimesScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Prayer Times"
+          title={t('islamic.prayerTimes')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
           <EmptyState
             icon="clock"
-            title="No prayer times"
-            subtitle="Could not load prayer times for your location"
-            actionLabel="Retry"
+            title={t('islamic.errors.noPrayerTimes')}
+            subtitle={t('islamic.errors.couldNotLoad')}
+            actionLabel={t('common.retry')}
             onAction={fetchData}
           />
         </View>
@@ -350,7 +350,7 @@ export default function PrayerTimesScreen() {
               <Text style={styles.locationText}>Dubai, United Arab Emirates</Text>
             </View>
             <TouchableOpacity onPress={() => { /* Open location picker */ }}>
-              <Text style={styles.changeLocation}>Change</Text>
+              <Text style={styles.changeLocation}>{t('common.change')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </Animated.View>
@@ -364,7 +364,7 @@ export default function PrayerTimesScreen() {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.currentPrayerContent}>
-              <Text style={styles.currentPrayerLabel}>Current Prayer</Text>
+              <Text style={styles.currentPrayerLabel}>{t('islamic.currentPrayer')}</Text>
               <Text style={styles.currentPrayerName}>
                 {prayerList[currentPrayerIndex]?.name || ''}
               </Text>
@@ -380,7 +380,7 @@ export default function PrayerTimesScreen() {
               </View>
 
               <View style={styles.countdownContainer}>
-                <Text style={styles.countdownLabel}>Time remaining until {prayerList[nextPrayerIndex]?.name || ''}</Text>
+                <Text style={styles.countdownLabel}>{t('islamic.timeRemainingUntil')} {prayerList[nextPrayerIndex]?.name || ''}</Text>
                 <CountdownTimer targetTime={prayerList[nextPrayerIndex]?.time || '00:00'} />
               </View>
             </View>
@@ -407,7 +407,7 @@ export default function PrayerTimesScreen() {
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.qiblaTitle}>Qibla Direction</Text>
+              <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
             </View>
 
             <View style={styles.compassContainer}>
@@ -456,7 +456,7 @@ export default function PrayerTimesScreen() {
             >
               <Icon name="clock" size="xs" color={colors.emerald} />
             </LinearGradient>
-            <Text style={styles.sectionTitle}>Today&apos;s Prayer Times</Text>
+            <Text style={styles.sectionTitle}>{t('islamic.todaysPrayerTimes')}</Text>
           </View>
 
           {prayerList.map((prayer, index) => (
@@ -483,7 +483,7 @@ export default function PrayerTimesScreen() {
               <Icon name="settings" size="sm" color={colors.gold} />
             </View>
             <View style={styles.methodText}>
-              <Text style={styles.methodLabel}>Calculation Method</Text>
+              <Text style={styles.methodLabel}>{t('islamic.prayerMethod')}</Text>
               <Text style={styles.methodValue}>{calculationMethod}</Text>
             </View>
             <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />

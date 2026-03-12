@@ -223,13 +223,13 @@ export default function ReelDetailScreen() {
     shareMutation.mutate();
     try {
       await Share.share({
-        message: `Check this out on Mizanly`,
+        message: t('share.defaultMessage'),
         url: `mizanly://reel/${id}`,
       });
     } catch {
       // User cancelled
     }
-  }, [id, shareMutation, haptic]);
+  }, [id, shareMutation, haptic, t]);
 
   const canSend = commentText.trim().length > 0 && !sendMutation.isPending;
 
@@ -237,15 +237,15 @@ export default function ReelDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Error"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('errors.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <View style={{ marginTop: 88 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load this content. Please try again."
-            actionLabel="Go back"
+            title={t('common.error')}
+            subtitle={t('errors.loadContentFailed')}
+            actionLabel={t('common.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -302,7 +302,7 @@ export default function ReelDetailScreen() {
                 <Text style={styles.reelDisplayName}>{reelQuery.data.user.displayName}</Text>
               </View>
               <TouchableOpacity style={styles.followButton}>
-                <Text style={styles.followButtonText}>Follow</Text>
+                <Text style={styles.followButtonText}>{t('common.follow')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -365,7 +365,7 @@ export default function ReelDetailScreen() {
         {/* Comments Header */}
         <View style={styles.commentsHeader}>
           <Text style={styles.commentsTitle}>
-            {reelQuery.data.commentsCount} Comments
+            {reelQuery.data.commentsCount} {t('saf.comments')}
           </Text>
         </View>
       </View>
@@ -384,8 +384,8 @@ export default function ReelDetailScreen() {
     !commentsQuery.isLoading && reelQuery.data ? (
       <EmptyState
         icon="message-circle"
-        title="No comments yet"
-        subtitle="Be the first to comment!"
+        title={t('comments.emptyTitle')}
+        subtitle={t('comments.emptySubtitle')}
       />
     ) : null
   ), [commentsQuery.isLoading, reelQuery.data]);
@@ -399,8 +399,8 @@ export default function ReelDetailScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Reel"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('bakra.reel')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
       />
 
       <KeyboardAvoidingView
@@ -449,7 +449,7 @@ export default function ReelDetailScreen() {
             {replyTo && (
               <View style={styles.replyBanner}>
                 <Text style={styles.replyBannerText}>
-                  Replying to @{replyTo.username}
+                  {t('comments.replyingTo')} @{replyTo.username}
                 </Text>
                 <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
                   <Icon name="x" size="xs" color={colors.text.secondary} />
@@ -461,7 +461,7 @@ export default function ReelDetailScreen() {
               <TextInput
                 ref={inputRef}
                 style={styles.input}
-                placeholder={replyTo ? `Reply to @${replyTo.username}…` : 'Add a comment…'}
+                placeholder={replyTo ? t('comments.replyPlaceholder', { username: replyTo.username }) : t('comments.addCommentPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={commentText}
                 onChangeText={setCommentText}
@@ -476,7 +476,7 @@ export default function ReelDetailScreen() {
                   <Icon name="loader" size="sm" color={colors.emerald} />
                 ) : (
                   <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
-                    Send
+                    {t('common.send')}
                   </Text>
                 )}
               </TouchableOpacity>

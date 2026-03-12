@@ -29,6 +29,7 @@ import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderStic
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Sticker = {
   id: string;
@@ -108,6 +109,7 @@ export default function StoryViewerScreen() {
   const [showReply, setShowReply] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
   const [stickerResponses, setStickerResponses] = useState<Record<string, any>>({});
+  const { t } = useTranslation();
 
   const story = group?.stories[storyIndex];
   const stickers = useMemo(() => {
@@ -282,7 +284,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
       onPress={handlePress} 
       style={styles.reactionBtn} 
       activeOpacity={0.7}
-      accessibilityLabel={`React with ${emoji}`}
+      accessibilityLabel={t('accessibility.reactWithEmoji', { emoji })}
       accessibilityRole="button"
     >
       <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
@@ -301,14 +303,14 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
       setReplyText('');
       setShowReply(false);
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
   const reactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
       const convo = await messagesApi.createDM(group!.user.id);
       await messagesApi.sendMessage(convo.id, { content: emoji });
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   // Guard: must be after all hooks
@@ -317,9 +319,9 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
       <View style={styles.container}>
         <EmptyState
           icon="flag"
-          title="Story unavailable"
-          subtitle="This story may have been removed or expired"
-          actionLabel="Go back"
+          title={t('saf.story.unavailable')}
+          subtitle={t('saf.story.unavailableSubtitle')}
+          actionLabel={t('saf.goBack')}
           onAction={() => router.back()}
         />
       </View>
@@ -399,7 +401,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
               onPress={() => router.back()}
               hitSlop={12}
               style={styles.closeBtn}
-              accessibilityLabel="Close story"
+              accessibilityLabel={t('accessibility.closeStory')}
               accessibilityRole="button"
             >
               <Icon name="x" size="sm" color={colors.text.primary} />
@@ -416,7 +418,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           onPressIn={() => setPaused(true)}
           onPressOut={() => setPaused(false)}
           activeOpacity={1}
-          accessibilityLabel="Previous story slide"
+          accessibilityLabel={t('accessibility.previousStorySlide')}
           accessibilityRole="button"
         />
         <TouchableOpacity
@@ -425,7 +427,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           onPressIn={() => setPaused(true)}
           onPressOut={() => setPaused(false)}
           activeOpacity={1}
-          accessibilityLabel="Next story slide"
+          accessibilityLabel={t('accessibility.nextStorySlide')}
           accessibilityRole="button"
         />
       </View>
@@ -466,12 +468,12 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
             style={styles.viewsBtn}
             onPress={() => setShowViewers(true)}
             activeOpacity={0.8}
-            accessibilityLabel={`View ${story?.viewsCount} viewers`}
+            accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
             accessibilityRole="button"
           >
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icon name="eye" size="sm" color="#fff" />
-              <Text style={styles.viewsBtnText}>{story?.viewsCount} views</Text>
+              <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
             </View>
           </TouchableOpacity>
         </SafeAreaView>
@@ -487,19 +489,19 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                   style={styles.replyInput}
                   value={replyText}
                   onChangeText={setReplyText}
-                  placeholder="Reply to story…"
+                  placeholder={t('saf.replyToStory')}
                   placeholderTextColor="rgba(255,255,255,0.5)"
                   autoFocus
                   maxLength={200}
                   onBlur={() => setShowReply(false)}
-                  accessibilityLabel="Story reply input"
+                  accessibilityLabel={t('accessibility.storyReplyInput')}
                 />
                 <TouchableOpacity
                   onPress={() => replyMutation.mutate()}
                   disabled={!replyText.trim() || replyMutation.isPending}
                   hitSlop={8}
                   style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
-                  accessibilityLabel="Send reply"
+                  accessibilityLabel={t('accessibility.sendReply')}
                   accessibilityRole="button"
                 >
                   <Icon
@@ -513,11 +515,11 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
               <TouchableOpacity
                 style={styles.replyPlaceholder}
                 onPress={() => { setShowReply(true); setPaused(true); }}
-                accessibilityLabel="Tap to reply"
+                accessibilityLabel={t('accessibility.tapToReply')}
                 accessibilityRole="button"
               >
                 <Text style={styles.replyPlaceholderText}>
-                  Reply to story…
+                  {t('saf.replyToStory')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -528,7 +530,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
       {/* Viewers bottom sheet (own stories) */}
       <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
         <Text style={styles.viewersTitle}>
-          {story?.viewsCount} {story?.viewsCount === 1 ? 'view' : 'views'}
+          {t('saf.view', { count: story?.viewsCount })}
         </Text>
         {viewersQuery.isLoading ? (
           <View style={styles.viewersSkeleton}>
@@ -564,7 +566,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
               </View>
             )}
             ListEmptyComponent={
-              <Text style={styles.viewersEmpty}>No views yet</Text>
+              <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
             }
             contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
           />

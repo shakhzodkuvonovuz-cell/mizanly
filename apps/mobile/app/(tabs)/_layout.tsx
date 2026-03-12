@@ -170,16 +170,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="bakra"
         options={{
-          title: 'Bakra',
-          tabBarAccessibilityLabel: "Short videos",
+          title: t('tabs.bakra'),
+          tabBarAccessibilityLabel: t('tabs.accessibility.shortVideos'),
           tabBarIcon: ({ focused }) => <TabIcon name="bakra" focused={focused} />,
         }}
       />
       <Tabs.Screen
         name="minbar"
         options={{
-          title: 'Minbar',
-          tabBarAccessibilityLabel: "Videos",
+          title: t('tabs.minbar'),
+          tabBarAccessibilityLabel: t('tabs.accessibility.videos'),
           tabBarIcon: ({ focused }) => <TabIcon name="minbar" focused={focused} />,
         }}
       />
@@ -193,16 +193,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="majlis"
         options={{
-          title: 'Majlis',
-          tabBarAccessibilityLabel: "Threads",
+          title: t('tabs.majlis'),
+          tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
           tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} badge={unreadNotifications || undefined} />,
         }}
       />
       <Tabs.Screen
         name="risalah"
         options={{
-          title: 'Risalah',
-          tabBarAccessibilityLabel: "Messages",
+          title: t('tabs.risalah'),
+          tabBarAccessibilityLabel: t('tabs.accessibility.messages'),
           tabBarIcon: ({ focused }) => <TabIcon name="risalah" focused={focused} badge={unreadMessages || undefined} />,
         }}
       />

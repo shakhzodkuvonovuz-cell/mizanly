@@ -16,6 +16,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { authApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -30,6 +31,7 @@ const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 
 export default function UsernameScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [username, setUsername] = useState('');
   const [checking, setChecking] = useState(false);
   const [available, setAvailable] = useState<boolean | null>(null);
@@ -119,10 +121,10 @@ export default function UsernameScreen() {
 
   const statusText = () => {
     if (username.length < 3) return null;
-    if (!USERNAME_RE.test(username)) return { text: 'Only letters, numbers, _ and .', color: colors.error };
-    if (checking) return { text: 'Checking…', color: colors.text.secondary };
-    if (available === true) return { text: `@${username} is available`, color: colors.emerald };
-    if (available === false) return { text: 'Username taken', color: colors.error };
+    if (!USERNAME_RE.test(username)) return { text: t('onboarding.username.validation.invalidChars'), color: colors.error };
+    if (checking) return { text: t('onboarding.username.checking'), color: colors.text.secondary };
+    if (available === true) return { text: `@${username} ${t('onboarding.username.available')}`, color: colors.emerald };
+    if (available === false) return { text: t('onboarding.username.taken'), color: colors.error };
     return null;
   };
 
@@ -136,8 +138,8 @@ export default function UsernameScreen() {
           <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
 
-        <Text style={styles.title}>Choose your username</Text>
-        <Text style={styles.subtitle}>This is how people will find you on Mizanly</Text>
+        <Text style={styles.title}>{t('onboarding.username.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.username.subtitle')}</Text>
 
         <View style={styles.inputWrap}>
           <Text style={styles.at}>@</Text>
@@ -145,7 +147,7 @@ export default function UsernameScreen() {
             style={styles.input}
             value={username}
             onChangeText={(v) => setUsername(v.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
-            placeholder="yourname"
+            placeholder={t('onboarding.username.placeholder')}
             placeholderTextColor={colors.text.tertiary}
             autoCapitalize="none"
             autoCorrect={false}
@@ -174,12 +176,12 @@ export default function UsernameScreen() {
 
         {/* Username preview card */}
         <Animated.View style={[styles.previewCard, previewFadeStyle]}>
-          <Text style={styles.previewText}>@{username} · Mizanly</Text>
+          <Text style={styles.previewText}>{t('onboarding.username.preview', { username })}</Text>
         </Animated.View>
 
         <View style={styles.btnWrap}>
           <GradientButton
-            label="Continue"
+            label={t('common.continue')}
             onPress={handleContinue}
             loading={loading}
             disabled={!isValid}

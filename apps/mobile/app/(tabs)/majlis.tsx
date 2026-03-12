@@ -24,15 +24,11 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Thread } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const TABS = [
-  { key: 'foryou', label: 'For You' },
-  { key: 'following', label: 'Following' },
-  { key: 'trending', label: 'Trending' },
-];
 
 // Animated thread card with entrance animation and engagement glow
 interface AnimatedThreadCardProps {
@@ -72,6 +68,7 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
 });
 
 export default function MajlisScreen() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();

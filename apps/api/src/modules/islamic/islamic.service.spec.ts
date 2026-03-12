@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { IslamicService } from './islamic.service';
 
+
 // Mock the hadiths.json import
 jest.mock('./data/hadiths.json', () => [
   {
@@ -44,7 +45,7 @@ jest.mock('./data/hadiths.json', () => [
     narrator: 'Test Narrator 5',
     chapter: 'Test Chapter 5',
   },
-]);
+], { virtual: true });
 
 describe('IslamicService', () => {
   let service: IslamicService;
@@ -386,7 +387,13 @@ describe('IslamicService', () => {
   describe('getRamadanInfo', () => {
     beforeEach(() => {
       // Mock Date to return fixed date for deterministic test
-      jest.spyOn(global, 'Date').mockImplementation(() => new Date('2026-03-15T12:00:00Z') as any);
+      const OriginalDate = global.Date;
+      jest.spyOn(global, 'Date').mockImplementation((...args) => {
+        if (args.length) {
+          return new OriginalDate(...args as any);
+        }
+        return new OriginalDate('2026-03-15T12:00:00Z');
+      });
     });
 
     afterEach(() => {

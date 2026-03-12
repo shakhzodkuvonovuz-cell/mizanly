@@ -16,6 +16,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const STEP = 2; // Step 2 of 4 in onboarding
 
@@ -23,6 +24,7 @@ export default function OnboardingProfileScreen() {
   const router = useRouter();
   const { user } = useUser();
   const { username } = useLocalSearchParams<{ username: string }>();
+  const { t } = useTranslation();
   const [displayName, setDisplayName] = useState(user?.fullName ?? '');
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
@@ -96,8 +98,8 @@ export default function OnboardingProfileScreen() {
         <Animated.View style={[styles.progressFill, progressStyle]} />
       </View>
 
-      <Text style={styles.title}>Set up your profile</Text>
-      <Text style={styles.subtitle}>How should people know you?</Text>
+      <Text style={styles.title}>{t('onboarding.profile.title')}</Text>
+      <Text style={styles.subtitle}>{t('onboarding.profile.subtitle')}</Text>
 
       {/* Avatar (read-only from Clerk, changeable later in settings) */}
       {user?.imageUrl ? (
@@ -110,17 +112,17 @@ export default function OnboardingProfileScreen() {
         <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Icon name="camera" size="lg" color={colors.text.tertiary} />
-            <Text style={styles.avatarHintInner}>Add photo</Text>
+            <Text style={styles.avatarHintInner}>{t('onboarding.profile.addPhoto')}</Text>
           </View>
         </Animated.View>
       )}
       <Text style={styles.avatarHint}>
-        You can change your photo from Settings later
+        {t('onboarding.profile.avatarHint')}
       </Text>
 
       {/* Display name with icon */}
       <View style={styles.field}>
-        <Text style={styles.label}>Display Name</Text>
+        <Text style={styles.label}>{t('onboarding.profile.displayName')}</Text>
         <View style={[styles.inputRow, nameFocused && styles.inputRowFocused]}>
           <Icon
             name="user"
@@ -131,7 +133,7 @@ export default function OnboardingProfileScreen() {
             style={styles.inputInner}
             value={displayName}
             onChangeText={(t) => { setDisplayName(t); setError(''); }}
-            placeholder="Your name"
+            placeholder={t('onboarding.profile.namePlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             maxLength={50}
             autoFocus
@@ -144,13 +146,13 @@ export default function OnboardingProfileScreen() {
 
       {/* Bio with focus glow */}
       <View style={styles.field}>
-        <Text style={styles.label}>Bio <Text style={styles.optional}>(optional)</Text></Text>
+        <Text style={styles.label}>{t('onboarding.profile.bioLabel')} <Text style={styles.optional}>{t('onboarding.profile.optional')}</Text></Text>
         <View style={[styles.bioRow, bioFocused && styles.bioRowFocused]}>
           <TextInput
             style={[styles.inputInner, styles.bioInput]}
             value={bio}
             onChangeText={setBio}
-            placeholder="Tell people a bit about yourself…"
+            placeholder={t('onboarding.profile.bioPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             multiline
             maxLength={150}
@@ -164,7 +166,7 @@ export default function OnboardingProfileScreen() {
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <GradientButton
-        label="Continue"
+        label={t('common.continue')}
         onPress={handleContinue}
         loading={loading}
         disabled={!displayName.trim()}
@@ -173,7 +175,7 @@ export default function OnboardingProfileScreen() {
 
       <View style={styles.skipBtn}>
         <GradientButton
-          label="Skip for now"
+          label={t('onboarding.profile.skip')}
           onPress={() => router.push('/onboarding/interests')}
           variant="ghost"
         />

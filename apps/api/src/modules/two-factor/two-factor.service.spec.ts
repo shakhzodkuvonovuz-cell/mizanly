@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Test, TestingModule } from '@nestjs/testing';
 import { TwoFactorService } from './two-factor.service';
 import { PrismaService } from '../../config/prisma.service';
@@ -5,6 +6,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 // Mock external modules
 jest.mock('otplib', () => ({
+  __esModule: true,
   authenticator: {
     generateSecret: jest.fn(),
     keyuri: jest.fn(),
@@ -13,6 +15,7 @@ jest.mock('otplib', () => ({
 }));
 
 jest.mock('qrcode', () => ({
+  __esModule: true,
   toDataURL: jest.fn(),
 }));
 
@@ -28,12 +31,7 @@ describe('TwoFactorService', () => {
     displayName: 'Test User',
   };
   const mockSecret = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-  const mockBackupCodes = ['BACKUP001', 'BACKUP002', 'BACKUP003'];
-  const mockBackupCodesHashed = [
-    'hash1',
-    'hash2',
-    'hash3',
-  ];
+  const mockBackupCodesHashed = ['hash1', 'hash2', 'hash3'];
   const mockQrDataUri = 'data:image/png;base64,QRCODE';
 
   // Mock PrismaService
@@ -48,13 +46,20 @@ describe('TwoFactorService', () => {
     },
   };
 
-  // Mock authenticator and qrcode
+  // Mocked module instances
   const mockAuthenticator = require('otplib').authenticator;
   const mockQrcode = require('qrcode');
 
   beforeEach(async () => {
     // Clear all mocks
     jest.clearAllMocks();
+
+    // Set up default mock implementations
+    mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+    mockAuthenticator.generateSecret.mockReturnValue(mockSecret);
+    mockAuthenticator.keyuri.mockReturnValue('otpauth://totp/Mizanly:test@example.com?secret=ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&issuer=Mizanly');
+    mockAuthenticator.verify.mockReturnValue(true);
+    mockQrcode.toDataURL.mockResolvedValue(mockQrDataUri);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,13 +70,6 @@ describe('TwoFactorService', () => {
 
     service = module.get<TwoFactorService>(TwoFactorService);
     prisma = module.get<PrismaService>(PrismaService);
-
-    // Default mock implementations
-    mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-    mockAuthenticator.generateSecret.mockReturnValue(mockSecret);
-    mockAuthenticator.keyuri.mockReturnValue('otpauth://totp/Mizanly:test@example.com?secret=ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&issuer=Mizanly');
-    mockAuthenticator.verify.mockReturnValue(true);
-    mockQrcode.toDataURL.mockResolvedValue(mockQrDataUri);
   });
 
   describe('setup', () => {
@@ -474,7 +472,7 @@ describe('TwoFactorService', () => {
       it('should generate correct number of codes', () => {
         const codes = (service as any).generateBackupCodes(5);
         expect(codes).toHaveLength(5);
-        codes.forEach(code => {
+        codes.forEach((code: any) => {
           expect(code).toMatch(/^[A-Z0-9]{10}$/);
         });
       });

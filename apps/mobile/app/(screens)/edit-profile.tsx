@@ -4,6 +4,7 @@ import {
   ScrollView, ActivityIndicator, Alert, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
@@ -36,6 +37,7 @@ type UpdateProfilePayload = {
 export default function EditProfileScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const meQuery = useQuery({
     queryKey: ['me'],
@@ -170,7 +172,7 @@ export default function EditProfileScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Edit Profile"
+          title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: () => router.back() }}
         />
         <View style={{ marginTop: insets.top + 44 }}>
@@ -184,7 +186,7 @@ export default function EditProfileScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Edit Profile"
+          title={t('profile.editProfile')}
           leftAction={{ icon: 'x', onPress: () => router.back() }}
         />
         <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 44 }}>
@@ -208,8 +210,8 @@ export default function EditProfileScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Edit Profile"
-        leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: 'Cancel' }}
+        title={t('profile.editProfile')}
+        leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.cancel') }}
       />
       {/* Save button overlay on GlassHeader right area */}
       <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">

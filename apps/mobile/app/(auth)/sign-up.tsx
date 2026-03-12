@@ -17,10 +17,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SignUpScreen() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -120,9 +122,9 @@ export default function SignUpScreen() {
             <Icon name="mail" size="xl" color={colors.emerald} />
           </Animated.View>
 
-          <Text style={styles.title}>Check your email</Text>
+          <Text style={styles.title}>{t('auth.checkEmail')}</Text>
           <Text style={styles.subtitle}>
-            We sent a verification code to{'\n'}
+            {t('auth.verificationSent')}{'\n'}
             <Text style={styles.emailHighlight}>{email}</Text>
           </Text>
 
@@ -156,10 +158,10 @@ export default function SignUpScreen() {
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            <Text style={styles.hintText}>Didn't get it? Check spam</Text>
+            <Text style={styles.hintText}>{t('auth.checkSpam')}</Text>
 
             <GradientButton
-              label="Verify Email"
+              label={t('auth.verifyEmail')}
               onPress={handleVerify}
               loading={loading}
               disabled={code.length < 6}
@@ -193,8 +195,8 @@ export default function SignUpScreen() {
 
           {/* Logo */}
           <Animated.View style={[styles.logoSection, logoAnimStyle]}>
-            <Text style={styles.logo}>Join Mizanly</Text>
-            <Text style={styles.tagline}>The Muslim social platform</Text>
+            <Text style={styles.logo}>{t('auth.joinTitle')}</Text>
+            <Text style={styles.tagline}>{t('auth.tagline')}</Text>
           </Animated.View>
 
           <View style={styles.form}>
@@ -207,7 +209,7 @@ export default function SignUpScreen() {
               />
               <TextInput
                 style={styles.inputInner}
-                placeholder="Email address"
+                placeholder={t('auth.emailPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={email}
                 onChangeText={setEmail}
@@ -228,7 +230,7 @@ export default function SignUpScreen() {
               />
               <TextInput
                 style={styles.inputInner}
-                placeholder="Password (min 8 characters)"
+                placeholder={t('auth.passwordPlaceholderMin')}
                 placeholderTextColor={colors.text.tertiary}
                 value={password}
                 onChangeText={setPassword}
@@ -262,7 +264,7 @@ export default function SignUpScreen() {
             {error ? <Text style={styles.error}>{error}</Text> : null}
 
             <GradientButton
-              label="Create Account"
+              label={t('auth.createAccount')}
               onPress={handleSignUp}
               loading={loading}
               disabled={!email || password.length < 8}
@@ -270,13 +272,13 @@ export default function SignUpScreen() {
             />
 
             <Text style={styles.terms}>
-              By signing up you agree to our Terms of Service and Privacy Policy
+              {t('auth.termsAgreement')}
             </Text>
 
             {/* Divider */}
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t('auth.or')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
@@ -284,20 +286,20 @@ export default function SignUpScreen() {
             <View style={styles.socialRow}>
               <Pressable style={styles.socialBtn}>
                 <Icon name="globe" size="sm" color={colors.text.primary} />
-                <Text style={styles.socialText}>Google</Text>
+                <Text style={styles.socialText}>{t('auth.google')}</Text>
               </Pressable>
               <Pressable style={styles.socialBtn}>
                 <Icon name="lock" size="sm" color={colors.text.primary} />
-                <Text style={styles.socialText}>Apple</Text>
+                <Text style={styles.socialText}>{t('auth.apple')}</Text>
               </Pressable>
             </View>
           </View>
 
           {/* Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
+            <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
             <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')}>
-              <Text style={styles.footerLink}>Sign in</Text>
+              <Text style={styles.footerLink}>{t('auth.signIn')}</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

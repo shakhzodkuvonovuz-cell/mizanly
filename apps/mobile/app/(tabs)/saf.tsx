@@ -22,16 +22,14 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Post, StoryGroup } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const FEED_TABS = [
-  { key: 'following', label: 'Following' },
-  { key: 'foryou', label: 'For You' },
-];
 
 export default function SafScreen() {
+  const { t } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();
@@ -41,6 +39,11 @@ export default function SafScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
+
+  const FEED_TABS = [
+    { key: 'following', label: t('saf.following') },
+    { key: 'foryou', label: t('saf.forYou') },
+  ];
 
   const feedRef = useRef<FlashList<Post>>(null);
   useScrollToTop(feedRef);
@@ -162,9 +165,9 @@ export default function SafScreen() {
     ) : (
       <EmptyState
         icon="users"
-        title="Your feed is waiting"
-        subtitle="Follow creators who inspire you"
-        actionLabel="Explore"
+        title={t('saf.emptyFeed.title')}
+        subtitle={t('saf.emptyFeed.subtitle')}
+        actionLabel={t('common.explore')}
         onAction={() => router.push('/(screens)/discover')}
       />
     )
@@ -196,9 +199,9 @@ export default function SafScreen() {
             onPressIn={cameraPress.onPressIn}
             onPressOut={cameraPress.onPressOut}
             style={cameraPress.animatedStyle}
-            accessibilityLabel="Create story"
+            accessibilityLabel={t('accessibility.createStory')}
             accessibilityRole="button"
-            accessibilityHint="Create a new story"
+            accessibilityHint={t('accessibility.createStoryHint')}
           >
             <Icon name="camera" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
@@ -208,9 +211,9 @@ export default function SafScreen() {
             onPressIn={searchPress.onPressIn}
             onPressOut={searchPress.onPressOut}
             style={searchPress.animatedStyle}
-            accessibilityLabel="Search"
+            accessibilityLabel={t('accessibility.search')}
             accessibilityRole="button"
-            accessibilityHint="Search for content and people"
+            accessibilityHint={t('accessibility.searchHint')}
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
@@ -224,9 +227,9 @@ export default function SafScreen() {
             onPressIn={bellPress.onPressIn}
             onPressOut={bellPress.onPressOut}
             style={bellPress.animatedStyle}
-            accessibilityLabel="Notifications"
+            accessibilityLabel={t('accessibility.notifications')}
             accessibilityRole="button"
-            accessibilityHint="View your notifications"
+            accessibilityHint={t('accessibility.notificationsHint')}
           >
             <View>
               <Icon name="bell" size="sm" color={colors.text.primary} />
@@ -248,7 +251,7 @@ export default function SafScreen() {
             onPressIn={profilePress.onPressIn}
             onPressOut={profilePress.onPressOut}
             style={profilePress.animatedStyle}
-            accessibilityLabel="Your profile"
+            accessibilityLabel={t('accessibility.yourProfile')}
             accessibilityRole="button"
           >
             <Icon name="user" size="sm" color={colors.text.primary} />
