@@ -30,6 +30,15 @@ import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
 
+type Sticker = {
+  id: string;
+  type: 'poll' | 'quiz' | 'question' | 'countdown' | 'slider' | 'location' | 'mention' | 'hashtag';
+  data: Record<string, any>;
+  x: number;
+  y: number;
+  scale: number;
+};
+
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const STORY_DURATION = 5000; // ms per story slide for images
 const QUICK_REACTIONS = ['❤️', '🔥', '👏', '😂', '😍', '😢'];
@@ -134,7 +143,7 @@ export default function StoryViewerScreen() {
     // TODO: send to backend API
   }, []);
 
-  const renderSticker = (sticker: any) => {
+  const renderSticker = (sticker: Sticker) => {
     const { id, type, data, x, y, scale } = sticker;
     const style = { position: 'absolute', left: x, top: y, transform: [{ scale }] };
     switch (type) {

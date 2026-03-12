@@ -58,7 +58,7 @@ const BG_GRADIENTS: [string, string][] = [
 ];
 
 // ── Sticker types ──
-type StickerType = 'poll' | 'question' | 'countdown' | 'quiz' | 'location' | 'mention' | 'hashtag';
+type StickerType = 'poll' | 'question' | 'countdown' | 'quiz' | 'location' | 'mention' | 'hashtag' | 'slider';
 
 interface Sticker {
   id: string;
@@ -679,6 +679,7 @@ export default function CreateStoryScreen() {
               { type: 'question' as StickerType, icon: 'at-sign' as const, label: 'Question' },
               { type: 'countdown' as StickerType, icon: 'clock' as const, label: 'Countdown' },
               { type: 'quiz' as StickerType, icon: 'check-circle' as const, label: 'Quiz' },
+              { type: 'slider' as StickerType, icon: 'trending-up' as const, label: 'Slider' },
               { type: 'mention' as StickerType, icon: 'at-sign' as const, label: 'Mention' },
               { type: 'hashtag' as StickerType, icon: 'hash' as const, label: 'Hashtag' },
               { type: 'location' as StickerType, icon: 'map-pin' as const, label: 'Location' },

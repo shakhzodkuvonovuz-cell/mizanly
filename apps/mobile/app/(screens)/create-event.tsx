@@ -534,6 +534,24 @@ export default function CreateEventScreen() {
           </LinearGradient>
         </TouchableOpacity>
       </View>
+
+      {/* Date Picker Bottom Sheet */}
+      <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={0.6}>
+        <Text style={styles.sheetTitle}>Select Date & Time</Text>
+        <View style={styles.datePickerPlaceholder}>
+          <Text style={styles.datePickerText}>
+            Date/time picker would appear here
+          </Text>
+          <Text style={styles.datePickerHint}>
+            For simplicity, we'll schedule for selected date.
+          </Text>
+          <TouchableOpacity style={styles.confirmButton} onPress={() => handleDateSelect(tempDate)}>
+            <LinearGradient colors={[colors.emerald, colors.emeraldDark]} style={styles.confirmButtonGradient}>
+              <Text style={styles.confirmButtonText}>Confirm</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+      </BottomSheet>
     </SafeAreaView>
   );
 }

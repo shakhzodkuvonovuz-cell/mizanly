@@ -27,45 +27,6 @@ import type { User } from '@/types';
 
 const { width } = Dimensions.get('window');
 
-interface Tier {
-  id: string;
-  name: string;
-  price: number;
-  members: number;
-  level: 'bronze' | 'silver' | 'gold';
-  benefits: string[];
-  isActive: boolean;
-}
-
-const MOCK_TIERS: Tier[] = [
-  {
-    id: '1',
-    name: 'Supporter',
-    price: 2.99,
-    members: 185,
-    level: 'bronze',
-    benefits: ['Ad-free viewing', 'Supporter badge', 'Early access to posts'],
-    isActive: true,
-  },
-  {
-    id: '2',
-    name: 'VIP',
-    price: 9.99,
-    members: 89,
-    level: 'silver',
-    benefits: ['All Supporter perks', 'Exclusive stories', 'Monthly Q&A', 'Priority replies'],
-    isActive: true,
-  },
-  {
-    id: '3',
-    name: 'Founding Member',
-    price: 24.99,
-    members: 38,
-    level: 'gold',
-    benefits: ['All VIP perks', '1-on-1 monthly call', 'Custom shoutouts', 'Behind-the-scenes content'],
-    isActive: true,
-  },
-];
 
 const TIER_COLORS = {
   bronze: {
@@ -183,8 +144,11 @@ function TierCard({
 export default function MembershipTiersScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [tiers, setTiers] = useState<MembershipTier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [tiers, setTiers] = useState<Tier[]>(MOCK_TIERS);
   const [isCreating, setIsCreating] = useState(false);
   const [newTierName, setNewTierName] = useState('');
   const [newTierPrice, setNewTierPrice] = useState('');

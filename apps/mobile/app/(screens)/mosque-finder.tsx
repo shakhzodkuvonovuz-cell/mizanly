@@ -137,23 +137,120 @@ export default function MosqueFinderScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mosques, setMosques] = useState<Mosque[]>([]);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Location permission required to find nearby mosques');
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      const lat = location.coords.latitude;
+      const lng = location.coords.longitude;
+      setUserLocation({ lat, lng });
+      const response = await islamicApi.getMosques(lat, lng, 10); // radius 10km
+      const apiMosques = response.data;
+      const mappedMosques: Mosque[] = apiMosques.map((m: ApiMosque) => ({
+        id: m.id,
+        name: m.name,
+        address: m.address,
+        distance: m.distanceKm >= 1 ? `${m.distanceKm.toFixed(1)} km` : `${Math.round(m.distanceKm * 1000)} m`,
+        nextPrayer: 'Fajr', // TODO: compute from m.prayerTimes
+        nextPrayerTime: '5:23 AM', // TODO: compute
+        facilities: m.facilities,
+      }));
+      setMosques(mappedMosques);
+    } catch (err) {
+      setError('Failed to load mosques');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const filteredMosques = useMemo(() => {
-    if (!searchQuery.trim()) return MOCK_MOSQUES;
+    if (!searchQuery.trim()) return mosques;
     const query = searchQuery.toLowerCase();
-    return MOCK_MOSQUES.filter(
+    return mosques.filter(
       mosque =>
         mosque.name.toLowerCase().includes(query) ||
         mosque.address.toLowerCase().includes(query)
     );
-  }, [searchQuery]);
+  }, [searchQuery, mosques]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Nearby Mosques"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <Skeleton.Rect width={width - 32} height={200} borderRadius={radius.lg} />
+          <Skeleton.Rect width={200} height={20} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
+          <Skeleton.Rect width={150} height={16} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Nearby Mosques"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <EmptyState
+            icon="map-pin"
+            title="Failed to load mosques"
+            subtitle={error}
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (mosques.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Nearby Mosques"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <EmptyState
+            icon="map-pin"
+            title="No mosques nearby"
+            subtitle="Try again in a different location"
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>

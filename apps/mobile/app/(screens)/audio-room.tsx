@@ -113,6 +113,18 @@ export default function AudioRoomScreen() {
     fetchData();
   }, [fetchData]);
 
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return 'Just now';
+    const diff = new Date().getTime() - new Date(dateString).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  };
+
   const { user } = useUser();
   const currentUserId = user?.id;
 
@@ -143,6 +155,9 @@ export default function AudioRoomScreen() {
     name: p.user.name || p.user.username || 'User',
     avatar: p.user.avatarUrl || null,
   }));
+
+  const displayedListeners = listenerData.slice(0, 12);
+  const moreListenerCount = listenerData.length - displayedListeners.length;
 
   const raisedHandData: RaisedHand[] = raisedHands.map(p => ({
     id: p.id,
@@ -245,7 +260,7 @@ export default function AudioRoomScreen() {
                 <Text style={styles.listenerCount}>{participants.length} listening</Text>
                 <Text style={styles.dot}>·</Text>
                 <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.startedText}>Started 45 min ago</Text>
+                <Text style={styles.startedText}>Started {formatTimeAgo(room.startedAt)}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -268,7 +283,7 @@ export default function AudioRoomScreen() {
             </View>
 
             <View style={styles.speakersGrid}>
-              {MOCK_SPEAKERS.map((speaker, index) => (
+              {speakerData.map((speaker, index) => (
                 <Animated.View
                   key={speaker.id}
                   entering={FadeInUp.delay(index * 80).duration(400)}
@@ -323,12 +338,12 @@ export default function AudioRoomScreen() {
               </LinearGradient>
               <Text style={styles.sectionTitle}>Listeners</Text>
               <View style={styles.countBadge}>
-                <Text style={styles.countText}>229</Text>
+                <Text style={styles.countText}>{listenerData.length}</Text>
               </View>
             </View>
 
             <View style={styles.listenersGrid}>
-              {MOCK_LISTENERS.map((listener, index) => (
+              {displayedListeners.map((listener, index) => (
                 <Animated.View
                   key={listener.id}
                   entering={FadeInUp.delay(index * 50).duration(400)}
@@ -341,7 +356,7 @@ export default function AudioRoomScreen() {
             </View>
 
             <View style={styles.moreBadge}>
-              <Text style={styles.moreText}>+217 more</Text>
+              <Text style={styles.moreText}>+{moreListenerCount} more</Text>
             </View>
           </LinearGradient>
         </Animated.View>

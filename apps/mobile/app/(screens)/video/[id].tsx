@@ -112,6 +112,15 @@ export default function VideoDetailScreen() {
       setDuration(video.duration);
     }
   }, [video?.duration]);
+
+  // Update mini player progress when video progresses
+  useEffect(() => {
+    if (video && miniPlayerVideo && video.id === miniPlayerVideo.id) {
+      setMiniPlayerProgress(progressRef.current);
+      setMiniPlayerPlaying(isPlaying);
+    }
+  }, [currentTime, isPlaying, video, miniPlayerVideo]);
+
   const chapters = video?.chapters ?? [];
 
   // Record view on mount
@@ -230,6 +239,7 @@ export default function VideoDetailScreen() {
   }, []);
 
   const handleCloseMiniPlayer = useCallback(() => {
+    videoRef.current?.pauseAsync();
     closeMiniPlayer();
   }, [closeMiniPlayer]);
 

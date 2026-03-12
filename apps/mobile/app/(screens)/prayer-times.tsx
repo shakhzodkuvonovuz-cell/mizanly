@@ -11,6 +11,10 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize } from '@/theme';
 
+import { islamicApi } from '@/services/islamicApi';
+import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo } from '@/types/islamic';
+import * as Location from 'expo-location';
+
 const { width: screenWidth } = Dimensions.get('window');
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
@@ -18,14 +22,6 @@ const PRAYER_ARABIC = ['الفجر', 'الشروق', 'الظهر', 'العصر',
 const PRAYER_ICONS = ['moon', 'sun', 'sun', 'sun', 'sun', 'moon'] as const;
 
 // Mock prayer times (static data - real API will integrate later)
-const MOCK_PRAYER_TIMES = [
-  { name: 'Fajr', arabic: 'الفجر', time: '5:23 AM', icon: 'moon' as const },
-  { name: 'Sunrise', arabic: 'الشروق', time: '6:45 AM', icon: 'sun' as const },
-  { name: 'Dhuhr', arabic: 'الظهر', time: '12:30 PM', icon: 'sun' as const },
-  { name: 'Asr', arabic: 'العصر', time: '3:45 PM', icon: 'sun' as const },
-  { name: 'Maghrib', arabic: 'المغرب', time: '6:12 PM', icon: 'sun' as const },
-  { name: 'Isha', arabic: 'العشاء', time: '7:35 PM', icon: 'moon' as const },
-];
 
 const CALCULATION_METHODS = [
   'Muslim World League',
