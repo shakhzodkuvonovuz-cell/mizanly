@@ -75,6 +75,15 @@ interface AppState {
   isRecording: boolean;
   setIsRecording: (v: boolean) => void;
 
+  // Video playback
+  miniPlayerVideo: { id: string; title: string; channelName: string; thumbnailUri?: string; videoUrl: string; } | null;
+  miniPlayerProgress: number; // 0-1
+  miniPlayerPlaying: boolean;
+  setMiniPlayerVideo: (video: { id: string; title: string; channelName: string; thumbnailUri?: string; videoUrl: string; } | null) => void;
+  setMiniPlayerProgress: (progress: number) => void;
+  setMiniPlayerPlaying: (playing: boolean) => void;
+  closeMiniPlayer: () => void;
+
   logout: () => void;
 }
 
@@ -166,6 +175,15 @@ export const useStore = create<AppState>()(
       isRecording: false,
       setIsRecording: (isRecording) => set({ isRecording }),
 
+      // Video playback
+      miniPlayerVideo: null,
+      miniPlayerProgress: 0,
+      miniPlayerPlaying: false,
+      setMiniPlayerVideo: (miniPlayerVideo) => set({ miniPlayerVideo }),
+      setMiniPlayerProgress: (miniPlayerProgress) => set({ miniPlayerProgress }),
+      setMiniPlayerPlaying: (miniPlayerPlaying) => set({ miniPlayerPlaying }),
+      closeMiniPlayer: () => set({ miniPlayerVideo: null, miniPlayerProgress: 0, miniPlayerPlaying: false }),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -180,6 +198,9 @@ export const useStore = create<AppState>()(
         feedDismissedIds: [],
         searchHistory: [],
         archivedConversationsCount: 0,
+        miniPlayerVideo: null,
+        miniPlayerProgress: 0,
+        miniPlayerPlaying: false,
         isRecording: false,
       }),
     }),
@@ -216,3 +237,6 @@ export const useFeedDismissedIds = () => useStore((s) => s.feedDismissedIds);
 export const useSearchHistory = () => useStore((s) => s.searchHistory);
 export const useArchivedConversationsCount = () => useStore((s) => s.archivedConversationsCount);
 export const useIsRecording = () => useStore((s) => s.isRecording);
+export const useMiniPlayerVideo = () => useStore((s) => s.miniPlayerVideo);
+export const useMiniPlayerProgress = () => useStore((s) => s.miniPlayerProgress);
+export const useMiniPlayerPlaying = () => useStore((s) => s.miniPlayerPlaying);

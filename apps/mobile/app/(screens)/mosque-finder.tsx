@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
+import { islamicApi } from '@/services/islamicApi';
+import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
+import * as Location from 'expo-location';
+
 const { width } = Dimensions.get('window');
 
 interface Mosque {
@@ -32,80 +36,6 @@ interface Mosque {
   facilities: string[];
 }
 
-const MOCK_MOSQUES: Mosque[] = [
-  {
-    id: '1',
-    name: 'Al-Rahman Mosque',
-    address: '123 Oak Street, Downtown',
-    distance: '0.3 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:23 AM',
-    facilities: ['parking', 'wheelchair', 'womens'],
-  },
-  {
-    id: '2',
-    name: 'Islamic Center of Guidance',
-    address: '456 Pine Avenue, Midtown',
-    distance: '0.8 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:25 AM',
-    facilities: ['parking', 'wudu', 'wheelchair', 'womens', 'school'],
-  },
-  {
-    id: '3',
-    name: 'Masjid al-Noor',
-    address: '789 Cedar Lane, Uptown',
-    distance: '1.2 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:28 AM',
-    facilities: ['parking', 'wudu', 'womens'],
-  },
-  {
-    id: '4',
-    name: 'Al-Huda Mosque',
-    address: '321 Elm Street, Westside',
-    distance: '1.5 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:30 AM',
-    facilities: ['parking', 'wheelchair'],
-  },
-  {
-    id: '5',
-    name: 'Masjid al-Taqwa',
-    address: '654 Maple Road, Eastside',
-    distance: '2.1 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:32 AM',
-    facilities: ['parking', 'wudu', 'wheelchair', 'womens', 'library'],
-  },
-  {
-    id: '6',
-    name: 'Islamic Community Center',
-    address: '987 Birch Blvd, Northside',
-    distance: '2.8 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:35 AM',
-    facilities: ['parking', 'wudu', 'wheelchair', 'womens', 'school', 'cafe'],
-  },
-  {
-    id: '7',
-    name: 'Baitul Mukarram',
-    address: '147 Spruce Way, Southside',
-    distance: '3.2 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:38 AM',
-    facilities: ['parking', 'wudu', 'womens'],
-  },
-  {
-    id: '8',
-    name: 'Masjid al-Iman',
-    address: '963 Willow Drive, Lakeside',
-    distance: '4.0 km',
-    nextPrayer: 'Fajr',
-    nextPrayerTime: '5:42 AM',
-    facilities: ['parking', 'wudu', 'wheelchair', 'womens', 'school'],
-  },
-];
 
 const FACILITY_ICONS: Record<string, IconName> = {
   parking: 'circle',

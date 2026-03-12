@@ -46,6 +46,11 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { HashtagsModule } from './modules/hashtags/hashtags.module';
 import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { WatchHistoryModule } from './modules/watch-history/watch-history.module';
+import { EventsModule } from './modules/events/events.module';
+import { MonetizationModule } from './modules/monetization/monetization.module';
+import { TwoFactorModule } from './modules/two-factor/two-factor.module';
+import { AudioRoomsModule } from './modules/audio-rooms/audio-rooms.module';
+import { IslamicModule } from './modules/islamic/islamic.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -104,6 +109,11 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     HashtagsModule,
     BookmarksModule,
     WatchHistoryModule,
+    EventsModule,
+    MonetizationModule,
+    TwoFactorModule,
+    AudioRoomsModule,
+    IslamicModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

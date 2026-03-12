@@ -181,7 +181,7 @@ export function LinkPreview({ url, onPress }: LinkPreviewProps) {
 
             {/* Link Indicator */}
             <View style={styles.linkIndicator}>
-              <Icon name="external-link" size="xs" color={colors.text.tertiary} />
+              <Icon name="link" size="xs" color={colors.text.tertiary} />
               <Text style={styles.linkText}>Open link</Text>
             </View>
           </View>

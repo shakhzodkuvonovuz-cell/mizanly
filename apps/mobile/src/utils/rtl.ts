@@ -91,7 +91,7 @@ export function rtlStyle<T extends ViewStyle | TextStyle>(
   style: T & { start?: number; end?: number },
 ): T {
   const { start, end, ...rest } = style;
-  const resolved: any = { ...rest };
+  const resolved: Record<string, unknown> = { ...rest };
   if (start !== undefined) {
     if (isRTL) {
       resolved.right = start;

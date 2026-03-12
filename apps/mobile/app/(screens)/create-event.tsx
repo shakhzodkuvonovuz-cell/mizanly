@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,11 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { eventsApi } from '@/services/eventsApi';
+import type { CreateEventDto, EventPrivacy, EventType as ApiEventType } from '@/types/events';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Alert } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -32,11 +37,7 @@ interface Community {
   memberCount: number;
 }
 
-const MOCK_COMMUNITIES: Community[] = [
-  { id: '1', name: 'Islamic Finance Hub', avatar: null, memberCount: 1240 },
-  { id: '2', name: 'Ramadan Connect', avatar: null, memberCount: 3400 },
-  { id: '3', name: 'Muslim Creators', avatar: null, memberCount: 890 },
-];
+const MOCK_COMMUNITIES: Community[] = []; // TODO: fetch communities from API
 
 export default function CreateEventScreen() {
   const router = useRouter();
@@ -52,11 +53,81 @@ export default function CreateEventScreen() {
   const [reminder1d, setReminder1d] = useState(true);
   const [hasCover, setHasCover] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [startDate, setStartDate] = useState<Date>(new Date());
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const date = new Date();
+    date.setHours(date.getHours() + 2);
+    return date;
+  });
+  const [showDatePicker, setShowDatePicker] = useState<'start' | 'end' | null>(null);
+  const [tempDate, setTempDate] = useState(new Date());
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [communitiesLoading, setCommunitiesLoading] = useState(false);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
+
+  useEffect(() => {
+    // TODO: fetch communities
+  }, []);
+
+  useEffect(() => {
+    if (showDatePicker === 'start') {
+      setTempDate(startDate);
+    } else if (showDatePicker === 'end') {
+      setTempDate(endDate);
+    }
+  }, [showDatePicker, startDate, endDate]);
+
+  const handleSubmit = useCallback(async () => {
+    if (submitting) return;
+    setError(null);
+    setSubmitting(true);
+    try {
+      const dto: CreateEventDto = {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        location: location.trim() || undefined,
+        isOnline,
+        onlineUrl: isOnline ? location.trim() : undefined,
+        eventType: eventType === 'in-person' ? 'in_person' : eventType === 'online' ? 'virtual' : 'hybrid',
+        privacy: privacy === 'public' ? 'public' : privacy === 'members' ? 'private' : 'community',
+        communityId: selectedCommunity || undefined,
+      };
+      const response = await eventsApi.create(dto);
+      router.push(`/(screens)/event-detail?id=${response.data.id}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create event');
+      Alert.alert('Error', 'Failed to create event. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [title, description, startDate, endDate, location, isOnline, eventType, privacy, selectedCommunity, submitting]);
+
+  const handleDateSelect = useCallback((date: Date) => {
+    if (showDatePicker === 'start') {
+      setStartDate(date);
+    } else if (showDatePicker === 'end') {
+      setEndDate(date);
+    }
+    setShowDatePicker(null);
+  }, [showDatePicker]);
+
+  const formatDateTime = (date: Date) => {
+    return date.toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
 
   const getPrivacyIcon = () => {
     switch (privacy) {
@@ -188,23 +259,23 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>Date & Time</Text>
             </View>
 
-            <View style={styles.dateRow}>
+            <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('start')} activeOpacity={0.8}>
               <Text style={styles.dateLabel}>Start</Text>
               <View style={styles.dateValue}>
-                <Text style={styles.dateText}>March 20, 2026 at 7:00 PM</Text>
+                <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
               </View>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.dateDivider} />
 
-            <View style={styles.dateRow}>
+            <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('end')} activeOpacity={0.8}>
               <Text style={styles.dateLabel}>End</Text>
               <View style={styles.dateValue}>
-                <Text style={styles.dateText}>March 20, 2026 at 9:00 PM</Text>
+                <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
               </View>
-            </View>
+            </TouchableOpacity>
 
             <View style={styles.toggleRow}>
               <Text style={styles.toggleLabel}>All Day</Text>
@@ -454,12 +525,12 @@ export default function CreateEventScreen() {
         <TouchableOpacity activeOpacity={0.8}>
           <Text style={styles.draftText}>Save Draft</Text>
         </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8}>
+        <TouchableOpacity activeOpacity={0.8} onPress={handleSubmit} disabled={submitting}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.createButton}
           >
-            <Text style={styles.createText}>Create Event</Text>
+            <Text style={styles.createText}>{submitting ? 'Creating...' : 'Create Event'}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

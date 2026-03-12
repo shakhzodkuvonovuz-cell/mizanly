@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Dimensions,
   TextInput,
   Alert,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +19,9 @@ import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation } from '@/theme';
+import { twoFactorApi } from '@/services/twoFactorApi';
+import { useUser } from '@/store';
+import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -30,17 +34,6 @@ const AUTHENTICATOR_APPS: { name: string; icon: IconName }[] = [
   { name: 'Duo Mobile', icon: 'lock' },
 ];
 
-// Mock QR data (in real app, this comes from backend)
-const MOCK_QR_SECRET = 'JBSWY3DPEHPK3PXP';
-const MOCK_QR_DATA_URI = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(
-  `otpauth://totp/Mizanly:user@example.com?secret=${MOCK_QR_SECRET}&issuer=Mizanly`
-)}`;
-
-// Mock backup codes
-const MOCK_BACKUP_CODES = [
-  '3F7A9C', 'B2D8E5', '9A4C1F', 'E7B2D8',
-  '5C9A3F', 'D8E5B2', '1F9A4C', 'B2E7D8',
-];
 
 export default function TwoFactorSetupScreen() {
   const router = useRouter();
@@ -50,6 +43,13 @@ export default function TwoFactorSetupScreen() {
   const [showAppPicker, setShowAppPicker] = useState(false);
   const [copiedCodes, setCopiedCodes] = useState<string[]>([]);
   const [isEnabling, setIsEnabling] = useState(false);
+  const user = useUser();
+  const [secret, setSecret] = useState<string>('');
+  const [qrDataUri, setQrDataUri] = useState<string>('');
+  const [backupCodes, setBackupCodes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [setupResponse, setSetupResponse] = useState<TwoFactorSetupResponse | null>(null);
 
   // Refs for OTP inputs (simplified array)
   const inputRefs = Array(6).fill(null);
@@ -72,18 +72,48 @@ export default function TwoFactorSetupScreen() {
     }
   };
 
-  const handleEnable2FA = () => {
+  const fetchSetup = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await twoFactorApi.setup();
+      setSecret(response.secret);
+      setQrDataUri(response.qrDataUri);
+      setBackupCodes(response.backupCodes);
+      setSetupResponse(response);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to setup 2FA');
+      Alert.alert('Setup Failed', 'Could not generate 2FA setup data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeStep === 'qr' && !setupResponse) {
+      fetchSetup();
+    }
+  }, [activeStep, setupResponse, fetchSetup]);
+
+  const handleEnable2FA = async () => {
     setIsEnabling(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsEnabling(false);
+    setError(null);
+    try {
+      const code = verificationCode.join('');
+      await twoFactorApi.verify({ code });
       setActiveStep('backup');
       Alert.alert(
         '2FA Enabled',
         'Two-factor authentication is now enabled for your account. Save your backup codes!',
         [{ text: 'OK' }]
       );
-    }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed');
+      Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+      // Optionally shake animation
+    } finally {
+      setIsEnabling(false);
+    }
   };
 
   const copyBackupCode = (code: string) => {
@@ -93,7 +123,7 @@ export default function TwoFactorSetupScreen() {
   };
 
   const copyAllBackupCodes = () => {
-    const allCodes = MOCK_BACKUP_CODES.join('\n');
+    const allCodes = backupCodes.join('\n');
     // Clipboard.setString(allCodes);
     Alert.alert('Copied', 'All backup codes copied to clipboard.');
   };
@@ -249,11 +279,23 @@ export default function TwoFactorSetupScreen() {
                 style={styles.qrContainer}
               >
                 <View style={styles.qrPlaceholder}>
-                  {/* In real app: <Image source={{ uri: MOCK_QR_DATA_URI }} style={styles.qrImage} /> */}
-                  <View style={styles.qrMock}>
-                    <Text style={styles.qrMockText}>QR Code</Text>
-                    <Text style={styles.qrMockSubtext}>Scan with authenticator app</Text>
-                  </View>
+                  {qrDataUri ? (
+                    <Image source={{ uri: qrDataUri }} style={styles.qrImage} />
+                  ) : (
+                    <View style={styles.qrMock}>
+                      {loading ? (
+                        <>
+                          <Icon name="loader" size="lg" color={colors.text.tertiary} />
+                          <Text style={styles.qrMockSubtext}>Generating QR code...</Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={styles.qrMockText}>QR Code</Text>
+                          <Text style={styles.qrMockSubtext}>Scan with authenticator app</Text>
+                        </>
+                      )}
+                    </View>
+                  )}
                 </View>
               </LinearGradient>
 
@@ -265,7 +307,7 @@ export default function TwoFactorSetupScreen() {
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                     style={styles.secretBox}
                   >
-                    <Text style={styles.secretText} selectable>{MOCK_QR_SECRET}</Text>
+                    <Text style={styles.secretText} selectable>{secret}</Text>
                     <Icon name="layers" size="xs" color={colors.emerald} />
                   </LinearGradient>
                 </TouchableOpacity>
@@ -375,7 +417,7 @@ export default function TwoFactorSetupScreen() {
 
               {/* Backup Codes Grid */}
               <View style={styles.backupGrid}>
-                {MOCK_BACKUP_CODES.map((code, idx) => (
+                {backupCodes.map((code, idx) => (
                   <TouchableOpacity
                     key={idx}
                     onPress={() => copyBackupCode(code)}
@@ -637,6 +679,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: radius.lg,
+  },
+  qrImage: {
+    width: 200,
+    height: 200,
     borderRadius: radius.lg,
   },
   qrMock: {

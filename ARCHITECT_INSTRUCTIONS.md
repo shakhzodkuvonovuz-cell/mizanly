@@ -1,8 +1,8 @@
-# BATCH 33: P0 Engineering Mega-Batch — 12 Parallel Agents
+# BATCH 34: Integration Mega-Batch — Wire Screens to Backends + UI Components
 
 **Date:** 2026-03-13
-**Theme:** Heavy engineering — 5 new backend modules + 7 mobile infrastructure tasks. All create NEW files only. Zero file conflicts. Prisma schema already updated with 8 new models.
-**Prerequisite:** Run `cd apps/api && npx prisma generate` before starting agents (schema already updated).
+**Theme:** Replace ALL mock data with real API calls. Wire new UI components into existing screens. Each agent modifies ONLY its listed files — zero conflicts.
+**Prerequisite:** Run npm installs from Batch 33 post-tasks first (otplib, qrcode, react-i18next, i18next, expo-localization, expo-notifications, expo-device).
 
 ---
 
@@ -10,640 +10,359 @@
 
 1. Read `CLAUDE.md` first — mandatory rules
 2. No `any` in non-test code. No `@ts-ignore`. No `@ts-expect-error`.
-3. ALL new files must be properly typed TypeScript
-4. Backend: Follow NestJS module pattern (module.ts, controller.ts, service.ts)
-5. Backend: Use `ClerkAuthGuard` for authenticated routes, `OptionalClerkAuthGuard` for public+personalized
-6. Backend: Use `@CurrentUser('id')` for userId extraction
-7. Backend: Import PrismaService from `../../prisma/prisma.service`
-8. Backend: Swagger decorators on all endpoints: `@ApiTags`, `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth`
-9. Backend: Throttle write endpoints: `@Throttle({ default: { limit: 10, ttl: 60000 } })`
-10. Mobile: Use existing design system (`@/theme`, `@/components/ui/*`)
-11. Mobile: New screens follow glassmorphism pattern (LinearGradient + FadeInUp + GlassHeader)
-12. **Do NOT modify any existing file** unless explicitly listed in your task
-13. After completing your task: `git add -A && git commit -m "feat: batch 33 agent N — <description>"`
+3. **Replace MOCK_ constants with real API calls** using the API clients in `src/services/`
+4. Use `useState` + `useEffect` for data fetching (no query library installed)
+5. Keep ALL existing glassmorphism, animations, and visual styling intact
+6. Add proper loading states (use `<Skeleton>` components, NOT bare ActivityIndicator)
+7. Add proper error states with retry
+8. Add `<RefreshControl>` on all FlatLists (pull-to-refresh)
+9. NEVER change the visual design — only replace data sources
+10. NEVER shadow imported variables (e.g., never `const colors = ...` inside a component that imports `colors`)
+11. Type icon arrays properly — use `icon: IconName`, NEVER `icon: string`
+12. NEVER use duplicate props (e.g., `style={...} style={...}`)
+13. After completing your task: `git add -A && git commit -m "feat: batch 34 agent N — <description>"`
 
 ---
 
-## AGENT 1: Events Backend Module
+## INTEGRATION PATTERN (use in ALL agents)
 
-**Creates:** `apps/api/src/modules/events/`
-- `events.module.ts`
-- `events.controller.ts`
-- `events.service.ts`
+```tsx
+// BEFORE (mock):
+const MOCK_DATA = [{ id: '1', title: 'Test' }];
+// ...
+const [data] = useState(MOCK_DATA);
 
-**Prisma models available:** `Event`, `EventRSVP` (already in schema)
+// AFTER (real API):
+import { someApi } from '@/services/someApi';
 
-**Endpoints (8):**
+const [data, setData] = useState<SomeType[]>([]);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+const [refreshing, setRefreshing] = useState(false);
+
+const fetchData = useCallback(async () => {
+  try {
+    setError(null);
+    const response = await someApi.list();
+    setData(response.data);
+  } catch (err) {
+    setError('Failed to load data');
+  } finally {
+    setLoading(false);
+    setRefreshing(false);
+  }
+}, []);
+
+useEffect(() => { fetchData(); }, [fetchData]);
+
+const handleRefresh = useCallback(() => {
+  setRefreshing(true);
+  fetchData();
+}, [fetchData]);
 ```
-POST   /events              — Create event (auth required)
-GET    /events              — List events (optional auth, cursor pagination)
-GET    /events/:id          — Get event detail (optional auth)
-PATCH  /events/:id          — Update event (auth, owner only)
-DELETE /events/:id          — Delete event (auth, owner only)
-POST   /events/:id/rsvp     — RSVP to event (auth required, body: { status: 'going'|'maybe'|'not_going' })
-DELETE /events/:id/rsvp     — Remove RSVP (auth required)
-GET    /events/:id/attendees — List attendees with pagination (optional auth)
+
+For mutations (create/update/delete):
+```tsx
+const [submitting, setSubmitting] = useState(false);
+
+const handleSubmit = useCallback(async () => {
+  try {
+    setSubmitting(true);
+    await someApi.create(formData);
+    router.back(); // or navigate to result
+  } catch (err) {
+    Alert.alert('Error', 'Failed to submit');
+  } finally {
+    setSubmitting(false);
+  }
+}, [formData]);
 ```
-
-**DTOs (inline in controller or separate dto/ folder):**
-- CreateEventDto: title, description?, coverUrl?, startDate, endDate?, location?, isOnline, onlineUrl?, eventType, privacy, communityId?
-- UpdateEventDto: Partial<CreateEventDto>
-- RsvpDto: status (going/maybe/not_going)
-
-**Service patterns:** Use PrismaService for all queries. Include counts (goingCount, maybeCount). Return event with user relation.
-
-**~400-600 lines total**
 
 ---
 
-## AGENT 2: Monetization Backend Module (Tips + Memberships)
+## AGENT 1: Monetization Screens (send-tip + membership-tiers + enable-tips)
 
-**Creates:** `apps/api/src/modules/monetization/`
-- `monetization.module.ts`
-- `monetization.controller.ts`
-- `monetization.service.ts`
+**Modifies:**
+- `apps/mobile/app/(screens)/send-tip.tsx` (617 lines)
+- `apps/mobile/app/(screens)/membership-tiers.tsx` (688 lines)
+- `apps/mobile/app/(screens)/enable-tips.tsx` (627 lines)
 
-**Prisma models available:** `Tip`, `MembershipTier`, `MembershipSubscription`
+**API Client:** `import { monetizationApi } from '@/services/monetizationApi';`
+**Types:** `import type { Tip, MembershipTier, MembershipSubscription, CreateTierDto } from '@/types/monetization';`
 
-**Endpoints (12):**
-```
-# Tips
-POST   /monetization/tips           — Send tip (auth required, body: { receiverId, amount, message? })
-GET    /monetization/tips/sent      — List tips sent by user (auth, cursor pagination)
-GET    /monetization/tips/received  — List tips received by user (auth, cursor pagination)
-GET    /monetization/tips/stats     — Tip stats: total earned, total sent, top supporters (auth)
+**send-tip.tsx changes:**
+- Remove MOCK_RECENT_TIPS, MOCK_TOP_SUPPORTERS, etc.
+- Wire `monetizationApi.sendTip({ receiverId, amount, message })` to submit handler
+- Wire `monetizationApi.getSentTips()` for recent tips list
+- Wire `monetizationApi.getTipStats()` for stats section
+- Add loading/error states
 
-# Membership Tiers
-POST   /monetization/tiers          — Create tier (auth, body: { name, price, benefits[], level })
-GET    /monetization/tiers/:userId  — List user's tiers (optional auth)
-PATCH  /monetization/tiers/:id      — Update tier (auth, owner only)
-DELETE /monetization/tiers/:id      — Delete tier (auth, owner only)
-PATCH  /monetization/tiers/:id/toggle — Toggle tier active/inactive (auth, owner only)
+**membership-tiers.tsx changes:**
+- Remove MOCK_TIERS constant
+- Wire `monetizationApi.getUserTiers(userId)` for tier list
+- Wire `monetizationApi.createTier(data)` for create flow
+- Wire `monetizationApi.subscribe(tierId)` / `monetizationApi.unsubscribe(tierId)` for subscription toggle
+- Wire `monetizationApi.getSubscribers()` for subscriber count
+- Add loading/error states
 
-# Subscriptions
-POST   /monetization/subscribe/:tierId    — Subscribe to tier (auth)
-DELETE /monetization/subscribe/:tierId    — Unsubscribe (auth)
-GET    /monetization/subscribers           — List subscribers to my tiers (auth, pagination)
-```
+**enable-tips.tsx changes:**
+- Check if screen has mock data — if so, wire to monetizationApi
+- Wire tip settings/preferences to settings API or monetization API as appropriate
 
-**Service patterns:** Calculate platformFee as 10% of tip amount. Revenue stats aggregate by month. Subscription creates with startDate=now.
-
-**~500-700 lines total**
+**~150-250 lines changed total across 3 files**
 
 ---
 
-## AGENT 3: Two-Factor Auth Backend Module
+## AGENT 2: Events Screens (create-event + event-detail)
 
-**Creates:** `apps/api/src/modules/two-factor/`
-- `two-factor.module.ts`
-- `two-factor.controller.ts`
-- `two-factor.service.ts`
+**Modifies:**
+- `apps/mobile/app/(screens)/create-event.tsx` (750 lines)
+- `apps/mobile/app/(screens)/event-detail.tsx` (769 lines)
 
-**Prisma model available:** `TwoFactorSecret`
+**API Client:** `import { eventsApi } from '@/services/eventsApi';`
+**Types:** `import type { Event, CreateEventDto, EventRSVP } from '@/types/events';`
 
-**Endpoints (6):**
-```
-POST   /two-factor/setup     — Generate TOTP secret + QR data URI (auth required)
-POST   /two-factor/verify    — Verify TOTP code + enable 2FA (auth, body: { code })
-POST   /two-factor/validate  — Validate TOTP code on login (body: { userId, code })
-DELETE /two-factor/disable   — Disable 2FA (auth, body: { code } to confirm)
-GET    /two-factor/status    — Check if 2FA enabled for user (auth)
-POST   /two-factor/backup    — Use backup code (body: { userId, backupCode })
-```
+**create-event.tsx changes:**
+- Remove MOCK_CATEGORIES, MOCK_COMMUNITIES, etc.
+- Wire form submit → `eventsApi.create(data)` with CreateEventDto
+- Add form validation before submit
+- Navigate to event-detail on success with returned event ID
+- Add submitting state to button
 
-**Dependencies:** Use `otplib` for TOTP generation (import { authenticator } from 'otplib'). Use `qrcode` for QR data URI. Use `crypto` for hashing backup codes.
+**event-detail.tsx changes:**
+- Remove MOCK_EVENT, MOCK_ATTENDEES, etc.
+- Get event ID from route params: `const { id } = useLocalSearchParams()`
+- Wire `eventsApi.getById(id)` for event data
+- Wire `eventsApi.rsvp(id, { status })` for RSVP button
+- Wire `eventsApi.listAttendees(id)` for attendee list
+- Wire `eventsApi.delete(id)` for owner delete action
+- Add loading skeleton, error state, pull-to-refresh
 
-**Service patterns:**
-- setup(): Generate 32-char secret, create 8 backup codes, store hashed. Return { secret, qrDataUri, backupCodes }
-- verify(): Validate TOTP token against secret. If valid, set isEnabled=true, verifiedAt=now
-- validate(): Check token against secret. Return { valid: boolean }
-- backup(): Hash input, compare against stored hashed codes. Remove used code.
-
-**Note:** Add `otplib` and `qrcode` to import but they may not be installed. Code should be correct regardless — user will `npm install` later.
-
-**~350-500 lines total**
+**~200-300 lines changed total across 2 files**
 
 ---
 
-## AGENT 4: Audio Rooms Backend Module
+## AGENT 3: 2FA Screens (2fa-setup + 2fa-verify)
 
-**Creates:** `apps/api/src/modules/audio-rooms/`
-- `audio-rooms.module.ts`
-- `audio-rooms.controller.ts`
-- `audio-rooms.service.ts`
+**Modifies:**
+- `apps/mobile/app/(screens)/2fa-setup.tsx` (755 lines)
+- `apps/mobile/app/(screens)/2fa-verify.tsx` (467 lines)
 
-**Prisma models available:** `AudioRoom`, `AudioRoomParticipant`
+**API Client:** `import { twoFactorApi } from '@/services/twoFactorApi';`
+**Types:** `import type { SetupResponse, TwoFactorStatus } from '@/types/twoFactor';`
 
-**Endpoints (10):**
-```
-POST   /audio-rooms             — Create room (auth, body: { title, description?, scheduledAt? })
-GET    /audio-rooms             — List active rooms (optional auth, cursor pagination)
-GET    /audio-rooms/:id         — Get room detail with participants (optional auth)
-DELETE /audio-rooms/:id         — End room (auth, host only)
-POST   /audio-rooms/:id/join    — Join room as listener (auth)
-DELETE /audio-rooms/:id/leave   — Leave room (auth)
-PATCH  /audio-rooms/:id/role    — Change participant role (auth, host only, body: { userId, role })
-PATCH  /audio-rooms/:id/hand    — Toggle hand raised (auth)
-PATCH  /audio-rooms/:id/mute    — Toggle mute (auth, self or host for others)
-GET    /audio-rooms/:id/participants — List participants by role (optional auth)
-```
+**2fa-setup.tsx changes:**
+- Remove MOCK_QR_DATA, MOCK_SECRET, MOCK_BACKUP_CODES, etc. (8 mocks)
+- Wire step 1 (setup): `twoFactorApi.setup()` → get secret + QR data URI + backup codes
+- Wire step 2 (verify): `twoFactorApi.verify({ code })` → enable 2FA
+- Wire status check: `twoFactorApi.status()` → show current 2FA state
+- Wire disable: `twoFactorApi.disable({ code })` → disable 2FA
+- Add loading states per step, error handling with shake animation
 
-**Service patterns:**
-- Create sets hostId, status='live', startedAt=now. Auto-add host as participant with role='host', isMuted=false
-- Join adds participant with role='listener', isMuted=true
-- Role changes: host can promote listener→speaker or demote speaker→listener
-- End room: set status='ended', endedAt=now. Remove all participants.
-- Hand raised: only listeners can raise hand. Host sees raised hands and can promote.
+**2fa-verify.tsx changes:**
+- Wire `twoFactorApi.validate({ userId, code })` for code verification
+- Wire `twoFactorApi.backup({ userId, backupCode })` for backup code path
+- Add error state with shake animation on invalid code
+- Add loading state during validation
+- Navigate on success
 
-**~400-600 lines total**
+**~150-250 lines changed total across 2 files**
 
 ---
 
-## AGENT 5: Islamic APIs Backend Module
+## AGENT 4: Audio Room Screen
 
-**Creates:** `apps/api/src/modules/islamic/`
-- `islamic.module.ts`
-- `islamic.controller.ts`
-- `islamic.service.ts`
+**Modifies:**
+- `apps/mobile/app/(screens)/audio-room.tsx` (695 lines)
 
-**No new Prisma models** — this module serves static/computed data (prayer times, hadith, mosques, zakat calculations).
+**API Client:** `import { audioRoomsApi } from '@/services/audioRoomsApi';`
+**Types:** `import type { AudioRoom, AudioRoomParticipant, CreateAudioRoomDto } from '@/types/audioRooms';`
 
-**Endpoints (8):**
-```
-GET    /islamic/prayer-times     — Get prayer times for location (query: lat, lng, method?, date?)
-GET    /islamic/prayer-times/methods — List calculation methods
-GET    /islamic/hadith/daily     — Get daily hadith (rotates daily)
-GET    /islamic/hadith/:id       — Get specific hadith by ID
-GET    /islamic/hadith           — List hadiths (cursor pagination)
-GET    /islamic/mosques          — Find nearby mosques (query: lat, lng, radius?)
-GET    /islamic/zakat/calculate  — Calculate zakat (query: cash, gold, silver, investments, debts)
-GET    /islamic/ramadan          — Get Ramadan info (query: year?, lat?, lng?)
-```
+**audio-room.tsx changes:**
+- Remove MOCK_ROOM, MOCK_SPEAKERS, MOCK_LISTENERS, MOCK_RAISED_HANDS, etc. (7 mocks)
+- Get room ID from route params
+- Wire `audioRoomsApi.getById(id)` for room data + participants
+- Wire `audioRoomsApi.join(id)` for join button
+- Wire `audioRoomsApi.leave(id)` for leave
+- Wire `audioRoomsApi.toggleHand(id)` for raise hand
+- Wire `audioRoomsApi.toggleMute(id)` for mute toggle
+- Wire `audioRoomsApi.changeRole(id, { userId, role })` for host promoting speakers
+- Add loading skeleton, error state
+- Poll for participants (useEffect with interval, or re-fetch on action)
 
-**Service patterns:**
-- Prayer times: Use Aladhan API formula or hardcoded calculation. Support methods: MWL, ISNA, Egypt, Makkah, Karachi.
-- Hadith: Serve from static JSON array of 40 hadiths (Nawawi's 40). Daily rotation by day-of-year % 40.
-- Mosques: Return mock data for now (8 mosques with lat/lng/name/address/facilities). Real integration later.
-- Zakat: Pure calculation — 2.5% of (cash + gold_value + silver_value + investments - debts) if above nisab (gold: 85g × price, silver: 595g × price). Use hardcoded gold_price=$68/g, silver_price=$0.82/g.
-- Ramadan: Return current Ramadan status, day number, iftar/suhoor times based on prayer calculation.
-
-**All endpoints use OptionalClerkAuthGuard** (public data).
-
-**Include static hadith data:** Create a `data/hadiths.json` file inside the module with 40 entries: { id, arabic, english, source, narrator, chapter }.
-
-**~500-700 lines total**
+**~150-200 lines changed**
 
 ---
 
-## AGENT 6: i18n Framework (Mobile)
+## AGENT 5: Islamic Screens (hadith + mosque-finder + prayer-times)
 
-**Creates:**
-- `apps/mobile/src/i18n/index.ts` — i18n configuration
-- `apps/mobile/src/i18n/en.json` — English translations (comprehensive, 200+ keys)
-- `apps/mobile/src/i18n/ar.json` — Arabic translations (matching en.json keys)
-- `apps/mobile/src/hooks/useTranslation.ts` — Translation hook
-- `apps/mobile/src/utils/rtl.ts` — RTL layout utilities
+**Modifies:**
+- `apps/mobile/app/(screens)/hadith.tsx` (482 lines)
+- `apps/mobile/app/(screens)/mosque-finder.tsx` (544 lines)
+- `apps/mobile/app/(screens)/prayer-times.tsx` (732 lines)
 
-**i18n/index.ts pattern:**
-```tsx
-// Use react-i18next with expo-localization
-// Configure i18next with en + ar resources
-// Default: en, fallback: en
-// Detect device language via expo-localization
-```
+**API Client:** `import { islamicApi } from '@/services/islamicApi';`
+**Types:** `import type { Hadith, Mosque, PrayerTimes, PrayerMethod } from '@/types/islamic';`
 
-**en.json structure (organize by screen/feature):**
-```json
-{
-  "common": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "loading": "Loading...", "error": "Something went wrong", "retry": "Retry", "done": "Done", "next": "Next", "back": "Back", "search": "Search", "share": "Share", "edit": "Edit", "settings": "Settings" },
-  "auth": { "signIn": "Sign In", "signUp": "Sign Up", "forgotPassword": "Forgot Password?", ... },
-  "tabs": { "saf": "Saf", "bakra": "Bakra", "majlis": "Majlis", "risalah": "Risalah", "minbar": "Minbar" },
-  "saf": { "feed": "Feed", "following": "Following", "forYou": "For You", "newPost": "New Post", ... },
-  "bakra": { ... },
-  "majlis": { ... },
-  "risalah": { "messages": "Messages", "newMessage": "New Message", "typeMessage": "Type a message...", ... },
-  "minbar": { ... },
-  "profile": { "followers": "Followers", "following": "Following", "posts": "Posts", "editProfile": "Edit Profile", ... },
-  "islamic": { "prayerTimes": "Prayer Times", "hadith": "Daily Hadith", "dhikr": "Dhikr Counter", "zakat": "Zakat Calculator", "mosque": "Nearby Mosques", "ramadan": "Ramadan", ... },
-  "monetization": { "tips": "Tips", "sendTip": "Send Tip", "membership": "Membership", ... },
-  "notifications": { ... },
-  "settings": { ... }
-}
-```
+**hadith.tsx changes:**
+- Remove MOCK_HADITHS (3 mocks)
+- Wire `islamicApi.getDailyHadith()` for daily featured hadith
+- Wire `islamicApi.listHadiths(cursor)` for full list with pagination
+- Wire `islamicApi.getHadith(id)` for detail view
+- Add loading skeleton, pull-to-refresh
 
-**ar.json:** Full Arabic translations for ALL keys in en.json. Use proper Arabic (not transliteration):
-- "Save" → "حفظ", "Cancel" → "إلغاء", "Delete" → "حذف", "Search" → "بحث"
-- "Prayer Times" → "أوقات الصلاة", "Ramadan" → "رمضان", etc.
+**mosque-finder.tsx changes:**
+- Remove MOCK_MOSQUES, MOCK_FACILITIES, etc. (3 mocks)
+- Wire `islamicApi.getMosques(lat, lng, radius)` — use expo-location for current position
+- Add loading state while fetching location + mosques
+- Add error state for location permission denied
 
-**useTranslation.ts:**
-```tsx
-// Wraps react-i18next useTranslation
-// Returns { t, language, changeLanguage, isRTL }
-// isRTL computed from language === 'ar'
-```
+**prayer-times.tsx changes:**
+- Remove MOCK_PRAYER_TIMES, MOCK_DATES, MOCK_SETTINGS, etc. (9 mocks)
+- Wire `islamicApi.getPrayerTimes(lat, lng, method, date)` for prayer times
+- Wire `islamicApi.getPrayerMethods()` for method selector
+- Use expo-location for current position
+- Add loading state, method selection persistence
 
-**rtl.ts:**
-```tsx
-// RTL-aware style helpers:
-// rtlFlexRow(isRTL): flexDirection row/row-reverse
-// rtlTextAlign(isRTL): textAlign left/right
-// rtlMargin(isRTL, start, end): marginLeft/Right swapped
-// rtlPadding(isRTL, start, end): paddingLeft/Right swapped
-// rtlIcon(isRTL): returns transform scaleX(-1) for directional icons
-```
-
-**~600-800 lines total across all files**
+**~250-350 lines changed total across 3 files**
 
 ---
 
-## AGENT 7: Image Carousel + Gallery Components (Mobile)
+## AGENT 6: Wire ImageCarousel into Post Screens
 
-**Creates:**
-- `apps/mobile/src/components/ui/ImageCarousel.tsx`
-- `apps/mobile/src/components/ui/ImageGallery.tsx`
+**Modifies:**
+- `apps/mobile/src/components/saf/PostMedia.tsx` (or wherever post media is rendered)
+- `apps/mobile/app/(screens)/post/[id].tsx` (if it exists, or the post detail screen)
 
-**ImageCarousel.tsx (~300 lines):**
-Horizontal swipeable image carousel for multi-image posts.
+**First:** Read PostMedia.tsx and post detail screen to understand current media rendering.
 
-```tsx
-interface ImageCarouselProps {
-  images: string[];           // Array of image URIs
-  height?: number;            // Default 400
-  showIndicators?: boolean;   // Dot indicators, default true
-  onImagePress?: (index: number) => void;  // Opens gallery
-  borderRadius?: number;      // Default radius.lg
-}
-```
+**Changes:**
+- Import `ImageCarousel` from `@/components/ui/ImageCarousel`
+- Import `ImageGallery` from `@/components/ui/ImageGallery`
+- When `post.mediaUrls.length > 1`, render `<ImageCarousel images={post.mediaUrls} />`
+- When `post.mediaUrls.length === 1`, keep existing single image
+- Add gallery state: `const [galleryVisible, setGalleryVisible] = useState(false)` + `const [galleryIndex, setGalleryIndex] = useState(0)`
+- On image press → open `<ImageGallery images={post.mediaUrls} initialIndex={index} visible={galleryVisible} onClose={() => setGalleryVisible(false)} />`
+- Render `<ImageGallery>` at bottom of component
 
-Features:
-- Horizontal FlatList with pagingEnabled + snapToInterval
-- Dot indicators below (emerald active, dark.surface inactive)
-- Image count badge top-right: "2/5" in glass pill
-- Pinch-to-zoom disabled (that's for the gallery)
-- Smooth scroll with `decelerationRate="fast"`
-- Uses `Image` from react-native with resizeMode="cover"
+**Also check:**
+- `apps/mobile/src/components/saf/PostCard.tsx` — if it renders media inline, add carousel there too
 
-**ImageGallery.tsx (~400 lines):**
-Full-screen lightbox gallery with pinch-to-zoom.
-
-```tsx
-interface ImageGalleryProps {
-  images: string[];
-  initialIndex?: number;
-  visible: boolean;
-  onClose: () => void;
-}
-```
-
-Features:
-- Full-screen modal-style overlay (use Animated.View, NOT RN Modal)
-- Black background with status bar hidden
-- Horizontal FlatList for swiping between images
-- Pinch-to-zoom on each image using `react-native-reanimated` gestures:
-  - useSharedValue for scale, translationX, translationY
-  - Double-tap to toggle 1x → 2x zoom
-  - Pinch gesture for continuous zoom (1x - 4x)
-- Close button (top-left, `x` icon in glass circle)
-- Image counter (top-center): "2 / 5" in glass pill
-- Share button (top-right, `share` icon in glass circle)
-- Swipe down to dismiss (with animated opacity)
-- FadeInUp entrance animation
-
-**Both components follow glassmorphism for controls/indicators.**
-
-**~700 lines total**
+**~50-100 lines changed**
 
 ---
 
-## AGENT 8: Video Player Enhancements (Mobile)
+## AGENT 7: Wire VideoControls + MiniPlayer into Video Screen
 
-**Creates:**
-- `apps/mobile/src/components/ui/VideoControls.tsx`
-- `apps/mobile/src/components/ui/MiniPlayer.tsx`
+**Modifies:**
+- `apps/mobile/app/(screens)/video/[id].tsx` (or equivalent video detail screen)
 
-**VideoControls.tsx (~350 lines):**
-Overlay controls for video playback with quality and speed selectors.
+**First:** Read the video detail screen to understand current playback implementation.
 
+**Changes:**
+- Import `VideoControls` from `@/components/ui/VideoControls`
+- Import `MiniPlayer` from `@/components/ui/MiniPlayer`
+- Add state for VideoControls props: quality, speed, volume, currentTime, duration
+- Replace any existing basic controls with `<VideoControls>` overlay
+- Wire quality/speed changes to Video component (expo-av)
+- Add auto-hide logic (show on tap, hide after 3s)
+- Wire MiniPlayer to appear when navigating away during playback (store video state in Zustand or context)
+
+**Types to use:**
 ```tsx
-interface VideoControlsProps {
-  isPlaying: boolean;
-  currentTime: number;        // seconds
-  duration: number;           // seconds
-  quality: VideoQuality;
-  speed: PlaybackSpeed;
-  volume: number;             // 0-1
-  onPlayPause: () => void;
-  onSeek: (time: number) => void;
-  onQualityChange: (q: VideoQuality) => void;
-  onSpeedChange: (s: PlaybackSpeed) => void;
-  onVolumeChange: (v: number) => void;
-  onFullscreen?: () => void;
-  onMinimize?: () => void;    // Opens mini player
-}
-
-type VideoQuality = '360p' | '480p' | '720p' | '1080p' | '4K';
-type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
+import type { VideoQuality, PlaybackSpeed } from '@/components/ui/VideoControls';
 ```
 
-Features:
-- Play/pause center button (large, 64x64 glass circle)
-- Seek bar: glass track with emerald fill + gold thumb
-- Time display: "01:23 / 05:45" in glass pill
-- Bottom bar with icons: quality, speed, volume, fullscreen, minimize
-- Quality selector: BottomSheet with quality options (glass cards, selected = emerald check)
-- Speed selector: BottomSheet with speed options
-- Auto-hide controls after 3 seconds (animated opacity)
-- Skip forward/back buttons (±10s): `fast-forward` / `rewind` icons
-
-**MiniPlayer.tsx (~350 lines):**
-Floating mini player that persists while browsing.
-
-```tsx
-interface MiniPlayerProps {
-  videoTitle: string;
-  channelName: string;
-  thumbnailUri?: string;
-  isPlaying: boolean;
-  progress: number;           // 0-1
-  onPlayPause: () => void;
-  onClose: () => void;
-  onExpand: () => void;       // Return to full player
-}
-```
-
-Features:
-- Fixed position at bottom of screen (above tab bar, ~64px height)
-- Glass card background with blur
-- Thumbnail (48x48 rounded) + title + channel name
-- Play/pause button + close (x) button
-- Thin progress bar at top (emerald fill)
-- Swipe up to expand, swipe right to dismiss
-- PanGestureHandler for swipe gestures
-- Animated entrance from bottom
-
-**~700 lines total**
+**~100-150 lines changed**
 
 ---
 
-## AGENT 9: Story Stickers System (Mobile)
+## AGENT 8: Wire LinkPreview into Thread/Post Content
 
-**Creates:** `apps/mobile/src/components/story/`
-- `PollSticker.tsx`
-- `QuizSticker.tsx`
-- `QuestionSticker.tsx`
-- `CountdownSticker.tsx`
-- `SliderSticker.tsx`
+**Modifies:**
+- `apps/mobile/src/components/ui/RichText.tsx` (add link preview rendering)
+- OR `apps/mobile/src/components/majlis/ThreadCard.tsx` (if RichText doesn't handle links)
 
-**Each sticker: ~150-200 lines. All share this pattern:**
-```tsx
-interface [Sticker]Props {
-  data: [StickserData];
-  onResponse?: (response: any) => void;  // Properly typed per sticker
-  isCreator?: boolean;         // Shows results vs interaction
-  style?: ViewStyle;
-}
-```
+**First:** Read RichText.tsx to understand how URLs in content are currently handled.
 
-**PollSticker.tsx:**
-- 2-4 options displayed as glass bars
-- Tap to vote → option fills with emerald/gold gradient showing percentage
-- After voting: show results with vote counts + percentages
-- Creator view: shows results always
-- Animated fill on vote
+**Changes:**
+- Import `LinkPreview` from `@/components/ui/LinkPreview`
+- Detect URLs in content using regex: `/(https?:\/\/[^\s]+)/g`
+- For the FIRST URL found in content, render `<LinkPreview url={firstUrl} />` below the text
+- Only show one preview per post/thread (like Twitter/X behavior)
+- Add `onPress` handler to open URL via `Linking.openURL`
 
-**QuizSticker.tsx:**
-- Question text + 4 answer options in glass cards
-- One correct answer (marked by creator)
-- Tap answer → green check on correct, red X on wrong
-- Shows correct answer after response
-- Confetti-like animation on correct answer (use emerald particles placeholder)
-
-**QuestionSticker.tsx:**
-- "Ask me anything" card with glass TextInput
-- Submit button with emerald gradient
-- Creator view: scrollable list of submitted questions in glass cards
-- "Reply" button per question for creator
-
-**CountdownSticker.tsx:**
-- Event name + target datetime
-- Live countdown: DD:HH:MM:SS in large text
-- Glass card with gold accent border
-- Pulsing animation when < 1 hour remaining
-- "Remind Me" toggle button
-- Shows "Event started!" when countdown reaches 0
-
-**SliderSticker.tsx:**
-- Emoji + question text (e.g., "How much do you love this? 🔥")
-- Horizontal slider with emoji at current position
-- Glass track with gradient fill (emerald → gold)
-- After sliding: shows average value from all responses
-- Animated fill to show average position
-
-**All stickers use glassmorphism, FadeInUp, theme tokens.**
-
-**~900 lines total across 5 files**
+**~30-60 lines changed**
 
 ---
 
-## AGENT 10: Link Preview + 2FA Screens (Mobile)
+## AGENT 9: Wire Story Stickers into Story Viewer
 
-**Creates:**
-- `apps/mobile/src/components/ui/LinkPreview.tsx`
-- `apps/mobile/app/(screens)/2fa-setup.tsx`
-- `apps/mobile/app/(screens)/2fa-verify.tsx`
+**Modifies:**
+- `apps/mobile/app/(screens)/story/[id].tsx` (or the story viewing screen)
 
-**LinkPreview.tsx (~200 lines):**
-```tsx
-interface LinkPreviewProps {
-  url: string;
-  onPress?: () => void;
-}
-```
+**First:** Read the story viewing screen to understand current sticker/overlay rendering.
 
-Features:
-- Glass card with: favicon placeholder, domain name, page title, description snippet, preview image
-- Loading skeleton while "fetching" metadata
-- Error state: just shows URL as link
-- Tap opens external browser (Linking.openURL)
-- Extracts domain from URL for display
-- Uses mock data for preview (real fetching = backend integration later)
+**Changes:**
+- Import all 5 stickers from `@/components/story`:
+  ```tsx
+  import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
+  ```
+- When story has sticker data (check story model for sticker fields), render the appropriate sticker component on top of story media
+- Position stickers using absolute positioning within story container
+- Wire `onResponse` handlers to send sticker responses to backend (use stickers API if available, otherwise local state for now)
+- For creators: show `isCreator={true}` to display results view
 
-**2fa-setup.tsx (~400 lines):**
-Full glassmorphism screen:
-- GlassHeader "Two-Factor Authentication"
-- Info card explaining 2FA benefits (lock icon, glass card)
-- Step 1: "Install authenticator app" with app suggestions (Google Authenticator, Authy)
-- Step 2: QR code display (large glass card with placeholder QR, manual key below)
-- Step 3: Verification code input (6-digit, glass cards per digit)
-- "Enable 2FA" emerald gradient button
-- Backup codes display card after enable (8 codes in 2-column grid, glass cards)
-- "Download Backup Codes" button
-- Copy-to-clipboard functionality
+**Also modify story creation if applicable:**
+- `apps/mobile/app/(screens)/story-create.tsx` or similar — add sticker picker to toolbar
 
-**2fa-verify.tsx (~300 lines):**
-- GlassHeader "Verify Identity"
-- Lock icon hero (large, emerald gradient background)
-- 6-digit code input (each digit in separate glass TextInput)
-- Auto-submit when 6 digits entered
-- "Use backup code instead" link → switches to backup code TextInput
-- Loading state during verification
-- Error state with shake animation
-- Success → navigate back
-- "Lost access?" help link
-
-**~900 lines total across 3 files**
-
----
-
-## AGENT 11: New API Clients + Types (Mobile)
-
-**Creates:**
-- `apps/mobile/src/services/eventsApi.ts`
-- `apps/mobile/src/services/monetizationApi.ts`
-- `apps/mobile/src/services/twoFactorApi.ts`
-- `apps/mobile/src/services/audioRoomsApi.ts`
-- `apps/mobile/src/services/islamicApi.ts`
-- `apps/mobile/src/types/events.ts`
-- `apps/mobile/src/types/monetization.ts`
-- `apps/mobile/src/types/audioRooms.ts`
-- `apps/mobile/src/types/islamic.ts`
-- `apps/mobile/src/types/twoFactor.ts`
-
-**Pattern (follow existing api.ts):**
-```tsx
-import { api } from './api';  // Import base ApiClient
-
-export const eventsApi = {
-  create: (data: CreateEventDto) => api.post('/events', data),
-  list: (cursor?: string) => api.get('/events', { params: { cursor } }),
-  // ... etc matching backend endpoints
-};
-```
-
-**Types pattern:**
-```tsx
-export interface Event {
-  id: string;
-  title: string;
-  description?: string;
-  // ... matching Prisma model
-}
-```
-
-**Each API client mirrors the corresponding backend agent's endpoints exactly.**
-**Each type file exports interfaces matching the Prisma models + DTOs.**
-
-**~600 lines total across 10 files**
-
----
-
-## AGENT 12: Push Notification Infrastructure (Mobile)
-
-**Creates:**
-- `apps/mobile/src/services/pushNotifications.ts`
-- `apps/mobile/src/hooks/usePushNotificationHandler.ts`
-- `apps/mobile/src/utils/deepLinking.ts`
-
-**pushNotifications.ts (~250 lines):**
-```tsx
-// Expo Notifications setup
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
-import Constants from 'expo-constants';
-
-// registerForPushNotifications(): Request permissions, get ExpoPushToken, register with backend (devicesApi)
-// configurePushChannels(): Set up notification channels (messages, likes, follows, mentions, live, islamic)
-// schedulePrayerNotification(prayerName, time): Schedule local notification for prayer times
-// scheduleRamadanNotification(type, time): Schedule iftar/suhoor reminders
-```
-
-**usePushNotificationHandler.ts (~250 lines):**
-```tsx
-// Hook that handles incoming notifications
-// Sets up listeners for:
-//   - Foreground notifications (show in-app banner)
-//   - Background notifications (handle silently)
-//   - Notification tap response (navigate to relevant screen)
-//
-// Navigation mapping:
-//   type 'like' → post/[id]
-//   type 'comment' → post/[id]
-//   type 'follow' → profile/[username]
-//   type 'message' → conversation/[id]
-//   type 'mention' → thread/[id] or post/[id]
-//   type 'live' → live/[id]
-//   type 'prayer' → prayer-times
-//   type 'event' → event-detail (new screen)
-```
-
-**deepLinking.ts (~150 lines):**
-```tsx
-// Deep link URL scheme: mizanly://
-// Route mapping:
-//   mizanly://post/:id → (screens)/post/[id]
-//   mizanly://profile/:username → (screens)/profile/[username]
-//   mizanly://conversation/:id → (screens)/conversation/[id]
-//   mizanly://live/:id → (screens)/live/[id]
-//   mizanly://event/:id → (screens)/event-detail
-//   mizanly://prayer-times → (screens)/prayer-times
-//
-// parseDeepLink(url: string): { screen: string, params: Record<string, string> }
-// getDeepLinkUrl(screen, params): string
-```
-
-**~650 lines total across 3 files**
+**~100-200 lines changed**
 
 ---
 
 ## FILE → AGENT CONFLICT MAP (zero overlaps)
 
-| Agent | Files Created | Touches Existing? |
-|-------|--------------|-------------------|
-| 1 | `modules/events/` (3 files) | NO |
-| 2 | `modules/monetization/` (3 files) | NO |
-| 3 | `modules/two-factor/` (3 files) | NO |
-| 4 | `modules/audio-rooms/` (3 files) | NO |
-| 5 | `modules/islamic/` (3+ files) | NO |
-| 6 | `src/i18n/` (3 files) + `hooks/` + `utils/` | NO |
-| 7 | `components/ui/ImageCarousel.tsx`, `ImageGallery.tsx` | NO |
-| 8 | `components/ui/VideoControls.tsx`, `MiniPlayer.tsx` | NO |
-| 9 | `components/story/` (5 files) | NO |
-| 10 | `components/ui/LinkPreview.tsx`, `(screens)/2fa-*.tsx` | NO |
-| 11 | `services/*Api.ts`, `types/*.ts` (10 files) | NO |
-| 12 | `services/pushNotifications.ts`, `hooks/`, `utils/` | NO |
+| Agent | Files Modified | Touches Existing? |
+|-------|---------------|-------------------|
+| 1 | send-tip.tsx, membership-tiers.tsx, enable-tips.tsx | YES (3 files, exclusive) |
+| 2 | create-event.tsx, event-detail.tsx | YES (2 files, exclusive) |
+| 3 | 2fa-setup.tsx, 2fa-verify.tsx | YES (2 files, exclusive) |
+| 4 | audio-room.tsx | YES (1 file, exclusive) |
+| 5 | hadith.tsx, mosque-finder.tsx, prayer-times.tsx | YES (3 files, exclusive) |
+| 6 | PostMedia.tsx or PostCard.tsx, post/[id].tsx | YES (2 files, exclusive) |
+| 7 | video/[id].tsx | YES (1 file, exclusive) |
+| 8 | RichText.tsx or ThreadCard.tsx | YES (1-2 files, exclusive) |
+| 9 | story/[id].tsx, possibly story-create.tsx | YES (1-2 files, exclusive) |
 
-**ZERO file conflicts. All agents create NEW files only.**
-
----
-
-## POST-BATCH TASKS (after all 12 agents complete)
-
-1. Register new backend modules in `app.module.ts` (add imports + module references)
-2. Run `npx prisma db push` to sync schema
-3. Run `npm install otplib qrcode` in api/ (for 2FA)
-4. Run `npm install react-i18next i18next expo-localization` in mobile/ (for i18n)
-5. Run `npm install expo-notifications expo-device` in mobile/ (for push)
-6. Wire new API clients into existing screens (separate integration batch)
-7. Add i18n `t()` calls to existing screen text (separate i18n rollout batch)
+**ZERO file conflicts. Each agent has exclusive ownership of its files.**
 
 ---
 
 ## VERIFICATION CHECKLIST
 
-**Backend (Agents 1-5):**
-- [ ] Module file exports class with @Module decorator
-- [ ] Controller has @ApiTags, @Controller decorator with route prefix
-- [ ] All endpoints have @ApiOperation + @ApiResponse decorators
-- [ ] Auth endpoints use @UseGuards(ClerkAuthGuard) + @ApiBearerAuth
-- [ ] Public endpoints use @UseGuards(OptionalClerkAuthGuard)
-- [ ] Write endpoints have @Throttle
-- [ ] Service uses PrismaService injection
+**For ALL agents:**
+- [ ] All MOCK_ constants removed (grep for `MOCK_` should return 0 in modified files)
+- [ ] Real API calls using imported API clients
+- [ ] Loading states with `<Skeleton>` components (not bare ActivityIndicator)
+- [ ] Error states with retry button
+- [ ] Pull-to-refresh on all FlatLists
 - [ ] 0 instances of `as any`
-- [ ] Proper error handling (NotFoundException, ForbiddenException, BadRequestException)
+- [ ] No `@ts-ignore` or `@ts-expect-error`
+- [ ] All existing visual styling preserved (glassmorphism, animations, colors)
+- [ ] No variable shadowing of `colors`, `spacing`, etc.
+- [ ] No duplicate props
 
-**Mobile (Agents 6-12):**
-- [ ] All components/screens properly typed
-- [ ] New screens follow glassmorphism pattern
-- [ ] 0 instances of `as any`
-- [ ] API clients match backend endpoint signatures
-- [ ] Types match Prisma model fields
+**For Agents 6-9 (UI component wiring):**
+- [ ] Components imported from correct paths
+- [ ] Props passed correctly matching component interfaces
+- [ ] Gallery/overlay dismissal works (onClose handlers)
+- [ ] No RN Modal used for overlays
+
+---
+
+## POST-BATCH TASKS
+
+1. Test all screens with real backend running (`cd apps/api && npm run start:dev`)
+2. Verify API response shapes match TypeScript types
+3. Check for any 401/403 errors (auth token passing)
+4. Verify prayer times / mosque finder work with real geolocation

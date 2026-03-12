@@ -31,6 +31,9 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
+import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/components/ui/VideoControls';
+import { MiniPlayer } from '@/components/ui/MiniPlayer';
+import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -51,6 +54,24 @@ export default function VideoDetailScreen() {
   const [showMenu, setShowMenu] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
   const [likeBursts, setLikeBursts] = useState<{ id: string; x: number; y: number }[]>([]);
+
+  // Video controls state
+  const [quality, setQuality] = useState<VideoQuality>('720p');
+  const [speed, setSpeed] = useState<PlaybackSpeed>(1);
+  const [volume, setVolume] = useState(1);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [showVideoControls, setShowVideoControls] = useState(false);
+
+  // Store selectors for mini player
+  const miniPlayerVideo = useStore(s => s.miniPlayerVideo);
+  const miniPlayerProgress = useStore(s => s.miniPlayerProgress);
+  const miniPlayerPlaying = useStore(s => s.miniPlayerPlaying);
+  const setMiniPlayerVideo = useStore(s => s.setMiniPlayerVideo);
+  const setMiniPlayerProgress = useStore(s => s.setMiniPlayerProgress);
+  const setMiniPlayerPlaying = useStore(s => s.setMiniPlayerPlaying);
+  const closeMiniPlayer = useStore(s => s.closeMiniPlayer);
 
   // Animated scroll value for parallax effect
   const scrollY = useSharedValue(0);
@@ -84,6 +105,13 @@ export default function VideoDetailScreen() {
 
   const video = videoQuery.data;
   const comments = commentsQuery.data ?? [];
+
+  // Set duration when video loads
+  useEffect(() => {
+    if (video?.duration) {
+      setDuration(video.duration);
+    }
+  }, [video?.duration]);
   const chapters = video?.chapters ?? [];
 
   // Record view on mount
@@ -135,13 +163,75 @@ export default function VideoDetailScreen() {
   });
 
   const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
-    if (status.isLoaded && status.durationMillis && status.durationMillis > 0 && status.positionMillis !== undefined) {
-      const progress = status.positionMillis / status.durationMillis; // ratio 0-1
-      if (Number.isFinite(progress)) {
-        progressRef.current = progress;
+    if (status.isLoaded) {
+      if (status.durationMillis && status.durationMillis > 0) {
+        setDuration(status.durationMillis / 1000);
       }
+      if (status.positionMillis !== undefined) {
+        setCurrentTime(status.positionMillis / 1000);
+        if (status.durationMillis && status.durationMillis > 0) {
+          const progress = status.positionMillis / status.durationMillis;
+          if (Number.isFinite(progress)) {
+            progressRef.current = progress;
+          }
+        }
+      }
+      setIsPlaying(status.isPlaying ?? false);
     }
   }, []);
+
+  const handlePlayPause = useCallback(() => {
+    if (isPlaying) {
+      videoRef.current?.pauseAsync();
+    } else {
+      videoRef.current?.playAsync();
+    }
+  }, [isPlaying]);
+
+  const handleSeek = useCallback((time: number) => {
+    videoRef.current?.setPositionAsync(time * 1000);
+  }, []);
+
+  const handleQualityChange = useCallback((q: VideoQuality) => {
+    setQuality(q);
+    // TODO: switch video source based on quality
+    // For now, just log
+    console.log('Quality changed to', q);
+  }, []);
+
+  const handleSpeedChange = useCallback((s: PlaybackSpeed) => {
+    setSpeed(s);
+    videoRef.current?.setRateAsync(s, true);
+  }, []);
+
+  const handleVolumeChange = useCallback((v: number) => {
+    setVolume(v);
+    videoRef.current?.setVolumeAsync(v);
+  }, []);
+
+  const handleMinimize = useCallback(() => {
+    if (video) {
+      setMiniPlayerVideo({
+        id: video.id,
+        title: video.title,
+        channelName: video.channel.name,
+        thumbnailUri: video.thumbnailUrl,
+        videoUrl: video.videoUrl,
+      });
+      setMiniPlayerProgress(progressRef.current);
+      setMiniPlayerPlaying(isPlaying);
+      // Optionally navigate away? Or just keep video screen open
+    }
+  }, [video, isPlaying]);
+
+  const handleExpandMiniPlayer = useCallback(() => {
+    // Already on video screen, maybe scroll to top?
+    // No action needed
+  }, []);
+
+  const handleCloseMiniPlayer = useCallback(() => {
+    closeMiniPlayer();
+  }, [closeMiniPlayer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -427,10 +517,27 @@ export default function VideoDetailScreen() {
               source={{ uri: video.videoUrl }}
               style={styles.videoPlayer}
               resizeMode={ResizeMode.CONTAIN}
-              useNativeControls
-              shouldPlay
+              useNativeControls={false}
+              shouldPlay={isPlaying}
+              rate={speed}
+              volume={volume}
+              isMuted={volume === 0}
               isLooping={false}
               onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+            />
+            <VideoControls
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              quality={quality}
+              speed={speed}
+              volume={volume}
+              onPlayPause={handlePlayPause}
+              onSeek={handleSeek}
+              onQualityChange={handleQualityChange}
+              onSpeedChange={handleSpeedChange}
+              onVolumeChange={handleVolumeChange}
+              onMinimize={handleMinimize}
             />
 
             {/* Cinematic gradient overlays */}
@@ -671,6 +778,32 @@ export default function VideoDetailScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Mini Player */}
+      {miniPlayerVideo && (
+        <MiniPlayer
+          videoTitle={miniPlayerVideo.title}
+          channelName={miniPlayerVideo.channelName}
+          thumbnailUri={miniPlayerVideo.thumbnailUri}
+          isPlaying={miniPlayerPlaying}
+          progress={miniPlayerProgress}
+          onPlayPause={() => {
+            if (miniPlayerPlaying) {
+              setMiniPlayerPlaying(false);
+              videoRef.current?.pauseAsync();
+            } else {
+              setMiniPlayerPlaying(true);
+              videoRef.current?.playAsync();
+            }
+          }}
+          onClose={handleCloseMiniPlayer}
+          onExpand={() => {
+            // Navigate back to video screen if not already there
+            // For now, just close mini player and keep video screen open
+            closeMiniPlayer();
+          }}
+        />
+      )}
 
       {/* Comments bottom sheet */}
       <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>

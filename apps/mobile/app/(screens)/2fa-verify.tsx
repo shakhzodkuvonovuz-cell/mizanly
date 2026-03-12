@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -22,11 +22,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, animation } from '@/theme';
+import { twoFactorApi } from '@/services/twoFactorApi';
+import { useUser } from '@/store';
+import type { ValidateTwoFactorDto, BackupCodeDto } from '@/types/twoFactor';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 export default function TwoFactorVerifyScreen() {
   const router = useRouter();
+  const user = useUser();
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [backupCode, setBackupCode] = useState('');
@@ -73,28 +77,34 @@ export default function TwoFactorVerifyScreen() {
     );
   };
 
-  const handleVerify = () => {
+  const handleVerify = useCallback(async () => {
     setLoading(true);
     setError(false);
-
-    // Simulate API verification
-    setTimeout(() => {
+    if (!user?.id) {
+      Alert.alert('Error', 'User not found');
       setLoading(false);
-      const isValid = Math.random() > 0.3; // 70% success rate for demo
-
-      if (isValid) {
-        Alert.alert(
-          'Verification Successful',
-          'You have successfully verified your identity.',
-          [{ text: 'Continue', onPress: () => router.back() }]
-        );
+      return;
+    }
+    try {
+      if (mode === 'code') {
+        const code = verificationCode.join('');
+        await twoFactorApi.validate({ userId: user.id, code });
       } else {
-        setError(true);
-        triggerShake();
-        Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+        await twoFactorApi.backup({ userId: user.id, backupCode });
       }
-    }, 1500);
-  };
+      Alert.alert(
+        'Verification Successful',
+        'You have successfully verified your identity.',
+        [{ text: 'Continue', onPress: () => router.back() }]
+      );
+    } catch (err) {
+      setError(true);
+      triggerShake();
+      Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [mode, verificationCode, backupCode, user, router]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: shakeAnimation.value }],

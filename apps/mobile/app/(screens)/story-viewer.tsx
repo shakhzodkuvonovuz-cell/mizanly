@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
   Dimensions, TextInput, Platform,
@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, messagesApi } from '@/services/api';
+import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -97,8 +98,20 @@ export default function StoryViewerScreen() {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
+  const [stickerResponses, setStickerResponses] = useState<Record<string, any>>({});
 
   const story = group?.stories[storyIndex];
+  const stickers = useMemo(() => {
+    if (!story?.stickerData) return [];
+    try {
+      const data = typeof story.stickerData === 'string'
+        ? JSON.parse(story.stickerData)
+        : story.stickerData;
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }, [story]);
 
   const viewersQuery = useQuery({
     queryKey: ['story-viewers', story?.id],
@@ -115,6 +128,113 @@ export default function StoryViewerScreen() {
       return prev;
     });
   }, [group?.stories.length, router, progressValue]);
+
+  const handleStickerResponse = useCallback((stickerId: string, response: any) => {
+    setStickerResponses(prev => ({ ...prev, [stickerId]: response }));
+    // TODO: send to backend API
+  }, []);
+
+  const renderSticker = (sticker: any) => {
+    const { id, type, data, x, y, scale } = sticker;
+    const style = { position: 'absolute', left: x, top: y, transform: [{ scale }] };
+    switch (type) {
+      case 'poll':
+        const pollData = {
+          question: data.question || '',
+          options: (data.options || []).map((opt: string, idx: number) => ({
+            id: `opt-${idx}`,
+            text: opt,
+            votes: 0,
+          })),
+          totalVotes: 0,
+        };
+        return (
+          <PollSticker
+            key={id}
+            data={pollData}
+            onResponse={(optionId) => handleStickerResponse(id, { optionId })}
+            isCreator={ownStory}
+            style={style}
+          />
+        );
+      case 'quiz':
+        const quizOptions = (data.options || []).map((opt: string, idx: number) => ({
+          id: `opt-${idx}`,
+          text: opt,
+          isCorrect: idx === data.correctIndex,
+        }));
+        const quizData = {
+          question: data.question || '',
+          options: quizOptions,
+          explanation: '',
+        };
+        return (
+          <QuizSticker
+            key={id}
+            data={quizData}
+            onResponse={(optionId, isCorrect) => handleStickerResponse(id, { optionId, isCorrect })}
+            isCreator={ownStory}
+            style={style}
+          />
+        );
+      case 'question':
+        const questionData = {
+          prompt: data.prompt || '',
+          submittedQuestions: [],
+        };
+        return (
+          <QuestionSticker
+            key={id}
+            data={questionData}
+            onResponse={(questionText) => handleStickerResponse(id, { questionText })}
+            isCreator={ownStory}
+            style={style}
+          />
+        );
+      case 'countdown':
+        const countdownData = {
+          eventName: data.title || '',
+          targetDate: data.endsAt ? new Date(data.endsAt) : new Date(Date.now() + 86400000),
+          description: '',
+        };
+        return (
+          <CountdownSticker
+            key={id}
+            data={countdownData}
+            onRemindMeToggle={(enabled) => handleStickerResponse(id, { remindMe: enabled })}
+            isCreator={ownStory}
+            style={style}
+          />
+        );
+      case 'slider':
+        const sliderData = {
+          emoji: '📊',
+          question: data.question || '',
+          minValue: data.minValue || 0,
+          maxValue: data.maxValue || 100,
+          averageValue: data.averageValue || 50,
+          totalResponses: data.totalResponses || 0,
+        };
+        return (
+          <SliderSticker
+            key={id}
+            data={sliderData}
+            onResponse={(value) => handleStickerResponse(id, { value })}
+            isCreator={ownStory}
+            style={style}
+          />
+        );
+      default:
+        // location, mention, hashtag - render simple text sticker
+        return (
+          <View key={id} style={[style, { backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: radius.md }]}>
+            <Text style={{ color: '#fff', fontSize: fontSize.sm }}>
+              {type === 'location' ? '📍' : type === 'mention' ? `@${data.username}` : `#${data.tag}`}
+            </Text>
+          </View>
+        );
+    }
+  };
 
   // Progress animation (for images; videos use their own duration)
   useEffect(() => {
@@ -301,6 +421,13 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
         />
       </View>
 
+      {/* Story stickers */}
+      {stickers.length > 0 && (
+        <View style={styles.stickersContainer} pointerEvents="box-none">
+          {stickers.map(renderSticker)}
+        </View>
+      )}
+
       {/* Text overlay */}
       {story?.textOverlay ? (
         <View style={styles.textOverlay}>
@@ -475,6 +602,7 @@ const styles = StyleSheet.create({
   tapZones: { ...StyleSheet.absoluteFillObject, flexDirection: 'row' },
   tapLeft: { flex: 1 },
   tapRight: { flex: 2 },
+  stickersContainer: { ...StyleSheet.absoluteFillObject, pointerEvents: 'box-none' },
 
   textOverlay: {
     position: 'absolute', top: '40%', left: spacing.xl, right: spacing.xl,

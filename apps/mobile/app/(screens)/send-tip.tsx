@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,8 +9,9 @@ import {
   TextInput,
   ActivityIndicator,
   Dimensions,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -21,6 +22,9 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { monetizationApi } from '@/services/monetizationApi';
+import { usersApi } from '@/services/api';
+import type { User } from '@/types';
 
 const { width } = Dimensions.get('window');
 
@@ -28,19 +32,6 @@ const PRESET_AMOUNTS = [1, 2, 5, 10, 25, 50];
 const PLATFORM_FEE_PERCENT = 0.1;
 const MAX_MESSAGE_LENGTH = 100;
 
-interface Creator {
-  name: string;
-  username: string;
-  isVerified: boolean;
-  followers: string;
-}
-
-const MOCK_CREATOR: Creator = {
-  name: 'Ahmed Hassan',
-  username: '@ahmedh',
-  isVerified: true,
-  followers: '124K',
-};
 
 function AmountButton({
   amount,
@@ -98,6 +89,10 @@ function VerifiedBadge({ size = 13 }: { size?: number }) {
 export default function SendTipScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const params = useLocalSearchParams<{ username?: string }>();
+  const [creator, setCreator] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedAmount, setSelectedAmount] = useState(5);
   const [customAmount, setCustomAmount] = useState('');
@@ -105,10 +100,41 @@ export default function SendTipScreen() {
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const formattedFollowers = useMemo(() => {
+    const count = creator?._count?.followers;
+    if (count == null) return '0';
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count.toString();
+  }, [creator?._count?.followers]);
+
+  const fetchCreator = useCallback(async () => {
+    const username = params.username;
+    if (!username) {
+      setError('No user specified');
+      setLoading(false);
+      return;
+    }
+    try {
+      setError(null);
+      const response = await usersApi.getProfile(username);
+      setCreator(response.data);
+    } catch (err) {
+      setError('Failed to load creator info');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [params.username]);
+
+  useEffect(() => {
+    fetchCreator();
+  }, [fetchCreator]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    fetchCreator();
+  }, [fetchCreator]);
 
   const tipAmount = customAmount ? parseFloat(customAmount) || 0 : selectedAmount;
   const platformFee = tipAmount * PLATFORM_FEE_PERCENT;
@@ -120,17 +146,32 @@ export default function SendTipScreen() {
     setCustomAmount('');
   }, [haptic]);
 
-  const handleSendTip = useCallback(() => {
+  const handleSendTip = useCallback(async () => {
+    if (!creator) {
+      Alert.alert('Error', 'Creator information not loaded');
+      return;
+    }
+    if (tipAmount <= 0) {
+      Alert.alert('Error', 'Please select a tip amount');
+      return;
+    }
     haptic.medium();
     setIsSending(true);
-
-    // Mock send
-    setTimeout(() => {
-      setIsSending(false);
+    try {
+      await monetizationApi.sendTip({
+        receiverId: creator.id,
+        amount: tipAmount,
+        message: message.trim() || undefined,
+        currency: 'USD',
+      });
       setIsSuccess(true);
       haptic.success();
-    }, 1500);
-  }, [haptic]);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to send tip. Please try again.');
+    } finally {
+      setIsSending(false);
+    }
+  }, [creator, tipAmount, message, haptic]);
 
   const handleDone = useCallback(() => {
     router.back();
@@ -161,7 +202,7 @@ export default function SendTipScreen() {
 
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <Text style={styles.successSubtitle}>
-              Your tip of ${tipAmount.toFixed(2)} has been sent to {MOCK_CREATOR.username}
+              Your tip of ${tipAmount.toFixed(2)} has been sent to {creator?.username}
             </Text>
           </Animated.View>
 
@@ -176,6 +217,39 @@ export default function SendTipScreen() {
             </TouchableOpacity>
           </Animated.View>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Send Tip"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { paddingTop: 100 }]}>
+          <Skeleton.Rect width="100%" height={100} borderRadius={radius.lg} />
+          <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} style={{ marginTop: spacing.lg }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Send Tip"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="slash"
+          title="Failed to load"
+          subtitle={error}
+          actionLabel="Retry"
+          onAction={fetchCreator}
+        />
       </SafeAreaView>
     );
   }
@@ -209,11 +283,11 @@ export default function SendTipScreen() {
             {/* Creator Details */}
             <View style={styles.creatorInfo}>
               <View style={styles.creatorNameRow}>
-                <Text style={styles.creatorName}>{MOCK_CREATOR.name}</Text>
-                {MOCK_CREATOR.isVerified && <VerifiedBadge size={13} />}
+                <Text style={styles.creatorName}>{creator?.displayName}</Text>
+                {creator?.isVerified && <VerifiedBadge size={13} />}
               </View>
-              <Text style={styles.creatorUsername}>{MOCK_CREATOR.username}</Text>
-              <Text style={styles.followerCount}>{MOCK_CREATOR.followers} followers</Text>
+              <Text style={styles.creatorUsername}>{creator?.username}</Text>
+              <Text style={styles.followerCount}>{formattedFollowers} followers</Text>
             </View>
           </LinearGradient>
         </Animated.View>

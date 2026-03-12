@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,6 +20,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
+import { islamicApi } from '@/services/islamicApi';
+import type { Hadith as ApiHadith } from '@/types/islamic';
+import type { PaginatedResponse } from '@/types';
+
 const { width } = Dimensions.get('window');
 
 interface Hadith {
@@ -32,71 +36,6 @@ interface Hadith {
   isBookmarked: boolean;
 }
 
-const MOCK_HADITHS: Hadith[] = [
-  {
-    id: '1',
-    arabic: 'إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى',
-    english: 'Actions are judged by intentions, and each person will have what they intended.',
-    source: 'Sahih al-Bukhari, Hadith #1',
-    narrator: 'Narrated by Umar ibn al-Khattab (RA)',
-    date: 'Today',
-    isBookmarked: false,
-  },
-  {
-    id: '2',
-    arabic: 'بُنِيَ الإِسْلَامُ عَلَى خَمْسٍ: شَهَادَةِ أَنْ لاَ إِلَهَ إِلاَّ اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ',
-    english: 'Islam is built upon five pillars: testifying that there is no deity worthy of worship except Allah and that Muhammad is His Messenger.',
-    source: 'Sahih al-Bukhari, Hadith #8',
-    narrator: 'Narrated by Ibn Umar (RA)',
-    date: 'Yesterday',
-    isBookmarked: true,
-  },
-  {
-    id: '3',
-    arabic: 'مَنْ يُرِدِ اللَّهُ بِهِ خَيْرًا يُفَقِّهْهُ فِي الدِّينِ',
-    english: 'When Allah wishes good for someone, He bestows upon him the understanding of the religion.',
-    source: 'Sahih al-Bukhari, Hadith #71',
-    narrator: 'Narrated by Muawiya (RA)',
-    date: '2 days ago',
-    isBookmarked: false,
-  },
-  {
-    id: '4',
-    arabic: 'الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ',
-    english: 'A Muslim is one from whose tongue and hand the Muslims are safe.',
-    source: 'Sahih al-Bukhari, Hadith #10',
-    narrator: 'Narrated by Abdullah ibn Amr (RA)',
-    date: '3 days ago',
-    isBookmarked: false,
-  },
-  {
-    id: '5',
-    arabic: 'مَا نَقَصَتْ صَدَقَةٌ مِنْ مَالٍ، وَمَا زَادَ اللَّهُ عَبْدًا بِعَفْوٍ إِلاَّ عِزًّا',
-    english: 'Charity does not decrease wealth. Allah increases a slave in honor when he forgives.',
-    source: 'Sahih Muslim, Hadith #2588',
-    narrator: 'Narrated by Abu Hurairah (RA)',
-    date: '4 days ago',
-    isBookmarked: true,
-  },
-  {
-    id: '6',
-    arabic: 'لاَ يُؤْمِنُ أَحَدُكُمْ حَتَّى يُحِبَّ لأَخِيهِ مَا يُحِبُّ لِنَفْسِهِ',
-    english: 'None of you truly believes until he loves for his brother what he loves for himself.',
-    source: 'Sahih al-Bukhari, Hadith #13',
-    narrator: 'Narrated by Anas ibn Malik (RA)',
-    date: '5 days ago',
-    isBookmarked: false,
-  },
-  {
-    id: '7',
-    arabic: 'مَنْ كَانَ يُؤْمِنُ بِاللَّهِ وَالْيَوْمِ الآخِرِ فَلْيَقُلْ خَيْرًا أَوْ لِيَصْمُتْ',
-    english: 'Whoever believes in Allah and the Last Day should say what is good or remain silent.',
-    source: 'Sahih al-Bukhari, Hadith #6018',
-    narrator: 'Narrated by Abu Hurairah (RA)',
-    date: '6 days ago',
-    isBookmarked: false,
-  },
-];
 
 function ActionButton({
   icon,
@@ -159,7 +98,7 @@ function PreviousHadithCard({
             </Text>
             <View style={styles.previousMeta}>
               <Text style={styles.previousSource}>{hadith.source}</Text>
-              <Text style={styles.previousDate}>{hadith.date}</Text>
+              {hadith.date ? <Text style={styles.previousDate}>{hadith.date}</Text> : null}
             </View>
           </View>
           {hadith.isBookmarked && (
@@ -177,23 +116,76 @@ export default function HadithScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [hadiths, setHadiths] = useState<Hadith[]>(MOCK_HADITHS);
-  const [currentHadith, setCurrentHadith] = useState<Hadith>(MOCK_HADITHS[0]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hadiths, setHadiths] = useState<Hadith[]>([]);
+  const [currentHadith, setCurrentHadith] = useState<Hadith | null>(null);
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
   const scaleAnim = useSharedValue(1);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const [dailyResp, listResp] = await Promise.all([
+        islamicApi.getDailyHadith(),
+        islamicApi.listHadiths(),
+      ]);
+      const dailyHadith: Hadith = {
+        id: dailyResp.data.id.toString(),
+        arabic: dailyResp.data.arabic,
+        english: dailyResp.data.english,
+        source: dailyResp.data.source,
+        narrator: dailyResp.data.narrator,
+        date: '',
+        isBookmarked: bookmarkedIds.has(dailyResp.data.id.toString()),
+      };
+      const listHadiths: Hadith[] = listResp.data.data.map((h: ApiHadith) => ({
+        id: h.id.toString(),
+        arabic: h.arabic,
+        english: h.english,
+        source: h.source,
+        narrator: h.narrator,
+        date: '',
+        isBookmarked: bookmarkedIds.has(h.id.toString()),
+      }));
+      setCurrentHadith(dailyHadith);
+      setHadiths([dailyHadith, ...listHadiths]);
+    } catch (err) {
+      setError('Failed to load hadiths');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [bookmarkedIds]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const handleBookmark = useCallback(() => {
+    if (!currentHadith) return;
     haptic.medium();
-    setCurrentHadith(prev => ({ ...prev, isBookmarked: !prev.isBookmarked }));
+    const hadithId = currentHadith.id;
+    setBookmarkedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(hadithId)) {
+        next.delete(hadithId);
+      } else {
+        next.add(hadithId);
+      }
+      return next;
+    });
+    setCurrentHadith(prev => ({ ...prev!, isBookmarked: !prev!.isBookmarked }));
+    setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
     scaleAnim.value = withSpring(1.1, { damping: 10, stiffness: 400 }, () => {
       scaleAnim.value = withSpring(1);
     });
-  }, [haptic, scaleAnim]);
+  }, [haptic, scaleAnim, currentHadith]);
 
   const handleShare = useCallback(() => {
     haptic.light();
@@ -224,6 +216,46 @@ export default function HadithScreen() {
           <Skeleton.Rect width={width - 32} height={200} borderRadius={radius.lg} />
           <Skeleton.Rect width={200} height={20} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
           <Skeleton.Rect width={150} height={16} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Daily Hadith"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={styles.loadingContainer}>
+          <EmptyState
+            icon="book-open"
+            title="Failed to load hadiths"
+            subtitle={error}
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentHadith) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Daily Hadith"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={styles.loadingContainer}>
+          <EmptyState
+            icon="book-open"
+            title="No hadith available"
+            subtitle="Check your connection and try again"
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
         </View>
       </SafeAreaView>
     );

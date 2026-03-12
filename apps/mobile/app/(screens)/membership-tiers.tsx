@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +20,10 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { monetizationApi } from '@/services/monetizationApi';
+import { usersApi } from '@/services/api';
+import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
+import type { User } from '@/types';
 
 const { width } = Dimensions.get('window');
 

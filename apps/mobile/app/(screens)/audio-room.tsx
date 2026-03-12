@@ -7,8 +7,10 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useAuth, useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,6 +18,9 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { audioRoomsApi } from '@/services/audioRoomsApi';
+import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const { width } = Dimensions.get('window');
 
@@ -41,37 +46,16 @@ interface RaisedHand {
   raisedAgo: string;
 }
 
-const MOCK_SPEAKERS: Speaker[] = [
-  { id: '1', name: 'Khalid', avatar: null, isSpeaking: true, isMuted: false, isHost: true },
-  { id: '2', name: 'Ahmed', avatar: null, isSpeaking: true, isMuted: false, isHost: false },
-  { id: '3', name: 'Fatima', avatar: null, isSpeaking: false, isMuted: true, isHost: false },
-  { id: '4', name: 'Omar', avatar: null, isSpeaking: false, isMuted: false, isHost: false },
-  { id: '5', name: 'Aisha', avatar: null, isSpeaking: false, isMuted: false, isHost: false },
-];
 
-const MOCK_LISTENERS: Listener[] = [
-  { id: '1', name: 'Yusuf', avatar: null },
-  { id: '2', name: 'Sarah', avatar: null },
-  { id: '3', name: 'Noor', avatar: null },
-  { id: '4', name: 'Hassan', avatar: null },
-  { id: '5', name: 'Mariam', avatar: null },
-  { id: '6', name: 'Ali', avatar: null },
-  { id: '7', name: 'Zainab', avatar: null },
-  { id: '8', name: 'Ibrahim', avatar: null },
-  { id: '9', name: 'Layla', avatar: null },
-  { id: '10', name: 'Mohammed', avatar: null },
-  { id: '11', name: 'Sana', avatar: null },
-  { id: '12', name: 'Bilal', avatar: null },
-];
 
-const MOCK_RAISED_HANDS: RaisedHand[] = [
-  { id: '1', name: 'Sami H.', avatar: null, raisedAgo: '2m ago' },
-  { id: '2', name: 'Rania K.', avatar: null, raisedAgo: '4m ago' },
-  { id: '3', name: 'Tariq M.', avatar: null, raisedAgo: '6m ago' },
-];
 
 export default function AudioRoomScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [room, setRoom] = useState<AudioRoom | null>(null);
+  const [participants, setParticipants] = useState<AudioRoomParticipant[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isMicOn, setIsMicOn] = useState(true);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [isSpeaker, setIsSpeaker] = useState(false);
@@ -92,10 +76,113 @@ export default function AudioRoomScreen() {
     opacity: 2 - pulseAnim.value,
   }));
 
+  const fetchData = useCallback(async () => {
+    if (!id) return;
+    try {
+      setError(null);
+      const [roomRes, participantsRes] = await Promise.all([
+        audioRoomsApi.getById(id),
+        audioRoomsApi.listParticipants(id),
+      ]);
+      setRoom(roomRes.data);
+      setParticipants(participantsRes.data.data);
+    } catch (err) {
+      setError('Failed to load audio room');
+      Alert.alert('Error', 'Failed to load audio room');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // Poll participants for live rooms
+  useEffect(() => {
+    if (!id || !room || room.status !== 'live') return;
+    const interval = setInterval(() => {
+      audioRoomsApi.listParticipants(id).then(res => setParticipants(res.data.data));
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [id, room]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    fetchData();
+  }, [fetchData]);
+
+  const { user } = useUser();
+  const currentUserId = user?.id;
+
+  const currentParticipant = currentUserId ? participants.find(p => p.userId === currentUserId) : null;
+
+  useEffect(() => {
+    if (currentParticipant) {
+      setIsSpeaker(currentParticipant.role === 'host' || currentParticipant.role === 'speaker');
+      setIsHandRaised(currentParticipant.handRaised);
+    }
+  }, [currentParticipant]);
+
+  const speakers = participants.filter(p => p.role === 'host' || p.role === 'speaker');
+  const listeners = participants.filter(p => p.role === 'listener');
+  const raisedHands = participants.filter(p => p.handRaised);
+
+  const speakerData: Speaker[] = speakers.map(p => ({
+    id: p.id,
+    name: p.user.name || p.user.username || 'User',
+    avatar: p.user.avatarUrl || null,
+    isSpeaking: false, // TODO: implement speaking detection
+    isMuted: p.isMuted,
+    isHost: p.role === 'host',
+  }));
+
+  const listenerData: Listener[] = listeners.map(p => ({
+    id: p.id,
+    name: p.user.name || p.user.username || 'User',
+    avatar: p.user.avatarUrl || null,
+  }));
+
+  const raisedHandData: RaisedHand[] = raisedHands.map(p => ({
+    id: p.id,
+    name: p.user.name || p.user.username || 'User',
+    avatar: p.user.avatarUrl || null,
+    raisedAgo: 'Just now', // TODO: compute from handRaisedAt if available
+  }));
+
+  // Loading skeleton
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title="Audio Room" onBack={() => router.back()} />
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} />
+          <Skeleton.Rect width="100%" height={150} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
+          <Skeleton.Rect width="100%" height={150} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title="Audio Room" onBack={() => router.back()} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
+          <Text style={{ color: colors.error, fontSize: fontSize.md, marginBottom: spacing.md }}>{error}</Text>
+          <TouchableOpacity onPress={fetchData}>
+            <Text style={{ color: colors.emerald }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!room) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -121,14 +208,14 @@ export default function AudioRoomScreen() {
             style={styles.roomCard}
           >
             <Text style={styles.roomTitle}>
-              Discussing Islamic Finance in the Modern World
+              {room.title}
             </Text>
 
             {/* Host Badge */}
             <View style={styles.hostRow}>
-              <Avatar uri={null} name="Khalid" size="md" />
+              <Avatar uri={room.host.avatarUrl} name={room.host.name} size="md" />
               <View style={styles.hostInfo}>
-                <Text style={styles.hostLabel}>Hosted by @khalid_dev</Text>
+                <Text style={styles.hostLabel}>Hosted by @{room.host.username}</Text>
               </View>
               <LinearGradient
                 colors={[colors.gold, colors.goldLight]}
@@ -155,7 +242,7 @@ export default function AudioRoomScreen() {
 
               <View style={styles.statsRow}>
                 <Icon name="users" size="xs" color={colors.gold} />
-                <Text style={styles.listenerCount}>234 listening</Text>
+                <Text style={styles.listenerCount}>{participants.length} listening</Text>
                 <Text style={styles.dot}>·</Text>
                 <Icon name="clock" size="xs" color={colors.text.tertiary} />
                 <Text style={styles.startedText}>Started 45 min ago</Text>
