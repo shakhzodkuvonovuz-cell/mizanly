@@ -6,6 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, FadeInUp, FadeOut, useSharedValue, useAnimatedStyle, withSpring, withSequence, withDelay } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
@@ -117,6 +119,40 @@ export default function CreateReelScreen() {
     setShowAutocomplete(null);
   };
 
+  // Countdown animation for video recording mode
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const countdownScale = useSharedValue(1);
+  const countdownOpacity = useSharedValue(1);
+
+  const startCountdown = () => {
+    setCountdown(3);
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(interval);
+          setTimeout(() => setCountdown(null), 500);
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  useEffect(() => {
+    if (countdown !== null) {
+      countdownScale.value = withSequence(
+        withSpring(1.5, { damping: 10, stiffness: 200 }),
+        withSpring(1, { damping: 15, stiffness: 300 })
+      );
+      countdownOpacity.value = withDelay(600, withSpring(0));
+    }
+  }, [countdown]);
+
+  const countdownStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: countdownScale.value }],
+    opacity: countdownOpacity.value,
+  }));
+
   const uploadMutation = useMutation({
     mutationFn: async () => {
       setIsUploading(true);
@@ -199,37 +235,100 @@ export default function CreateReelScreen() {
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
-        {/* Video preview */}
+        {/* Countdown Overlay */}
+        {countdown !== null && (
+          <View style={styles.countdownOverlay}>
+            <Animated.View style={[styles.countdownContainer, countdownStyle]}>
+              <LinearGradient
+                colors={[colors.emerald, '#05593A']}
+                style={styles.countdownCircle}
+              >
+                <Text style={styles.countdownText}>{countdown}</Text>
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        )}
+
+        {/* Video preview with focus ring */}
         {video ? (
-          <View style={styles.videoContainer}>
-            <Video
-              ref={videoRef}
-              source={{ uri: video.uri }}
-              style={styles.videoPreview}
-              resizeMode={ResizeMode.COVER}
-              useNativeControls
-              isLooping
-            />
+          <Animated.View entering={FadeInUp} style={styles.videoContainer}>
+            {/* Focus ring */}
+            <LinearGradient
+              colors={[colors.emerald, colors.gold, colors.emerald]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.focusRing}
+            >
+              <View style={styles.videoInner}>
+                <Video
+                  ref={videoRef}
+                  source={{ uri: video.uri }}
+                  style={styles.videoPreview}
+                  resizeMode={ResizeMode.COVER}
+                  useNativeControls
+                  isLooping
+                />
+              </View>
+            </LinearGradient>
+
+            {/* Video info badge */}
+            <View style={styles.videoInfoBadge}>
+              <LinearGradient
+                colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)']}
+                style={styles.videoInfoGradient}
+              >
+                <Icon name="play" size={12} color="#fff" />
+                <Text style={styles.videoInfoText}>
+                  {Math.floor(video.duration)}s
+                </Text>
+              </LinearGradient>
+            </View>
+
             <TouchableOpacity
               style={styles.removeVideoButton}
               onPress={removeVideo}
               hitSlop={8}
             >
-              <Icon name="x" size="sm" color={colors.text.primary} />
+              <LinearGradient
+                colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                style={styles.removeVideoGradient}
+              >
+                <Icon name="x" size="sm" color="#fff" />
+              </LinearGradient>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         ) : (
           <TouchableOpacity style={styles.uploadPlaceholder} onPress={pickVideo}>
-            <Icon name="video" size="xl" color={colors.text.secondary} />
-            <Text style={styles.uploadText}>Select video</Text>
-            <Text style={styles.uploadSubtext}>Up to 60 seconds, vertical (9:16)</Text>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.uploadPlaceholderGradient}
+            >
+              <View style={styles.uploadIconContainer}>
+                <Icon name="video" size="xl" color={colors.emerald} />
+              </View>
+              <Text style={styles.uploadText}>Select video</Text>
+              <Text style={styles.uploadSubtext}>Up to 60 seconds, vertical (9:16)</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
-        {/* Caption */}
+        {/* Caption with glassmorphism card */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>Caption</Text>
-          <View style={styles.captionContainer}>
+          <View style={styles.sectionHeader}>
+            <LinearGradient
+              colors={[colors.gold, colors.emerald]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.sectionAccent}
+            />
+            <Text style={styles.sectionLabel}>Caption</Text>
+          </View>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.captionCard}
+          >
             <TextInput
               ref={captionInputRef}
               style={styles.captionInput}
@@ -242,53 +341,103 @@ export default function CreateReelScreen() {
               textAlignVertical="top"
             />
             <View style={styles.captionFooter}>
-              <CharCountRing current={caption.length} max={500} size={24} />
+              <CharCountRing current={caption.length} max={500} size={28} />
             </View>
-          </View>
+          </LinearGradient>
         </View>
 
-        {/* Toolbar */}
-        <View style={styles.toolbar}>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => handleToolbarPress('hashtag')}
+        {/* Premium Gradient Toolbar */}
+        <View style={styles.toolbarContainer}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.toolbarCard}
           >
-            <Icon name="hash" size="sm" color={colors.text.secondary} />
-            <Text style={styles.toolbarLabel}>Hashtag</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.toolbarButton}
-            onPress={() => handleToolbarPress('mention')}
-          >
-            <Icon name="at-sign" size="sm" color={colors.text.secondary} />
-            <Text style={styles.toolbarLabel}>Mention</Text>
-          </TouchableOpacity>
-          {/* Audio placeholder */}
-          <TouchableOpacity style={styles.toolbarButton} disabled>
-            <Icon name="music" size="sm" color={colors.text.tertiary} />
-            <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Sound</Text>
-          </TouchableOpacity>
-          {/* Duet/Stitch placeholder */}
-          <TouchableOpacity style={styles.toolbarButton} disabled>
-            <Icon name="repeat" size="sm" color={colors.text.tertiary} />
-            <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Duet</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={() => handleToolbarPress('hashtag')}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="hash" size="md" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.toolbarLabel}>Hashtag</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.toolbarButton}
+              onPress={() => handleToolbarPress('mention')}
+            >
+              <LinearGradient
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="at-sign" size="md" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.toolbarLabel}>Mention</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.toolbarButton} disabled>
+              <LinearGradient
+                colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="music" size="md" color={colors.text.tertiary} />
+              </LinearGradient>
+              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Sound</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.toolbarButton} disabled>
+              <LinearGradient
+                colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="repeat" size="md" color={colors.text.tertiary} />
+              </LinearGradient>
+              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Duet</Text>
+            </TouchableOpacity>
+          </LinearGradient>
         </View>
 
-        {/* Extracted tags */}
+        {/* Extracted tags with premium badges */}
         {(hashtags.length > 0 || mentions.length > 0) && (
           <View style={styles.tagsSection}>
-            <Text style={styles.sectionLabel}>Tags</Text>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={[colors.emerald, colors.gold]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.sectionAccent}
+              />
+              <Text style={styles.sectionLabel}>Tags</Text>
+            </View>
             <View style={styles.tagsRow}>
               {hashtags.map(tag => (
-                <View key={tag} style={styles.tag}>
-                  <Text style={styles.tagText}>#{tag}</Text>
-                </View>
+                <LinearGradient
+                  key={tag}
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.tagGradient}
+                >
+                  <Icon name="hash" size={12} color={colors.emerald} />
+                  <Text style={styles.tagText}>{tag}</Text>
+                </LinearGradient>
               ))}
               {mentions.map(mention => (
-                <View key={mention} style={styles.tag}>
-                  <Text style={styles.tagText}>@{mention}</Text>
-                </View>
+                <LinearGradient
+                  key={mention}
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.tagGradient}
+                >
+                  <Icon name="at-sign" size={12} color={colors.gold} />
+                  <Text style={styles.tagTextGold}>{mention}</Text>
+                </LinearGradient>
               ))}
             </View>
           </View>
@@ -426,5 +575,153 @@ const styles = StyleSheet.create({
   tagText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
+  },
+
+  // Countdown overlay
+  countdownOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(13,17,23,0.8)',
+  },
+  countdownContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  countdownCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  countdownText: {
+    color: '#fff',
+    fontSize: 60,
+    fontWeight: '800',
+  },
+
+  // Focus ring video container
+  focusRing: {
+    padding: 3,
+    borderRadius: radius.lg,
+  },
+  videoInner: {
+    borderRadius: radius.lg - 3,
+    overflow: 'hidden',
+  },
+  videoInfoBadge: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
+  },
+  videoInfoGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  videoInfoText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  removeVideoGradient: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Upload placeholder
+  uploadPlaceholderGradient: {
+    width: VIDEO_PREVIEW_WIDTH,
+    height: VIDEO_PREVIEW_HEIGHT,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(10,123,79,0.3)',
+    borderStyle: 'dashed',
+    marginBottom: spacing.lg,
+  },
+  uploadIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.lg,
+    backgroundColor: 'rgba(10,123,79,0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+
+  // Section header with accent
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  sectionAccent: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+  },
+
+  // Caption card
+  captionCard: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.3)',
+  },
+
+  // Premium toolbar
+  toolbarContainer: {
+    marginBottom: spacing.lg,
+  },
+  toolbarCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.3)',
+  },
+  toolbarBtnGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+
+  // Premium tags
+  tagGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+  },
+  tagTextGold: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
   },
 });

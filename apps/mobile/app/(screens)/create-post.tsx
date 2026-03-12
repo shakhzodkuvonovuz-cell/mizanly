@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
-  ScrollView, Platform, Alert,
+  ScrollView, Platform, Alert, Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
@@ -11,6 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -358,7 +360,7 @@ export default function CreatePostScreen() {
           autoFocus
         />
 
-        {/* Media previews */}
+        {/* Premium glassmorphism media previews */}
         {media.length > 0 && (
           <ScrollView
             horizontal
@@ -367,23 +369,45 @@ export default function CreatePostScreen() {
             contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.base }}
           >
             {media.map((item, idx) => (
-              <View key={idx} style={styles.mediaThumbnail}>
-                <Image source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
-                {item.type === 'video' && (
-                  <View style={styles.videoBadge}><Icon name="play" size={10} color="#fff" /></View>
-                )}
-                <TouchableOpacity
-                  style={styles.removeMedia}
-                  onPress={() => removeMedia(idx)}
-                  hitSlop={4}
+              <Animated.View key={idx} entering={FadeInUp.delay(idx * 50)} style={styles.mediaCard}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.mediaCardGradient}
                 >
-                  <Icon name="x" size={12} color="#fff" />
-                </TouchableOpacity>
-              </View>
+                  <Image source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
+                  {item.type === 'video' && (
+                    <LinearGradient
+                      colors={['rgba(0,0,0,0.6)', 'transparent']}
+                      style={styles.videoBadgeGradient}
+                    >
+                      <Icon name="play" size={12} color="#fff" />
+                    </LinearGradient>
+                  )}
+                  <TouchableOpacity
+                    style={styles.removeMedia}
+                    onPress={() => removeMedia(idx)}
+                    hitSlop={4}
+                  >
+                    <LinearGradient
+                      colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                      style={styles.removeMediaGradient}
+                    >
+                      <Icon name="x" size={12} color="#fff" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </Animated.View>
             ))}
             {media.length < 10 && (
               <TouchableOpacity style={styles.addMoreMedia} onPress={pickMedia}>
-                <Icon name="plus" size="md" color={colors.text.secondary} />
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
+                  style={styles.addMoreMediaGradient}
+                >
+                  <Icon name="plus" size="md" color={colors.emerald} />
+                </LinearGradient>
               </TouchableOpacity>
             )}
           </ScrollView>
@@ -487,66 +511,116 @@ export default function CreatePostScreen() {
         onSelect={(loc) => setLocation(loc)}
       />
 
-      {/* Bottom toolbar */}
-      <View style={styles.toolbar}>
-        <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
-          <Icon name="image" size="md" color={colors.text.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={8}
-          style={[styles.toolbarBtn, location && styles.toolbarBtnActive]}
-          onPress={() => setShowLocationPicker(true)}
-        >
-          <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={8}
-          style={[styles.toolbarBtn, showAutocomplete && autocompleteType === 'hashtag' && styles.toolbarBtnActive]}
-          onPress={() => {
-            setAutocompleteType('hashtag');
-            setShowAutocomplete(true);
-            setAutocompleteQuery('');
-            inputRef.current?.focus();
-          }}
-        >
-          <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          hitSlop={8}
-          style={[styles.toolbarBtn, showAutocomplete && autocompleteType === 'mention' && styles.toolbarBtnActive]}
-          onPress={() => {
-            setAutocompleteType('mention');
-            setShowAutocomplete(true);
-            setAutocompleteQuery('');
-            inputRef.current?.focus();
-          }}
-        >
-          <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
-        </TouchableOpacity>
-        <Pressable
-          style={styles.toolbarBtn}
-          onPress={async () => {
-            try {
-              await draftsApi.save('SAF', {
-                content,
-                mediaUrls: media.map(m => m.uri),
-                mediaTypes: media.map(m => m.type),
-                visibility,
-                circleId,
-              });
-              Alert.alert('Saved', 'Draft saved to your account');
-            } catch {
-              Alert.alert('Error', 'Failed to save draft');
-            }
-          }}
-          accessibilityLabel="Save draft to cloud"
-          accessibilityRole="button"
-        >
-          <Icon name="layers" size="sm" color={colors.text.secondary} />
-        </Pressable>
-        <View style={styles.toolbarSpacer} />
-        <CharCountRing current={content.length} max={2200} />
-      </View>
+      {/* Premium gradient toolbar */}
+      <LinearGradient
+        colors={['transparent', 'rgba(13,17,23,0.95)', colors.dark.bg]}
+        locations={[0, 0.3, 1]}
+        style={styles.toolbarGradient}
+      >
+        <View style={styles.toolbar}>
+          <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
+              style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
+            >
+              <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : colors.text.secondary} />
+              {media.length > 0 && (
+                <View style={styles.mediaBadge}>
+                  <Text style={styles.mediaBadgeText}>{media.length}</Text>
+                </View>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            hitSlop={8}
+            style={styles.toolbarBtn}
+            onPress={() => setShowLocationPicker(true)}
+          >
+            <LinearGradient
+              colors={location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+              style={styles.toolbarBtnGradient}
+            >
+              <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            hitSlop={8}
+            style={styles.toolbarBtn}
+            onPress={() => {
+              setAutocompleteType('hashtag');
+              setShowAutocomplete(true);
+              setAutocompleteQuery('');
+              inputRef.current?.focus();
+            }}
+          >
+            <LinearGradient
+              colors={showAutocomplete && autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+              style={styles.toolbarBtnGradient}
+            >
+              <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            hitSlop={8}
+            style={styles.toolbarBtn}
+            onPress={() => {
+              setAutocompleteType('mention');
+              setShowAutocomplete(true);
+              setAutocompleteQuery('');
+              inputRef.current?.focus();
+            }}
+          >
+            <LinearGradient
+              colors={showAutocomplete && autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+              style={styles.toolbarBtnGradient}
+            >
+              <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <Pressable
+            style={styles.toolbarBtn}
+            onPress={async () => {
+              try {
+                await draftsApi.save('SAF', {
+                  content,
+                  mediaUrls: media.map(m => m.uri),
+                  mediaTypes: media.map(m => m.type),
+                  visibility,
+                  circleId,
+                });
+                Alert.alert('Saved', 'Draft saved to your account');
+              } catch {
+                Alert.alert('Error', 'Failed to save draft');
+              }
+            }}
+            accessibilityLabel="Save draft to cloud"
+            accessibilityRole="button"
+          >
+            <LinearGradient
+              colors={['rgba(200,150,62,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.toolbarBtnGradient}
+            >
+              <Icon name="clock" size="sm" color={colors.gold} />
+            </LinearGradient>
+          </Pressable>
+
+          <View style={styles.toolbarSpacer} />
+
+          {/* Animated char count with glow effect */}
+          <View style={styles.charCountContainer}>
+            <LinearGradient
+              colors={content.length > 2000 ? ['rgba(248,81,73,0.2)', 'transparent'] : ['rgba(10,123,79,0.1)', 'transparent']}
+              style={styles.charCountGlow}
+            >
+              <CharCountRing current={content.length} max={2200} />
+            </LinearGradient>
+          </View>
+        </View>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -615,27 +689,74 @@ const styles = StyleSheet.create({
     color: colors.text.primary, fontSize: fontSize.base, lineHeight: 24,
     minHeight: 120, textAlignVertical: 'top',
   },
-  // Media
+  // Premium media cards
   mediaRow: { marginTop: spacing.md },
+  mediaCard: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  mediaCardGradient: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.lg,
+    padding: 3,
+  },
   mediaThumbnail: {
     width: 100, height: 100, borderRadius: radius.md, overflow: 'hidden',
     backgroundColor: colors.dark.bgElevated,
   },
-  mediaImage: { width: '100%', height: '100%' },
+  mediaImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: radius.md - 3,
+  },
+  videoBadgeGradient: {
+    position: 'absolute',
+    bottom: 6,
+    left: 6,
+    right: 6,
+    top: '50%',
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   videoBadge: {
     position: 'absolute', bottom: 6, left: 6,
     backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: radius.md,
     paddingHorizontal: 6, paddingVertical: 2,
   },
   removeMedia: {
-    position: 'absolute', top: spacing.xs, right: spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.7)', borderRadius: radius.md,
-    width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
+    position: 'absolute',
+    top: spacing.xs,
+    right: spacing.xs,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  removeMediaGradient: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.md,
   },
   addMoreMedia: {
-    width: 100, height: 100, borderRadius: radius.md,
-    borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.dark.border,
-    alignItems: 'center', justifyContent: 'center',
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  addMoreMediaGradient: {
+    width: 120,
+    height: 120,
+    borderRadius: radius.lg,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(10,123,79,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Upload overlay
@@ -697,4 +818,50 @@ const styles = StyleSheet.create({
   emptyCircles: { alignItems: 'center', paddingVertical: spacing.xl, paddingHorizontal: spacing.xl, gap: spacing.sm },
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
+
+  // Premium toolbar styles
+  toolbarGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: spacing.xl,
+  },
+  toolbarBtnGradient: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolbarBtnGradientActive: {
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
+  mediaBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: colors.emerald,
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.dark.bg,
+  },
+  mediaBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  charCountContainer: {
+    padding: 4,
+    borderRadius: radius.full,
+  },
+  charCountGlow: {
+    padding: 4,
+    borderRadius: radius.full,
+  },
 });

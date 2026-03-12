@@ -10,6 +10,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -81,120 +83,169 @@ function ThreadPart({
   inputRef,
 }: ThreadPartProps) {
   return (
-    <View style={styles.part}>
+    <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
       <View style={styles.partLeft}>
         <Avatar uri={avatar} name={name} size="md" />
-        {showLine && <View style={styles.chainLine} />}
-      </View>
-      <View style={styles.partRight}>
-        <Text style={styles.partUser}>{name}</Text>
-        <TextInput
-          ref={(ref) => inputRef(index, ref)}
-          style={styles.partInput}
-          placeholder={index === 0 ? "What's on your mind?" : 'Continue the thread…'}
-          placeholderTextColor={colors.text.tertiary}
-          accessibilityLabel={index === 0 ? "Thread content" : "Thread continuation"}
-          value={part.content}
-          onChangeText={(text) => {
-            onChange(text);
-
-            // Detect if typing a hashtag or mention
-            const cursorPos = text.length;
-            const textBeforeCursor = text.slice(0, cursorPos);
-
-            // Check for hashtag pattern: #word
-            const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
-            if (hashMatch) {
-              setAutocomplete({ partIndex: index, type: 'hashtag', query: hashMatch[1] });
-              setShowAutocomplete(true);
-              return;
-            }
-
-            // Check for mention pattern: @word
-            const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
-            if (mentionMatch) {
-              setAutocomplete({ partIndex: index, type: 'mention', query: mentionMatch[1] });
-              setShowAutocomplete(true);
-              return;
-            }
-
-            // If this part was showing autocomplete, hide it
-            if (autocomplete.partIndex === index) {
-              setShowAutocomplete(false);
-              setAutocomplete({ partIndex: null, type: null, query: '' });
-            }
-          }}
-          multiline
-          maxLength={CHAR_LIMIT}
-          autoFocus={index === 0}
-        />
-        {/* Media thumbnails */}
-        {part.media.length > 0 && (
-          <ScrollView
-            horizontal showsHorizontalScrollIndicator={false}
-            style={styles.mediaRow}
-            contentContainerStyle={{ gap: spacing.xs }}
-          >
-            {part.media.map((item, mi) => (
-              <View key={mi} style={styles.thumb}>
-                <Image source={{ uri: item.uri }} style={styles.thumbImg} contentFit="cover" />
-                <TouchableOpacity style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
-                  <Icon name="x" size={10} color="#fff" />
-                </TouchableOpacity>
-              </View>
-            ))}
-          </ScrollView>
+        {showLine && (
+          <LinearGradient
+            colors={[colors.active.emerald20, colors.active.emerald10, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={styles.chainLineGradient}
+          />
         )}
-        {/* Part toolbar */}
-        <View style={styles.partToolbar}>
-          <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8} style={part.media.length >= 4 ? styles.toolbarDisabled : undefined}>
-            <Icon name="image" size="sm" color={colors.text.secondary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
-                // Toggle off
-                setShowAutocomplete(false);
-                setAutocomplete({ partIndex: null, type: null, query: '' });
-              } else {
-                // Trigger hashtag autocomplete
-                const newContent = part.content + '#';
-                onChange(newContent);
-                setAutocomplete({ partIndex: index, type: 'hashtag', query: '' });
-                setShowAutocomplete(true);
-              }
-            }}
-            hitSlop={8}
-          >
-            <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : colors.text.secondary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => {
-              if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
-                // Toggle off
-                setShowAutocomplete(false);
-                setAutocomplete({ partIndex: null, type: null, query: '' });
-              } else {
-                // Trigger mention autocomplete
-                const newContent = part.content + '@';
-                onChange(newContent);
-                setAutocomplete({ partIndex: index, type: 'mention', query: '' });
-                setShowAutocomplete(true);
-              }
-            }}
-            hitSlop={8}
-          >
-            <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : colors.text.secondary} />
-          </TouchableOpacity>
-          {onTogglePoll && (
-            <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
-              <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
-            </TouchableOpacity>
-          )}
-          <CharCountRing current={part.content.length} max={CHAR_LIMIT} size={24} />
-        </View>
       </View>
-    </View>
+
+      {/* Glassmorphism composer card */}
+      <LinearGradient
+        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.partCard}
+      >
+        <View style={styles.partRight}>
+          <Text style={styles.partUser}>{name}</Text>
+          <TextInput
+            ref={(ref) => inputRef(index, ref)}
+            style={styles.partInput}
+            placeholder={index === 0 ? "What's on your mind?" : 'Continue the thread…'}
+            placeholderTextColor={colors.text.tertiary}
+            accessibilityLabel={index === 0 ? "Thread content" : "Thread continuation"}
+            value={part.content}
+            onChangeText={(text) => {
+              onChange(text);
+
+              // Detect if typing a hashtag or mention
+              const cursorPos = text.length;
+              const textBeforeCursor = text.slice(0, cursorPos);
+
+              // Check for hashtag pattern: #word
+              const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
+              if (hashMatch) {
+                setAutocomplete({ partIndex: index, type: 'hashtag', query: hashMatch[1] });
+                setShowAutocomplete(true);
+                return;
+              }
+
+              // Check for mention pattern: @word
+              const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
+              if (mentionMatch) {
+                setAutocomplete({ partIndex: index, type: 'mention', query: mentionMatch[1] });
+                setShowAutocomplete(true);
+                return;
+              }
+
+              // If this part was showing autocomplete, hide it
+              if (autocomplete.partIndex === index) {
+                setShowAutocomplete(false);
+                setAutocomplete({ partIndex: null, type: null, query: '' });
+              }
+            }}
+            multiline
+            maxLength={CHAR_LIMIT}
+            autoFocus={index === 0}
+          />
+
+          {/* Premium media thumbnails */}
+          {part.media.length > 0 && (
+            <ScrollView
+              horizontal showsHorizontalScrollIndicator={false}
+              style={styles.mediaRow}
+              contentContainerStyle={{ gap: spacing.sm }}
+            >
+              {part.media.map((item, mi) => (
+                <Animated.View key={mi} entering={FadeInUp.delay(mi * 50)} style={styles.mediaCard}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+                    style={styles.mediaCardGradient}
+                  >
+                    <Image source={{ uri: item.uri }} style={styles.thumbImgEnhanced} contentFit="cover" />
+                    <TouchableOpacity style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
+                      <LinearGradient
+                        colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                        style={styles.removeThumbGradient}
+                      >
+                        <Icon name="x" size={10} color="#fff" />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </LinearGradient>
+                </Animated.View>
+              ))}
+            </ScrollView>
+          )}
+
+          {/* Premium gradient toolbar */}
+          <View style={styles.partToolbar}>
+            <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
+              <LinearGradient
+                colors={part.media.length >= 4 ? ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                style={[styles.toolbarBtnGradient, part.media.length >= 4 && styles.toolbarBtnDisabled]}
+              >
+                <Icon name="image" size="sm" color={part.media.length >= 4 ? colors.text.tertiary : colors.emerald} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
+                  setShowAutocomplete(false);
+                  setAutocomplete({ partIndex: null, type: null, query: '' });
+                } else {
+                  const newContent = part.content + '#';
+                  onChange(newContent);
+                  setAutocomplete({ partIndex: index, type: 'hashtag', query: '' });
+                  setShowAutocomplete(true);
+                }
+              }}
+              hitSlop={8}
+            >
+              <LinearGradient
+                colors={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
+                  setShowAutocomplete(false);
+                  setAutocomplete({ partIndex: null, type: null, query: '' });
+                } else {
+                  const newContent = part.content + '@';
+                  onChange(newContent);
+                  setAutocomplete({ partIndex: index, type: 'mention', query: '' });
+                  setShowAutocomplete(true);
+                }
+              }}
+              hitSlop={8}
+            >
+              <LinearGradient
+                colors={autocomplete.partIndex === index && autocomplete.type === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {onTogglePoll && (
+              <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
+                <LinearGradient
+                  colors={hasPoll ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
+
+            <View style={styles.toolbarSpacer} />
+            <CharCountRing current={part.content.length} max={CHAR_LIMIT} size={24} />
+          </View>
+        </View>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -498,17 +549,31 @@ export default function CreateThreadScreen() {
               setShowAutocomplete={setShowAutocomplete}
               inputRef={(idx, ref) => { if (ref) inputRefs.current.set(idx, ref); }}
             />
-            {/* Poll form — only on first part */}
+            {/* Premium Poll form — only on first part */}
             {index === 0 && poll && (
-              <View style={styles.pollForm}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.pollForm}
+              >
                 <View style={styles.pollFormHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Icon name="bar-chart-2" size="sm" color={colors.text.primary} />
-                    <Text style={styles.pollFormTitle}>Poll</Text>
-                  </View>
+                  <LinearGradient
+                    colors={[colors.gold, '#A67C00']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.pollIconContainer}
+                  >
+                    <Icon name="bar-chart-2" size="sm" color="#0D1117" />
+                  </LinearGradient>
+                  <Text style={styles.pollFormTitle}>Poll</Text>
                   <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                    <Icon name="x" size={14} color="#FF453A" />
-                    <Text style={styles.pollFormRemove}>Remove</Text>
+                    <LinearGradient
+                      colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                      style={styles.pollRemoveBtn}
+                    >
+                      <Icon name="x" size={14} color="#fff" />
+                    </LinearGradient>
                   </TouchableOpacity>
                 </View>
                 <TextInput
@@ -566,12 +631,29 @@ export default function CreateThreadScreen() {
           </View>
         ))}
 
-        {/* Add thread part */}
+        {/* Premium Add thread part */}
         {parts.length < 10 && (
           <TouchableOpacity style={styles.addPartBtn} onPress={addPart}>
-            <View style={styles.addPartLine} />
-            <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="sm" />
-            <Text style={styles.addPartText}>Add to thread…</Text>
+            <LinearGradient
+              colors={[colors.active.emerald20, 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={styles.addPartLineGradient}
+            />
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+              style={styles.addPartAvatarContainer}
+            >
+              <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="sm" />
+            </LinearGradient>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.addPartTextContainer}
+            >
+              <Text style={styles.addPartText}>Add to thread…</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
         <View style={{ height: 80 }} />
@@ -689,15 +771,95 @@ const styles = StyleSheet.create({
   emptyCirclesText: { color: colors.text.secondary, fontSize: fontSize.base },
   emptyCirclesLink: { color: colors.emerald, fontSize: fontSize.base, fontWeight: '600' },
 
-  // Poll form
-  pollForm: {
-    marginHorizontal: spacing.base, marginBottom: spacing.md,
-    borderWidth: 1, borderColor: colors.dark.border, borderRadius: radius.md,
-    padding: spacing.md, backgroundColor: colors.dark.bgElevated,
+  // Premium thread part styling
+  partCard: {
+    flex: 1,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.3)',
   },
-  pollFormHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.md },
-  pollFormTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
-  pollFormRemove: { color: '#FF453A', fontSize: fontSize.sm },
+  chainLineGradient: {
+    width: 2,
+    flex: 1,
+    marginTop: spacing.xs,
+    borderRadius: 1,
+  },
+
+  // Premium media cards
+  mediaCard: {
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  mediaCardGradient: {
+    padding: 2,
+    borderRadius: radius.md,
+  },
+  thumbImgEnhanced: {
+    width: 84,
+    height: 84,
+    borderRadius: radius.md - 2,
+  },
+  removeThumbGradient: {
+    position: 'absolute',
+    top: 3,
+    right: 3,
+    borderRadius: radius.sm,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Premium toolbar
+  toolbarBtnGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toolbarBtnDisabled: {
+    opacity: 0.5,
+  },
+  toolbarSpacer: { flex: 1 },
+
+  // Premium Poll form
+  pollForm: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(200,150,62,0.3)',
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    overflow: 'hidden',
+  },
+  pollFormHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  pollIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pollFormTitle: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '700',
+  },
+  pollRemoveBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   pollQuestion: {
     color: colors.text.primary, fontSize: fontSize.base,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
@@ -720,14 +882,38 @@ const styles = StyleSheet.create({
   pollCheckboxOn: { backgroundColor: colors.emerald, borderColor: colors.emerald },
   pollAllowMultipleText: { color: colors.text.secondary, fontSize: fontSize.sm },
 
-  // Add part
+  // Premium Add part
   addPartBtn: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md, gap: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
-  addPartLine: {
-    width: 2, height: 20, backgroundColor: colors.active.emerald20,
-    borderRadius: 1, marginLeft: spacing.lg, marginRight: spacing.xs,
+  addPartLineGradient: {
+    width: 2,
+    height: 24,
+    borderRadius: 1,
+    marginLeft: spacing.lg,
+    marginRight: spacing.xs,
   },
-  addPartText: { color: colors.text.tertiary, fontSize: fontSize.base },
+  addPartAvatarContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+  },
+  addPartTextContainer: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  addPartText: {
+    color: colors.emerald,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+  },
 });
