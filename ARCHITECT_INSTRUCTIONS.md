@@ -1,8 +1,8 @@
-# BATCH 30: Islamic + Monetization New Screens — 3 Stages, Sequential Run
+# BATCH 31: Content Creation New Screens — 3 Stages, Sequential Run
 
 **Date:** 2026-03-13
-**Theme:** 8 brand-new screens across Islamic features (Mizanly's #1 differentiator) and Monetization (revenue enabler). Plus 6 new icons as prerequisite. All screens use mock data — backend integration comes later. Execute stages sequentially — commit after each stage.
-**Total Tasks:** 9 (1 icon update + 8 new screens)
+**Theme:** 7 brand-new content creation screens closing the biggest gaps vs TikTok/Instagram/YouTube. Plus 3 new icons as prerequisite. All screens use mock data — backend integration comes later. Execute stages sequentially — commit after each stage.
+**Total Tasks:** 8 (1 icon update + 7 new screens)
 
 ---
 
@@ -14,11 +14,11 @@
 4. All FlatLists MUST have `<RefreshControl tintColor={colors.emerald} />`
 5. Import ALL design tokens from `@/theme`
 6. Use `expo-linear-gradient` for gradients, `react-native-reanimated` for animations
-7. Use existing `animation.spring.*` presets: `bouncy{D10,S400}`, `snappy{D12,S350}`, `responsive{D14,S170}`, `gentle{D20,S100}`, `fluid{D18,S150}`
-8. After completing each stage: `git add -A && git commit -m "feat: batch 30 stage N — <description>"`
-9. Do NOT start the next stage until the current one is committed
-10. Do NOT change any file not listed in the task. Do NOT rename exports, props, or routes.
-11. ALL new screens must be **300-600 lines minimum** — substantial, production-quality implementations, NOT stubs.
+7. After completing each stage: `git add -A && git commit -m "feat: batch 31 stage N — <description>"`
+8. Do NOT start the next stage until the current one is committed
+9. Do NOT change any file not listed in the task. Do NOT rename exports, props, or routes.
+10. ALL new screens must be **300-700 lines** — substantial, production-quality implementations, NOT stubs.
+11. **NEVER shadow imported variables** — if you need a local variable for colors/config, use a distinct name like `tierColors`, `itemStyle`, etc. Never `const colors = ...` inside a component that imports `colors` from theme.
 
 ### Quick Token Reference
 ```
@@ -85,370 +85,352 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 
 ## STAGE 0: Icon Prerequisites (1 file)
 
-### Task 0.1 — Add 6 new icons to Icon.tsx
+### Task 0.1 — Add 3 new icons to Icon.tsx
 
 **File:** `apps/mobile/src/components/ui/Icon.tsx`
 
-Add these 6 icons. This is required BEFORE Stage 1 screens can reference them.
+Add these 3 icons. Required BEFORE Stage 1 screens can reference them.
 
-**Step 1:** Add to the import from `lucide-react-native` (line 3-15):
+**Step 1:** Add to the import from `lucide-react-native` (line 14, after `Calendar,`):
 ```tsx
-Moon, Star, Gift, BookOpen, Calculator, Calendar,
+Scissors, Type, LayoutGrid,
 ```
 
-**Step 2:** Add to the `IconName` type union (after line 30 `| 'sun' | 'circle' | 'droplet' | 'sliders'`):
+**Step 2:** Add to the `IconName` type union (after line 32, after `| 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar';`):
 ```tsx
-| 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar';
+| 'scissors' | 'type' | 'layout';
 ```
 
-**Step 3:** Add to the `iconMap` Record (after the `'sliders': SlidersHorizontal,` entry):
+**Step 3:** Add to the `iconMap` Record (after the `'calendar': Calendar,` entry):
 ```tsx
-'moon': Moon,
-'star': Star,
-'gift': Gift,
-'book-open': BookOpen,
-'calculator': Calculator,
-'calendar': Calendar,
+'scissors': Scissors,
+'type': Type,
+'layout': LayoutGrid,
 ```
 
-**Commit:** `git add -A && git commit -m "feat: batch 30 stage 0 — add 6 new icons (moon, star, gift, book-open, calculator, calendar)"`
+**Commit:** `git add -A && git commit -m "feat: batch 31 stage 0 — add 3 new icons (scissors, type, layout)"`
 
 ---
 
-## STAGE 1: Islamic Features (5 new screens)
+## STAGE 1: Video Creation (3 new screens)
 
-### Task 1.1 — hadith.tsx (Daily Hadith)
+### Task 1.1 — video-editor.tsx (Video Editor)
 
-**Create:** `apps/mobile/app/(screens)/hadith.tsx`
+**Create:** `apps/mobile/app/(screens)/video-editor.tsx`
 
-**Purpose:** Daily hadith display with Arabic text, English translation, source attribution, and share/bookmark actions.
-
-**Required elements:**
-- GlassHeader with title "Daily Hadith" and back arrow
-- Hero card with today's hadith:
-  - Book icon (`book-open`) in emerald-gold gradient background
-  - Arabic text in larger font (fontSize.lg), right-aligned
-  - English translation below in normal font
-  - Source line: "Sahih al-Bukhari, Hadith #6018" in tertiary color
-  - Narrator line: "Narrated by Abu Hurairah (RA)" in secondary color
-- Action row: bookmark, share, copy icons in glass pill buttons
-- "Previous Hadith" section below with FlatList of past hadiths (5-7 mock entries)
-  - Each item: glass card with truncated text + source + date
-  - FadeInUp entrance animation per item
-- Bottom info card: "Hadith are sourced from authentic collections" with `check-circle` icon
-- Mock data (static array of 7 hadiths with Arabic + English + source + narrator)
-
-**Visual accents:**
-- Gold accent border on hero card (borderLeftWidth: 3, borderLeftColor: colors.gold)
-- Emerald gradient for action buttons on active state
-- Arabic text uses `textAlign: 'right'` with slightly larger lineHeight
-
-### Task 1.2 — dhikr-counter.tsx (Dhikr Counter)
-
-**Create:** `apps/mobile/app/(screens)/dhikr-counter.tsx`
-
-**Purpose:** Beautiful tappable counter for Islamic remembrance (dhikr) with preset phrases and daily goals.
+**Purpose:** Full video editing UI with timeline, trim handles, filters, and effects — the core tool for Bakra (TikTok) parity.
 
 **Required elements:**
-- GlassHeader with title "Dhikr Counter" and back arrow
-- Preset phrase selector (horizontal ScrollView):
-  - Glass pill buttons for each phrase: "SubhanAllah", "Alhamdulillah", "Allahu Akbar", "La ilaha illAllah", "Astaghfirullah"
-  - Arabic text below each: "سبحان الله", "الحمد لله", "الله أكبر", "لا إله إلا الله", "أستغفر الله"
-  - Selected phrase highlighted with emerald gradient border
-- Large circular counter display (center of screen):
-  - Outer ring: LinearGradient circle (200x200) with emerald-to-gold gradient border
-  - Inner: dark background with large count number (fontSize: 48, bold)
-  - Current phrase in Arabic below the number
-  - "Tap to count" hint text in tertiary color (hidden after first tap)
-- Large tap zone (the entire counter circle is pressable)
-  - Each tap increments count
-  - Use `useHaptic` hook: `import { useHaptic } from '@/hooks/useHaptic'` — call `triggerHaptic('light')` on each tap
-- Progress bar below counter: glass card showing "33/33 — Set complete!"
-  - Standard dhikr sets are 33 reps
-  - Gold accent when set is complete
-- Daily summary card at bottom:
-  - Total counts today with bar-chart-2 icon
-  - Sets completed with check-circle icon
-  - Current streak with trending-up icon
-  - All in glass card with emerald icon backgrounds
-- Reset button (small, in top-right of counter area): `circle` icon
+- GlassHeader with title "Edit Video" and back arrow
+- Video preview area (top 50% of screen):
+  - Glass card container with dark background (aspect ratio 9:16 or 16:9 toggle)
+  - Play/pause overlay button centered (large, 64x64 circle with `play`/`pause` icon)
+  - Current timestamp display: "00:12 / 00:45" in glass pill (top-right)
+  - Playback speed badge: "1x" in glass pill (top-left), tappable to cycle 0.5x, 1x, 1.5x, 2x
+- Timeline section (below preview):
+  - Glass card containing:
+    - Waveform/thumbnail strip placeholder (horizontal, ~60px height, dark.surface with subtle gradient segments)
+    - Two trim handles (left + right): vertical bars with `scissors` icon, emerald color
+    - Playhead: thin vertical line in gold, with small triangle indicator at top
+    - Time labels at start and end: "00:00" — "00:45"
+    - Drag hint text: "Drag handles to trim" in tertiary color
+- Tools tab bar (horizontal ScrollView):
+  - Glass pill buttons: Trim, Speed, Filters, Text, Music, Volume
+  - Icons: `scissors`, `fast-forward`, `sliders`, `type`, `music`, `volume-2`
+  - Selected tab highlighted with emerald gradient
+- Tool panel (shows content based on selected tab):
+  - **Trim tab:** Start/end time inputs + "Split" button + "Delete segment" button
+  - **Speed tab:** Speed selector buttons: 0.25x, 0.5x, 1x, 1.5x, 2x, 3x in glass pills
+  - **Filters tab:** Grid of 8 filter previews (3 columns):
+    - "Original", "Warm", "Cool", "B&W", "Vintage", "Vivid", "Dramatic", "Fade"
+    - Each: small square glass card with filter name + color preview circle
+    - Selected filter has emerald border
+  - **Text tab:** "Add Text" button + font selector (3 fonts) + color picker (6 color circles)
+  - **Music tab:** "Add from Library" button linking to audio-library, current track display
+  - **Volume tab:** Horizontal slider for original audio + music audio levels
+- Bottom action bar:
+  - "Cancel" (text button) + "Export" (emerald gradient button with `check` icon)
+  - Quality selector: "720p", "1080p", "4K" in small glass pills
 
 **Visual accents:**
-- Counter pulse animation on tap (scale 1.05 → 1.0, 150ms)
-- Gold shimmer on set completion (33 count reached)
-- Emerald progress fill on the progress bar
+- Gold playhead on timeline
+- Emerald trim handles
+- Active tool tab with emerald gradient fill
+- Filter previews use subtle color tints matching their name
 
-### Task 1.3 — zakat-calculator.tsx (Zakat Calculator)
+### Task 1.2 — duet-create.tsx (Duet Creator)
 
-**Create:** `apps/mobile/app/(screens)/zakat-calculator.tsx`
+**Create:** `apps/mobile/app/(screens)/duet-create.tsx`
 
-**Purpose:** Interactive step-by-step zakat calculator with asset categories, deductions, and final calculation.
+**Purpose:** Side-by-side video recording for duets (TikTok duet feature).
 
 **Required elements:**
-- GlassHeader with title "Zakat Calculator" and back arrow
-- Info banner at top: glass card with `calculator` icon explaining "Calculate your annual Zakat obligation (2.5% of eligible wealth above Nisab)"
-- Step indicator: 3 dots showing current step (Assets → Deductions → Result)
-  - Active dot: emerald filled, inactive: dark.surface
-- **Step 1 — Assets** (ScrollView of input cards):
-  - Cash & Bank Balances (TextInput with $ prefix)
-  - Gold & Silver (TextInput with weight unit toggle: grams/ounces)
-  - Investments & Stocks (TextInput)
-  - Business Inventory (TextInput)
-  - Property for Rent (TextInput)
-  - Each input in its own glass card with relevant icon (circle for cash, layers for investments, etc.)
-  - "Next" button at bottom with emerald gradient
-- **Step 2 — Deductions**:
-  - Outstanding Debts (TextInput)
-  - Immediate Expenses (TextInput)
-  - Each in glass card
-  - "Back" and "Calculate" buttons
-- **Step 3 — Result**:
-  - Large result card with gold border accent:
-    - Total Assets value
-    - Total Deductions value
-    - Net Zakatable Wealth (bold)
-    - Nisab threshold display (current gold/silver nisab in tertiary text)
-    - **Zakat Due: $X** in large emerald text (2.5% of net wealth if above nisab)
-    - If below nisab: "Your wealth is below the Nisab threshold. No Zakat is due." with check-circle in gold
-  - "Share" and "Recalculate" action buttons
-  - Educational note: "Zakat is 2.5% of wealth held for one lunar year above the Nisab threshold"
-- Mock nisab values: Gold Nisab = $5,800, Silver Nisab = $490 (display both)
+- GlassHeader with title "Create Duet" and back arrow
+- Original video info card:
+  - Glass card with original creator's avatar placeholder (40x40), username, video title
+  - "Duetting with @username" subtitle
+  - Verified badge if applicable
+- Split preview area (main section):
+  - Glass container taking ~60% of screen height
+  - Two equal panels side by side:
+    - **Left panel:** "Original" label at top, video placeholder (dark.bgCard with `play` icon centered), creator username at bottom
+    - **Right panel:** "You" label at top, camera preview placeholder (dark.surface with `camera` icon centered, dashed border), "Tap to record" hint
+  - Layout selector row below: 3 options in glass pills:
+    - "Side by Side" (`layout` icon) — default, selected with emerald
+    - "Top & Bottom" (`layers` icon)
+    - "React" (`user` icon) — small circle overlay
+  - Each layout option with emerald selection indicator
+- Recording controls:
+  - Large circular record button (80x80):
+    - Not recording: red gradient ring with white circle center
+    - Recording: pulsing red fill with "Recording..." label
+  - Timer display above: "00:00 / 00:60" (max 60 seconds)
+  - Flip camera button: glass circle with `repeat` icon
+  - Flash toggle: glass circle with `sun` icon (on/off state)
+- Audio settings card:
+  - Glass card with `volume-2` icon
+  - "Original Audio" slider (0-100%)
+  - "Your Audio" slider (0-100%)
+  - "Mute Original" toggle
+- Post button at bottom: "Next" emerald gradient (goes to create-reel flow)
 
 **Visual accents:**
-- Gold accent on the final Zakat amount
-- Emerald gradient on the step indicator active dot
-- Glass inputs with subtle border glow on focus (emerald rgba)
+- Red recording state with pulsing animation
+- Emerald selected layout option
+- Gold timer when close to max duration (last 10 seconds)
+- Split preview has subtle glass divider line
 
-### Task 1.4 — mosque-finder.tsx (Mosque Finder)
+### Task 1.3 — stitch-create.tsx (Stitch Creator)
 
-**Create:** `apps/mobile/app/(screens)/mosque-finder.tsx`
+**Create:** `apps/mobile/app/(screens)/stitch-create.tsx`
 
-**Purpose:** List-based mosque finder with distance, prayer times, and facilities info.
+**Purpose:** Sequential video composition — use first 5 seconds of someone's video, then add your own (TikTok stitch feature).
 
 **Required elements:**
-- GlassHeader with title "Nearby Mosques" and back arrow
-- Search bar at top: glass card with search icon + TextInput for filtering
-- Map placeholder: glass card (200px height) with `map-pin` icon centered, text "Map view coming soon" — LinearGradient background with subtle emerald tint
-- Mosque list (FlatList with RefreshControl):
-  - 8 mock mosques with: name, address, distance ("0.5 km"), next prayer time, facilities array
-  - Each mosque: glass card with:
-    - Mosque name (bold, primary text)
-    - Address (secondary text)
-    - Distance badge: emerald pill with `map-pin` icon + "0.5 km"
-    - Next prayer: "Maghrib at 6:12 PM" with `clock` icon in gold
-    - Facilities row: small icon pills for parking, wheelchair, women's section, wudu area
-    - "Directions" button: emerald gradient pill
-  - FadeInUp per item
-- Qibla direction card at bottom:
-  - Glass card with compass icon (use `globe` icon)
-  - "Qibla Direction: 118° SE" with arrow indicator
-  - "Point your phone towards the Qibla" hint text
-
-**Mock mosque data:**
-```
-Al-Rahman Mosque, 0.3km, Fajr 5:23 | Islamic Center of Guidance, 0.8km | Masjid al-Noor, 1.2km | Al-Huda Mosque, 1.5km | Masjid al-Taqwa, 2.1km | Islamic Community Center, 2.8km | Baitul Mukarram, 3.2km | Masjid al-Iman, 4.0km
-```
-
-**Visual accents:**
-- Emerald distance badges
-- Gold next-prayer time highlights
-- Facilities icons in small glass pills
-
-### Task 1.5 — ramadan-mode.tsx (Ramadan Mode)
-
-**Create:** `apps/mobile/app/(screens)/ramadan-mode.tsx`
-
-**Purpose:** Ramadan dashboard with iftar/suhoor countdown timers, fasting tracker, and daily goals.
-
-**Required elements:**
-- GlassHeader with title "Ramadan" and `moon` icon accent, back arrow
-- Hero section: large glass card with:
-  - "Ramadan 1446 AH" title with crescent moon (`moon` icon) in gold gradient background
-  - Day counter: "Day 15 of 30" with progress bar (emerald fill, gold track)
-  - Hijri date in Arabic below
-- Dual countdown timers (side by side):
-  - **Iftar Timer**: glass card with `sun` icon, "Iftar in" label, large countdown "02:34:15", time display "Maghrib: 6:12 PM"
-    - Gold accent when < 30 minutes remaining
-  - **Suhoor Timer**: glass card with `moon` icon, "Suhoor ends in" label, countdown, time display "Fajr: 5:23 AM"
-    - Emerald accent
-- Today's schedule card:
-  - Glass card with timeline of today's key times:
-    - Suhoor ends (Fajr) — 5:23 AM
-    - Sunrise — 6:45 AM
-    - Dhuhr — 12:30 PM
-    - Asr — 3:45 PM
-    - Iftar (Maghrib) — 6:12 PM
-    - Isha — 7:35 PM
-    - Taraweeh — 8:00 PM
-  - Each with `clock` icon + time, current item highlighted with emerald
-- Fasting tracker:
-  - Glass card with 30-day grid (5 rows × 6 columns)
-  - Each day: small circle, completed = emerald filled, today = gold ring, upcoming = dark.surface
-  - "22 days fasted" summary text
-- Daily goals card:
-  - Glass card with checklist items:
-    - "Read 1 Juz of Quran" — `book-open` icon
-    - "Make Dhikr 100x" — `circle` icon (link to dhikr-counter)
-    - "Give Sadaqah" — `gift` icon
-    - "Pray Taraweeh" — `moon` icon
-  - Each toggleable (mock state), completed items get emerald check
+- GlassHeader with title "Create Stitch" and back arrow
+- Original video card:
+  - Glass card with original creator avatar (40x40), username, verified badge
+  - "Stitching from @username" subtitle
+  - Video preview placeholder (16:9, dark.bgCard with `play` icon)
+  - Duration selector: "Use first ___" with options: 1s, 2s, 3s, 5s in glass pills
+  - Selected duration highlighted in emerald
+  - Preview of selected clip: progress bar showing selected portion in emerald, rest in dark.surface
+- Transition selector:
+  - Glass card with "Transition" label
+  - Horizontal ScrollView of transition options:
+    - "Cut" (instant), "Fade", "Slide", "Zoom", "Wipe"
+    - Each in glass pill with icon: `scissors`, `eye`, `chevron-right`, `maximize`, `layers`
+    - Selected with emerald gradient
+- Your clip section:
+  - Glass card with `camera` icon header
+  - Camera preview placeholder (16:9, dark.surface with dashed border)
+  - "Record your response" hint text
+  - Record button (same style as duet: large red circular button)
+  - Timer: "00:00 / 00:55" (60s - original clip duration)
+  - Flip + flash buttons
+- Combined preview card:
+  - Glass card showing "Preview" title
+  - Two thumbnails in sequence: [Original clip] → arrow → [Your clip]
+  - Total duration display
+  - "Play Preview" button with `play` icon in emerald gradient
+- Bottom action bar:
+  - "Cancel" text + "Next" emerald gradient button
 
 **Visual accents:**
-- Gold crescent moon theme throughout (Ramadan's iconic symbol)
-- Emerald progress fills
-- Iftar countdown gets gold glow effect when close to breaking fast
-- Moon icon in header uses gold color
+- Emerald progress on clip selection bar
+- Gold arrow between the two clip thumbnails in preview
+- Transition preview cards have subtle animation hints
 
-**Commit after Stage 1:** `git add -A && git commit -m "feat: batch 30 stage 1 — 5 Islamic screens (hadith, dhikr-counter, zakat-calculator, mosque-finder, ramadan-mode)"`
+**Commit after Stage 1:** `git add -A && git commit -m "feat: batch 31 stage 1 — 3 video creation screens (video-editor, duet-create, stitch-create)"`
 
 ---
 
-## STAGE 2: Monetization Screens (3 new screens)
+## STAGE 2: Content Tools (4 new screens)
 
-### Task 2.1 — enable-tips.tsx (Creator Tip Settings)
+### Task 2.1 — caption-editor.tsx (Caption/Subtitle Editor)
 
-**Create:** `apps/mobile/app/(screens)/enable-tips.tsx`
+**Create:** `apps/mobile/app/(screens)/caption-editor.tsx`
 
-**Purpose:** Creator settings screen to enable/configure tipping on their profile.
+**Purpose:** Edit auto-generated or manual captions/subtitles with timing and styling.
 
 **Required elements:**
-- GlassHeader with title "Creator Tips" and `gift` icon, back arrow
-- Hero card explaining tips:
-  - `gift` icon in emerald-gold gradient background (48x48)
-  - "Earn from your audience" title
-  - "Let your followers show appreciation by sending you tips" subtitle
-  - Enable/disable toggle (large, custom styled — not bare Switch)
-- When enabled, show configuration cards with FadeInUp:
-  - **Minimum Tip Amount** card:
-    - Glass card with `circle` icon (representing coin)
-    - Preset buttons: $1, $2, $5, $10 in horizontal row
-    - Custom TextInput for other amount
-    - Selected preset highlighted with emerald gradient
-  - **Display Settings** card:
-    - Glass card with `eye` icon
-    - Toggle: "Show tip button on profile" (default on)
-    - Toggle: "Show tip button on posts" (default off)
-    - Toggle: "Show top supporters on profile" (default on)
-    - Each toggle row with icon + label + custom toggle
-  - **Thank You Message** card:
-    - Glass card with `mail` icon
-    - TextInput (multiline, 3 lines) for custom thank-you message
-    - CharCountRing (150 char max) — import from `@/components/ui/CharCountRing`
-    - Default placeholder: "Thank you for your generous support! 🤲"
-  - **Payment Method** card:
-    - Glass card with `link` icon
-    - "Connect payment method" button with emerald gradient
-    - Status: "Not connected" in warning color, or "Connected ✓" in emerald
-- Save button at bottom: full-width emerald gradient
+- GlassHeader with title "Edit Captions" and back arrow
+- Video preview (top ~35% of screen):
+  - Glass container with video placeholder (dark.bgCard)
+  - Current caption overlaid at bottom of preview: styled text on semi-transparent dark bar
+  - Playback controls row: `rewind` (-5s), `play`/`pause`, `fast-forward` (+5s) in glass circles
+  - Timestamp: "00:12 / 01:30"
+- Caption list (FlatList, middle section):
+  - Each caption entry as glass card:
+    - Time range: "00:05 - 00:08" in emerald pill
+    - Caption text (editable TextInput)
+    - Delete button: small glass circle with `trash` icon (error color)
+    - FadeInUp entrance animation per item
+  - "Add Caption" button at bottom of list: dashed glass card with `circle-plus` icon
+  - Mock data: 8-10 caption entries with realistic dialogue
+- Style panel (bottom section):
+  - Glass card with "Style" header + `type` icon
+  - Font selector: 3 options in glass pills: "Default", "Bold", "Handwritten"
+  - Size selector: "S", "M", "L" in glass pills
+  - Position selector: "Top", "Center", "Bottom" in glass pills with emerald selection
+  - Background options: "None", "Dark Bar", "Outline" in glass pills
+  - Color picker: 6 color circles (white, yellow, emerald, gold, red, cyan)
+  - Selected options highlighted with emerald
+- Bottom bar:
+  - "Auto-Generate" button (glass pill with `mic` icon — mock, shows "Processing..." then populates)
+  - "Save" emerald gradient button
 
 **Visual accents:**
-- Gift icon uses gold color throughout
-- Enabled state has emerald glow
-- Disabled state grays everything out with opacity: 0.5
+- Time range pills in emerald
+- Currently playing caption highlighted with gold border in list
+- Style preview updates in real-time on the video preview overlay
 
-### Task 2.2 — send-tip.tsx (Send Tip Flow)
+### Task 2.2 — schedule-post.tsx (Post Scheduler)
 
-**Create:** `apps/mobile/app/(screens)/send-tip.tsx`
+**Create:** `apps/mobile/app/(screens)/schedule-post.tsx`
 
-**Purpose:** User-facing screen to send a tip to a creator.
+**Purpose:** Schedule a post for future publication with date/time picker and preview.
 
 **Required elements:**
-- GlassHeader with title "Send Tip" and back arrow
-- Creator info card at top:
+- GlassHeader with title "Schedule Post" and back arrow + `calendar` icon
+- Post preview card (top section):
   - Glass card with:
-    - Avatar placeholder (64x64 circle with user icon)
-    - Creator name (bold) + username (secondary)
-    - Verified badge if applicable — `<VerifiedBadge size={13} />`
-    - Follower count in tertiary text
-- Amount selector section:
-  - "Choose amount" label
-  - Preset amount grid (2 rows × 3 columns):
-    - $1, $2, $5, $10, $25, $50
-    - Each in glass card, selected = emerald gradient border + fill
-    - Gold star icon on the most popular ($5)
-  - Custom amount input:
-    - Glass card with "$" prefix + TextInput
-    - "Enter custom amount" placeholder
-- Message section:
-  - Glass card with `mail` icon
-  - TextInput (multiline, 2 lines) for optional message
-  - CharCountRing (100 char max)
-  - Placeholder: "Add a message (optional)"
-- Payment summary card:
+    - User avatar placeholder (40x40) + "Your Name" + "@username"
+    - Post content text preview (2-3 lines, truncated)
+    - Media thumbnail placeholder if applicable (small, corner)
+    - Post type badge: "Saf Post" / "Majlis Thread" / "Bakra Reel" in glass pill
+    - "Draft saved" indicator with `check` icon in emerald
+- Date picker section:
+  - Glass card with `calendar` icon header
+  - Calendar grid (current month):
+    - Weekday headers: S M T W T F S
+    - Day numbers in grid (7 columns)
+    - Today: emerald ring, Selected: emerald filled, Past: disabled (tertiary)
+    - Month navigation: `chevron-left` / `chevron-right` with month name "March 2026"
+  - Quick date buttons: "Tomorrow", "This Weekend", "Next Week" in glass pills
+- Time picker section:
+  - Glass card with `clock` icon header
+  - Hour selector: horizontal ScrollView of hours (1-12) in glass pills
+  - Minute selector: horizontal ScrollView (00, 05, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55) in glass pills
+  - AM/PM toggle: two glass pills side by side
+  - "Best time to post" suggestion: glass pill with `trending-up` icon — "6:00 PM (high engagement)" in gold
+- Timezone card:
+  - Glass card showing current timezone
+  - "UTC+3 (Arabia Standard Time)" with `globe` icon
+- Summary card:
   - Glass card with gold border accent:
-    - Tip amount: $5.00
-    - Platform fee: $0.50 (10%)
-    - Total: $5.50
-    - Each line with label + value, separator line between
-- "Send Tip" button: full-width gradient (emerald → gold)
-  - Shows amount: "Send $5.50"
-  - Loading state with ActivityIndicator (allowed in buttons per CLAUDE.md)
-- Success state (after mock "send"):
-  - Large `check-circle` icon in emerald
-  - "Tip sent!" title
-  - "Your tip of $5.00 has been sent to @username" subtitle
-  - "Done" button to go back
+    - "Scheduled for: March 15, 2026 at 6:00 PM"
+    - "Will post to: Saf" with space icon
+    - "You'll receive a reminder 30 minutes before"
+- Bottom bar:
+  - "Cancel" text + "Schedule" emerald gradient button with `calendar` icon
 
 **Visual accents:**
-- Gold border on payment summary
-- Emerald-to-gold gradient on send button (special, premium feel)
-- Selected amount card has subtle emerald glow
+- Selected calendar date: emerald filled circle
+- Today: emerald ring outline
+- "Best time" suggestion in gold
+- Summary card gold border accent
 
-### Task 2.3 — membership-tiers.tsx (Membership Tiers)
+### Task 2.3 — green-screen-editor.tsx (Green Screen / Virtual Background)
 
-**Create:** `apps/mobile/app/(screens)/membership-tiers.tsx`
+**Create:** `apps/mobile/app/(screens)/green-screen-editor.tsx`
 
-**Purpose:** Creator screen to view/create membership tiers for channel subscriptions.
+**Purpose:** Virtual background selector and editor for video recording.
 
 **Required elements:**
-- GlassHeader with title "Membership Tiers" and `star` icon, back arrow
-- Info banner:
-  - Glass card with `star` icon in gold gradient background
-  - "Offer exclusive content and perks to your members"
-  - "Members pay monthly for access to your exclusive content"
-- Existing tiers list (3 mock tiers, FlatList with RefreshControl):
-  - **Tier card** (glass card per tier):
-    - Tier icon: star with color coding (bronze/silver/gold gradient)
-    - Tier name (e.g., "Supporter", "VIP", "Founding Member")
-    - Price: "$4.99/month" in emerald text
-    - Subscriber count: "127 members" with `users` icon in pill badge
-    - Benefits list (3-4 items per tier):
-      - `check` icon + benefit text per line
-      - E.g., "Early access to posts", "Exclusive stories", "Monthly Q&A", "Custom badge"
-    - Edit button: glass pill with `pencil` icon
-    - Toggle: Active/Inactive status
-  - FadeInUp per tier card
-- "Create New Tier" button:
-  - Large dashed-border glass card with `circle-plus` icon centered
-  - "Add a membership tier" text
-  - Tap expands inline form (or just shows mock — no need for full form):
-    - Name TextInput
-    - Price TextInput with $ prefix
-    - Benefits TextInput (multiline)
-    - "Create" button with emerald gradient
-- Revenue summary card at bottom:
-  - Glass card with gold border accent
-  - "Monthly Revenue" with `bar-chart-2` icon
-  - "$2,847/month" in large gold text
-  - "312 active members" subtitle
-  - "Payout: 15th of each month" info line
+- GlassHeader with title "Green Screen" and back arrow
+- Camera preview (top ~50% of screen):
+  - Glass container with camera placeholder (dark.bgCard)
+  - Subject silhouette placeholder (centered `user` icon, 80x80, representing the person)
+  - Selected background visible "behind" the subject area
+  - Record button overlay (bottom-right): red circle with `video` icon
+- Background categories (horizontal ScrollView):
+  - Glass pill buttons: "Solid Colors", "Gradients", "Images", "Videos", "Custom"
+  - Selected category with emerald gradient
+- Background grid (selected category content):
+  - **Solid Colors tab:** 12 color circles (3 rows × 4 columns):
+    - Black, White, Emerald (#0A7B4F), Gold (#C8963E), Blue, Red, Purple, Pink, Orange, Yellow, Cyan, Gray
+    - Selected: emerald ring around the color circle
+  - **Gradients tab:** 8 gradient rectangles (2 rows × 4 columns):
+    - "Sunset", "Ocean", "Forest" (emerald gradient), "Midnight", "Rose", "Arctic", "Desert" (gold gradient), "Aurora"
+    - Each: small rounded rect with gradient preview + name below
+  - **Images tab:** Grid of 8 stock background thumbnails (2 rows × 4 columns):
+    - "Beach", "Mountains", "City", "Studio", "Space", "Library", "Café", "Garden"
+    - Each: glass card with placeholder (dark.surface with `image` icon + name)
+  - **Videos tab:** Grid of 6 animated background thumbnails:
+    - "Particles", "Rain", "Fire", "Bokeh", "Clouds", "Matrix"
+    - Each: glass card with `play` icon overlay + name
+  - **Custom tab:**
+    - "Upload Image" button: dashed glass card with `image` icon + `plus`
+    - "Upload Video" button: dashed glass card with `video` icon + `plus`
+    - Recent uploads section (empty state initially)
+  - FadeInUp per grid item
+- Intensity slider:
+  - Glass card with `sliders` icon
+  - "Background Blur" slider (0-100%)
+  - "Edge Smoothing" slider (0-100%)
+  - Both with emerald fill on the slider track
+- Bottom bar:
+  - "Cancel" text + "Apply & Record" emerald gradient button
 
-**Mock tier data:**
+**Visual accents:**
+- Color circles have subtle shadow/glow when selected
+- Gradient previews are actual LinearGradient components (not images)
+- Custom upload cards have dashed emerald borders
+
+### Task 2.4 — account-switcher.tsx (Multi-Account Switcher)
+
+**Create:** `apps/mobile/app/(screens)/account-switcher.tsx`
+
+**Purpose:** Quick-switch between multiple accounts (P0 ship-blocking feature).
+
+**Required elements:**
+- GlassHeader with title "Switch Account" and back arrow
+- Current account hero card:
+  - Large glass card with gold border accent (indicating active):
+    - Avatar placeholder (64x64) with emerald online ring
+    - Display name (bold, large)
+    - Username: "@username" in secondary text
+    - "Active" badge: emerald gradient pill with `check-circle` icon
+    - Account type: "Personal" or "Creator" in glass pill
+    - Stats row: "1.2K followers · 342 following · 89 posts" in tertiary text
+- Other accounts list (FlatList):
+  - 2-3 mock accounts, each in glass card:
+    - Avatar placeholder (48x48)
+    - Display name + username
+    - Account type badge
+    - Unread notifications badge: red circle with count (e.g., "3")
+    - "Switch" button: glass pill with emerald text
+    - Last active: "Active 2h ago" in tertiary text
+  - FadeInUp per account card
+- Add account section:
+  - Dashed glass card with `circle-plus` icon centered (48x48)
+  - "Add Account" text
+  - "Sign in to another account" subtitle in tertiary
+- Account management section:
+  - Glass card with `settings` icon header
+  - "Manage Accounts" row with `chevron-right`
+  - "Default Account" row showing current default + `chevron-right`
+  - "Auto-switch on notification" toggle
+- Security note at bottom:
+  - Small glass card with `lock` icon
+  - "Each account has its own login and security settings"
+  - "Sign out of all accounts" link in error color
+
+**Mock account data:**
 ```
-Supporter: $2.99/mo, 185 members, bronze star, benefits: [Ad-free viewing, Supporter badge, Early access to posts]
-VIP: $9.99/mo, 89 members, silver star, benefits: [All Supporter perks, Exclusive stories, Monthly Q&A, Priority replies]
-Founding Member: $24.99/mo, 38 members, gold star, benefits: [All VIP perks, 1-on-1 monthly call, Custom shoutouts, Behind-the-scenes content]
+Active: Khalid Al-Rashid (@khalid_dev), Personal, 1.2K followers
+Account 2: Mizanly Official (@mizanly), Creator, 45.2K followers, 3 unread
+Account 3: Design Studio (@khalid_designs), Creator, 890 followers, 0 unread
 ```
 
 **Visual accents:**
-- Bronze/silver/gold color coding for tier levels:
-  - Bronze: `rgba(205,127,50,0.3)` → `rgba(205,127,50,0.15)`
-  - Silver: `rgba(192,192,192,0.3)` → `rgba(192,192,192,0.15)`
-  - Gold: `rgba(200,150,62,0.3)` → `rgba(200,150,62,0.15)`
-- Star icon color matches tier level
-- Revenue card has premium gold accent
+- Active account: gold border accent
+- Notification badges: error red
+- "Switch" buttons: emerald text on glass
+- Add account: dashed emerald border
 
-**Commit after Stage 2:** `git add -A && git commit -m "feat: batch 30 stage 2 — 3 monetization screens (enable-tips, send-tip, membership-tiers)"`
+**Commit after Stage 2:** `git add -A && git commit -m "feat: batch 31 stage 2 — 4 content tool screens (caption-editor, schedule-post, green-screen-editor, account-switcher)"`
 
 ---
 
@@ -457,14 +439,13 @@ Founding Member: $24.99/mo, 38 members, gold star, benefits: [All VIP perks, 1-o
 | File | Stage |
 |------|-------|
 | `apps/mobile/src/components/ui/Icon.tsx` | 0 |
-| `apps/mobile/app/(screens)/hadith.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/dhikr-counter.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/zakat-calculator.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/mosque-finder.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/ramadan-mode.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/enable-tips.tsx` | 2 (NEW) |
-| `apps/mobile/app/(screens)/send-tip.tsx` | 2 (NEW) |
-| `apps/mobile/app/(screens)/membership-tiers.tsx` | 2 (NEW) |
+| `apps/mobile/app/(screens)/video-editor.tsx` | 1 (NEW) |
+| `apps/mobile/app/(screens)/duet-create.tsx` | 1 (NEW) |
+| `apps/mobile/app/(screens)/stitch-create.tsx` | 1 (NEW) |
+| `apps/mobile/app/(screens)/caption-editor.tsx` | 2 (NEW) |
+| `apps/mobile/app/(screens)/schedule-post.tsx` | 2 (NEW) |
+| `apps/mobile/app/(screens)/green-screen-editor.tsx` | 2 (NEW) |
+| `apps/mobile/app/(screens)/account-switcher.tsx` | 2 (NEW) |
 
 **Zero file conflicts between stages.**
 
@@ -472,22 +453,21 @@ Founding Member: $24.99/mo, 38 members, gold star, benefits: [All VIP perks, 1-o
 
 ## VERIFICATION CHECKLIST (run after ALL stages)
 
-For each of the 8 new screen files:
+For each of the 7 new screen files:
 - [ ] File exists at correct path
+- [ ] 300-700+ lines of real implementation
 - [ ] Imports `LinearGradient` from `expo-linear-gradient`
 - [ ] Imports `FadeInUp` from `react-native-reanimated`
 - [ ] Has glassmorphism card patterns (rgba gradient colors)
 - [ ] Has entrance animations on list/card items
-- [ ] Has `<Skeleton>` loading state
-- [ ] Has `<EmptyState>` or equivalent
-- [ ] Has `<RefreshControl>` on any FlatList/ScrollView
 - [ ] Uses `<GlassHeader>` for navigation
+- [ ] Has `<RefreshControl>` on any ScrollView/FlatList
 - [ ] 0 instances of `as any`
 - [ ] 0 hardcoded `borderRadius` >= 6
 - [ ] 0 RN `Modal` usage
-- [ ] 300-600+ lines of real implementation
-- [ ] All Icon names are valid IconName values (no string casts)
+- [ ] All Icon names are valid IconName values
+- [ ] **No variable shadowing** of imported `colors` or other theme values
 
 For Icon.tsx:
-- [ ] 6 new icons added to imports, IconName type, and iconMap
+- [ ] 3 new icons added to imports, IconName type, and iconMap
 - [ ] No TypeScript errors

@@ -90,7 +90,7 @@ function TierCard({
   onToggle: () => void;
 }) {
   const haptic = useHaptic();
-  const colors = TIER_COLORS[tier.level];
+  const tierColors = TIER_COLORS[tier.level];
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
@@ -102,14 +102,14 @@ function TierCard({
         <View style={styles.tierHeader}>
           <View style={styles.tierTitleSection}>
             <LinearGradient
-              colors={colors.iconBg}
+              colors={tierColors.iconBg}
               style={styles.tierIconBg}
             >
-              <Icon name="star" size="sm" color={colors.color} />
+              <Icon name="star" size="sm" color={tierColors.color} />
             </LinearGradient>
             <View>
               <Text style={styles.tierName}>{tier.name}</Text>
-              <Text style={[styles.tierPrice, { color: colors.color }]}>
+              <Text style={[styles.tierPrice, { color: tierColors.color }]}>
                 ${tier.price.toFixed(2)}/month
               </Text>
             </View>

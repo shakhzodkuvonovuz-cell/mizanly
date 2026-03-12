@@ -12,6 +12,7 @@ import {
   Maximize, Pause, Rewind, FastForward, Volume1, Volume2, Music,
   Sun, Circle, Droplet, SlidersHorizontal,
   Moon, Star, Gift, BookOpen, Calculator, Calendar,
+  Scissors, Type, LayoutGrid,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
@@ -29,7 +30,8 @@ export type IconName =
   | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader'
   | 'maximize' | 'music'
   | 'sun' | 'circle' | 'droplet' | 'sliders'
-  | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar';
+  | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar'
+  | 'scissors' | 'type' | 'layout';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -115,6 +117,9 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'book-open': BookOpen,
   'calculator': Calculator,
   'calendar': Calendar,
+  'scissors': Scissors,
+  'type': Type,
+  'layout': LayoutGrid,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);
