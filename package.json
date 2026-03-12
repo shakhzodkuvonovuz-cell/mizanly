@@ -22,5 +22,9 @@
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "expo-auth-session": "~6.0.3",
+    "expo-web-browser": "~14.0.2"
   }
 }

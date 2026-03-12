@@ -241,7 +241,7 @@ export default function BroadcastChannelsScreen() {
       <GlassHeader
         title="Channels"
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        rightAction={{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: 'Create channel' }}
+        rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: 'Create channel' }]}
       />
       <View style={styles.container}>
         <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>

@@ -336,20 +336,27 @@ export class ThreadsService {
     });
     if (existing) throw new ConflictException('Already reacted');
 
-    await this.prisma.$transaction([
-      this.prisma.threadReaction.create({
-        data: { userId, threadId, reaction: 'LIKE' },
-      }),
-      this.prisma.thread.update({
-        where: { id: threadId },
-        data: { likesCount: { increment: 1 } },
-      }),
-    ]);
-    // Notify thread owner
-    this.notifications.create({
-      userId: thread.userId, actorId: userId,
-      type: 'LIKE', threadId,
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    try {
+      await this.prisma.$transaction([
+        this.prisma.threadReaction.create({
+          data: { userId, threadId, reaction: 'LIKE' },
+        }),
+        this.prisma.thread.update({
+          where: { id: threadId },
+          data: { likesCount: { increment: 1 } },
+        }),
+      ]);
+      // Notify thread owner
+      this.notifications.create({
+        userId: thread.userId, actorId: userId,
+        type: 'LIKE', threadId,
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        return { liked: true };
+      }
+      throw err;
+    }
     return { liked: true };
   }
 

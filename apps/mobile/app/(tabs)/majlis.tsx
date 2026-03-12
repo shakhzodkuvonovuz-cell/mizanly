@@ -62,7 +62,7 @@ export default function MajlisScreen() {
     queryKey: ['majlis-feed', feedType],
     queryFn: ({ pageParam }) => threadsApi.getFeed(feedType, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
   const trendingHashtagsQuery = useQuery({
@@ -70,7 +70,7 @@ export default function MajlisScreen() {
     queryFn: () => hashtagsApi.getTrending(),
   });
 
-  const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
 
   const listEmpty = useMemo(() => (
     feedQuery.isLoading ? (

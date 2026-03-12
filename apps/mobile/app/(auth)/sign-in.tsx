@@ -31,7 +31,8 @@ export default function SignInScreen() {
         await setActive({ session: result.createdSessionId });
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Sign in failed');
+      console.error('Sign in error:', JSON.stringify(err, null, 2));
+      setError(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Sign in failed');
     } finally {
       setLoading(false);
     }

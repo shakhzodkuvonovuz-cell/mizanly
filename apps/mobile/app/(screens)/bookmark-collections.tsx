@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: spacing.base,
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
   },
   columnWrapper: {
     justifyContent: 'space-between',
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   emptyWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
   card: {
     flex: 1,

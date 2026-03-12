@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { useHaptic } from '@/hooks/useHaptic';
 import { animation, colors, spacing, fontSize } from '@/theme';
@@ -53,11 +54,6 @@ export function ActionButton({
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
-    shadowColor: isActive ? activeColor : 'transparent',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: isActive ? 0.3 : 0,
-    shadowRadius: isActive ? 8 : 0,
-    elevation: isActive ? 4 : 0,
   }));
 
   return (

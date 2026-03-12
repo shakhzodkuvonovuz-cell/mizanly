@@ -76,12 +76,15 @@ export default function SafScreen() {
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['saf-feed', feedType],
-    queryFn: ({ pageParam }) => postsApi.getFeed(feedType, pageParam as string | undefined),
+    queryFn: async ({ pageParam }) => {
+      const res = await postsApi.getFeed(feedType, pageParam as string | undefined);
+      return res;
+    },
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
-  const posts: Post[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const posts: Post[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

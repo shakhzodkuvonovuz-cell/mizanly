@@ -332,40 +332,47 @@ export class VideosService {
     if (existingReaction?.isLike === true) throw new ConflictException('Already liked');
     // If existing reaction is dislike, we'll replace it
 
-    await this.prisma.$transaction(async (tx) => {
-      if (existingReaction) {
-        // Update existing reaction
-        await tx.videoReaction.update({
-          where: { userId_videoId: { userId, videoId } },
-          data: { isLike: true },
-        });
-        // Decrement dislikesCount, increment likesCount
-        await tx.$executeRaw`
-          UPDATE "Video"
-          SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1),
-              "likesCount" = GREATEST(0, "likesCount" + 1)
-          WHERE id = ${videoId}
-        `;
-      } else {
-        // Create new reaction
-        await tx.videoReaction.create({
-          data: { userId, videoId, isLike: true },
-        });
-        await tx.$executeRaw`
-          UPDATE "Video"
-          SET "likesCount" = GREATEST(0, "likesCount" + 1)
-          WHERE id = ${videoId}
-        `;
-      }
-    });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        if (existingReaction) {
+          // Update existing reaction
+          await tx.videoReaction.update({
+            where: { userId_videoId: { userId, videoId } },
+            data: { isLike: true },
+          });
+          // Decrement dislikesCount, increment likesCount
+          await tx.$executeRaw`
+            UPDATE "Video"
+            SET "dislikesCount" = GREATEST(0, "dislikesCount" - 1),
+                "likesCount" = GREATEST(0, "likesCount" + 1)
+            WHERE id = ${videoId}
+          `;
+        } else {
+          // Create new reaction
+          await tx.videoReaction.create({
+            data: { userId, videoId, isLike: true },
+          });
+          await tx.$executeRaw`
+            UPDATE "Video"
+            SET "likesCount" = GREATEST(0, "likesCount" + 1)
+            WHERE id = ${videoId}
+          `;
+        }
+      });
 
-    // Notify video owner
-    this.notifications.create({
-      userId: video.userId,
-      actorId: userId,
-      type: 'VIDEO_LIKE',
-      videoId,
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+      // Notify video owner
+      this.notifications.create({
+        userId: video.userId,
+        actorId: userId,
+        type: 'VIDEO_LIKE',
+        videoId,
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        return { liked: true };
+      }
+      throw err;
+    }
 
     return { liked: true };
   }

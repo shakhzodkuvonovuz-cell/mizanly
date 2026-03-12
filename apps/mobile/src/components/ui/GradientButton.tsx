@@ -31,6 +31,8 @@ interface GradientButtonProps {
   disabled?: boolean;
   fullWidth?: boolean;
   size?: ButtonSize;
+  accessibilityLabel?: string;
+  accessibilityRole?: string;
 }
 
 const sizeConfig: Record<ButtonSize, {

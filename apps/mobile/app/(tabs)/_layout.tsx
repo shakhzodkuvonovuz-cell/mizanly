@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
+  withTiming,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,7 +13,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, tabBar, spacing, fontSize, animation, radius, glass } from '@/theme';
+import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow } from '@/theme';
 import { useStore } from '@/store';
 import { useState } from 'react';
 

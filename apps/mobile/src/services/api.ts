@@ -112,7 +112,12 @@ class ApiClient {
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
-    const token = this.getToken ? await this.getToken() : null;
+    let token: string | null = null;
+    try {
+      token = this.getToken ? await this.getToken() : null;
+    } catch (e) {
+      console.error('[API] Token getter failed:', e);
+    }
 
     const res = await fetch(`${API_URL}${path}`, {
       ...options,
@@ -125,11 +130,19 @@ class ApiClient {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ message: 'Request failed' }));
+      console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
       throw new Error(error.message || `HTTP ${res.status}`);
     }
 
     if (res.status === 204) return null as T;
-    return res.json();
+    const json = await res.json();
+    // Unwrap TransformInterceptor envelope
+    // Paginated responses have { success, data, meta, timestamp } — keep data + meta together
+    if (json.success && json.meta !== undefined) {
+      return { data: json.data, meta: json.meta } as T;
+    }
+    // Non-paginated: { success, data, timestamp } — return just data
+    return json.data !== undefined ? json.data : json;
   }
 
   get<T>(path: string) { return this.request<T>(path); }

@@ -13,7 +13,8 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import { callsApi } from '@/services/api';
+import { api, callsApi } from '@/services/api';
+import type { CallSession } from '@/types';
 
 type CallType = 'voice' | 'video';
 type CallStatus = 'ringing' | 'connected' | 'ended' | 'missed' | 'declined';
@@ -49,18 +50,18 @@ export default function CallScreen() {
 
   const { data: call, isLoading } = useQuery({
     queryKey: ['call', id],
-    queryFn: () => callsApi.getCall(id),
+    queryFn: () => api.get<CallSession>(`/calls/${id}`).then(r => r.data),
     enabled: !!id,
   });
 
   const answerMutation = useMutation({
-    mutationFn: () => callsApi.answerCall(id),
+    mutationFn: () => callsApi.answer(id),
     onSuccess: () => setCallStatus('connected'),
     onError: (err: Error) => Alert.alert('Error', err.message),
   });
 
   const endCallMutation = useMutation({
-    mutationFn: () => callsApi.endCall(id),
+    mutationFn: () => callsApi.end(id),
     onSuccess: () => {
       setCallStatus('ended');
       router.back();
@@ -69,7 +70,7 @@ export default function CallScreen() {
   });
 
   const declineMutation = useMutation({
-    mutationFn: () => callsApi.declineCall(id),
+    mutationFn: () => callsApi.decline(id),
     onSuccess: () => {
       setCallStatus('declined');
       router.back();

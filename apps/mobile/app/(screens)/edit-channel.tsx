@@ -148,7 +148,7 @@ export default function EditChannelScreen() {
       <ScrollView 
         contentContainerStyle={[
           styles.content, 
-          { paddingTop: insets.top + 52 + spacing.xl, paddingBottom: insets.bottom + spacing.2xl }
+          { paddingTop: insets.top + 52 + spacing.xl, paddingBottom: insets.bottom + spacing['2xl'] }
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: spacing.2xl,
+    marginBottom: spacing['2xl'],
   },
   avatarWrap: {
     position: 'relative',
@@ -276,6 +276,6 @@ const styles = StyleSheet.create({
     right: spacing.sm,
   },
   buttonWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
 });

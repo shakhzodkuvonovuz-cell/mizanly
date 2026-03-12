@@ -1,4 +1,4 @@
-import { useState, useCallback, memo } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Share, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -40,6 +40,13 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
+
+  // Sync local state when server data changes (e.g. after feed refetch or FlashList recycle)
+  useEffect(() => {
+    setLocalLiked(post.userReaction === 'LIKE');
+    setLocalLikes(post.likesCount);
+    setLocalSaved(post.isSaved ?? false);
+  }, [post.id, post.userReaction, post.likesCount, post.isSaved]);
   const [dismissed, setDismissed] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [heartTrigger, setHeartTrigger] = useState(0);
@@ -48,17 +55,23 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const overlayHeartScale = useSharedValue(0);
   const overlayHeartOpacity = useSharedValue(0);
 
+  const reactInFlight = useRef(false);
   const reactMutation = useMutation({
     mutationFn: () =>
       localLiked ? postsApi.unreact(post.id) : postsApi.react(post.id, 'LIKE'),
     onMutate: () => {
+      const prev = { liked: localLiked, likes: localLikes };
       setLocalLiked((p) => !p);
       setLocalLikes((p) => localLiked ? p - 1 : p + 1);
+      return prev;
     },
-    onError: () => {
-      setLocalLiked((p) => !p);
-      setLocalLikes((p) => localLiked ? p + 1 : p - 1);
+    onError: (_e, _v, ctx) => {
+      if (ctx) {
+        setLocalLiked(ctx.liked);
+        setLocalLikes(ctx.likes);
+      }
     },
+    onSettled: () => { reactInFlight.current = false; },
   });
 
   const saveMutation = useMutation({
@@ -154,6 +167,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
 
   // Handle like button press
   const handleLike = useCallback(() => {
+    if (reactInFlight.current) return;
+    reactInFlight.current = true;
     if (!localLiked) {
       triggerHeartAnimation();
     }
@@ -166,7 +181,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
     const now = Date.now();
     if (now - lastTap.value < 300) {
       // Double tap detected
-      if (!localLiked) {
+      if (!localLiked && !reactInFlight.current) {
+        reactInFlight.current = true;
         reactMutation.mutate();
         triggerHeartAnimation();
       }

@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   listContent: {
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
   },
   featuredSection: {
     marginBottom: spacing.base,
@@ -383,11 +383,11 @@ const styles = StyleSheet.create({
     color: colors.emerald,
   },
   emptyWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
   sheetContent: {
     padding: spacing.base,
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
   },
   sheetTitle: {
     fontSize: fontSize.lg,

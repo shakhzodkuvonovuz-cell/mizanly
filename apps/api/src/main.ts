@@ -22,7 +22,7 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',').filter(Boolean) || ['http://localhost:8081'],
+    origin: process.env.CORS_ORIGINS?.split(',').filter(Boolean) || ['http://localhost:8081', 'http://localhost:8082'],
     credentials: true,
   });
 

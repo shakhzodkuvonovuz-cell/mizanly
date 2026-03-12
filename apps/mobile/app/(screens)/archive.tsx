@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, StyleSheet, FlatList, Alert, Pressable,
+  View, StyleSheet, FlatList, Alert, Pressable, type ViewStyle, type ImageStyle,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -19,7 +19,7 @@ import { useStore } from '@/store';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
-const ITEM_SIZE = (100 / GRID_COLUMNS) + '%';
+const ITEM_SIZE = `${100 / GRID_COLUMNS}%` as const;
 
 export default function ArchiveScreen() {
   const router = useRouter();
@@ -102,19 +102,19 @@ export default function ArchiveScreen() {
   const renderGridItem = useCallback(({ item }: { item: Story }) => {
     return (
       <Pressable
-        style={styles.gridItem}
+        style={styles.gridItem as ViewStyle}
         onPress={() => handleStoryPress(item)}
         onLongPress={() => handleStoryLongPress(item)}
         delayLongPress={500}
       >
         <Image
           source={{ uri: item.thumbnailUrl || item.mediaUrl }}
-          style={styles.thumbnail}
+          style={styles.thumbnail as ImageStyle}
           contentFit="cover"
           transition={200}
         />
         {item.mediaType === 'VIDEO' && (
-          <View style={styles.videoBadge}>
+          <View style={styles.videoBadge as ViewStyle}>
             <Icon name="play" size="xs" color="#FFF" />
           </View>
         )}
@@ -124,7 +124,7 @@ export default function ArchiveScreen() {
 
   const renderSkeleton = useCallback(() => {
     return (
-      <View style={styles.skeletonGrid}>
+      <View style={styles.skeletonGrid as ViewStyle}>
         {Array.from({ length: 9 }).map((_, i) => (
           <Skeleton.Rect key={i} width="100%" height={100} borderRadius={radius.sm} />
         ))}
@@ -134,7 +134,7 @@ export default function ArchiveScreen() {
 
   if (isError) {
     return (
-      <View style={styles.container}>
+      <View style={styles.container as ViewStyle}>
         <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
         <EmptyState
           icon="flag"
@@ -149,7 +149,7 @@ export default function ArchiveScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.container as ViewStyle}>
         <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
         {renderSkeleton()}
       </View>
@@ -157,7 +157,7 @@ export default function ArchiveScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={styles.container as ViewStyle}>
       <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
@@ -166,15 +166,16 @@ export default function ArchiveScreen() {
         renderItem={renderGridItem}
         keyExtractor={(item) => item.id}
         numColumns={GRID_COLUMNS}
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
+        columnWrapperStyle={styles.gridRow as ViewStyle}
+        contentContainerStyle={[styles.gridContainer as ViewStyle, { paddingTop: insets.top + 52 }]}
         ListEmptyComponent={
-          <EmptyState
-            icon="clock"
-            title="No archived stories"
-            subtitle="Stories you archive will appear here"
-            style={styles.emptyState}
-          />
+          <View style={styles.emptyState}>
+            <EmptyState
+              icon="clock"
+              title="No archived stories"
+              subtitle="Stories you archive will appear here"
+            />
+          </View>
         }
         refreshControl={
           <RefreshControl

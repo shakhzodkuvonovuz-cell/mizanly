@@ -118,9 +118,10 @@ export class PostsService {
 
       // Strip internal score field
       const data = result.map(({ _score, ...post }) => post);
+      const enriched = await this.enrichPostsForUser(data, userId);
 
       const finalResult = {
-        data,
+        data: enriched,
         meta: {
           cursor: hasMore ? data[data.length - 1].createdAt.toISOString() : null,
           hasMore,
@@ -163,12 +164,35 @@ export class PostsService {
 
     const hasMore = posts.length > limit;
     const items = hasMore ? posts.slice(0, limit) : posts;
+    const enriched = await this.enrichPostsForUser(items, userId);
     const result = {
-      data: items,
+      data: enriched,
       meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
     };
 
     return result;
+  }
+
+  private async enrichPostsForUser(posts: any[], userId: string) {
+    if (!posts.length) return posts;
+    const postIds = posts.map((p) => p.id);
+    const [reactions, saves] = await Promise.all([
+      this.prisma.postReaction.findMany({
+        where: { userId, postId: { in: postIds } },
+        select: { postId: true, reaction: true },
+      }),
+      this.prisma.savedPost.findMany({
+        where: { userId, postId: { in: postIds } },
+        select: { postId: true },
+      }),
+    ]);
+    const reactionMap = new Map(reactions.map((r) => [r.postId, r.reaction]));
+    const savedSet = new Set(saves.map((s) => s.postId));
+    return posts.map((post) => ({
+      ...post,
+      userReaction: reactionMap.get(post.id) ?? null,
+      isSaved: savedSet.has(post.id),
+    }));
   }
 
   async create(userId: string, dto: CreatePostDto) {
@@ -319,20 +343,27 @@ export class PostsService {
         data: { reaction: reaction as ReactionType },
       });
     } else {
-      await this.prisma.$transaction([
-        this.prisma.postReaction.create({
-          data: { userId, postId, reaction: reaction as ReactionType },
-        }),
-        this.prisma.post.update({
-          where: { id: postId },
-          data: { likesCount: { increment: 1 } },
-        }),
-      ]);
-      // Notify post owner
-      this.notifications.create({
-        userId: post.userId, actorId: userId,
-        type: 'LIKE', postId,
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      try {
+        await this.prisma.$transaction([
+          this.prisma.postReaction.create({
+            data: { userId, postId, reaction: reaction as ReactionType },
+          }),
+          this.prisma.post.update({
+            where: { id: postId },
+            data: { likesCount: { increment: 1 } },
+          }),
+        ]);
+        // Notify post owner
+        this.notifications.create({
+          userId: post.userId, actorId: userId,
+          type: 'LIKE', postId,
+        }).catch((err) => this.logger.error('Failed to create notification', err));
+      } catch (err: unknown) {
+        if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+          return { reaction }; // Already reacted (race condition), treat as success
+        }
+        throw err;
+      }
     }
     return { reaction };
   }
@@ -341,7 +372,7 @@ export class PostsService {
     const existing = await this.prisma.postReaction.findUnique({
       where: { userId_postId: { userId, postId } },
     });
-    if (!existing) throw new NotFoundException('Reaction not found');
+    if (!existing) return { reaction: null }; // Already unreacted, idempotent
 
     await this.prisma.$transaction([
       this.prisma.postReaction.delete({
@@ -386,6 +417,11 @@ export class PostsService {
   async share(postId: string, userId: string, content?: string) {
     const original = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!original || original.isRemoved) throw new NotFoundException('Post not found');
+
+    const existing = await this.prisma.post.findFirst({
+      where: { userId, sharedPostId: postId, isRemoved: false },
+    });
+    if (existing) throw new ConflictException('Already shared this post');
 
     const [shared] = await this.prisma.$transaction([
       this.prisma.post.create({

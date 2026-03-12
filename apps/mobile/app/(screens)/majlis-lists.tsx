@@ -237,12 +237,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bg 
   },
   listContent: {
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
     paddingHorizontal: spacing.base,
     gap: spacing.md,
   },
   emptyWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
   card: {
     flexDirection: 'row',
@@ -282,7 +282,7 @@ const styles = StyleSheet.create({
   },
   sheetContent: {
     padding: spacing.base,
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
   },
   sheetTitle: {
     fontSize: fontSize.lg,

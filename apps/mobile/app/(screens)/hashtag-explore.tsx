@@ -177,10 +177,10 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   listContent: {
-    paddingBottom: spacing.2xl,
+    paddingBottom: spacing['2xl'],
   },
   emptyWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
   row: {
     flexDirection: 'row',

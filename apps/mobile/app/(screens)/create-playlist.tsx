@@ -113,7 +113,7 @@ export default function CreatePlaylistScreen() {
       <ScrollView 
         contentContainerStyle={[
           styles.content, 
-          { paddingTop: insets.top + 52 + spacing.md, paddingBottom: insets.bottom + spacing.2xl }
+          { paddingTop: insets.top + 52 + spacing.md, paddingBottom: insets.bottom + spacing['2xl'] }
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -238,6 +238,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   buttonWrap: {
-    marginTop: spacing.2xl,
+    marginTop: spacing['2xl'],
   },
 });

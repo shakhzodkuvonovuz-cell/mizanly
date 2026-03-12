@@ -42,35 +42,58 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
   const [showMenu, setShowMenu] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
+  // Sync local state when server data changes
+  useEffect(() => {
+    setLocalLiked(thread.userReaction === 'LIKE');
+    setLocalLikes(thread.likesCount);
+    setLocalBookmarked(thread.isBookmarked ?? false);
+    setLocalReposted(thread.isReposted ?? false);
+    setLocalReposts(thread.repostsCount);
+  }, [thread.id, thread.userReaction, thread.likesCount, thread.isBookmarked, thread.isReposted, thread.repostsCount]);
+
   const likeMutation = useMutation({
     mutationFn: () => localLiked ? threadsApi.unlike(thread.id) : threadsApi.like(thread.id),
     onMutate: () => {
+      const prev = { liked: localLiked, likes: localLikes };
       setLocalLiked((p) => !p);
       setLocalLikes((p) => localLiked ? p - 1 : p + 1);
+      return prev;
     },
-    onError: () => {
-      setLocalLiked((p) => !p);
-      setLocalLikes((p) => localLiked ? p + 1 : p - 1);
+    onError: (_e, _v, ctx) => {
+      if (ctx) {
+        setLocalLiked(ctx.liked);
+        setLocalLikes(ctx.likes);
+      }
     },
   });
 
   const bookmarkMutation = useMutation({
     mutationFn: () =>
       localBookmarked ? threadsApi.unbookmark(thread.id) : threadsApi.bookmark(thread.id),
-    onMutate: () => setLocalBookmarked((p) => !p),
-    onError: () => setLocalBookmarked((p) => !p),
+    onMutate: () => {
+      const prev = localBookmarked;
+      setLocalBookmarked((p) => !p);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx) setLocalBookmarked(ctx.prev);
+    },
   });
 
   const repostMutation = useMutation({
     mutationFn: () =>
       localReposted ? threadsApi.unrepost(thread.id) : threadsApi.repost(thread.id),
     onMutate: () => {
+      const prev = { reposted: localReposted, reposts: localReposts };
       setLocalReposted((p) => !p);
       setLocalReposts((p) => localReposted ? p - 1 : p + 1);
+      return prev;
     },
-    onError: () => {
-      setLocalReposted((p) => !p);
-      setLocalReposts((p) => localReposted ? p + 1 : p - 1);
+    onError: (_e, _v, ctx) => {
+      if (ctx) {
+        setLocalReposted(ctx.reposted);
+        setLocalReposts(ctx.reposts);
+      }
     },
   });
 

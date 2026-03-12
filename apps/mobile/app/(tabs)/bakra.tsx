@@ -385,10 +385,10 @@ export default function BakraScreen() {
     queryKey: ['reels-feed'],
     queryFn: ({ pageParam }) => reelsApi.getFeed(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
 
-  const reels: Reel[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const reels: Reel[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -421,24 +421,38 @@ export default function BakraScreen() {
     }
   }, [currentIndex, reels]);
 
+  const likeInFlight = useRef(false);
   const handleLike = async (reel: Reel) => {
+    if (likeInFlight.current) return;
+    likeInFlight.current = true;
     haptic.light();
-    if (reel.isLiked) {
-      await reelsApi.unlike(reel.id);
-    } else {
-      await reelsApi.like(reel.id);
+    try {
+      if (reel.isLiked) {
+        await reelsApi.unlike(reel.id);
+      } else {
+        await reelsApi.like(reel.id);
+      }
+      feedQuery.refetch();
+    } finally {
+      likeInFlight.current = false;
     }
-    feedQuery.refetch();
   };
 
+  const bookmarkInFlight = useRef(false);
   const handleBookmark = async (reel: Reel) => {
+    if (bookmarkInFlight.current) return;
+    bookmarkInFlight.current = true;
     haptic.light();
-    if (reel.isBookmarked) {
-      await reelsApi.unbookmark(reel.id);
-    } else {
-      await reelsApi.bookmark(reel.id);
+    try {
+      if (reel.isBookmarked) {
+        await reelsApi.unbookmark(reel.id);
+      } else {
+        await reelsApi.bookmark(reel.id);
+      }
+      feedQuery.refetch();
+    } finally {
+      bookmarkInFlight.current = false;
     }
-    feedQuery.refetch();
   };
 
   const handleShare = async (reel: Reel) => {

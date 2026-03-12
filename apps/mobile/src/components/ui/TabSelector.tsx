@@ -14,7 +14,7 @@ interface Tab {
 }
 
 interface TabSelectorProps {
-  tabs: Tab[];
+  tabs: readonly Tab[];
   activeKey: string;
   onTabChange: (key: string) => void;
   variant?: 'underline' | 'pill';

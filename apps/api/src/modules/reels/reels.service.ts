@@ -289,26 +289,33 @@ export class ReelsService {
     });
     if (existingReaction) throw new ConflictException('Already liked');
 
-    await this.prisma.$transaction([
-      this.prisma.reelReaction.create({
-        data: { userId, reelId, reaction: ReactionType.LIKE },
-      }),
-      this.prisma.reelInteraction.upsert({
-        where: { userId_reelId: { userId, reelId } },
-        create: { userId, reelId, liked: true },
-        update: { liked: true },
-      }),
-      this.prisma.$executeRaw`
-        UPDATE "Reel"
-        SET "likesCount" = GREATEST(0, "likesCount" + 1)
-        WHERE id = ${reelId}
-      `,
-    ]);
-    // Notify reel owner
-    this.notifications.create({
-      userId: reel.userId, actorId: userId,
-      type: 'LIKE', reelId,
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    try {
+      await this.prisma.$transaction([
+        this.prisma.reelReaction.create({
+          data: { userId, reelId, reaction: ReactionType.LIKE },
+        }),
+        this.prisma.reelInteraction.upsert({
+          where: { userId_reelId: { userId, reelId } },
+          create: { userId, reelId, liked: true },
+          update: { liked: true },
+        }),
+        this.prisma.$executeRaw`
+          UPDATE "Reel"
+          SET "likesCount" = GREATEST(0, "likesCount" + 1)
+          WHERE id = ${reelId}
+        `,
+      ]);
+      // Notify reel owner
+      this.notifications.create({
+        userId: reel.userId, actorId: userId,
+        type: 'LIKE', reelId,
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    } catch (err: unknown) {
+      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+        return { liked: true };
+      }
+      throw err;
+    }
     return { liked: true };
   }
 
@@ -426,7 +433,12 @@ export class ReelsService {
     const reel = await this.prisma.reel.findUnique({ where: { id: reelId } });
     if (!reel || reel.status !== ReelStatus.READY) throw new NotFoundException('Reel not found');
 
-    await this.prisma.$transaction([
+    const existing = await this.prisma.reelInteraction.findUnique({
+      where: { userId_reelId: { userId, reelId } },
+    });
+    if (existing?.shared) return { shared: true };
+
+    const ops = [
       this.prisma.reelInteraction.upsert({
         where: { userId_reelId: { userId, reelId } },
         create: { userId, reelId, shared: true },
@@ -436,7 +448,8 @@ export class ReelsService {
         where: { id: reelId },
         data: { sharesCount: { increment: 1 } },
       }),
-    ]);
+    ];
+    await this.prisma.$transaction(ops);
     return { shared: true };
   }
 
