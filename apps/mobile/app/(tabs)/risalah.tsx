@@ -52,11 +52,13 @@ const ConversationRow = memo(function ConversationRow({
   userId,
   onPress,
   isOnline,
+  isTyping,
 }: {
   item: Conversation;
   userId?: string;
   onPress: () => void;
   isOnline?: boolean;
+  isTyping?: boolean;
 }) {
   const name = conversationName(item, userId);
   const avi = conversationAvatar(item, userId);
@@ -91,16 +93,22 @@ const ConversationRow = memo(function ConversationRow({
           <Text style={[styles.chatTime, hasUnread && styles.chatTimeUnread]}>{time}</Text>
         </View>
         <View style={styles.chatBottomRow}>
-          <Text
-            style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
-            numberOfLines={1}
-          >
-            {item.lastMessageText || 'No messages yet'}
-          </Text>
-          {!item.isGroup && lastMessageRead && (
+          {isTyping ? (
+            <Text style={styles.typingText} numberOfLines={1}>
+              typing...
+            </Text>
+          ) : (
+            <Text
+              style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
+              numberOfLines={1}
+            >
+              {item.lastMessageText || 'No messages yet'}
+            </Text>
+          )}
+          {!item.isGroup && !isTyping && lastMessageRead && (
             <Icon name="check-check" size={12} color={colors.emerald} />
           )}
-          {!item.isGroup && !lastMessageRead && item.lastMessageAt && (
+          {!item.isGroup && !isTyping && !lastMessageRead && item.lastMessageAt && (
             <Icon name="check" size={12} color={colors.text.tertiary} />
           )}
           {item.isMuted && (
@@ -123,6 +131,7 @@ export default function RisalahScreen() {
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const { getToken } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+  const [typingUsers, setTypingUsers] = useState<Map<string, Set<string>>>(new Map());
   const socketRef = useRef<Socket | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>('chats');
   const [filterChip, setFilterChip] = useState<'all' | 'unread' | 'groups'>('all');
@@ -159,6 +168,24 @@ export default function RisalahScreen() {
         setOnlineUsers(prev => {
           const next = new Set(prev);
           next.delete(userId);
+          return next;
+        });
+      });
+
+      socket.on('user_typing', ({ conversationId, userId, isTyping }: { conversationId: string; userId: string; isTyping: boolean }) => {
+        setTypingUsers(prev => {
+          const next = new Map(prev);
+          const currentSet = next.get(conversationId) ?? new Set();
+          if (isTyping) {
+            currentSet.add(userId);
+          } else {
+            currentSet.delete(userId);
+          }
+          if (currentSet.size === 0) {
+            next.delete(conversationId);
+          } else {
+            next.set(conversationId, currentSet);
+          }
           return next;
         });
       });
@@ -247,6 +274,7 @@ export default function RisalahScreen() {
   const renderItem = useCallback(({ item }: { item: Conversation }) => {
     const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
     const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
+    const isTyping = typingUsers.get(item.id)?.size > 0;
     const renderRightActions = () => (
       <Pressable
         style={styles.archiveAction}
@@ -269,10 +297,11 @@ export default function RisalahScreen() {
           userId={user?.id}
           onPress={() => router.push(`/(screens)/conversation/${item.id}`)}
           isOnline={isOnline}
+          isTyping={isTyping}
         />
       </Swipeable>
     );
-  }, [user?.id, router, onlineUsers]);
+  }, [user?.id, router, onlineUsers, typingUsers]);
   const getItemLayout = useCallback((_: ArrayLike<Conversation> | null | undefined, index: number) => ({
     length: 72,
     offset: 72 * index,
@@ -409,6 +438,12 @@ const styles = StyleSheet.create({
   },
   chatPreview: { color: colors.text.tertiary, fontSize: fontSize.sm, flex: 1 },
   chatPreviewUnread: { color: colors.text.secondary },
+  typingText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    flex: 1,
+    fontStyle: 'italic',
+  },
   filterChipRow: {
     flexDirection: 'row',
     paddingHorizontal: spacing.base,

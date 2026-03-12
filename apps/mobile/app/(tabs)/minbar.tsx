@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, RefreshControl } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter, useNavigation } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius, shadow } from '@/theme';
 import { useStore } from '@/store';
 import { videosApi, usersApi } from '@/services/api';
@@ -73,24 +74,43 @@ interface VideoCardProps {
   onMorePress: (video: Video) => void;
 }
 
+interface VideoWithProgress extends Video {
+  progress?: number;
+}
+
 const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMorePress }: VideoCardProps) {
-  const durationMinutes = Math.floor(item.duration / 60);
-  const durationSeconds = Math.floor(item.duration % 60);
+  const video = item as VideoWithProgress;
+  const durationMinutes = Math.floor(video.duration / 60);
+  const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+  const hasWatchProgress = video.progress !== undefined && video.progress > 0 && video.progress < 1;
 
   return (
     <TouchableOpacity
       style={styles.videoCard}
       activeOpacity={0.8}
-      onPress={() => onPress(item)}
+      onPress={() => onPress(video)}
     >
       {/* Thumbnail */}
       <View style={styles.thumbnailContainer}>
-        {item.thumbnailUrl ? (
-          <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+        {video.thumbnailUrl ? (
+          <Image source={{ uri: video.thumbnailUrl }} style={styles.thumbnail} />
         ) : (
           <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
             <Icon name="video" size="lg" color={colors.text.secondary} />
+          </View>
+        )}
+        {/* Dark overlay gradient at bottom */}
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.6)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0, y: 1 }}
+          style={styles.thumbnailOverlay}
+        />
+        {/* Watch progress bar */}
+        {hasWatchProgress && (
+          <View style={styles.watchProgressBarBg}>
+            <View style={[styles.watchProgressBarFill, { width: `${video.progress * 100}%` }]} />
           </View>
         )}
         <View style={styles.durationBadge}>
@@ -102,30 +122,33 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
       <View style={styles.infoRow}>
         <TouchableOpacity
           style={styles.channelAvatar}
-          onPress={() => onChannelPress(item.channel.handle)}
+          onPress={() => onChannelPress(video.channel.handle)}
           hitSlop={8}
         >
           <Avatar
-            uri={item.channel.avatarUrl}
-            name={item.channel.name}
+            uri={video.channel.avatarUrl}
+            name={video.channel.name}
             size="sm"
             showRing={false}
           />
         </TouchableOpacity>
         <View style={styles.videoDetails}>
           <Text style={styles.videoTitle} numberOfLines={2}>
-            {item.title}
+            {video.title}
           </Text>
-          <Text style={styles.channelName} numberOfLines={1}>
-            {item.channel.name}
-          </Text>
+          <View style={styles.channelNameRow}>
+            <Icon name="globe" size={10} color={colors.text.secondary} />
+            <Text style={styles.channelName} numberOfLines={1}>
+              {video.channel.name}
+            </Text>
+          </View>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {item.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(item.publishedAt || item.createdAt), { addSuffix: true })}
+            {video.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
         </View>
         <TouchableOpacity
           style={styles.moreButton}
-          onPress={() => onMorePress(item)}
+          onPress={() => onMorePress(video)}
           hitSlop={8}
         >
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
@@ -413,8 +436,6 @@ export default function MinbarScreen() {
         estimatedItemSize={260}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
         renderItem={renderVideoItem}
         maxToRenderPerBatch={5}
         windowSize={5}
@@ -422,6 +443,13 @@ export default function MinbarScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.emerald}
+          />
+        }
       />
       <BottomSheet
         visible={!!selectedVideoId}
@@ -517,14 +545,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  thumbnailOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 60,
+  },
+  watchProgressBarBg: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  watchProgressBarFill: {
+    height: '100%',
+    backgroundColor: colors.emerald,
+  },
   durationBadge: {
     position: 'absolute',
     bottom: spacing.sm,
     right: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: colors.emerald,
     borderRadius: radius.sm,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
   durationText: {
     color: colors.text.primary,
@@ -550,10 +597,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
   },
+  channelNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
   channelName: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
-    marginBottom: 2,
   },
   videoStats: {
     color: colors.text.tertiary,

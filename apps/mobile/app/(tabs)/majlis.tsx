@@ -11,6 +11,8 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withSequence,
+  withTiming,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, animation, radius, tabBar } from '@/theme';
@@ -32,6 +34,43 @@ const TABS = [
   { key: 'trending', label: 'Trending' },
 ];
 
+// Animated thread card with entrance animation and engagement glow
+interface AnimatedThreadCardProps {
+  thread: Thread;
+  viewerId?: string;
+  isOwn?: boolean;
+  index: number;
+}
+
+const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, isOwn, index }: AnimatedThreadCardProps) {
+  // Entrance animation
+  const translateY = useSharedValue(4);
+  const opacity = useSharedValue(0);
+
+  useEffect(() => {
+    const delay = Math.min(index * 50, 300); // Stagger animation, max 300ms delay
+    const timer = setTimeout(() => {
+      translateY.value = withSpring(0, animation.spring.gentle);
+      opacity.value = withTiming(1, { duration: 250 });
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [index, translateY, opacity]);
+
+  const animStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: opacity.value,
+  }));
+
+  // Engagement glow: high engagement gets gold left border
+  const hasHighEngagement = thread.likesCount > 50 || thread.repliesCount > 20;
+
+  return (
+    <Animated.View style={[animStyle, hasHighEngagement && styles.highEngagementCard]}>
+      <ThreadCard thread={thread} viewerId={viewerId} isOwn={isOwn} />
+    </Animated.View>
+  );
+});
+
 export default function MajlisScreen() {
   const { user } = useUser();
   const router = useRouter();
@@ -40,6 +79,12 @@ export default function MajlisScreen() {
   const feedType = useStore((s) => s.majlisFeedType);
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Feed transition animation
+  const feedOpacity = useSharedValue(1);
+  const feedAnimStyle = useAnimatedStyle(() => ({
+    opacity: feedOpacity.value,
+  }));
 
   const feedRef = useRef<FlashList<Thread>>(null);
   useScrollToTop(feedRef);
@@ -57,6 +102,15 @@ export default function MajlisScreen() {
   const fabStyle = useAnimatedStyle(() => ({
     transform: [{ scale: fabScale.value }],
   }));
+
+  // Animate feed transition when feedType changes
+  useEffect(() => {
+    feedOpacity.value = withTiming(0, { duration: 75 });
+    const timer = setTimeout(() => {
+      feedOpacity.value = withTiming(1, { duration: 75 });
+    }, 75);
+    return () => clearTimeout(timer);
+  }, [feedType, feedOpacity]);
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
@@ -117,8 +171,13 @@ export default function MajlisScreen() {
   }, [feedQuery]);
 
   const keyExtractor = useCallback((item: Thread) => item.id, []);
-  const renderItem = useCallback(({ item }: { item: Thread }) => (
-    <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+  const renderItem = useCallback(({ item, index }: { item: Thread; index: number }) => (
+    <AnimatedThreadCard
+      thread={item}
+      viewerId={user?.id}
+      isOwn={user?.username === item.user.username}
+      index={index}
+    />
   ), [user?.id, user?.username]);
   const onEndReached = useCallback(() => {
     if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) feedQuery.fetchNextPage();
@@ -180,22 +239,24 @@ export default function MajlisScreen() {
         </ScrollView>
       ) : null}
 
-      <FlashList
-        ref={feedRef}
-        data={threads}
-        keyExtractor={keyExtractor}
-        estimatedItemSize={120}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
-        renderItem={renderItem}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews={true}
-        ListEmptyComponent={listEmpty}
-        ListFooterComponent={listFooter}
-      />
+      <Animated.View style={[{ flex: 1 }, feedAnimStyle]}>
+        <FlashList
+          ref={feedRef}
+          data={threads}
+          keyExtractor={keyExtractor}
+          estimatedItemSize={120}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          onRefresh={onRefresh}
+          refreshing={refreshing}
+          renderItem={renderItem}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+          removeClippedSubviews={true}
+          ListEmptyComponent={listEmpty}
+          ListFooterComponent={listFooter}
+        />
+      </Animated.View>
 
       {/* Floating compose button */}
       <AnimatedPressable
@@ -292,5 +353,9 @@ const styles = StyleSheet.create({
   endOfFeedText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+  },
+  highEngagementCard: {
+    borderLeftWidth: 2,
+    borderLeftColor: colors.gold,
   },
 });

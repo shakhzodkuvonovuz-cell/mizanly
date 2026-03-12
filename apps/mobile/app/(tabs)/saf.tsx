@@ -6,7 +6,9 @@ import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useRouter, useNavigation } from 'expo-router';
-import { colors, spacing, fontSize } from '@/theme';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { Pressable } from 'react-native';
+import { colors, spacing, fontSize, animation } from '@/theme';
 import { CaughtUpCard } from '@/components/ui/CaughtUpCard';
 import { useStore } from '@/store';
 import { postsApi, storiesApi, notificationsApi } from '@/services/api';
@@ -20,8 +22,6 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
-import Animated from 'react-native-reanimated';
-import { Pressable } from 'react-native';
 import type { Post, StoryGroup } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -105,6 +105,17 @@ export default function SafScreen() {
 
   const storyGroups: StoryGroup[] = (storiesQuery.data) ?? [];
 
+  // Feed type animation
+  const feedTypeProgress = useSharedValue(0);
+  const feedTypeAnimStyle = useAnimatedStyle(() => ({
+    opacity: 1 - Math.abs(feedTypeProgress.value) * 0.3,
+    transform: [{ translateX: feedTypeProgress.value * 10 }],
+  }));
+
+  useEffect(() => {
+    feedTypeProgress.value = withSpring(feedType === 'foryou' ? 1 : 0, animation.spring.snappy);
+  }, [feedType, feedTypeProgress]);
+
   const listHeader = useMemo(() => (
     <View>
       <StoryRow
@@ -127,15 +138,19 @@ export default function SafScreen() {
           }
         }}
       />
-      <TabSelector
-        tabs={FEED_TABS}
-        activeKey={feedType}
-        onTabChange={(key) => setFeedType(key as 'following' | 'foryou')}
-        variant="pill"
-        style={{ marginHorizontal: spacing.base }}
-      />
+      {/* Story row separator */}
+      <View style={styles.storySeparator} />
+      <Animated.View style={feedTypeAnimStyle}>
+        <TabSelector
+          tabs={FEED_TABS}
+          activeKey={feedType}
+          onTabChange={(key) => setFeedType(key as 'following' | 'foryou')}
+          variant="pill"
+          style={{ marginHorizontal: spacing.base }}
+        />
+      </Animated.View>
     </View>
-  ), [storyGroups, feedType, setFeedType, user?.id, router]);
+  ), [storyGroups, feedType, setFeedType, user?.id, router, feedTypeAnimStyle]);
 
   const listEmpty = useMemo(() => (
     feedQuery.isLoading ? (
@@ -284,4 +299,9 @@ const styles = StyleSheet.create({
     right: -8,
   },
   footer: { paddingVertical: spacing.sm },
+  storySeparator: {
+    height: 0.5,
+    backgroundColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+  },
 });
