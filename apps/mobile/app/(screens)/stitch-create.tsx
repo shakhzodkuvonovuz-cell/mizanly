@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,7 +18,7 @@ type TransitionType = 'cut' | 'fade' | 'slide' | 'zoom' | 'wipe';
 
 const DURATION_OPTIONS: DurationOption[] = [1, 2, 3, 5];
 
-const TRANSITIONS: { id: TransitionType; name: string; icon: string }[] = [
+const TRANSITIONS: { id: TransitionType; name: string; icon: IconName }[] = [
   { id: 'cut', name: 'Cut', icon: 'scissors' },
   { id: 'fade', name: 'Fade', icon: 'eye' },
   { id: 'slide', name: 'Slide', icon: 'chevron-right' },
@@ -185,7 +185,7 @@ export default function StitchCreateScreen() {
                         style={styles.transitionButtonGradient}
                       >
                         <Icon
-                          name={transition.icon as any}
+                          name={transition.icon}
                           size="sm"
                           color={selectedTransition === transition.id ? colors.emerald : colors.text.secondary}
                         />

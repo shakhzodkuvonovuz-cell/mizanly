@@ -1,0 +1,750 @@
+import { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  RefreshControl,
+  TouchableOpacity,
+  TextInput,
+  Switch,
+  Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { CharCountRing } from '@/components/ui/CharCountRing';
+import { Avatar } from '@/components/ui/Avatar';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+
+const { width } = Dimensions.get('window');
+
+type EventType = 'in-person' | 'online' | 'hybrid';
+type PrivacyType = 'public' | 'members' | 'invite';
+
+interface Community {
+  id: string;
+  name: string;
+  avatar: string | null;
+  memberCount: number;
+}
+
+const MOCK_COMMUNITIES: Community[] = [
+  { id: '1', name: 'Islamic Finance Hub', avatar: null, memberCount: 1240 },
+  { id: '2', name: 'Ramadan Connect', avatar: null, memberCount: 3400 },
+  { id: '3', name: 'Muslim Creators', avatar: null, memberCount: 890 },
+];
+
+export default function CreateEventScreen() {
+  const router = useRouter();
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [eventType, setEventType] = useState<EventType>('in-person');
+  const [privacy, setPrivacy] = useState<PrivacyType>('public');
+  const [location, setLocation] = useState('');
+  const [isOnline, setIsOnline] = useState(false);
+  const [allDay, setAllDay] = useState(false);
+  const [selectedCommunity, setSelectedCommunity] = useState<string>('');
+  const [reminder1h, setReminder1h] = useState(true);
+  const [reminder1d, setReminder1d] = useState(true);
+  const [hasCover, setHasCover] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  }, []);
+
+  const getPrivacyIcon = () => {
+    switch (privacy) {
+      case 'public':
+        return 'globe';
+      case 'members':
+        return 'users';
+      case 'invite':
+        return 'lock';
+      default:
+        return 'globe';
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <GlassHeader title="Create Event" onBack={() => router.back()} />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Cover Image Section */}
+        <Animated.View entering={FadeInUp.duration(400)}>
+          <TouchableOpacity
+            style={[styles.coverContainer, hasCover && styles.coverHasImage]}
+            onPress={() => setHasCover(!hasCover)}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+              style={styles.coverGradient}
+            >
+              <View style={styles.coverContent}>
+                <Icon name="camera" size={48} color={colors.gold} />
+                <Text style={styles.coverTitle}>
+                  {hasCover ? 'Change Cover Photo' : 'Add Cover Photo'}
+                </Text>
+                {!hasCover && (
+                  <Text style={styles.coverHint}>Tap to upload</Text>
+                )}
+              </View>
+            </LinearGradient>
+            {hasCover && (
+              <View style={styles.coverOverlay}>
+                <TouchableOpacity style={styles.changeButton} activeOpacity={0.8}>
+                  <Text style={styles.changeText}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+
+        {/* Title Card */}
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="pencil" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Event Name</Text>
+            </View>
+            <TextInput
+              style={styles.titleInput}
+              placeholder="What's the event called?"
+              placeholderTextColor={colors.text.tertiary}
+              value={title}
+              onChangeText={setTitle}
+              maxLength={100}
+            />
+            <View style={styles.charCountRow}>
+              <CharCountRing current={title.length} max={100} size={24} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Description Card */}
+        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="edit" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Description</Text>
+            </View>
+            <TextInput
+              style={styles.descriptionInput}
+              placeholder="What's this event about?"
+              placeholderTextColor={colors.text.tertiary}
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              numberOfLines={4}
+              maxLength={500}
+              textAlignVertical="top"
+            />
+            <View style={styles.charCountRow}>
+              <CharCountRing current={description.length} max={500} size={24} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Date & Time Card */}
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.15)']}
+                style={styles.iconBg}
+              >
+                <Icon name="calendar" size="xs" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Date & Time</Text>
+            </View>
+
+            <View style={styles.dateRow}>
+              <Text style={styles.dateLabel}>Start</Text>
+              <View style={styles.dateValue}>
+                <Text style={styles.dateText}>March 20, 2026 at 7:00 PM</Text>
+                <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
+              </View>
+            </View>
+
+            <View style={styles.dateDivider} />
+
+            <View style={styles.dateRow}>
+              <Text style={styles.dateLabel}>End</Text>
+              <View style={styles.dateValue}>
+                <Text style={styles.dateText}>March 20, 2026 at 9:00 PM</Text>
+                <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
+              </View>
+            </View>
+
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>All Day</Text>
+              <Switch
+                value={allDay}
+                onValueChange={setAllDay}
+                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                thumbColor={allDay ? colors.emerald : colors.text.tertiary}
+              />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Location Card */}
+        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="map-pin" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Location</Text>
+            </View>
+
+            <View style={styles.toggleRow}>
+              <Text style={styles.toggleLabel}>Online Event</Text>
+              <Switch
+                value={isOnline}
+                onValueChange={setIsOnline}
+                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                thumbColor={isOnline ? colors.emerald : colors.text.tertiary}
+              />
+            </View>
+
+            <TextInput
+              style={styles.locationInput}
+              placeholder={isOnline ? "Add meeting URL" : "Add location"}
+              placeholderTextColor={colors.text.tertiary}
+              value={location}
+              onChangeText={setLocation}
+            />
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Event Type Selector */}
+        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="layers" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Event Type</Text>
+            </View>
+
+            <View style={styles.pillRow}>
+              {(['in-person', 'online', 'hybrid'] as EventType[]).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={styles.pillButton}
+                  onPress={() => setEventType(type)}
+                  activeOpacity={0.8}
+                >
+                  {eventType === type ? (
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.pillGradient}
+                    >
+                      <Text style={[styles.pillText, styles.pillTextActive]}>
+                        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', '-')}
+                      </Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.pillInner}>
+                      <Text style={styles.pillText}>
+                        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', '-')}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Privacy Selector */}
+        <Animated.View entering={FadeInUp.delay(350).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name={getPrivacyIcon()} size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Privacy</Text>
+            </View>
+
+            <View style={styles.pillRow}>
+              {(['public', 'members', 'invite'] as PrivacyType[]).map((type) => (
+                <TouchableOpacity
+                  key={type}
+                  style={styles.pillButton}
+                  onPress={() => setPrivacy(type)}
+                  activeOpacity={0.8}
+                >
+                  {privacy === type ? (
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.pillGradient}
+                    >
+                      <Text style={[styles.pillText, styles.pillTextActive]}>
+                        {type === 'members' ? 'Members' : type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Text>
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.pillInner}>
+                      <Text style={styles.pillText}>
+                        {type === 'members' ? 'Members' : type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Community Selector */}
+        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="users" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Community</Text>
+            </View>
+
+            <TouchableOpacity style={styles.communityDropdown} activeOpacity={0.8}>
+              <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
+                {selectedCommunity
+                  ? MOCK_COMMUNITIES.find(c => c.id === selectedCommunity)?.name
+                  : 'Post to community'}
+              </Text>
+              <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
+            </TouchableOpacity>
+
+            <Text style={styles.sectionTitle}>Your Communities</Text>
+            {MOCK_COMMUNITIES.map((community, index) => (
+              <TouchableOpacity
+                key={community.id}
+                style={[
+                  styles.communityRow,
+                  index < MOCK_COMMUNITIES.length - 1 && styles.communityRowBorder,
+                  selectedCommunity === community.id && styles.communityRowSelected,
+                ]}
+                onPress={() => setSelectedCommunity(community.id)}
+                activeOpacity={0.8}
+              >
+                <Avatar uri={community.avatar} name={community.name} size="sm" />
+                <View style={styles.communityInfo}>
+                  <Text style={styles.communityName}>{community.name}</Text>
+                  <Text style={styles.communityMeta}>{community.memberCount.toLocaleString()} members</Text>
+                </View>
+                {selectedCommunity === community.id && (
+                  <LinearGradient
+                    colors={[colors.emerald, colors.emeraldDark]}
+                    style={styles.checkCircle}
+                  >
+                    <Icon name="check" size="xs" color={colors.text.primary} />
+                  </LinearGradient>
+                )}
+              </TouchableOpacity>
+            ))}
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Reminders Card */}
+        <Animated.View entering={FadeInUp.delay(450).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.formHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="bell" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.formLabel}>Reminders</Text>
+            </View>
+
+            <View style={styles.toggleRow}>
+              <View style={styles.reminderLabel}>
+                <Icon name="clock" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
+                <Text style={styles.toggleLabel}>Remind 1 hour before</Text>
+              </View>
+              <Switch
+                value={reminder1h}
+                onValueChange={setReminder1h}
+                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                thumbColor={reminder1h ? colors.emerald : colors.text.tertiary}
+              />
+            </View>
+
+            <View style={styles.toggleRow}>
+              <View style={styles.reminderLabel}>
+                <Icon name="calendar" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
+                <Text style={styles.toggleLabel}>Remind 1 day before</Text>
+              </View>
+              <Switch
+                value={reminder1d}
+                onValueChange={setReminder1d}
+                trackColor={{ false: colors.dark.surface, true: colors.emeraldLight }}
+                thumbColor={reminder1d ? colors.emerald : colors.text.tertiary}
+              />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Bottom Spacer */}
+        <View style={styles.bottomSpacer} />
+      </ScrollView>
+
+      {/* Bottom Bar */}
+      <View style={styles.bottomBar}>
+        <TouchableOpacity activeOpacity={0.8}>
+          <Text style={styles.draftText}>Save Draft</Text>
+        </TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.8}>
+          <LinearGradient
+            colors={[colors.emerald, colors.emeraldDark]}
+            style={styles.createButton}
+          >
+            <Text style={styles.createText}>Create Event</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg,
+  },
+  scrollContent: {
+    padding: spacing.base,
+  },
+  coverContainer: {
+    height: 200,
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.emerald,
+    borderStyle: 'dashed',
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+  coverHasImage: {
+    borderStyle: 'solid',
+    borderColor: colors.dark.border,
+  },
+  coverGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  coverContent: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  coverTitle: {
+    fontSize: fontSize.md,
+    fontFamily: fonts.semibold,
+    color: colors.text.primary,
+  },
+  coverHint: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.regular,
+    color: colors.text.secondary,
+  },
+  coverOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  changeButton: {
+    backgroundColor: colors.dark.surface,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  changeText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.medium,
+    color: colors.text.primary,
+  },
+  formCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.base,
+    marginBottom: spacing.md,
+  },
+  formHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  iconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  formLabel: {
+    fontSize: fontSize.md,
+    fontFamily: fonts.semibold,
+    color: colors.text.primary,
+  },
+  titleInput: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.primary,
+    padding: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.md,
+    marginBottom: spacing.xs,
+  },
+  descriptionInput: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.primary,
+    padding: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.md,
+    marginBottom: spacing.xs,
+    minHeight: 100,
+  },
+  locationInput: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.primary,
+    padding: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.md,
+    marginTop: spacing.md,
+  },
+  charCountRow: {
+    alignItems: 'flex-end',
+  },
+  dateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  dateLabel: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+    width: 50,
+  },
+  dateValue: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  dateText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.primary,
+  },
+  dateDivider: {
+    height: 1,
+    backgroundColor: colors.dark.border,
+    marginVertical: spacing.xs,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.border,
+  },
+  toggleLabel: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.medium,
+    color: colors.text.primary,
+  },
+  reminderLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  reminderIcon: {
+    marginRight: spacing.sm,
+  },
+  pillRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    flexWrap: 'wrap',
+  },
+  pillButton: {
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  pillGradient: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+  },
+  pillInner: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.full,
+  },
+  pillText: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+  },
+  pillTextActive: {
+    color: colors.text.primary,
+  },
+  communityDropdown: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.sm,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+  },
+  dropdownPlaceholder: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
+  },
+  dropdownValue: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.primary,
+  },
+  sectionTitle: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.semibold,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  communityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  communityRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+  },
+  communityRowSelected: {
+    backgroundColor: 'rgba(10,123,79,0.05)',
+    borderRadius: radius.sm,
+  },
+  communityInfo: {
+    flex: 1,
+    marginLeft: spacing.sm,
+  },
+  communityName: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.medium,
+    color: colors.text.primary,
+  },
+  communityMeta: {
+    fontSize: fontSize.xs,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bottomSpacer: {
+    height: 100,
+  },
+  bottomBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.base,
+    backgroundColor: colors.dark.bg,
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.border,
+  },
+  draftText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.medium,
+    color: colors.text.secondary,
+    padding: spacing.sm,
+  },
+  createButton: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+  },
+  createText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.semibold,
+    color: colors.text.primary,
+  },
+});

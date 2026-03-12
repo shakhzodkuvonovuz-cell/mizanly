@@ -282,7 +282,7 @@ export default function AccountSwitcherScreen() {
                   <Text style={styles.managementRowText}>Default Account</Text>
                 </View>
                 <View style={styles.managementRowRight}>
-                  <Text style={styles.managementRowValue} style={{color: colors.text.tertiary}}>
+                  <Text style={[styles.managementRowValue, {color: colors.text.tertiary}]}>
                     @{activeAccount?.username}
                   </Text>
                   <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />

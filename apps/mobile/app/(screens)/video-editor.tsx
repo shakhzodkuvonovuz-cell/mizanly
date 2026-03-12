@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -441,13 +441,13 @@ export default function VideoEditorScreen() {
             style={styles.toolsScroll}
             contentContainerStyle={styles.toolsContent}
           >
-            {[
-              { id: 'trim', icon: 'scissors', label: 'Trim' },
-              { id: 'speed', icon: 'fast-forward', label: 'Speed' },
-              { id: 'filters', icon: 'sliders', label: 'Filters' },
-              { id: 'text', icon: 'type', label: 'Text' },
-              { id: 'music', icon: 'music', label: 'Music' },
-              { id: 'volume', icon: 'volume-2', label: 'Volume' },
+            {([
+              { id: 'trim', icon: 'scissors' as IconName, label: 'Trim' },
+              { id: 'speed', icon: 'fast-forward' as IconName, label: 'Speed' },
+              { id: 'filters', icon: 'sliders' as IconName, label: 'Filters' },
+              { id: 'text', icon: 'type' as IconName, label: 'Text' },
+              { id: 'music', icon: 'music' as IconName, label: 'Music' },
+              { id: 'volume', icon: 'volume-2' as IconName, label: 'Volume' },
             ].map((tool) => (
               <TouchableOpacity
                 key={tool.id}
@@ -462,7 +462,7 @@ export default function VideoEditorScreen() {
                   style={styles.toolTabGradient}
                 >
                   <Icon
-                    name={tool.icon as any}
+                    name={tool.icon}
                     size="sm"
                     color={selectedTool === tool.id ? colors.emerald : colors.text.secondary}
                   />

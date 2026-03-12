@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -229,9 +229,9 @@ export default function DuetCreateScreen() {
             <Text style={styles.layoutSelectorTitle}>Layout</Text>
             <View style={styles.layoutButtons}>
               {[
-                { id: 'side-by-side', icon: 'layout', label: 'Side by Side' },
-                { id: 'top-bottom', icon: 'layers', label: 'Top & Bottom' },
-                { id: 'react', icon: 'user', label: 'React' },
+                { id: 'side-by-side', icon: 'layout' as IconName, label: 'Side by Side' },
+                { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
+                { id: 'react', icon: 'user' as IconName, label: 'React' },
               ].map((layout) => (
                 <TouchableOpacity
                   key={layout.id}
@@ -246,7 +246,7 @@ export default function DuetCreateScreen() {
                     style={styles.layoutButtonGradient}
                   >
                     <Icon
-                      name={layout.icon as any}
+                      name={layout.icon}
                       size="sm"
                       color={layoutMode === layout.id ? colors.emerald : colors.text.secondary}
                     />
