@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -105,7 +105,7 @@ function ActionButton({
   isActive,
   activeColor = colors.emerald,
 }: {
-  icon: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
   isActive?: boolean;
@@ -127,7 +127,7 @@ function ActionButton({
         style={styles.actionButtonGradient}
       >
         <Icon
-          name={icon as any}
+          name={icon}
           size="sm"
           color={isActive ? colors.text.primary : colors.text.secondary}
         />

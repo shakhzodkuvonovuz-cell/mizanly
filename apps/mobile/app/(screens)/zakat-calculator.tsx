@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -97,7 +97,7 @@ function InputCard({
   suffix,
   delay = 0,
 }: {
-  icon: string;
+  icon: IconName;
   label: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -122,7 +122,7 @@ function InputCard({
             colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
             style={styles.inputIconBg}
           >
-            <Icon name={icon as any} size="sm" color={colors.emerald} />
+            <Icon name={icon} size="sm" color={colors.emerald} />
           </LinearGradient>
           <View style={styles.inputContent}>
             <Text style={styles.inputLabel}>{label}</Text>

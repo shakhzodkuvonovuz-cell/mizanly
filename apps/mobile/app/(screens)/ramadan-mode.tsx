@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -23,7 +23,7 @@ const { width } = Dimensions.get('window');
 
 interface DailyGoal {
   id: string;
-  icon: string;
+  icon: IconName;
   label: string;
   completed: boolean;
 }
@@ -61,7 +61,7 @@ function CountdownDisplay({
 }: {
   label: string;
   time: string;
-  icon: string;
+  icon: IconName;
   iconColor: string;
   isUrgent?: boolean;
 }) {
@@ -90,7 +90,7 @@ function CountdownDisplay({
           ]}
           style={styles.countdownIconBg}
         >
-          <Icon name={icon as any} size="sm" color={iconColor} />
+          <Icon name={icon} size="sm" color={iconColor} />
         </LinearGradient>
 
         <Text style={styles.countdownLabel}>{label}</Text>
@@ -174,7 +174,7 @@ function GoalItem({
             ]}
             style={styles.goalIconBg}
           >
-            <Icon name={goal.icon as any} size="sm" color={goal.completed ? colors.emerald : colors.text.secondary} />
+            <Icon name={goal.icon} size="sm" color={goal.completed ? colors.emerald : colors.text.secondary} />
           </LinearGradient>
 
           <Text

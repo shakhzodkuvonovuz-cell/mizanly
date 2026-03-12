@@ -19,7 +19,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -81,7 +81,7 @@ function StatCard({
   value,
   delay,
 }: {
-  icon: string;
+  icon: IconName;
   label: string;
   value: string | number;
   delay: number;
@@ -96,7 +96,7 @@ function StatCard({
           colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
           style={styles.statIconBg}
         >
-          <Icon name={icon as any} size="sm" color={colors.emerald} />
+          <Icon name={icon} size="sm" color={colors.emerald} />
         </LinearGradient>
         <Text style={styles.statValue}>{value}</Text>
         <Text style={styles.statLabel}>{label}</Text>

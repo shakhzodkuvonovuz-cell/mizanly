@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -107,7 +107,7 @@ const MOCK_MOSQUES: Mosque[] = [
   },
 ];
 
-const FACILITY_ICONS: Record<string, string> = {
+const FACILITY_ICONS: Record<string, IconName> = {
   parking: 'circle',
   wheelchair: 'check-circle',
   womens: 'users',
@@ -130,7 +130,7 @@ const FACILITY_LABELS: Record<string, string> = {
 function FacilityBadge({ facility }: { facility: string }) {
   return (
     <View style={styles.facilityBadge}>
-      <Icon name={FACILITY_ICONS[facility] as any} size="xs" color={colors.text.tertiary} />
+      <Icon name={FACILITY_ICONS[facility]} size="xs" color={colors.text.tertiary} />
       <Text style={styles.facilityText}>{FACILITY_LABELS[facility] || facility}</Text>
     </View>
   );
