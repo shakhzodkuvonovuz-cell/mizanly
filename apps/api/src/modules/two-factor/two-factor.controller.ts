@@ -77,9 +77,12 @@ export class TwoFactorController {
   @Post('setup')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Generate TOTP secret + QR data URI' })
   @ApiResponse({ status: 201, description: 'Returns secret, QR data URI, and backup codes' })
+  @ApiResponse({ status: 400, description: 'Two-factor authentication already enabled' })
+  @ApiResponse({ status: 404, description: 'User not found' })
   async setup(@CurrentUser('id') userId: string): Promise<SetupResponseDto> {
     return this.twoFactorService.setup(userId);
   }
@@ -90,6 +93,7 @@ export class TwoFactorController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Verify TOTP code and enable 2FA' })
   @ApiResponse({ status: 200, description: '2FA enabled successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid code or already enabled' })
   async verify(
     @CurrentUser('id') userId: string,
     @Body() dto: VerifyDto,
@@ -116,15 +120,12 @@ export class TwoFactorController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Disable 2FA with confirmation code' })
   @ApiResponse({ status: 200, description: '2FA disabled successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid code or not enabled' })
   async disable(
     @CurrentUser('id') userId: string,
     @Body() dto: DisableDto,
   ) {
-    const isValid = await this.twoFactorService.verify(userId, dto.code);
-    if (!isValid) {
-      throw new BadRequestException('Invalid verification code');
-    }
-    await this.twoFactorService.disable(userId);
+    await this.twoFactorService.disable(userId, dto.code);
     return { success: true, message: 'Two-factor authentication disabled' };
   }
 
@@ -142,6 +143,7 @@ export class TwoFactorController {
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Use a backup code for authentication' })
   @ApiResponse({ status: 200, description: 'Backup code accepted' })
+  @ApiResponse({ status: 400, description: 'Invalid backup code' })
   async backup(@Body() dto: BackupDto) {
     const valid = await this.twoFactorService.useBackupCode(dto.userId, dto.backupCode);
     if (!valid) {
