@@ -258,7 +258,7 @@ describe('IslamicService', () => {
     it('should handle empty result when cursor not found', () => {
       const result = service.getHadiths(999, 2);
 
-      expect(result.data).toHaveLength(5); // Starts from beginning if cursor not found
+      expect(result.data).toHaveLength(2); // Starts from beginning if cursor not found, respects limit
       expect(result.data[0].id).toBe(1);
     });
   });
@@ -386,18 +386,11 @@ describe('IslamicService', () => {
 
   describe('getRamadanInfo', () => {
     beforeEach(() => {
-      // Mock Date to return fixed date for deterministic test
-      const OriginalDate = global.Date;
-      jest.spyOn(global, 'Date').mockImplementation((...args) => {
-        if (args.length) {
-          return new OriginalDate(...args as any);
-        }
-        return new OriginalDate('2026-03-15T12:00:00Z');
-      });
+      jest.useFakeTimers({ now: new Date('2026-03-15T12:00:00Z') });
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      jest.useRealTimers();
     });
 
     it('should return Ramadan info for given year', () => {
@@ -425,7 +418,7 @@ describe('IslamicService', () => {
 
     it('should not include currentDay when outside Ramadan', () => {
       // Mock date outside Ramadan
-      jest.spyOn(global, 'Date').mockImplementation(() => new Date('2026-01-01T12:00:00Z') as any);
+      jest.setSystemTime(new Date('2026-01-01T12:00:00Z'));
 
       const params = { year: 2026 };
       const result = service.getRamadanInfo(params);
