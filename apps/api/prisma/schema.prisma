@@ -346,6 +346,15 @@ model User {
   reelInteractions       ReelInteraction[]
   videoInteractions      VideoInteraction[]
 
+  // Batch 33: Events, Monetization, Audio Rooms, 2FA
+  events                 Event[]
+  eventRsvps             EventRSVP[]
+  membershipTiers        MembershipTier[]
+  membershipSubscriptions MembershipSubscription[]
+  audioRoomsHosted       AudioRoom[]
+  audioRoomParticipations AudioRoomParticipant[]
+  twoFactorSecret        TwoFactorSecret?
+
   @@index([username])
   @@index([clerkId])
   @@index([createdAt(sort: Desc)])
@@ -1681,4 +1690,139 @@ model VideoInteraction {
   @@unique([userId, videoId])
   @@index([videoId])
   @@map("video_interactions")
+}
+
+// ═══════════════════════════════════════════════════
+// BATCH 33: Events, Monetization, Audio Rooms, 2FA
+// ═══════════════════════════════════════════════════
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String   @db.VarChar(200)
+  description String?  @db.VarChar(5000)
+  coverUrl    String?
+  startDate   DateTime
+  endDate     DateTime?
+  location    String?  @db.VarChar(500)
+  locationUrl String?
+  isOnline    Boolean  @default(false)
+  onlineUrl   String?
+  eventType   String   @default("in_person") @db.VarChar(20)
+  privacy     String   @default("public") @db.VarChar(20)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  communityId String?
+  rsvps       EventRSVP[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([userId])
+  @@index([startDate(sort: Desc)])
+  @@map("events")
+}
+
+model EventRSVP {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String   @db.VarChar(20)
+  createdAt DateTime @default(now())
+  @@unique([eventId, userId])
+  @@index([eventId])
+  @@map("event_rsvps")
+}
+
+model Tip {
+  id          String   @id @default(cuid())
+  senderId    String
+  receiverId  String
+  amount      Float
+  currency    String   @default("USD") @db.VarChar(3)
+  message     String?  @db.VarChar(500)
+  platformFee Float    @default(0)
+  status      String   @default("completed") @db.VarChar(20)
+  createdAt   DateTime @default(now())
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("tips")
+}
+
+model MembershipTier {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String   @db.VarChar(100)
+  price         Float
+  currency      String   @default("USD") @db.VarChar(3)
+  benefits      String[] @default([])
+  isActive      Boolean  @default(true)
+  level         String   @default("bronze") @db.VarChar(10)
+  subscriptions MembershipSubscription[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([userId])
+  @@map("membership_tiers")
+}
+
+model MembershipSubscription {
+  id        String   @id @default(cuid())
+  tierId    String
+  tier      MembershipTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status    String   @default("active") @db.VarChar(20)
+  startDate DateTime @default(now())
+  endDate   DateTime?
+  createdAt DateTime @default(now())
+  @@unique([tierId, userId])
+  @@index([userId])
+  @@map("membership_subscriptions")
+}
+
+model AudioRoom {
+  id           String    @id @default(cuid())
+  title        String    @db.VarChar(300)
+  description  String?   @db.VarChar(2000)
+  hostId       String
+  host         User      @relation(fields: [hostId], references: [id], onDelete: Cascade)
+  status       String    @default("live") @db.VarChar(20)
+  scheduledAt  DateTime?
+  startedAt    DateTime?
+  endedAt      DateTime?
+  maxSpeakers  Int       @default(10)
+  isRecording  Boolean   @default(false)
+  participants AudioRoomParticipant[]
+  createdAt    DateTime  @default(now())
+  @@index([hostId])
+  @@index([status])
+  @@map("audio_rooms")
+}
+
+model AudioRoomParticipant {
+  id         String    @id @default(cuid())
+  roomId     String
+  room       AudioRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role       String    @default("listener") @db.VarChar(20)
+  isMuted    Boolean   @default(true)
+  handRaised Boolean   @default(false)
+  joinedAt   DateTime  @default(now())
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@map("audio_room_participants")
+}
+
+model TwoFactorSecret {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  secret      String
+  isEnabled   Boolean   @default(false)
+  backupCodes String[]  @default([])
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@map("two_factor_secrets")
 }

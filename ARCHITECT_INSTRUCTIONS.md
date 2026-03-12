@@ -1,419 +1,649 @@
-# BATCH 32: Final Visual Screens — 2 Stages, Sequential Run (Kimi's Last Visual Batch)
+# BATCH 33: P0 Engineering Mega-Batch — 12 Parallel Agents
 
 **Date:** 2026-03-13
-**Theme:** 5 final new screens completing the visual layer before switching to DeepSeek for heavy engineering. Execute stages sequentially — commit after each stage.
-**Total Tasks:** 5 new screens across 2 stages
+**Theme:** Heavy engineering — 5 new backend modules + 7 mobile infrastructure tasks. All create NEW files only. Zero file conflicts. Prisma schema already updated with 8 new models.
+**Prerequisite:** Run `cd apps/api && npx prisma generate` before starting agents (schema already updated).
 
 ---
 
-## GLOBAL RULES (apply to ALL stages)
+## GLOBAL RULES
 
-1. Read `CLAUDE.md` in project root FIRST — mandatory code quality rules
-2. `<BottomSheet>` never RN Modal | `<Skeleton>` never ActivityIndicator for content | `<EmptyState>` never bare text | `<Icon>` never emoji | `radius.*` never hardcoded >= 6
-3. No `any` in non-test code. No `@ts-ignore`. No `@ts-expect-error`.
-4. All FlatLists MUST have `<RefreshControl tintColor={colors.emerald} />`
-5. Import ALL design tokens from `@/theme`
-6. Use `expo-linear-gradient` for gradients, `react-native-reanimated` for animations
-7. After completing each stage: `git add -A && git commit -m "feat: batch 32 stage N — <description>"`
-8. Do NOT start the next stage until the current one is committed
-9. Do NOT change any file not listed in the task. Do NOT rename exports, props, or routes.
-10. ALL new screens must be **300-600 lines** — substantial, production-quality implementations, NOT stubs.
-11. **NEVER shadow imported variables** — if you need a local variable, use a distinct name (e.g., `tierColors`, `itemConfig`). Never `const colors = ...` inside a component that imports `colors` from theme.
-12. **NEVER use duplicate props** — e.g., `style={...} style={...}` is invalid. Merge into `style={[..., ...]}`.
-13. **Type icon arrays properly** — use `icon: IconName` (import `type IconName` from `@/components/ui/Icon`), NEVER `icon: string` with `as any` cast later.
+1. Read `CLAUDE.md` first — mandatory rules
+2. No `any` in non-test code. No `@ts-ignore`. No `@ts-expect-error`.
+3. ALL new files must be properly typed TypeScript
+4. Backend: Follow NestJS module pattern (module.ts, controller.ts, service.ts)
+5. Backend: Use `ClerkAuthGuard` for authenticated routes, `OptionalClerkAuthGuard` for public+personalized
+6. Backend: Use `@CurrentUser('id')` for userId extraction
+7. Backend: Import PrismaService from `../../prisma/prisma.service`
+8. Backend: Swagger decorators on all endpoints: `@ApiTags`, `@ApiOperation`, `@ApiResponse`, `@ApiBearerAuth`
+9. Backend: Throttle write endpoints: `@Throttle({ default: { limit: 10, ttl: 60000 } })`
+10. Mobile: Use existing design system (`@/theme`, `@/components/ui/*`)
+11. Mobile: New screens follow glassmorphism pattern (LinearGradient + FadeInUp + GlassHeader)
+12. **Do NOT modify any existing file** unless explicitly listed in your task
+13. After completing your task: `git add -A && git commit -m "feat: batch 33 agent N — <description>"`
 
-### Quick Token Reference
-```
-colors.emerald=#0A7B4F  colors.emeraldLight=#0D9B63  colors.emeraldDark=#066B42
-colors.gold=#C8963E  colors.goldLight=#D4A94F
-colors.dark.bg=#0D1117  colors.dark.bgElevated=#161B22  colors.dark.bgCard=#1C2333
-colors.dark.bgSheet=#21283B  colors.dark.surface=#2D3548
-colors.dark.border=#30363D  colors.dark.borderLight=#484F58
-colors.text.primary=#FFF  colors.text.secondary=#8B949E  colors.text.tertiary=#6E7781
-colors.error=#F85149  colors.warning=#D29922  colors.like=#F85149  colors.bookmark=#C8963E
-spacing: xs=4 sm=8 md=12 base=16 lg=20 xl=24 xxl=32
-fontSize: xs=11 sm=13 base=15 md=17 lg=20 xl=24 xxl=32
-radius: sm=6 md=10 lg=16 full=9999
-```
+---
 
-### Available Icon Names (62 total)
+## AGENT 1: Events Backend Module
+
+**Creates:** `apps/api/src/modules/events/`
+- `events.module.ts`
+- `events.controller.ts`
+- `events.service.ts`
+
+**Prisma models available:** `Event`, `EventRSVP` (already in schema)
+
+**Endpoints (8):**
 ```
-heart, heart-filled, message-circle, bookmark, bookmark-filled, send, search, home,
-play, pause, rewind, fast-forward, more-horizontal, share, check-circle, arrow-left,
-plus, camera, image, mic, phone, video, settings, bell, user, users, globe, lock,
-flag, trash, edit, x, chevron-right, chevron-left, repeat, eye, eye-off, volume-x,
-volume-1, volume-2, mail, hash, trending-up, map-pin, link, clock, check, check-check,
-paperclip, smile, at-sign, filter, layers, circle-plus, pencil, slash, log-out,
-bar-chart-2, chevron-down, loader, maximize, music, sun, circle, droplet, sliders,
-moon, star, gift, book-open, calculator, calendar, scissors, type, layout
+POST   /events              — Create event (auth required)
+GET    /events              — List events (optional auth, cursor pagination)
+GET    /events/:id          — Get event detail (optional auth)
+PATCH  /events/:id          — Update event (auth, owner only)
+DELETE /events/:id          — Delete event (auth, owner only)
+POST   /events/:id/rsvp     — RSVP to event (auth required, body: { status: 'going'|'maybe'|'not_going' })
+DELETE /events/:id/rsvp     — Remove RSVP (auth required)
+GET    /events/:id/attendees — List attendees with pagination (optional auth)
 ```
 
-### Glassmorphism Recipe (copy-paste into every new screen)
+**DTOs (inline in controller or separate dto/ folder):**
+- CreateEventDto: title, description?, coverUrl?, startDate, endDate?, location?, isOnline, onlineUrl?, eventType, privacy, communityId?
+- UpdateEventDto: Partial<CreateEventDto>
+- RsvpDto: status (going/maybe/not_going)
+
+**Service patterns:** Use PrismaService for all queries. Include counts (goingCount, maybeCount). Return event with user relation.
+
+**~400-600 lines total**
+
+---
+
+## AGENT 2: Monetization Backend Module (Tips + Memberships)
+
+**Creates:** `apps/api/src/modules/monetization/`
+- `monetization.module.ts`
+- `monetization.controller.ts`
+- `monetization.service.ts`
+
+**Prisma models available:** `Tip`, `MembershipTier`, `MembershipSubscription`
+
+**Endpoints (12):**
+```
+# Tips
+POST   /monetization/tips           — Send tip (auth required, body: { receiverId, amount, message? })
+GET    /monetization/tips/sent      — List tips sent by user (auth, cursor pagination)
+GET    /monetization/tips/received  — List tips received by user (auth, cursor pagination)
+GET    /monetization/tips/stats     — Tip stats: total earned, total sent, top supporters (auth)
+
+# Membership Tiers
+POST   /monetization/tiers          — Create tier (auth, body: { name, price, benefits[], level })
+GET    /monetization/tiers/:userId  — List user's tiers (optional auth)
+PATCH  /monetization/tiers/:id      — Update tier (auth, owner only)
+DELETE /monetization/tiers/:id      — Delete tier (auth, owner only)
+PATCH  /monetization/tiers/:id/toggle — Toggle tier active/inactive (auth, owner only)
+
+# Subscriptions
+POST   /monetization/subscribe/:tierId    — Subscribe to tier (auth)
+DELETE /monetization/subscribe/:tierId    — Unsubscribe (auth)
+GET    /monetization/subscribers           — List subscribers to my tiers (auth, pagination)
+```
+
+**Service patterns:** Calculate platformFee as 10% of tip amount. Revenue stats aggregate by month. Subscription creates with startDate=now.
+
+**~500-700 lines total**
+
+---
+
+## AGENT 3: Two-Factor Auth Backend Module
+
+**Creates:** `apps/api/src/modules/two-factor/`
+- `two-factor.module.ts`
+- `two-factor.controller.ts`
+- `two-factor.service.ts`
+
+**Prisma model available:** `TwoFactorSecret`
+
+**Endpoints (6):**
+```
+POST   /two-factor/setup     — Generate TOTP secret + QR data URI (auth required)
+POST   /two-factor/verify    — Verify TOTP code + enable 2FA (auth, body: { code })
+POST   /two-factor/validate  — Validate TOTP code on login (body: { userId, code })
+DELETE /two-factor/disable   — Disable 2FA (auth, body: { code } to confirm)
+GET    /two-factor/status    — Check if 2FA enabled for user (auth)
+POST   /two-factor/backup    — Use backup code (body: { userId, backupCode })
+```
+
+**Dependencies:** Use `otplib` for TOTP generation (import { authenticator } from 'otplib'). Use `qrcode` for QR data URI. Use `crypto` for hashing backup codes.
+
+**Service patterns:**
+- setup(): Generate 32-char secret, create 8 backup codes, store hashed. Return { secret, qrDataUri, backupCodes }
+- verify(): Validate TOTP token against secret. If valid, set isEnabled=true, verifiedAt=now
+- validate(): Check token against secret. Return { valid: boolean }
+- backup(): Hash input, compare against stored hashed codes. Remove used code.
+
+**Note:** Add `otplib` and `qrcode` to import but they may not be installed. Code should be correct regardless — user will `npm install` later.
+
+**~350-500 lines total**
+
+---
+
+## AGENT 4: Audio Rooms Backend Module
+
+**Creates:** `apps/api/src/modules/audio-rooms/`
+- `audio-rooms.module.ts`
+- `audio-rooms.controller.ts`
+- `audio-rooms.service.ts`
+
+**Prisma models available:** `AudioRoom`, `AudioRoomParticipant`
+
+**Endpoints (10):**
+```
+POST   /audio-rooms             — Create room (auth, body: { title, description?, scheduledAt? })
+GET    /audio-rooms             — List active rooms (optional auth, cursor pagination)
+GET    /audio-rooms/:id         — Get room detail with participants (optional auth)
+DELETE /audio-rooms/:id         — End room (auth, host only)
+POST   /audio-rooms/:id/join    — Join room as listener (auth)
+DELETE /audio-rooms/:id/leave   — Leave room (auth)
+PATCH  /audio-rooms/:id/role    — Change participant role (auth, host only, body: { userId, role })
+PATCH  /audio-rooms/:id/hand    — Toggle hand raised (auth)
+PATCH  /audio-rooms/:id/mute    — Toggle mute (auth, self or host for others)
+GET    /audio-rooms/:id/participants — List participants by role (optional auth)
+```
+
+**Service patterns:**
+- Create sets hostId, status='live', startedAt=now. Auto-add host as participant with role='host', isMuted=false
+- Join adds participant with role='listener', isMuted=true
+- Role changes: host can promote listener→speaker or demote speaker→listener
+- End room: set status='ended', endedAt=now. Remove all participants.
+- Hand raised: only listeners can raise hand. Host sees raised hands and can promote.
+
+**~400-600 lines total**
+
+---
+
+## AGENT 5: Islamic APIs Backend Module
+
+**Creates:** `apps/api/src/modules/islamic/`
+- `islamic.module.ts`
+- `islamic.controller.ts`
+- `islamic.service.ts`
+
+**No new Prisma models** — this module serves static/computed data (prayer times, hadith, mosques, zakat calculations).
+
+**Endpoints (8):**
+```
+GET    /islamic/prayer-times     — Get prayer times for location (query: lat, lng, method?, date?)
+GET    /islamic/prayer-times/methods — List calculation methods
+GET    /islamic/hadith/daily     — Get daily hadith (rotates daily)
+GET    /islamic/hadith/:id       — Get specific hadith by ID
+GET    /islamic/hadith           — List hadiths (cursor pagination)
+GET    /islamic/mosques          — Find nearby mosques (query: lat, lng, radius?)
+GET    /islamic/zakat/calculate  — Calculate zakat (query: cash, gold, silver, investments, debts)
+GET    /islamic/ramadan          — Get Ramadan info (query: year?, lat?, lng?)
+```
+
+**Service patterns:**
+- Prayer times: Use Aladhan API formula or hardcoded calculation. Support methods: MWL, ISNA, Egypt, Makkah, Karachi.
+- Hadith: Serve from static JSON array of 40 hadiths (Nawawi's 40). Daily rotation by day-of-year % 40.
+- Mosques: Return mock data for now (8 mosques with lat/lng/name/address/facilities). Real integration later.
+- Zakat: Pure calculation — 2.5% of (cash + gold_value + silver_value + investments - debts) if above nisab (gold: 85g × price, silver: 595g × price). Use hardcoded gold_price=$68/g, silver_price=$0.82/g.
+- Ramadan: Return current Ramadan status, day number, iftar/suhoor times based on prayer calculation.
+
+**All endpoints use OptionalClerkAuthGuard** (public data).
+
+**Include static hadith data:** Create a `data/hadiths.json` file inside the module with 40 entries: { id, arabic, english, source, narrator, chapter }.
+
+**~500-700 lines total**
+
+---
+
+## AGENT 6: i18n Framework (Mobile)
+
+**Creates:**
+- `apps/mobile/src/i18n/index.ts` — i18n configuration
+- `apps/mobile/src/i18n/en.json` — English translations (comprehensive, 200+ keys)
+- `apps/mobile/src/i18n/ar.json` — Arabic translations (matching en.json keys)
+- `apps/mobile/src/hooks/useTranslation.ts` — Translation hook
+- `apps/mobile/src/utils/rtl.ts` — RTL layout utilities
+
+**i18n/index.ts pattern:**
 ```tsx
-// Card wrapper
-<LinearGradient
-  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-  style={{
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-    padding: spacing.base,
-    marginBottom: spacing.md,
-  }}
->
-  {/* content */}
-</LinearGradient>
-
-// Section icon background
-<LinearGradient
-  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-  style={{
-    width: 32, height: 32,
-    borderRadius: radius.sm,
-    alignItems: 'center', justifyContent: 'center',
-  }}
->
-  <Icon name="..." size="xs" color={colors.emerald} />
-</LinearGradient>
-
-// Entrance animation on list items
-<Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+// Use react-i18next with expo-localization
+// Configure i18next with en + ar resources
+// Default: en, fallback: en
+// Detect device language via expo-localization
 ```
 
-### Standard Imports Template (use for EVERY new screen)
+**en.json structure (organize by screen/feature):**
+```json
+{
+  "common": { "save": "Save", "cancel": "Cancel", "delete": "Delete", "loading": "Loading...", "error": "Something went wrong", "retry": "Retry", "done": "Done", "next": "Next", "back": "Back", "search": "Search", "share": "Share", "edit": "Edit", "settings": "Settings" },
+  "auth": { "signIn": "Sign In", "signUp": "Sign Up", "forgotPassword": "Forgot Password?", ... },
+  "tabs": { "saf": "Saf", "bakra": "Bakra", "majlis": "Majlis", "risalah": "Risalah", "minbar": "Minbar" },
+  "saf": { "feed": "Feed", "following": "Following", "forYou": "For You", "newPost": "New Post", ... },
+  "bakra": { ... },
+  "majlis": { ... },
+  "risalah": { "messages": "Messages", "newMessage": "New Message", "typeMessage": "Type a message...", ... },
+  "minbar": { ... },
+  "profile": { "followers": "Followers", "following": "Following", "posts": "Posts", "editProfile": "Edit Profile", ... },
+  "islamic": { "prayerTimes": "Prayer Times", "hadith": "Daily Hadith", "dhikr": "Dhikr Counter", "zakat": "Zakat Calculator", "mosque": "Nearby Mosques", "ramadan": "Ramadan", ... },
+  "monetization": { "tips": "Tips", "sendTip": "Send Tip", "membership": "Membership", ... },
+  "notifications": { ... },
+  "settings": { ... }
+}
+```
+
+**ar.json:** Full Arabic translations for ALL keys in en.json. Use proper Arabic (not transliteration):
+- "Save" → "حفظ", "Cancel" → "إلغاء", "Delete" → "حذف", "Search" → "بحث"
+- "Prayer Times" → "أوقات الصلاة", "Ramadan" → "رمضان", etc.
+
+**useTranslation.ts:**
 ```tsx
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Icon, type IconName } from '@/components/ui/Icon';
-import { GlassHeader } from '@/components/ui/GlassHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+// Wraps react-i18next useTranslation
+// Returns { t, language, changeLanguage, isRTL }
+// isRTL computed from language === 'ar'
 ```
 
----
-
-## STAGE 1: Social Features (3 new screens)
-
-### Task 1.1 — chat-theme-picker.tsx (Chat Theme/Wallpaper Picker)
-
-**Create:** `apps/mobile/app/(screens)/chat-theme-picker.tsx`
-
-**Purpose:** Browse and preview chat themes/wallpapers for individual conversations (WhatsApp-style).
-
-**Required elements:**
-- GlassHeader with title "Chat Theme" and back arrow
-- Current theme preview card:
-  - Glass card showing a mock chat conversation preview (3 messages):
-    - Sent message (right-aligned): emerald gradient bubble with white text
-    - Received message (left-aligned): dark.bgCard bubble with primary text
-    - Sent message (right-aligned): another emerald bubble
-  - Current wallpaper visible "behind" the messages
-  - "Current: Default Dark" label below
-- Theme categories (horizontal ScrollView):
-  - Glass pills: "Solid Colors", "Gradients", "Patterns", "Photos"
-  - Selected with emerald gradient
-- Theme grid (FlatList, 2 columns):
-  - **Solid Colors tab:** 12 color swatches:
-    - Default Dark (#0D1117), Midnight Blue, Deep Purple, Forest (#0A7B4F tint), Charcoal, Navy, Slate, Burgundy, Dark Teal, Espresso, Graphite, Obsidian
-    - Each: rounded square (width/2 - 32px), selected = emerald ring + check icon overlay
-  - **Gradients tab:** 8 gradient previews:
-    - "Emerald Night" (emerald → dark), "Golden Hour" (gold → dark), "Ocean Deep", "Twilight", "Aurora", "Cosmic", "Sahara", "Midnight Rose"
-    - Each: LinearGradient rounded square with name below
-  - **Patterns tab:** 6 pattern options:
-    - "Geometric", "Stars", "Waves", "Dots", "Islamic Art", "Minimal"
-    - Each: glass card with pattern name + small icon (`layers`, `star`, `droplet`, `circle`, `moon`, `slash`)
-  - **Photos tab:**
-    - "Upload Photo" dashed card with `image` + `plus` icons
-    - 4 stock wallpaper placeholders (dark.surface with `image` icon + name)
-  - FadeInUp per grid item
-- Opacity/blur controls:
-  - Glass card with `sliders` icon
-  - "Wallpaper Opacity" slider (0-100%, default 30%)
-  - "Message Blur" slider (0-100%, default 0%)
-- Bottom bar:
-  - "Reset to Default" text button + "Apply" emerald gradient button
-
-**Mock data:** theme names + color values as described above.
-
-**Visual accents:**
-- Live preview updates as user selects themes
-- Selected theme gets emerald ring + animated check
-- Gradient previews are actual LinearGradient components
-
-### Task 1.2 — create-event.tsx (Create Event)
-
-**Create:** `apps/mobile/app/(screens)/create-event.tsx`
-
-**Purpose:** Create community events with details, date/time, location, and cover image.
-
-**Required elements:**
-- GlassHeader with title "Create Event" and back arrow
-- Cover image section:
-  - Glass card (200px height) with dashed border:
-    - `camera` icon (48x48) centered in emerald-gold gradient background
-    - "Add Cover Photo" text + "Tap to upload" hint
-  - After "upload" (mock): show placeholder with "Change" overlay button
-- Event details form (ScrollView with RefreshControl):
-  - **Title** card:
-    - Glass card with `pencil` icon
-    - TextInput: "Event Name" placeholder
-    - CharCountRing (100 char max) — import from `@/components/ui/CharCountRing`
-  - **Description** card:
-    - Glass card with `edit` icon
-    - TextInput (multiline, 4 lines): "What's this event about?" placeholder
-    - CharCountRing (500 char max)
-  - **Date & Time** card:
-    - Glass card with `calendar` icon header
-    - Start date row: "Start" label + date display + `chevron-right`
-    - End date row: "End" label + date display + `chevron-right`
-    - "All Day" toggle
-    - Mock dates: "March 20, 2026 at 7:00 PM" — "March 20, 2026 at 9:00 PM"
-  - **Location** card:
-    - Glass card with `map-pin` icon
-    - TextInput: "Add location" placeholder
-    - "Online Event" toggle — when on, shows URL input instead
-  - **Event Type** selector:
-    - Glass card with `layers` icon
-    - Horizontal pills: "In-Person", "Online", "Hybrid"
-    - Selected with emerald gradient
-  - **Privacy** selector:
-    - Glass card with `globe`/`lock` icon (toggles based on selection)
-    - "Public" / "Members Only" / "Invite Only" in glass pills
-  - **Community** selector:
-    - Glass card with `users` icon
-    - "Post to community" dropdown placeholder
-    - "Your Communities" list (2-3 mock communities)
-  - **Reminders** card:
-    - Glass card with `bell` icon
-    - Toggle: "Send reminder 1 hour before"
-    - Toggle: "Send reminder 1 day before"
-- Bottom bar:
-  - "Save Draft" text button + "Create Event" emerald gradient button
-
-**Visual accents:**
-- Calendar icon uses gold color
-- Active toggles in emerald
-- Cover image area has subtle emerald dashed border
-
-### Task 1.3 — event-detail.tsx (Event Detail View)
-
-**Create:** `apps/mobile/app/(screens)/event-detail.tsx`
-
-**Purpose:** View event details, RSVP, see attendees, and interact.
-
-**Required elements:**
-- GlassHeader with title "Event" and back arrow + share button (`share` icon)
-- Cover image hero:
-  - Full-width placeholder (220px height, dark.bgCard with `image` icon)
-  - Gradient overlay from transparent to dark.bg at bottom
-  - Event type badge overlay (top-left): "In-Person" in glass pill
-- Event info section:
-  - Title: large bold text "Community Iftar Gathering"
-  - Host row: avatar placeholder (40x40) + "Hosted by @community_name" + verified badge
-  - Date/time card:
-    - Glass card with `calendar` icon in gold gradient background
-    - "Saturday, March 20, 2026"
-    - "7:00 PM — 9:00 PM (AST)"
-    - "Add to Calendar" button with `calendar` icon
-  - Location card:
-    - Glass card with `map-pin` icon in emerald gradient background
-    - "Islamic Community Center"
-    - "123 Main Street, Riyadh"
-    - "Get Directions" button with `map-pin` icon
-  - Description card:
-    - Glass card with event description text (3-4 lines)
-    - "Read more" expandable if text is long
-- RSVP section:
-  - Glass card with gold border accent:
-    - "Are you going?" label
-    - 3 RSVP buttons in row: "Going" (emerald), "Maybe" (gold), "Can't Go" (dark.surface)
-    - Selected button has filled gradient, others outlined
-    - Current selection shows check icon
-- Attendees section:
-  - Glass card with `users` icon header
-  - "47 Going · 12 Maybe · 8 Invited"
-  - Horizontal avatar row (overlapping circles, 5 visible + "+42")
-  - "See All Attendees" button with `chevron-right`
-- Discussion section:
-  - Glass card with `message-circle` icon header
-  - "3 comments" count
-  - 2 mock comment rows (avatar + name + text + timestamp)
-  - "Add a comment..." input row at bottom
-- Bottom bar:
-  - "Share Event" button (glass pill with `share` icon)
-  - "RSVP: Going" confirmation button (emerald gradient, reflects current RSVP)
-
-**Mock event data:**
-```
-Title: Community Iftar Gathering
-Host: Islamic Community Center (@icc_riyadh)
-Date: Saturday, March 20, 2026, 7:00-9:00 PM
-Location: Islamic Community Center, 123 Main Street, Riyadh
-Type: In-Person, Public
-Attendees: 47 going, 12 maybe
-Description: "Join us for a blessed evening of community iftar during Ramadan. We'll break our fast together, share a meal, and enjoy each other's company. All are welcome — bring your family and friends!"
+**rtl.ts:**
+```tsx
+// RTL-aware style helpers:
+// rtlFlexRow(isRTL): flexDirection row/row-reverse
+// rtlTextAlign(isRTL): textAlign left/right
+// rtlMargin(isRTL, start, end): marginLeft/Right swapped
+// rtlPadding(isRTL, start, end): paddingLeft/Right swapped
+// rtlIcon(isRTL): returns transform scaleX(-1) for directional icons
 ```
 
-**Visual accents:**
-- Gold accent on calendar date card
-- Emerald "Going" RSVP button
-- Overlapping avatar circles create depth effect
-- Host row has subtle verified badge glow
-
-**Commit after Stage 1:** `git add -A && git commit -m "feat: batch 32 stage 1 — 3 social screens (chat-theme-picker, create-event, event-detail)"`
+**~600-800 lines total across all files**
 
 ---
 
-## STAGE 2: Engagement (2 new screens)
+## AGENT 7: Image Carousel + Gallery Components (Mobile)
 
-### Task 2.1 — audio-room.tsx (Audio Room / Spaces)
+**Creates:**
+- `apps/mobile/src/components/ui/ImageCarousel.tsx`
+- `apps/mobile/src/components/ui/ImageGallery.tsx`
 
-**Create:** `apps/mobile/app/(screens)/audio-room.tsx`
+**ImageCarousel.tsx (~300 lines):**
+Horizontal swipeable image carousel for multi-image posts.
 
-**Purpose:** Live audio room (Twitter Spaces / Clubhouse style) for Majlis space.
+```tsx
+interface ImageCarouselProps {
+  images: string[];           // Array of image URIs
+  height?: number;            // Default 400
+  showIndicators?: boolean;   // Dot indicators, default true
+  onImagePress?: (index: number) => void;  // Opens gallery
+  borderRadius?: number;      // Default radius.lg
+}
+```
 
-**Required elements:**
-- GlassHeader with title "Audio Room" and back arrow + more-horizontal menu
-- Room info hero:
-  - Glass card with:
-    - Room title: "Discussing Islamic Finance in the Modern World" (bold, lg fontSize)
-    - Host badge: avatar (40x40) + "Hosted by @khalid_dev" + `star` icon
-    - "LIVE" badge: pulsing red dot + "LIVE" text in red gradient pill
-    - Listener count: `users` icon + "234 listening" in gold
-    - Started: `clock` icon + "Started 45 min ago" in tertiary
-- Speakers section (top area):
-  - Glass card with "Speakers" header + `mic` icon
-  - Grid of speaker avatars (2 rows × 3 columns max):
-    - Each speaker: avatar circle (64x64) with:
-      - Speaking indicator: animated emerald ring when "speaking" (mock 2 of 5 as speaking)
-      - Muted indicator: small `volume-x` icon overlay when muted
-      - Name below avatar
-      - Host badge (star icon) for the host
-    - Mock 5 speakers: host + 4 speakers (2 speaking, 1 muted, 1 idle)
-  - FadeInUp per speaker
-- Listeners section:
-  - Glass card with "Listeners" header + `users` icon + count badge "229"
-  - Scrollable grid of smaller avatars (32x32, 4 columns):
-    - 12 mock listener avatars with names
-    - "+217 more" indicator
-  - FadeInUp per row
-- Raised hands section:
-  - Glass card with "Raised Hands" header + `hand` (use `edit` icon as substitute) + count "3"
-  - 3 raised hand entries: avatar + name + "Raised 2m ago" + "Accept" emerald button + "Decline" text
-- Room controls (bottom fixed bar):
-  - Glass card with controls row:
-    - Mic toggle: large circle button, emerald when on, error when muted (`mic` / `volume-x`)
-    - Raise hand: circle button with `edit` icon
-    - Emoji reactions: circle button with `smile` icon
-    - Leave: circle button with `log-out` icon in error color
-  - "You are a listener" / "You are a speaker" status text above controls
-- End room (host-only section, mock as visible):
-  - Small "End Room" text button in error color at very bottom
+Features:
+- Horizontal FlatList with pagingEnabled + snapToInterval
+- Dot indicators below (emerald active, dark.surface inactive)
+- Image count badge top-right: "2/5" in glass pill
+- Pinch-to-zoom disabled (that's for the gallery)
+- Smooth scroll with `decelerationRate="fast"`
+- Uses `Image` from react-native with resizeMode="cover"
 
-**Visual accents:**
-- Speaking avatars have animated emerald ring (use pulsing border)
-- LIVE badge pulses with red glow
-- Listener count in gold
-- Mic on = emerald, mic off = error red
-- Raised hand entries have subtle gold accent
+**ImageGallery.tsx (~400 lines):**
+Full-screen lightbox gallery with pinch-to-zoom.
 
-### Task 2.2 — appeal-moderation.tsx (Content Appeal)
+```tsx
+interface ImageGalleryProps {
+  images: string[];
+  initialIndex?: number;
+  visible: boolean;
+  onClose: () => void;
+}
+```
 
-**Create:** `apps/mobile/app/(screens)/appeal-moderation.tsx`
+Features:
+- Full-screen modal-style overlay (use Animated.View, NOT RN Modal)
+- Black background with status bar hidden
+- Horizontal FlatList for swiping between images
+- Pinch-to-zoom on each image using `react-native-reanimated` gestures:
+  - useSharedValue for scale, translationX, translationY
+  - Double-tap to toggle 1x → 2x zoom
+  - Pinch gesture for continuous zoom (1x - 4x)
+- Close button (top-left, `x` icon in glass circle)
+- Image counter (top-center): "2 / 5" in glass pill
+- Share button (top-right, `share` icon in glass circle)
+- Swipe down to dismiss (with animated opacity)
+- FadeInUp entrance animation
 
-**Purpose:** Appeal a content moderation decision (content removed, account restricted, etc.).
+**Both components follow glassmorphism for controls/indicators.**
 
-**Required elements:**
-- GlassHeader with title "Appeal Decision" and back arrow
-- Moderation action card (top):
-  - Glass card with error-tinted gradient (`rgba(248,81,73,0.15)` → `rgba(248,81,73,0.05)`):
-    - `flag` icon in error gradient background (32x32)
-    - "Your post was removed" title in error color
-    - "Reason: Community guidelines violation — Misleading content" in secondary text
-    - "Removed on: March 12, 2026" with `clock` icon
-    - "Violation ID: #MOD-2847" in tertiary text
-- Content preview card:
-  - Glass card with "Affected Content" header
-  - Post preview: truncated text (2 lines) + media thumbnail placeholder
-  - "View Guidelines" link with `link` icon in emerald
-- Appeal form:
-  - Glass card with "Your Appeal" header + `pencil` icon
-  - **Reason selector:**
-    - "Why do you disagree?" label
-    - Radio options (each in glass row):
-      - "This content doesn't violate guidelines"
-      - "This was taken out of context"
-      - "This is educational/newsworthy content"
-      - "This was posted by mistake and has been edited"
-      - "Other"
-    - Selected radio: emerald filled circle, unselected: dark.surface outline
-  - **Details TextInput:**
-    - Glass card with multiline input (5 lines)
-    - "Provide additional context for your appeal..." placeholder
-    - CharCountRing (1000 char max) — import from `@/components/ui/CharCountRing`
-  - **Evidence section:**
-    - Glass card with `paperclip` icon
-    - "Attach supporting evidence (optional)"
-    - "Upload Image" button: dashed glass card with `image` + `plus`
-    - "Upload Document" button: dashed glass card with `paperclip` + `plus`
-- Appeal status section (for previously submitted appeals):
-  - Glass card with "Appeal History" header + `clock` icon
-  - Mock entry: "Appeal #1 — Submitted March 12, 2026 — Under Review"
-  - Status badge: "Under Review" in gold pill, "Approved" in emerald pill, "Denied" in error pill
-  - Timeline: 3 steps (Submitted → Under Review → Decision) with connecting line, current step highlighted
-- Important notes card:
-  - Glass card with `check-circle` icon
-  - "Appeals are typically reviewed within 24-48 hours"
-  - "You can submit one appeal per moderation action"
-  - "Our team reviews each appeal carefully and fairly"
-- Bottom bar:
-  - "Cancel" text button + "Submit Appeal" emerald gradient button
-  - Button disabled until reason selected + at least 50 chars in details
-
-**Visual accents:**
-- Error-tinted glass for the moderation action card (red theme)
-- Emerald for positive appeal actions
-- Gold for "Under Review" status
-- Timeline dots: completed = emerald, current = gold pulse, upcoming = dark.surface
-
-**Commit after Stage 2:** `git add -A && git commit -m "feat: batch 32 stage 2 — 2 engagement screens (audio-room, appeal-moderation)"`
+**~700 lines total**
 
 ---
 
-## FILE → STAGE CONFLICT MAP (zero overlaps)
+## AGENT 8: Video Player Enhancements (Mobile)
 
-| File | Stage |
-|------|-------|
-| `apps/mobile/app/(screens)/chat-theme-picker.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/create-event.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/event-detail.tsx` | 1 (NEW) |
-| `apps/mobile/app/(screens)/audio-room.tsx` | 2 (NEW) |
-| `apps/mobile/app/(screens)/appeal-moderation.tsx` | 2 (NEW) |
+**Creates:**
+- `apps/mobile/src/components/ui/VideoControls.tsx`
+- `apps/mobile/src/components/ui/MiniPlayer.tsx`
 
-**Zero file conflicts between stages. No existing files modified.**
+**VideoControls.tsx (~350 lines):**
+Overlay controls for video playback with quality and speed selectors.
+
+```tsx
+interface VideoControlsProps {
+  isPlaying: boolean;
+  currentTime: number;        // seconds
+  duration: number;           // seconds
+  quality: VideoQuality;
+  speed: PlaybackSpeed;
+  volume: number;             // 0-1
+  onPlayPause: () => void;
+  onSeek: (time: number) => void;
+  onQualityChange: (q: VideoQuality) => void;
+  onSpeedChange: (s: PlaybackSpeed) => void;
+  onVolumeChange: (v: number) => void;
+  onFullscreen?: () => void;
+  onMinimize?: () => void;    // Opens mini player
+}
+
+type VideoQuality = '360p' | '480p' | '720p' | '1080p' | '4K';
+type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
+```
+
+Features:
+- Play/pause center button (large, 64x64 glass circle)
+- Seek bar: glass track with emerald fill + gold thumb
+- Time display: "01:23 / 05:45" in glass pill
+- Bottom bar with icons: quality, speed, volume, fullscreen, minimize
+- Quality selector: BottomSheet with quality options (glass cards, selected = emerald check)
+- Speed selector: BottomSheet with speed options
+- Auto-hide controls after 3 seconds (animated opacity)
+- Skip forward/back buttons (±10s): `fast-forward` / `rewind` icons
+
+**MiniPlayer.tsx (~350 lines):**
+Floating mini player that persists while browsing.
+
+```tsx
+interface MiniPlayerProps {
+  videoTitle: string;
+  channelName: string;
+  thumbnailUri?: string;
+  isPlaying: boolean;
+  progress: number;           // 0-1
+  onPlayPause: () => void;
+  onClose: () => void;
+  onExpand: () => void;       // Return to full player
+}
+```
+
+Features:
+- Fixed position at bottom of screen (above tab bar, ~64px height)
+- Glass card background with blur
+- Thumbnail (48x48 rounded) + title + channel name
+- Play/pause button + close (x) button
+- Thin progress bar at top (emerald fill)
+- Swipe up to expand, swipe right to dismiss
+- PanGestureHandler for swipe gestures
+- Animated entrance from bottom
+
+**~700 lines total**
 
 ---
 
-## VERIFICATION CHECKLIST (run after ALL stages)
+## AGENT 9: Story Stickers System (Mobile)
 
-For each of the 5 new screen files:
-- [ ] File exists at correct path
-- [ ] 300-600+ lines of real implementation
-- [ ] Imports `LinearGradient` from `expo-linear-gradient`
-- [ ] Imports `FadeInUp` from `react-native-reanimated`
-- [ ] Imports `type IconName` from `@/components/ui/Icon`
-- [ ] Has glassmorphism card patterns (rgba gradient colors)
-- [ ] Uses `<GlassHeader>` for navigation
-- [ ] Has `<RefreshControl>` on any ScrollView/FlatList
+**Creates:** `apps/mobile/src/components/story/`
+- `PollSticker.tsx`
+- `QuizSticker.tsx`
+- `QuestionSticker.tsx`
+- `CountdownSticker.tsx`
+- `SliderSticker.tsx`
+
+**Each sticker: ~150-200 lines. All share this pattern:**
+```tsx
+interface [Sticker]Props {
+  data: [StickserData];
+  onResponse?: (response: any) => void;  // Properly typed per sticker
+  isCreator?: boolean;         // Shows results vs interaction
+  style?: ViewStyle;
+}
+```
+
+**PollSticker.tsx:**
+- 2-4 options displayed as glass bars
+- Tap to vote → option fills with emerald/gold gradient showing percentage
+- After voting: show results with vote counts + percentages
+- Creator view: shows results always
+- Animated fill on vote
+
+**QuizSticker.tsx:**
+- Question text + 4 answer options in glass cards
+- One correct answer (marked by creator)
+- Tap answer → green check on correct, red X on wrong
+- Shows correct answer after response
+- Confetti-like animation on correct answer (use emerald particles placeholder)
+
+**QuestionSticker.tsx:**
+- "Ask me anything" card with glass TextInput
+- Submit button with emerald gradient
+- Creator view: scrollable list of submitted questions in glass cards
+- "Reply" button per question for creator
+
+**CountdownSticker.tsx:**
+- Event name + target datetime
+- Live countdown: DD:HH:MM:SS in large text
+- Glass card with gold accent border
+- Pulsing animation when < 1 hour remaining
+- "Remind Me" toggle button
+- Shows "Event started!" when countdown reaches 0
+
+**SliderSticker.tsx:**
+- Emoji + question text (e.g., "How much do you love this? 🔥")
+- Horizontal slider with emoji at current position
+- Glass track with gradient fill (emerald → gold)
+- After sliding: shows average value from all responses
+- Animated fill to show average position
+
+**All stickers use glassmorphism, FadeInUp, theme tokens.**
+
+**~900 lines total across 5 files**
+
+---
+
+## AGENT 10: Link Preview + 2FA Screens (Mobile)
+
+**Creates:**
+- `apps/mobile/src/components/ui/LinkPreview.tsx`
+- `apps/mobile/app/(screens)/2fa-setup.tsx`
+- `apps/mobile/app/(screens)/2fa-verify.tsx`
+
+**LinkPreview.tsx (~200 lines):**
+```tsx
+interface LinkPreviewProps {
+  url: string;
+  onPress?: () => void;
+}
+```
+
+Features:
+- Glass card with: favicon placeholder, domain name, page title, description snippet, preview image
+- Loading skeleton while "fetching" metadata
+- Error state: just shows URL as link
+- Tap opens external browser (Linking.openURL)
+- Extracts domain from URL for display
+- Uses mock data for preview (real fetching = backend integration later)
+
+**2fa-setup.tsx (~400 lines):**
+Full glassmorphism screen:
+- GlassHeader "Two-Factor Authentication"
+- Info card explaining 2FA benefits (lock icon, glass card)
+- Step 1: "Install authenticator app" with app suggestions (Google Authenticator, Authy)
+- Step 2: QR code display (large glass card with placeholder QR, manual key below)
+- Step 3: Verification code input (6-digit, glass cards per digit)
+- "Enable 2FA" emerald gradient button
+- Backup codes display card after enable (8 codes in 2-column grid, glass cards)
+- "Download Backup Codes" button
+- Copy-to-clipboard functionality
+
+**2fa-verify.tsx (~300 lines):**
+- GlassHeader "Verify Identity"
+- Lock icon hero (large, emerald gradient background)
+- 6-digit code input (each digit in separate glass TextInput)
+- Auto-submit when 6 digits entered
+- "Use backup code instead" link → switches to backup code TextInput
+- Loading state during verification
+- Error state with shake animation
+- Success → navigate back
+- "Lost access?" help link
+
+**~900 lines total across 3 files**
+
+---
+
+## AGENT 11: New API Clients + Types (Mobile)
+
+**Creates:**
+- `apps/mobile/src/services/eventsApi.ts`
+- `apps/mobile/src/services/monetizationApi.ts`
+- `apps/mobile/src/services/twoFactorApi.ts`
+- `apps/mobile/src/services/audioRoomsApi.ts`
+- `apps/mobile/src/services/islamicApi.ts`
+- `apps/mobile/src/types/events.ts`
+- `apps/mobile/src/types/monetization.ts`
+- `apps/mobile/src/types/audioRooms.ts`
+- `apps/mobile/src/types/islamic.ts`
+- `apps/mobile/src/types/twoFactor.ts`
+
+**Pattern (follow existing api.ts):**
+```tsx
+import { api } from './api';  // Import base ApiClient
+
+export const eventsApi = {
+  create: (data: CreateEventDto) => api.post('/events', data),
+  list: (cursor?: string) => api.get('/events', { params: { cursor } }),
+  // ... etc matching backend endpoints
+};
+```
+
+**Types pattern:**
+```tsx
+export interface Event {
+  id: string;
+  title: string;
+  description?: string;
+  // ... matching Prisma model
+}
+```
+
+**Each API client mirrors the corresponding backend agent's endpoints exactly.**
+**Each type file exports interfaces matching the Prisma models + DTOs.**
+
+**~600 lines total across 10 files**
+
+---
+
+## AGENT 12: Push Notification Infrastructure (Mobile)
+
+**Creates:**
+- `apps/mobile/src/services/pushNotifications.ts`
+- `apps/mobile/src/hooks/usePushNotificationHandler.ts`
+- `apps/mobile/src/utils/deepLinking.ts`
+
+**pushNotifications.ts (~250 lines):**
+```tsx
+// Expo Notifications setup
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import Constants from 'expo-constants';
+
+// registerForPushNotifications(): Request permissions, get ExpoPushToken, register with backend (devicesApi)
+// configurePushChannels(): Set up notification channels (messages, likes, follows, mentions, live, islamic)
+// schedulePrayerNotification(prayerName, time): Schedule local notification for prayer times
+// scheduleRamadanNotification(type, time): Schedule iftar/suhoor reminders
+```
+
+**usePushNotificationHandler.ts (~250 lines):**
+```tsx
+// Hook that handles incoming notifications
+// Sets up listeners for:
+//   - Foreground notifications (show in-app banner)
+//   - Background notifications (handle silently)
+//   - Notification tap response (navigate to relevant screen)
+//
+// Navigation mapping:
+//   type 'like' → post/[id]
+//   type 'comment' → post/[id]
+//   type 'follow' → profile/[username]
+//   type 'message' → conversation/[id]
+//   type 'mention' → thread/[id] or post/[id]
+//   type 'live' → live/[id]
+//   type 'prayer' → prayer-times
+//   type 'event' → event-detail (new screen)
+```
+
+**deepLinking.ts (~150 lines):**
+```tsx
+// Deep link URL scheme: mizanly://
+// Route mapping:
+//   mizanly://post/:id → (screens)/post/[id]
+//   mizanly://profile/:username → (screens)/profile/[username]
+//   mizanly://conversation/:id → (screens)/conversation/[id]
+//   mizanly://live/:id → (screens)/live/[id]
+//   mizanly://event/:id → (screens)/event-detail
+//   mizanly://prayer-times → (screens)/prayer-times
+//
+// parseDeepLink(url: string): { screen: string, params: Record<string, string> }
+// getDeepLinkUrl(screen, params): string
+```
+
+**~650 lines total across 3 files**
+
+---
+
+## FILE → AGENT CONFLICT MAP (zero overlaps)
+
+| Agent | Files Created | Touches Existing? |
+|-------|--------------|-------------------|
+| 1 | `modules/events/` (3 files) | NO |
+| 2 | `modules/monetization/` (3 files) | NO |
+| 3 | `modules/two-factor/` (3 files) | NO |
+| 4 | `modules/audio-rooms/` (3 files) | NO |
+| 5 | `modules/islamic/` (3+ files) | NO |
+| 6 | `src/i18n/` (3 files) + `hooks/` + `utils/` | NO |
+| 7 | `components/ui/ImageCarousel.tsx`, `ImageGallery.tsx` | NO |
+| 8 | `components/ui/VideoControls.tsx`, `MiniPlayer.tsx` | NO |
+| 9 | `components/story/` (5 files) | NO |
+| 10 | `components/ui/LinkPreview.tsx`, `(screens)/2fa-*.tsx` | NO |
+| 11 | `services/*Api.ts`, `types/*.ts` (10 files) | NO |
+| 12 | `services/pushNotifications.ts`, `hooks/`, `utils/` | NO |
+
+**ZERO file conflicts. All agents create NEW files only.**
+
+---
+
+## POST-BATCH TASKS (after all 12 agents complete)
+
+1. Register new backend modules in `app.module.ts` (add imports + module references)
+2. Run `npx prisma db push` to sync schema
+3. Run `npm install otplib qrcode` in api/ (for 2FA)
+4. Run `npm install react-i18next i18next expo-localization` in mobile/ (for i18n)
+5. Run `npm install expo-notifications expo-device` in mobile/ (for push)
+6. Wire new API clients into existing screens (separate integration batch)
+7. Add i18n `t()` calls to existing screen text (separate i18n rollout batch)
+
+---
+
+## VERIFICATION CHECKLIST
+
+**Backend (Agents 1-5):**
+- [ ] Module file exports class with @Module decorator
+- [ ] Controller has @ApiTags, @Controller decorator with route prefix
+- [ ] All endpoints have @ApiOperation + @ApiResponse decorators
+- [ ] Auth endpoints use @UseGuards(ClerkAuthGuard) + @ApiBearerAuth
+- [ ] Public endpoints use @UseGuards(OptionalClerkAuthGuard)
+- [ ] Write endpoints have @Throttle
+- [ ] Service uses PrismaService injection
 - [ ] 0 instances of `as any`
-- [ ] 0 hardcoded `borderRadius` >= 6
-- [ ] 0 RN `Modal` usage
-- [ ] 0 duplicate props (e.g., `style={...} style={...}`)
-- [ ] 0 variable shadowing of imported `colors`
-- [ ] All Icon names are valid IconName values (see list above)
-- [ ] All icon arrays typed with `icon: IconName`, NOT `icon: string`
+- [ ] Proper error handling (NotFoundException, ForbiddenException, BadRequestException)
+
+**Mobile (Agents 6-12):**
+- [ ] All components/screens properly typed
+- [ ] New screens follow glassmorphism pattern
+- [ ] 0 instances of `as any`
+- [ ] API clients match backend endpoint signatures
+- [ ] Types match Prisma model fields
