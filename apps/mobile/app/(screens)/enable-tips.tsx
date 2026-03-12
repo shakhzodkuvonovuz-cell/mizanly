@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Switch,
+  Alert,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -21,6 +22,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { monetizationApi } from '@/services/monetizationApi';
+import { settingsApi } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -73,6 +76,9 @@ export default function EnableTipsScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [isEnabled, setIsEnabled] = useState(true);
   const [minTipAmount, setMinTipAmount] = useState(2);
   const [customAmount, setCustomAmount] = useState('');
@@ -86,19 +92,61 @@ export default function EnableTipsScreen() {
   const [thankYouMessage, setThankYouMessage] = useState('');
   const [isConnected, setIsConnected] = useState(false);
 
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      // TODO: Replace with actual API call when backend endpoint is ready
+      // const response = await monetizationApi.getTipSettings();
+      // const settings = response.data;
+      // setIsEnabled(settings.tipEnabled);
+      // setMinTipAmount(settings.minTipAmount);
+      // setDisplaySettings(settings.displaySettings);
+      // setThankYouMessage(settings.thankYouMessage);
+      // setIsConnected(settings.paymentConnected);
+      // For now, simulate loading
+      await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (err) {
+      setError('Failed to load tip settings');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   const toggleDisplaySetting = useCallback((key: keyof typeof displaySettings) => {
     setDisplaySettings(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const handleSave = useCallback(() => {
-    haptic.success();
-    // Mock save
-  }, [haptic]);
+  const handleSave = useCallback(async () => {
+    haptic.medium();
+    setSubmitting(true);
+    try {
+      // TODO: Replace with actual API call when backend endpoint is ready
+      // await monetizationApi.updateTipSettings({
+      //   tipEnabled: isEnabled,
+      //   minTipAmount,
+      //   displaySettings,
+      //   thankYouMessage,
+      //   paymentConnected: isConnected,
+      // });
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
+      haptic.success();
+      Alert.alert('Success', 'Tip settings saved successfully');
+    } catch (err) {
+      Alert.alert('Error', 'Failed to save settings. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [haptic, isEnabled, minTipAmount, displaySettings, thankYouMessage, isConnected]);
 
   const handleConnectPayment = useCallback(() => {
     haptic.light();

@@ -240,186 +240,196 @@ export default function MembershipTiersScreen() {
         rightActions={[{ icon: 'star', onPress: () => {}, accessibilityLabel: 'Tiers' }]}
       />
 
-      <FlatList
-        data={tiers}
-        keyExtractor={item => item.id}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-        ListHeaderComponent={
-          <>
-            {/* Info Banner */}
-            <Animated.View entering={FadeInUp.duration(400)}>
-              <LinearGradient
-                colors={['rgba(200,150,62,0.15)', 'rgba(28,35,51,0.2)']}
-                style={styles.infoBanner}
-              >
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.infoIconBg}
-                >
-                  <Icon name="star" size="sm" color={colors.gold} />
-                </LinearGradient>
-                <View style={styles.infoContent}>
-                  <Text style={styles.infoTitle}>Offer exclusive content and perks to your members</Text>
-                  <Text style={styles.infoSubtitle}>Members pay monthly for access to your exclusive content</Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
-          </>
-        }
-        renderItem={({ item, index }) => (
-          <TierCard
-            tier={item}
-            index={index}
-            onToggle={() => toggleTier(item.id)}
-          />
-        )}
-        ListFooterComponent={
-          <>
-            {/* Create New Tier Button / Form */}
-            {!isCreating ? (
-              <Animated.View entering={FadeInUp.delay(tiers.length * 100 + 100).duration(400)}>
-                <TouchableOpacity
-                  onPress={() => {
-                    haptic.light();
-                    setIsCreating(true);
-                  }}
-                  activeOpacity={0.8}
-                >
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
-                    style={styles.createButton}
-                  >
-                    <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
-                    <Text style={styles.createButtonText}>Add a membership tier</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
-            ) : (
+      {loading ? (
+        <View style={{ padding: spacing.base, paddingTop: 100 }}>
+          <Skeleton.Rect width="100%" height={100} borderRadius={radius.lg} />
+          <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
+          <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
+        </View>
+      ) : error ? (
+        <EmptyState icon="alert-circle" title="Unable to load tiers" subtitle={error} actionLabel="Retry" onAction={fetchData} />
+      ) : (
+        <FlatList
+          data={tiers}
+          keyExtractor={item => item.id}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+          ListHeaderComponent={
+            <>
+              {/* Info Banner */}
               <Animated.View entering={FadeInUp.duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.createFormCard}
+                  colors={['rgba(200,150,62,0.15)', 'rgba(28,35,51,0.2)']}
+                  style={styles.infoBanner}
                 >
-                  <Text style={styles.createFormTitle}>Create New Tier</Text>
-
-                  {/* Name Input */}
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={styles.formInputContainer}
+                    colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.infoIconBg}
                   >
-                    <Text style={styles.formInputLabel}>Tier Name</Text>
-                    <TextInput
-                      style={styles.formInput}
-                      value={newTierName}
-                      onChangeText={setNewTierName}
-                      placeholder="e.g., Premium Supporter"
-                      placeholderTextColor={colors.text.tertiary}
-                    />
+                    <Icon name="star" size="sm" color={colors.gold} />
                   </LinearGradient>
-
-                  {/* Price Input */}
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={styles.formInputContainer}
-                  >
-                    <Text style={styles.formInputLabel}>Monthly Price</Text>
-                    <View style={styles.priceInputWrapper}>
-                      <Text style={styles.pricePrefix}>$</Text>
-                      <TextInput
-                        style={styles.formInput}
-                        value={newTierPrice}
-                        onChangeText={setNewTierPrice}
-                        placeholder="9.99"
-                        placeholderTextColor={colors.text.tertiary}
-                        keyboardType="decimal-pad"
-                      />
-                      <Text style={styles.priceSuffix}>/month</Text>
-                    </View>
-                  </LinearGradient>
-
-                  {/* Benefits Input */}
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={styles.formInputContainer}
-                  >
-                    <Text style={styles.formInputLabel}>Benefits (one per line)</Text>
-                    <TextInput
-                      style={[styles.formInput, styles.multilineInput]}
-                      value={newTierBenefits}
-                      onChangeText={setNewTierBenefits}
-                      placeholder="• Exclusive content&#10;• Early access&#10;• Monthly Q&A"
-                      placeholderTextColor={colors.text.tertiary}
-                      multiline
-                      numberOfLines={4}
-                      textAlignVertical="top"
-                    />
-                  </LinearGradient>
-
-                  {/* Form Buttons */}
-                  <View style={styles.formButtonRow}>
-                    <TouchableOpacity
-                      onPress={() => setIsCreating(false)}
-                      activeOpacity={0.8}
-                      style={styles.cancelButton}
-                    >
-                      <LinearGradient
-                        colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                        style={styles.cancelButtonGradient}
-                      >
-                        <Text style={styles.cancelButtonText}>Cancel</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      onPress={handleCreateTier}
-                      activeOpacity={0.8}
-                      style={styles.createTierButton}
-                    >
-                      <LinearGradient
-                        colors={[colors.emerald, colors.emeraldDark]}
-                        style={styles.createTierButtonGradient}
-                      >
-                        <Text style={styles.createTierButtonText}>Create</Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
+                  <View style={styles.infoContent}>
+                    <Text style={styles.infoTitle}>Offer exclusive content and perks to your members</Text>
+                    <Text style={styles.infoSubtitle}>Members pay monthly for access to your exclusive content</Text>
                   </View>
                 </LinearGradient>
               </Animated.View>
-            )}
-
-            {/* Revenue Summary Card */}
-            <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                style={[styles.revenueCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
-              >
-                <View style={styles.revenueHeader}>
-                  <LinearGradient
-                    colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.revenueIconBg}
+            </>
+          }
+          renderItem={({ item, index }) => (
+            <TierCard
+              tier={item}
+              index={index}
+              onToggle={() => toggleTier(item.id)}
+            />
+          )}
+          ListFooterComponent={
+            <>
+              {/* Create New Tier Button / Form */}
+              {!isCreating ? (
+                <Animated.View entering={FadeInUp.delay(tiers.length * 100 + 100).duration(400)}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      haptic.light();
+                      setIsCreating(true);
+                    }}
+                    activeOpacity={0.8}
                   >
-                    <Icon name="bar-chart-2" size="sm" color={colors.gold} />
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
+                      style={styles.createButton}
+                    >
+                      <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
+                      <Text style={styles.createButtonText}>Add a membership tier</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
+              ) : (
+                <Animated.View entering={FadeInUp.duration(400)}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.createFormCard}
+                  >
+                    <Text style={styles.createFormTitle}>Create New Tier</Text>
+
+                    {/* Name Input */}
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                      style={styles.formInputContainer}
+                    >
+                      <Text style={styles.formInputLabel}>Tier Name</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        value={newTierName}
+                        onChangeText={setNewTierName}
+                        placeholder="e.g., Premium Supporter"
+                        placeholderTextColor={colors.text.tertiary}
+                      />
+                    </LinearGradient>
+
+                    {/* Price Input */}
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                      style={styles.formInputContainer}
+                    >
+                      <Text style={styles.formInputLabel}>Monthly Price</Text>
+                      <View style={styles.priceInputWrapper}>
+                        <Text style={styles.pricePrefix}>$</Text>
+                        <TextInput
+                          style={styles.formInput}
+                          value={newTierPrice}
+                          onChangeText={setNewTierPrice}
+                          placeholder="9.99"
+                          placeholderTextColor={colors.text.tertiary}
+                          keyboardType="decimal-pad"
+                        />
+                        <Text style={styles.priceSuffix}>/month</Text>
+                      </View>
+                    </LinearGradient>
+
+                    {/* Benefits Input */}
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                      style={styles.formInputContainer}
+                    >
+                      <Text style={styles.formInputLabel}>Benefits (one per line)</Text>
+                      <TextInput
+                        style={[styles.formInput, styles.multilineInput]}
+                        value={newTierBenefits}
+                        onChangeText={setNewTierBenefits}
+                        placeholder="• Exclusive content&#10;• Early access&#10;• Monthly Q&A"
+                        placeholderTextColor={colors.text.tertiary}
+                        multiline
+                        numberOfLines={4}
+                        textAlignVertical="top"
+                      />
+                    </LinearGradient>
+
+                    {/* Form Buttons */}
+                    <View style={styles.formButtonRow}>
+                      <TouchableOpacity
+                        onPress={() => setIsCreating(false)}
+                        activeOpacity={0.8}
+                        style={styles.cancelButton}
+                      >
+                        <LinearGradient
+                          colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                          style={styles.cancelButtonGradient}
+                        >
+                          <Text style={styles.cancelButtonText}>Cancel</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        onPress={handleCreateTier}
+                        activeOpacity={0.8}
+                        style={styles.createTierButton}
+                      >
+                        <LinearGradient
+                          colors={[colors.emerald, colors.emeraldDark]}
+                          style={styles.createTierButtonGradient}
+                        >
+                          <Text style={styles.createTierButtonText}>Create</Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </View>
                   </LinearGradient>
-                  <Text style={styles.revenueTitle}>Monthly Revenue</Text>
-                </View>
+                </Animated.View>
+              )}
 
-                <Text style={styles.revenueAmount}>
-                  ${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/month
-                </Text>
+              {/* Revenue Summary Card */}
+              <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                  style={[styles.revenueCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+                >
+                  <View style={styles.revenueHeader}>
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.revenueIconBg}
+                    >
+                      <Icon name="bar-chart-2" size="sm" color={colors.gold} />
+                    </LinearGradient>
+                    <Text style={styles.revenueTitle}>Monthly Revenue</Text>
+                  </View>
 
-                <View style={styles.revenueStats}>
-                  <Text style={styles.revenueStat}>{totalMembers} active members</Text>
-                  <Text style={styles.revenuePayout}>Payout: 15th of each month</Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
+                  <Text style={styles.revenueAmount}>
+                    ${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/month
+                  </Text>
 
-            {/* Bottom spacing */}
-            <View style={{ height: spacing.xxl }} />
-          </>
-        }
-      />
+                  <View style={styles.revenueStats}>
+                    <Text style={styles.revenueStat}>{totalMembers} active members</Text>
+                    <Text style={styles.revenuePayout}>Payout: 15th of each month</Text>
+                  </View>
+                </LinearGradient>
+              </Animated.View>
+
+              {/* Bottom spacing */}
+              <View style={{ height: spacing.xxl }} />
+            </>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }

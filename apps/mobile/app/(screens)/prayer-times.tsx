@@ -1,12 +1,14 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize } from '@/theme';
@@ -31,7 +33,7 @@ interface Prayer {
 const CALCULATION_METHODS = [
   'Muslim World League',
   'Islamic Society of North America (ISNA)',
-  'Egyptian Global Authority',
+  'Egyptian General Authority',
   'Umm al-Qura University, Makkah',
   'University of Karachi',
   'Jafari / Shia',
@@ -71,26 +73,26 @@ function CountdownTimer({ targetTime }: { targetTime: string }) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // Mock countdown calculation
       const now = new Date();
+      const [hours, minutes] = targetTime.split(':').map(Number);
       const target = new Date();
-      target.setHours(19, 35, 0); // Mock target (Isha time)
-
+      target.setHours(hours, minutes, 0, 0);
+      // If target time is earlier than now, assume it's tomorrow
+      if (target <= now) {
+        target.setDate(target.getDate() + 1);
+      }
       const diff = target.getTime() - now.getTime();
       if (diff <= 0) {
         setRemaining('00:00:00');
         return;
       }
-
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
+      const hoursRemaining = Math.floor(diff / (1000 * 60 * 60));
+      const minutesRemaining = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const secondsRemaining = Math.floor((diff % (1000 * 60)) / 1000);
       setRemaining(
-        `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+        `${hoursRemaining.toString().padStart(2, '0')}:${minutesRemaining.toString().padStart(2, '0')}:${secondsRemaining.toString().padStart(2, '0')}`
       );
     }, 1000);
-
     return () => clearInterval(interval);
   }, [targetTime]);
 
@@ -195,6 +197,7 @@ export default function PrayerTimesScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState<ApiPrayerTimes | null>(null);
   const [calculationMethod, setCalculationMethod] = useState('MWL');
   const [showMethodPicker, setShowMethodPicker] = useState(false);
@@ -203,13 +206,31 @@ export default function PrayerTimesScreen() {
   const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
   const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
 
+  const prayerList = useMemo(() => {
+    if (!prayerTimes) return [];
+    return getPrayerList(prayerTimes);
+  }, [prayerTimes]);
+
+  useEffect(() => {
+    if (prayerList.length === 0) return;
+    const updateCurrentPrayer = () => {
+      const newIndex = getCurrentPrayerIndex(prayerList);
+      setCurrentPrayerIndex(newIndex);
+    };
+    updateCurrentPrayer();
+    const interval = setInterval(updateCurrentPrayer, 60000); // update every minute
+    return () => clearInterval(interval);
+  }, [prayerList]);
+
   const fetchData = useCallback(async () => {
     try {
       setError(null);
+      if (!refreshing) setLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setError('Location permission required for accurate prayer times');
         setLoading(false);
+        setRefreshing(false);
         return;
       }
       const location = await Location.getCurrentPositionAsync({});
@@ -223,20 +244,83 @@ export default function PrayerTimesScreen() {
       setPrayerTimes(timesResp.data);
       setPrayerMethods(methodsResp.data);
       // compute current prayer index based on current time
-      // TODO: implement
-      setCurrentPrayerIndex(3); // placeholder
+      const prayerList = getPrayerList(timesResp.data);
+      const currentIndex = getCurrentPrayerIndex(prayerList);
+      setCurrentPrayerIndex(currentIndex);
     } catch (err) {
       setError('Failed to load prayer times');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  }, [calculationMethod]);
+  }, [calculationMethod, refreshing]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const nextPrayerIndex = (currentPrayerIndex + 1) % (prayerTimes ? 6 : 0);
+  const nextPrayerIndex = prayerList.length > 0 ? (currentPrayerIndex + 1) % prayerList.length : 0;
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Prayer Times"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <Skeleton.Rect width={screenWidth - 32} height={200} borderRadius={radius.lg} />
+          <Skeleton.Rect width={200} height={20} borderRadius={radius.sm} style={{ marginTop: spacing.lg }} />
+          <Skeleton.Rect width={150} height={16} borderRadius={radius.sm} style={{ marginTop: spacing.md }} />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Prayer Times"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <EmptyState
+            icon="clock"
+            title="Failed to load prayer times"
+            subtitle={error}
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!prayerTimes) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Prayer Times"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <View style={[styles.scrollContent, { flex: 1, paddingTop: 100 }]}>
+          <EmptyState
+            icon="clock"
+            title="No prayer times"
+            subtitle="Could not load prayer times for your location"
+            actionLabel="Retry"
+            onAction={fetchData}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -249,6 +333,9 @@ export default function PrayerTimesScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         {/* Location Header */}
         <Animated.View entering={FadeInUp.duration(500)} style={styles.locationContainer}>
@@ -277,22 +364,22 @@ export default function PrayerTimesScreen() {
             <View style={styles.currentPrayerContent}>
               <Text style={styles.currentPrayerLabel}>Current Prayer</Text>
               <Text style={styles.currentPrayerName}>
-                {MOCK_PRAYER_TIMES[currentPrayerIndex].name}
+                {prayerList[currentPrayerIndex]?.name || ''}
               </Text>
               <Text style={styles.currentPrayerArabic}>
-                {MOCK_PRAYER_TIMES[currentPrayerIndex].arabic}
+                {prayerList[currentPrayerIndex]?.arabic || ''}
               </Text>
 
               <View style={styles.currentPrayerTimeRow}>
                 <Icon name="clock" size="sm" color="rgba(255,255,255,0.8)" />
                 <Text style={styles.currentPrayerTime}>
-                  {MOCK_PRAYER_TIMES[currentPrayerIndex].time}
+                  {prayerList[currentPrayerIndex]?.time || ''}
                 </Text>
               </View>
 
               <View style={styles.countdownContainer}>
-                <Text style={styles.countdownLabel}>Time remaining until {MOCK_PRAYER_TIMES[nextPrayerIndex].name}</Text>
-                <CountdownTimer targetTime={MOCK_PRAYER_TIMES[nextPrayerIndex].time} />
+                <Text style={styles.countdownLabel}>Time remaining until {prayerList[nextPrayerIndex]?.name || ''}</Text>
+                <CountdownTimer targetTime={prayerList[nextPrayerIndex]?.time || '00:00'} />
               </View>
             </View>
 
@@ -370,7 +457,7 @@ export default function PrayerTimesScreen() {
             <Text style={styles.sectionTitle}>Today&apos;s Prayer Times</Text>
           </View>
 
-          {MOCK_PRAYER_TIMES.map((prayer, index) => (
+          {prayerList.map((prayer, index) => (
             <PrayerCard
               key={prayer.name}
               prayer={prayer}
@@ -414,15 +501,15 @@ export default function PrayerTimesScreen() {
 
       {/* Method Picker Bottom Sheet */}
       <BottomSheet visible={showMethodPicker} onClose={() => setShowMethodPicker(false)}>
-        {CALCULATION_METHODS.map((method) => (
+        {prayerMethods.map((method) => (
           <BottomSheetItem
-            key={method}
-            label={method}
+            key={method.id}
+            label={method.name}
             onPress={() => {
-              setCalculationMethod(method);
+              setCalculationMethod(method.id);
               setShowMethodPicker(false);
             }}
-            icon={calculationMethod === method ? (
+            icon={calculationMethod === method.id ? (
               <Icon name="check" size="sm" color={colors.emerald} />
             ) : undefined}
           />
