@@ -201,7 +201,7 @@ export default function TwoFactorSetupScreen() {
                 style={styles.appPickerCard}
               >
                 <View style={styles.appPickerLeft}>
-                  <Icon name="smartphone" size="sm" color={colors.emerald} />
+                  <Icon name="phone" size="sm" color={colors.emerald} />
                   <Text style={styles.appPickerText}>
                     {selectedApp || 'Select an authenticator app'}
                   </Text>
@@ -265,7 +265,7 @@ export default function TwoFactorSetupScreen() {
                     style={styles.secretBox}
                   >
                     <Text style={styles.secretText} selectable>{MOCK_QR_SECRET}</Text>
-                    <Icon name="copy" size="xs" color={colors.emerald} />
+                    <Icon name="layers" size="xs" color={colors.emerald} />
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -409,7 +409,7 @@ export default function TwoFactorSetupScreen() {
                     colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.backupActionGradient}
                   >
-                    <Icon name="copy" size="sm" color={colors.text.primary} />
+                    <Icon name="layers" size="sm" color={colors.text.primary} />
                     <Text style={styles.backupActionText}>Copy All</Text>
                   </LinearGradient>
                 </TouchableOpacity>
