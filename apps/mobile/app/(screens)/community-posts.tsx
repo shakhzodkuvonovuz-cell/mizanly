@@ -8,6 +8,8 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { Image } from 'expo-image';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { useUser } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
@@ -24,11 +26,12 @@ import * as ImagePicker from 'expo-image-picker';
 
 const POST_MAX_LENGTH = 5000;
 
-function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress }: {
+function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
   post: ChannelPost;
   isOwnChannel: boolean;
   onLike: (postId: string, liked: boolean) => void;
   onLongPress: (post: ChannelPost) => void;
+  index: number;
 }) {
   const router = useRouter();
   const [liked, setLiked] = useState(post.isLiked ?? false);
@@ -55,11 +58,16 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress }: {
   }, [onLongPress, post]);
 
   return (
-    <Pressable
-      style={styles.postCard}
-      onLongPress={handleLongPress}
-      delayLongPress={500}
-    >
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Pressable
+        style={styles.postCard}
+        onLongPress={handleLongPress}
+        delayLongPress={500}
+      >
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.postCardGradient}
+        >
       <View style={styles.postHeader}>
         <TouchableOpacity style={styles.postUser} onPress={handlePressUser}>
           <Avatar
@@ -118,7 +126,9 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress }: {
           <Icon name="share" size="sm" color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
-    </Pressable>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -226,12 +236,13 @@ export default function CommunityPostsScreen() {
     setSelectedPost(post);
   }, []);
 
-  const renderPostItem = useCallback(({ item }: { item: ChannelPost }) => (
+  const renderPostItem = useCallback(({ item, index }: { item: ChannelPost; index: number }) => (
     <CommunityPostItem
       post={item}
       isOwnChannel={isOwnChannel}
       onLike={handleLike}
       onLongPress={handleLongPress}
+      index={index}
     />
   ), [isOwnChannel, handleLike, handleLongPress]);
 
@@ -288,59 +299,69 @@ export default function CommunityPostsScreen() {
         <View style={styles.headerSpacer} />
 
         {isOwnChannel && (
-          <View style={styles.composeContainerOuter}>
-            {selectedMediaList.length > 0 && (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.mediaPreviewScroll}
-                contentContainerStyle={styles.mediaPreviewContent}
-              >
-                {selectedMediaList.map((media, index) => (
-                  <View key={index} style={styles.mediaPreviewItem}>
-                    <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
-                    <Pressable
-                      style={styles.mediaPreviewClose}
-                      onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== index))}
-                      accessibilityLabel="Remove selected media"
-                      accessibilityRole="button"
-                    >
-                      <Icon name="x" size="xs" color={colors.text.primary} />
-                    </Pressable>
-                    {media.type === 'video' && (
-                      <View style={styles.videoBadge}>
-                        <Icon name="play" size={10} color="#fff" />
-                      </View>
-                    )}
-                  </View>
-                ))}
-              </ScrollView>
-            )}
-            <View style={styles.composeContainer}>
-            <TextInput
-              ref={composeInputRef}
-              style={styles.composeInput}
-              placeholder="Share something with your community..."
-              placeholderTextColor={colors.text.tertiary}
-              value={composeText}
-              onChangeText={setComposeText}
-              multiline
-              maxLength={POST_MAX_LENGTH}
-            />
-            <TouchableOpacity
-              style={[styles.composeButton, !composeText.trim() && styles.composeButtonDisabled]}
-              onPress={handleCreatePost}
-              disabled={!composeText.trim() || createMutation.isPending}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.composeContainerOuter}
             >
-              {createMutation.isPending ? (
-                <Icon name="loader" size="sm" color={colors.text.secondary} />
-              ) : (
-                <Icon name="send" size="sm" color={colors.emerald} />
+              {selectedMediaList.length > 0 && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.mediaPreviewScroll}
+                  contentContainerStyle={styles.mediaPreviewContent}
+                >
+                  {selectedMediaList.map((media, idx) => (
+                    <View key={idx} style={styles.mediaPreviewItem}>
+                      <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
+                      <Pressable
+                        style={styles.mediaPreviewClose}
+                        onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== idx))}
+                        accessibilityLabel="Remove selected media"
+                        accessibilityRole="button"
+                      >
+                        <Icon name="x" size="xs" color={colors.text.primary} />
+                      </Pressable>
+                      {media.type === 'video' && (
+                        <View style={styles.videoBadge}>
+                          <Icon name="play" size={10} color="#fff" />
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                </ScrollView>
               )}
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+              <View style={styles.composeContainer}>
+                <TextInput
+                  ref={composeInputRef}
+                  style={styles.composeInput}
+                  placeholder="Share something with your community..."
+                  placeholderTextColor={colors.text.tertiary}
+                  value={composeText}
+                  onChangeText={setComposeText}
+                  multiline
+                  maxLength={POST_MAX_LENGTH}
+                />
+                <TouchableOpacity
+                  style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
+                  onPress={handleCreatePost}
+                  disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
+                >
+                  {createMutation.isPending ? (
+                    <Icon name="loader" size="sm" color={colors.text.secondary} />
+                  ) : (
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                      style={styles.composeButtonGradient}
+                    >
+                      <Icon name="send" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        )}
 
       <FlatList
           removeClippedSubviews={true}
@@ -441,13 +462,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
   },
   composeContainerOuter: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
-    paddingVertical: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.base,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
   mediaPreviewScroll: {
     marginHorizontal: spacing.base,
@@ -499,10 +521,16 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: spacing.xs,
+  },
+  composeButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   composeButtonDisabled: {
     opacity: 0.5,
@@ -511,10 +539,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   postCard: {
-    backgroundColor: colors.dark.bgCard,
     marginHorizontal: spacing.base,
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
     borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  postCardGradient: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     padding: spacing.base,
   },
   postHeader: {

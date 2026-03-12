@@ -12,7 +12,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSequence, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { searchApi } from '@/services/api';
 import type { Post } from '@/types';
 import { useState, useEffect } from 'react';
@@ -131,15 +132,30 @@ export default function HashtagScreen() {
       />
       <View style={styles.headerSpacer} />
 
-      {/* Follow hashtag bar */}
-      <View style={styles.followBar}>
-        <GradientButton
-          label={isFollowing ? 'Following' : 'Follow'}
-          onPress={toggleFollow}
-          variant={isFollowing ? 'secondary' : 'primary'}
-          size="sm"
-        />
-      </View>
+      {/* Header Card - Glassmorphism */}
+      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.headerCard}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.headerCardGradient}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.hashtagIconBg}
+          >
+            <Icon name="hash" size="lg" color={colors.emerald} />
+          </LinearGradient>
+          <Text style={styles.tagNameLarge}>#{tag}</Text>
+          <Text style={styles.postCountGold}>{totalCount.toLocaleString()} posts</Text>
+          <View style={styles.followButtonWrap}>
+            <GradientButton
+              label={isFollowing ? 'Following' : 'Follow'}
+              onPress={toggleFollow}
+              variant={isFollowing ? 'secondary' : 'primary'}
+              size="sm"
+            />
+          </View>
+        </LinearGradient>
+      </Animated.View>
 
       <FlatList
         removeClippedSubviews={true}
@@ -156,11 +172,13 @@ export default function HashtagScreen() {
             tintColor={colors.emerald}
           />
         }
-        renderItem={({ item }) => (
-          <GridItem
-            post={item}
-            onPress={() => router.push(`/(screens)/post/${item.id}`)}
-          />
+        renderItem={({ item, index }) => (
+          <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+            <GridItem
+              post={item}
+              onPress={() => router.push(`/(screens)/post/${item.id}`)}
+            />
+          </Animated.View>
         )}
         ListEmptyComponent={() =>
           postsQuery.isLoading ? (
@@ -201,6 +219,42 @@ const styles = StyleSheet.create({
   followBar: {
     alignItems: 'center', paddingVertical: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  },
+
+  // Header Card Styles
+  headerCard: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+  },
+  headerCardGradient: {
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  hashtagIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  tagNameLarge: {
+    color: colors.text.primary,
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+  },
+  postCountGold: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  followButtonWrap: {
+    minWidth: 120,
   },
 
   skeletonGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 1 },

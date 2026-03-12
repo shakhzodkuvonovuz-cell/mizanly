@@ -35,43 +35,61 @@ const SEARCH_TABS = [
 type SearchTab = typeof SEARCH_TABS[number]['key'];
 
 
-function HashtagRow({ hashtag, onPress }: { hashtag: Hashtag; onPress: () => void }) {
+function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: () => void; index: number }) {
   return (
-    <Pressable
-      style={styles.hashtagRow}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`View hashtag ${hashtag.name}`}
-    >
-      <View style={styles.hashtagIconWrap}>
-        <Icon name="hash" size="sm" color={colors.emerald} />
-      </View>
-      <View>
-        <Text style={styles.hashtagName}>#{hashtag.name}</Text>
-        <Text style={styles.hashtagCount}>{hashtag.postsCount} posts</Text>
-      </View>
-    </Pressable>
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`View hashtag ${hashtag.name}`}
+      >
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.hashtagRow}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.hashtagIconWrap}
+          >
+            <Icon name="hash" size="sm" color={colors.emerald} />
+          </LinearGradient>
+          <View>
+            <Text style={styles.hashtagName}>#{hashtag.name}</Text>
+            <Text style={styles.hashtagCount}>{hashtag.postsCount} posts</Text>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }
 
-function ReelGridItem({ reel, onPress }: { reel: Reel; onPress: () => void }) {
+function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => void; index: number }) {
   return (
-    <Pressable
-      style={styles.reelGridItem}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="View reel"
-    >
-      <Image
-        source={{ uri: reel.thumbnailUrl || reel.videoUrl }}
-        style={styles.reelGridThumbnail}
-        resizeMode="cover"
-      />
-      <View style={styles.reelGridOverlay}>
-        <Icon name="play" size={16} color={colors.text.primary} />
-        <Text style={styles.reelGridViews}>{reel.viewsCount.toLocaleString()}</Text>
-      </View>
-    </Pressable>
+    <Animated.View entering={FadeInUp.delay(index * 30).duration(400)} style={styles.reelGridItem}>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel="View reel"
+      >
+        <Image
+          source={{ uri: reel.thumbnailUrl || reel.videoUrl }}
+          style={styles.reelGridThumbnail}
+          resizeMode="cover"
+        />
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.7)']}
+          style={styles.reelGridOverlay}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+            style={styles.playIconBg}
+          >
+            <Icon name="play" size={12} color="#FFF" />
+          </LinearGradient>
+          <Text style={styles.reelGridViews}>{reel.viewsCount.toLocaleString()}</Text>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 }
 
@@ -239,55 +257,74 @@ export default function SearchResultsScreen() {
     },
   });
 
-  const UserRow = ({ user, onPress }: { user: User; onPress: () => void }) => {
+  const UserRow = ({ user, onPress, index }: { user: User; onPress: () => void; index: number }) => {
     const handleFollow = () => {
       followMutation.mutate({ userId: user.id, follow: !user.isFollowing });
     };
     return (
-      <View style={styles.userRow}>
-        <Pressable
-          onPress={onPress}
-          style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
-          accessibilityRole="button"
-          accessibilityLabel={`View profile of ${user.displayName}`}
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.userRow}
         >
-          <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
-          <View style={styles.userInfo}>
-            <View style={styles.userNameRow}>
-              <Text style={styles.userName}>{user.displayName}</Text>
-              {user.isVerified && <VerifiedBadge size={13} />}
+          <Pressable
+            onPress={onPress}
+            style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
+            accessibilityRole="button"
+            accessibilityLabel={`View profile of ${user.displayName}`}
+          >
+            <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
+            <View style={styles.userInfo}>
+              <View style={styles.userNameRow}>
+                <Text style={styles.userName}>{user.displayName}</Text>
+                {user.isVerified && <VerifiedBadge size={13} />}
+              </View>
+              <Text style={styles.userHandle}>@{user.username}</Text>
+              {user._count && (
+                <Text style={styles.userFollowers}>{user._count.followers} followers</Text>
+              )}
             </View>
-            <Text style={styles.userHandle}>@{user.username}</Text>
-            {user._count && (
-              <Text style={styles.userFollowers}>{user._count.followers} followers</Text>
-            )}
-          </View>
-        </Pressable>
-        {user.isFollowing ? (
-          <GradientButton
-            label="Following"
-            size="sm"
-            variant="secondary"
-            onPress={handleFollow}
-          />
-        ) : (
-          <GradientButton
-            label="Follow"
-            size="sm"
-            onPress={handleFollow}
-          />
-        )}
-      </View>
+          </Pressable>
+          {user.isFollowing ? (
+            <GradientButton
+              label="Following"
+              size="sm"
+              variant="secondary"
+              onPress={handleFollow}
+            />
+          ) : (
+            <GradientButton
+              label="Follow"
+              size="sm"
+              onPress={handleFollow}
+            />
+          )}
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
   return (
     <View style={styles.container}>
       <GlassHeader
+        title="Search"
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        titleComponent={
+      />
+      <View style={styles.headerSpacer} />
+
+      {/* Search Box - Glassmorphism */}
+      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.searchBoxWrap}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.searchBoxOuter}
+        >
           <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
-            <Icon name="search" size="xs" color={colors.text.tertiary} />
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.searchIconBg}
+            >
+              <Icon name="search" size="xs" color={colors.emerald} />
+            </LinearGradient>
             <TextInput
               style={styles.searchInput}
               placeholder="Search…"
@@ -306,9 +343,8 @@ export default function SearchResultsScreen() {
               </Pressable>
             )}
           </View>
-        }
-      />
-      <View style={styles.headerSpacer} />
+        </LinearGradient>
+      </Animated.View>
 
       <TabSelector
         tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
@@ -356,10 +392,11 @@ export default function SearchResultsScreen() {
           removeClippedSubviews={true}
                   data={people}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
+                  renderItem={({ item, index }) => (
                     <UserRow
                       user={item}
                       onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+                      index={index}
                     />
                   )}
                   ListEmptyComponent={() => (
@@ -477,10 +514,11 @@ export default function SearchResultsScreen() {
           removeClippedSubviews={true}
                   data={reels}
                   keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => (
+                  renderItem={({ item, index }) => (
                     <ReelGridItem
                       reel={item}
                       onPress={() => router.push(`/(screens)/reel/${item.id}`)}
+                      index={index}
                     />
                   )}
                   numColumns={3}
@@ -527,10 +565,11 @@ export default function SearchResultsScreen() {
           removeClippedSubviews={true}
                   data={hashtags}
                   keyExtractor={(item) => item.id || `ht-${item.name}`}
-                  renderItem={({ item }) => (
+                  renderItem={({ item, index }) => (
                     <HashtagRow
                       hashtag={item}
                       onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
+                      index={index}
                     />
                   )}
                   ListEmptyComponent={() => (
@@ -562,16 +601,30 @@ export default function SearchResultsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  headerSpacer: { height: 44 + spacing.sm + 44 },
+  headerSpacer: { height: 100 },
+  searchBoxWrap: {
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.md,
+  },
+  searchBoxOuter: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   searchBox: {
     width: '100%', flexDirection: 'row', alignItems: 'center',
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
-    paddingHorizontal: spacing.sm, gap: spacing.xs,
+    paddingHorizontal: spacing.sm, gap: spacing.sm,
     borderWidth: 1, borderColor: 'transparent',
   },
   searchBoxFocused: {
     borderColor: colors.emerald,
     backgroundColor: colors.active.emerald10,
+  },
+  searchIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   searchInput: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
@@ -588,8 +641,11 @@ const styles = StyleSheet.create({
   },
   userRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.xs,
   },
   userInfo: { flex: 1 },
   userNameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
@@ -598,12 +654,14 @@ const styles = StyleSheet.create({
   userFollowers: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   hashtagRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.xs,
   },
   hashtagIconWrap: {
-    width: 40, height: 40, borderRadius: radius.full,
-    backgroundColor: colors.active.emerald10,
+    width: 40, height: 40, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',
   },
   hashtagName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
@@ -630,7 +688,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  playIconBg: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   reelGridViews: {
     color: colors.text.primary,
