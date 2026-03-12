@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   Pressable,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -31,7 +33,7 @@ interface QuizStickerProps {
   data: QuizStickerData;
   onResponse?: (optionId: string, isCorrect: boolean) => void;
   isCreator?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

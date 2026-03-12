@@ -263,7 +263,7 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
  * Get all scheduled notifications
  */
 export async function getAllScheduledNotifications(): Promise<
-  Array<{ id: string; content: any; trigger: any }>
+  Array<{ id: string; content: unknown; trigger: unknown }>
 > {
   try {
     const Notifications = await import('expo-notifications');

@@ -58,6 +58,7 @@ export class AudioRoomsController {
   }
 
   @Delete(':id')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -67,6 +68,7 @@ export class AudioRoomsController {
   }
 
   @Post(':id/join')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Join audio room as listener' })
@@ -75,6 +77,7 @@ export class AudioRoomsController {
   }
 
   @Delete(':id/leave')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
@@ -84,6 +87,7 @@ export class AudioRoomsController {
   }
 
   @Patch(':id/role')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Change participant role (host only)' })
@@ -96,6 +100,7 @@ export class AudioRoomsController {
   }
 
   @Patch(':id/hand')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Toggle hand raised' })
@@ -108,6 +113,7 @@ export class AudioRoomsController {
   }
 
   @Patch(':id/mute')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Toggle mute (self or host for others)' })

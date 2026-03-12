@@ -182,14 +182,17 @@ export class AudioRoomsService {
 
     // Delete all participants (cascade)
     // Update room status
-    const updated = await this.prisma.audioRoom.update({
-      where: { id },
-      data: {
-        status: ROOM_STATUS.ENDED,
-        endedAt: new Date(),
-      },
-      select: ROOM_SELECT,
-    });
+    const [_, updated] = await this.prisma.$transaction([
+      this.prisma.audioRoomParticipant.deleteMany({ where: { roomId: id } }),
+      this.prisma.audioRoom.update({
+        where: { id },
+        data: {
+          status: ROOM_STATUS.ENDED,
+          endedAt: new Date(),
+        },
+        select: ROOM_SELECT,
+      }),
+    ]);
 
     return updated;
   }
@@ -390,7 +393,7 @@ export class AudioRoomsService {
       throw new NotFoundException('Audio room not found');
     }
 
-    const where: any = { roomId: id };
+    const where: Prisma.AudioRoomParticipantWhereInput = { roomId: id };
     if (role) {
       where.role = role;
     }

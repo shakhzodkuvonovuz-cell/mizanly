@@ -32,7 +32,7 @@ type NotificationData = {
   prayerName?: string;
   message?: string;
   // Additional metadata
-  [key: string]: any;
+  [key: string]: unknown;
 };
 
 /**
@@ -40,8 +40,8 @@ type NotificationData = {
  * and maps them to navigation routes
  */
 export function usePushNotificationHandler(isSignedIn: boolean = true) {
-  const notificationListener = useRef<any>(null);
-  const responseListener = useRef<any>(null);
+  const notificationListener = useRef<{ remove: () => void } | null>(null);
+  const responseListener = useRef<{ remove: () => void } | null>(null);
 
   // Configure notification handler for foreground behavior
   useEffect(() => {

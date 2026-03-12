@@ -7,6 +7,8 @@ import {
   Pressable,
   FlatList,
   Keyboard,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -33,7 +35,7 @@ interface QuestionStickerProps {
   data: QuestionStickerData;
   onResponse?: (questionText: string) => void;
   isCreator?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);

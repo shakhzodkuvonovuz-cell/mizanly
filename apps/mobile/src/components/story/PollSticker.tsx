@@ -5,6 +5,8 @@ import {
   StyleSheet,
   Pressable,
   TouchableOpacity,
+  StyleProp,
+  ViewStyle,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -33,7 +35,7 @@ interface PollStickerProps {
   data: PollStickerData;
   onResponse?: (optionId: string) => void;
   isCreator?: boolean;
-  style?: any;
+  style?: StyleProp<ViewStyle>;
 }
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
