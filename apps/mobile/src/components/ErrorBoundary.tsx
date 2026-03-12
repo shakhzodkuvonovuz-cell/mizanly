@@ -1,6 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 
 interface Props {
@@ -56,7 +56,7 @@ const styles = StyleSheet.create({
   },
   btn: {
     backgroundColor: colors.emerald,
-    borderRadius: 999, paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
+    borderRadius: radius.full, paddingHorizontal: spacing.xl, paddingVertical: spacing.md,
   },
   btnText: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
 });

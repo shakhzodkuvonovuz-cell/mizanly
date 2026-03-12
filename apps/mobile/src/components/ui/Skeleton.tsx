@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, type DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,7 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, radius, animation } from '@/theme';
 
 function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
-  width: number | string;
+  width: DimensionValue;
   height: number;
   borderRadius?: number;
   style?: object;
@@ -35,7 +35,7 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
     <View
       style={[
         {
-          width: width as any,
+          width,
           height,
           borderRadius,
           backgroundColor: colors.dark.bgElevated,
