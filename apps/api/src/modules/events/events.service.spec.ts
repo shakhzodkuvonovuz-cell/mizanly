@@ -52,10 +52,10 @@ describe('EventsService', () => {
       location: 'Test Location',
       locationUrl: 'https://maps.example.com',
       isOnline: false,
-      onlineUrl: null,
+      onlineUrl: undefined,
       eventType: 'in_person' as const,
       privacy: 'public' as const,
-      communityId: null,
+      communityId: undefined,
     };
     const baseEvent = {
       id: 'event1',
@@ -68,7 +68,7 @@ describe('EventsService', () => {
       location: 'Test Location',
       locationUrl: 'https://maps.example.com',
       isOnline: false,
-      onlineUrl: null,
+      onlineUrl: undefined,
       eventType: 'in_person',
       privacy: 'public',
       createdAt: new Date(),
@@ -127,7 +127,6 @@ describe('EventsService', () => {
               isVerified: true,
             },
           },
-          community: false,
           _count: { select: { rsvps: true } },
         },
       });
@@ -145,16 +144,11 @@ describe('EventsService', () => {
 
       expect(mockPrismaService.event.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          community: { connect: { id: 'comm1' } },
+          communityId: 'comm1',
         }),
         include: expect.objectContaining({
-          community: {
-            select: {
-              id: true,
-              name: true,
-              avatarUrl: true,
-            },
-          },
+          user: expect.any(Object),
+          _count: expect.any(Object),
         }),
       });
     });

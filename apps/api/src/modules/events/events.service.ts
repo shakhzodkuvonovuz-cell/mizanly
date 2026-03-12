@@ -30,7 +30,7 @@ export class EventsService {
       user: { connect: { id: userId } },
     };
     if (dto.communityId) {
-      data.community = { connect: { id: dto.communityId } };
+      data.communityId = dto.communityId;
     }
 
     const event = await this.prisma.event.create({
@@ -45,13 +45,6 @@ export class EventsService {
             isVerified: true,
           },
         },
-        community: dto.communityId ? {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        } : false,
         _count: {
           select: {
             rsvps: true,
@@ -117,13 +110,6 @@ export class EventsService {
             isVerified: true,
           },
         },
-        community: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        },
         _count: {
           select: {
             rsvps: true,
@@ -179,13 +165,6 @@ export class EventsService {
             displayName: true,
             avatarUrl: true,
             isVerified: true,
-          },
-        },
-        community: {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
           },
         },
         _count: {
@@ -257,11 +236,7 @@ export class EventsService {
     if (dto.eventType !== undefined) data.eventType = dto.eventType;
     if (dto.privacy !== undefined) data.privacy = dto.privacy;
     if (dto.communityId !== undefined) {
-      if (dto.communityId === null) {
-        data.community = { disconnect: true };
-      } else {
-        data.community = { connect: { id: dto.communityId } };
-      }
+      data.communityId = dto.communityId;
     }
 
     const updated = await this.prisma.event.update({
@@ -277,13 +252,6 @@ export class EventsService {
             isVerified: true,
           },
         },
-        community: dto.communityId ? {
-          select: {
-            id: true,
-            name: true,
-            avatarUrl: true,
-          },
-        } : false,
         _count: {
           select: {
             rsvps: true,
