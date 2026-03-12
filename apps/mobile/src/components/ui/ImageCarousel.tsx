@@ -19,6 +19,7 @@ export interface ImageCarouselProps {
   showIndicators?: boolean; // Dot indicators, default true
   onImagePress?: (index: number) => void; // Opens gallery
   borderRadius?: number; // Default radius.lg
+  blurred?: boolean; // Apply blur effect for sensitive content
 }
 
 export function ImageCarousel({
@@ -27,6 +28,7 @@ export function ImageCarousel({
   showIndicators = true,
   onImagePress,
   borderRadius = radius.lg,
+  blurred = false,
 }: ImageCarouselProps) {
   const { width: screenWidth } = useWindowDimensions();
   const flatListRef = useRef<FlatList<string>>(null);
@@ -53,9 +55,10 @@ export function ImageCarousel({
     >
       <Image
         source={{ uri: item }}
-        style={[styles.image, { borderRadius }]}
+        style={[styles.image, { borderRadius }, blurred && { opacity: 0.15 }]}
         contentFit="cover"
         transition={200}
+        blurRadius={blurred ? 30 : 0}
       />
     </Pressable>
   );
