@@ -166,6 +166,46 @@ export default function AudioRoomScreen() {
     raisedAgo: 'Just now', // TODO: compute from handRaisedAt if available
   }));
 
+  const handleToggleMic = async () => {
+    if (!room) return;
+    try {
+      await audioRoomsApi.toggleMute(room.id);
+      setIsMicOn(prev => !prev);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to toggle mute');
+    }
+  };
+
+  const handleToggleHand = async () => {
+    if (!room) return;
+    try {
+      await audioRoomsApi.toggleHand(room.id);
+      setIsHandRaised(prev => !prev);
+    } catch (err) {
+      Alert.alert('Error', 'Failed to raise hand');
+    }
+  };
+
+  const handleLeave = async () => {
+    if (!room) return;
+    try {
+      await audioRoomsApi.leave(room.id);
+      router.back();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to leave room');
+    }
+  };
+
+  const handleAcceptHand = async (userId: string) => {
+    if (!room) return;
+    try {
+      await audioRoomsApi.changeRole(room.id, { userId, role: 'speaker' });
+      fetchData();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to accept hand');
+    }
+  };
+
   // Loading skeleton
   if (loading) {
     return (
@@ -376,15 +416,15 @@ export default function AudioRoomScreen() {
               </LinearGradient>
               <Text style={styles.sectionTitle}>Raised Hands</Text>
               <View style={[styles.countBadge, { backgroundColor: colors.gold }]}>
-                <Text style={[styles.countText, { color: colors.dark.bg }]}>3</Text>
+                <Text style={[styles.countText, { color: colors.dark.bg }]}>{raisedHandData.length}</Text>
               </View>
             </View>
 
-            {MOCK_RAISED_HANDS.map((hand, index) => (
+            {raisedHandData.map((hand, index) => (
               <Animated.View
                 key={hand.id}
                 entering={FadeInUp.delay(index * 80).duration(400)}
-                style={[styles.raisedHandRow, index < MOCK_RAISED_HANDS.length - 1 && styles.raisedHandBorder]}
+                style={[styles.raisedHandRow, index < raisedHandData.length - 1 && styles.raisedHandBorder]}
               >
                 <Avatar uri={hand.avatar} name={hand.name} size="sm" />
                 <View style={styles.raisedHandInfo}>

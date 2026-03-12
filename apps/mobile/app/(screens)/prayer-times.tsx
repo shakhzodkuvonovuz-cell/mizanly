@@ -159,12 +159,50 @@ function PrayerCard({
 
 export default function PrayerTimesScreen() {
   const router = useRouter();
-  const [currentPrayerIndex, setCurrentPrayerIndex] = useState(3); // Asr as current
-  const [calculationMethod, setCalculationMethod] = useState('Muslim World League');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [prayerTimes, setPrayerTimes] = useState<ApiPrayerTimes | null>(null);
+  const [calculationMethod, setCalculationMethod] = useState('MWL');
   const [showMethodPicker, setShowMethodPicker] = useState(false);
   const [qiblaDirection] = useState(45); // Degrees from North
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
+  const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
 
-  const nextPrayerIndex = (currentPrayerIndex + 1) % MOCK_PRAYER_TIMES.length;
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Location permission required for accurate prayer times');
+        setLoading(false);
+        return;
+      }
+      const location = await Location.getCurrentPositionAsync({});
+      const lat = location.coords.latitude;
+      const lng = location.coords.longitude;
+      setUserLocation({ lat, lng });
+      const [timesResp, methodsResp] = await Promise.all([
+        islamicApi.getPrayerTimes(lat, lng, calculationMethod),
+        islamicApi.getPrayerMethods(),
+      ]);
+      setPrayerTimes(timesResp.data);
+      setPrayerMethods(methodsResp.data);
+      // compute current prayer index based on current time
+      // TODO: implement
+      setCurrentPrayerIndex(3); // placeholder
+    } catch (err) {
+      setError('Failed to load prayer times');
+    } finally {
+      setLoading(false);
+    }
+  }, [calculationMethod]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const nextPrayerIndex = (currentPrayerIndex + 1) % (prayerTimes ? 6 : 0);
 
   return (
     <View style={styles.container}>

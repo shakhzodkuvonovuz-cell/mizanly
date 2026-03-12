@@ -836,4 +836,43 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     color: colors.text.primary,
   },
+  sheetTitle: {
+    fontSize: fontSize.lg,
+    fontFamily: fonts.semibold,
+    color: colors.text.primary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  datePickerPlaceholder: {
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  datePickerText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.regular,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  datePickerHint: {
+    fontSize: fontSize.sm,
+    fontFamily: fonts.regular,
+    color: colors.text.tertiary,
+    marginBottom: spacing.lg,
+    textAlign: 'center',
+  },
+  confirmButton: {
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  confirmButtonGradient: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+  },
+  confirmButtonText: {
+    fontSize: fontSize.base,
+    fontFamily: fonts.semibold,
+    color: colors.text.primary,
+  },
 });

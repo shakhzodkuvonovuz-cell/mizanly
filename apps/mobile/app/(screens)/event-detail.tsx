@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,11 @@ import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { eventsApi } from '@/services/eventsApi';
+import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/events';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Alert } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
@@ -37,13 +42,7 @@ interface Comment {
   time: string;
 }
 
-const MOCK_ATTENDEES: Attendee[] = [
-  { id: '1', name: 'Ahmed', avatar: null },
-  { id: '2', name: 'Fatima', avatar: null },
-  { id: '3', name: 'Omar', avatar: null },
-  { id: '4', name: 'Aisha', avatar: null },
-  { id: '5', name: 'Khalid', avatar: null },
-];
+const MOCK_ATTENDEES: Attendee[] = []; // TODO: fetch attendees from API
 
 const MOCK_COMMENTS: Comment[] = [
   {
@@ -73,11 +72,38 @@ export default function EventDetailScreen() {
   const router = useRouter();
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('going');
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [event, setEvent] = useState<EventWithCounts | null>(null);
+  const [attendees, setAttendees] = useState<Attendee[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const { id } = useLocalSearchParams<{ id: string }>();
+
+  const fetchEvent = useCallback(async () => {
+    if (!id) return;
+    try {
+      setError(null);
+      const response = await eventsApi.getById(id as string);
+      setEvent(response.data);
+      // TODO: fetch attendees and comments
+    } catch (err: any) {
+      setError(err.message || 'Failed to load event');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [id]);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    fetchEvent();
+  }, [fetchEvent]);
+
+  useEffect(() => {
+    if (id) {
+      fetchEvent();
+    }
+  }, [id, fetchEvent]);
 
   const getRsvpButtonStyle = (status: RsvpStatus) => {
     const isSelected = rsvpStatus === status;
