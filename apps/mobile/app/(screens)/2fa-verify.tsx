@@ -218,7 +218,7 @@ export default function TwoFactorVerifyScreen() {
             <Text style={styles.modeToggleText}>
               {mode === 'code' ? 'Use backup code instead' : 'Use authenticator code instead'}
             </Text>
-            <Icon name={mode === 'code' ? 'key' : 'smartphone'} size="xs" color={colors.emerald} />
+            <Icon name={mode === 'code' ? 'lock' : 'phone'} size="xs" color={colors.emerald} />
           </TouchableOpacity>
 
           {/* Verify Button */}
@@ -259,7 +259,7 @@ export default function TwoFactorVerifyScreen() {
               )
             }
           >
-            <Icon name="help-circle" size="xs" color={colors.text.tertiary} />
+            <Icon name="circle" size="xs" color={colors.text.tertiary} />
             <Text style={styles.lostAccessText}>Lost access to both?</Text>
           </TouchableOpacity>
         </Animated.View>
