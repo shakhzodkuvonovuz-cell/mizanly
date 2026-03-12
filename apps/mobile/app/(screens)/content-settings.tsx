@@ -22,10 +22,10 @@ type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
 
 // Section icons mapping
 const sectionIcons: Record<string, IconName> = {
-  'Feed Preferences': 'trending-up',
-  'Content Filters': 'filter',
-  'Blocked Keywords': 'slash',
-  'Digital Wellbeing': 'clock',
+  'feedPreferences': 'trending-up',
+  'contentFilters': 'filter',
+  'blockedKeywords': 'slash',
+  'digitalWellbeing': 'clock',
 };
 
 // Reuse Row and SectionHeader with premium styling
@@ -94,6 +94,7 @@ function Row({
 }
 
 function SectionHeader({ title }: { title: string }) {
+  const { t } = useTranslation();
   const icon = sectionIcons[title] || 'settings';
   return (
     <View style={styles.sectionHeader}>
@@ -103,7 +104,7 @@ function SectionHeader({ title }: { title: string }) {
       >
         <Icon name={icon} size="xs" color={colors.emerald} />
       </LinearGradient>
-      <Text style={styles.sectionHeaderText}>{title}</Text>
+      <Text style={styles.sectionHeaderText}>{t(`settings.sections.${title}`)}</Text>
     </View>
   );
 }
@@ -118,6 +119,7 @@ export default function ContentSettingsScreen() {
   const majlisFeedType = useMajlisFeedType();
   const setSafFeedType = useStore((s) => s.setSafFeedType);
   const setMajlisFeedType = useStore((s) => s.setMajlisFeedType);
+  const { t } = useTranslation();
 
   // Settings from API
   const settingsQuery = useQuery({
@@ -144,7 +146,7 @@ export default function ContentSettingsScreen() {
 
   const wellbeingMutation = useMutation<Settings, Error, WellbeingSettings>({
     mutationFn: settingsApi.updateWellbeing,
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleUpdateSensitiveContent = (v: boolean) => {
@@ -168,21 +170,21 @@ export default function ContentSettingsScreen() {
   };
 
   const safOptions: { label: string; value: SafFeedType }[] = [
-    { label: 'Following', value: 'following' },
-    { label: 'For You', value: 'foryou' },
+    { label: 'feed.following', value: 'following' },
+    { label: 'feed.forYou', value: 'foryou' },
   ];
 
   const majlisOptions: { label: string; value: MajlisFeedType }[] = [
-    { label: 'For You', value: 'foryou' },
-    { label: 'Following', value: 'following' },
-    { label: 'Trending', value: 'trending' },
+    { label: 'feed.forYou', value: 'foryou' },
+    { label: 'feed.following', value: 'following' },
+    { label: 'feed.trending', value: 'trending' },
   ];
 
   const dailyReminderOptions: { label: string; value: DailyReminderOption }[] = [
-    { label: 'Off', value: 'off' },
-    { label: '30 minutes', value: '30min' },
-    { label: '1 hour', value: '1h' },
-    { label: '2 hours', value: '2h' },
+    { label: 'settings.dailyReminder.off', value: 'off' },
+    { label: 'settings.dailyReminder.30min', value: '30min' },
+    { label: 'settings.dailyReminder.1h', value: '1h' },
+    { label: 'settings.dailyReminder.2h', value: '2h' },
   ];
 
   if (settingsQuery.isError) {
@@ -190,10 +192,10 @@ export default function ContentSettingsScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
           <Text style={{ color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md }}>
-            Failed to load settings
+            {t('settings.loadError')}
           </Text>
           <TouchableOpacity onPress={() => settingsQuery.refetch()}>
-            <Text style={{ color: colors.emerald, fontSize: fontSize.base }}>Try Again</Text>
+            <Text style={{ color: colors.emerald, fontSize: fontSize.base }}>{t('common.tryAgain')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -215,14 +217,14 @@ export default function ContentSettingsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Content Preferences"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('settings.contentPreferences')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* Feed Preferences */}
         <Animated.View entering={FadeInUp.duration(400)}>
-          <SectionHeader title="Feed Preferences" />
+          <SectionHeader title="feedPreferences" />
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
@@ -230,7 +232,7 @@ export default function ContentSettingsScreen() {
             <TouchableOpacity
               style={styles.rowPressable}
               onPress={() => setSafPickerVisible(true)}
-              accessibilityLabel="Saf default feed"
+              accessibilityLabel={t('settings.safDefaultFeed')}
               accessibilityRole="button"
             >
               <View style={styles.rowContent}>
@@ -241,8 +243,8 @@ export default function ContentSettingsScreen() {
                   <Icon name="trending-up" size="xs" color={colors.emerald} />
                 </LinearGradient>
                 <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>Saf default</Text>
-                  <Text style={styles.rowHint}>Choose default feed for Saf</Text>
+                  <Text style={styles.rowLabel}>{t('settings.safDefault')}</Text>
+                  <Text style={styles.rowHint}>{t('settings.hints.safDefault')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -251,7 +253,7 @@ export default function ContentSettingsScreen() {
                   style={styles.valueBadge}
                 >
                   <Text style={styles.valueText}>
-                    {safFeedType === 'following' ? 'Following' : 'For You'}
+                    {safFeedType === 'following' ? t('feed.following') : t('feed.forYou')}
                   </Text>
                 </LinearGradient>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -261,7 +263,7 @@ export default function ContentSettingsScreen() {
             <TouchableOpacity
               style={styles.rowPressable}
               onPress={() => setMajlisPickerVisible(true)}
-              accessibilityLabel="Majlis default feed"
+              accessibilityLabel={t('settings.majlisDefaultFeed')}
               accessibilityRole="button"
             >
               <View style={styles.rowContent}>
@@ -272,8 +274,8 @@ export default function ContentSettingsScreen() {
                   <Icon name="hash" size="xs" color={colors.gold} />
                 </LinearGradient>
                 <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>Majlis default</Text>
-                  <Text style={styles.rowHint}>Choose default feed for Majlis</Text>
+                  <Text style={styles.rowLabel}>{t('settings.majlisDefault')}</Text>
+                  <Text style={styles.rowHint}>{t('settings.hints.majlisDefault')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
@@ -282,7 +284,7 @@ export default function ContentSettingsScreen() {
                   style={styles.valueBadge}
                 >
                   <Text style={styles.valueText}>
-                    {majlisFeedType === 'foryou' ? 'For You' : majlisFeedType === 'following' ? 'Following' : 'Trending'}
+                    {majlisFeedType === 'foryou' ? t('feed.forYou') : majlisFeedType === 'following' ? t('feed.following') : t('feed.trending')}
                   </Text>
                 </LinearGradient>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -293,22 +295,22 @@ export default function ContentSettingsScreen() {
 
         {/* Content Filters */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <SectionHeader title="Content Filters" />
+          <SectionHeader title="contentFilters" />
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
             <Row
-              label="Filter sensitive content"
-              hint="Hide posts marked as sensitive"
+              label={t('settings.filterSensitiveContent')}
+              hint={t('settings.hints.filterSensitiveContent')}
               value={sensitiveContent}
               onToggle={handleUpdateSensitiveContent}
               icon="eye"
             />
             <View style={styles.divider} />
             <Row
-              label="Hide reposted content"
-              hint="Don't show reposted posts in feeds"
+              label={t('settings.hideRepostedContent')}
+              hint={t('settings.hints.hideRepostedContent')}
               value={hideRepostedContent}
               onToggle={setHideRepostedContent}
               icon="repeat"
@@ -318,14 +320,14 @@ export default function ContentSettingsScreen() {
 
         {/* Blocked Keywords */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <SectionHeader title="Blocked Keywords" />
+          <SectionHeader title="blockedKeywords" />
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
             <Row
-              label="Manage Blocked Keywords"
-              hint="Add or remove filtered keywords"
+              label={t('settings.manageBlockedKeywords')}
+              hint={t('settings.hints.manageBlockedKeywords')}
               onPress={() => router.push('/(screens)/blocked-keywords')}
               icon="slash"
             />
@@ -334,7 +336,7 @@ export default function ContentSettingsScreen() {
 
         {/* Digital Wellbeing */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <SectionHeader title="Digital Wellbeing" />
+          <SectionHeader title="digitalWellbeing" />
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
@@ -363,7 +365,7 @@ export default function ContentSettingsScreen() {
                   style={styles.valueBadge}
                 >
                   <Text style={styles.valueText}>
-                    {dailyReminder === 'off' ? 'Off' : dailyReminder === '30min' ? '30 min' : dailyReminder === '1h' ? '1 hour' : '2 hours'}
+                    {dailyReminder === 'off' ? t('settings.dailyReminder.off') : dailyReminder === '30min' ? t('settings.dailyReminder.30min') : dailyReminder === '1h' ? t('settings.dailyReminder.1h') : t('settings.dailyReminder.2h')}
                   </Text>
                 </LinearGradient>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -378,7 +380,7 @@ export default function ContentSettingsScreen() {
         {safOptions.map((opt) => (
           <BottomSheetItem
             key={opt.value}
-            label={opt.label}
+            label={t(opt.label)}
             onPress={() => {
               setSafFeedType(opt.value);
               setSafPickerVisible(false);
@@ -393,7 +395,7 @@ export default function ContentSettingsScreen() {
         {majlisOptions.map((opt) => (
           <BottomSheetItem
             key={opt.value}
-            label={opt.label}
+            label={t(opt.label)}
             onPress={() => {
               setMajlisFeedType(opt.value);
               setMajlisPickerVisible(false);
@@ -408,7 +410,7 @@ export default function ContentSettingsScreen() {
         {dailyReminderOptions.map((opt) => (
           <BottomSheetItem
             key={opt.value}
-            label={opt.label}
+            label={t(opt.label)}
             onPress={() => {
               handleUpdateDailyReminder(opt.value);
               setDailyReminderPickerVisible(false);

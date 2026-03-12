@@ -250,7 +250,7 @@ export default function MembershipTiersScreen() {
           <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
         </View>
       ) : error ? (
-        <EmptyState icon="alert-circle" title="Unable to load tiers" subtitle={error} actionLabel="Retry" onAction={fetchData} />
+        <EmptyState icon="alert-circle" title={t('monetization.errors.unableToLoadTiers')} subtitle={error} actionLabel={t('common.retry')} onAction={fetchData} />
       ) : (
         <FlatList
           data={tiers}
@@ -272,8 +272,8 @@ export default function MembershipTiersScreen() {
                     <Icon name="star" size="sm" color={colors.gold} />
                   </LinearGradient>
                   <View style={styles.infoContent}>
-                    <Text style={styles.infoTitle}>Offer exclusive content and perks to your members</Text>
-                    <Text style={styles.infoSubtitle}>Members pay monthly for access to your exclusive content</Text>
+                    <Text style={styles.infoTitle}>{t('monetization.infoTitle')}</Text>
+                    <Text style={styles.infoSubtitle}>{t('monetization.infoSubtitle')}</Text>
                   </View>
                 </LinearGradient>
               </Animated.View>
@@ -303,7 +303,7 @@ export default function MembershipTiersScreen() {
                       style={styles.createButton}
                     >
                       <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
-                      <Text style={styles.createButtonText}>Add a membership tier</Text>
+                      <Text style={styles.createButtonText}>{t('monetization.addMembershipTier')}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                 </Animated.View>
@@ -313,14 +313,14 @@ export default function MembershipTiersScreen() {
                     colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
                     style={styles.createFormCard}
                   >
-                    <Text style={styles.createFormTitle}>Create New Tier</Text>
+                    <Text style={styles.createFormTitle}>{t('monetization.createNewTier')}</Text>
 
                     {/* Name Input */}
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.formInputContainer}
                     >
-                      <Text style={styles.formInputLabel}>Tier Name</Text>
+                      <Text style={styles.formInputLabel}>{t('monetization.tierName')}</Text>
                       <TextInput
                         style={styles.formInput}
                         value={newTierName}
@@ -335,7 +335,7 @@ export default function MembershipTiersScreen() {
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.formInputContainer}
                     >
-                      <Text style={styles.formInputLabel}>Monthly Price</Text>
+                      <Text style={styles.formInputLabel}>{t('monetization.monthlyPrice')}</Text>
                       <View style={styles.priceInputWrapper}>
                         <Text style={styles.pricePrefix}>$</Text>
                         <TextInput

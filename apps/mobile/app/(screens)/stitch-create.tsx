@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -28,6 +29,7 @@ const TRANSITIONS: { id: TransitionType; name: string; icon: IconName }[] = [
 
 export default function StitchCreateScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState<DurationOption>(5);
   const [selectedTransition, setSelectedTransition] = useState<TransitionType>('fade');
@@ -77,7 +79,7 @@ export default function StitchCreateScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Create Stitch" showBackButton />
+      <GlassHeader title={t('stitch.createStitch')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

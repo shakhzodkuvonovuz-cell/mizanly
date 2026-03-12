@@ -99,7 +99,7 @@ export default function ConversationInfoScreen() {
       queryClient.invalidateQueries({ queryKey: ['conversation', id] });
     },
     onError: (error) => {
-      Alert.alert('Error', 'Failed to remove member. Please try again.');
+      Alert.alert(t('common.error'), t('conversation.failedToRemoveMember'));
     },
   });
 
@@ -123,7 +123,7 @@ export default function ConversationInfoScreen() {
         if (!uploadRes.ok) throw new Error('Avatar upload failed');
         updateGroupMutation.mutate({ groupAvatarUrl: presign.publicUrl });
       } catch (err) {
-        Alert.alert('Error', 'Failed to upload avatar. Please try again.');
+        Alert.alert(t('common.error'), t('conversation.failedToUploadAvatar'));
       }
     }
   };
@@ -149,9 +149,9 @@ export default function ConversationInfoScreen() {
   const [selectedMember, setSelectedMember] = useState<{ id: string; username: string } | null>(null);
 
   const handleRemoveMember = (targetUserId: string) => {
-    Alert.alert('Remove member?', 'This member will be removed from the group.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => removeMemberMutation.mutate(targetUserId) },
+    Alert.alert(t('conversation.removeMemberConfirmTitle'), t('conversation.removeMemberConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => removeMemberMutation.mutate(targetUserId) },
     ]);
   };
 
@@ -162,9 +162,9 @@ export default function ConversationInfoScreen() {
   };
 
   const handleLeave = () => {
-    Alert.alert('Leave group?', 'You will no longer receive messages from this group.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Leave', style: 'destructive', onPress: () => leaveGroupMutation.mutate() },
+    Alert.alert(t('conversation.leaveGroupConfirmTitle'), t('conversation.leaveGroupConfirmMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.leave'), style: 'destructive', onPress: () => leaveGroupMutation.mutate() },
     ]);
   };
 
@@ -492,7 +492,7 @@ export default function ConversationInfoScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel="Clear search">
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')}>
                 <Icon name="x" size="xs" color={colors.text.secondary} />
               </Pressable>
             )}
@@ -533,11 +533,11 @@ export default function ConversationInfoScreen() {
               ListEmptyComponent={() =>
                 debouncedSearchQuery.trim().length >= 2 ? (
                   <View style={styles.empty}>
-                    <Text style={styles.emptyText}>No users found for "{debouncedSearchQuery}"</Text>
+                    <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
                   </View>
                 ) : (
                   <View style={styles.hint}>
-                    <Text style={styles.hintText}>Search by name or username</Text>
+                    <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
                   </View>
                 )
               }
@@ -554,7 +554,7 @@ export default function ConversationInfoScreen() {
               <ActivityIndicator color={colors.text.primary} />
             ) : (
               <Text style={styles.sheetButtonText}>
-                Add {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
+                {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
               </Text>
             )}
           </TouchableOpacity>
@@ -573,7 +573,7 @@ export default function ConversationInfoScreen() {
           <>
             {isCreator && selectedMember.id !== user?.id && (
               <BottomSheetItem
-                label="Remove from group"
+                label={t('conversation.removeFromGroup')}
                 icon={<Icon name="x" size="sm" color={colors.error} />}
                 onPress={() => {
                   setMemberActionSheetOpen(false);
@@ -584,7 +584,7 @@ export default function ConversationInfoScreen() {
               />
             )}
             <BottomSheetItem
-              label="View profile"
+              label={t('conversation.viewProfile')}
               icon={<Icon name="user" size="sm" color={colors.text.primary} />}
               onPress={() => {
                 setMemberActionSheetOpen(false);

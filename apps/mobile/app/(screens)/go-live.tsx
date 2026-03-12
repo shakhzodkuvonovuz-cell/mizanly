@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView,
   Alert, Switch, Platform,
@@ -18,18 +18,25 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type LiveType = 'VIDEO' | 'AUDIO';
 
-const LIVE_TYPE_OPTIONS: { value: LiveType; label: string; iconName: React.ComponentProps<typeof Icon>['name'] }[] = [
-  { value: 'VIDEO', label: 'Video Stream', iconName: 'video' },
-  { value: 'AUDIO', label: 'Audio Space', iconName: 'mic' },
-];
+// i18n: moved inside component
+// const LIVE_TYPE_OPTIONS: { value: LiveType; label: string; iconName: React.ComponentProps<typeof Icon>['name'] }[] = [
+//   { value: 'VIDEO', label: 'Video Stream', iconName: 'video' },
+//   { value: 'AUDIO', label: 'Audio Space', iconName: 'mic' },
+// ];
 
 export default function GoLiveScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
+  const { t } = useTranslation();
+  const LIVE_TYPE_OPTIONS = useMemo(() => [
+    { value: 'VIDEO' as LiveType, label: t('live.videoStream'), iconName: 'video' as React.ComponentProps<typeof Icon>['name'] },
+    { value: 'AUDIO' as LiveType, label: t('live.audioSpace'), iconName: 'mic' as React.ComponentProps<typeof Icon>['name'] },
+  ], [t]);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -93,7 +100,7 @@ export default function GoLiveScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Go Live"
+        title={t('live.goLive')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
       />
 
@@ -108,7 +115,7 @@ export default function GoLiveScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.inputCard}
           >
-            <Text style={styles.inputLabel}>Title</Text>
+            <Text style={styles.inputLabel}>{t('common.title')}</Text>
             <TextInput
               style={styles.input}
               placeholder="What are you streaming?"
@@ -131,7 +138,7 @@ export default function GoLiveScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.inputCard}
           >
-            <Text style={styles.inputLabel}>Description (optional)</Text>
+            <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               placeholder="Tell viewers what your stream is about"
@@ -180,7 +187,7 @@ export default function GoLiveScreen() {
           >
             <View style={styles.scheduleRow}>
               <View>
-                <Text style={styles.inputLabel}>Schedule for later</Text>
+                <Text style={styles.inputLabel}>{t('live.scheduleForLater')}</Text>
                 <Text style={styles.scheduleSubtitle}>
                   Start your stream at a specific time
                 </Text>
@@ -222,7 +229,7 @@ export default function GoLiveScreen() {
 
         <Animated.View entering={FadeInUp.delay(400).duration(400)}>
           <GradientButton
-            label={createMutation.isPending ? 'Starting…' : 'Go Live'}
+            label={createMutation.isPending ? t('live.starting') : t('live.goLive')}
             onPress={handleGoLive}
             disabled={!canGoLive}
           />
@@ -231,7 +238,7 @@ export default function GoLiveScreen() {
 
       {/* Live type picker bottom sheet */}
       <BottomSheet visible={showLiveTypePicker} onClose={() => setShowLiveTypePicker(false)}>
-        <Text style={styles.sheetTitle}>Select Stream Type</Text>
+        <Text style={styles.sheetTitle}>{t('live.selectStreamType')}</Text>
         {LIVE_TYPE_OPTIONS.map((opt) => (
           <BottomSheetItem
             key={opt.value}
@@ -247,7 +254,7 @@ export default function GoLiveScreen() {
 
       {/* Date picker bottom sheet */}
       <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
-        <Text style={styles.sheetTitle}>Schedule Time</Text>
+        <Text style={styles.sheetTitle}>{t('live.scheduleTime')}</Text>
         {/* In a real app, you would use DateTimePicker component */}
         <View style={styles.datePickerPlaceholder}>
           <Text style={styles.datePickerText}>

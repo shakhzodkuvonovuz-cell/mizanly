@@ -405,8 +405,8 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         />
         <EmptyState
           icon="slash"
-          title="Something went wrong"
-          subtitle="Could not load this content. Please try again."
+          title={t('common.error')}
+          subtitle={t('errors.loadContentFailed')}
           actionLabel="Go back"
           onAction={() => router.back()}
         />
@@ -424,8 +424,8 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         </View>
         <EmptyState
           icon="video"
-          title="Channel not found"
-          subtitle="This channel may have been removed or is unavailable"
+          title={t('channel.notFound')}
+          subtitle={t('channel.notFoundSubtitle')}
           actionLabel="Go back"
           onAction={() => router.back()}
         />
@@ -467,8 +467,8 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             ) : (
               <EmptyState
                 icon="video"
-                title="No videos yet"
-                subtitle="This channel hasn't uploaded any videos"
+                title={t('channel.noVideosYet')}
+                subtitle={t('channel.noVideosSubtitle')}
                 style={styles.emptyState}
               />
             )
@@ -481,8 +481,8 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             ) : (
               <EmptyState
                 icon="layers"
-                title="No playlists yet"
-                subtitle="This channel hasn't created any playlists"
+                title={t('channel.noPlaylistsYet')}
+                subtitle={t('channel.noPlaylistsSubtitle')}
                 style={styles.emptyState}
               />
             )
@@ -490,7 +490,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             <View style={styles.aboutTab}>
               <Text style={styles.aboutDescription}>{channel.description || 'No description provided.'}</Text>
               <View style={styles.aboutMeta}>
-                <Text style={styles.aboutMetaLabel}>Joined</Text>
+                <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
                 <Text style={styles.aboutMetaValue}>
                   {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true })}
                 </Text>
