@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -23,11 +25,11 @@ import { usersApi, accountApi } from '@/services/api';
 function InfoRow({
   label,
   description,
-  children,
+  icon,
 }: {
   label: string;
   description?: string;
-  children?: React.ReactNode;
+  icon?: string;
 }) {
   return (
     <View style={styles.infoRow}>
@@ -35,7 +37,14 @@ function InfoRow({
         <Text style={styles.infoLabel}>{label}</Text>
         {description && <Text style={styles.infoDescription}>{description}</Text>}
       </View>
-      {children}
+      {icon && (
+        <LinearGradient
+          colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+          style={styles.iconBg}
+        >
+          <Icon name={icon as any} size="md" color={colors.emerald} />
+        </LinearGradient>
+      )}
     </View>
   );
 }
@@ -44,14 +53,14 @@ function ActionRow({
   label,
   description,
   buttonLabel,
-  buttonColor,
+  destructive,
   onPress,
   loading,
 }: {
   label: string;
   description?: string;
   buttonLabel: string;
-  buttonColor?: string;
+  destructive?: boolean;
   onPress: () => void;
   loading?: boolean;
 }) {
@@ -62,17 +71,23 @@ function ActionRow({
         {description && <Text style={styles.actionDescription}>{description}</Text>}
       </View>
       <Pressable
-        style={[styles.actionButton, buttonColor && { backgroundColor: buttonColor }]}
         onPress={onPress}
         disabled={loading}
         accessibilityLabel={buttonLabel}
         accessibilityRole="button"
       >
-        {loading ? (
-          <Icon name="loader" size="sm" color="#fff" />
-        ) : (
-          <Text style={styles.actionButtonText}>{buttonLabel}</Text>
-        )}
+        <LinearGradient
+          colors={destructive ? ['rgba(248,81,73,0.3)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.1)']}
+          style={styles.actionButton}
+        >
+          {loading ? (
+            <Icon name="loader" size="sm" color={destructive ? colors.error : colors.emerald} />
+          ) : (
+            <Text style={[styles.actionButtonText, destructive && styles.actionButtonTextDestructive]}>
+              {buttonLabel}
+            </Text>
+          )}
+        </LinearGradient>
       </Pressable>
     </View>
   );
@@ -228,47 +243,50 @@ export default function ManageDataScreen() {
           />
         }
       >
-        <View style={styles.card}>
-          {/* Download Your Data */}
-          <ActionRow
-            label="Download Your Data"
-            description="Request a copy of all your data. We'll notify you when it's ready."
-            buttonLabel="Request Download"
-            onPress={handleRequestDownload}
-          />
-          <View style={styles.divider} />
-          {/* Connected Apps */}
-          <InfoRow label="Connected Apps" description="No connected apps">
-            <Icon name="layers" size="md" color={colors.text.tertiary} />
-          </InfoRow>
-          <View style={styles.divider} />
-          {/* Clear Search History */}
-          <ActionRow
-            label="Clear Search History"
-            description="Remove all recent searches from this device."
-            buttonLabel="Clear"
-            onPress={handleClearSearchHistory}
-          />
-          <View style={styles.divider} />
-          {/* Clear Watch History */}
-          <ActionRow
-            label="Clear Watch History"
-            description="Remove all videos from your watch history."
-            buttonLabel="Clear"
-            onPress={handleClearWatchHistory}
-            loading={clearWatchHistoryMutation.isPending}
-          />
-          <View style={styles.divider} />
-          {/* Delete Account */}
-          <ActionRow
-            label="Delete Account"
-            description="Permanently delete your account and all your data."
-            buttonLabel="Delete Account"
-            buttonColor={colors.error}
-            onPress={handleDeleteAccount}
-            loading={deleteAccountMutation.isPending}
-          />
-        </View>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            {/* Download Your Data */}
+            <ActionRow
+              label="Download Your Data"
+              description="Request a copy of all your data. We'll notify you when it's ready."
+              buttonLabel="Request Download"
+              onPress={handleRequestDownload}
+            />
+            <View style={styles.divider} />
+            {/* Connected Apps */}
+            <InfoRow label="Connected Apps" description="No connected apps" icon="layers" />
+            <View style={styles.divider} />
+            {/* Clear Search History */}
+            <ActionRow
+              label="Clear Search History"
+              description="Remove all recent searches from this device."
+              buttonLabel="Clear"
+              onPress={handleClearSearchHistory}
+            />
+            <View style={styles.divider} />
+            {/* Clear Watch History */}
+            <ActionRow
+              label="Clear Watch History"
+              description="Remove all videos from your watch history."
+              buttonLabel="Clear"
+              onPress={handleClearWatchHistory}
+              loading={clearWatchHistoryMutation.isPending}
+            />
+            <View style={styles.divider} />
+            {/* Delete Account */}
+            <ActionRow
+              label="Delete Account"
+              description="Permanently delete your account and all your data."
+              buttonLabel="Delete Account"
+              destructive
+              onPress={handleDeleteAccount}
+              loading={deleteAccountMutation.isPending}
+            />
+          </LinearGradient>
+        </Animated.View>
 
         <Text style={styles.footerNote}>
           For more privacy settings, visit the{' '}
@@ -288,10 +306,9 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60, paddingTop: 100 },
   card: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
-    borderWidth: 0.5,
-    borderColor: colors.dark.border,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
@@ -300,7 +317,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
   actionText: { flex: 1, marginRight: spacing.md },
@@ -316,23 +333,25 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   actionButton: {
-    backgroundColor: colors.emerald,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
     minWidth: 80,
     alignItems: 'center',
   },
   actionButtonText: {
-    color: '#fff',
+    color: colors.emerald,
     fontSize: fontSize.sm,
     fontWeight: '600',
+  },
+  actionButtonTextDestructive: {
+    color: colors.error,
   },
   infoRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
   infoText: { flex: 1, marginRight: spacing.md },
@@ -347,10 +366,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
     lineHeight: 16,
   },
+  iconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   divider: {
     height: 0.5,
-    backgroundColor: colors.dark.border,
-    marginLeft: spacing.base,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginLeft: spacing.md,
   },
   footerNote: {
     color: colors.text.tertiary,

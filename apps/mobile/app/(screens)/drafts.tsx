@@ -3,6 +3,8 @@ import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl, Alert } fr
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -71,36 +73,50 @@ export default function DraftsScreen() {
     router.push({ pathname: screen, params: { draftId: draft.id } } as never);
   };
 
-  const renderDraft = ({ item }: { item: DraftItem }) => {
+  const renderDraft = ({ item, index }: { item: DraftItem; index: number }) => {
     const data = item.data as Record<string, string>;
     const preview = data.content ?? data.caption ?? data.title ?? 'Untitled draft';
     const time = formatDistanceToNowStrict(new Date(item.updatedAt), { addSuffix: true });
 
     return (
-      <Pressable
-        style={styles.draftItem}
-        onPress={() => handleOpen(item)}
-        accessibilityLabel={`Draft: ${preview}`}
-        accessibilityRole="button"
-      >
-        <View style={styles.draftIcon}>
-          <Icon name={SPACE_ICONS[item.space] ?? 'image'} size="sm" color={colors.emerald} />
-        </View>
-        <View style={styles.draftContent}>
-          <Text style={styles.draftType}>{SPACE_LABELS[item.space] ?? 'Draft'}</Text>
-          <Text style={styles.draftPreview} numberOfLines={2}>{preview}</Text>
-          <Text style={styles.draftTime}>{time}</Text>
-        </View>
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <Pressable
-          style={styles.draftDeleteBtn}
-          onPress={() => handleDelete(item.id)}
-          hitSlop={8}
-          accessibilityLabel="Delete draft"
+          onPress={() => handleOpen(item)}
+          accessibilityLabel={`Draft: ${preview}`}
           accessibilityRole="button"
         >
-          <Icon name="trash" size="sm" color={colors.error} />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.draftItem}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.draftIcon}
+            >
+              <Icon name={SPACE_ICONS[item.space] ?? 'image'} size="sm" color={colors.emerald} />
+            </LinearGradient>
+            <View style={styles.draftContent}>
+              <Text style={styles.draftType}>{SPACE_LABELS[item.space] ?? 'Draft'}</Text>
+              <Text style={styles.draftPreview} numberOfLines={2}>{preview}</Text>
+              <Text style={styles.draftTime}>{time}</Text>
+            </View>
+            <Pressable
+              style={styles.draftDeleteBtn}
+              onPress={() => handleDelete(item.id)}
+              hitSlop={8}
+              accessibilityLabel="Delete draft"
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                style={styles.deleteBtnGradient}
+              >
+                <Icon name="trash" size="sm" color={colors.error} />
+              </LinearGradient>
+            </Pressable>
+          </LinearGradient>
         </Pressable>
-      </Pressable>
+      </Animated.View>
     );
   };
 
@@ -167,23 +183,27 @@ const styles = StyleSheet.create({
   draftItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     padding: spacing.base,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   draftIcon: {
-    width: 40, height: 40, borderRadius: radius.full,
-    backgroundColor: colors.active.emerald10,
+    width: 40, height: 40, borderRadius: radius.md,
     alignItems: 'center', justifyContent: 'center',
     marginRight: spacing.md,
   },
   draftContent: { flex: 1 },
   draftType: {
-    color: colors.emerald, fontSize: fontSize.xs,
+    color: colors.gold, fontSize: fontSize.xs,
     fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5,
   },
   draftPreview: { color: colors.text.primary, fontSize: fontSize.base, marginTop: 2 },
   draftTime: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
-  draftDeleteBtn: { padding: spacing.xs, marginLeft: spacing.sm },
+  draftDeleteBtn: { marginLeft: spacing.sm },
+  deleteBtnGradient: {
+    width: 32, height: 32, borderRadius: radius.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
 });

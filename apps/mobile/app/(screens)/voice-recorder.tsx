@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Audio } from 'expo-av';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -152,48 +154,70 @@ export default function VoiceRecorderScreen() {
       />
 
       <View style={[s.content, { paddingTop: insets.top + 52 }]}>
-        <View style={s.timerContainer}>
-          <Text style={s.timerText}>{format(time)}</Text>
-          <Text style={s.timerSubtext}>
-            {isRecording ? 'Recording…' : isPlaying ? 'Playing…' : isRecorded ? 'Recorded' : 'Ready to record'}
-          </Text>
-        </View>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={s.glassCard}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={s.cardGradient}
+          >
+            <View style={s.timerContainer}>
+              <LinearGradient
+                colors={isRecording ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={s.timerIconBg}
+              >
+                <Icon
+                  name={isRecording || isPlaying ? 'mic' : isRecorded ? 'check' : 'mic'}
+                  size="lg"
+                  color={isRecording ? colors.error : colors.emerald}
+                />
+              </LinearGradient>
+              <Text style={s.timerText}>{format(time)}</Text>
+              <Text style={s.timerSubtext}>
+                {isRecording ? 'Recording…' : isPlaying ? 'Playing…' : isRecorded ? 'Recorded' : 'Ready to record'}
+              </Text>
+            </View>
 
-        <View style={s.amplitudeContainer}>
-          {(isRecording ? levels : Array(20).fill(0)).map((l, idx) => (
-            <View
-              key={idx}
-              style={[
-                s.amplitudeBar,
-                {
-                  height: 8 + (isRecording ? l * 0.3 : 0),
-                  backgroundColor: isRecording ? colors.emerald : colors.text.tertiary,
-                },
-              ]}
-            />
-          ))}
-        </View>
+            <View style={s.amplitudeContainer}>
+              {(isRecording ? levels : Array(20).fill(0)).map((l, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    s.amplitudeBar,
+                    {
+                      height: 8 + (isRecording ? l * 0.3 : 0),
+                      backgroundColor: isRecording ? colors.emerald : colors.text.tertiary,
+                    },
+                  ]}
+                />
+              ))}
+            </View>
 
-        <Pressable
-          style={[s.recordButton, isRecording && s.recordingActive, (isRecorded || isPlaying) && s.playButton]}
-          onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
-        >
-          <Icon
-            name={isRecording || isPlaying ? 'square' : isRecorded ? 'play' : 'mic'}
-            size="3xl"
-            color={isRecording ? colors.error : colors.emerald}
-          />
-        </Pressable>
+            <Pressable
+              style={s.recordButtonWrap}
+              onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
+            >
+              <LinearGradient
+                colors={isRecording ? ['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.4)'] : ['rgba(10,123,79,0.8)', 'rgba(200,150,62,0.4)']}
+                style={[s.recordButton, (isRecorded || isPlaying) && s.playButton]}
+              >
+                <Icon
+                  name={isRecording || isPlaying ? 'square' : isRecorded ? 'play' : 'mic'}
+                  size="3xl"
+                  color="#FFF"
+                />
+              </LinearGradient>
+            </Pressable>
 
-        <Text style={s.hintText}>
-          {isRecording
-            ? 'Tap to stop recording'
-            : isPlaying
-              ? 'Tap to stop playback'
-              : isRecorded
-                ? 'Tap to listen'
-                : 'Tap to start recording (max 5 minutes)'}
-        </Text>
+            <Text style={s.hintText}>
+              {isRecording
+                ? 'Tap to stop recording'
+                : isPlaying
+                  ? 'Tap to stop playback'
+                  : isRecorded
+                    ? 'Tap to listen'
+                    : 'Tap to start recording (max 5 minutes)'}
+            </Text>
+          </LinearGradient>
+        </Animated.View>
       </View>
 
       <View style={s.footer}>
@@ -221,7 +245,26 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: spacing['2xl'],
   },
+  glassCard: {
+    width: '100%',
+    borderRadius: radius.lg,
+  },
+  cardGradient: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing['2xl'],
+    alignItems: 'center',
+  },
   timerContainer: { alignItems: 'center', marginBottom: spacing['2xl'] },
+  timerIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
   timerText: { fontSize: fontSize['3xl'], fontWeight: '700', color: colors.text.primary, letterSpacing: 1 },
   timerSubtext: { fontSize: fontSize.sm, color: colors.text.secondary, marginTop: spacing.xs },
   amplitudeContainer: {
@@ -234,17 +277,21 @@ const s = StyleSheet.create({
     gap: 2,
   },
   amplitudeBar: { width: 4, borderRadius: radius.sm },
+  recordButtonWrap: {
+    borderRadius: radius.full,
+  },
   recordButton: {
     width: 100,
     height: 100,
     borderRadius: radius.full,
-    backgroundColor: colors.emerald,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,
   },
-  recordingActive: { backgroundColor: colors.error },
-  playButton: { backgroundColor: colors.active.emerald10, borderWidth: 2, borderColor: colors.emerald },
+  playButton: {
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
+  },
   hintText: { fontSize: fontSize.sm, color: colors.text.secondary, textAlign: 'center', marginTop: spacing.sm },
   footer: {
     flexDirection: 'row',

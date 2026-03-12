@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk, useUser } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Switch } from 'react-native-gesture-handler';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -53,8 +55,19 @@ function Row({
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
+function SectionHeader({ title, index }: { title: string; index: number }) {
+  return (
+    <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+      <LinearGradient
+        colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+        style={styles.sectionHeaderGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        <Text style={styles.sectionHeader}>{title}</Text>
+      </LinearGradient>
+    </Animated.View>
+  );
 }
 
 export default function AccountSettingsScreen() {
@@ -205,59 +218,81 @@ export default function AccountSettingsScreen() {
 
       <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
         {/* Account Info */}
-        <SectionHeader title="Account Info" />
-        <View style={styles.card}>
-          <Row
-            label="Email"
-            value={primaryEmail || 'Not set'}
-          />
-          <View style={styles.divider} />
-          <Row
-            label="Phone"
-            value={primaryPhone || 'Not set'}
-          />
-          <View style={styles.divider} />
-          <Row
-            label="Joined"
-            value={joinedDate}
-          />
-        </View>
+        <SectionHeader title="Account Info" index={0} />
+        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            <Row
+              label="Email"
+              value={primaryEmail || 'Not set'}
+            />
+            <View style={styles.divider} />
+            <Row
+              label="Phone"
+              value={primaryPhone || 'Not set'}
+            />
+            <View style={styles.divider} />
+            <Row
+              label="Joined"
+              value={joinedDate}
+            />
+          </LinearGradient>
+        </Animated.View>
 
         {/* Data & Privacy */}
-        <SectionHeader title="Data & Privacy" />
-        <View style={styles.card}>
-          <Row
-            label="Download My Data"
-            hint="Export all your data as a ZIP file"
-            onPress={handleExportData}
-          />
-          <View style={styles.divider} />
-          <Row
-            label="Manage Data"
-            hint="View and manage your stored data"
-            onPress={() => router.push('/(screens)/manage-data')}
-          />
-        </View>
+        <SectionHeader title="Data & Privacy" index={1} />
+        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            <Row
+              label="Download My Data"
+              hint="Export all your data as a ZIP file"
+              onPress={handleExportData}
+            />
+            <View style={styles.divider} />
+            <Row
+              label="Manage Data"
+              hint="View and manage your stored data"
+              onPress={() => router.push('/(screens)/manage-data')}
+            />
+          </LinearGradient>
+        </Animated.View>
 
         {/* Account Actions */}
-        <SectionHeader title="Account Actions" />
-        <View style={styles.card}>
-          <Row
-            label="Deactivate Account"
-            hint="Temporarily hide your account"
-            onPress={handleDeactivate}
-            destructive
-          />
-          <View style={styles.divider} />
-          <Row
-            label="Delete Account"
-            hint="Permanently delete after 30 days"
-            onPress={handleDeleteAccount}
-            destructive
-          />
-        </View>
+        <SectionHeader title="Account Actions" index={2} />
+        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            <Row
+              label="Deactivate Account"
+              hint="Temporarily hide your account"
+              onPress={handleDeactivate}
+              destructive
+            />
+            <View style={styles.divider} />
+            <Row
+              label="Delete Account"
+              hint="Permanently delete after 30 days"
+              onPress={handleDeleteAccount}
+              destructive
+            />
+          </LinearGradient>
+        </Animated.View>
 
-        <Text style={styles.version}>Mizanly v0.1.0</Text>
+        <Animated.View entering={FadeInUp.delay(350).duration(400)}>
+          <LinearGradient
+            colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+            style={styles.versionCard}
+          >
+            <Text style={styles.version}>Mizanly v0.1.0</Text>
+          </LinearGradient>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -268,31 +303,42 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60 },
 
+  sectionHeaderGradient: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    padding: spacing.sm,
+  },
   sectionHeader: {
-    color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
+    color: colors.gold, fontSize: fontSize.xs, fontWeight: '700',
     textTransform: 'uppercase', letterSpacing: 0.8,
-    paddingHorizontal: spacing.base, paddingTop: spacing.xl, paddingBottom: spacing.sm,
-    borderLeftWidth: 3, borderLeftColor: colors.emerald, paddingLeft: spacing.sm,
-    marginLeft: spacing.base,
   },
   card: {
-    backgroundColor: colors.dark.bgCard, borderRadius: radius.lg,
-    borderWidth: 0.5, borderColor: colors.dark.border,
+    borderRadius: radius.lg,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden', marginHorizontal: spacing.base, marginBottom: spacing.md,
   },
 
   row: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.md,
   },
   rowText: { flex: 1, marginRight: spacing.md },
   rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
   rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
   rowValue: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
-  destructive: { color: '#FF453A' },
-  divider: { height: 0.5, backgroundColor: colors.dark.border, marginLeft: spacing.base },
+  destructive: { color: colors.error },
+  divider: { height: 0.5, backgroundColor: 'rgba(255,255,255,0.06)', marginLeft: spacing.md },
 
+  versionCard: {
+    marginHorizontal: spacing.base,
+    marginTop: spacing.xl,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    alignItems: 'center',
+  },
   version: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,
+    color: colors.emerald, fontSize: fontSize.xs, textAlign: 'center', fontWeight: '600',
   },
 });

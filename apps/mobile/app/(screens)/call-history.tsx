@@ -5,6 +5,8 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useUser } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -50,7 +52,7 @@ export default function CallHistoryScreen() {
 
   const calls = data?.pages.flatMap((page) => page.data) ?? [];
 
-  const renderItem = ({ item }: { item: CallSession }) => {
+  const renderItem = ({ item, index }: { item: CallSession; index: number }) => {
     const isCaller = item.callerId === myUserId;
     const otherUser = isCaller ? item.receiver : item.caller;
 
@@ -73,36 +75,52 @@ export default function CallHistoryScreen() {
     else statusText = item.status;
 
     return (
-      <Pressable 
-        style={styles.row}
-        onPress={() => router.push(`/(screens)/profile/${otherUser.username}` as never)}
-      >
-        <Avatar uri={otherUser.avatarUrl} name={otherUser.displayName || otherUser.username} size="md" />
-        <View style={styles.info}>
-          <Text style={[styles.name, isMissed && styles.missedName]} numberOfLines={1}>
-            {otherUser.displayName || otherUser.username}
-          </Text>
-          <View style={styles.subInfo}>
-            <Icon 
-              name={isVideo ? 'video' : 'phone'} 
-              size={12} 
-              color={isMissed ? colors.error : colors.text.secondary} 
-            />
-            <Text style={styles.statusText}>{statusText}</Text>
-            <Text style={styles.dot}>•</Text>
-            <Text style={styles.time} numberOfLines={1}>
-              {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
-            </Text>
-          </View>
-        </View>
-        <Pressable
-          style={styles.actionButton}
-          hitSlop={8}
-          onPress={() => router.push(`/(screens)/call/${item.id}` as never)}
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.row}
         >
-          <Icon name={isVideo ? 'video' : 'phone'} size={20} color={colors.emerald} />
-        </Pressable>
-      </Pressable>
+          <Pressable
+            style={styles.rowInner}
+            onPress={() => router.push(`/(screens)/profile/${otherUser.username}` as never)}
+          >
+            <Avatar uri={otherUser.avatarUrl} name={otherUser.displayName || otherUser.username} size="md" />
+            <View style={styles.info}>
+              <Text style={[styles.name, isMissed && styles.missedName]} numberOfLines={1}>
+                {otherUser.displayName || otherUser.username}
+              </Text>
+              <View style={styles.subInfo}>
+                <LinearGradient
+                  colors={isMissed ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.callTypeIconBg}
+                >
+                  <Icon
+                    name={isVideo ? 'video' : 'phone'}
+                    size={12}
+                    color={isMissed ? colors.error : colors.emerald}
+                  />
+                </LinearGradient>
+                <Text style={[styles.statusText, isMissed && styles.missedText]}>{statusText}</Text>
+                <Text style={styles.dot}>•</Text>
+                <Text style={styles.time} numberOfLines={1}>
+                  {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+                </Text>
+              </View>
+            </View>
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => router.push(`/(screens)/call/${item.id}` as never)}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+              style={styles.actionButton}
+            >
+              <Icon name={isVideo ? 'video' : 'phone'} size={18} color={colors.emerald} />
+            </LinearGradient>
+          </Pressable>
+        </LinearGradient>
+      </Animated.View>
     );
   };
 
@@ -191,9 +209,20 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.xs,
+  },
+  rowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
   },
   info: {
     flex: 1,
@@ -218,6 +247,16 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     textTransform: 'capitalize',
   },
+  missedText: {
+    color: colors.error,
+  },
+  callTypeIconBg: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   dot: {
     fontSize: fontSize.sm,
     color: colors.text.tertiary,
@@ -227,6 +266,10 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   actionButton: {
-    padding: spacing.xs,
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

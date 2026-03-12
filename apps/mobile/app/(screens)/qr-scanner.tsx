@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, Pressable, Alert, Linking } from 'react-native'
 import { useRouter } from 'expo-router';
 import { Camera, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -110,11 +112,28 @@ export default function QRScannerScreen() {
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
       >
         <View style={styles.overlay}>
-          <View style={styles.focusFrame} />
-          <Text style={styles.instruction}>Align QR code within the frame</Text>
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+              style={styles.focusFrameOuter}
+            >
+              <View style={styles.focusFrameInner} />
+            </LinearGradient>
+          </Animated.View>
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.instructionBg}
+          >
+            <Text style={styles.instruction}>Align QR code within the frame</Text>
+          </LinearGradient>
           {scanned && (
             <View style={styles.scannedOverlay}>
-              <Icon name="check-circle" size="xl" color={colors.emerald} />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                style={styles.scannedIconBg}
+              >
+                <Icon name="check-circle" size="xl" color={colors.emerald} />
+              </LinearGradient>
               <Text style={styles.scannedText}>Scanned successfully</Text>
             </View>
           )}
@@ -145,22 +164,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  focusFrame: {
+  focusFrameOuter: {
+    width: 254,
+    height: 254,
+    borderRadius: radius.lg,
+    padding: 2,
+  },
+  focusFrameInner: {
     width: 250,
     height: 250,
-    borderWidth: 2,
-    borderColor: colors.emerald,
-    borderRadius: radius.lg,
+    borderRadius: radius.md,
     backgroundColor: 'transparent',
+  },
+  instructionBg: {
+    marginTop: spacing.xl,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
   },
   instruction: {
     color: colors.text.primary,
     fontSize: fontSize.base,
-    marginTop: spacing.xl,
-    backgroundColor: colors.dark.bg + 'CC',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
+    fontWeight: '500',
   },
   scannedOverlay: {
     position: 'absolute',
@@ -169,6 +194,13 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     backgroundColor: colors.dark.bg + 'CC',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scannedIconBg: {
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
