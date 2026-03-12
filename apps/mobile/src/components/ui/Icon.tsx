@@ -11,6 +11,7 @@ import {
   Layers, CirclePlus, Edit3, Slash, LogOut, BarChart2, Loader,
   Maximize, Pause, Rewind, FastForward, Volume1, Volume2, Music,
   Sun, Circle, Droplet, SlidersHorizontal,
+  Moon, Star, Gift, BookOpen, Calculator, Calendar,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
@@ -27,7 +28,8 @@ export type IconName =
   | 'paperclip' | 'smile' | 'at-sign' | 'filter' | 'layers' | 'circle-plus'
   | 'pencil' | 'slash' | 'log-out' | 'bar-chart-2' | 'chevron-down' | 'loader'
   | 'maximize' | 'music'
-  | 'sun' | 'circle' | 'droplet' | 'sliders';
+  | 'sun' | 'circle' | 'droplet' | 'sliders'
+  | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -107,6 +109,12 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'circle': Circle,
   'droplet': Droplet,
   'sliders': SlidersHorizontal,
+  'moon': Moon,
+  'star': Star,
+  'gift': Gift,
+  'book-open': BookOpen,
+  'calculator': Calculator,
+  'calendar': Calendar,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

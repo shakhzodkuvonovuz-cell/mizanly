@@ -7,6 +7,7 @@ import { formatDistanceToNowStrict, format } from 'date-fns';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -66,7 +67,7 @@ export default function MyReportsScreen() {
 
   const renderItem = ({ item, index }: { item: Report; index: number }) => {
     const statusColor = getStatusColor(item.status);
-    const statusIcon = item.status === 'RESOLVED' ? 'check' : item.status === 'PENDING' ? 'clock' : 'flag';
+    const statusIcon: IconName = item.status === 'RESOLVED' ? 'check' : item.status === 'PENDING' ? 'clock' : 'flag';
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -79,7 +80,7 @@ export default function MyReportsScreen() {
               colors={[statusColor + '33', statusColor + '1A']}
               style={styles.statusIconBg}
             >
-              <Icon name={statusIcon as any} size="xs" color={statusColor} />
+              <Icon name={statusIcon} size="xs" color={statusColor} />
             </LinearGradient>
             <Text style={styles.reason} numberOfLines={1}>
               {item.reason.replace(/_/g, ' ')}

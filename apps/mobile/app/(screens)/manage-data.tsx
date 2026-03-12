@@ -16,6 +16,7 @@ import { useClerk } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -29,7 +30,7 @@ function InfoRow({
 }: {
   label: string;
   description?: string;
-  icon?: string;
+  icon?: IconName;
 }) {
   return (
     <View style={styles.infoRow}>
@@ -42,7 +43,7 @@ function InfoRow({
           colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
           style={styles.iconBg}
         >
-          <Icon name={icon as any} size="md" color={colors.emerald} />
+          <Icon name={icon} size="md" color={colors.emerald} />
         </LinearGradient>
       )}
     </View>
