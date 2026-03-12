@@ -16,10 +16,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SignInScreen() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -80,7 +82,7 @@ export default function SignInScreen() {
         <Animated.View style={[styles.logoSection, logoAnimStyle]}>
           <Text style={styles.logo}>Mizanly</Text>
           <Text style={styles.logoArabic}>ميزانلي</Text>
-          <Text style={styles.tagline}>The Muslim social platform</Text>
+          <Text style={styles.tagline}>{t('auth.tagline')}</Text>
         </Animated.View>
 
         {/* Form */}
@@ -94,7 +96,7 @@ export default function SignInScreen() {
             />
             <TextInput
               style={styles.inputInner}
-              placeholder="Email address"
+              placeholder={t('auth.emailPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={email}
               onChangeText={setEmail}
@@ -115,7 +117,7 @@ export default function SignInScreen() {
             />
             <TextInput
               style={styles.inputInner}
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={password}
               onChangeText={setPassword}
@@ -129,7 +131,7 @@ export default function SignInScreen() {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <GradientButton
-            label="Sign In"
+            label={t('auth.signIn')}
             onPress={handleSignIn}
             loading={loading}
             disabled={!email || !password}
@@ -139,7 +141,7 @@ export default function SignInScreen() {
           {/* Divider */}
           <View style={styles.dividerRow}>
             <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
+            <Text style={styles.dividerText}>{t('auth.or')}</Text>
             <View style={styles.dividerLine} />
           </View>
 
@@ -147,20 +149,20 @@ export default function SignInScreen() {
           <View style={styles.socialRow}>
             <Pressable style={styles.socialBtn}>
               <Icon name="globe" size="sm" color={colors.text.primary} />
-              <Text style={styles.socialText}>Google</Text>
+              <Text style={styles.socialText}>{t('auth.google')}</Text>
             </Pressable>
             <Pressable style={styles.socialBtn}>
               <Icon name="lock" size="sm" color={colors.text.primary} />
-              <Text style={styles.socialText}>Apple</Text>
+              <Text style={styles.socialText}>{t('auth.apple')}</Text>
             </Pressable>
           </View>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
+          <Text style={styles.footerText}>{t('auth.dontHaveAccount')}</Text>
           <TouchableOpacity onPress={() => router.replace('/(auth)/sign-up')}>
-            <Text style={styles.footerLink}>Sign up</Text>
+            <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

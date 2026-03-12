@@ -23,6 +23,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Comment, Reel } from '@/types';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -43,6 +44,7 @@ function CommentRow({
   onDeleted: () => void;
 }) {
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
@@ -63,9 +65,9 @@ function CommentRow({
   });
 
   const handleDelete = () => {
-    Alert.alert('Delete Comment', 'Delete this comment?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    Alert.alert(t('comments.deleteTitle'), t('comments.deletePrompt'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   };
 
@@ -80,14 +82,14 @@ function CommentRow({
         <View style={styles.commentMeta}>
           <Text style={styles.commentTime}>{timeAgo}</Text>
           {localLikes > 0 && (
-            <Text style={styles.commentLikesLabel}>{localLikes} likes</Text>
+            <Text style={styles.commentLikesLabel}>{localLikes} {t('saf.likes')}</Text>
           )}
           <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
-            <Text style={styles.commentAction}>Reply</Text>
+            <Text style={styles.commentAction}>{t('common.reply')}</Text>
           </TouchableOpacity>
           {isOwn && (
             <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
-              <Text style={styles.commentActionDestructive}>Delete</Text>
+              <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -115,6 +117,7 @@ export default function ReelDetailScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const videoRef = useRef<Video>(null);
   const [commentText, setCommentText] = useState('');

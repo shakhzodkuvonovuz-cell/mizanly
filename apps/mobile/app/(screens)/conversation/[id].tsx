@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
@@ -382,7 +383,7 @@ function MessageBubble({
     return (
       <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn, !isGroupEnd && styles.bubbleWrapGrouped]}>
         {!isOwn && <View style={{ width: AVATAR_SIZE }} />}
-        <Text style={styles.deletedMsg}>Message deleted</Text>
+        <Text style={styles.deletedMsg}>{t('messages.deleted')}</Text>
       </View>
     );
   }
@@ -439,7 +440,7 @@ function MessageBubble({
         {(message.isForwarded || message.forwardedFrom) && (
           <View style={styles.forwardedLabel}>
             <Icon name="share" size={10} color={colors.text.tertiary} />
-            <Text style={styles.forwardedText}>Forwarded</Text>
+            <Text style={styles.forwardedText}>{t('messages.forwarded')}</Text>
           </View>
         )}
         {message.replyTo && (
@@ -586,6 +587,7 @@ export default function ConversationScreen() {
   const isOffline = useStore((s) => s.isOffline);
   const haptic = useHaptic();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const flatListRef = useRef<FlatList>(null);
   const socketRef = useRef<Socket | null>(null);
   const inputRef = useRef<TextInput>(null);

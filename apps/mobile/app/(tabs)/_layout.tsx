@@ -1,5 +1,6 @@
 import { Tabs, useRouter } from 'expo-router';
 import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { useTranslation } from '@/hooks/useTranslation';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -22,12 +23,13 @@ type TabName = 'saf' | 'bakra' | 'minbar' | 'majlis' | 'risalah';
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; badge?: number }) {
+  const { t } = useTranslation();
   const iconMap: Record<TabName, { icon: React.ComponentProps<typeof Icon>['name']; label: string }> = {
-    saf: { icon: 'home', label: 'Saf' },
-    bakra: { icon: 'play', label: 'Bakra' },
-    minbar: { icon: 'video', label: 'Minbar' },
-    majlis: { icon: 'message-circle', label: 'Majlis' },
-    risalah: { icon: 'mail', label: 'Risalah' },
+    saf: { icon: 'home', label: t('tabs.saf') },
+    bakra: { icon: 'play', label: t('tabs.bakra') },
+    minbar: { icon: 'video', label: t('tabs.minbar') },
+    majlis: { icon: 'message-circle', label: t('tabs.majlis') },
+    risalah: { icon: 'mail', label: t('tabs.risalah') },
   };
 
   const { icon } = iconMap[name];
@@ -63,6 +65,7 @@ function TabIcon({ name, focused, badge }: { name: TabName; focused: boolean; ba
 }
 
 function CreateButton() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const haptic = useHaptic();
@@ -89,7 +92,7 @@ function CreateButton() {
 
   return (
     <>
-      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress} accessibilityLabel="Create new post" accessibilityRole="button">
+      <AnimatedPressable style={[styles.createButton, animatedStyle]} onPress={handlePress} accessibilityLabel={t('tabs.create.newPost')} accessibilityRole="button">
         <LinearGradient
           colors={[colors.emeraldLight, colors.emeraldDark]}
           style={styles.createGradient}
@@ -102,25 +105,25 @@ function CreateButton() {
 
       <BottomSheet visible={open} onClose={() => setOpen(false)}>
         <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Create</Text>
+          <Text style={styles.sheetTitle}>{t('common.create')}</Text>
         </View>
         <BottomSheetItem
-          label="Photo or Video Post"
+          label={t('tabs.createSheet.photoOrVideoPost')}
           icon={<Icon name="image" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-post')}
         />
         <BottomSheetItem
-          label="Start a Thread"
+          label={t('tabs.createSheet.startThread')}
           icon={<Icon name="message-circle" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-thread')}
         />
         <BottomSheetItem
-          label="Share a Story"
+          label={t('tabs.createSheet.shareStory')}
           icon={<Icon name="circle-plus" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-story')}
         />
         <BottomSheetItem
-          label="Short Video (Reel)"
+          label={t('tabs.createSheet.shortVideoReel')}
           icon={<Icon name="video" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-reel')}
         />
@@ -130,6 +133,7 @@ function CreateButton() {
 }
 
 export default function TabLayout() {
+  const { t } = useTranslation();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
 
@@ -158,8 +162,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="saf"
         options={{
-          title: 'Saf',
-          tabBarAccessibilityLabel: "Home feed",
+          title: t('tabs.saf'),
+          tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
           tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} />,
         }}
       />

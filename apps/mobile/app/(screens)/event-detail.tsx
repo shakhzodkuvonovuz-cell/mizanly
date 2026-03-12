@@ -64,8 +64,8 @@ export default function EventDetailScreen() {
       const response = await eventsApi.getById(id as string);
       setEvent(response.data);
       // TODO: fetch attendees and comments
-    } catch (err: any) {
-      setError(err.message || 'Failed to load event');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load event');
     } finally {
       setLoading(false);
       setRefreshing(false);

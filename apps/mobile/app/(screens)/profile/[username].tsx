@@ -4,6 +4,7 @@ import {
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
@@ -38,11 +39,6 @@ const COVER_HEIGHT = 160;
 
 type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
-const PROFILE_TABS = [
-  { key: 'posts', label: 'Posts' },
-  { key: 'threads', label: 'Threads' },
-  { key: 'reels', label: 'Reels' },
-];
 
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const scale = useSharedValue(1);
@@ -119,10 +115,11 @@ interface FollowButtonProps {
 }
 
 function FollowButton({ isFollowing, isPending, onPress }: FollowButtonProps) {
+  const { t } = useTranslation();
   if (isFollowing) {
     return (
       <GradientButton
-        label="Following"
+        label={t('profile.following')}
         onPress={onPress}
         variant="secondary"
         size="sm"
@@ -151,6 +148,12 @@ export default function ProfileScreen() {
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
+  const PROFILE_TABS = [
+    { key: 'posts', label: t('profile.posts') },
+    { key: 'threads', label: t('profile.threads') },
+    { key: 'reels', label: t('profile.reels') },
+  ];
   const [activeTab, setActiveTab] = useState<Tab>('posts');
   const isOwnProfile = clerkUser?.username === username;
   const [showMenu, setShowMenu] = useState(false);

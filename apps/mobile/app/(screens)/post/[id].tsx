@@ -20,6 +20,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -39,6 +40,7 @@ function CommentRow({
   onDeleted: () => void;
 }) {
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const [editing, setEditing] = useState(false);
@@ -77,9 +79,9 @@ function CommentRow({
   });
 
   const handleDelete = () => {
-    Alert.alert('Delete Comment', 'Delete this comment?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    Alert.alert(t('saf.deleteCommentTitle'), t('saf.deleteCommentMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   };
 
@@ -173,6 +175,7 @@ export default function PostDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
+  const { t } = useTranslation();
 
   const postQuery = useQuery({
     queryKey: ['post', id],

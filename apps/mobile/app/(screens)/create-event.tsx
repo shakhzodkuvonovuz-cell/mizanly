@@ -102,8 +102,9 @@ export default function CreateEventScreen() {
       };
       const response = await eventsApi.create(dto);
       router.push(`/(screens)/event-detail?id=${response.data.id}`);
-    } catch (err: any) {
-      setError(err.message || 'Failed to create event');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create event';
+      setError(message);
       Alert.alert('Error', 'Failed to create event. Please try again.');
     } finally {
       setSubmitting(false);

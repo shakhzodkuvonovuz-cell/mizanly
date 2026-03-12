@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -16,6 +16,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo } from '@/types/islamic';
 import * as Location from 'expo-location';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -195,6 +196,7 @@ function PrayerCard({
 
 export default function PrayerTimesScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
