@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import * as hadiths from './data/hadiths.json';
 
 export interface PrayerTimesRequest {
@@ -169,8 +169,12 @@ export class IslamicService {
     return this.hadiths[index];
   }
 
-  getHadithById(id: number): Hadith | null {
-    return this.hadiths.find(h => h.id === id) || null;
+  getHadithById(id: number): Hadith {
+    const hadith = this.hadiths.find(h => h.id === id);
+    if (!hadith) {
+      throw new NotFoundException(`Hadith with ID ${id} not found`);
+    }
+    return hadith;
   }
 
   getHadiths(cursor?: number, limit = 20): { data: Hadith[]; cursor?: number; hasMore: boolean } {
