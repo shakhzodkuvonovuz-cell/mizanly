@@ -44,29 +44,7 @@ interface Comment {
 
 const MOCK_ATTENDEES: Attendee[] = []; // TODO: fetch attendees from API
 
-const MOCK_COMMENTS: Comment[] = [
-  {
-    id: '1',
-    author: 'Sarah M.',
-    avatar: null,
-    text: 'Looking forward to it! Will bring some dates.',
-    time: '2h ago',
-  },
-  {
-    id: '2',
-    author: 'Yusuf A.',
-    avatar: null,
-    text: 'Is there parking available nearby?',
-    time: '4h ago',
-  },
-  {
-    id: '3',
-    author: 'Noor H.',
-    avatar: null,
-    text: 'Can\'t wait to see everyone there!',
-    time: '5h ago',
-  },
-];
+const MOCK_COMMENTS: Comment[] = []; // TODO: fetch comments from API
 
 export default function EventDetailScreen() {
   const router = useRouter();

@@ -41,6 +41,7 @@ interface Listener {
 
 interface RaisedHand {
   id: string;
+  userId: string;
   name: string;
   avatar: string | null;
   raisedAgo: string;
@@ -161,6 +162,7 @@ export default function AudioRoomScreen() {
 
   const raisedHandData: RaisedHand[] = raisedHands.map(p => ({
     id: p.id,
+    userId: p.userId,
     name: p.user.name || p.user.username || 'User',
     avatar: p.user.avatarUrl || null,
     raisedAgo: 'Just now', // TODO: compute from handRaisedAt if available
