@@ -101,7 +101,6 @@ export class MonetizationController {
 
   @Get('tiers/:userId')
   @UseGuards(OptionalClerkAuthGuard)
-  @ApiBearerAuth('optional')
   @ApiOperation({ summary: "List a user's membership tiers" })
   @ApiResponse({ status: 200, description: 'List of tiers (public)' })
   getUserTiers(@Param('userId') userId: string) {
