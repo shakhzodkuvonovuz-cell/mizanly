@@ -96,7 +96,7 @@ export default function CreateGroupScreen() {
       if (err.message.includes(`at least ${MIN_MEMBERS} members`)) {
         setValidationError(err.message);
       } else {
-        Alert.alert('Error', err.message || 'Could not create group');
+        Alert.alert(t('common.error'), err.message || t('groups.couldNotCreateGroup'));
       }
     },
   });
@@ -148,10 +148,10 @@ export default function CreateGroupScreen() {
 
         {/* Avatar picker */}
         <View style={styles.section}>
-          <Text style={styles.label}>Group avatar (optional)</Text>
-          <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel="Choose group avatar" accessibilityRole="button">
+          <Text style={styles.label}>{t('groups.groupAvatarOptional')}</Text>
+          <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
             {avatarUri ? (
-              <Avatar uri={avatarUri} name={groupName || 'Group'} size="2xl" />
+              <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
             ) : (
               <View style={styles.avatarPlaceholder}>
                 <Icon name="camera" size={32} color={colors.text.secondary} />
@@ -165,11 +165,11 @@ export default function CreateGroupScreen() {
             onPress={() => setAvatarUri(undefined)}
             disabled={createMutation.isPending}
             style={styles.skipBtn}
-            accessibilityLabel="Skip group avatar"
+            accessibilityLabel={t('groups.skipGroupAvatar')}
             accessibilityRole="button"
           >
             <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
-              Skip for now
+              {t('common.skipForNow')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -178,7 +178,7 @@ export default function CreateGroupScreen() {
         {selectedMembers.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.label}>
-              Members ({selectedMembers.length})
+              {t('groups.members', { count: selectedMembers.length })}
             </Text>
             <View style={styles.chips}>
               {selectedMembers.map(member => (
@@ -191,7 +191,7 @@ export default function CreateGroupScreen() {
                     onPress={() => handleRemoveMember(member.id)}
                     hitSlop={4}
                     style={styles.chipRemove}
-                    accessibilityLabel={`Remove ${member.displayName}`}
+                    accessibilityLabel={t('groups.removeMember', { name: member.displayName })}
                     accessibilityRole="button"
                   >
                     <Icon name="x" size={12} color={colors.text.secondary} />
@@ -204,20 +204,20 @@ export default function CreateGroupScreen() {
 
         {/* Member search */}
         <View style={styles.section}>
-          <Text style={styles.label}>Add members</Text>
+          <Text style={styles.label}>{t('groups.addMembers')}</Text>
           <View style={styles.searchWrap}>
             <Icon name="search" size="sm" color={colors.text.secondary} />
             <TextInput
               style={styles.searchInput}
               value={query}
               onChangeText={handleQueryChange}
-              placeholder="Search people…"
+              placeholder={t('common.searchPeople')}
               placeholderTextColor={colors.text.tertiary}
               autoCapitalize="none"
               autoCorrect={false}
             />
             {query.length > 0 && (
-              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel="Clear search" accessibilityRole="button">
+              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')} accessibilityRole="button">
                 <Icon name="x" size="xs" color={colors.text.secondary} />
               </Pressable>
             )}
@@ -242,7 +242,7 @@ export default function CreateGroupScreen() {
                   onPress={() => handleAddMember(item)}
                   disabled={createMutation.isPending}
                   activeOpacity={0.7}
-                  accessibilityLabel={`Add ${item.displayName}`}
+                  accessibilityLabel={t('groups.addMember', { name: item.displayName })}
                   accessibilityRole="button"
                 >
                   <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
@@ -259,11 +259,11 @@ export default function CreateGroupScreen() {
               ListEmptyComponent={() =>
                 debouncedQuery.trim().length >= 2 ? (
                   <View style={styles.empty}>
-                    <Text style={styles.emptyText}>No users found for "{debouncedQuery}"</Text>
+                    <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
                   </View>
                 ) : (
                   <View style={styles.hint}>
-                    <Text style={styles.hintText}>Search by name or username</Text>
+                    <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
                   </View>
                 )
               }
@@ -273,16 +273,16 @@ export default function CreateGroupScreen() {
 
         {/* Minimum requirement note */}
         <Text style={styles.note}>
-          At least {MIN_MEMBERS} members (excluding yourself) are required.
+          {t('groups.minMembersRequired', { count: MIN_MEMBERS })}
         </Text>
 
         {/* Create button */}
         <View style={{ marginTop: spacing.lg, marginHorizontal: spacing.base }}>
           <GradientButton
-            label="Create"
+            label={t('common.create')}
             onPress={() => {
               if (selectedMembers.length < MIN_MEMBERS) {
-                setValidationError(`Please add at least ${MIN_MEMBERS} members.`);
+                setValidationError(t('groups.pleaseAddMembers', { count: MIN_MEMBERS }));
                 return;
               }
               createMutation.mutate();

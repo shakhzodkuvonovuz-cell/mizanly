@@ -31,22 +31,8 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type TabKey = 'chats' | 'groups';
 
-const TABS = [
-  { key: 'chats', label: 'Chats' },
-  { key: 'groups', label: 'Groups' },
-];
 
-function conversationName(convo: Conversation, myId?: string): string {
-  if (convo.isGroup) return convo.groupName ?? 'Group';
-  const other = convo.members.find((m) => m.user.id !== myId);
-  return other?.user.displayName ?? 'Chat';
-}
 
-function conversationAvatar(convo: Conversation, myId?: string): string | undefined {
-  if (convo.isGroup) return convo.groupAvatarUrl;
-  const other = convo.members.find((m) => m.user.id !== myId);
-  return other?.user.avatarUrl;
-}
 
 const ConversationRow = memo(function ConversationRow({
   item,
@@ -62,6 +48,18 @@ const ConversationRow = memo(function ConversationRow({
   isTyping?: boolean;
 }) {
   const { t } = useTranslation();
+
+  function conversationName(convo: Conversation, myId?: string): string {
+    if (convo.isGroup) return convo.groupName ?? t('risalah.group');
+    const other = convo.members.find((m) => m.user.id !== myId);
+    return other?.user.displayName ?? t('risalah.chat');
+  }
+
+  function conversationAvatar(convo: Conversation, myId?: string): string | undefined {
+    if (convo.isGroup) return convo.groupAvatarUrl;
+    const other = convo.members.find((m) => m.user.id !== myId);
+    return other?.user.avatarUrl;
+  }
   const name = conversationName(item, userId);
   const avi = conversationAvatar(item, userId);
   const time = item.lastMessageAt
@@ -82,9 +80,9 @@ const ConversationRow = memo(function ConversationRow({
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.98, animation.spring.snappy); }}
       onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
-      accessibilityLabel={`${item.isGroup ? 'Group' : 'Chat'} with ${name}`}
+      accessibilityLabel={`${item.isGroup ? t('risalah.group') : t('risalah.chat')} with ${name}`}
       accessibilityRole="button"
-      accessibilityHint="Open conversation"
+      accessibilityHint={t('accessibility.openConversation')}
     >
       <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup && isOnline} />
       <View style={styles.chatInfo}>
@@ -97,14 +95,14 @@ const ConversationRow = memo(function ConversationRow({
         <View style={styles.chatBottomRow}>
           {isTyping ? (
             <Text style={styles.typingText} numberOfLines={1}>
-              typing...
+              {t('risalah.typing')}
             </Text>
           ) : (
             <Text
               style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
               numberOfLines={1}
             >
-              {item.lastMessageText || 'No messages yet'}
+              {item.lastMessageText || t('risalah.noMessages')}
             </Text>
           )}
           {!item.isGroup && !isTyping && lastMessageRead && (
@@ -131,6 +129,11 @@ export default function RisalahScreen() {
   const { user } = useUser();
   const haptic = useHaptic();
   const { t } = useTranslation();
+
+  const TABS = [
+    { key: 'chats', label: t('risalah.chats') },
+    { key: 'groups', label: t('risalah.groups') },
+  ];
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const { getToken } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -243,13 +246,13 @@ export default function RisalahScreen() {
     ) : (
       <EmptyState
         icon="mail"
-        title={activeTab === 'groups' ? 'No groups yet' : 'Your conversations'}
+        title={activeTab === 'groups' ? t('risalah.noGroupsYet') : t('risalah.yourConversations')}
         subtitle={
           activeTab === 'groups'
-            ? 'Create a group to chat with multiple people'
-            : 'Messages with friends and groups will appear here'
+            ? t('risalah.createGroupHint')
+            : t('risalah.messagesHint')
         }
-        actionLabel="New Message"
+        actionLabel={t('risalah.newMessage')}
         onAction={() => router.push('/(screens)/new-conversation')}
       />
     )
@@ -261,11 +264,11 @@ export default function RisalahScreen() {
       <Pressable
         style={styles.archivedRow}
         onPress={() => router.push('/(screens)/archive')}
-        accessibilityLabel="Archived conversations"
+        accessibilityLabel={t('accessibility.archivedConversations')}
         accessibilityRole="button"
       >
         <Icon name="layers" size="sm" color={colors.text.secondary} />
-        <Text style={styles.archivedText}>Archived</Text>
+        <Text style={styles.archivedText}>{t('risalah.archived')}</Text>
         <Badge count={archivedCount} color={colors.text.tertiary} size="xs" />
         <View style={{ flex: 1 }} />
         <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -282,7 +285,7 @@ export default function RisalahScreen() {
       <Pressable
         style={styles.archiveAction}
         onPress={() => archiveMutation.mutate(item.id)}
-        accessibilityLabel="Archive conversation"
+        accessibilityLabel={t('accessibility.archiveConversation')}
         accessibilityRole="button"
       >
         <Icon name="archive" size="sm" color={colors.text.primary} />
@@ -314,13 +317,13 @@ export default function RisalahScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.logo}>Risalah</Text>
+        <Text style={styles.logo}>{t('tabs.risalah')}</Text>
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
-          accessibilityLabel="New conversation"
+          accessibilityLabel={t('accessibility.newConversation')}
           accessibilityRole="button"
-          accessibilityHint="Start a new chat or group"
+          accessibilityHint={t('accessibility.newConversationHint')}
         >
           <Icon name="pencil" size="sm" color={colors.text.primary} />
         </Pressable>
@@ -328,7 +331,7 @@ export default function RisalahScreen() {
 
       <BottomSheet visible={openNewConvoSheet} onClose={() => setOpenNewConvoSheet(false)}>
         <BottomSheetItem
-          label="New Message"
+          label={t('risalah.newMessage')}
           icon={<Icon name="mail" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
@@ -336,7 +339,7 @@ export default function RisalahScreen() {
           }}
         />
         <BottomSheetItem
-          label="New Group"
+          label={t('risalah.newGroup')}
           icon={<Icon name="users" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setOpenNewConvoSheet(false);
@@ -359,11 +362,11 @@ export default function RisalahScreen() {
             key={chip}
             style={[styles.filterChip, filterChip === chip && styles.filterChipSelected]}
             onPress={() => setFilterChip(chip)}
-            accessibilityLabel={chip === 'groups' ? 'Groups' : chip === 'unread' ? 'Unread' : 'All'}
+            accessibilityLabel={chip === 'groups' ? t('risalah.groups') : chip === 'unread' ? t('risalah.unread') : t('risalah.all')}
             accessibilityRole="button"
           >
             <Text style={[styles.filterChipText, filterChip === chip && styles.filterChipTextSelected]}>
-              {chip === 'groups' ? 'Groups' : chip === 'unread' ? 'Unread' : 'All'}
+              {chip === 'groups' ? t('risalah.groups') : chip === 'unread' ? t('risalah.unread') : t('risalah.all')}
             </Text>
           </Pressable>
         ))}
@@ -392,7 +395,7 @@ export default function RisalahScreen() {
       <Pressable
         style={styles.fab}
         onPress={() => router.push('/(screens)/broadcast-channels')}
-        accessibilityLabel="Broadcast channels"
+        accessibilityLabel={t('accessibility.broadcastChannels')}
         accessibilityRole="button"
       >
         <Icon name="hash" size="lg" color={colors.text.primary} />

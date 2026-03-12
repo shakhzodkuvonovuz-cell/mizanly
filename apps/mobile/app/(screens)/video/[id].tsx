@@ -686,7 +686,7 @@ export default function VideoDetailScreen() {
                 styles.subscribeText,
                 video.isSubscribed && styles.subscribedText,
               ]}>
-                {video.isSubscribed ? 'Subscribed' : 'Subscribe'}
+                {video.isSubscribed ? t('minbar.subscribed') : t('minbar.subscribe')}
               </Text>
             </TouchableOpacity>
           </TouchableOpacity>

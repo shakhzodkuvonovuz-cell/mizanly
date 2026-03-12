@@ -20,6 +20,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
@@ -30,11 +31,12 @@ const FEATURED_HEIGHT = Dimensions.get('window').width * 0.56; // 16:9 ratio
 
 type Tab = 'videos' | 'playlists' | 'about';
 
-const CHANNEL_TABS = [
-  { key: 'videos', label: 'Videos' },
-  { key: 'playlists', label: 'Playlists' },
-  { key: 'about', label: 'About' },
-];
+// i18n: moved inside component
+// const CHANNEL_TABS = [
+//   { key: 'videos', label: 'Videos' },
+//   { key: 'playlists', label: 'Playlists' },
+//   { key: 'about', label: 'About' },
+// ];
 
 function VideoCard({ video }: { video: Video }) {
   const router = useRouter();
@@ -83,7 +85,7 @@ function VideoCard({ video }: { video: Video }) {
           <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
           <Text style={styles.channelName} numberOfLines={1}>{video.channel.name}</Text>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
         </View>
         <TouchableOpacity style={styles.moreButton} hitSlop={8}>
@@ -116,7 +118,7 @@ function VideoCard({ video }: { video: Video }) {
               </View>
               <Text style={styles.featuredTitle} numberOfLines={2}>{video.title}</Text>
               <View style={styles.featuredStats}>
-                <Text style={styles.featuredStatText}>{video.viewsCount.toLocaleString()} views</Text>
+                <Text style={styles.featuredStatText}>{video.viewsCount.toLocaleString()} {t('minbar.viewCount')}</Text>
                 <Text style={styles.featuredStatDot}>•</Text>
                 <Text style={styles.featuredStatText}>{durationText}</Text>
               </View>
@@ -161,6 +163,12 @@ export default function ChannelScreen() {
   const router = useRouter();
   const { user } = useUser();
   const haptic = useHaptic();
+  const { t } = useTranslation();
+  const CHANNEL_TABS = useMemo(() => [
+    { key: 'videos', label: t('minbar.videos') },
+    { key: 'playlists', label: t('minbar.playlists') },
+    { key: 'about', label: t('common.about') },
+  ], [t]);
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('videos');
   const [refreshing, setRefreshing] = useState(false);
@@ -291,7 +299,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         </View>
         <View style={styles.subscribeContainer}>
           <GradientButton
-            label={channel?.isSubscribed ? 'Subscribed' : 'Subscribe'}
+            label={channel?.isSubscribed ? t('minbar.subscribed') : t('minbar.subscribe')}
             variant={channel?.isSubscribed ? 'secondary' : 'primary'}
             size="sm"
             onPress={handleSubscribe}
@@ -323,19 +331,19 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <View style={styles.statItemEnhanced}>
           <Icon name="users" size="sm" color={colors.emerald} />
           <Text style={styles.statNumEnhanced}>{channel?.subscribersCount.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabelEnhanced}>subscribers</Text>
+          <Text style={styles.statLabelEnhanced}>{t('channel.subscribers')}</Text>
         </View>
         <View style={styles.statDividerEnhanced} />
         <View style={styles.statItemEnhanced}>
           <Icon name="video" size="sm" color={colors.gold} />
           <Text style={styles.statNumEnhanced}>{channel?.videosCount.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabelEnhanced}>videos</Text>
+          <Text style={styles.statLabelEnhanced}>{t('minbar.videos')}</Text>
         </View>
         <View style={styles.statDividerEnhanced} />
         <View style={styles.statItemEnhanced}>
           <Icon name="eye" size="sm" color={colors.text.secondary} />
           <Text style={styles.statNumEnhanced}>{channel?.totalViews.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabelEnhanced}>views</Text>
+          <Text style={styles.statLabelEnhanced}>{t('minbar.viewCount')}</Text>
         </View>
       </View>
 
@@ -370,13 +378,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         />
       </View>
     </View>
-  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab]);
+  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab, CHANNEL_TABS]);
 
   if (channelQuery.isLoading) {
     return (
       <View style={styles.container}>
         <GlassHeader
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <Skeleton.Rect width="100%" height={BANNER_HEIGHT} borderRadius={0} style={{ marginTop: 88 }} />
         <View style={styles.skeletonContent}>
@@ -393,7 +401,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
     return (
       <View style={styles.container}>
         <GlassHeader
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <EmptyState
           icon="slash"
@@ -488,7 +496,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 </Text>
               </View>
               <View style={styles.aboutMeta}>
-                <Text style={styles.aboutMetaLabel}>Total views</Text>
+                <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
                 <Text style={styles.aboutMetaValue}>{channel.totalViews.toLocaleString()}</Text>
               </View>
             </View>
@@ -508,7 +516,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <Text style={styles.sheetTitle}>Channel options</Text>
         </View>
         <BottomSheetItem
-          label="Report channel"
+          label={t('channel.reportChannel')}
           icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowMenu(false);
@@ -516,7 +524,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           }}
         />
         <BottomSheetItem
-          label="Share channel"
+          label={t('channel.shareChannel')}
           icon={<Icon name="share" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowMenu(false);
@@ -536,10 +544,10 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       {/* Share bottom sheet */}
       <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
         <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Share channel</Text>
+          <Text style={styles.sheetTitle}>{t('channel.shareChannel')}</Text>
         </View>
         <BottomSheetItem
-          label="Share via..."
+          label={t('common.shareVia')}
           icon={<Icon name="share" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setShowShareSheet(false);

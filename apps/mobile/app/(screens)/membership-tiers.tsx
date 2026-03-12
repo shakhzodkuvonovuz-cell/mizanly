@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { monetizationApi } from '@/services/monetizationApi';
 import { usersApi } from '@/services/api';
 import type { MembershipTier, MembershipSubscription } from '@/types/monetization';
@@ -56,6 +57,7 @@ function TierCard({
   onToggle: () => void;
 }) {
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const tierColors = TIER_COLORS[tier.level];
 
   return (
@@ -109,7 +111,7 @@ function TierCard({
           style={styles.membersBadge}
         >
           <Icon name="users" size="xs" color={colors.text.tertiary} />
-          <Text style={styles.membersText}>{tier._count?.subscriptions ?? 0} members</Text>
+          <Text style={styles.membersText}>{t('monetization.members', { count: tier._count?.subscriptions ?? 0 })}</Text>
         </LinearGradient>
 
         {/* Benefits */}
@@ -133,7 +135,7 @@ function TierCard({
             style={styles.editButtonGradient}
           >
             <Icon name="pencil" size="xs" color={colors.text.secondary} />
-            <Text style={styles.editButtonText}>Edit tier</Text>
+            <Text style={styles.editButtonText}>{t('monetization.editTier')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </LinearGradient>
@@ -144,6 +146,7 @@ function TierCard({
 export default function MembershipTiersScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [tiers, setTiers] = useState<MembershipTier[]>([]);
   const [loading, setLoading] = useState(true);
@@ -164,7 +167,7 @@ export default function MembershipTiersScreen() {
       const tiersResponse = await monetizationApi.getUserTiers(userResponse.data.id);
       setTiers(tiersResponse.data);
     } catch (err) {
-      setError('Failed to load membership tiers');
+      setError(t('monetization.errors.failedToLoadTiers'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -187,18 +190,18 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      Alert.alert('Error', 'Failed to toggle tier');
+      Alert.alert(t('common.error'), t('monetization.errors.failedToToggleTier'));
     }
   }, [fetchData, haptic]);
 
   const handleCreateTier = useCallback(async () => {
     if (!currentUser) {
-      Alert.alert('Error', 'User not loaded');
+      Alert.alert(t('common.error'), t('monetization.errors.userNotLoaded'));
       return;
     }
     const price = parseFloat(newTierPrice);
     if (!newTierName.trim() || isNaN(price) || price <= 0) {
-      Alert.alert('Error', 'Please enter a valid name and price');
+      Alert.alert(t('common.error'), t('monetization.errors.enterValidNameAndPrice'));
       return;
     }
     const benefits = newTierBenefits.split('\n').filter(b => b.trim());
@@ -220,7 +223,7 @@ export default function MembershipTiersScreen() {
       fetchData();
       haptic.success();
     } catch (err) {
-      Alert.alert('Error', 'Failed to create tier');
+      Alert.alert(t('common.error'), t('monetization.errors.failedToCreateTier'));
       setIsCreating(true); // Reopen form on error
     }
   }, [currentUser, newTierName, newTierPrice, newTierBenefits, fetchData, haptic]);
@@ -235,7 +238,7 @@ export default function MembershipTiersScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Membership Tiers"
+        title={t('monetization.membershipTiers')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         rightActions={[{ icon: 'star', onPress: () => {}, accessibilityLabel: 'Tiers' }]}
       />

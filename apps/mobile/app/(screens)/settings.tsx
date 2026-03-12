@@ -191,7 +191,7 @@ export default function SettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const deleteAccountMutation = useMutation({
@@ -199,24 +199,24 @@ export default function SettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', onPress: () => signOut() },
+    Alert.alert(t('settings.signOut'), t('settings.confirmSignOut'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('settings.signOut'), onPress: () => signOut() },
     ]);
   };
 
   const handleDeactivate = () => {
     Alert.alert(
-      'Deactivate Account',
-      'Your account will be hidden. You can reactivate by signing back in. Continue?',
+      t('settings.deactivateAccount'),
+      t('settings.deactivateMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Deactivate',
+          text: t('settings.deactivate'),
           style: 'destructive',
           onPress: () => deactivateMutation.mutate(),
         },
@@ -226,21 +226,21 @@ export default function SettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all your data. This cannot be undone.',
+      t('settings.deleteAccount'),
+      t('settings.deleteMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('settings.delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Are you absolutely sure?',
-              'Type DELETE to confirm.',
+              t('settings.deleteConfirmTitle'),
+              t('settings.deleteConfirmMessage'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'Confirm Delete',
+                  text: t('settings.confirmDelete'),
                   style: 'destructive',
                   onPress: async () => {
                     await deleteAccountMutation.mutateAsync();
@@ -287,25 +287,25 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Content Preferences"
+            label={t('settings.contentPreferences')}
             icon={<Icon name="settings" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/content-settings')}
           />
           <View style={styles.divider} />
           <Row
-            label="Drafts"
+            label={t('settings.drafts')}
             icon={<Icon name="clock" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/drafts')}
           />
           <View style={styles.divider} />
           <Row
-            label="Archive"
+            label={t('settings.archive')}
             icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/archive')}
           />
           <View style={styles.divider} />
           <Row
-            label="Watch History"
+            label={t('settings.watchHistory')}
             icon={<Icon name="play" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/watch-history')}
             isLast
@@ -321,16 +321,16 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Appearance"
+            label={t('settings.appearance')}
             icon={<Icon name="eye" size="sm" color={colors.emerald} />}
-            hint="Theme, dark mode, and visual settings"
+            hint={t('settings.hints.themeDarkMode')}
             onPress={() => router.push('/(screens)/theme-settings')}
           />
           <View style={styles.divider} />
           <Row
-            label="Saved"
+            label={t('settings.saved')}
             icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
-            hint="Your saved posts and threads"
+            hint={t('settings.hints.savedPosts')}
             onPress={() => router.push('/(screens)/saved')}
             isLast
           />
@@ -345,9 +345,9 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Share Profile"
+            label={t('profile.shareProfile')}
             icon={<Icon name="share" size="sm" color={colors.emerald} />}
-            hint="Share your profile via QR code or link"
+            hint={t('settings.hints.shareProfile')}
             onPress={() => router.push('/(screens)/share-profile')}
             isLast
           />
@@ -362,24 +362,24 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Private Account"
+            label={t('settings.privateAccount')}
             icon={<Icon name="lock" size="sm" color={colors.emerald} />}
-            hint="Only approved followers see your posts"
+            hint={t('settings.hints.privateAccount')}
             value={isPrivate}
             onToggle={(v) => { setIsPrivate(v); privacyMutation.mutate({ isPrivate: v }); }}
           />
           <View style={styles.divider} />
           <Row
-            label="Follow Requests"
+            label={t('settings.followRequests')}
             icon={<Icon name="users" size="sm" color={colors.gold} />}
-            hint="Approve or deny pending requests"
+            hint={t('settings.hints.followRequests')}
             onPress={() => router.push('/(screens)/follow-requests')}
           />
           <View style={styles.divider} />
           <Row
-            label="Blocked Keywords"
+            label={t('settings.blockedKeywords')}
             icon={<Icon name="slash" size="sm" color={colors.error} />}
-            hint="Filter comments with specific words"
+            hint={t('settings.hints.blockedKeywords')}
             onPress={() => router.push('/(screens)/blocked-keywords')}
             isLast
           />
@@ -394,35 +394,35 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Likes"
+            label={t('settings.likes')}
             icon={<Icon name="heart" size="sm" color={colors.error} />}
             value={notifyLikes}
             onToggle={(v) => { setNotifyLikes(v); notifMutation.mutate({ notifyLikes: v }); }}
           />
           <View style={styles.divider} />
           <Row
-            label="Comments"
+            label={t('settings.comments')}
             icon={<Icon name="message-circle" size="sm" color={colors.emerald} />}
             value={notifyComments}
             onToggle={(v) => { setNotifyComments(v); notifMutation.mutate({ notifyComments: v }); }}
           />
           <View style={styles.divider} />
           <Row
-            label="New Followers"
+            label={t('settings.newFollowers')}
             icon={<Icon name="user-plus" size="sm" color={colors.gold} />}
             value={notifyFollows}
             onToggle={(v) => { setNotifyFollows(v); notifMutation.mutate({ notifyFollows: v }); }}
           />
           <View style={styles.divider} />
           <Row
-            label="Mentions"
+            label={t('settings.mentions')}
             icon={<Icon name="at-sign" size="sm" color={colors.emerald} />}
             value={notifyMentions}
             onToggle={(v) => { setNotifyMentions(v); notifMutation.mutate({ notifyMentions: v }); }}
           />
           <View style={styles.divider} />
           <Row
-            label="Messages"
+            label={t('settings.messages')}
             icon={<Icon name="mail" size="sm" color={colors.gold} />}
             value={notifyMessages}
             onToggle={(v) => { setNotifyMessages(v); notifMutation.mutate({ notifyMessages: v }); }}
@@ -439,9 +439,9 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Filter Sensitive Content"
+            label={t('settings.filterSensitiveContent')}
             icon={<Icon name="eye-off" size="sm" color={colors.emerald} />}
-            hint="Hide posts marked as sensitive"
+            hint={t('settings.hints.filterSensitiveContent')}
             value={sensitiveContent}
             onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
             isLast
@@ -457,9 +457,9 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Reduce Motion"
+            label={t('settings.reduceMotion')}
             icon={<Icon name="clock" size="sm" color={colors.gold} />}
-            hint="Minimize animations throughout the app"
+            hint={t('settings.hints.reduceMotion')}
             value={reducedMotion}
             onToggle={(v) => { setReducedMotion(v); accessibilityMutation.mutate({ reducedMotion: v }); }}
             isLast
@@ -475,13 +475,13 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Blocked Accounts"
+            label={t('settings.blockedAccounts')}
             icon={<Icon name="x" size="sm" color={colors.error} />}
             onPress={() => router.push('/(screens)/blocked')}
           />
           <View style={styles.divider} />
           <Row
-            label="Muted Accounts"
+            label={t('settings.mutedAccounts')}
             icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
             onPress={() => router.push('/(screens)/muted')}
             isLast
@@ -497,9 +497,9 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Circles"
+            label={t('settings.circles')}
             icon={<Icon name="users" size="sm" color={colors.emerald} />}
-            hint="Manage your close friends groups"
+            hint={t('settings.hints.circles')}
             onPress={() => router.push('/(screens)/circles')}
             isLast
           />
@@ -514,19 +514,19 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Analytics"
+            label={t('settings.analytics')}
             icon={<Icon name="bar-chart-2" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/analytics')}
           />
           <View style={styles.divider} />
           <Row
-            label="Broadcast Channels"
+            label={t('settings.broadcastChannels')}
             icon={<Icon name="radio" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/broadcast-channels')}
           />
           <View style={styles.divider} />
           <Row
-            label="My Reports"
+            label={t('settings.myReports')}
             icon={<Icon name="flag" size="sm" color={colors.error} />}
             onPress={() => router.push('/(screens)/my-reports')}
             isLast
@@ -542,21 +542,21 @@ export default function SettingsScreen() {
           style={styles.card}
         >
           <Row
-            label="Account"
+            label={t('settings.account')}
             icon={<Icon name="user" size="sm" color={colors.emerald} />}
-            hint="Manage account settings"
+            hint={t('settings.hints.account')}
             onPress={() => router.push('/(screens)/account-settings')}
           />
           <View style={styles.divider} />
           <Row
-            label="Deactivate Account"
+            label={t('settings.deactivateAccount')}
             icon={<Icon name="x" size="sm" color={colors.error} />}
             destructive
             onPress={handleDeactivate}
           />
           <View style={styles.divider} />
           <Row
-            label="Delete Account"
+            label={t('settings.deleteAccount')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={handleDeleteAccount}
@@ -573,7 +573,7 @@ export default function SettingsScreen() {
             style={styles.signOutGradient}
           >
             <Icon name="log-out" size="sm" color={colors.error} />
-            <Text style={styles.signOutLabel}>Sign Out</Text>
+            <Text style={styles.signOutLabel}>{t('settings.signOut')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -585,29 +585,29 @@ export default function SettingsScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.card}
         >
-          <Row label="Version" rightText="1.0.0" />
+          <Row label={t('settings.version')} rightText="1.0.0" />
           <View style={styles.divider} />
           <Row
-            label="Terms of Service"
+            label={t('settings.termsOfService')}
             icon={<Icon name="file-text" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/terms')}
           />
           <View style={styles.divider} />
           <Row
-            label="Privacy Policy"
+            label={t('settings.privacyPolicy')}
             icon={<Icon name="shield" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/privacy')}
           />
           <View style={styles.divider} />
           <Row
-            label="Licenses"
+            label={t('settings.licenses')}
             icon={<Icon name="layers" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/licenses')}
             isLast
           />
         </LinearGradient>
 
-        <Text style={styles.version}>Mizanly v1.0.0</Text>
+        <Text style={styles.version}>{t('settings.versionLabel')}</Text>
       </ScrollView>
     </View>
   );

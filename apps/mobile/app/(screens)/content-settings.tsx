@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
 

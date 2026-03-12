@@ -199,12 +199,12 @@ export default function SendTipScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-            <Text style={styles.successTitle}>Tip sent!</Text>
+            <Text style={styles.successTitle}>{t('monetization.tipSent')}</Text>
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <Text style={styles.successSubtitle}>
-              Your tip of ${tipAmount.toFixed(2)} has been sent to {creator?.username}
+              {t('monetization.tipSentConfirmation', { amount: tipAmount.toFixed(2), username: creator?.username })}
             </Text>
           </Animated.View>
 
@@ -214,7 +214,7 @@ export default function SendTipScreen() {
                 colors={[colors.emerald, colors.emeraldDark]}
                 style={styles.doneButton}
               >
-                <Text style={styles.doneButtonText}>Done</Text>
+                <Text style={styles.doneButtonText}>{t('common.done')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
@@ -247,9 +247,9 @@ export default function SendTipScreen() {
         />
         <EmptyState
           icon="slash"
-          title="Failed to load"
+          title={t('common.failedToLoad')}
           subtitle={error}
-          actionLabel="Retry"
+          actionLabel={t('common.retry')}
           onAction={fetchCreator}
         />
       </SafeAreaView>
@@ -289,14 +289,14 @@ export default function SendTipScreen() {
                 {creator?.isVerified && <VerifiedBadge size={13} />}
               </View>
               <Text style={styles.creatorUsername}>{creator?.username}</Text>
-              <Text style={styles.followerCount}>{formattedFollowers} followers</Text>
+              <Text style={styles.followerCount}>{t('profile.followersCount', { count: formattedFollowers })}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
 
         {/* Amount Selector */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <Text style={styles.sectionLabel}>Choose amount</Text>
+          <Text style={styles.sectionLabel}>{t('monetization.chooseAmount')}</Text>
 
           {/* Preset Grid */}
           <View style={styles.amountGrid}>
@@ -327,7 +327,7 @@ export default function SendTipScreen() {
                   setCustomAmount(cleaned);
                 }
               }}
-              placeholder="Enter custom amount"
+              placeholder={t('monetization.enterCustomAmount')}
               placeholderTextColor={colors.text.tertiary}
               keyboardType="decimal-pad"
             />
@@ -336,7 +336,7 @@ export default function SendTipScreen() {
 
         {/* Message Section */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <Text style={styles.sectionLabel}>Add a message (optional)</Text>
+          <Text style={styles.sectionLabel}>{t('monetization.addMessageOptional')}</Text>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.messageCard}
@@ -355,7 +355,7 @@ export default function SendTipScreen() {
                 style={styles.messageInput}
                 value={message}
                 onChangeText={setMessage}
-                placeholder="Add a message (optional)"
+                placeholder={t('monetization.addMessageOptional')}
                 placeholderTextColor={colors.text.tertiary}
                 multiline
                 numberOfLines={2}
@@ -376,16 +376,16 @@ export default function SendTipScreen() {
             style={[styles.summaryCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
           >
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Tip amount</Text>
+              <Text style={styles.summaryLabel}>{t('monetization.tipAmount')}</Text>
               <Text style={styles.summaryValue}>${tipAmount.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Platform fee (10%)</Text>
+              <Text style={styles.summaryLabel}>{t('monetization.platformFee')}</Text>
               <Text style={[styles.summaryValue, styles.feeValue]}>${platformFee.toFixed(2)}</Text>
             </View>
             <View style={styles.summaryDivider} />
             <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, styles.totalLabel]}>Total</Text>
+              <Text style={[styles.summaryLabel, styles.totalLabel]}>{t('monetization.total')}</Text>
               <Text style={[styles.summaryValue, styles.totalValue]}>${total.toFixed(2)}</Text>
             </View>
           </LinearGradient>
@@ -411,7 +411,7 @@ export default function SendTipScreen() {
                 <ActivityIndicator color={colors.text.primary} size="small" />
               ) : (
                 <>
-                  <Text style={styles.sendButtonText}>Send ${total.toFixed(2)}</Text>
+                  <Text style={styles.sendButtonText}>{t('monetization.sendAmount', { amount: total.toFixed(2) })}</Text>
                   <Icon name="send" size="sm" color={colors.text.primary} />
                 </>
               )}

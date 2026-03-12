@@ -20,7 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
 import type { Conversation, User } from '@/types';
 
 const MAX_GROUP_NAME = 50;
@@ -42,7 +42,7 @@ export default function ConversationInfoScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();
+  const haptic = useHaptic();\n  const { t } = useTranslation();
 
   // Admin state
   const [editNameSheetOpen, setEditNameSheetOpen] = useState(false);
@@ -180,15 +180,15 @@ export default function ConversationInfoScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Chat Info"
+          title={t('conversation.chatInfo')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
         />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load chat info"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('conversation.couldNotLoadChatInfo')}
+            subtitle={t('common.checkConnectionAndRetry')}
+            actionLabel={t('common.retry')}
             onAction={() => convoQuery.refetch()}
           />
         </View>
@@ -219,7 +219,7 @@ export default function ConversationInfoScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <GlassHeader
-        title="Chat Info"
+        title={t('conversation.chatInfo')}
         leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
       />
 
@@ -250,7 +250,7 @@ export default function ConversationInfoScreen() {
               )}
             </View>
             {isGroup && (
-              <Text style={styles.heroSub}>{convo.members.length} members</Text>
+              <Text style={styles.heroSub}>{t('conversation.members', { count: convo.members.length })}</Text>
             )}
             {!isGroup && otherMember && (
               <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
@@ -264,7 +264,7 @@ export default function ConversationInfoScreen() {
                   >
                     <Icon name="plus" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.adminActionText}>Add members</Text>
+                  <Text style={styles.adminActionText}>{t('groups.addMembers')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -284,7 +284,7 @@ export default function ConversationInfoScreen() {
               >
                 <Icon name="user" size="md" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.quickActionLabel}>Profile</Text>
+              <Text style={styles.quickActionLabel}>{t('common.profile')}</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -303,7 +303,7 @@ export default function ConversationInfoScreen() {
                 >
                   <Icon name="users" size="xs" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.sectionTitle}>Members</Text>
+                <Text style={styles.sectionTitle}>{t('conversation.membersTitle')}</Text>
               </View>
               {convo.members.map((m, index) => (
                 <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
@@ -327,14 +327,14 @@ export default function ConversationInfoScreen() {
                             colors={[colors.emerald, colors.gold]}
                             style={styles.creatorBadgeGradient}
                           >
-                            <Text style={styles.creatorBadgeText}>Creator</Text>
+                            <Text style={styles.creatorBadgeText}>{t('conversation.creator')}</Text>
                           </LinearGradient>
                         )}
                       </View>
                       <Text style={styles.memberHandle}>@{m.user.username}</Text>
                     </View>
                     {m.user.id === user?.id && (
-                      <Text style={styles.youLabel}>You</Text>
+                      <Text style={styles.youLabel}>{t('common.you')}</Text>
                     )}
                   </TouchableOpacity>
                 </Animated.View>
@@ -362,7 +362,7 @@ export default function ConversationInfoScreen() {
                       >
                         <Icon name="log-out" size="xs" color={colors.error} />
                       </LinearGradient>
-                      <Text style={styles.actionDestructive}>Leave group</Text>
+                      <Text style={styles.actionDestructive}>{t('conversation.leaveGroup')}</Text>
                     </View>
                 }
               </TouchableOpacity>
@@ -392,7 +392,7 @@ export default function ConversationInfoScreen() {
                   >
                     <Icon name="slash" size="xs" color={colors.error} />
                   </LinearGradient>
-                  <Text style={styles.actionDestructive}>Block user</Text>
+                  <Text style={styles.actionDestructive}>{t('conversation.blockUser')}</Text>
                 </View>
               </TouchableOpacity>
             )}
@@ -409,13 +409,13 @@ export default function ConversationInfoScreen() {
         }}
       >
         <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Edit group name</Text>
+          <Text style={styles.sheetTitle}>{t('conversation.editGroupName')}</Text>
           <View style={styles.nameInputRow}>
             <TextInput
               style={styles.nameInput}
               value={newGroupName}
               onChangeText={setNewGroupName}
-              placeholder="Enter new group name"
+              placeholder={t('groups.enterNewGroupName')}
               placeholderTextColor={colors.text.tertiary}
               autoFocus
               maxLength={MAX_GROUP_NAME}
@@ -434,7 +434,7 @@ export default function ConversationInfoScreen() {
             {updateGroupMutation.isPending ? (
               <ActivityIndicator color={colors.text.primary} />
             ) : (
-              <Text style={styles.sheetButtonText}>Save</Text>
+              <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
             )}
           </TouchableOpacity>
         </View>
@@ -452,12 +452,12 @@ export default function ConversationInfoScreen() {
         snapPoint={0.85}
       >
         <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Add members</Text>
+          <Text style={styles.sheetTitle}>{t('groups.addMembers')}</Text>
 
           {/* Selected members chips */}
           {selectedNewMembers.length > 0 && (
             <View style={styles.chipsContainer}>
-              <Text style={styles.chipsLabel}>Selected ({selectedNewMembers.length})</Text>
+              <Text style={styles.chipsLabel}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
               <View style={styles.chips}>
                 {selectedNewMembers.map(member => (
                   <View key={member.id} style={styles.chip}>
@@ -469,7 +469,7 @@ export default function ConversationInfoScreen() {
                       onPress={() => setSelectedNewMembers(prev => prev.filter(m => m.id !== member.id))}
                       hitSlop={4}
                       style={styles.chipRemove}
-                      accessibilityLabel="Remove member"
+                      accessibilityLabel={t('groups.removeMember')}
                     >
                       <Icon name="x" size={12} color={colors.text.secondary} />
                     </Pressable>
@@ -486,7 +486,7 @@ export default function ConversationInfoScreen() {
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search people…"
+              placeholder={t('common.searchPeople')}
               placeholderTextColor={colors.text.tertiary}
               autoCapitalize="none"
               autoCorrect={false}
