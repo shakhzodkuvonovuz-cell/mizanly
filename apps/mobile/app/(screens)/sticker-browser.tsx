@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -17,8 +19,8 @@ import { useHaptic } from '@/hooks/useHaptic';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-function PackCard({ pack, onPress, onAdd, onRemove }: { pack: StickerPack; onPress: () => void; onAdd: () => void; onRemove: () => void }) {
-  const [isAdded, setIsAdded] = useState(false); // In a real app, backend tells us if it's added. Assuming we need to mock optimistic state.
+function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
+  const [isAdded, setIsAdded] = useState(false);
   const haptic = useHaptic();
 
   const handleToggle = () => {
@@ -35,28 +37,43 @@ function PackCard({ pack, onPress, onAdd, onRemove }: { pack: StickerPack; onPre
   const coverImage = pack.coverUrl || (pack.stickers && pack.stickers.length > 0 ? pack.stickers[0].imageUrl : null);
 
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <View style={styles.coverWrap}>
-        {coverImage ? (
-          <Image source={{ uri: coverImage }} style={styles.cover} contentFit="cover" />
-        ) : (
-          <View style={[styles.cover, styles.placeholderCover]}>
-            <Icon name="smile" size={24} color={colors.text.tertiary} />
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.card}
+      >
+        <Pressable onPress={onPress}>
+          <View style={styles.coverWrap}>
+            {coverImage ? (
+              <Image source={{ uri: coverImage }} style={styles.cover} contentFit="cover" />
+            ) : (
+              <LinearGradient
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                style={[styles.cover, styles.placeholderCover]}
+              >
+                <Icon name="smile" size="md" color={colors.gold} />
+              </LinearGradient>
+            )}
           </View>
-        )}
-      </View>
-      <View style={styles.cardInfo}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{pack.name}</Text>
-        <Text style={styles.cardSubtitle}>
-          {pack.stickers?.length || 0} stickers • {pack.downloadCount || 0} downloads
-        </Text>
-      </View>
-      <Pressable style={[styles.addButton, isAdded && styles.addedButton]} onPress={handleToggle}>
-        <Text style={[styles.addButtonText, isAdded && styles.addedButtonText]}>
-          {isAdded ? "Added" : "Add"}
-        </Text>
-      </Pressable>
-    </Pressable>
+          <View style={styles.cardInfo}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{pack.name}</Text>
+            <Text style={styles.cardSubtitle}>
+              {pack.stickers?.length || 0} stickers • {pack.downloadCount || 0} downloads
+            </Text>
+          </View>
+          <Pressable onPress={handleToggle}>
+            <LinearGradient
+              colors={isAdded ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={[styles.addButton, isAdded && styles.addedButton]}
+            >
+              <Text style={[styles.addButtonText, isAdded && styles.addedButtonText]}>
+                {isAdded ? "Added" : "Add"}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -181,13 +198,21 @@ export default function StickerBrowserScreen() {
     <View style={styles.container}>
       <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
       
-      <View style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
-        <View style={styles.searchInputWrap}>
-          <Icon name="search" size={16} color={colors.text.secondary} />
+      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.searchInputWrap}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.searchIconBg}
+          >
+            <Icon name="search" size="xs" color={colors.emerald} />
+          </LinearGradient>
           <TextInput
             style={styles.searchInput}
             placeholder="Search sticker packs..."
-            placeholderTextColor={colors.text.secondary}
+            placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -195,21 +220,22 @@ export default function StickerBrowserScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
-              <Icon name="x" size={16} color={colors.text.secondary} />
+              <Icon name="x" size="xs" color={colors.text.secondary} />
             </Pressable>
           )}
-        </View>
-      </View>
+        </LinearGradient>
+      </Animated.View>
 
       <FlatList
         data={packs}
         ListHeaderComponent={renderFeatured}
-        renderItem={({ item }) => (
-          <PackCard 
-            pack={item} 
-            onPress={() => setSelectedPack(item)} 
+        renderItem={({ item, index }) => (
+          <PackCard
+            pack={item}
+            onPress={() => setSelectedPack(item)}
             onAdd={() => handleAdd(item.id)}
             onRemove={() => handleRemove(item.id)}
+            index={index}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -272,33 +298,38 @@ export default function StickerBrowserScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   searchWrap: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
-    backgroundColor: colors.dark.bg,
     zIndex: 1,
   },
   searchInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
-    borderRadius: radius.full,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
-    height: 40,
+    paddingVertical: spacing.sm,
     gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  searchIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   searchInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    height: '100%',
+    height: 40,
   },
   listContent: {
     paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.base,
   },
   featuredSection: {
     marginBottom: spacing.base,
@@ -336,9 +367,12 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     gap: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   coverWrap: {
     width: 60,

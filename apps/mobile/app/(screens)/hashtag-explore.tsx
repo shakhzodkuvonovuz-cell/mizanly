@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable 
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -54,22 +56,32 @@ export default function HashtagExploreScreen() {
   const isLoading = debouncedQuery.length > 0 ? isSearchLoading : isTrendingLoading;
   const isError = debouncedQuery.length === 0 && isTrendingError;
 
-  const renderItem = ({ item }: { item: HashtagInfo }) => (
-    <Pressable 
-      style={styles.row}
-      onPress={() => router.push(`/(screens)/search-results?q=${encodeURIComponent('#' + item.name)}` as never)}
-    >
-      <View style={styles.iconWrap}>
-        <Icon name="hash" size={20} color={colors.text.primary} />
-      </View>
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>#{item.name}</Text>
-        <Text style={styles.count}>
-          {item.postsCount?.toLocaleString() || 0} posts
-        </Text>
-      </View>
-      <Icon name="chevron-right" size={20} color={colors.text.tertiary} />
-    </Pressable>
+  const renderItem = ({ item, index }: { item: HashtagInfo; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.row}
+      >
+        <Pressable
+          style={styles.rowInner}
+          onPress={() => router.push(`/(screens)/search-results?q=${encodeURIComponent('#' + item.name)}` as never)}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.iconWrap}
+          >
+            <Icon name="hash" size="sm" color={colors.emerald} />
+          </LinearGradient>
+          <View style={styles.info}>
+            <Text style={styles.name} numberOfLines={1}>#{item.name}</Text>
+            <Text style={styles.count}>
+              {item.postsCount?.toLocaleString() || 0} <Text style={styles.countGold}>posts</Text>
+            </Text>
+          </View>
+          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 
   if (isError) {
@@ -98,13 +110,21 @@ export default function HashtagExploreScreen() {
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
       />
       
-      <View style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
-        <View style={styles.searchInputWrap}>
-          <Icon name="search" size={16} color={colors.text.secondary} />
+      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.searchInputWrap}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.searchIconBg}
+          >
+            <Icon name="search" size="xs" color={colors.emerald} />
+          </LinearGradient>
           <TextInput
             style={styles.searchInput}
             placeholder="Search hashtags..."
-            placeholderTextColor={colors.text.secondary}
+            placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
             autoCapitalize="none"
@@ -112,11 +132,11 @@ export default function HashtagExploreScreen() {
           />
           {searchQuery.length > 0 && (
             <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
-              <Icon name="x" size={16} color={colors.text.secondary} />
+              <Icon name="x" size="xs" color={colors.text.secondary} />
             </Pressable>
           )}
-        </View>
-      </View>
+        </LinearGradient>
+      </Animated.View>
 
       {isLoading ? (
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -151,48 +171,57 @@ export default function HashtagExploreScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   searchWrap: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.md,
-    backgroundColor: colors.dark.bg,
     zIndex: 1,
   },
   searchInputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.full,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
-    height: 40,
+    paddingVertical: spacing.sm,
     gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  searchIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   searchInput: {
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
-    height: '100%',
+    height: 40,
   },
   listContent: {
     paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.base,
   },
   emptyWrap: {
     marginTop: spacing['2xl'],
   },
   row: {
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  rowInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    padding: spacing.md,
   },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.dark.surface,
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -210,5 +239,8 @@ const styles = StyleSheet.create({
   count: {
     fontSize: fontSize.sm,
     color: colors.text.secondary,
+  },
+  countGold: {
+    color: colors.gold,
   },
 });

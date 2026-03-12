@@ -8,6 +8,8 @@ import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-quer
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RefreshControl } from 'react-native-gesture-handler';
 import { Image as ExpoImage } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -77,25 +79,24 @@ export default function SoundScreen() {
     }
   }, [reelsQuery]);
 
-  const renderGridItem = useCallback(({ item }: { item: Reel }) => {
+  const renderGridItem = useCallback(({ item, index }: { item: Reel; index: number }) => {
     return (
-      <Pressable
-        style={styles.gridItem}
-        onPress={() => handleReelPress(item)}
-      >
-        <ExpoImage
-          source={{ uri: item.thumbnailUrl || item.videoUrl }}
-          style={styles.thumbnail}
-          contentFit="cover"
-          transition={200}
-        />
-        {item.viewsCount > 0 && (
-          <View style={styles.viewCountOverlay}>
-            <Icon name="play" size="xs" color="#FFF" />
-            <Text style={styles.viewCountText}>{formatNumber(item.viewsCount)}</Text>
-          </View>
-        )}
-      </Pressable>
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem}>
+        <Pressable onPress={() => handleReelPress(item)}>
+          <ExpoImage
+            source={{ uri: item.thumbnailUrl || item.videoUrl }}
+            style={styles.thumbnail}
+            contentFit="cover"
+            transition={200}
+          />
+          {item.viewsCount > 0 && (
+            <View style={styles.viewCountOverlay}>
+              <Icon name="play" size="xs" color="#FFF" />
+              <Text style={styles.viewCountText}>{formatNumber(item.viewsCount)}</Text>
+            </View>
+          )}
+        </Pressable>
+      </Animated.View>
     );
   }, [handleReelPress]);
 
@@ -171,47 +172,68 @@ export default function SoundScreen() {
         columnWrapperStyle={styles.gridRow}
         contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
         ListHeaderComponent={
-          <View style={styles.headerSection}>
-            {/* Cover art */}
-            <View style={styles.coverContainer}>
-              {track.coverUrl ? (
-                <ExpoImage
-                  source={{ uri: track.coverUrl }}
-                  style={styles.cover}
-                  contentFit="cover"
-                  transition={200}
-                />
-              ) : (
-                <View style={[styles.cover, styles.coverPlaceholder]}>
-                  <Icon name="music" size="xl" color={colors.text.secondary} />
-                </View>
-              )}
-              {track.isTrending && (
-                <View style={[styles.trendingBadge, { backgroundColor: colors.emerald }]}>
-                  <Text style={styles.trendingBadgeText}>Trending</Text>
-                </View>
-              )}
-            </View>
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.headerSection}
+            >
+              {/* Cover art */}
+              <View style={styles.coverContainer}>
+                {track.coverUrl ? (
+                  <ExpoImage
+                    source={{ uri: track.coverUrl }}
+                    style={styles.cover}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <LinearGradient
+                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                    style={[styles.cover, styles.coverPlaceholder]}
+                  >
+                    <Icon name="music" size="xl" color={colors.gold} />
+                  </LinearGradient>
+                )}
+                {track.isTrending && (
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.trendingBadge}
+                  >
+                    <Text style={styles.trendingBadgeText}>Trending</Text>
+                  </LinearGradient>
+                )}
+              </View>
 
-            {/* Title + artist */}
-            <Text style={styles.trackTitle}>{track.title}</Text>
-            <Text style={styles.trackArtist}>{track.artist}</Text>
+              {/* Title + artist */}
+              <Text style={styles.trackTitle}>{track.title}</Text>
+              <Text style={styles.trackArtist}>{track.artist}</Text>
 
-            {/* Usage count */}
-            <View style={styles.usageRow}>
-              <Icon name="repeat" size="sm" color={colors.text.secondary} />
-              <Text style={styles.usageText}>
-                {formatNumber(track.usageCount)} reels
-              </Text>
-            </View>
+              {/* Stats row with icon backgrounds */}
+              <View style={styles.statsRow}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.statBadge}
+                >
+                  <Icon name="repeat" size="xs" color={colors.emerald} />
+                  <Text style={styles.statBadgeText}>{formatNumber(track.usageCount)} reels</Text>
+                </LinearGradient>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.statBadge}
+                >
+                  <Icon name="play" size="xs" color={colors.emerald} />
+                  <Text style={styles.statBadgeText}>{formatNumber(track.playsCount || 0)} plays</Text>
+                </LinearGradient>
+              </View>
 
-            {/* Use this sound button */}
-            <GradientButton
-              label="Use this sound"
-              onPress={handleUseSound}
-              style={styles.useButton}
-            />
-          </View>
+              {/* Use this sound button */}
+              <GradientButton
+                label="Use this sound"
+                onPress={handleUseSound}
+                style={styles.useButton}
+              />
+            </LinearGradient>
+          </Animated.View>
         }
         ListEmptyComponent={
           reelsQuery.isLoading ? (
@@ -252,9 +274,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing['2xl'],
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.base,
     marginBottom: spacing.lg,
+    marginTop: spacing.md,
   },
   coverContainer: {
     position: 'relative',
@@ -265,11 +290,12 @@ const styles = StyleSheet.create({
     height: COVER_SIZE,
     borderRadius: radius.md,
     backgroundColor: colors.dark.bgCard,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   coverPlaceholder: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.dark.surface,
   },
   trendingBadge: {
     position: 'absolute',
@@ -297,14 +323,22 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.md,
   },
-  usageRow: {
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  statBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
   },
-  usageText: {
-    fontSize: fontSize.sm,
+  statBadgeText: {
+    fontSize: fontSize.xs,
     color: colors.text.secondary,
   },
   useButton: {

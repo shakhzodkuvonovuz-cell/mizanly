@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -46,37 +48,57 @@ export default function TrendingAudioScreen() {
   };
 
   const renderItem = ({ item, index }: { item: AudioTrack; index: number }) => (
-    <View style={styles.row}>
-      <Text style={styles.rank}>{index + 1}</Text>
-      
-      <View style={styles.coverWrap}>
-        {item.coverUrl ? (
-          <Image source={{ uri: item.coverUrl }} style={styles.cover} contentFit="cover" />
-        ) : (
-          <View style={[styles.cover, styles.placeholderCover]}>
-            <Icon name="music" size={20} color={colors.text.tertiary} />
-          </View>
-        )}
-      </View>
-
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
-        <Text style={styles.artist} numberOfLines={1}>{item.artist}</Text>
-        <Text style={styles.stats}>
-          {formatDuration(item.duration)} • {formatUsage(item.usageCount)}
-        </Text>
-      </View>
-
-      <Pressable 
-        style={styles.useButton}
-        onPress={() => {
-          haptic.light();
-          router.push(`/(screens)/create-reel?audioId=${item.id}` as never);
-        }}
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.row}
       >
-        <Text style={styles.useButtonText}>Use</Text>
-      </Pressable>
-    </View>
+        <Text style={[styles.rank, index < 3 && styles.rankGold]}>{index + 1}</Text>
+
+        <View style={styles.coverWrap}>
+          {item.coverUrl ? (
+            <Image source={{ uri: item.coverUrl }} style={styles.cover} contentFit="cover" />
+          ) : (
+            <LinearGradient
+              colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+              style={[styles.cover, styles.placeholderCover]}
+            >
+              <Icon name="music" size="md" color={colors.gold} />
+            </LinearGradient>
+          )}
+          {/* Play button overlay */}
+          <LinearGradient
+            colors={[colors.emerald, colors.emeraldDark]}
+            style={styles.playButton}
+          >
+            <Icon name="play" size="xs" color={colors.text.primary} />
+          </LinearGradient>
+        </View>
+
+        <View style={styles.info}>
+          <Text style={styles.title} numberOfLines={1}>{item.title}</Text>
+          <Text style={styles.artist} numberOfLines={1}>{item.artist}</Text>
+          <Text style={styles.stats}>
+            {formatDuration(item.duration)} • <Text style={styles.statsGold}>{formatUsage(item.usageCount)}</Text>
+          </Text>
+        </View>
+
+        <Pressable
+          style={styles.useButton}
+          onPress={() => {
+            haptic.light();
+            router.push(`/(screens)/create-reel?audioId=${item.id}` as never);
+          }}
+        >
+          <LinearGradient
+            colors={[colors.emerald, colors.emeraldDark]}
+            style={styles.useButtonGradient}
+          >
+            <Text style={styles.useButtonText}>Use</Text>
+          </LinearGradient>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 
   if (isError) {
@@ -146,12 +168,14 @@ export default function TrendingAudioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   listContent: {
     paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
   },
   emptyWrap: {
     marginTop: spacing['2xl'],
@@ -159,22 +183,29 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
   },
   rank: {
-    fontSize: fontSize.md,
+    fontSize: fontSize.lg,
     fontWeight: '700',
     color: colors.text.tertiary,
-    width: 24,
+    width: 32,
     textAlign: 'center',
+  },
+  rankGold: {
+    color: colors.gold,
   },
   coverWrap: {
     width: 50,
     height: 50,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     overflow: 'hidden',
+    position: 'relative',
   },
   cover: {
     width: '100%',
@@ -184,6 +215,16 @@ const styles = StyleSheet.create({
   placeholderCover: {
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  playButton: {
+    position: 'absolute',
+    bottom: 2,
+    right: 2,
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     flex: 1,
@@ -204,15 +245,20 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginTop: 2,
   },
+  statsGold: {
+    color: colors.gold,
+  },
   useButton: {
-    backgroundColor: colors.active.emerald10,
+    overflow: 'hidden',
+    borderRadius: radius.full,
+  },
+  useButtonGradient: {
     paddingHorizontal: spacing.md,
     paddingVertical: 8,
-    borderRadius: radius.full,
   },
   useButtonText: {
     fontSize: fontSize.sm,
     fontWeight: '600',
-    color: colors.emerald,
+    color: colors.text.primary,
   },
 });
