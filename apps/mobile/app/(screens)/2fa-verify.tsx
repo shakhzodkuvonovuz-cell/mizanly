@@ -270,7 +270,7 @@ export default function TwoFactorVerifyScreen() {
             colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
             style={styles.helpCard}
           >
-            <Icon name="info" size="sm" color={colors.emerald} />
+            <Icon name="circle" size="sm" color={colors.emerald} />
             <View style={styles.helpTextContainer}>
               <Text style={styles.helpTitle}>Need help?</Text>
               <Text style={styles.helpDescription}>

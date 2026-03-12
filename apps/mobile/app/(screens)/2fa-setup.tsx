@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation } from '@/theme';
@@ -21,7 +22,7 @@ import { colors, spacing, radius, fontSize, animation } from '@/theme';
 const { width: screenWidth } = Dimensions.get('window');
 
 // Mock authenticator apps
-const AUTHENTICATOR_APPS = [
+const AUTHENTICATOR_APPS: { name: string; icon: IconName }[] = [
   { name: 'Google Authenticator', icon: 'globe' },
   { name: 'Authy', icon: 'lock' },
   { name: 'Microsoft Authenticator', icon: 'globe' },
@@ -451,7 +452,7 @@ export default function TwoFactorSetupScreen() {
           <BottomSheetItem
             key={app.name}
             label={app.name}
-            icon={<Icon name={app.icon as any} size="sm" color={colors.text.primary} />}
+            icon={<Icon name={app.icon as IconName} size="sm" color={colors.text.primary} />}
             onPress={() => {
               setSelectedApp(app.name);
               setShowAppPicker(false);
