@@ -21,16 +21,50 @@ const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const PRAYER_ARABIC = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
 const PRAYER_ICONS = ['moon', 'sun', 'sun', 'sun', 'sun', 'moon'] as const;
 
-// Mock prayer times (static data - real API will integrate later)
+interface Prayer {
+  name: string;
+  arabic: string;
+  icon: string;
+  time: string;
+}
 
 const CALCULATION_METHODS = [
   'Muslim World League',
   'Islamic Society of North America (ISNA)',
-  'Egyptian General Authority',
+  'Egyptian Global Authority',
   'Umm al-Qura University, Makkah',
   'University of Karachi',
   'Jafari / Shia',
 ];
+
+function timeStringToDate(timeStr: string): Date {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+function getPrayerList(prayerTimes: any): Prayer[] {
+  // prayerTimes may be flat fields or have timings object
+  const timings = prayerTimes?.timings || prayerTimes;
+  return PRAYER_NAMES.map((name, index) => ({
+    name,
+    arabic: PRAYER_ARABIC[index],
+    icon: PRAYER_ICONS[index],
+    time: timings[name.toLowerCase()] || timings[index] || '--:--',
+  }));
+}
+
+function getCurrentPrayerIndex(prayerList: Prayer[]): number {
+  const now = new Date();
+  for (let i = prayerList.length - 1; i >= 0; i--) {
+    const prayerTime = timeStringToDate(prayerList[i].time);
+    if (now >= prayerTime) {
+      return i;
+    }
+  }
+  return 0; // Default to first prayer if before Fajr
+}
 
 function CountdownTimer({ targetTime }: { targetTime: string }) {
   const [remaining, setRemaining] = useState('00:00:00');
@@ -71,7 +105,7 @@ function PrayerCard({
   isNext,
   index,
 }: {
-  prayer: typeof MOCK_PRAYER_TIMES[0];
+  prayer: Prayer;
   isCurrent: boolean;
   isNext: boolean;
   index: number;

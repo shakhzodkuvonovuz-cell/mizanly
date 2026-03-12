@@ -57,20 +57,21 @@ export default function AudioRoomScreen() {
   const [participants, setParticipants] = useState<AudioRoomParticipant[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isHandRaised, setIsHandRaised] = useState(false);
-  const [isSpeaker, setIsSpeaker] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const pulseAnim = useSharedValue(1);
 
   useEffect(() => {
+    if (!room || room.status !== 'live') {
+      pulseAnim.value = 1;
+      return;
+    }
     pulseAnim.value = withRepeat(
       withSpring(1.3, { damping: 2, stiffness: 100 }),
       -1,
       true
     );
-  }, [pulseAnim]);
+  }, [room, pulseAnim]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulseAnim.value }],
@@ -131,12 +132,9 @@ export default function AudioRoomScreen() {
 
   const currentParticipant = currentUserId ? participants.find(p => p.userId === currentUserId) : null;
 
-  useEffect(() => {
-    if (currentParticipant) {
-      setIsSpeaker(currentParticipant.role === 'host' || currentParticipant.role === 'speaker');
-      setIsHandRaised(currentParticipant.handRaised);
-    }
-  }, [currentParticipant]);
+  const isSpeaker = currentParticipant?.role === 'host' || currentParticipant?.role === 'speaker';
+  const isHandRaised = currentParticipant?.handRaised ?? false;
+  const isMicOn = !currentParticipant?.isMuted;
 
   const speakers = participants.filter(p => p.role === 'host' || p.role === 'speaker');
   const listeners = participants.filter(p => p.role === 'listener');
@@ -172,7 +170,7 @@ export default function AudioRoomScreen() {
     if (!room) return;
     try {
       await audioRoomsApi.toggleMute(room.id);
-      setIsMicOn(prev => !prev);
+      fetchData(); // refresh participants
     } catch (err) {
       Alert.alert('Error', 'Failed to toggle mute');
     }
@@ -182,7 +180,7 @@ export default function AudioRoomScreen() {
     if (!room) return;
     try {
       await audioRoomsApi.toggleHand(room.id);
-      setIsHandRaised(prev => !prev);
+      fetchData(); // refresh participants
     } catch (err) {
       Alert.alert('Error', 'Failed to raise hand');
     }
@@ -434,7 +432,7 @@ export default function AudioRoomScreen() {
                   <Text style={styles.raisedHandTime}>Raised {hand.raisedAgo}</Text>
                 </View>
                 <View style={styles.raisedHandActions}>
-                  <TouchableOpacity activeOpacity={0.8}>
+                  <TouchableOpacity activeOpacity={0.8} onPress={() => handleAcceptHand(hand.userId)}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.acceptButton}
@@ -468,7 +466,7 @@ export default function AudioRoomScreen() {
           {/* Mic Toggle */}
           <TouchableOpacity
             style={styles.controlButton}
-            onPress={() => setIsMicOn(!isMicOn)}
+            onPress={handleToggleMic}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -482,7 +480,7 @@ export default function AudioRoomScreen() {
           {/* Raise Hand */}
           <TouchableOpacity
             style={styles.controlButton}
-            onPress={() => setIsHandRaised(!isHandRaised)}
+            onPress={handleToggleHand}
             activeOpacity={0.8}
           >
             <LinearGradient
@@ -504,7 +502,7 @@ export default function AudioRoomScreen() {
           </TouchableOpacity>
 
           {/* Leave */}
-          <TouchableOpacity style={styles.controlButton} onPress={() => router.back()} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.controlButton} onPress={handleLeave} activeOpacity={0.8}>
             <LinearGradient
               colors={[colors.error, colors.error]}
               style={styles.controlButtonInner}

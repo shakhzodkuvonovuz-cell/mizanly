@@ -105,6 +105,10 @@ export default function CreateStoryScreen() {
   const [quizCorrectIndex, setQuizCorrectIndex] = useState(0);
   const [mentionUsername, setMentionUsername] = useState('');
   const [hashtagText, setHashtagText] = useState('');
+  const [sliderQuestion, setSliderQuestion] = useState('');
+  const [sliderEmoji, setSliderEmoji] = useState('📊');
+  const [sliderMin, setSliderMin] = useState('0');
+  const [sliderMax, setSliderMax] = useState('100');
 
   // ── Close friends ──
   const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
@@ -228,6 +232,23 @@ export default function CreateStoryScreen() {
     if (!hashtagText.trim()) return;
     addSticker('hashtag', { tag: hashtagText.replace('#', '') });
     setHashtagText('');
+  };
+
+  const submitSlider = () => {
+    if (!sliderQuestion.trim()) return;
+    const min = parseInt(sliderMin) || 0;
+    const max = parseInt(sliderMax) || 100;
+    if (min >= max) return;
+    addSticker('slider', {
+      emoji: sliderEmoji.trim() || '📊',
+      question: sliderQuestion.trim(),
+      minValue: min,
+      maxValue: max,
+    });
+    setSliderQuestion('');
+    setSliderEmoji('📊');
+    setSliderMin('0');
+    setSliderMax('100');
   };
 
   // ── Upload mutation ──

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -51,7 +51,7 @@ function TierCard({
   index,
   onToggle,
 }: {
-  tier: Tier;
+  tier: MembershipTier;
   index: number;
   onToggle: () => void;
 }) {
@@ -109,7 +109,7 @@ function TierCard({
           style={styles.membersBadge}
         >
           <Icon name="users" size="xs" color={colors.text.tertiary} />
-          <Text style={styles.membersText}>{tier.members} members</Text>
+          <Text style={styles.membersText}>{tier._count?.subscriptions ?? 0} members</Text>
         </LinearGradient>
 
         {/* Benefits */}
@@ -154,30 +154,82 @@ export default function MembershipTiersScreen() {
   const [newTierPrice, setNewTierPrice] = useState('');
   const [newTierBenefits, setNewTierBenefits] = useState('');
 
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      // First get current user
+      const userResponse = await usersApi.getMe();
+      setCurrentUser(userResponse.data);
+      // Then get tiers for this user
+      const tiersResponse = await monetizationApi.getUserTiers(userResponse.data.id);
+      setTiers(tiersResponse.data);
+    } catch (err) {
+      setError('Failed to load membership tiers');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1500);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
-  const toggleTier = useCallback((id: string) => {
-    setTiers(prev =>
-      prev.map(t => (t.id === id ? { ...t, isActive: !t.isActive } : t))
-    );
-  }, []);
+  const toggleTier = useCallback(async (id: string) => {
+    try {
+      await monetizationApi.toggleTierActive(id);
+      // Refetch tiers to get updated state
+      fetchData();
+      haptic.success();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to toggle tier');
+    }
+  }, [fetchData, haptic]);
 
-  const handleCreateTier = useCallback(() => {
-    haptic.success();
+  const handleCreateTier = useCallback(async () => {
+    if (!currentUser) {
+      Alert.alert('Error', 'User not loaded');
+      return;
+    }
+    const price = parseFloat(newTierPrice);
+    if (!newTierName.trim() || isNaN(price) || price <= 0) {
+      Alert.alert('Error', 'Please enter a valid name and price');
+      return;
+    }
+    const benefits = newTierBenefits.split('\n').filter(b => b.trim());
+    haptic.medium();
     setIsCreating(false);
-    setNewTierName('');
-    setNewTierPrice('');
-    setNewTierBenefits('');
-  }, [haptic]);
+    try {
+      await monetizationApi.createTier({
+        name: newTierName.trim(),
+        price,
+        benefits,
+        level: 'bronze', // default level
+        currency: 'USD',
+      });
+      // Reset form
+      setNewTierName('');
+      setNewTierPrice('');
+      setNewTierBenefits('');
+      // Refresh tiers list
+      fetchData();
+      haptic.success();
+    } catch (err) {
+      Alert.alert('Error', 'Failed to create tier');
+      setIsCreating(true); // Reopen form on error
+    }
+  }, [currentUser, newTierName, newTierPrice, newTierBenefits, fetchData, haptic]);
 
   const monthlyRevenue = tiers.reduce((sum, tier) => {
-    return tier.isActive ? sum + tier.price * tier.members : sum;
+    return tier.isActive ? sum + tier.price * (tier._count?.subscriptions ?? 0) : sum;
   }, 0);
   const totalMembers = tiers.reduce((sum, tier) => {
-    return tier.isActive ? sum + tier.members : sum;
+    return tier.isActive ? sum + (tier._count?.subscriptions ?? 0) : sum;
   }, 0);
 
   return (
