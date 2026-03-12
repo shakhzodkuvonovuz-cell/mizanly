@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl, Dimensions } from '
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@/components/ui/Icon';
+import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -17,23 +19,43 @@ interface AnalyticsResponse {
 
 const { width: screenWidth } = Dimensions.get('window');
 
-function SummaryCard({ title, value, change }: { title: string; value: string; change?: string }) {
+function SummaryCard({ title, value, change, icon, index }: { title: string; value: string; change?: string; icon: IconName; index: number }) {
   const isPositive = change?.startsWith('+');
   const isNegative = change?.startsWith('-');
   return (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardValue}>{value}</Text>
-      {change && (
-        <Text style={[
-          styles.cardChange,
-          isPositive && styles.positive,
-          isNegative && styles.negative
-        ]}>
-          {change}
-        </Text>
-      )}
-    </View>
+    <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.cardContainer}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+        style={styles.cardGradient}
+      >
+        <View style={styles.cardHeader}>
+          <LinearGradient
+            colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+            style={styles.cardIconBg}
+          >
+            <Icon name={icon} size="xs" color={colors.emerald} />
+          </LinearGradient>
+          <Text style={styles.cardTitle}>{title}</Text>
+        </View>
+        <Text style={styles.cardValue}>{value}</Text>
+        {change && (
+          <View style={styles.changeRow}>
+            <Icon
+              name={isPositive ? 'trending-up' : isNegative ? 'trending-down' : 'minus'}
+              size="xs"
+              color={isPositive ? colors.success : isNegative ? colors.error : colors.text.tertiary}
+            />
+            <Text style={[
+              styles.cardChange,
+              isPositive && styles.positive,
+              isNegative && styles.negative
+            ]}>
+              {change}
+            </Text>
+          </View>
+        )}
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -52,38 +74,67 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
   const maxViews = Math.max(...values, 1);
 
   return (
-    <View style={styles.chartContainer}>
-      <Text style={styles.sectionTitle}>Engagement over time</Text>
-      <View style={styles.chart}>
-        {dates.map((date, i) => (
-          <View key={date} style={styles.barWrapper}>
-            <View
-              style={[
-                styles.bar,
-                { height: Math.max(4, (values[i] / maxViews) * 120) }
-              ]}
-            />
-            <Text style={styles.barLabel}>
-              {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-            </Text>
-          </View>
-        ))}
+    <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.chartContainer}>
+      <View style={styles.sectionHeader}>
+        <LinearGradient
+          colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+          style={styles.sectionIconBg}
+        >
+          <Icon name="bar-chart-2" size="xs" color={colors.gold} />
+        </LinearGradient>
+        <Text style={styles.sectionTitle}>Engagement over time</Text>
       </View>
-    </View>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        style={styles.chartBg}
+      >
+        <View style={styles.chart}>
+          {dates.map((date, i) => (
+            <View key={date} style={styles.barWrapper}>
+              <LinearGradient
+                colors={[colors.emerald, colors.gold]}
+                style={[
+                  styles.bar,
+                  { height: Math.max(4, (values[i] / maxViews) * 100) }
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              />
+              <Text style={styles.barLabel}>
+                {new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </Text>
+            </View>
+          ))}
+        </View>
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
 function TopContentSection() {
   // Placeholder for top performing content
   return (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>Top Performing Content</Text>
-      <EmptyState
-        icon="bar-chart-2"
-        title="No content data yet"
-        subtitle="Your top posts, reels, and threads will appear here"
-      />
-    </View>
+    <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.section}>
+      <View style={styles.sectionHeader}>
+        <LinearGradient
+          colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+          style={styles.sectionIconBg}
+        >
+          <Icon name="trending-up" size="xs" color={colors.emerald} />
+        </LinearGradient>
+        <Text style={styles.sectionTitle}>Top Performing Content</Text>
+      </View>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        style={styles.topContentCard}
+      >
+        <EmptyState
+          icon="bar-chart-2"
+          title="No content data yet"
+          subtitle="Your top posts, reels, and threads will appear here"
+        />
+      </LinearGradient>
+    </Animated.View>
   );
 }
 
@@ -186,16 +237,22 @@ export default function AnalyticsScreen() {
                 title="Views"
                 value={formatNumber(totalViews)}
                 change={totalViews > 0 ? '+' + formatNumber(totalViews) : undefined}
+                icon="eye"
+                index={0}
               />
               <SummaryCard
                 title="Likes"
                 value={formatNumber(totalLikes)}
                 change={totalLikes > 0 ? '+' + formatNumber(totalLikes) : undefined}
+                icon="heart"
+                index={1}
               />
               <SummaryCard
                 title="Followers"
                 value={formatNumber(totalFollowers)}
                 change={totalFollowers > 0 ? '+' + formatNumber(totalFollowers) : undefined}
+                icon="users"
+                index={2}
               />
             </View>
 
@@ -214,11 +271,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.dark.bg,
   },
-  headerTitle: {
-    fontSize: fontSize.md,
-    fontFamily: fonts.bodySemiBold,
-    color: colors.text.primary,
-  },
   scroll: {
     flex: 1,
   },
@@ -230,30 +282,52 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
-  card: {
+  // Premium glassmorphism cards
+  cardContainer: {
     flex: 1,
-    backgroundColor: colors.dark.bgCard,
+  },
+  cardGradient: {
     borderRadius: radius.md,
     padding: spacing.md,
-    marginHorizontal: spacing.xs,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  cardIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   cardTitle: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     color: colors.text.secondary,
     fontFamily: fonts.bodyMedium,
-    marginBottom: spacing.xs,
   },
   cardValue: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.xl,
     color: colors.text.primary,
     fontFamily: fonts.bodyBold,
     marginBottom: spacing.xs,
   },
+  changeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
   cardChange: {
     fontSize: fontSize.xs,
     fontFamily: fonts.bodyMedium,
+    color: colors.text.tertiary,
   },
   positive: {
     color: colors.success,
@@ -261,41 +335,64 @@ const styles = StyleSheet.create({
   negative: {
     color: colors.error,
   },
+  // Section headers with icons
   section: {
     marginBottom: spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
     fontSize: fontSize.base,
     color: colors.text.primary,
     fontFamily: fonts.bodySemiBold,
-    marginBottom: spacing.md,
   },
+  // Chart with glassmorphism
   chartContainer: {
-    backgroundColor: colors.dark.bgCard,
+    marginBottom: spacing.xl,
+  },
+  chartBg: {
     borderRadius: radius.md,
     padding: spacing.md,
-    marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   chart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    height: 150,
+    height: 130,
+    paddingTop: spacing.md,
   },
   barWrapper: {
     alignItems: 'center',
     flex: 1,
   },
   bar: {
-    width: 8,
-    backgroundColor: colors.emerald,
-    borderRadius: radius.sm,
+    width: 6,
+    borderRadius: radius.full,
     marginBottom: spacing.xs,
   },
   barLabel: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
-    transform: [{ rotate: '-45deg' }],
     marginTop: spacing.xs,
+  },
+  // Top content section
+  topContentCard: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
 });

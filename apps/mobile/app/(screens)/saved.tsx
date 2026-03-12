@@ -313,9 +313,11 @@ export default function SavedScreen() {
             !savedPostsQuery.isLoading ? (
               <EmptyState icon="bookmark" title="Your saved posts will appear here" subtitle="Tap the bookmark icon on any post you love to keep it close" />
             ) : (
-              <View style={{ padding: spacing.base, gap: spacing.md }}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} />
+              <View style={styles.gridLoadingContainer}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <View key={i} style={styles.gridShimmerItem}>
+                    <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
+                  </View>
                 ))}
               </View>
             )
@@ -348,8 +350,23 @@ export default function SavedScreen() {
             !savedThreadsQuery.isLoading ? (
               <EmptyState icon="bookmark" title="Your saved threads will appear here" subtitle="Bookmark threads that inspire you to revisit anytime" />
             ) : (
-              <View style={{ padding: spacing.base }}>
-                <Skeleton.ThreadCard />
+              <View style={styles.listLoadingContainer}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <View key={i} style={styles.threadShimmerCard}>
+                    <View style={styles.threadShimmerHeader}>
+                      <Skeleton.Circle size={40} />
+                      <View style={styles.threadShimmerMeta}>
+                        <Skeleton.Rect width={120} height={14} borderRadius={radius.sm} />
+                        <Skeleton.Rect width={80} height={12} borderRadius={radius.sm} />
+                      </View>
+                    </View>
+                    <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} />
+                    <View style={styles.threadShimmerActions}>
+                      <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
+                      <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
+                    </View>
+                  </View>
+                ))}
               </View>
             )
           }
@@ -383,9 +400,11 @@ export default function SavedScreen() {
             !savedReelsQuery.isLoading ? (
               <EmptyState icon="bookmark" title="Your saved reels will appear here" subtitle="Save reels you enjoy and watch them again later" />
             ) : (
-              <View style={{ padding: spacing.base, gap: spacing.md }}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} />
+              <View style={styles.gridLoadingContainer}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <View key={i} style={styles.gridShimmerItem}>
+                    <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
+                  </View>
                 ))}
               </View>
             )
@@ -418,8 +437,17 @@ export default function SavedScreen() {
             !savedVideosQuery.isLoading ? (
               <EmptyState icon="bookmark" title="Your saved videos will appear here" subtitle="Bookmark videos to build your personal collection" />
             ) : (
-              <View style={{ padding: spacing.base }}>
-                <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
+              <View style={styles.listLoadingContainer}>
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <View key={i} style={styles.videoShimmerRow}>
+                    <Skeleton.Rect width={120} height={68} borderRadius={radius.sm} />
+                    <View style={styles.videoShimmerInfo}>
+                      <Skeleton.Rect width="80%" height={16} borderRadius={radius.sm} />
+                      <Skeleton.Rect width="50%" height={14} borderRadius={radius.sm} />
+                      <Skeleton.Rect width={40} height={12} borderRadius={radius.sm} />
+                    </View>
+                  </View>
+                ))}
               </View>
             )
           }
@@ -464,4 +492,56 @@ const styles = StyleSheet.create({
   videoTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: 2 },
   videoChannel: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: 2 },
   videoDuration: { color: colors.text.tertiary, fontSize: fontSize.xs },
+
+  // Premium loading states
+  gridLoadingContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 1,
+    gap: 1,
+  },
+  gridShimmerItem: {
+    width: GRID_ITEM,
+    height: GRID_ITEM,
+    backgroundColor: colors.dark.bgElevated,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listLoadingContainer: {
+    padding: spacing.base,
+    gap: spacing.md,
+  },
+  threadShimmerCard: {
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.sm,
+    borderWidth: 0.5,
+    borderColor: colors.dark.borderLight,
+  },
+  threadShimmerHeader: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  threadShimmerMeta: {
+    gap: spacing.xs,
+  },
+  threadShimmerActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.xs,
+  },
+  videoShimmerRow: {
+    flexDirection: 'row',
+    gap: spacing.base,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
+  },
+  videoShimmerInfo: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
 });

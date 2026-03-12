@@ -7,6 +7,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
@@ -18,31 +20,39 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 
-function UserRow({ user, isMe, onPress, onFollow }: {
+function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
   user: User;
   isMe: boolean;
   onPress: () => void;
   onFollow: () => void;
+  index?: number;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7} accessibilityLabel={`View ${user.displayName}'s profile`} accessibilityRole="link">
-      <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
-      <View style={styles.info}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{user.displayName}</Text>
-          {user.isVerified && <VerifiedBadge size={13} />}
-        </View>
-        <Text style={styles.handle}>@{user.username}</Text>
-      </View>
-      {!isMe && (
-        <GradientButton
-          label={user.isFollowing ? 'Following' : 'Follow'}
-          variant={user.isFollowing ? 'secondary' : 'primary'}
-          size="sm"
-          onPress={onFollow}
-        />
-      )}
-    </TouchableOpacity>
+    <Animated.View entering={FadeInUp.delay(index * 20).duration(300)}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityLabel={`View ${user.displayName}'s profile`} accessibilityRole="link">
+        <LinearGradient
+          colors={user.isFollowing ? ['rgba(10,123,79,0.08)', 'rgba(10,123,79,0.02)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+          style={styles.row}
+        >
+          <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showRing={user.isFollowing} ringColor={colors.emerald} />
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={[styles.name, user.isFollowing && styles.nameFollowing]}>{user.displayName}</Text>
+              {user.isVerified && <VerifiedBadge size={13} />}
+            </View>
+            <Text style={styles.handle}>@{user.username}</Text>
+          </View>
+          {!isMe && (
+            <GradientButton
+              label={user.isFollowing ? 'Following' : 'Follow'}
+              variant={user.isFollowing ? 'secondary' : 'primary'}
+              size="sm"
+              onPress={onFollow}
+            />
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -111,12 +121,13 @@ export default function FollowingScreen() {
         removeClippedSubviews={true}
         data={following}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <UserRow
             user={item}
             isMe={clerkUser?.id === item.id}
             onPress={() => router.push(`/(screens)/profile/${item.username}`)}
             onFollow={() => followMutation.mutate(item)}
+            index={index}
           />
         )}
         onEndReached={onEndReached}
@@ -161,17 +172,33 @@ export default function FollowingScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  skeletonList: { padding: spacing.base, gap: spacing.lg },
-  skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.dark.bgCard,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
 
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  nameFollowing: { color: colors.emerald },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
 
 });

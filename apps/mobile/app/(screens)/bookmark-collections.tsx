@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -34,28 +36,43 @@ export default function BookmarkCollectionsScreen() {
     setRefreshing(false);
   }, [refetch, haptic]);
 
-  const renderItem = ({ item }: { item: BookmarkCollection }) => (
-    <Pressable 
-      style={styles.card}
-      onPress={() => {
-        haptic.light();
-        router.push(`/(screens)/saved?collection=${encodeURIComponent(item.name)}` as never);
-      }}
-    >
-      <View style={styles.coverWrap}>
-        {item.thumbnailUrl ? (
-          <Image source={{ uri: item.thumbnailUrl }} style={styles.cover} contentFit="cover" />
-        ) : (
-          <View style={[styles.cover, styles.placeholderCover]}>
-            <Icon name="bookmark" size={32} color={colors.text.tertiary} />
+  const renderItem = ({ item, index }: { item: BookmarkCollection; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Pressable
+        style={styles.card}
+        onPress={() => {
+          haptic.light();
+          router.push(`/(screens)/saved?collection=${encodeURIComponent(item.name)}` as never);
+        }}
+      >
+        <LinearGradient
+          colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+          style={styles.cardGradient}
+        >
+          <View style={styles.coverWrap}>
+            {item.thumbnailUrl ? (
+              <Image source={{ uri: item.thumbnailUrl }} style={styles.cover} contentFit="cover" />
+            ) : (
+              <View style={[styles.cover, styles.placeholderCover]}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+                  style={styles.placeholderGradient}
+                >
+                  <Icon name="bookmark" size={32} color={colors.emerald} />
+                </LinearGradient>
+              </View>
+            )}
           </View>
-        )}
-      </View>
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
-        <Text style={styles.count}>{item.count} saved</Text>
-      </View>
-    </Pressable>
+          <View style={styles.info}>
+            <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+            <View style={styles.countBadge}>
+              <Icon name="bookmark" size={10} color={colors.text.tertiary} />
+              <Text style={styles.count}>{item.count} saved</Text>
+            </View>
+          </View>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   );
 
   if (isError) {
@@ -81,14 +98,21 @@ export default function BookmarkCollectionsScreen() {
     const itemWidth = (SCREEN_WIDTH - spacing.base * 2 - spacing.md) / 2;
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Saved Collections" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title="Saved Collections"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
-          <Skeleton.Rect width={itemWidth} height={itemWidth + 60} borderRadius={radius.md} />
-          <Skeleton.Rect width={itemWidth} height={itemWidth + 60} borderRadius={radius.md} />
+          {[1, 2].map((_, i) => (
+            <View key={i} style={[styles.skeletonCard, { width: itemWidth }]}>
+              <Skeleton.Rect width="100%" height={itemWidth} borderRadius={radius.md} />
+              <View style={{ padding: spacing.sm, gap: spacing.xs, marginTop: spacing.xs }}>
+                <Skeleton.Rect width="70%" height={14} borderRadius={radius.sm} />
+                <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} />
+              </View>
+            </View>
+          ))}
         </View>
       </View>
     );
@@ -127,9 +151,9 @@ export default function BookmarkCollectionsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   listContent: {
     paddingHorizontal: spacing.base,
@@ -143,16 +167,31 @@ const styles = StyleSheet.create({
   emptyWrap: {
     marginTop: spacing['2xl'],
   },
+  skeletonCard: {
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
   card: {
     flex: 1,
     maxWidth: (SCREEN_WIDTH - spacing.base * 2 - spacing.md) / 2,
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     overflow: 'hidden',
+  },
+  cardGradient: {
+    flex: 1,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
   coverWrap: {
     width: '100%',
     aspectRatio: 1,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    margin: spacing.sm,
   },
   cover: {
     width: '100%',
@@ -160,6 +199,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgElevated,
   },
   placeholderCover: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderGradient: {
+    flex: 1,
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -171,6 +216,12 @@ const styles = StyleSheet.create({
     fontSize: fontSize.base,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  countBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
   },
   count: {
     fontSize: fontSize.sm,

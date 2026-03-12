@@ -3,12 +3,15 @@ import { View, Text, StyleSheet, TextInput, Switch, Alert, ScrollView } from 're
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi, channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -110,64 +113,109 @@ export default function CreatePlaylistScreen() {
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
       />
       
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={[
-          styles.content, 
+          styles.content,
           { paddingTop: insets.top + 52 + spacing.md, paddingBottom: insets.bottom + spacing['2xl'] }
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.label}>Title</Text>
-        <View style={styles.inputWrap}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Favorite Nasheeds"
-            placeholderTextColor={colors.text.secondary}
-            value={title}
-            onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
-          />
-          <View style={styles.ringWrap}>
-             <CharCountRing current={title.length} max={MAX_TITLE} size={24} />
+        {/* Title Section */}
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <View style={styles.sectionHeader}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.sectionIcon}
+            >
+              <Icon name="edit" size="sm" color={colors.gold} />
+            </LinearGradient>
+            <Text style={styles.label}>Title</Text>
           </View>
-        </View>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputWrap}
+          >
+            <TextInput
+              style={styles.input}
+              placeholder="e.g., Favorite Nasheeds"
+              placeholderTextColor={colors.text.tertiary}
+              value={title}
+              onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
+            />
+            <View style={styles.ringWrap}>
+               <CharCountRing current={title.length} max={MAX_TITLE} size={24} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
-        <Text style={styles.label}>Description (Optional)</Text>
-        <View style={[styles.inputWrap, styles.textAreaWrap]}>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="What's this playlist about?"
-            placeholderTextColor={colors.text.secondary}
-            value={description}
-            onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-          <View style={styles.ringWrapBottom}>
-             <CharCountRing current={description.length} max={MAX_DESC} size={24} />
+        {/* Description Section */}
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <View style={styles.sectionHeader}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.sectionIcon}
+            >
+              <Icon name="file-text" size="sm" color={colors.gold} />
+            </LinearGradient>
+            <Text style={styles.label}>Description (Optional)</Text>
           </View>
-        </View>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={[styles.inputWrap, styles.textAreaWrap]}
+          >
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="What's this playlist about?"
+              placeholderTextColor={colors.text.tertiary}
+              value={description}
+              onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
+              multiline
+              numberOfLines={4}
+              textAlignVertical="top"
+            />
+            <View style={styles.ringWrapBottom}>
+               <CharCountRing current={description.length} max={MAX_DESC} size={24} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
-        <View style={styles.toggleRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.toggleTitle}>Public Playlist</Text>
-            <Text style={styles.toggleDesc}>Anyone can search for and view this playlist</Text>
-          </View>
-          <Switch 
-            value={isPublic}
-            onValueChange={setIsPublic}
-            trackColor={{ false: colors.dark.surface, true: colors.emerald }}
-            thumbColor={colors.dark.text}
-          />
-        </View>
+        {/* Privacy Toggle */}
+        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.toggleRow}
+          >
+            <View style={styles.toggleIconBg}>
+              <LinearGradient
+                colors={isPublic ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(100,100,100,0.2)', 'transparent']}
+                style={styles.toggleIconGradient}
+              >
+                <Icon name={isPublic ? "globe" : "lock"} size="sm" color={isPublic ? colors.emerald : colors.text.tertiary} />
+              </LinearGradient>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleTitle}>{isPublic ? 'Public Playlist' : 'Private Playlist'}</Text>
+              <Text style={styles.toggleDesc}>
+                {isPublic ? 'Anyone can search for and view this playlist' : 'Only you can see this playlist'}
+              </Text>
+            </View>
+            <Switch
+              value={isPublic}
+              onValueChange={setIsPublic}
+              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              thumbColor={colors.dark.text}
+            />
+          </LinearGradient>
+        </Animated.View>
 
-        <View style={styles.buttonWrap}>
-          <GradientButton 
+        {/* Create Button */}
+        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrap}>
+          <GradientButton
             title={createMutation.isPending ? "Creating..." : "Create Playlist"}
             onPress={handleCreate}
             disabled={createMutation.isPending || title.trim().length === 0 || !channelId}
           />
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -181,20 +229,33 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: spacing.base,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+    marginTop: spacing.lg,
+  },
+  sectionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   label: {
     fontSize: fontSize.sm,
     fontWeight: '500',
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    marginTop: spacing.lg,
   },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingHorizontal: spacing.md,
-    height: 52,
+    height: 56,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   textAreaWrap: {
     height: 120,
@@ -222,10 +283,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: spacing.xl,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.surface,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  toggleIconBg: {
+    marginRight: spacing.md,
+  },
+  toggleIconGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   toggleTitle: {
     fontSize: fontSize.base,

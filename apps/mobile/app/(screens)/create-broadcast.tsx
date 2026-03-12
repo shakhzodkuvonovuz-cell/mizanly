@@ -8,6 +8,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
@@ -108,88 +110,139 @@ export default function CreateBroadcastScreen() {
         contentContainerStyle={{ paddingTop: insets.top + 52 }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Avatar picker */}
-        <View style={styles.avatarSection}>
-          <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
-            {avatarUri ? (
-              <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Icon name="camera" size="xl" color={colors.text.secondary} />
-                <Text style={styles.avatarPlaceholderText}>Channel photo</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-          <Text style={styles.avatarHint}>Optional. Tap to add a channel photo.</Text>
-        </View>
+        {/* Avatar picker — Glassmorphism Card */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.avatarSection}
+          >
+            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
+              {avatarUri ? (
+                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+              ) : (
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.avatarPlaceholder}
+                >
+                  <Icon name="camera" size="xl" color={colors.emerald} />
+                  <Text style={styles.avatarPlaceholderText}>Channel photo</Text>
+                </LinearGradient>
+              )}
+            </TouchableOpacity>
+            <Text style={styles.avatarHint}>Optional. Tap to add a channel photo.</Text>
+          </LinearGradient>
+        </Animated.View>
 
-        {/* Name */}
-        <View style={styles.field}>
-          <View style={styles.fieldHeader}>
-            <Text style={styles.label}>Channel Name</Text>
-            <CharCountRing current={nameCount} max={50} size={24} />
-          </View>
-          <TextInput
-            style={styles.input}
-            value={name}
-            onChangeText={setName}
-            placeholder="e.g., Tech News Daily"
-            placeholderTextColor={colors.text.tertiary}
-            maxLength={50}
-            autoCorrect={false}
-            accessibilityLabel="Channel name"
-          />
-        </View>
-
-        {/* Slug */}
-        <View style={styles.field}>
-          <View style={styles.fieldHeader}>
-            <Text style={styles.label}>Channel URL</Text>
-            <CharCountRing current={slugCount} max={30} size={24} />
-          </View>
-          <View style={styles.slugContainer}>
-            <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
+        {/* Name — Glassmorphism Card */}
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.fieldCard}
+          >
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="edit" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.sectionLabel}>Channel Name</Text>
+              <CharCountRing current={nameCount} max={50} size={24} />
+            </View>
             <TextInput
-              style={[styles.input, styles.slugInput]}
-              value={slug}
-              onChangeText={(text) => setSlug(slugify(text))}
-              placeholder="tech-news-daily"
+              style={styles.input}
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g., Tech News Daily"
               placeholderTextColor={colors.text.tertiary}
-              maxLength={30}
-              autoCapitalize="none"
+              maxLength={50}
               autoCorrect={false}
-              accessibilityLabel="Channel URL slug"
+              accessibilityLabel="Channel name"
             />
-          </View>
-          <Text style={styles.hint}>Letters, numbers, and hyphens only. This will be your channel's web address.</Text>
-        </View>
+          </LinearGradient>
+        </Animated.View>
 
-        {/* Description */}
-        <View style={styles.field}>
-          <View style={styles.fieldHeader}>
-            <Text style={styles.label}>Description</Text>
-            <CharCountRing current={descCount} max={200} size={24} />
-          </View>
-          <TextInput
-            style={[styles.input, styles.multiline]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="What is this channel about? (optional)"
-            placeholderTextColor={colors.text.tertiary}
-            multiline
-            maxLength={200}
-            textAlignVertical="top"
-            accessibilityLabel="Channel description"
-          />
-        </View>
+        {/* Slug — Glassmorphism Card */}
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.fieldCard}
+          >
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="link" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.sectionLabel}>Channel URL</Text>
+              <CharCountRing current={slugCount} max={30} size={24} />
+            </View>
+            <View style={styles.slugContainer}>
+              <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
+              <TextInput
+                style={[styles.input, styles.slugInput]}
+                value={slug}
+                onChangeText={(text) => setSlug(slugify(text))}
+                placeholder="tech-news-daily"
+                placeholderTextColor={colors.text.tertiary}
+                maxLength={30}
+                autoCapitalize="none"
+                autoCorrect={false}
+                accessibilityLabel="Channel URL slug"
+              />
+            </View>
+            <Text style={styles.hint}>Letters, numbers, and hyphens only. This will be your channel's web address.</Text>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Description — Glassmorphism Card */}
+        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.fieldCard}
+          >
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="edit" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.sectionLabel}>Description</Text>
+              <CharCountRing current={descCount} max={200} size={24} />
+            </View>
+            <TextInput
+              style={[styles.input, styles.multiline]}
+              value={description}
+              onChangeText={setDescription}
+              placeholder="What is this channel about? (optional)"
+              placeholderTextColor={colors.text.tertiary}
+              multiline
+              maxLength={200}
+              textAlignVertical="top"
+              accessibilityLabel="Channel description"
+            />
+          </LinearGradient>
+        </Animated.View>
 
         {/* Info note */}
-        <View style={styles.note}>
-          <Icon name="info" size="sm" color={colors.gold} />
-          <Text style={styles.noteText}>
-            Channels are public. Anyone can subscribe and view your messages.
-          </Text>
-        </View>
+        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+          <LinearGradient
+            colors={['rgba(200,150,62,0.15)', 'rgba(10,123,79,0.1)']}
+            style={styles.note}
+          >
+            <LinearGradient
+              colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.noteIconBg}
+            >
+              <Icon name="info" size="xs" color={colors.gold} />
+            </LinearGradient>
+            <Text style={styles.noteText}>
+              Channels are public. Anyone can subscribe and view your messages.
+            </Text>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Create button */}
         <GradientButton
@@ -214,27 +267,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
+    padding: spacing.xl,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   avatarImage: {
     width: 120,
     height: 120,
     borderRadius: radius.full,
     backgroundColor: colors.dark.bgElevated,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   avatarPlaceholder: {
     width: 120,
     height: 120,
     borderRadius: radius.full,
-    backgroundColor: colors.dark.bgElevated,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: colors.dark.border,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    borderWidth: 2,
+    borderColor: 'rgba(10,123,79,0.3)',
+    borderStyle: 'dashed',
   },
   avatarPlaceholderText: {
-    color: colors.text.secondary,
+    color: colors.emerald,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },
@@ -245,15 +303,28 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  // Field
-  field: { marginBottom: spacing.xl },
-  fieldHeader: {
+  // Field Card
+  fieldCard: {
+    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  label: { color: colors.text.secondary, fontSize: fontSize.sm },
+  sectionIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  sectionLabel: {
+    flex: 1,
+    color: colors.text.secondary, fontSize: fontSize.sm,
+  },
   input: {
     color: colors.text.primary,
     fontSize: fontSize.base,
@@ -294,14 +365,19 @@ const styles = StyleSheet.create({
   // Note
   note: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.active.emerald10,
     borderRadius: radius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     marginTop: spacing.xl,
     marginBottom: spacing.xl,
+    borderWidth: 1,
+    borderColor: 'rgba(200,150,62,0.2)',
+  },
+  noteIconBg: {
+    width: 28, height: 28, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   noteText: {
     flex: 1,

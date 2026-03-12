@@ -5,6 +5,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -116,34 +118,55 @@ export default function SaveToPlaylistScreen() {
     router.push('/(screens)/create-playlist');
   };
 
-  const renderPlaylistItem = ({ item }: { item: Playlist }) => {
+  const renderPlaylistItem = ({ item, index }: { item: Playlist; index: number }) => {
     const isLoading = loadingPlaylistIds.has(item.id);
     const isInPlaylist = inPlaylistMap[item.id] || false;
     const inclusionLoading = inclusionQueries.find(q => q.data !== undefined && q.queryKey[1] === item.id)?.isLoading;
 
     return (
-      <TouchableOpacity
-        style={styles.row}
-        onPress={() => togglePlaylist(item)}
-        disabled={isLoading || inclusionLoading}
-      >
-        <View style={styles.rowLeft}>
-          <Icon name="layers" size="md" color={colors.text.secondary} />
-          <View style={styles.playlistInfo}>
-            <Text style={styles.playlistName} numberOfLines={1}>{item.title}</Text>
-            <Text style={styles.playlistMeta}>{item.videosCount} videos</Text>
-          </View>
-        </View>
-        {isLoading || inclusionLoading ? (
-          <ActivityIndicator size="small" color={colors.emerald} />
-        ) : (
-          <Icon
-            name={isInPlaylist ? 'check-circle' : 'circle-plus'}
-            size="md"
-            color={isInPlaylist ? colors.emerald : colors.text.tertiary}
-          />
-        )}
-      </TouchableOpacity>
+      <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+        <TouchableOpacity
+          style={styles.row}
+          onPress={() => togglePlaylist(item)}
+          disabled={isLoading || inclusionLoading}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={isInPlaylist ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.rowGradient}
+          >
+            <View style={styles.rowLeft}>
+              <LinearGradient
+                colors={isInPlaylist ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="layers" size="md" color={isInPlaylist ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+              <View style={styles.playlistInfo}>
+                <Text style={[styles.playlistName, isInPlaylist && styles.playlistNameActive]} numberOfLines={1}>{item.title}</Text>
+                <View style={styles.metaRow}>
+                  <Icon name="video" size={10} color={colors.text.tertiary} />
+                  <Text style={styles.playlistMeta}>{item.videosCount} videos</Text>
+                </View>
+              </View>
+            </View>
+            {isLoading || inclusionLoading ? (
+              <ActivityIndicator size="small" color={colors.emerald} />
+            ) : (
+              <LinearGradient
+                colors={isInPlaylist ? [colors.emerald, colors.gold] : ['transparent', 'transparent']}
+                style={styles.checkBg}
+              >
+                <Icon
+                  name={isInPlaylist ? 'check' : 'circle-plus'}
+                  size="md"
+                  color={isInPlaylist ? '#fff' : colors.text.tertiary}
+                />
+              </LinearGradient>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </Animated.View>
     );
   };
 
@@ -242,21 +265,34 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.sm,
+    gap: spacing.sm,
   },
   row: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.sm,
+  },
+  rowGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   rowLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
     flex: 1,
+  },
+  iconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   playlistInfo: {
     flex: 1,
@@ -264,12 +300,27 @@ const styles = StyleSheet.create({
   playlistName: {
     color: colors.text.primary,
     fontSize: fontSize.base,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  playlistNameActive: {
+    color: colors.emerald,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
   },
   playlistMeta: {
     color: colors.text.tertiary,
     fontSize: fontSize.sm,
-    marginTop: 2,
+  },
+  checkBg: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyState: {
     marginTop: spacing.xl,

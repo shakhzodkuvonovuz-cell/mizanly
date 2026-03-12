@@ -6,6 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -57,8 +59,14 @@ function CreateSheet({
             key={e}
             style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
             onPress={() => setEmoji(e)}
+            activeOpacity={0.8}
           >
-            <Text style={styles.emojiText}>{e}</Text>
+            <LinearGradient
+              colors={emoji === e ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
+              style={styles.emojiGradient}
+            >
+              <Text style={styles.emojiText}>{e}</Text>
+            </LinearGradient>
           </TouchableOpacity>
         ))}
       </View>
@@ -75,15 +83,21 @@ function CreateSheet({
       />
 
       <TouchableOpacity
-        style={[styles.createBtn, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
+        style={[styles.createBtnWrapper, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
         onPress={() => createMutation.mutate()}
         disabled={!name.trim() || createMutation.isPending}
+        activeOpacity={0.8}
       >
-        {createMutation.isPending ? (
-          <ActivityIndicator color={colors.text.primary} size="small" />
-        ) : (
-          <Text style={styles.createBtnText}>Create Circle</Text>
-        )}
+        <LinearGradient
+          colors={!name.trim() || createMutation.isPending ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)'] : [colors.emerald, colors.gold]}
+          style={styles.createBtnGradient}
+        >
+          {createMutation.isPending ? (
+            <ActivityIndicator color={colors.text.primary} size="small" />
+          ) : (
+            <Text style={styles.createBtnText}>Create Circle</Text>
+          )}
+        </LinearGradient>
       </TouchableOpacity>
     </BottomSheet>
   );
@@ -179,25 +193,43 @@ export default function CirclesScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-          renderItem={({ item }) => (
-            <View style={styles.circleRow}>
-              <View style={styles.circleIcon}>
-                <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
-              </View>
-              <View style={styles.circleInfo}>
-                <Text style={styles.circleName}>{item.name}</Text>
-                <Text style={styles.circleMemberCount}>
-                  {item._count?.members ?? 0} members
-                </Text>
-              </View>
-              <TouchableOpacity
-                hitSlop={8}
-                onPress={() => handleDelete(item)}
-                style={styles.deleteBtn}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.circleCard}
               >
-                <Icon name="trash" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
-            </View>
+                <View style={styles.circleIcon}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                    style={styles.circleIconGradient}
+                  >
+                    <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
+                  </LinearGradient>
+                </View>
+                <View style={styles.circleInfo}>
+                  <Text style={styles.circleName}>{item.name}</Text>
+                  <View style={styles.memberBadge}>
+                    <Icon name="users" size="xs" color={colors.text.tertiary} />
+                    <Text style={styles.circleMemberCount}>
+                      {item._count?.members ?? 0} members
+                    </Text>
+                  </View>
+                </View>
+                <TouchableOpacity
+                  hitSlop={8}
+                  onPress={() => handleDelete(item)}
+                  style={styles.deleteBtn}
+                >
+                  <LinearGradient
+                    colors={['rgba(248,81,73,0.1)', 'transparent']}
+                    style={styles.deleteBtnGradient}
+                  >
+                    <Icon name="trash" size="sm" color={colors.error} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
           )}
           ListEmptyComponent={() => (
             <EmptyState
@@ -230,23 +262,49 @@ const styles = StyleSheet.create({
 
   skeletonList: { paddingHorizontal: spacing.base, paddingTop: spacing.lg, gap: spacing.lg },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  list: { paddingHorizontal: spacing.base, paddingBottom: 40 },
+  list: { paddingHorizontal: spacing.base, paddingBottom: 40, gap: spacing.md },
 
-  circleRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  circleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   circleIcon: {
-    width: 48, height: 48, borderRadius: radius.full,
-    backgroundColor: 'rgba(10,123,79,0.12)',
-    alignItems: 'center', justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  circleIconGradient: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   circleEmoji: { fontSize: 24 },
   circleInfo: { flex: 1 },
   circleName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
-  circleMemberCount: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
-  deleteBtn: { padding: spacing.xs },
+  memberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  circleMemberCount: { color: colors.text.tertiary, fontSize: fontSize.sm },
+  deleteBtn: {
+    padding: spacing.xs,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  deleteBtnGradient: {
+    padding: spacing.sm,
+    borderRadius: radius.full,
+  },
 
 
   // Sheet content
@@ -261,22 +319,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
   },
   emojiBtn: {
-    width: 44, height: 44, borderRadius: radius.full, borderWidth: 1.5,
-    borderColor: 'transparent', alignItems: 'center', justifyContent: 'center',
+    width: 48, height: 48, borderRadius: radius.full,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  emojiBtnActive: { borderColor: colors.emerald, backgroundColor: 'rgba(10,123,79,0.1)' },
+  emojiGradient: {
+    width: 48, height: 48,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  emojiBtnActive: { borderColor: colors.emerald },
   emojiText: { fontSize: 24 },
   nameInput: {
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.md,
     color: colors.text.primary, fontSize: fontSize.base,
     marginBottom: spacing.lg, marginHorizontal: spacing.base,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  createBtn: {
-    backgroundColor: colors.emerald, borderRadius: radius.full,
-    paddingVertical: spacing.md, alignItems: 'center',
+  createBtnWrapper: {
+    borderRadius: radius.full,
+    overflow: 'hidden',
     marginHorizontal: spacing.base,
   },
-  createBtnDisabled: { backgroundColor: colors.dark.surface },
+  createBtnGradient: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+    borderRadius: radius.full,
+  },
+  createBtnDisabled: { opacity: 0.6 },
   createBtnText: { color: '#fff', fontSize: fontSize.base, fontWeight: '700' },
 });

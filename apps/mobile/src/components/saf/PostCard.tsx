@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
   withDelay,
   runOnJS,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -201,7 +202,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   if (dismissed) return null;
 
   return (
-    <View style={styles.card}>
+    <Animated.View entering={FadeInUp.duration(400).springify()} style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -389,7 +390,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           </>
         )}
       </BottomSheet>
-    </View>
+    </Animated.View>
   );
 });
 

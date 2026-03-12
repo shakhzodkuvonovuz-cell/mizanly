@@ -124,10 +124,17 @@ export default function ArchiveScreen() {
 
   const renderSkeleton = useCallback(() => {
     return (
-      <View style={styles.skeletonGrid as ViewStyle}>
-        {Array.from({ length: 9 }).map((_, i) => (
-          <Skeleton.Rect key={i} width="100%" height={100} borderRadius={radius.sm} />
-        ))}
+      <View style={styles.skeletonContainer as ViewStyle}>
+        <View style={styles.skeletonGrid as ViewStyle}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <View key={i} style={styles.skeletonItem as ViewStyle}>
+              <Skeleton.Rect width="100%" height="100%" borderRadius={radius.sm} />
+              <View style={styles.skeletonPlayOverlay as ViewStyle}>
+                <Icon name="play" size="xs" color="rgba(255,255,255,0.3)" />
+              </View>
+            </View>
+          ))}
+        </View>
       </View>
     );
   }, []);
@@ -237,11 +244,33 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     padding: spacing.xs,
   },
+  skeletonContainer: {
+    paddingTop: 100,
+    flex: 1,
+  },
   skeletonGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    padding: spacing.xs,
+    padding: GRID_GAP,
+    gap: GRID_GAP,
+  },
+  skeletonItem: {
+    width: `${(100 - (GRID_COLUMNS - 1) * 2) / GRID_COLUMNS}%`,
+    aspectRatio: 0.75,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  skeletonPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   emptyState: {
     marginTop: spacing['2xl'],

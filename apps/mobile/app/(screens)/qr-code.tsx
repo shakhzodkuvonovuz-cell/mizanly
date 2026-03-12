@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Share, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import QRCode from 'react-native-qrcode-svg';
 import { Icon } from '@/components/ui/Icon';
@@ -58,43 +60,63 @@ export default function QrCodeScreen() {
         </View>
       ) : (
       <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
-        <Text style={styles.title}>@{username}</Text>
-        <Text style={styles.subtitle}>
+        <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.title}>@{username}</Animated.Text>
+        <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.subtitle}>
           Scan this code to visit this profile directly in Mizanly
-        </Text>
+        </Animated.Text>
 
-        <View style={styles.qrContainer}>
-          <QRCode
-            value={qrValue}
-            size={220}
-            backgroundColor={colors.dark.bgCard}
-            color={colors.text.primary}
-          />
-        </View>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+            style={styles.qrContainer}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.qrInner}
+            >
+              <QRCode
+                value={qrValue}
+                size={220}
+                backgroundColor="transparent"
+                color={colors.text.primary}
+              />
+            </LinearGradient>
+          </LinearGradient>
+        </Animated.View>
 
-        <Text style={styles.hint}>
+        <Animated.Text entering={FadeInUp.delay(250).duration(400)} style={styles.hint}>
           Open the camera app on another device to scan
-        </Text>
+        </Animated.Text>
 
-        <View style={styles.buttons}>
+        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttons}>
           <Pressable
-            style={[styles.button, styles.shareButton]}
+            style={styles.button}
             onPress={handleShare}
             disabled={loading}
           >
-            <Icon name="share" size="md" color={colors.text.primary} />
-            <Text style={styles.buttonText}>Share</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+              style={styles.shareGradient}
+            >
+              <Icon name="share" size="md" color={colors.text.primary} />
+              <Text style={styles.buttonText}>Share</Text>
+            </LinearGradient>
           </Pressable>
 
           <Pressable
-            style={[styles.button, styles.saveButton]}
+            style={styles.button}
             onPress={handleSave}
             disabled={loading}
           >
-            <Icon name="share" size="md" color={colors.text.primary} />
-            <Text style={styles.buttonText}>Save</Text>
+            <LinearGradient
+              colors={[colors.emerald, colors.gold]}
+              style={styles.saveGradient}
+            >
+              <Icon name="download" size="md" color="#fff" />
+              <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+            </LinearGradient>
           </Pressable>
-        </View>
+        </Animated.View>
       </View>
       )}
     </View>
@@ -125,15 +147,15 @@ const styles = StyleSheet.create({
     maxWidth: 300,
   },
   qrContainer: {
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
-    padding: spacing.xl,
+    padding: spacing.lg,
     marginBottom: spacing.xl,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  qrInner: {
+    borderRadius: radius.md,
+    padding: spacing.xl,
   },
   hint: {
     color: colors.text.tertiary,
@@ -148,24 +170,38 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  shareGradient: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,
-    borderRadius: radius.md,
-  },
-  shareButton: {
-    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.dark.border,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
-  saveButton: {
-    backgroundColor: colors.emerald,
+  saveGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   buttonText: {
     color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
+  },
+  saveButtonText: {
+    color: '#fff',
   },
 });

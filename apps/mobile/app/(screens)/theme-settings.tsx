@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useColorScheme } 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Moon, Sun, Settings } from 'lucide-react-native';
+import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -22,27 +24,50 @@ interface ThemeRadioProps {
 function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioProps) {
   return (
     <TouchableOpacity
-      style={[styles.radio, isActive && styles.radioActive]}
       onPress={onPress}
-      activeOpacity={0.7}
+      activeOpacity={0.9}
       accessibilityLabel={`Select ${label} theme`}
       accessibilityRole="radio"
       accessibilityState={{ selected: isActive }}
     >
-      <View style={styles.radioIcon}>{icon}</View>
-      <View style={styles.radioText}>
-        <Text style={[styles.radioLabel, isActive && styles.radioLabelActive]}>{label}</Text>
-        {description && <Text style={styles.radioDescription}>{description}</Text>}
-      </View>
-      {isActive && <Icon name="check" size="sm" color={colors.emerald} />}
+      <LinearGradient
+        colors={isActive ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+        style={[styles.radio, isActive && styles.radioActive]}
+      >
+        <LinearGradient
+          colors={isActive ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)']}
+          style={styles.radioIconBg}
+        >
+          {icon}
+        </LinearGradient>
+        <View style={styles.radioText}>
+          <Text style={[styles.radioLabel, isActive && styles.radioLabelActive]}>{label}</Text>
+          {description && <Text style={styles.radioDescription}>{description}</Text>}
+        </View>
+        {isActive && (
+          <LinearGradient
+            colors={[colors.emerald, colors.gold]}
+            style={styles.checkIconBg}
+          >
+            <Icon name="check" size="xs" color="#fff" />
+          </LinearGradient>
+        )}
+      </LinearGradient>
     </TouchableOpacity>
   );
 }
 
 function ColorSwatch({ bg, border, text }: { bg: string; border: string; text: string }) {
   return (
-    <View style={[styles.swatch, { backgroundColor: bg, borderColor: border }]}>
-      <Text style={[styles.swatchText, { color: text }]}>Aa</Text>
+    <View style={styles.swatchOuter}>
+      <LinearGradient
+        colors={[colors.emerald, colors.gold]}
+        style={styles.swatchBorder}
+      >
+        <View style={[styles.swatch, { backgroundColor: bg }]}>
+          <Text style={[styles.swatchText, { color: text }]}>Aa</Text>
+        </View>
+      </LinearGradient>
     </View>
   );
 }
@@ -129,39 +154,65 @@ export default function ThemeSettingsScreen() {
       />
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        {/* Preview swatch */}
-        <View style={styles.previewCard}>
-          <Text style={styles.previewTitle}>Preview</Text>
-          <View style={styles.swatchRow}>
-            <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
-            <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={colors.text.primary} />
-            <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={colors.text.primary} />
-            <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
-          </View>
-          <Text style={styles.previewHint}>
-            {effectiveTheme === 'dark' ? 'Dark theme uses deep backgrounds with emerald highlights.' :
-             effectiveTheme === 'light' ? 'Light theme uses light backgrounds with emerald highlights.' :
-             'Theme follows your device settings.'}
-          </Text>
-        </View>
+        {/* Preview swatch with glassmorphism */}
+        <Animated.View entering={FadeInUp.duration(500)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+            style={styles.previewCard}
+          >
+            <View style={styles.previewHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                style={styles.previewIconBg}
+              >
+                <Icon name="eye" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.previewTitle}>Preview</Text>
+            </View>
+            <View style={styles.swatchRow}>
+              <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
+              <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={colors.text.primary} />
+              <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={colors.text.primary} />
+              <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
+            </View>
+            <Text style={styles.previewHint}>
+              {effectiveTheme === 'dark' ? 'Dark theme uses deep backgrounds with emerald highlights.' :
+               effectiveTheme === 'light' ? 'Light theme uses light backgrounds with emerald highlights.' :
+               'Theme follows your device settings.'}
+            </Text>
+          </LinearGradient>
+        </Animated.View>
 
-        {/* Theme selection */}
+        {/* Theme selection with glassmorphism */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Theme</Text>
-          <View style={styles.card}>
-            {options.map((opt, index) => (
-              <React.Fragment key={opt.value}>
-                {index > 0 && <View style={styles.divider} />}
-                <ThemeRadio
-                  icon={opt.icon}
-                  label={opt.label}
-                  description={opt.description}
-                  isActive={theme === opt.value}
-                  onPress={() => setTheme(opt.value)}
-                />
-              </React.Fragment>
-            ))}
+          <View style={styles.sectionHeader}>
+            <LinearGradient
+              colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+              style={styles.sectionIconBg}
+            >
+              <Icon name="settings" size="xs" color={colors.gold} />
+            </LinearGradient>
+            <Text style={styles.sectionTitle}>Theme</Text>
           </View>
+          <Animated.View entering={FadeInUp.delay(100).duration(500)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              {options.map((opt, index) => (
+                <React.Fragment key={opt.value}>
+                  {index > 0 && <View style={styles.divider} />}
+                  <ThemeRadio
+                    icon={opt.icon}
+                    label={opt.label}
+                    description={opt.description}
+                    isActive={theme === opt.value}
+                    onPress={() => setTheme(opt.value)}
+                  />
+                </React.Fragment>
+              ))}
+            </LinearGradient>
+          </Animated.View>
         </View>
 
         {/* Note */}
@@ -178,49 +229,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.dark.bg,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
-  },
-  headerTitle: {
-    color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontWeight: '700',
-  },
   body: {
     flex: 1,
   },
   bodyContent: {
     paddingBottom: 60,
   },
+  // Preview card with glassmorphism
   previewCard: {
-    backgroundColor: colors.dark.bgElevated,
     marginHorizontal: spacing.base,
     marginTop: spacing.xl,
     borderRadius: radius.lg,
     padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
+  },
+  previewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  previewIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   previewTitle: {
     color: colors.text.primary,
     fontSize: fontSize.md,
     fontWeight: '600',
-    marginBottom: spacing.md,
   },
   swatchRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: spacing.lg,
   },
+  // Color swatches with gradient borders
+  swatchOuter: {
+    padding: 2,
+    borderRadius: radius.md + 2,
+  },
+  swatchBorder: {
+    padding: 2,
+    borderRadius: radius.md + 2,
+  },
   swatch: {
     width: 52,
     height: 52,
     borderRadius: radius.md,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -233,8 +292,23 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     lineHeight: 18,
   },
+  // Section with glassmorphism
   section: {
     marginTop: spacing.xl,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  sectionIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
     color: colors.text.secondary,
@@ -242,25 +316,34 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
   },
   card: {
-    backgroundColor: colors.dark.bgElevated,
     marginHorizontal: spacing.base,
     borderRadius: radius.lg,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.sm,
   },
+  // Radio buttons with premium styling
   radio: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    marginVertical: 2,
   },
   radioActive: {
-    backgroundColor: colors.active.emerald10,
+    borderWidth: 1,
+    borderColor: 'rgba(10,123,79,0.3)',
   },
-  radioIcon: {
+  radioIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: spacing.md,
   },
   radioText: {
@@ -274,16 +357,24 @@ const styles = StyleSheet.create({
   },
   radioLabelActive: {
     color: colors.emerald,
+    fontWeight: '600',
   },
   radioDescription: {
     color: colors.text.tertiary,
     fontSize: fontSize.xs,
     marginTop: 2,
   },
+  checkIconBg: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   divider: {
     height: 0.5,
-    backgroundColor: colors.dark.border,
-    marginLeft: spacing.base,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.md,
   },
   note: {
     color: colors.text.tertiary,

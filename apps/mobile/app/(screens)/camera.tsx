@@ -1,0 +1,482 @@
+import { useState, useRef, useCallback } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Dimensions,
+  StatusBar, Animated as RNAnimated,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withSpring,
+  withTiming, withRepeat, withSequence, interpolate,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
+import { colors, spacing, radius } from '@/theme';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+type CameraMode = 'photo' | 'video' | 'story';
+
+export default function CameraScreen() {
+  const router = useRouter();
+  const [mode, setMode] = useState<CameraMode>('photo');
+  const [isRecording, setIsRecording] = useState(false);
+  const [flashOn, setFlashOn] = useState(false);
+  const [isFrontCamera, setIsFrontCamera] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+
+  const captureScale = useSharedValue(1);
+  const recordProgress = useSharedValue(0);
+  const pulseAnim = useSharedValue(1);
+
+  // Recording timer
+  const recordingInterval = useRef<NodeJS.Timeout | null>(null);
+
+  const handleCapturePress = useCallback(() => {
+    if (mode === 'video') {
+      if (isRecording) {
+        // Stop recording
+        setIsRecording(false);
+        setRecordingTime(0);
+        recordProgress.value = withTiming(0, { duration: 300 });
+        if (recordingInterval.current) {
+          clearInterval(recordingInterval.current);
+        }
+        // Navigate to create-reel with video
+        router.push('/(screens)/create-reel');
+      } else {
+        // Start recording
+        setIsRecording(true);
+        recordProgress.value = withTiming(1, { duration: 60000 }); // 60s max
+        recordingInterval.current = setInterval(() => {
+          setRecordingTime(prev => {
+            if (prev >= 60) {
+              // Auto stop at 60s
+              setIsRecording(false);
+              recordProgress.value = withTiming(0, { duration: 300 });
+              if (recordingInterval.current) clearInterval(recordingInterval.current);
+              return 0;
+            }
+            return prev + 1;
+          });
+        }, 1000);
+      }
+    } else {
+      // Photo capture
+      captureScale.value = withSequence(
+        withTiming(0.85, { duration: 100 }),
+        withSpring(1, { damping: 12, stiffness: 400 })
+      );
+      // Navigate to create-post or create-story
+      setTimeout(() => {
+        if (mode === 'story') {
+          router.push('/(screens)/create-story');
+        } else {
+          router.push('/(screens)/create-post');
+        }
+      }, 200);
+    }
+  }, [mode, isRecording, recordProgress, captureScale, router]);
+
+  const animatedCaptureStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: captureScale.value }],
+  }));
+
+  const animatedRecordRingStyle = useAnimatedStyle(() => ({
+    transform: [{
+      rotate: interpolate(
+        recordProgress.value,
+        [0, 1],
+        ['0deg', '360deg']
+      ),
+    }],
+  }));
+
+  // Pulse animation for the capture button when ready
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseAnim.value }],
+    opacity: interpolate(pulseAnim.value, [1, 1.1], [0.8, 1]),
+  }));
+
+  // Start pulse animation on mount
+  useState(() => {
+    pulseAnim.value = withRepeat(
+      withSequence(
+        withTiming(1.05, { duration: 1000 }),
+        withTiming(1, { duration: 1000 })
+      ),
+      -1,
+      true
+    );
+  });
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" hidden />
+
+      {/* Camera Preview Placeholder */}
+      <View style={styles.cameraPreview}>
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f3460']}
+          style={styles.cameraGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <View style={styles.cameraOverlay}>
+          <Text style={styles.cameraOverlayText}>Camera Preview</Text>
+          <Text style={styles.cameraOverlaySubtext}>expo-camera integration ready</Text>
+        </View>
+
+        {/* Grid lines for composition */}
+        <View style={styles.gridOverlay}>
+          <View style={styles.gridLineVertical} />
+          <View style={styles.gridLineHorizontal} />
+        </View>
+      </View>
+
+      {/* Top Controls */}
+      <SafeAreaView style={styles.topControls} edges={['top']}>
+        <View style={styles.topControlsRow}>
+          {/* Close Button */}
+          <TouchableOpacity
+            style={styles.controlPill}
+            onPress={() => router.back()}
+          >
+            <Icon name="x" size="sm" color="#fff" />
+          </TouchableOpacity>
+
+          {/* Flash Toggle */}
+          <TouchableOpacity
+            style={[styles.controlPill, flashOn && styles.controlPillActive]}
+            onPress={() => setFlashOn(!flashOn)}
+          >
+            <Icon name={flashOn ? 'eye' : 'eye-off'} size="sm" color="#fff" />
+          </TouchableOpacity>
+
+          {/* Camera Flip */}
+          <TouchableOpacity
+            style={styles.controlPill}
+            onPress={() => setIsFrontCamera(!isFrontCamera)}
+          >
+            <Icon name="repeat" size="sm" color="#fff" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Recording Timer */}
+        {isRecording && (
+          <Animated.View entering={FadeIn} style={styles.timerContainer}>
+            <View style={styles.recordingDot} />
+            <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
+          </Animated.View>
+        )}
+      </SafeAreaView>
+
+      {/* Bottom Controls */}
+      <SafeAreaView style={styles.bottomControls} edges={['bottom']}>
+        {/* Mode Selector */}
+        <View style={styles.modeSelector}>
+          {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
+            <TouchableOpacity
+              key={m}
+              style={[styles.modePill, mode === m && styles.modePillActive]}
+              onPress={() => setMode(m)}
+            >
+              <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
+                {m.charAt(0).toUpperCase() + m.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        {/* Capture Controls */}
+        <View style={styles.captureContainer}>
+          {/* Gallery Shortcut */}
+          <TouchableOpacity style={styles.galleryButton}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+              style={styles.galleryThumbnail}
+            >
+              <Icon name="image" size="sm" color={colors.text.tertiary} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Capture Button */}
+          <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
+            <TouchableOpacity
+              onPress={handleCapturePress}
+              activeOpacity={0.8}
+              style={styles.captureButtonTouch}
+            >
+              <Animated.View style={[styles.captureButtonInner, animatedCaptureStyle]}>
+                {mode === 'video' && isRecording ? (
+                  <View style={styles.stopButton} />
+                ) : (
+                  <LinearGradient
+                    colors={['#fff', '#f0f0f0']}
+                    style={styles.captureCircle}
+                  />
+                )}
+              </Animated.View>
+
+              {/* Recording Progress Ring */}
+              {mode === 'video' && isRecording && (
+                <Animated.View style={[styles.progressRing, animatedRecordRingStyle]}>
+                  <View style={styles.progressRingInner} />
+                </Animated.View>
+              )}
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Spacer for symmetry */}
+          <View style={styles.galleryButton} />
+        </View>
+
+        {/* Mode hint */}
+        <Text style={styles.modeHint}>
+          {mode === 'photo' ? 'Tap to capture photo' :
+           mode === 'video' ? 'Tap and hold to record' :
+           'Tap to capture story'}
+        </Text>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+const FadeIn = {
+  from: { opacity: 0 },
+  to: { opacity: 1 },
+  duration: 200,
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+
+  // Camera Preview
+  cameraPreview: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  cameraOverlay: {
+    alignItems: 'center',
+  },
+  cameraOverlayText: {
+    color: 'rgba(255,255,255,0.8)',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  cameraOverlaySubtext: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 14,
+    marginTop: spacing.sm,
+  },
+
+  // Grid overlay
+  gridOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  gridLineVertical: {
+    position: 'absolute',
+    left: '33.33%',
+    right: '33.33%',
+    top: 0,
+    bottom: 0,
+    borderLeftWidth: 0.5,
+    borderRightWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  gridLineHorizontal: {
+    position: 'absolute',
+    top: '33.33%',
+    bottom: '33.33%',
+    left: 0,
+    right: 0,
+    borderTopWidth: 0.5,
+    borderBottomWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+
+  // Top Controls
+  topControls: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  topControlsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+  },
+  controlPill: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  controlPillActive: {
+    backgroundColor: colors.emerald,
+  },
+
+  // Recording Timer
+  timerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignSelf: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  recordingDot: {
+    width: 8,
+    height: 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.error,
+    marginRight: spacing.sm,
+  },
+  timerText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    fontFamily: 'monospace',
+  },
+
+  // Bottom Controls
+  bottomControls: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingBottom: spacing.xl,
+  },
+
+  // Mode Selector
+  modeSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  modePill: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  modePillActive: {
+    backgroundColor: colors.emerald,
+  },
+  modeText: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  modeTextActive: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+
+  // Capture Controls
+  captureContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+
+  // Gallery Button
+  galleryButton: {
+    width: 48,
+    height: 48,
+  },
+  galleryThumbnail: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.sm,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.2)',
+  },
+
+  // Capture Button
+  captureButtonOuter: {
+    width: 84,
+    height: 84,
+    borderRadius: radius.full,
+    borderWidth: 4,
+    borderColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureButtonTouch: {
+    width: 72,
+    height: 72,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureButtonInner: {
+    width: 72,
+    height: 72,
+    borderRadius: radius.full,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  captureCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+  },
+  stopButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 4,
+    backgroundColor: colors.error,
+  },
+
+  // Recording Progress Ring
+  progressRing: {
+    position: 'absolute',
+    width: 84,
+    height: 84,
+    borderRadius: radius.full,
+    borderWidth: 4,
+    borderColor: colors.error,
+    borderTopColor: 'transparent',
+  },
+  progressRingInner: {
+    width: 76,
+    height: 76,
+    borderRadius: radius.full,
+  },
+
+  // Mode hint
+  modeHint: {
+    color: 'rgba(255,255,255,0.6)',
+    fontSize: 13,
+    textAlign: 'center',
+  },
+});

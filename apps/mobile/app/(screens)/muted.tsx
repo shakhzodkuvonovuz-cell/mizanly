@@ -6,6 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -106,24 +108,32 @@ export default function MutedScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-          renderItem={({ item }) => {
+          renderItem={({ item, index }) => {
             const u = item.muted;
             return (
-              <View style={styles.row}>
-                <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
-                <View style={styles.info}>
-                  <Text style={styles.name}>{u.displayName}</Text>
-                  <Text style={styles.username}>@{u.username}</Text>
-                </View>
-                <GradientButton
-                  label="Unmute"
-                  variant="secondary"
-                  size="sm"
-                  onPress={() => unmuteMutation.mutate(u.id)}
-                  loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                  disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                />
-              </View>
+              <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.row}
+                >
+                  <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
+                  <View style={styles.info}>
+                    <Text style={styles.name}>{u.displayName}</Text>
+                    <View style={styles.mutedBadge}>
+                      <Icon name="volume-x" size={10} color={colors.text.tertiary} />
+                      <Text style={styles.username}>@{u.username}</Text>
+                    </View>
+                  </View>
+                  <GradientButton
+                    label="Unmute"
+                    variant="secondary"
+                    size="sm"
+                    onPress={() => unmuteMutation.mutate(u.id)}
+                    loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+                    disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+                  />
+                </LinearGradient>
+              </Animated.View>
             );
           }}
           ListFooterComponent={() =>
@@ -152,21 +162,34 @@ export default function MutedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
-  list: { paddingBottom: 40 },
+  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: 40 },
   skeletonList: { padding: spacing.base, gap: spacing.md },
   skeletonRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
 
   row: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginBottom: spacing.sm,
   },
   info: { flex: 1 },
-  name: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700' },
-  username: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  mutedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  username: { color: colors.text.secondary, fontSize: fontSize.sm },
   unmuteBtn: {
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 1,

@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -20,47 +22,63 @@ import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
 
 const CLOSE_FRIENDS_CIRCLE_NAME = 'Close Friends';
 
-function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled }: {
+function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index = 0 }: {
   user: User;
   isMe: boolean;
   isCloseFriend: boolean;
   onToggle: (userId: string, newValue: boolean) => void;
   onPress: () => void;
   disabled: boolean;
+  index?: number;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
-      <View style={styles.info}>
-        <View style={styles.nameRow}>
-          <Text style={styles.name}>{user.displayName}</Text>
-          {user.isVerified && <VerifiedBadge size={13} />}
-        </View>
-        <Text style={styles.handle}>@{user.username}</Text>
-      </View>
-      {!isMe && (
-        <View style={styles.actions}>
-          {isCloseFriend && (
-            <TouchableOpacity
-              onPress={() => onToggle(user.id, false)}
-              hitSlop={8}
-              style={styles.removeBtn}
-              disabled={disabled}
-            >
-              <Icon name="x" size="sm" color={disabled ? colors.text.tertiary : colors.error} />
-            </TouchableOpacity>
+    <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+        <LinearGradient
+          colors={isCloseFriend ? ['rgba(10,123,79,0.12)', 'rgba(10,123,79,0.04)'] : ['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
+          style={styles.row}
+        >
+          <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showRing={isCloseFriend} ringColor={colors.emerald} />
+          <View style={styles.info}>
+            <View style={styles.nameRow}>
+              <Text style={[styles.name, isCloseFriend && styles.nameActive]}>{user.displayName}</Text>
+              {user.isVerified && <VerifiedBadge size={13} />}
+              {isCloseFriend && (
+                <LinearGradient
+                  colors={[colors.emerald, colors.gold]}
+                  style={styles.closeFriendBadge}
+                >
+                  <Icon name="heart" size={10} color="#fff" />
+                </LinearGradient>
+              )}
+            </View>
+            <Text style={styles.handle}>@{user.username}</Text>
+          </View>
+          {!isMe && (
+            <View style={styles.actions}>
+              {isCloseFriend && (
+                <TouchableOpacity
+                  onPress={() => onToggle(user.id, false)}
+                  hitSlop={8}
+                  style={styles.removeBtn}
+                  disabled={disabled}
+                >
+                  <Icon name="x" size="sm" color={disabled ? colors.text.tertiary : colors.error} />
+                </TouchableOpacity>
+              )}
+              <Switch
+                value={isCloseFriend}
+                onValueChange={(value) => onToggle(user.id, value)}
+                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                thumbColor={isCloseFriend ? '#fff' : colors.text.secondary}
+                ios_backgroundColor={colors.dark.border}
+                disabled={disabled}
+              />
+            </View>
           )}
-          <Switch
-            value={isCloseFriend}
-            onValueChange={(value) => onToggle(user.id, value)}
-            trackColor={{ false: colors.dark.border, true: colors.emerald }}
-            thumbColor={isCloseFriend ? '#fff' : colors.text.secondary}
-            ios_backgroundColor={colors.dark.border}
-            disabled={disabled}
-          />
-        </View>
-      )}
-    </TouchableOpacity>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -256,41 +274,56 @@ export default function CloseFriendsScreen() {
         }
       />
 
-      {/* Search Bar */}
+      {/* Search Bar with Glassmorphism */}
       <View style={[styles.searchContainer, { marginTop: headerHeight + spacing.md }]}>
-        <Icon name="search" size="sm" color={colors.text.secondary} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search followers..."
-          placeholderTextColor={colors.text.tertiary}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {searchQuery.length > 0 && (
-          <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-            <Icon name="x" size="sm" color={colors.text.secondary} />
-          </Pressable>
-        )}
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.searchGradient}
+        >
+          <Icon name="search" size="sm" color={colors.text.secondary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search followers..."
+            placeholderTextColor={colors.text.tertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+              <Icon name="x" size="sm" color={colors.text.secondary} />
+            </Pressable>
+          )}
+        </LinearGradient>
       </View>
 
-      {/* Stats bar */}
-      <View style={styles.statsBar}>
-        <Text style={styles.statsText}>
-          {closeFriendsInList.length} of {filteredFollowers.length} shown
-        </Text>
-        <Text style={styles.statsText}>
-          {memberIds.length} total close friends
-        </Text>
-      </View>
+      {/* Stats bar with Glassmorphism */}
+      <LinearGradient
+        colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+        style={styles.statsBar}
+      >
+        <View style={styles.statItem}>
+          <Icon name="users" size="xs" color={colors.emerald} />
+          <Text style={styles.statsText}>
+            {closeFriendsInList.length} of {filteredFollowers.length} shown
+          </Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statItem}>
+          <Icon name="heart" size="xs" color={colors.gold} />
+          <Text style={[styles.statsText, styles.statsTextAccent]}>
+            {memberIds.length} close friends
+          </Text>
+        </View>
+      </LinearGradient>
 
       {/* List */}
       <FlatList
           removeClippedSubviews={true}
         data={filteredFollowers}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <UserRow
             user={item}
             isMe={clerkUser?.id === item.id}
@@ -298,6 +331,7 @@ export default function CloseFriendsScreen() {
             onToggle={toggleCloseFriend}
             onPress={() => router.push(`/(screens)/profile/${item.username}`)}
             disabled={!isReady || toggleMemberMutation.isPending}
+            index={index}
           />
         )}
         onEndReached={onEndReached}
@@ -346,15 +380,20 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodySemiBold,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
-    borderRadius: radius.md,
     marginHorizontal: spacing.base,
     marginVertical: spacing.md,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+  },
+  searchGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     gap: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   searchInput: {
     flex: 1,
@@ -365,12 +404,31 @@ const styles = StyleSheet.create({
   statsBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
+    alignItems: 'center',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(10,123,79,0.2)',
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statDivider: {
+    width: 1,
+    height: 20,
+    backgroundColor: 'rgba(10,123,79,0.3)',
   },
   statsText: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
+  },
+  statsTextAccent: {
+    color: colors.gold,
+    fontWeight: '600',
   },
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: {
@@ -382,10 +440,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.base,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  nameActive: {
+    color: colors.emerald,
+  },
+  closeFriendBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    marginLeft: spacing.xs,
   },
   actions: {
     flexDirection: 'row',
@@ -394,6 +464,8 @@ const styles = StyleSheet.create({
   },
   removeBtn: {
     padding: spacing.xs,
+    backgroundColor: 'rgba(248,81,73,0.1)',
+    borderRadius: radius.full,
   },
   info: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

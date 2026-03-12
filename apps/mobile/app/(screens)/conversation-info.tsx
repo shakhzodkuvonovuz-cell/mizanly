@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -222,130 +224,180 @@ export default function ConversationInfoScreen() {
       />
 
       <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
-        {/* Avatar + name */}
-        <View style={styles.hero}>
-          <TouchableOpacity onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
-            <Avatar uri={avatarUri} name={name} size="2xl" />
+        {/* Avatar + name — Glassmorphism Card */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.heroCard}
+          >
+            <TouchableOpacity onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
+              <Avatar uri={avatarUri} name={name} size="2xl" />
+              {isGroup && isCreator && (
+                <LinearGradient
+                  colors={[colors.emerald, colors.emeraldDark]}
+                  style={styles.avatarOverlayGradient}
+                >
+                  <Icon name="edit" size={16} color={colors.text.primary} />
+                </LinearGradient>
+              )}
+            </TouchableOpacity>
+            <View style={styles.nameRow}>
+              <Text style={styles.heroName}>{name}</Text>
+              {isGroup && isCreator && (
+                <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
+                  <Icon name="edit" size={16} color={colors.text.secondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+            {isGroup && (
+              <Text style={styles.heroSub}>{convo.members.length} members</Text>
+            )}
+            {!isGroup && otherMember && (
+              <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
+            )}
             {isGroup && isCreator && (
-              <View style={styles.avatarOverlay}>
-                <Icon name="edit" size={16} color={colors.text.primary} />
+              <View style={styles.adminActions}>
+                <TouchableOpacity style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.adminActionIconBg}
+                  >
+                    <Icon name="plus" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.adminActionText}>Add members</Text>
+                </TouchableOpacity>
               </View>
             )}
-          </TouchableOpacity>
-          <View style={styles.nameRow}>
-            <Text style={styles.heroName}>{name}</Text>
-            {isGroup && isCreator && (
-              <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
-                <Icon name="edit" size={16} color={colors.text.secondary} />
-              </TouchableOpacity>
-            )}
-          </View>
-          {isGroup && (
-            <Text style={styles.heroSub}>{convo.members.length} members</Text>
-          )}
-          {!isGroup && otherMember && (
-            <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
-          )}
-          {isGroup && isCreator && (
-            <View style={styles.adminActions}>
-              <TouchableOpacity style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
-                <Icon name="plus" size="sm" color={colors.emerald} />
-                <Text style={styles.adminActionText}>Add members</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Quick actions */}
         {!isGroup && otherMember && (
-          <View style={styles.quickActions}>
+          <Animated.View entering={FadeInUp.delay(80).duration(400)} style={styles.quickActions}>
             <TouchableOpacity
               style={styles.quickAction}
               onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
             >
-              <Icon name="user" size={28} color={colors.text.primary} />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.quickActionIconBg}
+              >
+                <Icon name="user" size="md" color={colors.emerald} />
+              </LinearGradient>
               <Text style={styles.quickActionLabel}>Profile</Text>
             </TouchableOpacity>
-          </View>
+          </Animated.View>
         )}
 
         {/* Members list (group only) */}
         {isGroup && (
-          <View style={[styles.section, styles.optionsCard]}>
-            <Text style={styles.sectionTitle}>Members</Text>
-            {convo.members.map((m) => (
-              <TouchableOpacity
-                key={m.user.id}
-                style={styles.memberRow}
-                onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
-                onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
-                delayLongPress={500}
-                activeOpacity={0.7}
-                accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
-                accessibilityHint="Press to view profile, long press to view member actions"
-                accessibilityRole="button"
-              >
-                <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
-                <View style={styles.memberInfo}>
-                  <View style={styles.memberNameRow}>
-                    <Text style={styles.memberName}>{m.user.displayName}</Text>
-                    {m.user.isVerified && <VerifiedBadge size={13} />}
-                    {m.user.id === convo.createdById && (
-                      <View style={styles.creatorBadge}>
-                        <Text style={styles.creatorBadgeText}>Creator</Text>
+          <Animated.View entering={FadeInUp.delay(160).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={[styles.section, styles.optionsCardGlass]}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="users" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>Members</Text>
+              </View>
+              {convo.members.map((m, index) => (
+                <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
+                  <TouchableOpacity
+                    style={styles.memberRow}
+                    onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
+                    onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
+                    delayLongPress={500}
+                    activeOpacity={0.7}
+                    accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
+                    accessibilityHint="Press to view profile, long press to view member actions"
+                    accessibilityRole="button"
+                  >
+                    <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
+                    <View style={styles.memberInfo}>
+                      <View style={styles.memberNameRow}>
+                        <Text style={styles.memberName}>{m.user.displayName}</Text>
+                        {m.user.isVerified && <VerifiedBadge size={13} />}
+                        {m.user.id === convo.createdById && (
+                          <LinearGradient
+                            colors={[colors.emerald, colors.gold]}
+                            style={styles.creatorBadgeGradient}
+                          >
+                            <Text style={styles.creatorBadgeText}>Creator</Text>
+                          </LinearGradient>
+                        )}
                       </View>
+                      <Text style={styles.memberHandle}>@{m.user.username}</Text>
+                    </View>
+                    {m.user.id === user?.id && (
+                      <Text style={styles.youLabel}>You</Text>
                     )}
-                  </View>
-                  <Text style={styles.memberHandle}>@{m.user.username}</Text>
-                </View>
-                {m.user.id === user?.id && (
-                  <Text style={styles.youLabel}>You</Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
+                  </TouchableOpacity>
+                </Animated.View>
+              ))}
+            </LinearGradient>
+          </Animated.View>
         )}
 
         {/* Actions */}
-        <View style={styles.optionsCard}>
-          {isGroup && !isCreator && (
-            <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
-              {leaveGroupMutation.isPending
-                ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <ActivityIndicator color={colors.error} />
-                  </View>
-                : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                    <Icon name="log-out" size="sm" color={colors.error} />
-                    <Text style={styles.actionDestructive}>Leave group</Text>
-                  </View>
-              }
-            </TouchableOpacity>
-          )}
-          {!isGroup && (
-            <TouchableOpacity
-              style={styles.actionRow}
-              onPress={() => {
-                const other = convo?.members.find((m) => m.user.id !== user?.id);
-                if (!other) return;
-                Alert.alert('Block user', 'Are you sure?', [
-                  { text: 'Cancel', style: 'cancel' },
-                  {
-                    text: 'Block', style: 'destructive', onPress: () => {
-                      blocksApi.block(other.user.id)
-                        .then(() => router.replace('/(tabs)/risalah'))
-                        .catch(() => Alert.alert('Error', 'Could not block user.'));
+        <Animated.View entering={FadeInUp.delay(240).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.optionsCardGlass}
+          >
+            {isGroup && !isCreator && (
+              <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
+                {leaveGroupMutation.isPending
+                  ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <ActivityIndicator color={colors.error} />
+                    </View>
+                  : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                      <LinearGradient
+                        colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                        style={styles.actionIconBg}
+                      >
+                        <Icon name="log-out" size="xs" color={colors.error} />
+                      </LinearGradient>
+                      <Text style={styles.actionDestructive}>Leave group</Text>
+                    </View>
+                }
+              </TouchableOpacity>
+            )}
+            {!isGroup && (
+              <TouchableOpacity
+                style={styles.actionRow}
+                onPress={() => {
+                  const other = convo?.members.find((m) => m.user.id !== user?.id);
+                  if (!other) return;
+                  Alert.alert('Block user', 'Are you sure?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Block', style: 'destructive', onPress: () => {
+                        blocksApi.block(other.user.id)
+                          .then(() => router.replace('/(tabs)/risalah'))
+                          .catch(() => Alert.alert('Error', 'Could not block user.'));
+                      },
                     },
-                  },
-                ]);
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Icon name="slash" size="sm" color={colors.error} />
-                <Text style={styles.actionDestructive}>Block user</Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        </View>
+                  ]);
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient
+                    colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                    style={styles.actionIconBg}
+                  >
+                    <Icon name="slash" size="xs" color={colors.error} />
+                  </LinearGradient>
+                  <Text style={styles.actionDestructive}>Block user</Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </LinearGradient>
+        </Animated.View>
       </ScrollView>
 
       {/* Edit group name BottomSheet */}
@@ -558,27 +610,59 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
   },
+  optionsCardGlass: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden' as const,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+  },
 
-  hero: { alignItems: 'center', paddingVertical: spacing.xl, gap: spacing.sm },
+  heroCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.xl,
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   heroName: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700' },
   heroSub: { color: colors.text.secondary, fontSize: fontSize.sm },
 
   quickActions: { flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.lg },
   quickAction: { alignItems: 'center', gap: spacing.xs, paddingHorizontal: spacing.xl },
+  quickActionIconBg: {
+    width: 44, height: 44, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
   quickActionLabel: { color: colors.text.secondary, fontSize: fontSize.xs },
 
   section: {
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,
     marginTop: spacing.lg,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sectionIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
   sectionTitle: {
     color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     textTransform: 'uppercase', letterSpacing: 0.5,
   },
   memberRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
+    paddingVertical: spacing.md,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   memberInfo: { flex: 1 },
@@ -587,28 +671,42 @@ const styles = StyleSheet.create({
   memberHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
   youLabel: { color: colors.text.tertiary, fontSize: fontSize.xs },
   creatorBadge: {
-    backgroundColor: colors.active.gold10, // gold with 10% opacity
+    backgroundColor: colors.active.gold10,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  creatorBadgeGradient: {
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
   },
   creatorBadgeText: {
-    color: colors.gold,
+    color: colors.text.primary,
     fontSize: fontSize.xs,
     fontWeight: '600',
   },
 
   actionRow: {
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md + 2,
+    paddingVertical: spacing.md + 2,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
   actionDestructive: { color: colors.error, fontSize: fontSize.base },
+  actionIconBg: {
+    width: 36, height: 36, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   // Admin styles
   avatarOverlay: {
     position: 'absolute', bottom: 0, right: 0,
     width: 32, height: 32, borderRadius: radius.full,
     backgroundColor: colors.emerald, alignItems: 'center', justifyContent: 'center',
+  },
+  avatarOverlayGradient: {
+    position: 'absolute', bottom: 0, right: 0,
+    width: 32, height: 32, borderRadius: radius.full,
+    alignItems: 'center', justifyContent: 'center',
   },
   nameRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
@@ -621,7 +719,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   adminAction: {
-    alignItems: 'center', gap: spacing.xs,
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+  },
+  adminActionIconBg: {
+    width: 32, height: 32, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   adminActionText: {
     color: colors.emerald, fontSize: fontSize.sm, fontWeight: '500',

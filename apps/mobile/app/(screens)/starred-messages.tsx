@@ -5,6 +5,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -70,55 +72,67 @@ export default function StarredMessagesScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <Pressable 
-      style={styles.messageCard}
-      accessibilityLabel={`Starred message from ${item.sender.displayName}: ${item.content || 'Media'}`}
-      accessibilityRole="none"
-    >
-      <Avatar
-        uri={item.sender.avatarUrl}
-        name={item.sender.displayName}
-        size="sm"
-        showOnline={false}
-      />
-      <View style={styles.messageContent}>
-        <View style={styles.messageHeader}>
-          <Text style={styles.senderName}>{item.sender.displayName}</Text>
-          <Text style={styles.timestamp}>
-            {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-        {item.content && <Text style={styles.content}>{item.content}</Text>}
-        {item.mediaUrl && (
-          <View style={styles.mediaPlaceholder}>
-            <Icon name="image" size={20} color={colors.text.secondary} />
-            <Text style={styles.mediaText}>Media</Text>
-          </View>
-        )}
-        <View style={styles.reactions}>
-          {item.reactions?.map((reaction) => (
-            reaction.emoji === '\u2B50' ? (
-              <Pressable
-                key={reaction.id}
-                style={styles.reactionChip}
-                onPress={() => handleUnstar(item.id)}
-                accessibilityLabel="Unstar message"
-                accessibilityRole="button"
-              >
-                <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                <Text style={styles.reactionCount}>Starred</Text>
-              </Pressable>
-            ) : (
-              <View key={reaction.id} style={styles.reactionChip}>
-                <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
-                <Text style={styles.reactionCount}>{reaction.emoji}</Text>
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.messageCard}
+      >
+        <Pressable
+          style={styles.messageInner}
+          accessibilityLabel={`Starred message from ${item.sender.displayName}: ${item.content || 'Media'}`}
+          accessibilityRole="none"
+        >
+          <Avatar
+            uri={item.sender.avatarUrl}
+            name={item.sender.displayName}
+            size="sm"
+            showOnline={false}
+          />
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={styles.senderName}>{item.sender.displayName}</Text>
+              <Text style={styles.timestamp}>
+                {new Date(item.createdAt).toLocaleDateString()} {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+            {item.content && <Text style={styles.content}>{item.content}</Text>}
+            {item.mediaUrl && (
+              <View style={styles.mediaPlaceholder}>
+                <Icon name="image" size={20} color={colors.text.secondary} />
+                <Text style={styles.mediaText}>Media</Text>
               </View>
-            )
-          ))}
-        </View>
-      </View>
-    </Pressable>
+            )}
+            <View style={styles.reactions}>
+              {item.reactions?.map((reaction) => (
+                reaction.emoji === '\u2B50' ? (
+                  <Pressable
+                    key={reaction.id}
+                    style={styles.reactionChip}
+                    onPress={() => handleUnstar(item.id)}
+                    accessibilityLabel="Unstar message"
+                    accessibilityRole="button"
+                  >
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.starIconBg}
+                    >
+                      <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                    </LinearGradient>
+                    <Text style={styles.reactionCountGold}>Starred</Text>
+                  </Pressable>
+                ) : (
+                  <View key={reaction.id} style={styles.reactionChip}>
+                    <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
+                    <Text style={styles.reactionCount}>{reaction.emoji}</Text>
+                  </View>
+                )
+              ))}
+            </View>
+          </View>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 
   if (isLoading) {
@@ -175,13 +189,19 @@ export default function StarredMessagesScreen() {
       />
 
       {conversation && (
-        <View style={styles.conversationHeader}>
-          <Text style={styles.conversationName}>
-            {conversation.isGroup
-              ? conversation.groupName
-              : conversation.otherUser?.displayName || conversation.otherUser?.username}
-          </Text>
-        </View>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.conversationHeader}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.conversationHeaderGradient}
+          >
+            <Text style={styles.conversationName}>
+              {conversation.isGroup
+                ? conversation.groupName
+                : conversation.otherUser?.displayName || conversation.otherUser?.username}
+            </Text>
+            <Text style={styles.starredCount}>★ {messages.length} starred</Text>
+          </LinearGradient>
+        </Animated.View>
       )}
 
       <FlatList
@@ -229,13 +249,16 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   messageCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
-    padding: spacing.md,
     marginBottom: spacing.md,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.emerald,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.gold,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  messageInner: {
+    flexDirection: 'row',
   },
   messageContent: {
     flex: 1,
@@ -299,14 +322,34 @@ const styles = StyleSheet.create({
   conversationHeader: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.dark.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+  },
+  conversationHeaderGradient: {
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   conversationName: {
     fontSize: fontSize.sm,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  starredCount: {
+    fontSize: fontSize.xs,
+    color: colors.gold,
+    marginTop: spacing.xs,
+  },
+  starIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionCountGold: {
+    fontSize: fontSize.xs,
+    color: colors.gold,
+    marginLeft: spacing.xs,
   },
   skeletonContainer: {
     paddingHorizontal: spacing.base,

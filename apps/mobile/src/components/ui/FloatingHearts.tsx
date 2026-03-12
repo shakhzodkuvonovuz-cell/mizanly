@@ -84,7 +84,7 @@ function Heart({
   );
 }
 
-export function FloatingHearts({ trigger, color, count = 5 }: FloatingHeartsProps) {
+export function FloatingHearts({ trigger, color, count = 8 }: FloatingHeartsProps) {
   const [particles, setParticles] = useState<HeartParticle[]>([]);
   const prevTrigger = useRef(trigger);
   const heartColor = color ?? colors.like;

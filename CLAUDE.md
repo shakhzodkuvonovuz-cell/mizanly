@@ -16,11 +16,12 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: ~97% Feature Complete (as of 2026-03-08)
-All 5 spaces built and functional. 46 screens, 224 API endpoints, 38 test specs.
-Backend: NestJS with 27 modules, 28 controllers, Redis, security headers, rate limiting, observability.
-Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions, offline resilience.
-Features added in Batch 17-18: engagement-scored feeds, admin moderation, recommendations, analytics, discover, content settings, scheduling, majlis-lists, polls, subtitles, archive, bookmark folders, manage data.
+## Status: ~78% Competitor Parity (as of 2026-03-13, Post-Batch 28)
+All 5 spaces built and polished. 72 screens, 387 API endpoints, 41 backend modules, 73 Prisma models.
+Backend: NestJS with 41 modules, 41 controllers, Redis, security headers, rate limiting, observability, CI/CD.
+Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions/calls, offline resilience, glassmorphism visual polish throughout.
+Features added in Batches 17-28: engagement-scored feeds, admin moderation, recommendations, analytics, discover, content settings, scheduling, majlis-lists, polls, subtitles, archive, bookmark folders, manage data, camera, image editor, audio library, prayer times, Islamic calendar, Quran sharing, communities, live streaming, calls, drafts, visual overhaul.
+See `docs/COMPETITOR_ANALYSIS.md` for full gap analysis vs TikTok/IG/X/YT/WA.
 
 ---
 
@@ -47,16 +48,11 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Lightbox/pinch-zoom, draft auto-save, notification filters, theme selector
 - Message forward, message edit (inline)
 
-### Still Missing (deferred to V2.0+)
-- Story filters, drawing tools, stickers, music
-- Alt text for media accessibility
-- "Who can reply" control on threads
-- E2E encryption
-- Monetization / payments
-- GDPR/CCPA compliance
-- CI/CD pipeline
-- i18n / Arabic translations
-- Live streaming (Minbar V1.4)
+### Still Missing (see docs/COMPETITOR_ANALYSIS.md for full list)
+**P0 (Ship-blocking):** Multi-image carousel, video quality selector, playback speed, story interactive stickers, multi-account switching, i18n framework + Arabic, RTL layout, CDN, FCM/APNs push, comprehensive tests
+**P1 (Month 1):** Video trim/cut editor, AR filters, duet/stitch, auto-captions, link previews, PiP, mini player, E2E encryption, file sharing in chat, call quality (TURN), group permissions, 2FA UI, alt text, who can reply, content appeal, creator tips, channel memberships, Hadith, Ramadan mode
+**P2 (Month 2-3):** Green screen, voiceover, story music/stickers, disappearing messages, chat themes, virtual gifts, shopping, audio rooms, events, communities moderation
+**Deferred (V2.0+):** Desktop web client, bot platform, AI moderation, watch parties, cross-posting
 
 ---
 

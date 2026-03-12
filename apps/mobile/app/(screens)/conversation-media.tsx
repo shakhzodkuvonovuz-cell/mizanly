@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, Pressable, FlatList,
   TouchableOpacity, RefreshControl, Linking,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -217,67 +218,79 @@ export default function ConversationMediaScreen() {
     { key: 'docs', label: `Docs (${docItems.length})` },
   ] as const;
 
-  const renderMediaItem = ({ item }: { item: MediaItem }) => (
-    <ScaleMediaItem
-      item={item}
-      onImagePress={() => {
-        const imageUrls = mediaItems.filter(m => m.type === 'image').map(m => m.url);
-        const index = imageUrls.indexOf(item.url);
-        handleOpenImageLightbox(imageUrls, index);
-      }}
-      onVideoPress={() => handleOpenVideoPlayer(item.url)}
-    />
+  const renderMediaItem = ({ item, index }: { item: MediaItem; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <ScaleMediaItem
+        item={item}
+        onImagePress={() => {
+          const imageUrls = mediaItems.filter(m => m.type === 'image').map(m => m.url);
+          const idx = imageUrls.indexOf(item.url);
+          handleOpenImageLightbox(imageUrls, idx);
+        }}
+        onVideoPress={() => handleOpenVideoPlayer(item.url)}
+      />
+    </Animated.View>
   );
 
-  const renderLinkItem = ({ item }: { item: LinkItem }) => (
-    <TouchableOpacity
-      style={styles.linkItem}
-      onPress={() => handleOpenLink(item.url)}
-      activeOpacity={0.7}
-      accessibilityLabel={`Open link: ${item.url}`}
-      accessibilityRole="link"
-    >
-      <View style={styles.linkIcon}>
-        <Icon name="link" size="md" color={colors.text.secondary} />
-      </View>
-      <View style={styles.linkContent}>
-        <Text style={styles.linkUrl} numberOfLines={1}>
-          {item.url}
-        </Text>
-        <Text style={styles.linkDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
-      </View>
-      <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-    </TouchableOpacity>
-  );
-
-  const renderDocItem = ({ item }: { item: DocItem }) => (
-    <TouchableOpacity
-      style={styles.docItem}
-      onPress={() => handleOpenLink(item.url)}
-      activeOpacity={0.7}
-      accessibilityLabel={`Open document: ${item.fileName}`}
-      accessibilityRole="link"
-    >
-      <View style={styles.docIcon}>
-        <Icon name="paperclip" size="md" color={colors.text.secondary} />
-      </View>
-      <View style={styles.docContent}>
-        <Text style={styles.docName} numberOfLines={1}>
-          {item.fileName}
-        </Text>
-        {item.fileSize && (
-          <Text style={styles.docSize}>
-            {(item.fileSize / 1024).toFixed(1)} KB
+  const renderLinkItem = ({ item, index }: { item: LinkItem; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <TouchableOpacity
+        style={styles.linkItem}
+        onPress={() => handleOpenLink(item.url)}
+        activeOpacity={0.7}
+        accessibilityLabel={`Open link: ${item.url}`}
+        accessibilityRole="link"
+      >
+        <LinearGradient
+          colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+          style={styles.linkIcon}
+        >
+          <Icon name="link" size="sm" color={colors.emerald} />
+        </LinearGradient>
+        <View style={styles.linkContent}>
+          <Text style={styles.linkUrl} numberOfLines={1}>
+            {item.url}
           </Text>
-        )}
-        <Text style={styles.docDate}>
-          {new Date(item.createdAt).toLocaleDateString()}
-        </Text>
-      </View>
-      <Icon name="download" size="sm" color={colors.text.tertiary} />
-    </TouchableOpacity>
+          <Text style={styles.linkDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
+  const renderDocItem = ({ item, index }: { item: DocItem; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <TouchableOpacity
+        style={styles.docItem}
+        onPress={() => handleOpenLink(item.url)}
+        activeOpacity={0.7}
+        accessibilityLabel={`Open document: ${item.fileName}`}
+        accessibilityRole="link"
+      >
+        <LinearGradient
+          colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+          style={styles.docIcon}
+        >
+          <Icon name="paperclip" size="sm" color={colors.emerald} />
+        </LinearGradient>
+        <View style={styles.docContent}>
+          <Text style={styles.docName} numberOfLines={1}>
+            {item.fileName}
+          </Text>
+          {item.fileSize && (
+            <Text style={styles.docSize}>
+              {(item.fileSize / 1024).toFixed(1)} KB
+            </Text>
+          )}
+          <Text style={styles.docDate}>
+            {new Date(item.createdAt).toLocaleDateString()}
+          </Text>
+        </View>
+        <Icon name="download" size="sm" color={colors.text.tertiary} />
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   const renderEmpty = () => {
@@ -448,14 +461,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   linkIcon: {
     width: 40,
     height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
@@ -475,14 +491,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   docIcon: {
     width: 40,
     height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,

@@ -5,6 +5,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -64,27 +66,41 @@ export default function PinnedMessagesScreen() {
     }
   };
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <Pressable
-      style={styles.messageCard}
-      accessibilityLabel={`Pinned message from ${item.sender.displayName}`}
-      accessibilityRole="button"
-    >
-      <Avatar
-        uri={item.sender.avatarUrl}
-        name={item.sender.displayName}
-        size="sm"
-        showOnline={false}
-      />
-      <View style={styles.messageContent}>
-        {item.mediaUrl && (
-          <View style={styles.mediaPlaceholder}>
-            <Icon name="image" size={20} color={colors.text.secondary} />
-            <Text style={styles.mediaText}>Media</Text>
+  const renderMessage = ({ item, index }: { item: Message; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.messageCard}
+      >
+        <Pressable
+          style={styles.messageInner}
+          accessibilityLabel={`Pinned message from ${item.sender.displayName}`}
+          accessibilityRole="button"
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.pinIconBg}
+          >
+            <Icon name="map-pin" size="xs" color={colors.emerald} />
+          </LinearGradient>
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={styles.senderName}>{item.sender.displayName}</Text>
+              <Text style={styles.timestamp}>
+                {new Date(item.createdAt).toLocaleDateString()}
+              </Text>
+            </View>
+            {item.content && <Text style={styles.content}>{item.content}</Text>}
+            {item.mediaUrl && (
+              <View style={styles.mediaPlaceholder}>
+                <Icon name="image" size={20} color={colors.text.secondary} />
+                <Text style={styles.mediaText}>Media</Text>
+              </View>
+            )}
           </View>
-        )}
-      </View>
-    </Pressable>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 
   if (isLoading) {
@@ -173,17 +189,27 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   messageCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
-    padding: spacing.md,
     marginBottom: spacing.md,
-    borderLeftWidth: 2,
+    borderLeftWidth: 3,
     borderLeftColor: colors.emerald,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  messageInner: {
+    flexDirection: 'row',
+  },
+  pinIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
   },
   messageContent: {
     flex: 1,
-    marginLeft: spacing.md,
   },
   messageHeader: {
     flexDirection: 'row',

@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
@@ -164,29 +166,39 @@ export default function BroadcastChannelScreen() {
     loadMessages();
   }, []);
 
-  const renderMessageItem = useCallback(({ item }: { item: BroadcastMessage }) => (
-    <Pressable
-      style={styles.messageCard}
-      onLongPress={() => handleMessageLongPress(item)}
-      delayLongPress={400}
-    >
-      <Avatar uri={item.user?.avatarUrl} name={item.user?.displayName} size="md" />
-      <View style={styles.messageContent}>
-        <View style={styles.messageHeader}>
-          <Text style={styles.messageSender}>{item.user?.displayName}</Text>
-          <Text style={styles.messageTime}>
-            {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-        </View>
-        <Text style={styles.messageText}>{item.content}</Text>
-        {item.isPinned && (
-          <View style={styles.pinBadge}>
-            <Icon name="map-pin" size="xs" color={colors.text.tertiary} />
-            <Text style={styles.pinText}>Pinned</Text>
+  const renderMessageItem = useCallback(({ item, index }: { item: BroadcastMessage; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.messageCard}
+      >
+        <Pressable
+          style={styles.messageInner}
+          onLongPress={() => handleMessageLongPress(item)}
+          delayLongPress={400}
+        >
+          <Avatar uri={item.user?.avatarUrl} name={item.user?.displayName} size="md" />
+          <View style={styles.messageContent}>
+            <View style={styles.messageHeader}>
+              <Text style={styles.messageSender}>{item.user?.displayName}</Text>
+              <Text style={styles.messageTime}>
+                {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
+            <Text style={styles.messageText}>{item.content}</Text>
+            {item.isPinned && (
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.pinBadge}
+              >
+                <Icon name="map-pin" size="xs" color={colors.emerald} />
+                <Text style={styles.pinTextEmerald}>Pinned</Text>
+              </LinearGradient>
+            )}
           </View>
-        )}
-      </View>
-    </Pressable>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   ), [handleMessageLongPress]);
 
   const renderEmptyState = useCallback(() => (
@@ -231,26 +243,37 @@ export default function BroadcastChannelScreen() {
       />
       <View style={styles.container}>
         {channel && (
-          <View style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}>
-            <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
-            <Text style={styles.channelName}>{channel.name}</Text>
-            <Text style={styles.channelSubscribers}>
-              {channel.subscribersCount.toLocaleString()} subscribers
-            </Text>
-            <View style={styles.channelActions}>
-              <GradientButton
-                label={channel.isSubscribed ? 'Subscribed' : 'Subscribe'}
-                variant={channel.isSubscribed ? 'secondary' : 'primary'}
-                onPress={handleSubscribe}
-              />
-              {channel.isMuted && (
-                <Pressable style={styles.muteBadge}>
-                  <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
-                  <Text style={styles.muteText}>Muted</Text>
-                </Pressable>
-              )}
-            </View>
-          </View>
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}
+            >
+              <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
+              <Text style={styles.channelName}>{channel.name}</Text>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.subscriberBadge}
+              >
+                <Icon name="users" size="xs" color={colors.gold} />
+                <Text style={styles.channelSubscribers}>
+                  {channel.subscribersCount.toLocaleString()} subscribers
+                </Text>
+              </LinearGradient>
+              <View style={styles.channelActions}>
+                <GradientButton
+                  label={channel.isSubscribed ? 'Subscribed' : 'Subscribe'}
+                  variant={channel.isSubscribed ? 'secondary' : 'primary'}
+                  onPress={handleSubscribe}
+                />
+                {channel.isMuted && (
+                  <Pressable style={styles.muteBadge}>
+                    <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
+                    <Text style={styles.muteText}>Muted</Text>
+                  </Pressable>
+                )}
+              </View>
+            </LinearGradient>
+          </Animated.View>
         )}
 
         <FlatList
@@ -330,8 +353,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.dark.border,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
   },
   channelName: {
     color: colors.text.primary,
@@ -339,10 +365,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: spacing.md,
   },
+  subscriberBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
   channelSubscribers: {
-    color: colors.text.secondary,
+    color: colors.gold,
     fontSize: fontSize.sm,
-    marginTop: spacing.xs,
   },
   channelActions: {
     flexDirection: 'row',
@@ -369,8 +403,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   messageCard: {
-    flexDirection: 'row',
+    borderRadius: radius.md,
+    marginBottom: spacing.sm,
     padding: spacing.base,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  messageInner: {
+    flexDirection: 'row',
     gap: spacing.md,
   },
   messageContent: {
@@ -399,7 +439,6 @@ const styles = StyleSheet.create({
   pinBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
     alignSelf: 'flex-start',
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -407,8 +446,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     marginTop: spacing.xs,
   },
-  pinText: {
-    color: colors.text.tertiary,
+  pinTextEmerald: {
+    color: colors.emerald,
     fontSize: fontSize.xs,
   },
   composeContainer: {

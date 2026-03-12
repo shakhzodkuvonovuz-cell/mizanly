@@ -8,6 +8,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -221,241 +223,403 @@ export default function EditProfileScreen() {
       </View>
 
       <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
-        {/* Cover photo */}
-        <TouchableOpacity onPress={pickCover} activeOpacity={0.8}>
+        {/* Cover photo with premium gradient overlay */}
+        <TouchableOpacity onPress={pickCover} activeOpacity={0.9}>
           {currentCover ? (
-            <View>
+            <Animated.View entering={FadeIn.duration(400)}>
               <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
+                style={styles.coverGradient}
+              />
               <View style={styles.coverOverlay}>
-                <Icon name="camera" size="md" color="#fff" />
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                  style={styles.coverEditBadge}
+                >
+                  <Icon name="camera" size="sm" color="#fff" />
+                  <Text style={styles.coverEditText}>Change Cover</Text>
+                </LinearGradient>
               </View>
-            </View>
+            </Animated.View>
           ) : (
-            <View style={styles.coverPlaceholder}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                <Icon name="camera" size="md" color={colors.text.secondary} />
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+              style={styles.coverPlaceholder}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.coverPlaceholderInner}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+                  style={styles.coverPlaceholderIconBg}
+                >
+                  <Icon name="camera" size="lg" color={colors.gold} />
+                </LinearGradient>
                 <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
+                <Text style={styles.coverPlaceholderSubtext}>Tap to upload</Text>
               </View>
-            </View>
+            </LinearGradient>
           )}
         </TouchableOpacity>
 
-        {/* Avatar */}
-        <TouchableOpacity style={styles.avatarWrap} onPress={pickAvatar} activeOpacity={0.8}>
-          <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
-          <View style={styles.avatarEdit}>
-            <Icon name="camera" size="md" color="#fff" />
-          </View>
-        </TouchableOpacity>
+        {/* Avatar with glassmorphism overlay */}
+        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.avatarWrap}>
+          <TouchableOpacity onPress={pickAvatar} activeOpacity={0.9}>
+            <View style={styles.avatarContainer}>
+              <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
+                style={styles.avatarEdit}
+              >
+                <Icon name="camera" size="sm" color="#fff" />
+              </LinearGradient>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
 
-        {/* Form fields */}
-        <View style={styles.form}>
-          <View style={styles.field}>
-            <Text style={styles.label}>Display Name</Text>
-            <TextInput
-              style={[styles.input, styles.inputBorder, focusedField === 'displayName' && styles.inputFocused]}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="Your name"
-              placeholderTextColor={colors.text.tertiary}
-              maxLength={50}
-              onFocus={() => setFocusedField('displayName')}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Username</Text>
-            <Text style={styles.usernameText}>@{me?.username}</Text>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Bio</Text>
-            <TextInput
-              style={[styles.input, styles.inputBorder, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
-              value={bio}
-              onChangeText={setBio}
-              placeholder="Tell people about yourself"
-              placeholderTextColor={colors.text.tertiary}
-              multiline
-              maxLength={150}
-              textAlignVertical="top"
-              onFocus={() => setFocusedField('bio')}
-              onBlur={() => setFocusedField(null)}
-            />
-            <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Website</Text>
-            <TextInput
-              style={[styles.input, styles.inputBorder, focusedField === 'website' && styles.inputFocused]}
-              value={website}
-              onChangeText={setWebsite}
-              placeholder="https://yoursite.com"
-              placeholderTextColor={colors.text.tertiary}
-              autoCapitalize="none"
-              keyboardType="url"
-              maxLength={100}
-              onFocus={() => setFocusedField('website')}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Location</Text>
-            <View style={styles.iconInputRow}>
-              <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+        {/* Form fields with glassmorphism cards */}
+        <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.form}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="user" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.label}>Display Name</Text>
+              </View>
               <TextInput
-                style={[styles.input, styles.inputBorder, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
-                value={location}
-                onChangeText={setLocation}
-                placeholder="Add location"
+                style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholder="Your name"
                 placeholderTextColor={colors.text.tertiary}
-                maxLength={100}
-                onFocus={() => setFocusedField('location')}
+                maxLength={50}
+                onFocus={() => setFocusedField('displayName')}
                 onBlur={() => setFocusedField(null)}
               />
             </View>
-          </View>
+          </LinearGradient>
 
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Pronouns</Text>
-            <TextInput
-              style={[styles.input, styles.inputBorder, focusedField === 'pronouns' && styles.inputFocused]}
-              value={pronouns}
-              onChangeText={setPronouns}
-              placeholder="Add pronouns"
-              placeholderTextColor={colors.text.tertiary}
-              maxLength={30}
-              onFocus={() => setFocusedField('pronouns')}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.field}>
-            <Text style={styles.label}>Birthday</Text>
-            <TextInput
-              style={[styles.input, styles.inputBorder, focusedField === 'birthday' && styles.inputFocused]}
-              value={birthday}
-              onChangeText={setBirthday}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={colors.text.tertiary}
-              maxLength={10}
-              onFocus={() => setFocusedField('birthday')}
-              onBlur={() => setFocusedField(null)}
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          <View style={[styles.field, styles.rowField]}>
-            <View>
-              <Text style={styles.label}>Private Account</Text>
-              <Text style={styles.fieldHint}>Only approved followers see your posts</Text>
-            </View>
-            <Switch
-              value={isPrivate}
-              onValueChange={setIsPrivate}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
-              thumbColor="#fff"
-            />
-          </View>
-
-          <View style={styles.divider} />
-
-          {/* Profile Links */}
-          <View style={styles.field}>
-            <View style={styles.linksSectionHeader}>
-              <Text style={styles.label}>Profile Links</Text>
-              <Text style={styles.linksCount}>{links.length}/5</Text>
-            </View>
-
-            {linksQuery.isLoading ? (
-              <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
-                <Skeleton.Rect width="100%" height={44} />
-                <Skeleton.Rect width="70%" height={44} />
+          {/* Username - Read only glassmorphism card */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.25)', 'rgba(28,35,51,0.15)']}
+            style={styles.formCardReadOnly}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(110,119,129,0.3)', 'rgba(110,119,129,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="at-sign" size="xs" color={colors.text.tertiary} />
+                </LinearGradient>
+                <Text style={styles.label}>Username</Text>
               </View>
-            ) : (
-              links.map((link) => (
-                <View key={link.id} style={styles.linkRow}>
-                  <View style={styles.linkIcon}>
-                    <Icon name="link" size="sm" color={colors.emerald} />
-                  </View>
-                  <View style={styles.linkInfo}>
-                    <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
-                    <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
-                  </View>
-                  <TouchableOpacity
-                    hitSlop={8}
-                    onPress={() => deleteLinkMutation.mutate(link.id)}
-                    disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
-                  >
-                    <Icon name="x" size="sm" color={colors.text.tertiary} />
-                  </TouchableOpacity>
-                </View>
-              ))
-            )}
+              <Text style={styles.usernameText}>@{me?.username}</Text>
+            </View>
+          </LinearGradient>
 
-            {showAddLink ? (
-              <View style={styles.addLinkForm}>
-                <TextInput
-                  style={styles.addLinkInput}
-                  placeholder="Title (e.g. My Website)"
-                  placeholderTextColor={colors.text.tertiary}
-                  value={newLinkTitle}
-                  onChangeText={setNewLinkTitle}
-                  maxLength={40}
-                />
-                <TextInput
-                  style={[styles.addLinkInput, styles.addLinkInputBottom]}
-                  placeholder="URL (https://...)"
-                  placeholderTextColor={colors.text.tertiary}
-                  value={newLinkUrl}
-                  onChangeText={setNewLinkUrl}
-                  autoCapitalize="none"
-                  keyboardType="url"
-                  maxLength={200}
-                />
-                <View style={styles.addLinkActions}>
-                  <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
-                    <Text style={styles.addLinkCancel}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.addLinkSave,
-                      (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
-                    ]}
-                    onPress={() => addLinkMutation.mutate()}
-                    disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
-                  >
-                    {addLinkMutation.isPending ? (
-                      <ActivityIndicator color={colors.text.primary} size="small" />
-                    ) : (
-                      <Text style={styles.addLinkSaveText}>Add</Text>
-                    )}
-                  </TouchableOpacity>
-                </View>
+          {/* Bio with glassmorphism */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCardMultiline}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="edit" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.label}>Bio</Text>
               </View>
-            ) : links.length < 5 ? (
-              <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
-                <Text style={styles.addLinkBtnText}>+ Add a link</Text>
+              <TextInput
+                style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
+                value={bio}
+                onChangeText={setBio}
+                placeholder="Tell people about yourself"
+                placeholderTextColor={colors.text.tertiary}
+                multiline
+                maxLength={150}
+                textAlignVertical="top"
+                onFocus={() => setFocusedField('bio')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
+            </View>
+          </LinearGradient>
+
+          {/* Website */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="globe" size="xs" color={colors.gold} />
+                </LinearGradient>
+                <Text style={styles.label}>Website</Text>
+              </View>
+              <TextInput
+                style={[styles.input, focusedField === 'website' && styles.inputFocused]}
+                value={website}
+                onChangeText={setWebsite}
+                placeholder="https://yoursite.com"
+                placeholderTextColor={colors.text.tertiary}
+                autoCapitalize="none"
+                keyboardType="url"
+                maxLength={100}
+                onFocus={() => setFocusedField('website')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </LinearGradient>
+
+          {/* Location */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="map-pin" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.label}>Location</Text>
+              </View>
+              <View style={styles.iconInputRow}>
+                <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+                <TextInput
+                  style={[styles.input, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
+                  value={location}
+                  onChangeText={setLocation}
+                  placeholder="Add location"
+                  placeholderTextColor={colors.text.tertiary}
+                  maxLength={100}
+                  onFocus={() => setFocusedField('location')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Pronouns */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="user" size="xs" color={colors.gold} />
+                </LinearGradient>
+                <Text style={styles.label}>Pronouns</Text>
+              </View>
+              <TextInput
+                style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
+                value={pronouns}
+                onChangeText={setPronouns}
+                placeholder="e.g. they/them"
+                placeholderTextColor={colors.text.tertiary}
+                maxLength={30}
+                onFocus={() => setFocusedField('pronouns')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </LinearGradient>
+
+          {/* Birthday */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCard}
+          >
+            <View style={styles.field}>
+              <View style={styles.fieldHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.fieldIconBg}
+                >
+                  <Icon name="clock" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.label}>Birthday</Text>
+              </View>
+              <TextInput
+                style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
+                value={birthday}
+                onChangeText={setBirthday}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={colors.text.tertiary}
+                maxLength={10}
+                onFocus={() => setFocusedField('birthday')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </LinearGradient>
+
+          {/* Private Account with Premium Toggle */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCardToggle}
+          >
+            <View style={[styles.field, styles.rowField]}>
+              <View style={styles.toggleTextContainer}>
+                <View style={styles.toggleHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="lock" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Private Account</Text>
+                </View>
+                <Text style={styles.fieldHint}>Only approved followers see your posts</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
+                onPress={() => setIsPrivate(!isPrivate)}
+                activeOpacity={0.9}
+              >
+                <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
+                  <LinearGradient
+                    colors={isPrivate ? [colors.emerald, colors.emerald] : ['#fff', '#f0f0f0']}
+                    style={styles.toggleThumbGradient}
+                  />
+                </View>
               </TouchableOpacity>
-            ) : null}
-          </View>
-        </View>
+            </View>
+          </LinearGradient>
+
+          {/* Profile Links - Glassmorphism Section */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+            style={styles.formCardLinks}
+          >
+            <View style={styles.field}>
+              <View style={styles.linksSectionHeader}>
+                <View style={styles.toggleHeader}>
+                  <LinearGradient
+                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="link" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Profile Links</Text>
+                </View>
+                <View style={styles.linksCountBadge}>
+                  <Text style={styles.linksCount}>{links.length}/5</Text>
+                </View>
+              </View>
+
+              {linksQuery.isLoading ? (
+                <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+                  <Skeleton.Rect width="100%" height={44} />
+                  <Skeleton.Rect width="70%" height={44} />
+                </View>
+              ) : (
+                links.map((link, index) => (
+                  <Animated.View key={link.id} entering={FadeInUp.delay(index * 50).duration(300)}>
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+                      style={styles.linkRowGlass}
+                    >
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                        style={styles.linkIconGlass}
+                      >
+                        <Icon name="link" size="sm" color={colors.emerald} />
+                      </LinearGradient>
+                      <View style={styles.linkInfo}>
+                        <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
+                        <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
+                      </View>
+                      <TouchableOpacity
+                        hitSlop={8}
+                        onPress={() => deleteLinkMutation.mutate(link.id)}
+                        disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
+                        style={styles.linkDeleteBtn}
+                      >
+                        <Icon name="x" size="sm" color={colors.text.tertiary} />
+                      </TouchableOpacity>
+                    </LinearGradient>
+                  </Animated.View>
+                ))
+              )}
+
+              {showAddLink ? (
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.25)']}
+                  style={styles.addLinkFormGlass}
+                >
+                  <TextInput
+                    style={styles.addLinkInput}
+                    placeholder="Title (e.g. My Website)"
+                    placeholderTextColor={colors.text.tertiary}
+                    value={newLinkTitle}
+                    onChangeText={setNewLinkTitle}
+                    maxLength={40}
+                  />
+                  <TextInput
+                    style={[styles.addLinkInput, styles.addLinkInputBottom]}
+                    placeholder="URL (https://...)"
+                    placeholderTextColor={colors.text.tertiary}
+                    value={newLinkUrl}
+                    onChangeText={setNewLinkUrl}
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    maxLength={200}
+                  />
+                  <View style={styles.addLinkActions}>
+                    <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
+                      <Text style={styles.addLinkCancel}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.addLinkSave,
+                        (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
+                      ]}
+                      onPress={() => addLinkMutation.mutate()}
+                      disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
+                    >
+                      {addLinkMutation.isPending ? (
+                        <ActivityIndicator color={colors.text.primary} size="small" />
+                      ) : (
+                        <Text style={styles.addLinkSaveText}>Add</Text>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                </LinearGradient>
+              ) : links.length < 5 ? (
+                <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                    style={styles.addLinkBtnGradient}
+                  >
+                    <Icon name="plus" size="sm" color={colors.emerald} />
+                    <Text style={styles.addLinkBtnText}>Add a link</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          </LinearGradient>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -471,91 +635,206 @@ const styles = StyleSheet.create({
 
   body: { flex: 1 },
 
-  cover: { width: '100%', height: 140 },
-  coverPlaceholder: {
-    width: '100%', height: 140, backgroundColor: colors.dark.bgElevated,
-    alignItems: 'center', justifyContent: 'center',
+  // Cover photo styles
+  cover: { width: '100%', height: 160 },
+  coverGradient: {
+    ...StyleSheet.absoluteFillObject,
+    height: 160,
   },
   coverOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    height: 160,
     alignItems: 'center', justifyContent: 'center',
   },
-  coverPlaceholderText: { color: colors.text.secondary, fontSize: fontSize.base },
-
-  avatarWrap: {
-    marginLeft: spacing.base, marginTop: -36, marginBottom: spacing.md,
-    alignSelf: 'flex-start', position: 'relative',
+  coverEditBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.xs,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)',
   },
+  coverEditText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '600' },
+  coverPlaceholder: {
+    width: '100%', height: 160,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  coverPlaceholderInner: { alignItems: 'center', gap: spacing.sm },
+  coverPlaceholderIconBg: {
+    width: 64, height: 64, borderRadius: radius.full,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  coverPlaceholderText: { color: colors.text.primary, fontSize: fontSize.md, fontWeight: '600' },
+  coverPlaceholderSubtext: { color: colors.text.tertiary, fontSize: fontSize.sm },
+
+  // Avatar styles
+  avatarWrap: {
+    marginLeft: spacing.base, marginTop: -40, marginBottom: spacing.md,
+    alignSelf: 'flex-start',
+  },
+  avatarContainer: { position: 'relative' },
   avatarEdit: {
     position: 'absolute', bottom: 0, right: 0,
-    width: 32, height: 32, borderRadius: radius.full,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderWidth: 2, borderColor: colors.dark.bg,
+    width: 36, height: 36, borderRadius: radius.full,
     alignItems: 'center', justifyContent: 'center',
+    borderWidth: 3, borderColor: colors.dark.bg,
   },
 
-  form: { paddingHorizontal: spacing.base },
+  // Form styles with glassmorphism cards
+  form: { paddingHorizontal: spacing.base, gap: spacing.md, paddingBottom: spacing.xl },
 
-  field: { paddingVertical: spacing.md },
+  formCard: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  formCardReadOnly: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)',
+    overflow: 'hidden',
+    opacity: 0.8,
+  },
+  formCardMultiline: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+    minHeight: 140,
+  },
+  formCardToggle: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+  formCardLinks: {
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+    overflow: 'hidden',
+  },
+
+  field: { paddingVertical: spacing.sm },
   rowField: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: spacing.xs,
   },
-  label: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.xs },
-  fieldHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  fieldHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  fieldIconBg: {
+    width: 28, height: 28, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  label: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
+  fieldHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2, marginLeft: 40 },
   input: {
     color: colors.text.primary, fontSize: fontSize.base,
     paddingVertical: Platform.OS === 'ios' ? spacing.xs : 0,
-  },
-  inputBorder: {
-    borderWidth: 1, borderColor: colors.dark.border,
-    borderRadius: radius.sm, paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: 0,
   },
   inputFocused: {
-    borderColor: colors.emerald,
+    color: colors.emerald,
   },
-  multiline: { minHeight: 80, lineHeight: 22 },
+  multiline: { minHeight: 60, lineHeight: 22, textAlignVertical: 'top' },
   iconInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   iconInput: { flex: 1 },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },
-  usernameText: { color: colors.text.secondary, fontSize: fontSize.base },
+  usernameText: { color: colors.text.secondary, fontSize: fontSize.base, marginLeft: 40 },
+
+  // Premium Toggle Switch
+  toggleTextContainer: { flex: 1 },
+  toggleHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+  },
+  toggleTrack: {
+    width: 52, height: 28, borderRadius: radius.full,
+    backgroundColor: colors.dark.border,
+    padding: 2,
+    justifyContent: 'center',
+  },
+  toggleTrackActive: {
+    backgroundColor: 'rgba(10,123,79,0.3)',
+  },
+  toggleThumb: {
+    width: 24, height: 24, borderRadius: radius.full,
+    backgroundColor: '#fff',
+    transform: [{ translateX: 0 }],
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 24 }],
+  },
+  toggleThumbGradient: {
+    width: '100%', height: '100%', borderRadius: radius.full,
+  },
 
   divider: { height: 0.5, backgroundColor: colors.dark.border },
 
-  // Profile links
+  // Profile links with glassmorphism
   linksSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  linksCount: { color: colors.text.tertiary, fontSize: fontSize.xs },
-  linkRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+  linksCountBadge: {
+    backgroundColor: 'rgba(10,123,79,0.2)',
+    paddingHorizontal: spacing.sm, paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
   },
-  linkIcon: {
-    width: 36, height: 36, borderRadius: radius.sm, backgroundColor: colors.dark.bgElevated,
+  linksCount: { color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' },
+  // Glassmorphism link rows
+  linkRowGlass: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
+  },
+  linkIconGlass: {
+    width: 36, height: 36, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  linkDeleteBtn: {
+    width: 28, height: 28, borderRadius: radius.full,
+    backgroundColor: 'rgba(248,81,73,0.1)',
     alignItems: 'center', justifyContent: 'center',
   },
   linkInfo: { flex: 1 },
   linkTitle: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '600' },
   linkUrl: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 },
 
+  // Add link button with gradient
   addLinkBtn: {
-    marginTop: spacing.sm, paddingVertical: spacing.sm,
-    borderWidth: 1, borderStyle: 'dashed', borderColor: colors.dark.border,
-    borderRadius: radius.sm, alignItems: 'center',
+    marginTop: spacing.sm,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+  },
+  addLinkBtnGradient: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(10,123,79,0.4)',
+    borderRadius: radius.sm,
   },
   addLinkBtnText: { color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
 
-  addLinkForm: {
-    marginTop: spacing.sm, backgroundColor: colors.dark.bgElevated,
+  // Add link form with glassmorphism
+  addLinkFormGlass: {
+    marginTop: spacing.sm,
     borderRadius: radius.md, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    padding: spacing.sm,
   },
   addLinkInput: {
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     color: colors.text.primary, fontSize: fontSize.base,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5, borderBottomColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
   },
-  addLinkInputBottom: { borderBottomWidth: 0 },
+  addLinkInputBottom: { marginBottom: 0 },
   addLinkActions: {
     flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
     gap: spacing.md, padding: spacing.sm,
@@ -566,6 +845,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg, paddingVertical: spacing.xs + 2,
     minWidth: 60, alignItems: 'center',
   },
-  addLinkSaveDisabled: { backgroundColor: colors.dark.surface },
+  addLinkSaveDisabled: { backgroundColor: colors.dark.surface, opacity: 0.5 },
   addLinkSaveText: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700' },
 });

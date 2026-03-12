@@ -9,6 +9,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  FadeInUp,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
@@ -168,6 +169,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
   if (dismissed) return null;
 
   return (
+    <Animated.View entering={FadeInUp.duration(400).springify()}>
     <TouchableOpacity
       style={styles.card}
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
@@ -404,6 +406,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
         )}
       </BottomSheet>
     </TouchableOpacity>
+    </Animated.View>
   );
 });
 

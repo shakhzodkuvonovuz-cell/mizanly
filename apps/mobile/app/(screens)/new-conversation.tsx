@@ -6,13 +6,15 @@ import {
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { colors, spacing, fontSize } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi } from '@/services/api';
 import type { User } from '@/types';
 
@@ -60,31 +62,41 @@ export default function NewConversationScreen() {
         }}
       />
 
-      {/* Search box */}
-      <View style={styles.searchWrap}>
-        <Text style={styles.toLabel}>To:</Text>
-        <TextInput
-          style={styles.searchInput}
-          value={query}
-          onChangeText={handleQueryChange}
-          placeholder="Search people…"
-          placeholderTextColor={colors.text.tertiary}
-          autoFocus
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel="Search people input"
-        />
-        {query.length > 0 && (
-          <Pressable 
-            onPress={() => { setQuery(''); setDebouncedQuery(''); }} 
-            hitSlop={8}
-            accessibilityLabel="Clear search query"
-            accessibilityRole="button"
+      {/* Search box — Glassmorphism wrapper */}
+      <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.searchWrap}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.searchIconBg}
           >
-            <Icon name="x" size="xs" color={colors.text.secondary} />
-          </Pressable>
-        )}
-      </View>
+            <Icon name="search" size="xs" color={colors.emerald} />
+          </LinearGradient>
+          <TextInput
+            style={styles.searchInput}
+            value={query}
+            onChangeText={handleQueryChange}
+            placeholder="Search people…"
+            placeholderTextColor={colors.text.tertiary}
+            autoFocus
+            autoCapitalize="none"
+            autoCorrect={false}
+            accessibilityLabel="Search people input"
+          />
+          {query.length > 0 && (
+            <Pressable
+              onPress={() => { setQuery(''); setDebouncedQuery(''); }}
+              hitSlop={8}
+              accessibilityLabel="Clear search query"
+              accessibilityRole="button"
+            >
+              <Icon name="x" size="xs" color={colors.text.secondary} />
+            </Pressable>
+          )}
+        </LinearGradient>
+      </Animated.View>
 
       {searchQuery.isLoading ? (
         <View style={styles.skeletonList}>
@@ -118,29 +130,36 @@ export default function NewConversationScreen() {
               tintColor={colors.emerald}
             />
           }
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.userRow}
-              onPress={() => dmMutation.mutate(item.id)}
-              disabled={dmMutation.isPending}
-              activeOpacity={0.7}
-              accessibilityLabel={`Chat with ${item.displayName}`}
-              accessibilityRole="button"
-            >
-              <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-              <View style={styles.userInfo}>
-                <View style={styles.nameRow}>
-                  <Text style={styles.name}>{item.displayName}</Text>
-                  {item.isVerified && <VerifiedBadge size={13} />}
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+              <TouchableOpacity
+                style={styles.userRow}
+                onPress={() => dmMutation.mutate(item.id)}
+                disabled={dmMutation.isPending}
+                activeOpacity={0.7}
+                accessibilityLabel={`Chat with ${item.displayName}`}
+                accessibilityRole="button"
+              >
+                <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+                <View style={styles.userInfo}>
+                  <View style={styles.nameRow}>
+                    <Text style={styles.name}>{item.displayName}</Text>
+                    {item.isVerified && <VerifiedBadge size={13} />}
+                  </View>
+                  <Text style={styles.handle}>@{item.username}</Text>
                 </View>
-                <Text style={styles.handle}>@{item.username}</Text>
-              </View>
-              {dmMutation.isPending && dmMutation.variables === item.id ? (
-                <ActivityIndicator color={colors.emerald} size="small" />
-              ) : (
-                <Icon name="mail" size="sm" color={colors.text.secondary} />
-              )}
-            </TouchableOpacity>
+                {dmMutation.isPending && dmMutation.variables === item.id ? (
+                  <ActivityIndicator color={colors.emerald} size="small" />
+                ) : (
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.mailIconBg}
+                  >
+                    <Icon name="mail" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
           )}
           ListEmptyComponent={() =>
             debouncedQuery.trim().length >= 2 ? (
@@ -164,7 +183,16 @@ const styles = StyleSheet.create({
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  searchIconBg: {
+    width: 36, height: 36, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
   },
   toLabel: { color: colors.text.secondary, fontSize: fontSize.base, fontWeight: '600' },
   searchInput: { flex: 1, color: colors.text.primary, fontSize: fontSize.base },
@@ -177,12 +205,21 @@ const styles = StyleSheet.create({
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.md,
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   userInfo: { flex: 1 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   name: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
   handle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 1 },
+  mailIconBg: {
+    width: 36, height: 36, borderRadius: radius.sm,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   empty: { alignItems: 'center', paddingTop: 60 },
   emptyText: { color: colors.text.secondary, fontSize: fontSize.base },
