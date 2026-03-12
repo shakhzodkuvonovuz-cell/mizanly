@@ -86,12 +86,21 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
       transform: [{ scale: getLikeScale(item.id).value }],
     }));
 
+    const isCreator = item.user.id === reel.user?.id;
+    const isPinned = item.isPinned;
+
     return (
       <View style={[
         styles.commentItem,
-        item.user.id === reel.user?.id && styles.opComment,
+        isCreator && styles.opComment,
         item.parentId && styles.replyComment,
       ]}>
+        {isPinned && (
+          <View style={styles.pinnedIndicator}>
+            <Icon name="bookmark" size={10} color={colors.gold} />
+            <Text style={styles.pinnedText}>Pinned</Text>
+          </View>
+        )}
         <Avatar
           uri={item.user.avatarUrl}
           name={item.user.username}
@@ -100,7 +109,14 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
         />
         <View style={styles.commentContent}>
           <View style={styles.commentHeader}>
-            <Text style={styles.commentUsername}>{item.user.username}</Text>
+            <View style={styles.commentHeaderLeft}>
+              <Text style={styles.commentUsername}>{item.user.username}</Text>
+              {isCreator && (
+                <View style={styles.creatorBadge}>
+                  <Text style={styles.creatorBadgeText}>Creator</Text>
+                </View>
+              )}
+            </View>
             <Text style={styles.commentTime}>
               {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
             </Text>
@@ -279,8 +295,37 @@ const styles = StyleSheet.create({
   commentHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    justifyContent: 'space-between',
     marginBottom: 2,
+  },
+  commentHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  creatorBadge: {
+    backgroundColor: colors.active.emerald10,
+    borderRadius: radius.sm,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+  },
+  creatorBadgeText: {
+    fontSize: 9,
+    color: colors.emerald,
+    fontWeight: '700',
+  },
+  pinnedIndicator: {
+    position: 'absolute',
+    top: -spacing.xs,
+    left: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  pinnedText: {
+    fontSize: 10,
+    color: colors.gold,
+    fontWeight: '600',
   },
   commentUsername: {
     color: colors.text.primary,

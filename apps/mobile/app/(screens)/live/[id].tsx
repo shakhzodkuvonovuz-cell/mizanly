@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
-  RefreshControl, FlatList, TextInput, Platform, Share,
+  RefreshControl, FlatList, TextInput, Platform, Share, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,6 +9,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withSpring,
+  withSequence,
+  interpolate,
+  Extrapolation,
+  FadeIn,
+  FadeInUp,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -18,6 +31,15 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// Floating emoji reaction type
+interface FloatingReaction {
+  id: string;
+  emoji: string;
+  startX: number;
+}
 
 interface LiveParticipant {
   id: string;
@@ -42,6 +64,62 @@ export default function LiveViewerScreen() {
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
+  const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
+
+  // Animated values for visual effects
+  const pulseAnim = useSharedValue(1);
+  const viewerCountAnim = useSharedValue(1);
+  const audioBars = [useSharedValue(0.3), useSharedValue(0.5), useSharedValue(0.7), useSharedValue(0.4), useSharedValue(0.6)];
+
+  // Pulsing animation for LIVE badge
+  useEffect(() => {
+    pulseAnim.value = withRepeat(
+      withTiming(1.5, { duration: 1000 }),
+      -1,
+      true
+    );
+  }, []);
+
+  // Animated audio bars for audio space
+  useEffect(() => {
+    if (live?.liveType === 'AUDIO') {
+      const interval = setInterval(() => {
+        audioBars.forEach((bar) => {
+          bar.value = withSpring(0.2 + Math.random() * 0.8, { damping: 10, stiffness: 100 });
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [live?.liveType]);
+
+  // Floating reactions animation
+  const addFloatingReaction = (emoji: string) => {
+    const id = Date.now().toString();
+    const startX = Math.random() * (SCREEN_WIDTH - 100) + 50;
+    setFloatingReactions(prev => [...prev, { id, emoji, startX }]);
+    setTimeout(() => {
+      setFloatingReactions(prev => prev.filter(r => r.id !== id));
+    }, 3000);
+  };
+
+  // Viewer count bump animation
+  useEffect(() => {
+    if (live?.viewerCount) {
+      viewerCountAnim.value = withSequence(
+        withSpring(1.2, { damping: 8, stiffness: 300 }),
+        withSpring(1, { damping: 12, stiffness: 200 })
+      );
+    }
+  }, [live?.viewerCount]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(pulseAnim.value, [1, 1.5], [1, 0.5], Extrapolation.CLAMP),
+    transform: [{ scale: interpolate(pulseAnim.value, [1, 1.5], [1, 1.2], Extrapolation.CLAMP) }],
+  }));
+
+  const viewerCountStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: viewerCountAnim.value }],
+  }));
 
   // Fetch live stream
   const liveQuery = useQuery({
@@ -160,6 +238,39 @@ export default function LiveViewerScreen() {
     ]);
   };
 
+  // Floating reaction component
+  function FloatingReactionBubble({ reaction }: { reaction: FloatingReaction }) {
+    const yAnim = useSharedValue(0);
+    const opacityAnim = useSharedValue(1);
+
+    useEffect(() => {
+      yAnim.value = withTiming(-300, { duration: 3000 });
+      opacityAnim.value = withTiming(0, { duration: 2500 });
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [{ translateY: yAnim.value }],
+      opacity: opacityAnim.value,
+    }));
+
+    return (
+      <Animated.View style={[styles.floatingReaction, { left: reaction.startX }, animatedStyle]}>
+        <Text style={styles.floatingReactionEmoji}>{reaction.emoji}</Text>
+      </Animated.View>
+    );
+  }
+
+  // Audio bar animated component
+  function AudioBar({ value }: { value: Animated.SharedValue<number> }) {
+    const animatedStyle = useAnimatedStyle(() => ({
+      height: `${value.value * 100}%`,
+    }));
+
+    return (
+      <Animated.View style={[styles.audioBarAnimated, animatedStyle]} />
+    );
+  }
+
   const renderParticipantItem = ({ item }: { item: LiveParticipant }) => {
     const isSelf = item.userId === user?.id;
     const isHost = item.role === 'HOST';
@@ -168,16 +279,46 @@ export default function LiveViewerScreen() {
 
     return (
       <View style={styles.participantItem}>
-        <Avatar uri={item.user.avatarUrl} name={item.user.username} size="md" />
+        <View style={styles.avatarWithBadge}>
+          <Avatar uri={item.user.avatarUrl} name={item.user.username} size="md" />
+          {isHost && (
+            <View style={styles.hostCrownBadge}>
+              <Icon name="check" size={10} color="#fff" />
+            </View>
+          )}
+        </View>
         <View style={styles.participantInfo}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
             <Text style={styles.participantName}>{item.user.username}</Text>
-            {isHost && <Badge label="Host" color={colors.emerald} />}
-            {isSpeaker && <Badge label="Speaker" color={colors.gold} />}
-            {item.raisedHand && <Badge label="✋" color={colors.active.emerald10} />}
+            {isHost && (
+              <LinearGradient
+                colors={[colors.gold, '#A67C00']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.hostBadge}
+              >
+                <Icon name="check" size={10} color="#fff" />
+              </LinearGradient>
+            )}
+            {isSpeaker && (
+              <LinearGradient
+                colors={[colors.emerald, '#05593A']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.speakerBadge}
+              >
+                <Icon name="mic" size={10} color="#fff" />
+              </LinearGradient>
+            )}
+            {item.raisedHand && (
+              <View style={styles.raisedHandBadge}>
+                <Text style={styles.raisedHandEmoji}>✋</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.participantRole}>
-            {item.role.toLowerCase()}{item.raisedHand ? ' • Hand raised' : ''}
+            {isHost ? '👑 Host' : isSpeaker ? '🎤 Speaker' : '👤 Listener'}
+            {item.raisedHand ? ' • wants to speak' : ''}
           </Text>
         </View>
         {canModerate && !isSelf && (
@@ -188,7 +329,7 @@ export default function LiveViewerScreen() {
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
-              <Icon name="x" size="sm" color={colors.text.secondary} />
+              <Icon name="x" size="sm" color={colors.error} />
             </TouchableOpacity>
           </View>
         )}
@@ -263,6 +404,13 @@ export default function LiveViewerScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Floating reactions overlay */}
+      <View style={styles.floatingReactionsOverlay} pointerEvents="none">
+        {floatingReactions.map(reaction => (
+          <FloatingReactionBubble key={reaction.id} reaction={reaction} />
+        ))}
+      </View>
+
       <GlassHeader
         title="Live"
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
@@ -280,6 +428,18 @@ export default function LiveViewerScreen() {
           },
         ]}
       />
+
+      {/* LIVE badge with pulsing dot */}
+      <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60 }]} entering={FadeIn}>
+        <View style={styles.liveBadge}>
+          <Animated.View style={[styles.liveDot, pulseStyle]} />
+          <Text style={styles.liveBadgeText}>LIVE</Text>
+        </View>
+        <Animated.View style={[styles.viewerCountBadge, viewerCountStyle]}>
+          <Icon name="eye" size={12} color="#fff" />
+          <Text style={styles.viewerCountText}>{(live?.viewerCount || 0).toLocaleString()}</Text>
+        </Animated.View>
+      </Animated.View>
 
       <ScrollView
         style={{ paddingTop: insets.top + 44 }}
@@ -304,13 +464,32 @@ export default function LiveViewerScreen() {
         {/* Audio space UI (if audio) */}
         {live.liveType === 'AUDIO' && (
           <View style={styles.audioContainer}>
-            <View style={styles.audioVisualizer}>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <View key={i} style={styles.audioBar} />
-              ))}
-            </View>
-            <Text style={styles.audioLabel}>Audio Space</Text>
-            <Text style={styles.audioHint}>Live conversation in progress</Text>
+            <LinearGradient
+              colors={[colors.dark.bgElevated, colors.dark.surface]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.audioGradient}
+            >
+              <View style={styles.audioVisualizer}>
+                {audioBars.map((bar, i) => (
+                  <AudioBar key={i} value={bar} />
+                ))}
+              </View>
+              <Text style={styles.audioLabel}>Audio Space</Text>
+              <Text style={styles.audioHint}>Live conversation in progress</Text>
+              {/* Waveform decoration */}
+              <View style={styles.waveformDecoration}>
+                {[...Array(20)].map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      styles.waveformDot,
+                      { opacity: 0.1 + (i / 20) * 0.3 },
+                    ]}
+                  />
+                ))}
+              </View>
+            </LinearGradient>
           </View>
         )}
 
@@ -318,8 +497,8 @@ export default function LiveViewerScreen() {
         <View style={styles.content}>
           <Text style={styles.liveTitle}>{live.title}</Text>
           <View style={styles.liveStats}>
-            <Icon name="eye" size="xs" color={colors.text.secondary} />
-            <Text style={styles.liveStatsText}>
+            <Icon name="eye" size="xs" color={colors.gold} />
+            <Text style={styles.liveStatsTextGold}>
               {live.viewerCount.toLocaleString()} watching
             </Text>
             <Text style={styles.liveStatsDot}>•</Text>
@@ -328,13 +507,26 @@ export default function LiveViewerScreen() {
             </Text>
           </View>
 
-          {/* Host row */}
+          {/* Host row with crown */}
           {hostParticipant && (
             <View style={styles.hostRow}>
-              <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="lg" />
+              <View style={styles.hostAvatarContainer}>
+                <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="lg" />
+                <LinearGradient
+                  colors={[colors.gold, '#A67C00']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.hostCrownBadgeLarge}
+                >
+                  <Icon name="check" size={12} color="#fff" />
+                </LinearGradient>
+              </View>
               <View style={styles.hostInfo}>
                 <Text style={styles.hostName}>Hosted by {hostParticipant.user.username}</Text>
-                <Text style={styles.hostStatus}>Live now</Text>
+                <View style={styles.liveStatusRow}>
+                  <Animated.View style={[styles.liveStatusDot, pulseStyle]} />
+                  <Text style={styles.hostStatus}>Live now</Text>
+                </View>
               </View>
             </View>
           )}
@@ -418,12 +610,65 @@ export default function LiveViewerScreen() {
       <BottomSheet visible={showChat} onClose={() => setShowChat(false)} snapPoint={0.7}>
         <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>Live Chat</Text>
+          <View style={styles.chatHeaderGlow} />
         </View>
-        <View style={styles.chatMessages}>
-          <Text style={styles.chatPlaceholder}>
-            Chat messages would appear here in real‑time.
-          </Text>
+
+        {/* Sample chat messages with translucent bubbles */}
+        <View style={styles.chatMessagesContainer}>
+          <ScrollView style={styles.chatScroll} showsVerticalScrollIndicator={false}>
+            {/* Welcome message */}
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.welcomeBubble}
+            >
+              <Text style={styles.welcomeText}>Welcome to the live stream! 👋</Text>
+            </LinearGradient>
+
+            {/* Sample message */}
+            <View style={styles.chatMessageRow}>
+              <Avatar uri={null} name="Sarah" size="xs" />
+              <LinearGradient
+                colors={['rgba(45,53,72,0.9)', 'rgba(45,53,72,0.7)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.chatBubble}
+              >
+                <Text style={styles.chatUsername}>Sarah</Text>
+                <Text style={styles.chatMessageText}>This is amazing! 🔥</Text>
+              </LinearGradient>
+            </View>
+
+            {/* Sample message with gold accent */}
+            <View style={styles.chatMessageRow}>
+              <Avatar uri={null} name="Ahmed" size="xs" />
+              <LinearGradient
+                colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={[styles.chatBubble, styles.chatBubbleGold]}
+              >
+                <Text style={styles.chatUsername}>Ahmed</Text>
+                <Text style={styles.chatMessageText}>Great stream today! 👏</Text>
+              </LinearGradient>
+            </View>
+          </ScrollView>
+
+          {/* Floating emoji reaction bar */}
+          <View style={styles.reactionBar}>
+            {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
+              <TouchableOpacity
+                key={emoji}
+                style={styles.reactionButton}
+                onPress={() => addFloatingReaction(emoji)}
+              >
+                <Text style={styles.reactionEmoji}>{emoji}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
+
         <View style={styles.chatInputRow}>
           <TextInput
             style={styles.chatInput}
@@ -433,8 +678,17 @@ export default function LiveViewerScreen() {
             onChangeText={setChatMessage}
             multiline
           />
-          <TouchableOpacity onPress={handleSendChat} disabled={!chatMessage.trim()}>
-            <Icon name="send" size="sm" color={chatMessage.trim() ? colors.emerald : colors.text.tertiary} />
+          <TouchableOpacity
+            style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
+            onPress={handleSendChat}
+            disabled={!chatMessage.trim()}
+          >
+            <LinearGradient
+              colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [colors.dark.surface, colors.dark.surface]}
+              style={styles.sendButtonGradient}
+            >
+              <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
+            </LinearGradient>
           </TouchableOpacity>
         </View>
       </BottomSheet>
@@ -655,5 +909,274 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     marginRight: spacing.sm,
     maxHeight: 100,
+  },
+
+  // LIVE badge styles
+  liveBadgeContainer: {
+    position: 'absolute',
+    left: spacing.base,
+    zIndex: 100,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(248,81,73,0.9)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    gap: spacing.xs,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#fff',
+  },
+  liveBadgeText: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  viewerCountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    gap: spacing.xs,
+  },
+  viewerCountText: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+
+  // Floating reactions
+  floatingReactionsOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 50,
+    pointerEvents: 'none',
+  },
+  floatingReaction: {
+    position: 'absolute',
+    bottom: 120,
+  },
+  floatingReactionEmoji: {
+    fontSize: 32,
+  },
+
+  // Enhanced host styles
+  hostAvatarContainer: {
+    position: 'relative',
+  },
+  hostCrownBadgeLarge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.dark.bg,
+  },
+  liveStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  liveStatusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.emerald,
+  },
+
+  // Audio visualizer
+  audioGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  audioBarAnimated: {
+    width: 8,
+    backgroundColor: colors.emerald,
+    borderRadius: radius.sm,
+  },
+  waveformDecoration: {
+    position: 'absolute',
+    bottom: 20,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  waveformDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.emerald,
+  },
+
+  // Participant badges
+  avatarWithBadge: {
+    position: 'relative',
+  },
+  hostCrownBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: colors.dark.bg,
+  },
+  hostBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  speakerBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  raisedHandBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.active.emerald10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  raisedHandEmoji: {
+    fontSize: 12,
+  },
+
+  // Chat styling
+  liveStatsTextGold: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  chatMessagesContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(13,17,23,0.95)',
+  },
+  chatScroll: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+  },
+  welcomeBubble: {
+    alignSelf: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(10,123,79,0.3)',
+  },
+  welcomeText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+  chatMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  chatBubble: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderTopLeftRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.5)',
+  },
+  chatBubbleGold: {
+    borderColor: 'rgba(200,150,62,0.3)',
+  },
+  chatUsername: {
+    color: colors.gold,
+    fontSize: fontSize.xs,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  chatMessageText: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    lineHeight: fontSize.lg,
+  },
+  chatHeaderGlow: {
+    position: 'absolute',
+    bottom: -20,
+    left: 0,
+    right: 0,
+    height: 40,
+    backgroundColor: 'rgba(10,123,79,0.1)',
+    borderRadius: radius.lg,
+  },
+
+  // Reaction bar
+  reactionBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(45,53,72,0.8)',
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  reactionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(13,17,23,0.8)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  reactionEmoji: {
+    fontSize: 22,
+  },
+
+  // Send button
+  sendButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  sendButtonDisabled: {
+    opacity: 0.5,
+  },
+  sendButtonGradient: {
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

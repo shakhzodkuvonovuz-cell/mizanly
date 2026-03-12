@@ -1,13 +1,25 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share,
-  RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState,
+  RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+  withDelay,
+  interpolate,
+  FadeIn,
+  FadeInUp,
+  FadeOut,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -20,6 +32,8 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 
 export default function VideoDetailScreen() {
@@ -36,6 +50,23 @@ export default function VideoDetailScreen() {
   const [replyToId, setReplyToId] = useState<string | undefined>();
   const [showMenu, setShowMenu] = useState(false);
   const [showChapters, setShowChapters] = useState(false);
+  const [likeBursts, setLikeBursts] = useState<{ id: string; x: number; y: number }[]>([]);
+
+  // Animated scroll value for parallax effect
+  const scrollY = useSharedValue(0);
+  const headerOpacity = useSharedValue(1);
+
+  // Like burst animation handler
+  const handleVideoDoubleTap = (e: any) => {
+    const { locationX, locationY } = e.nativeEvent;
+    const id = Date.now().toString();
+    setLikeBursts(prev => [...prev, { id, x: locationX, y: locationY }]);
+    haptic.light();
+    handleLike();
+    setTimeout(() => {
+      setLikeBursts(prev => prev.filter(b => b.id !== id));
+    }, 1000);
+  };
 
   // Fetch video
   const videoQuery = useQuery({
@@ -210,6 +241,75 @@ export default function VideoDetailScreen() {
   const durationSeconds = video ? Math.floor(video.duration % 60) : 0;
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
 
+  // Animated like burst component
+  function LikeBurst({ x, y }: { x: number; y: number }) {
+    const scaleAnim = useSharedValue(0);
+    const opacityAnim = useSharedValue(1);
+    const translateY = useSharedValue(0);
+
+    useEffect(() => {
+      scaleAnim.value = withSequence(
+        withSpring(1.5, { damping: 10, stiffness: 200 }),
+        withSpring(1, { damping: 15, stiffness: 300 })
+      );
+      translateY.value = withTiming(-80, { duration: 800 });
+      opacityAnim.value = withDelay(400, withTiming(0, { duration: 400 }));
+    }, []);
+
+    const animatedStyle = useAnimatedStyle(() => ({
+      transform: [
+        { translateX: x - 40 },
+        { translateY: y + translateY.value - 40 },
+        { scale: scaleAnim.value },
+      ],
+      opacity: opacityAnim.value,
+    }));
+
+    return (
+      <Animated.View style={[styles.likeBurst, animatedStyle]}>
+        <Icon name="heart-filled" size={80} color="rgba(248,81,73,0.9)" />
+      </Animated.View>
+    );
+  }
+
+  // Chapter marker with progress indicator
+  function ChapterMarker({ chapter, index, total, currentProgress }: { chapter: VideoChapter; index: number; total: number; currentProgress: number }) {
+    const progressPercent = ((chapter.startTime / (video?.duration || 1)) * 100);
+    const isPast = currentProgress > (chapter.startTime / (video?.duration || 1));
+    const isCurrent = Math.abs(currentProgress - (chapter.startTime / (video?.duration || 1))) < 0.05;
+
+    return (
+      <TouchableOpacity
+        style={[
+          styles.chapterMarker,
+          isCurrent && styles.chapterMarkerActive,
+          isPast && styles.chapterMarkerPast,
+        ]}
+        onPress={() => seekToChapter(chapter.startTime)}
+      >
+        <View style={styles.chapterMarkerLine}>
+          <LinearGradient
+            colors={isCurrent ? [colors.gold, colors.emerald] : isPast ? [colors.emerald, colors.emerald] : ['rgba(110,119,129,0.5)', 'rgba(110,119,129,0.3)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.chapterMarkerDot, isCurrent && styles.chapterMarkerDotActive]}
+          />
+        </View>
+        <View style={styles.chapterMarkerInfo}>
+          <Text style={[styles.chapterMarkerTitle, isCurrent && styles.chapterMarkerTitleActive]}>
+            {chapter.title}
+          </Text>
+          <Text style={styles.chapterMarkerTime}>{formatTime(chapter.startTime)}</Text>
+        </View>
+        {isCurrent && (
+          <Animated.View entering={FadeIn} style={styles.nowPlayingBadge}>
+            <Text style={styles.nowPlayingText}>NOW PLAYING</Text>
+          </Animated.View>
+        )}
+      </TouchableOpacity>
+    );
+  }
+
   const renderCommentItem = ({ item }: { item: VideoComment }) => (
     <View style={styles.commentItem}>
       <Avatar
@@ -310,25 +410,89 @@ export default function VideoDetailScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
         }
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => {
+          scrollY.value = e.nativeEvent.contentOffset.y;
+        }}
+        scrollEventThrottle={16}
       >
-        {/* Video player */}
-        <Video
-          ref={videoRef}
-          source={{ uri: video.videoUrl }}
-          style={styles.videoPlayer}
-          resizeMode={ResizeMode.CONTAIN}
-          useNativeControls
-          shouldPlay
-          isLooping={false}
-          onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-        />
+        {/* Cinematic Video Player with gradient overlay */}
+        <View style={styles.videoContainer}>
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={(e) => handleVideoDoubleTap(e)}
+            style={styles.videoWrapper}
+          >
+            <Video
+              ref={videoRef}
+              source={{ uri: video.videoUrl }}
+              style={styles.videoPlayer}
+              resizeMode={ResizeMode.CONTAIN}
+              useNativeControls
+              shouldPlay
+              isLooping={false}
+              onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+            />
 
-        {/* Title & stats */}
+            {/* Cinematic gradient overlays */}
+            <LinearGradient
+              colors={['rgba(13,17,23,0.8)', 'transparent', 'transparent', 'rgba(13,17,23,0.6)']}
+              locations={[0, 0.2, 0.8, 1]}
+              style={styles.videoGradientOverlay}
+            />
+
+            {/* Like burst animations */}
+            {likeBursts.map(burst => (
+              <LikeBurst key={burst.id} x={burst.x} y={burst.y} />
+            ))}
+
+            {/* Cinematic title overlay (fades on scroll) */}
+            <Animated.View style={styles.videoTitleOverlay}>
+              <LinearGradient
+                colors={['transparent', 'rgba(13,17,23,0.9)']}
+                style={styles.videoTitleGradient}
+              >
+                <Text style={styles.videoTitleCinematic} numberOfLines={2}>
+                  {video.title}
+                </Text>
+              </LinearGradient>
+            </Animated.View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Title & stats with cinematic styling */}
         <View style={styles.content}>
+          {/* Gold accent divider */}
+          <View style={styles.titleAccentContainer}>
+            <LinearGradient
+              colors={[colors.gold, colors.emerald, 'transparent']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.titleAccentLine}
+            />
+            <View style={styles.titleAccentDot} />
+          </View>
+
           <Text style={styles.videoTitle}>{video.title}</Text>
-          <Text style={styles.videoStats}>
-            {video.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
-          </Text>
+
+          {/* Enhanced stats row with icons */}
+          <View style={styles.videoStatsRow}>
+            <View style={styles.statItem}>
+              <Icon name="eye" size="xs" color={colors.text.secondary} />
+              <Text style={styles.videoStatText}>{video.viewsCount.toLocaleString()}</Text>
+            </View>
+            <Text style={styles.statDivider}>•</Text>
+            <View style={styles.statItem}>
+              <Icon name="clock" size="xs" color={colors.text.secondary} />
+              <Text style={styles.videoStatText}>
+                {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+              </Text>
+            </View>
+            <Text style={styles.statDivider}>•</Text>
+            <View style={styles.statItem}>
+              <Icon name="bar-chart-2" size="xs" color={colors.gold} />
+              <Text style={styles.videoStatTextGold}>{durationText}</Text>
+            </View>
+          </View>
 
           {/* Action row */}
           <View style={styles.actionRow}>
@@ -424,36 +588,52 @@ export default function VideoDetailScreen() {
             </View>
           )}
 
-          {/* Chapters */}
+          {/* Cinematic Chapters Timeline */}
           {chapters.length > 0 && (
             <View style={styles.chaptersSection}>
-              <TouchableOpacity
-                style={styles.chapterHeader}
-                onPress={() => setShowChapters(!showChapters)}
-                accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
-                accessibilityRole="button"
+              <LinearGradient
+                colors={['rgba(200,150,62,0.1)', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.chaptersGradient}
               >
-                <Icon name="layers" size="sm" color={colors.text.secondary} />
-                <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
-                <Icon
-                  name={showChapters ? 'chevron-down' : 'chevron-right'}
-                  size="sm"
-                  color={colors.text.tertiary}
-                />
-              </TouchableOpacity>
-              {showChapters &&
-                chapters.map((ch, i) => (
-                  <TouchableOpacity
-                    key={i}
-                    style={styles.chapterRow}
-                    onPress={() => seekToChapter(ch.startTime)}
-                    accessibilityLabel={`Go to chapter: ${ch.title} at ${formatTime(ch.startTime)}`}
-                    accessibilityRole="button"
-                  >
-                    <Text style={styles.chapterTime}>{formatTime(ch.startTime)}</Text>
-                    <Text style={styles.chapterTitle}>{ch.title}</Text>
-                  </TouchableOpacity>
-                ))}
+                <TouchableOpacity
+                  style={styles.chapterHeader}
+                  onPress={() => setShowChapters(!showChapters)}
+                  accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.chapterIconContainer}>
+                    <Icon name="layers" size="sm" color={colors.gold} />
+                  </View>
+                  <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
+                  <View style={styles.chapterTimelinePreview}>
+                    {chapters.slice(0, 4).map((_, i) => (
+                      <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : colors.dark.border }]} />
+                    ))}
+                  </View>
+                  <Icon
+                    name={showChapters ? 'chevron-down' : 'chevron-right'}
+                    size="sm"
+                    color={colors.text.tertiary}
+                  />
+                </TouchableOpacity>
+
+                {showChapters && (
+                  <View style={styles.chaptersTimeline}>
+                    <View style={styles.timelineLine} />
+                    {chapters.map((ch, i) => (
+                      <ChapterMarker
+                        key={i}
+                        chapter={ch}
+                        index={i}
+                        total={chapters.length}
+                        currentProgress={progressRef.current}
+                      />
+                    ))}
+                  </View>
+                )}
+              </LinearGradient>
             </View>
           )}
 
@@ -772,5 +952,199 @@ const styles = StyleSheet.create({
     flex: 1,
     color: colors.text.primary,
     fontSize: fontSize.base,
+  },
+
+  // Cinematic video player styles
+  videoContainer: {
+    position: 'relative',
+  },
+  videoWrapper: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  videoGradientOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    pointerEvents: 'none',
+  },
+  videoTitleOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  videoTitleGradient: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.lg,
+    paddingTop: spacing.xl,
+  },
+  videoTitleCinematic: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+
+  // Like burst animation
+  likeBurst: {
+    position: 'absolute',
+    zIndex: 100,
+  },
+
+  // Title accent
+  titleAccentContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  titleAccentLine: {
+    height: 2,
+    flex: 1,
+    maxWidth: 60,
+    borderRadius: 1,
+  },
+  titleAccentDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.gold,
+  },
+
+  // Enhanced stats row
+  videoStatsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  videoStatText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  videoStatTextGold: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  statDivider: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
+  },
+
+  // Cinematic chapters
+  chaptersGradient: {
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(200,150,62,0.2)',
+  },
+  chapterIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    backgroundColor: 'rgba(200,150,62,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chapterTimelinePreview: {
+    flexDirection: 'row',
+    gap: 4,
+    flex: 1,
+    justifyContent: 'flex-end',
+    marginRight: spacing.sm,
+  },
+  timelineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  chaptersTimeline: {
+    marginTop: spacing.md,
+    position: 'relative',
+    paddingLeft: spacing.md,
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 4,
+    top: 0,
+    bottom: 0,
+    width: 2,
+    backgroundColor: colors.dark.border,
+  },
+  chapterMarker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingLeft: spacing.lg,
+    position: 'relative',
+  },
+  chapterMarkerActive: {
+    backgroundColor: 'rgba(200,150,62,0.1)',
+    borderRadius: radius.md,
+    marginLeft: -spacing.md,
+    paddingLeft: spacing.lg + spacing.md,
+    marginVertical: spacing.xs,
+  },
+  chapterMarkerPast: {
+    opacity: 0.7,
+  },
+  chapterMarkerLine: {
+    position: 'absolute',
+    left: -spacing.lg + 2,
+    width: 12,
+    height: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  chapterMarkerDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: colors.dark.bg,
+  },
+  chapterMarkerDotActive: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  chapterMarkerInfo: {
+    flex: 1,
+  },
+  chapterMarkerTitle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+  },
+  chapterMarkerTitleActive: {
+    color: colors.text.primary,
+    fontWeight: '700',
+  },
+  chapterMarkerTime: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+  },
+  nowPlayingBadge: {
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  nowPlayingText: {
+    color: '#0D1117',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

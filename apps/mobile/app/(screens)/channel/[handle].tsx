@@ -8,6 +8,8 @@ import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tansta
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Clipboard from 'expo-clipboard';
 import { useUser } from '@clerk/clerk-expo';
+import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
@@ -23,7 +25,8 @@ import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
-const BANNER_HEIGHT = Dimensions.get('window').width / 3; // 3:1 ratio
+const BANNER_HEIGHT = Dimensions.get('window').width / 2.5; // 2.5:1 ratio for cinematic look
+const FEATURED_HEIGHT = Dimensions.get('window').width * 0.56; // 16:9 ratio
 
 type Tab = 'videos' | 'playlists' | 'about';
 
@@ -91,7 +94,43 @@ function VideoCard({ video }: { video: Video }) {
   );
 }
 
-function PlaylistCard({ playlist }: { playlist: Playlist }) {
+// Featured Video Card Component
+  function FeaturedVideoCard({ video, onPress }: { video: Video; onPress: () => void }) {
+    const durationMinutes = Math.floor(video.duration / 60);
+    const durationSeconds = Math.floor(video.duration % 60);
+    const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+
+    return (
+      <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
+        <TouchableOpacity style={styles.featuredCard} onPress={onPress} activeOpacity={0.9}>
+          <Image source={{ uri: video.thumbnailUrl || '' }} style={styles.featuredThumbnail} />
+          <LinearGradient
+            colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
+            locations={[0.3, 0.7, 1]}
+            style={styles.featuredGradient}
+          >
+            <View style={styles.featuredContent}>
+              <View style={styles.featuredBadge}>
+                <Icon name="check" size={10} color="#fff" />
+                <Text style={styles.featuredBadgeText}>FEATURED</Text>
+              </View>
+              <Text style={styles.featuredTitle} numberOfLines={2}>{video.title}</Text>
+              <View style={styles.featuredStats}>
+                <Text style={styles.featuredStatText}>{video.viewsCount.toLocaleString()} views</Text>
+                <Text style={styles.featuredStatDot}>•</Text>
+                <Text style={styles.featuredStatText}>{durationText}</Text>
+              </View>
+            </View>
+          </LinearGradient>
+          <View style={styles.featuredDurationBadge}>
+            <Text style={styles.durationText}>{durationText}</Text>
+          </View>
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  }
+
+  function PlaylistCard({ playlist }: { playlist: Playlist }) {
   const router = useRouter();
   const haptic = useHaptic();
 
@@ -208,18 +247,48 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   const renderVideoItem = ({ item }: { item: Video }) => <VideoCard video={item} />;
 
+  const featuredVideo = videos.length > 0 ? videos[0] : null;
+  const regularVideos = videos.slice(1);
+
   const ListHeader = useMemo(() => (
     <View>
-      {/* Banner */}
-      {channel?.bannerUrl ? (
-        <Image source={{ uri: channel.bannerUrl }} style={styles.banner} />
-      ) : (
-        <View style={[styles.banner, styles.bannerPlaceholder]} />
-      )}
+      {/* Cinematic Banner with gradient overlay */}
+      <View style={styles.bannerContainer}>
+        {channel?.bannerUrl ? (
+          <>
+            <Image source={{ uri: channel.bannerUrl }} style={styles.banner} />
+            <LinearGradient
+              colors={['rgba(13,17,23,0.3)', 'transparent', 'rgba(13,17,23,0.6)']}
+              locations={[0, 0.5, 1]}
+              style={styles.bannerGradient}
+            />
+          </>
+        ) : (
+          <LinearGradient
+            colors={[colors.dark.bgElevated, colors.dark.surface, colors.dark.bgElevated]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.banner, styles.bannerPlaceholder]}
+          >
+            <View style={styles.bannerPattern}>
+              {[...Array(6)].map((_, i) => (
+                <View key={i} style={[styles.bannerPatternLine, { opacity: 0.03 + i * 0.01 }]} />
+              ))}
+            </View>
+          </LinearGradient>
+        )}
+      </View>
 
-      {/* Avatar row */}
+      {/* Avatar row with floating effect */}
       <View style={styles.avatarRow}>
-        <Avatar uri={channel?.avatarUrl} name={channel?.name || ''} size="2xl" />
+        <View style={styles.avatarContainer}>
+          <Avatar uri={channel?.avatarUrl} name={channel?.name || ''} size="2xl" />
+          {channel?.isVerified && (
+            <View style={styles.verifiedBadgeFloating}>
+              <VerifiedBadge size={16} />
+            </View>
+          )}
+        </View>
         <View style={styles.subscribeContainer}>
           <GradientButton
             label={channel?.isSubscribed ? 'Subscribed' : 'Subscribe'}
@@ -232,8 +301,16 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         </View>
       </View>
 
-      {/* Name + handle */}
+      {/* Name + handle with gold accent */}
       <View style={styles.nameSection}>
+        <View style={styles.nameAccent}>
+          <LinearGradient
+            colors={[colors.gold, colors.emerald]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.nameAccentLine}
+          />
+        </View>
         <View style={styles.nameRow}>
           <Text style={styles.channelName}>{channel?.name}</Text>
           {channel?.isVerified && <VerifiedBadge size={18} />}
@@ -241,39 +318,59 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <Text style={styles.handle}>@{handle}</Text>
       </View>
 
-      {/* Stats */}
-      <View style={styles.stats}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNum}>{channel?.subscribersCount.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabel}>subscribers</Text>
+      {/* Enhanced Stats with icons */}
+      <View style={styles.statsEnhanced}>
+        <View style={styles.statItemEnhanced}>
+          <Icon name="users" size="sm" color={colors.emerald} />
+          <Text style={styles.statNumEnhanced}>{channel?.subscribersCount.toLocaleString() || '0'}</Text>
+          <Text style={styles.statLabelEnhanced}>subscribers</Text>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNum}>{channel?.videosCount.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabel}>videos</Text>
+        <View style={styles.statDividerEnhanced} />
+        <View style={styles.statItemEnhanced}>
+          <Icon name="video" size="sm" color={colors.gold} />
+          <Text style={styles.statNumEnhanced}>{channel?.videosCount.toLocaleString() || '0'}</Text>
+          <Text style={styles.statLabelEnhanced}>videos</Text>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNum}>{channel?.totalViews.toLocaleString() || '0'}</Text>
-          <Text style={styles.statLabel}>views</Text>
+        <View style={styles.statDividerEnhanced} />
+        <View style={styles.statItemEnhanced}>
+          <Icon name="eye" size="sm" color={colors.text.secondary} />
+          <Text style={styles.statNumEnhanced}>{channel?.totalViews.toLocaleString() || '0'}</Text>
+          <Text style={styles.statLabelEnhanced}>views</Text>
         </View>
       </View>
 
-      {/* Description */}
+      {/* Description with card styling */}
       {channel?.description && (
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionText}>{channel.description}</Text>
+        <View style={styles.descriptionCard}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.descriptionGradient}
+          >
+            <Text style={styles.descriptionText}>{channel.description}</Text>
+          </LinearGradient>
         </View>
       )}
 
-      {/* Tabs */}
-      <TabSelector
-        tabs={CHANNEL_TABS}
-        activeKey={activeTab}
-        onTabChange={(key) => setActiveTab(key as Tab)}
-      />
+      {/* Featured Video Section */}
+      {featuredVideo && activeTab === 'videos' && (
+        <FeaturedVideoCard
+          video={featuredVideo}
+          onPress={() => router.push(`/(screens)/video/${featuredVideo.id}`)}
+        />
+      )}
+
+      {/* Tabs with enhanced styling */}
+      <View style={styles.tabsContainer}>
+        <TabSelector
+          tabs={CHANNEL_TABS}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as Tab)}
+        />
+      </View>
     </View>
-  ), [channel, handle, subscribeMutation.isPending]);
+  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab]);
 
   if (channelQuery.isLoading) {
     return (
@@ -347,7 +444,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       </View>
 
       <FlatList
-        data={activeTab === 'videos' ? videos : activeTab === 'playlists' ? playlists : []}
+        data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
         keyExtractor={(item) => item.id}
         renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
         ListHeaderComponent={ListHeader}
@@ -721,5 +818,174 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontSize: fontSize.sm,
     fontWeight: '700',
+  },
+
+  // Cinematic banner styles
+  bannerContainer: {
+    position: 'relative',
+  },
+  bannerGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  bannerPattern: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'space-evenly',
+  },
+  bannerPatternLine: {
+    height: 1,
+    backgroundColor: colors.text.primary,
+    marginHorizontal: spacing.lg,
+  },
+
+  // Avatar with floating verified badge
+  avatarContainer: {
+    position: 'relative',
+  },
+  verifiedBadgeFloating: {
+    position: 'absolute',
+    bottom: 0,
+    right: -4,
+    backgroundColor: colors.dark.bg,
+    borderRadius: radius.full,
+    padding: 2,
+  },
+
+  // Name section with gold accent
+  nameAccent: {
+    marginBottom: spacing.sm,
+  },
+  nameAccentLine: {
+    width: 40,
+    height: 3,
+    borderRadius: 1.5,
+  },
+
+  // Enhanced stats
+  statsEnhanced: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+  },
+  statItemEnhanced: {
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  statNumEnhanced: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '800',
+  },
+  statLabelEnhanced: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  statDividerEnhanced: {
+    width: 1,
+    backgroundColor: colors.dark.border,
+  },
+
+  // Description card
+  descriptionCard: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  descriptionGradient: {
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.5)',
+  },
+
+  // Tabs container
+  tabsContainer: {
+    marginTop: spacing.sm,
+  },
+
+  // Featured video section
+  featuredContainer: {
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.md,
+  },
+  featuredCard: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.surface,
+  },
+  featuredThumbnail: {
+    width: '100%',
+    height: FEATURED_HEIGHT,
+  },
+  featuredGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: FEATURED_HEIGHT * 0.6,
+    justifyContent: 'flex-end',
+    padding: spacing.md,
+  },
+  featuredContent: {
+    gap: spacing.xs,
+  },
+  featuredBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  featuredBadgeText: {
+    color: '#0D1117',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  featuredTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.md,
+    fontWeight: '700',
+  },
+  featuredStats: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  featuredStatText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  featuredStatDot: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.sm,
+  },
+  featuredDurationBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
   },
 });

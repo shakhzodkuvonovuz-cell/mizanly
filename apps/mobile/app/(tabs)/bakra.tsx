@@ -263,11 +263,13 @@ const ReelItem = memo(function ReelItem({
                 showRing={false}
               />
               {/* Follow button on creator avatar */}
-              {!item.user?.isFollowing && item.user.id !== user?.id && (
+              {item.user.id !== user?.id && (
                 <Pressable
                   onPress={() => {
-                    followMutation.mutate(item.user.id);
-                    haptic('medium');
+                    if (!item.user?.isFollowing) {
+                      followMutation.mutate(item.user.id);
+                      haptic('medium');
+                    }
                   }}
                   style={{
                     position: 'absolute',
@@ -277,17 +279,29 @@ const ReelItem = memo(function ReelItem({
                     borderWidth: 1.5, borderColor: colors.dark.bg,
                   }}
                 >
-                  <LinearGradient
-                    colors={[colors.emerald, '#05593A']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={{
-                      width: 26, height: 26,
-                      justifyContent: 'center', alignItems: 'center',
-                    }}
-                  >
-                    <Icon name="plus" size={14} color="#fff" />
-                  </LinearGradient>
+                  {item.user?.isFollowing ? (
+                    <View
+                      style={{
+                        width: 26, height: 26,
+                        justifyContent: 'center', alignItems: 'center',
+                        backgroundColor: colors.emerald,
+                      }}
+                    >
+                      <Icon name="check" size={14} color="#fff" />
+                    </View>
+                  ) : (
+                    <LinearGradient
+                      colors={[colors.emerald, '#05593A']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={{
+                        width: 26, height: 26,
+                        justifyContent: 'center', alignItems: 'center',
+                      }}
+                    >
+                      <Icon name="plus" size={14} color="#fff" />
+                    </LinearGradient>
+                  )}
                 </Pressable>
               )}
             </View>
