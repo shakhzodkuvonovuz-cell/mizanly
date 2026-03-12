@@ -13,6 +13,7 @@ import {
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -22,11 +23,26 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { feedApi, searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 
+const CATEGORIES = [
+  { key: 'all', label: 'All', emoji: '🌟' },
+  { key: 'trending', label: 'Trending', emoji: '🔥' },
+  { key: 'food', label: 'Food', emoji: '🍽️' },
+  { key: 'fashion', label: 'Fashion', emoji: '👗' },
+  { key: 'sports', label: 'Sports', emoji: '⚽' },
+  { key: 'tech', label: 'Tech', emoji: '💻' },
+  { key: 'islamic', label: 'Islamic', emoji: '🕌' },
+  { key: 'art', label: 'Art', emoji: '🎨' },
+];
+
+type CategoryKey = typeof CATEGORIES[number]['key'];
+
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.xs;
 const ITEM_WIDTH = (screenWidth - spacing.base * 2 - GRID_GAP * 2) / 3;
+const FEATURED_WIDTH = screenWidth * 0.75;
+const FEATURED_HEIGHT = FEATURED_WIDTH * (9 / 16);
 
 function TrendingHashtagsSkeleton() {
   const chips = Array.from({ length: 5 }, (_, i) => i);
@@ -62,13 +78,14 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
         contentContainerStyle={styles.trendingList}
         renderItem={({ item }) => (
           <Pressable
-            style={styles.hashtagChip}
+            style={styles.hashtagChipGold}
             onPress={() => router.push(`/(screens)/search?q=${encodeURIComponent(item.name)}` as never)}
             accessibilityRole="button"
             accessibilityLabel={`Search for hashtag ${item.name}`}
           >
-            <Text style={styles.hashtagText}>#{item.name}</Text>
-            <Text style={styles.hashtagCount}>
+            <Icon name="hash" size={12} color={colors.gold} />
+            <Text style={styles.hashtagTextGold}>#{item.name}</Text>
+            <Text style={styles.hashtagCountGold}>
               {item.postsCount + item.threadsCount > 1000
                 ? `${Math.floor((item.postsCount + item.threadsCount) / 1000)}k`
                 : item.postsCount + item.threadsCount}
@@ -76,6 +93,125 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
           </Pressable>
         )}
       />
+    </View>
+  );
+}
+
+function CategoryPills({ active, onSelect }: { active: CategoryKey; onSelect: (c: CategoryKey) => void }) {
+  return (
+    <View style={styles.categoriesSection}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.categoriesList}
+      >
+        {CATEGORIES.map((cat) => {
+          const isActive = active === cat.key;
+          return (
+            <Pressable
+              key={cat.key}
+              style={[
+                styles.categoryPill,
+                isActive && styles.categoryPillActive,
+              ]}
+              onPress={() => onSelect(cat.key)}
+              accessibilityRole="button"
+              accessibilityLabel={`Filter by ${cat.label}`}
+            >
+              <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
+                {cat.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    </View>
+  );
+}
+
+interface FeaturedItem {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  creator: { avatarUrl?: string; displayName: string };
+  viewsCount: number;
+  type: 'post' | 'reel' | 'video';
+}
+
+function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => void }) {
+  const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.97 });
+
+  return (
+    <AnimatedPressable
+      style={[styles.featuredCard, animatedStyle]}
+      onPress={onPress}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      accessibilityRole="button"
+      accessibilityLabel={`View ${item.title}`}
+    >
+      <Image source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
+      <View style={styles.featuredOverlay}>
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.85)']}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.featuredContent}>
+          <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
+          <View style={styles.featuredMeta}>
+            <View style={styles.featuredCreator}>
+              {item.creator.avatarUrl ? (
+                <Image source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
+              ) : (
+                <View style={styles.featuredAvatarPlaceholder}>
+                  <Icon name="user" size={10} color={colors.text.primary} />
+                </View>
+              )}
+              <Text style={styles.featuredCreatorName} numberOfLines={1}>
+                {item.creator.displayName}
+              </Text>
+            </View>
+            <View style={styles.featuredViews}>
+              <Icon name="eye" size={12} color={colors.text.secondary} />
+              <Text style={styles.featuredViewsText}>
+                {item.viewsCount > 1000 ? `${Math.floor(item.viewsCount / 1000)}k` : item.viewsCount}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </AnimatedPressable>
+  );
+}
+
+function FeaturedSection({ items }: { items: FeaturedItem[] }) {
+  const router = useRouter();
+
+  if (!items.length) return null;
+
+  return (
+    <View style={styles.featuredSection}>
+      <Text style={styles.sectionTitle}>Featured</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.featuredList}
+        decelerationRate="fast"
+        snapToInterval={FEATURED_WIDTH + spacing.md}
+      >
+        {items.map((item) => (
+          <FeaturedCard
+            key={item.id}
+            item={item}
+            onPress={() => {
+              if (item.type === 'reel') router.push(`/(screens)/reel/${item.id}`);
+              else if (item.type === 'video') router.push(`/(screens)/video/${item.id}`);
+              else router.push(`/(screens)/post/${item.id}`);
+            }}
+          />
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -155,6 +291,7 @@ function ExploreGridSkeleton() {
 export default function DiscoverScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
 
   // Fetch trending hashtags
   const {
@@ -183,6 +320,36 @@ export default function DiscoverScreen() {
   });
 
   const exploreItems = exploreData?.pages.flatMap((page) => page.data) ?? [];
+
+  // Generate featured items from first 5 content items with media
+  const featuredItems: FeaturedItem[] = exploreItems
+    .filter((item): item is (Post | Reel | Video) => {
+      if ('videoUrl' in item && item.videoUrl) return true; // Reel
+      if ('postType' in item && item.mediaUrls?.length > 0) return true; // Post
+      if ('channel' in item && item.thumbnailUrl) return true; // Video
+      return false;
+    })
+    .slice(0, 5)
+    .map((item) => {
+      const isReel = 'videoUrl' in item && item.videoUrl;
+      const isVideo = 'channel' in item;
+
+      return {
+        id: item.id,
+        title: isVideo ? (item as Video).title : isReel ? (item as Reel).caption || 'Reel' : (item as Post).content?.slice(0, 60) || 'Post',
+        thumbnailUrl: isReel
+          ? (item as Reel).thumbnailUrl || (item as Reel).videoUrl
+          : isVideo
+            ? (item as Video).thumbnailUrl || (item as Video).videoUrl
+            : (item as Post).mediaUrls[0],
+        creator: {
+          avatarUrl: item.user?.avatarUrl,
+          displayName: item.user?.displayName || 'User',
+        },
+        viewsCount: (item as Reel | Video).viewsCount || 0,
+        type: isReel ? 'reel' : isVideo ? 'video' : 'post',
+      };
+    });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -237,6 +404,8 @@ export default function DiscoverScreen() {
         renderItem={({ item }) => <ExploreGridItem item={item} />}
         ListHeaderComponent={
           <>
+            <CategoryPills active={activeCategory} onSelect={setActiveCategory} />
+            {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
             {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
             <Text style={styles.sectionTitle}>Explore</Text>
           </>
@@ -295,6 +464,111 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.xl,
   },
+  categoriesSection: {
+    marginTop: spacing.md,
+    marginBottom: spacing.md,
+  },
+  categoriesList: {
+    paddingRight: spacing.base,
+    gap: spacing.sm,
+  },
+  categoryPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+  },
+  categoryPillActive: {
+    backgroundColor: colors.emerald,
+  },
+  categoryEmoji: {
+    fontSize: 14,
+  },
+  categoryText: {
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
+    fontWeight: '500',
+  },
+  categoryTextActive: {
+    color: '#fff',
+  },
+  featuredSection: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  featuredList: {
+    paddingRight: spacing.base,
+    gap: spacing.md,
+  },
+  featuredCard: {
+    width: FEATURED_WIDTH,
+    height: FEATURED_HEIGHT,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard,
+    borderWidth: 0.5,
+    borderColor: colors.dark.borderLight,
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+  },
+  featuredOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+  },
+  featuredContent: {
+    padding: spacing.base,
+  },
+  featuredTitle: {
+    color: '#fff',
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  featuredMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  featuredCreator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
+  featuredAvatar: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+  },
+  featuredAvatarPlaceholder: {
+    width: 20,
+    height: 20,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featuredCreatorName: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    flex: 1,
+  },
+  featuredViews: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  featuredViewsText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+  },
   trendingSection: {
     marginTop: spacing.lg,
     marginBottom: spacing.xl,
@@ -323,16 +597,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.dark.border,
   },
+  hashtagChipGold: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.sm,
+    borderWidth: 0.5,
+    borderColor: colors.gold,
+  },
   hashtagText: {
     fontSize: fontSize.sm,
     color: colors.text.primary,
     fontWeight: '500',
+  },
+  hashtagTextGold: {
+    fontSize: fontSize.sm,
+    color: colors.gold,
+    fontWeight: '600',
   },
   hashtagCount: {
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
     fontWeight: '400',
     marginTop: 2,
+  },
+  hashtagCountGold: {
+    fontSize: fontSize.xs,
+    color: colors.gold,
+    fontWeight: '500',
+    opacity: 0.8,
   },
   gridRow: {
     justifyContent: 'space-between',
@@ -344,6 +641,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     overflow: 'hidden',
     backgroundColor: colors.dark.bgCard,
+    borderWidth: 0.5,
+    borderColor: colors.dark.borderLight,
   },
   gridImage: {
     width: '100%',
