@@ -1,0 +1,688 @@
+import { useState, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  TextInput,
+  Dimensions,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useHaptic } from '@/hooks/useHaptic';
+
+const { width } = Dimensions.get('window');
+
+interface Tier {
+  id: string;
+  name: string;
+  price: number;
+  members: number;
+  level: 'bronze' | 'silver' | 'gold';
+  benefits: string[];
+  isActive: boolean;
+}
+
+const MOCK_TIERS: Tier[] = [
+  {
+    id: '1',
+    name: 'Supporter',
+    price: 2.99,
+    members: 185,
+    level: 'bronze',
+    benefits: ['Ad-free viewing', 'Supporter badge', 'Early access to posts'],
+    isActive: true,
+  },
+  {
+    id: '2',
+    name: 'VIP',
+    price: 9.99,
+    members: 89,
+    level: 'silver',
+    benefits: ['All Supporter perks', 'Exclusive stories', 'Monthly Q&A', 'Priority replies'],
+    isActive: true,
+  },
+  {
+    id: '3',
+    name: 'Founding Member',
+    price: 24.99,
+    members: 38,
+    level: 'gold',
+    benefits: ['All VIP perks', '1-on-1 monthly call', 'Custom shoutouts', 'Behind-the-scenes content'],
+    isActive: true,
+  },
+];
+
+const TIER_COLORS = {
+  bronze: {
+    gradient: ['rgba(205,127,50,0.3)', 'rgba(205,127,50,0.15)'] as const,
+    iconBg: ['rgba(205,127,50,0.4)', 'rgba(205,127,50,0.2)'] as const,
+    color: '#CD7F32',
+  },
+  silver: {
+    gradient: ['rgba(192,192,192,0.3)', 'rgba(192,192,192,0.15)'] as const,
+    iconBg: ['rgba(192,192,192,0.4)', 'rgba(192,192,192,0.2)'] as const,
+    color: '#C0C0C0',
+  },
+  gold: {
+    gradient: ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.15)'] as const,
+    iconBg: ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)'] as const,
+    color: colors.gold,
+  },
+};
+
+function TierCard({
+  tier,
+  index,
+  onToggle,
+}: {
+  tier: Tier;
+  index: number;
+  onToggle: () => void;
+}) {
+  const haptic = useHaptic();
+  const colors = TIER_COLORS[tier.level];
+
+  return (
+    <Animated.View entering={FadeInUp.delay(index * 100).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.tierCard}
+      >
+        {/* Header */}
+        <View style={styles.tierHeader}>
+          <View style={styles.tierTitleSection}>
+            <LinearGradient
+              colors={colors.iconBg}
+              style={styles.tierIconBg}
+            >
+              <Icon name="star" size="sm" color={colors.color} />
+            </LinearGradient>
+            <View>
+              <Text style={styles.tierName}>{tier.name}</Text>
+              <Text style={[styles.tierPrice, { color: colors.color }]}>
+                ${tier.price.toFixed(2)}/month
+              </Text>
+            </View>
+          </View>
+
+          {/* Toggle */}
+          <TouchableOpacity
+            onPress={() => {
+              haptic.light();
+              onToggle();
+            }}
+            activeOpacity={0.8}
+          >
+            <LinearGradient
+              colors={tier.isActive ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+              style={styles.toggleTrack}
+            >
+              <View
+                style={[
+                  styles.toggleThumb,
+                  tier.isActive && styles.toggleThumbActive,
+                ]}
+              />
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
+
+        {/* Members Badge */}
+        <LinearGradient
+          colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+          style={styles.membersBadge}
+        >
+          <Icon name="users" size="xs" color={colors.text.tertiary} />
+          <Text style={styles.membersText}>{tier.members} members</Text>
+        </LinearGradient>
+
+        {/* Benefits */}
+        <View style={styles.benefitsContainer}>
+          {tier.benefits.map((benefit, i) => (
+            <View key={i} style={styles.benefitRow}>
+              <Icon name="check" size="xs" color={colors.emerald} />
+              <Text style={styles.benefitText}>{benefit}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Edit Button */}
+        <TouchableOpacity
+          onPress={() => haptic.light()}
+          activeOpacity={0.8}
+          style={styles.editButton}
+        >
+          <LinearGradient
+            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+            style={styles.editButtonGradient}
+          >
+            <Icon name="pencil" size="xs" color={colors.text.secondary} />
+            <Text style={styles.editButtonText}>Edit tier</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+      </LinearGradient>
+    </Animated.View>
+  );
+}
+
+export default function MembershipTiersScreen() {
+  const router = useRouter();
+  const haptic = useHaptic();
+  const [refreshing, setRefreshing] = useState(false);
+  const [tiers, setTiers] = useState<Tier[]>(MOCK_TIERS);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTierName, setNewTierName] = useState('');
+  const [newTierPrice, setNewTierPrice] = useState('');
+  const [newTierBenefits, setNewTierBenefits] = useState('');
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1500);
+  }, []);
+
+  const toggleTier = useCallback((id: string) => {
+    setTiers(prev =>
+      prev.map(t => (t.id === id ? { ...t, isActive: !t.isActive } : t))
+    );
+  }, []);
+
+  const handleCreateTier = useCallback(() => {
+    haptic.success();
+    setIsCreating(false);
+    setNewTierName('');
+    setNewTierPrice('');
+    setNewTierBenefits('');
+  }, [haptic]);
+
+  const monthlyRevenue = tiers.reduce((sum, tier) => {
+    return tier.isActive ? sum + tier.price * tier.members : sum;
+  }, 0);
+  const totalMembers = tiers.reduce((sum, tier) => {
+    return tier.isActive ? sum + tier.members : sum;
+  }, 0);
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <GlassHeader
+        title="Membership Tiers"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        rightActions={[{ icon: 'star', onPress: () => {}, accessibilityLabel: 'Tiers' }]}
+      />
+
+      <FlatList
+        data={tiers}
+        keyExtractor={item => item.id}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={styles.scrollContent}
+        ListHeaderComponent={
+          <>
+            {/* Info Banner */}
+            <Animated.View entering={FadeInUp.duration(400)}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.15)', 'rgba(28,35,51,0.2)']}
+                style={styles.infoBanner}
+              >
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.infoIconBg}
+                >
+                  <Icon name="star" size="sm" color={colors.gold} />
+                </LinearGradient>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoTitle}>Offer exclusive content and perks to your members</Text>
+                  <Text style={styles.infoSubtitle}>Members pay monthly for access to your exclusive content</Text>
+                </View>
+              </LinearGradient>
+            </Animated.View>
+          </>
+        }
+        renderItem={({ item, index }) => (
+          <TierCard
+            tier={item}
+            index={index}
+            onToggle={() => toggleTier(item.id)}
+          />
+        )}
+        ListFooterComponent={
+          <>
+            {/* Create New Tier Button / Form */}
+            {!isCreating ? (
+              <Animated.View entering={FadeInUp.delay(tiers.length * 100 + 100).duration(400)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    haptic.light();
+                    setIsCreating(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
+                    style={styles.createButton}
+                  >
+                    <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
+                    <Text style={styles.createButtonText}>Add a membership tier</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            ) : (
+              <Animated.View entering={FadeInUp.duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.createFormCard}
+                >
+                  <Text style={styles.createFormTitle}>Create New Tier</Text>
+
+                  {/* Name Input */}
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                    style={styles.formInputContainer}
+                  >
+                    <Text style={styles.formInputLabel}>Tier Name</Text>
+                    <TextInput
+                      style={styles.formInput}
+                      value={newTierName}
+                      onChangeText={setNewTierName}
+                      placeholder="e.g., Premium Supporter"
+                      placeholderTextColor={colors.text.tertiary}
+                    />
+                  </LinearGradient>
+
+                  {/* Price Input */}
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                    style={styles.formInputContainer}
+                  >
+                    <Text style={styles.formInputLabel}>Monthly Price</Text>
+                    <View style={styles.priceInputWrapper}>
+                      <Text style={styles.pricePrefix}>$</Text>
+                      <TextInput
+                        style={styles.formInput}
+                        value={newTierPrice}
+                        onChangeText={setNewTierPrice}
+                        placeholder="9.99"
+                        placeholderTextColor={colors.text.tertiary}
+                        keyboardType="decimal-pad"
+                      />
+                      <Text style={styles.priceSuffix}>/month</Text>
+                    </View>
+                  </LinearGradient>
+
+                  {/* Benefits Input */}
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                    style={styles.formInputContainer}
+                  >
+                    <Text style={styles.formInputLabel}>Benefits (one per line)</Text>
+                    <TextInput
+                      style={[styles.formInput, styles.multilineInput]}
+                      value={newTierBenefits}
+                      onChangeText={setNewTierBenefits}
+                      placeholder="• Exclusive content&#10;• Early access&#10;• Monthly Q&A"
+                      placeholderTextColor={colors.text.tertiary}
+                      multiline
+                      numberOfLines={4}
+                      textAlignVertical="top"
+                    />
+                  </LinearGradient>
+
+                  {/* Form Buttons */}
+                  <View style={styles.formButtonRow}>
+                    <TouchableOpacity
+                      onPress={() => setIsCreating(false)}
+                      activeOpacity={0.8}
+                      style={styles.cancelButton}
+                    >
+                      <LinearGradient
+                        colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                        style={styles.cancelButtonGradient}
+                      >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={handleCreateTier}
+                      activeOpacity={0.8}
+                      style={styles.createTierButton}
+                    >
+                      <LinearGradient
+                        colors={[colors.emerald, colors.emeraldDark]}
+                        style={styles.createTierButtonGradient}
+                      >
+                        <Text style={styles.createTierButtonText}>Create</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </View>
+                </LinearGradient>
+              </Animated.View>
+            )}
+
+            {/* Revenue Summary Card */}
+            <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                style={[styles.revenueCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+              >
+                <View style={styles.revenueHeader}>
+                  <LinearGradient
+                    colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.revenueIconBg}
+                  >
+                    <Icon name="bar-chart-2" size="sm" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.revenueTitle}>Monthly Revenue</Text>
+                </View>
+
+                <Text style={styles.revenueAmount}>
+                  ${monthlyRevenue.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}/month
+                </Text>
+
+                <View style={styles.revenueStats}>
+                  <Text style={styles.revenueStat}>{totalMembers} active members</Text>
+                  <Text style={styles.revenuePayout}>Payout: 15th of each month</Text>
+                </View>
+              </LinearGradient>
+            </Animated.View>
+
+            {/* Bottom spacing */}
+            <View style={{ height: spacing.xxl }} />
+          </>
+        }
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg,
+  },
+  scrollContent: {
+    padding: spacing.base,
+    paddingTop: 100,
+  },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  infoIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoTitle: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+    lineHeight: 22,
+  },
+  infoSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+    lineHeight: 20,
+  },
+  tierCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  tierHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  tierTitleSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  tierIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  tierName: {
+    fontFamily: fonts.heading,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+    marginBottom: spacing.xs,
+  },
+  tierPrice: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.md,
+  },
+  toggleTrack: {
+    width: 48,
+    height: 28,
+    borderRadius: radius.full,
+    padding: 2,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.text.primary,
+  },
+  toggleThumbActive: {
+    transform: [{ translateX: 20 }],
+  },
+  membersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  membersText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.xs,
+    color: colors.text.secondary,
+  },
+  benefitsContainer: {
+    marginBottom: spacing.md,
+  },
+  benefitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+    gap: spacing.xs,
+  },
+  benefitText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  editButton: {
+    alignSelf: 'flex-start',
+  },
+  editButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  editButtonText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  createButton: {
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderStyle: 'dashed',
+    padding: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  createButtonText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.base,
+    color: colors.text.tertiary,
+    marginTop: spacing.sm,
+  },
+  createFormCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  createFormTitle: {
+    fontFamily: fonts.heading,
+    fontSize: fontSize.md,
+    color: colors.text.primary,
+    marginBottom: spacing.md,
+  },
+  formInputContainer: {
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  formInputLabel: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+    marginBottom: spacing.xs,
+  },
+  priceInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pricePrefix: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.md,
+    color: colors.text.tertiary,
+    marginRight: spacing.xs,
+  },
+  formInput: {
+    flex: 1,
+    fontFamily: fonts.body,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+    padding: 0,
+  },
+  priceSuffix: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+    marginLeft: spacing.xs,
+  },
+  multilineInput: {
+    minHeight: 80,
+    lineHeight: 22,
+  },
+  formButtonRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  cancelButton: {
+    flex: 0.4,
+  },
+  cancelButtonGradient: {
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.base,
+    color: colors.text.secondary,
+  },
+  createTierButton: {
+    flex: 0.6,
+  },
+  createTierButtonGradient: {
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  createTierButtonText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+  },
+  revenueCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.lg,
+    marginTop: spacing.lg,
+  },
+  revenueHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  revenueIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  revenueTitle: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.base,
+    color: colors.text.primary,
+  },
+  revenueAmount: {
+    fontFamily: fonts.heading,
+    fontSize: 32,
+    color: colors.gold,
+    marginBottom: spacing.md,
+  },
+  revenueStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  revenueStat: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  revenuePayout: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+  },
+});
