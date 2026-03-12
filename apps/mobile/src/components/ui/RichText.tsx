@@ -1,5 +1,6 @@
-import { Text, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
+import { LinkPreview } from '@/components/ui/LinkPreview';
 import { colors, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
@@ -43,8 +44,11 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
     segments.push({ type: 'text', value: text.slice(lastIndex) });
   }
 
+  const firstUrl = segments.find(seg => seg.type === 'url')?.value;
+
   return (
-    <Text style={[styles.base, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
+    <View>
+      <Text style={[styles.base, style]} numberOfLines={numberOfLines} onPress={onPostPress}>
       {segments.map((seg, i) => {
         if (seg.type === 'url') {
           return (
@@ -111,7 +115,9 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
         }
         return <Text key={i}>{seg.value}</Text>;
       })}
-    </Text>
+      </Text>
+      {firstUrl && <LinkPreview url={firstUrl} />}
+    </View>
   );
 }
 
