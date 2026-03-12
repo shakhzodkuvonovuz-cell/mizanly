@@ -96,8 +96,10 @@ function TypingDots() {
   const dot1 = useSharedValue(0);
   const dot2 = useSharedValue(0);
   const dot3 = useSharedValue(0);
+  const fadeIn = useSharedValue(0);
 
   useEffect(() => {
+    fadeIn.value = withTiming(1, { duration: 200 });
     const bounce = (delay: number) =>
       withRepeat(
         withSequence(
@@ -110,18 +112,22 @@ function TypingDots() {
     dot1.value = bounce(0);
     dot2.value = bounce(150);
     dot3.value = bounce(300);
-  }, [dot1, dot2, dot3]);
+    return () => {
+      fadeIn.value = 0;
+    };
+  }, [dot1, dot2, dot3, fadeIn]);
 
   const s1 = useAnimatedStyle(() => ({ transform: [{ translateY: dot1.value }] }));
   const s2 = useAnimatedStyle(() => ({ transform: [{ translateY: dot2.value }] }));
   const s3 = useAnimatedStyle(() => ({ transform: [{ translateY: dot3.value }] }));
+  const containerStyle = useAnimatedStyle(() => ({ opacity: fadeIn.value }));
 
   return (
-    <View style={styles.typingDots}>
+    <Animated.View style={[styles.typingDots, containerStyle]}>
       <Animated.View style={[styles.dot, s1]} />
       <Animated.View style={[styles.dot, s2]} />
       <Animated.View style={[styles.dot, s3]} />
-    </View>
+    </Animated.View>
   );
 }
 
@@ -420,7 +426,7 @@ function MessageBubble({
       >
         {isOwn && (
           <LinearGradient
-            colors={[colors.emeraldLight, colors.emerald]}
+            colors={[colors.emerald, colors.emeraldDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
@@ -430,8 +436,14 @@ function MessageBubble({
         {!isOwn && isGroupStart && (
           <Text style={styles.senderName}>{message.sender.displayName}</Text>
         )}
+        {(message.isForwarded || message.forwardedFrom) && (
+          <View style={styles.forwardedLabel}>
+            <Icon name="share" size={10} color={colors.text.tertiary} />
+            <Text style={styles.forwardedText}>Forwarded</Text>
+          </View>
+        )}
         {message.replyTo && (
-          <View style={[styles.replyPreview, !isOwn && styles.replyPreviewOther]}>
+          <View style={[styles.replyPreview, styles.replyPreviewEmeraldBorder]}>
             <Text style={[styles.replyPreviewUser, !isOwn && styles.replyPreviewUserOther]}>
               {message.replyTo.sender.username}
             </Text>
@@ -1061,7 +1073,12 @@ export default function ConversationScreen() {
               <Avatar uri={avatarUri} name={name} size="sm" showOnline />
               <View>
                 <Text style={styles.headerName} numberOfLines={1}>{name}</Text>
-                {otherTyping && <TypingDots />}
+                {otherTyping && (
+                  <View style={styles.typingRow}>
+                    <Text style={styles.typingText}>typing</Text>
+                    <TypingDots />
+                  </View>
+                )}
               </View>
             </Pressable>
           }
@@ -1600,6 +1617,8 @@ const styles = StyleSheet.create({
 
   typingDots: { flexDirection: 'row', gap: 3, paddingTop: 2 },
   dot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.emerald },
+  typingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  typingText: { color: colors.emerald, fontSize: fontSize.xs, fontStyle: 'italic' },
 
   loaderWrap: { flex: 1, padding: spacing.base, justifyContent: 'center' },
   messageList: { paddingHorizontal: spacing.sm, paddingVertical: spacing.sm, flexGrow: 1 },
@@ -1631,8 +1650,22 @@ const styles = StyleSheet.create({
   replyPreview: {
     borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',
     paddingLeft: spacing.xs, marginBottom: spacing.xs,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.sm,
+    padding: spacing.xs,
   },
-  replyPreviewOther: { borderLeftColor: colors.emerald },
+  replyPreviewEmeraldBorder: { borderLeftColor: colors.emerald },
+  forwardedLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  forwardedText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontStyle: 'italic',
+  },
   replyPreviewUser: { color: 'rgba(255,255,255,0.8)', fontSize: fontSize.xs, fontWeight: '700' },
   replyPreviewUserOther: { color: colors.emerald },
   replyPreviewText: { color: 'rgba(255,255,255,0.6)', fontSize: fontSize.xs },

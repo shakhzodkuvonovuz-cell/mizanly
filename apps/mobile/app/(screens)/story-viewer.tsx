@@ -257,17 +257,23 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
           />
           {/* User info */}
           <View style={styles.userRow}>
-            <Avatar uri={group.user.avatarUrl} name={group.user.displayName} size="sm" />
+            <Avatar
+              uri={group.user.avatarUrl}
+              name={group.user.displayName}
+              size="sm"
+              showStoryRing={group.stories.length > storyIndex + 1}
+              ringColor={colors.emerald}
+            />
             <Text style={styles.userName}>{group.user.displayName}</Text>
             <Text style={styles.timeAgo}>{timeAgo}</Text>
-            <TouchableOpacity 
-              onPress={() => router.back()} 
-              hitSlop={12} 
+            <TouchableOpacity
+              onPress={() => router.back()}
+              hitSlop={12}
               style={styles.closeBtn}
               accessibilityLabel="Close story"
               accessibilityRole="button"
             >
-              <Icon name="x" size="sm" color="#fff" />
+              <Icon name="x" size="sm" color={colors.text.primary} />
             </TouchableOpacity>
           </View>
         </SafeAreaView>
@@ -345,7 +351,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                   style={styles.replyInput}
                   value={replyText}
                   onChangeText={setReplyText}
-                  placeholder={`Reply to ${group.user.displayName}…`}
+                  placeholder="Reply to story…"
                   placeholderTextColor="rgba(255,255,255,0.5)"
                   autoFocus
                   maxLength={200}
@@ -360,7 +366,11 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                   accessibilityLabel="Send reply"
                   accessibilityRole="button"
                 >
-                  <Icon name="send" size="sm" color="#fff" />
+                  <Icon
+                    name="send"
+                    size="sm"
+                    color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
+                  />
                 </TouchableOpacity>
               </View>
             ) : (
@@ -371,7 +381,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                 accessibilityRole="button"
               >
                 <Text style={styles.replyPlaceholderText}>
-                  Reply to {group.user.displayName}…
+                  Reply to story…
                 </Text>
               </TouchableOpacity>
             )}
@@ -442,9 +452,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row', gap: 3, marginTop: spacing.sm, paddingHorizontal: spacing.xs,
   },
   progressTrack: {
-    flex: 1, height: 2, backgroundColor: 'rgba(255,255,255,0.35)', borderRadius: 1, overflow: 'hidden',
+    flex: 1,
+    height: 2.5,
+    borderRadius: 1.5,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    overflow: 'hidden',
   },
-  progressFill: { height: '100%', backgroundColor: colors.emerald, borderRadius: 1 },
+  progressFill: {
+    height: '100%',
+    borderRadius: 1.5,
+    backgroundColor: colors.emerald,
+  },
 
   userRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
@@ -452,7 +470,7 @@ const styles = StyleSheet.create({
   },
   userName: { color: '#fff', fontSize: fontSize.sm, fontWeight: '700', flex: 1 },
   timeAgo: { color: 'rgba(255,255,255,0.7)', fontSize: fontSize.xs },
-  closeBtn: { padding: spacing.xs },
+  closeBtn: { padding: spacing.xs, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: radius.full },
 
   tapZones: { ...StyleSheet.absoluteFillObject, flexDirection: 'row' },
   tapLeft: { flex: 1 },
@@ -484,17 +502,19 @@ const styles = StyleSheet.create({
 
   bottomBar: { position: 'absolute', bottom: 0, left: 0, right: 0, paddingHorizontal: spacing.base },
   replyPlaceholder: {
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radius.full,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     marginBottom: spacing.md,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },
-  replyPlaceholderText: { color: 'rgba(255,255,255,0.6)', fontSize: fontSize.base },
+  replyPlaceholderText: { color: 'rgba(255,255,255,0.5)', fontSize: fontSize.base },
 
   replyRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radius.full,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
     marginBottom: spacing.md,
     backgroundColor: 'rgba(255,255,255,0.1)',
   },

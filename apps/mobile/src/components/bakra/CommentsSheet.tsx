@@ -1,6 +1,11 @@
 import { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withSequence,
+} from 'react-native-reanimated';
 import { useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -56,52 +61,79 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
     addCommentMutation.mutate(trimmed);
   };
 
+  // Heart bounce animation per comment
+  const likeScales = useRef<{ [key: string]: Animated.SharedValue<number> }>({});
+
+  const getLikeScale = (commentId: string) => {
+    if (!likeScales.current[commentId]) {
+      likeScales.current[commentId] = useSharedValue(1);
+    }
+    return likeScales.current[commentId];
+  };
+
   const handleLikeComment = async (commentId: string) => {
     // Optimistic-only — no backend endpoint for reel comment likes yet
     haptic.light();
+    const scale = getLikeScale(commentId);
+    scale.value = withSequence(
+      withSpring(1.3, { damping: 12, stiffness: 350 }),
+      withSpring(1, { damping: 10, stiffness: 400 })
+    );
   };
 
-  const renderComment = ({ item }: { item: Comment }) => (
-    <View style={[styles.commentItem, item.user.id === reel.user?.id && styles.opComment]}>
-      <Avatar
-        uri={item.user.avatarUrl}
-        name={item.user.username}
-        size="sm"
-        showRing={false}
-      />
-      <View style={styles.commentContent}>
-        <View style={styles.commentHeader}>
-          <Text style={styles.commentUsername}>{item.user.username}</Text>
-          <Text style={styles.commentTime}>
-            {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
-          </Text>
-        </View>
-        <Text style={styles.commentText}>{item.content}</Text>
-        <View style={styles.commentActions}>
-          <TouchableOpacity
-            style={styles.commentAction}
-            onPress={() => handleLikeComment(item.id)}
-            hitSlop={8}
-          >
-            <Icon name="heart" size="xs" color={colors.text.secondary} />
-            <Text style={styles.commentActionText}>
-              {item.likesCount > 0 ? item.likesCount : ''}
+  const renderComment = ({ item }: { item: Comment }) => {
+    const likeAnimStyle = useAnimatedStyle(() => ({
+      transform: [{ scale: getLikeScale(item.id).value }],
+    }));
+
+    return (
+      <View style={[
+        styles.commentItem,
+        item.user.id === reel.user?.id && styles.opComment,
+        item.parentId && styles.replyComment,
+      ]}>
+        <Avatar
+          uri={item.user.avatarUrl}
+          name={item.user.username}
+          size="sm"
+          showRing={false}
+        />
+        <View style={styles.commentContent}>
+          <View style={styles.commentHeader}>
+            <Text style={styles.commentUsername}>{item.user.username}</Text>
+            <Text style={styles.commentTime}>
+              {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.commentAction}
-            onPress={() => setReplyTo(item)}
-            hitSlop={8}
-          >
-            <Icon name="message-circle" size="xs" color={colors.text.secondary} />
-            <Text style={styles.commentActionText}>
-              {item._count?.replies ? item._count.replies : ''}
-            </Text>
-          </TouchableOpacity>
+          </View>
+          <Text style={styles.commentText}>{item.content}</Text>
+          <View style={styles.commentActions}>
+            <TouchableOpacity
+              style={styles.commentAction}
+              onPress={() => handleLikeComment(item.id)}
+              hitSlop={8}
+            >
+              <Animated.View style={likeAnimStyle}>
+                <Icon name="heart" size="xs" color={colors.text.secondary} />
+              </Animated.View>
+              <Text style={styles.commentActionText}>
+                {item.likesCount > 0 ? item.likesCount : ''}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.commentAction}
+              onPress={() => setReplyTo(item)}
+              hitSlop={8}
+            >
+              <Icon name="message-circle" size="xs" color={colors.text.secondary} />
+              <Text style={styles.commentActionText}>
+                {item._count?.replies ? item._count.replies : ''}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   const listEmpty = commentsQuery.isLoading ? (
     <View style={styles.skeletonContainer}>
@@ -130,9 +162,9 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
         style={styles.container}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
       >
-        {/* Header */}
+        {/* Header with comment count */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Comments</Text>
+          <Text style={styles.headerTitle}>Comments · {reel.commentsCount}</Text>
           <TouchableOpacity onPress={onClose} hitSlop={8}>
             <Icon name="x" size="sm" color={colors.text.primary} />
           </TouchableOpacity>
@@ -233,6 +265,12 @@ const styles = StyleSheet.create({
   opComment: {
     borderLeftWidth: 2,
     borderLeftColor: colors.emerald,
+    paddingLeft: spacing.sm,
+  },
+  replyComment: {
+    marginLeft: spacing.xl,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.active.emerald20,
     paddingLeft: spacing.sm,
   },
   commentContent: {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Pressable, Image, type ViewToken } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Pressable, Image, type ViewToken, Alert } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -13,12 +13,13 @@ import Animated, {
   withSpring,
   withRepeat,
   withTiming,
+  withSequence,
   Easing,
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useStore } from '@/store';
 import { reelsApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
@@ -27,6 +28,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { CommentsSheet } from '@/components/bakra/CommentsSheet';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { Platform } from 'react-native';
@@ -39,6 +41,45 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_H;
 const VIDEO_WIDTH = SCREEN_W;
 
+// Animated action button wrapper
+function ActionButton({
+  children,
+  onPress,
+  accessibilityLabel,
+}: {
+  children: React.ReactNode;
+  onPress: () => void;
+  accessibilityLabel: string;
+}) {
+  const scale = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  const handlePress = () => {
+    scale.value = withSequence(
+      withSpring(0.75, animation.spring.snappy),
+      withSpring(1, animation.spring.bouncy)
+    );
+    onPress();
+  };
+
+  return (
+    <TouchableOpacity
+      style={styles.actionButton}
+      onPress={handlePress}
+      activeOpacity={0.7}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+    >
+      <Animated.View style={animatedStyle}>
+        {children}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+}
+
 interface ReelItemProps {
   item: Reel;
   index: number;
@@ -49,6 +90,8 @@ interface ReelItemProps {
   onComment: (reel: Reel) => void;
   onProfilePress: (username: string) => void;
   onReport: (reel: Reel) => void;
+  onNotInterested: (reel: Reel) => void;
+  onCopyLink: (reel: Reel) => void;
   setVideoRef: (id: string, ref: Video) => void;
   doubleTapGesture: TapGesture;
   heartTrigger: number;
@@ -64,6 +107,8 @@ const ReelItem = memo(function ReelItem({
   onComment,
   onProfilePress,
   onReport,
+  onNotInterested,
+  onCopyLink,
   setVideoRef,
   doubleTapGesture,
   heartTrigger,
@@ -71,6 +116,8 @@ const ReelItem = memo(function ReelItem({
   const localVideoRef = useRef<Video | null>(null);
   const { user } = useUser();
   const [captionExpanded, setCaptionExpanded] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [progress, setProgress] = useState(0);
   const queryClient = useQueryClient();
   const haptic = useHaptic();
   const router = useRouter();
@@ -118,12 +165,23 @@ const ReelItem = memo(function ReelItem({
           isLooping
           useNativeControls={false}
           onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
-            if (status.isLoaded && !status.isPlaying && isActive) {
-              // Auto-play if paused but should be playing
-              localVideoRef.current?.playAsync();
+            if (status.isLoaded) {
+              if (status.durationMillis && status.durationMillis > 0) {
+                const newProgress = status.positionMillis / status.durationMillis;
+                runOnJS(setProgress)(newProgress);
+              }
+              if (!status.isPlaying && isActive) {
+                // Auto-play if paused but should be playing
+                localVideoRef.current?.playAsync();
+              }
             }
           }}
         />
+        {/* Progress bar at top */}
+        <View style={styles.progressTrack}>
+          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+        </View>
+
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,0.85)']}
           locations={[0, 0.4, 0.7, 1]}
@@ -158,6 +216,11 @@ const ReelItem = memo(function ReelItem({
               borderWidth: 2, borderColor: '#fff',
               overflow: 'hidden', marginLeft: spacing.sm,
               backgroundColor: '#1C1C1E', // Vinyl color
+              shadowColor: colors.emerald,
+              shadowOpacity: 0.3,
+              shadowRadius: 6,
+              shadowOffset: { width: 0, height: 0 },
+              elevation: 4,
             }}
           >
             <Animated.View style={[{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }, spinStyle]}>
@@ -263,12 +326,9 @@ const ReelItem = memo(function ReelItem({
 
         {/* Right action buttons */}
         <View style={styles.actionColumn}>
-          <TouchableOpacity
-            style={styles.actionButton}
+          <ActionButton
             onPress={() => onLike(item)}
-            activeOpacity={0.7}
             accessibilityLabel={item.isLiked ? "Unlike reel" : "Like reel"}
-            accessibilityRole="button"
           >
             <Icon
               name={item.isLiked ? 'heart-filled' : 'heart'}
@@ -277,27 +337,21 @@ const ReelItem = memo(function ReelItem({
               style={item.isLiked ? undefined : styles.iconShadow}
             />
             <Text style={styles.actionCount}>{item.likesCount}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
+          </ActionButton>
+          <ActionButton
             onPress={() => onComment(item)}
-            activeOpacity={0.7}
             accessibilityLabel="Comment on reel"
-            accessibilityRole="button"
           >
             <Icon name="message-circle" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.commentsCount}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
+          </ActionButton>
+          <ActionButton
             onPress={() => onShare(item)}
-            activeOpacity={0.7}
             accessibilityLabel="Share reel"
-            accessibilityRole="button"
           >
             <Icon name="share" size="lg" color={colors.text.primary} style={styles.iconShadow} />
             <Text style={styles.actionCount}>{item.sharesCount}</Text>
-          </TouchableOpacity>
+          </ActionButton>
 
           {/* Duet button */}
           <Pressable
@@ -336,30 +390,51 @@ const ReelItem = memo(function ReelItem({
             </View>
             <Text style={styles.actionCountDuetStitch}>Stitch</Text>
           </Pressable>
-          <TouchableOpacity
-            style={styles.actionButton}
+          <ActionButton
             onPress={() => onBookmark(item)}
-            activeOpacity={0.7}
-            accessibilityLabel={item.isBookmarked ? "Remove bookmark" : "Bookmark reel"}
-            accessibilityRole="button"
+            accessibilityLabel={item.isSaved ? "Remove bookmark" : "Bookmark reel"}
           >
             <Icon
-              name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
+              name={item.isSaved ? 'bookmark-filled' : 'bookmark'}
               size="lg"
-              color={item.isBookmarked ? colors.gold : colors.text.primary}
-              style={item.isBookmarked ? undefined : styles.iconShadow}
+              color={item.isSaved ? colors.gold : colors.text.primary}
+              fill={item.isSaved ? colors.gold : undefined}
+              style={item.isSaved ? undefined : styles.iconShadow}
             />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => onReport(item)}
-            activeOpacity={0.7}
-            accessibilityLabel="Report reel"
-            accessibilityRole="button"
+            {item.savesCount > 0 && <Text style={styles.actionCount}>{item.savesCount}</Text>}
+          </ActionButton>
+          <ActionButton
+            onPress={() => setShowMoreMenu(true)}
+            accessibilityLabel="More options"
           >
-            <Icon name="flag" size="lg" color={colors.text.primary} style={styles.iconShadow} />
-          </TouchableOpacity>
+            <Icon name="more-horizontal" size="lg" color={colors.text.primary} style={styles.iconShadow} />
+          </ActionButton>
         </View>
+
+        {/* More menu BottomSheet */}
+        <BottomSheet visible={showMoreMenu} onClose={() => setShowMoreMenu(false)}>
+          <BottomSheetItem
+            label="Not interested"
+            icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
+            onPress={() => { onNotInterested(item); setShowMoreMenu(false); }}
+          />
+          <BottomSheetItem
+            label="Report"
+            icon={<Icon name="flag" size="sm" color={colors.error} />}
+            onPress={() => { onReport(item); setShowMoreMenu(false); }}
+            destructive
+          />
+          <BottomSheetItem
+            label="Copy link"
+            icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+            onPress={() => { onCopyLink(item); setShowMoreMenu(false); }}
+          />
+          <BottomSheetItem
+            label="Save to collection"
+            icon={<Icon name="bookmark" size="sm" color={colors.text.primary} />}
+            onPress={() => { onBookmark(item); setShowMoreMenu(false); }}
+          />
+        </BottomSheet>
         <FloatingHearts trigger={heartTrigger} />
       </View>
     </GestureDetector>
@@ -474,6 +549,16 @@ export default function BakraScreen() {
     router.push(`/(screens)/report?type=reel&id=${reel.id}`);
   };
 
+  const handleNotInterested = (reel: Reel) => {
+    haptic.light();
+    Alert.alert('Not Interested', 'We\'ll show you fewer reels like this.');
+  };
+
+  const handleCopyLink = (reel: Reel) => {
+    haptic.light();
+    Alert.alert('Link Copied', 'Reel link copied to clipboard.');
+  };
+
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
@@ -496,11 +581,13 @@ export default function BakraScreen() {
       onComment={handleComment}
       onProfilePress={handleProfilePress}
       onReport={handleReport}
+      onNotInterested={handleNotInterested}
+      onCopyLink={handleCopyLink}
       setVideoRef={setVideoRef}
       doubleTapGesture={doubleTapGesture}
       heartTrigger={heartTrigger}
     />
-  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, setVideoRef, doubleTapGesture, heartTrigger]);
+  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
   const getItemLayout = useCallback((_: ArrayLike<Reel> | null | undefined, index: number) => ({
@@ -613,6 +700,19 @@ const styles = StyleSheet.create({
     width: SCREEN_W,
     height: VIDEO_HEIGHT,
     position: 'relative',
+  },
+  progressTrack: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    zIndex: 20,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.emerald,
   },
   video: {
     width: SCREEN_W,

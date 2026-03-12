@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { PanGestureHandler, PinchGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue, useAnimatedStyle, useAnimatedGestureHandler,
-  withSpring, runOnJS,
+  withSpring, runOnJS, withTiming, withDelay,
 } from 'react-native-reanimated';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
@@ -112,6 +112,13 @@ export default function CreateStoryScreen() {
   // ── Active tool ──
   const [activeTool, setActiveTool] = useState<'text' | 'filter' | 'sticker' | null>(null);
 
+  // ── Sticker hint toast ──
+  const [showStickerHint, setShowStickerHint] = useState(false);
+  const hintOpacity = useSharedValue(0);
+
+  // ── Gradient selection animation ──
+  const gradientScales = useRef(BG_GRADIENTS.map(() => useSharedValue(1))).current;
+
   // ── Discard check ──
   const hasContent = mediaUri || text.length > 0 || stickers.length > 0;
 
@@ -170,6 +177,12 @@ export default function CreateStoryScreen() {
     ]);
     setActiveStickerEditor(null);
     setShowStickerMenu(false);
+    // Show hint toast
+    setShowStickerHint(true);
+    hintOpacity.value = 1;
+    hintOpacity.value = withDelay(2000, withTiming(0, { duration: 300 }, () => {
+      runOnJS(setShowStickerHint)(false);
+    }));
   };
 
   const removeSticker = (id: string) => {
@@ -362,30 +375,60 @@ export default function CreateStoryScreen() {
           <Icon name="x" size="md" color={colors.text.primary} />
         </Pressable>
         <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 }}>New Story</Text>
-        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'center' }}>
+        <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'text' ? null : 'text')}
-            style={{ padding: spacing.xs, backgroundColor: activeTool === 'text' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            style={{
+              alignItems: 'center',
+              padding: spacing.xs,
+              backgroundColor: activeTool === 'text' ? colors.active.emerald20 : 'transparent',
+              borderRadius: radius.full,
+            }}
             accessibilityLabel="Add text"
             accessibilityRole="button"
           >
             <Icon name="edit" size="sm" color={activeTool === 'text' ? colors.emerald : colors.text.primary} />
+            <Text style={{
+              fontSize: fontSize.xs,
+              color: colors.text.secondary,
+              marginTop: 2,
+            }}>Text</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'sticker' ? null : 'sticker')}
-            style={{ padding: spacing.xs, backgroundColor: activeTool === 'sticker' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            style={{
+              alignItems: 'center',
+              padding: spacing.xs,
+              backgroundColor: activeTool === 'sticker' ? colors.active.emerald20 : 'transparent',
+              borderRadius: radius.full,
+            }}
             accessibilityLabel="Add sticker"
             accessibilityRole="button"
           >
             <Icon name="smile" size="sm" color={activeTool === 'sticker' ? colors.emerald : colors.text.primary} />
+            <Text style={{
+              fontSize: fontSize.xs,
+              color: colors.text.secondary,
+              marginTop: 2,
+            }}>Sticker</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'filter' ? null : 'filter')}
-            style={{ padding: spacing.xs, backgroundColor: activeTool === 'filter' ? colors.active.emerald10 : 'transparent', borderRadius: radius.sm }}
+            style={{
+              alignItems: 'center',
+              padding: spacing.xs,
+              backgroundColor: activeTool === 'filter' ? colors.active.emerald20 : 'transparent',
+              borderRadius: radius.full,
+            }}
             accessibilityLabel="Add filter"
             accessibilityRole="button"
           >
             <Icon name="layers" size="sm" color={activeTool === 'filter' ? colors.emerald : colors.text.primary} />
+            <Text style={{
+              fontSize: fontSize.xs,
+              color: colors.text.secondary,
+              marginTop: 2,
+            }}>Filter</Text>
           </Pressable>
         </View>
       </View>
@@ -428,6 +471,32 @@ export default function CreateStoryScreen() {
 
         {/* Stickers on canvas */}
         {stickers.map(renderSticker)}
+
+        {/* Sticker placement hint toast */}
+        {showStickerHint && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              bottom: 20,
+              left: 0,
+              right: 0,
+              alignItems: 'center',
+              opacity: hintOpacity,
+            }}
+          >
+            <View style={{
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              borderRadius: radius.full,
+              paddingHorizontal: spacing.md,
+              paddingVertical: spacing.sm,
+            }}>
+              <Text style={{
+                color: colors.text.secondary,
+                fontSize: fontSize.xs,
+              }}>Drag to move · Pinch to resize</Text>
+            </View>
+          </Animated.View>
+        )}
       </View>
 
       {/* ── Tool Panels ── */}
@@ -452,17 +521,55 @@ export default function CreateStoryScreen() {
           <View style={{ marginBottom: spacing.md }}>
             <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>Background</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {BG_GRADIENTS.map((g, i) => (
-                <Pressable key={i} onPress={() => setBgGradientIndex(i)}>
-                  <LinearGradient
-                    colors={g}
-                    style={{
-                      width: 40, height: 40, borderRadius: radius.sm, marginRight: spacing.sm,
-                      borderWidth: i === bgGradientIndex ? 2 : 0, borderColor: colors.emerald,
-                    }}
-                  />
-                </Pressable>
-              ))}
+              {BG_GRADIENTS.map((g, i) => {
+                const isActive = i === bgGradientIndex;
+                const animatedStyle = useAnimatedStyle(() => ({
+                  transform: [{ scale: gradientScales[i].value }],
+                }));
+
+                const handleGradientPress = () => {
+                  // Bounce animation
+                  gradientScales[i].value = withTiming(1.15, { duration: 100 }, () => {
+                    gradientScales[i].value = withTiming(1, { duration: 150 });
+                  });
+                  setBgGradientIndex(i);
+                };
+
+                return (
+                  <Pressable key={i} onPress={handleGradientPress}>
+                    <Animated.View style={[
+                      {
+                        width: 48,
+                        height: 48,
+                        borderRadius: radius.full,
+                        marginRight: spacing.sm,
+                        overflow: 'hidden',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      },
+                      animatedStyle,
+                    ]}>
+                      <LinearGradient
+                        colors={g}
+                        style={StyleSheet.absoluteFill}
+                      />
+                      {/* Emerald check overlay when active */}
+                      {isActive && (
+                        <View style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: radius.full,
+                          backgroundColor: colors.emerald,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        }}>
+                          <Icon name="check" size={12} color="#fff" />
+                        </View>
+                      )}
+                    </Animated.View>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
           </View>
         )}
@@ -537,18 +644,26 @@ export default function CreateStoryScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {FILTERS.map((f, i) => (
               <Pressable key={f.id} onPress={() => setFilterIndex(i)} style={{ marginRight: spacing.md, alignItems: 'center' }}>
+                {/* Circular thumbnail with filter tint overlay */}
                 <View style={{
-                  width: 60, height: 80, borderRadius: radius.sm, overflow: 'hidden',
+                  width: 40, height: 40, borderRadius: radius.full, overflow: 'hidden',
                   borderWidth: i === filterIndex ? 2 : 0, borderColor: colors.emerald,
                 }}>
                   {mediaUri && (
-                    <Image source={{ uri: mediaUri }} style={[{ width: 60, height: 80 }, f.style]} contentFit="cover" />
+                    <View style={{ flex: 1 }}>
+                      <Image source={{ uri: mediaUri }} style={{ width: 40, height: 40 }} contentFit="cover" />
+                      <View style={[StyleSheet.absoluteFill, f.style]} />
+                    </View>
                   )}
                   {!mediaUri && (
-                    <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={[{ width: 60, height: 80 }, f.style]} />
+                    <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={[{ flex: 1 }, f.style]} />
                   )}
                 </View>
-                <Text style={{ color: i === filterIndex ? colors.emerald : colors.text.secondary, fontSize: fontSize.xs, marginTop: 4 }}>
+                <Text style={{
+                  color: i === filterIndex ? colors.emerald : colors.text.secondary,
+                  fontSize: 10,
+                  marginTop: 4,
+                }}>
                   {f.label}
                 </Text>
               </Pressable>

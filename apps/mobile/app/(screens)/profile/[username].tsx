@@ -157,6 +157,19 @@ export default function ProfileScreen() {
   const [showShareSheet, setShowShareSheet] = useState(false);
   const [loadingHighlightId, setLoadingHighlightId] = useState<string | null>(null);
 
+  // Parallax scroll tracking
+  const scrollY = useSharedValue(0);
+  const scrollHandler = useAnimatedScrollHandler({
+    onScroll: (e) => { scrollY.value = e.contentOffset.y; },
+  });
+
+  const coverAnimStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: interpolate(scrollY.value, [-100, 0, 200], [50, 0, -100], Extrapolation.CLAMP) },
+      { scale: interpolate(scrollY.value, [-100, 0], [1.15, 1], Extrapolation.CLAMP) },
+    ],
+  }));
+
   const profileQuery = useQuery({
     queryKey: ['profile', username],
     queryFn: () => usersApi.getProfile(username),
@@ -356,23 +369,31 @@ export default function ProfileScreen() {
 
   const ListHeader = (
     <View>
-      {/* Cover image */}
-      {profile.coverUrl ? (
-        <View>
-          <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+      {/* Cover image with parallax */}
+      <Animated.View style={[{ overflow: 'hidden' }, coverAnimStyle]}>
+        {profile.coverUrl ? (
+          <View>
+            <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.6)']}
+              locations={[0.4, 1]}
+              style={StyleSheet.absoluteFill}
+            />
+          </View>
+        ) : (
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.6)']}
-            locations={[0.4, 1]}
-            style={StyleSheet.absoluteFill}
+            colors={[colors.emeraldDark, colors.dark.bgCard, colors.dark.bg]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.cover}
           />
-        </View>
-      ) : (
-        <View style={styles.coverPlaceholder} />
-      )}
+        )}
+      </Animated.View>
 
-      {/* Avatar row */}
+      {/* Avatar row with emerald ring */}
       <View style={styles.avatarRow}>
-        <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
+        <View style={styles.avatarRing}>
+          <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
         {isOwnProfile ? (
           <View style={{ flexDirection: 'row' }}>
             <Pressable
@@ -499,12 +520,14 @@ export default function ProfileScreen() {
               accessibilityLabel={`View highlight: ${album.title}`}
               accessibilityRole="button"
             >
-              <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
-                {album.coverUrl ? (
-                  <Image source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
-                ) : (
-                  <Icon name="image" size="md" color={colors.text.tertiary} />
-                )}
+              <View style={styles.highlightRing}>
+                <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
+                  {album.coverUrl ? (
+                    <Image source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
+                  ) : (
+                    <Icon name="image" size="md" color={colors.text.tertiary} />
+                  )}
+                </View>
               </View>
               <Text style={styles.highlightLabel} numberOfLines={1}>{album.title}</Text>
             </TouchableOpacity>
@@ -512,8 +535,8 @@ export default function ProfileScreen() {
         </ScrollView>
       )}
 
-      {/* Stats */}
-      <View style={styles.stats}>
+      {/* Stats card */}
+      <View style={styles.statsCard}>
         <StatItem
           num={profile._count?.followers ?? 0}
           label="Followers"
@@ -716,8 +739,10 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
-      <FlatList
+      <Animated.FlatList
         removeClippedSubviews={true}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         data={currentData}
         keyExtractor={(item) => item.id}
         numColumns={activeTab === 'threads' ? 1 : 3}
@@ -819,6 +844,16 @@ const styles = StyleSheet.create({
   headerActions: { flexDirection: 'row', gap: spacing.md, alignItems: 'center' },
   cover: { width: '100%', height: COVER_HEIGHT },
   coverPlaceholder: { width: '100%', height: COVER_HEIGHT, backgroundColor: colors.dark.bgElevated },
+  avatarRing: {
+    borderWidth: 2.5,
+    borderColor: colors.emerald,
+    borderRadius: radius.full,
+    padding: 2,
+    shadowColor: colors.dark.bg,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
   avatarRow: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
     paddingHorizontal: spacing.base, marginTop: -40,
@@ -858,9 +893,28 @@ const styles = StyleSheet.create({
   },
   highlightImg: { width: '100%', height: '100%' },
   highlightLabel: { color: colors.text.primary, fontSize: fontSize.xs, marginTop: 4, width: '100%', textAlign: 'center' },
+  highlightRing: {
+    borderWidth: 2,
+    borderColor: colors.emerald,
+    borderRadius: radius.full,
+    padding: 2,
+  },
   stats: {
     flexDirection: 'row', paddingHorizontal: spacing.base,
     marginTop: spacing.xl, gap: spacing.xl,
+  },
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    marginHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    gap: spacing.xl,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+    justifyContent: 'center',
   },
   stat: { gap: 2 },
   statNum: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '800' },

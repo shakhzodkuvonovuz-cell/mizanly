@@ -1,11 +1,17 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, FlatList,
+  View, Text, StyleSheet, Pressable, SectionList, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -14,7 +20,7 @@ import { TabSelector } from '@/components/ui/TabSelector';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
@@ -65,6 +71,68 @@ function notificationTarget(n: Notification): string | null {
   return null;
 }
 
+// Group notifications by date
+function groupByDate(items: Notification[]): { title: string; data: Notification[] }[] {
+  const today: Notification[] = [];
+  const yesterday: Notification[] = [];
+  const thisWeek: Notification[] = [];
+  const earlier: Notification[] = [];
+  const now = new Date();
+
+  items.forEach((n) => {
+    const d = new Date(n.createdAt);
+    const diffDays = Math.floor((now.getTime() - d.getTime()) / 86400000);
+    if (diffDays === 0) today.push(n);
+    else if (diffDays === 1) yesterday.push(n);
+    else if (diffDays < 7) thisWeek.push(n);
+    else earlier.push(n);
+  });
+
+  return [
+    today.length > 0 && { title: 'Today', data: today },
+    yesterday.length > 0 && { title: 'Yesterday', data: yesterday },
+    thisWeek.length > 0 && { title: 'This Week', data: thisWeek },
+    earlier.length > 0 && { title: 'Earlier', data: earlier },
+  ].filter(Boolean) as { title: string; data: Notification[] }[];
+}
+
+// Aggregate consecutive LIKE notifications for same postId
+interface AggregatedNotification extends Notification {
+  _aggregatedActors?: { displayName: string; username: string; avatarUrl?: string }[];
+  _aggregatedCount?: number;
+}
+
+function aggregateLikes(items: Notification[]): AggregatedNotification[] {
+  const result: AggregatedNotification[] = [];
+  let i = 0;
+  while (i < items.length) {
+    if (items[i].type === 'LIKE' && items[i].postId) {
+      const postId = items[i].postId;
+      const group: Notification[] = [items[i]];
+      while (i + 1 < items.length && items[i + 1].type === 'LIKE' && items[i + 1].postId === postId) {
+        group.push(items[++i]);
+      }
+      if (group.length > 1) {
+        result.push({
+          ...group[0],
+          _aggregatedActors: group.map((g) => ({
+            displayName: g.actor?.displayName ?? 'Someone',
+            username: g.actor?.username ?? '',
+            avatarUrl: g.actor?.avatarUrl,
+          })),
+          _aggregatedCount: group.length,
+        });
+      } else {
+        result.push(group[0]);
+      }
+    } else {
+      result.push(items[i]);
+    }
+    i++;
+  }
+  return result;
+}
+
 function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
   const haptic = useHaptic();
@@ -108,11 +176,25 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
   );
 }
 
-function NotificationRow({ notification }: { notification: Notification }) {
+function NotificationRow({ notification, index }: { notification: AggregatedNotification; index: number }) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
   const iconInfo = notificationIcon(notification.type);
+
+  // Entrance animation
+  const slideIn = useSharedValue(8);
+  const fadeIn = useSharedValue(0);
+
+  useEffect(() => {
+    slideIn.value = withSpring(0, animation.spring.responsive);
+    fadeIn.value = withTiming(1, { duration: 300, delay: index * 50 });
+  }, []);
+
+  const entranceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: slideIn.value }],
+    opacity: fadeIn.value,
+  }));
 
   const readMutation = useMutation({
     mutationFn: () => notificationsApi.markRead(notification.id),
@@ -128,6 +210,10 @@ function NotificationRow({ notification }: { notification: Notification }) {
 
   const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true });
 
+  // Check if this is an aggregated like notification
+  const isAggregated = notification._aggregatedCount && notification._aggregatedCount > 1;
+  const aggregatedActors = notification._aggregatedActors ?? [];
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -140,43 +226,72 @@ function NotificationRow({ notification }: { notification: Notification }) {
       accessibilityRole="button"
       accessibilityLabel={`View notification from ${notification.actor?.displayName ?? 'Someone'}`}
     >
-      {/* Unread accent bar */}
-      {!notification.isRead && <View style={styles.unreadBar} />}
+      <Animated.View style={[styles.rowInner, entranceStyle]}>
+        {/* Unread accent bar */}
+        {!notification.isRead && <View style={styles.unreadBar} />}
 
-      {/* Actor avatar with icon overlay */}
-      <View style={styles.avatarContainer}>
-        <Avatar
-          uri={notification.actor?.avatarUrl}
-          name={notification.actor?.displayName ?? '?'}
-          size="md"
-        />
-        <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }]}>
-          <Icon name={iconInfo.name} size={10} color="#FFF" fill={iconInfo.name === 'heart-filled' ? '#FFF' : undefined} />
+        {/* Actor avatar(s) with icon overlay */}
+        <View style={styles.avatarContainer}>
+          {isAggregated ? (
+            <View style={styles.stackedAvatars}>
+              {aggregatedActors.slice(0, 3).map((actor, idx) => (
+                <View key={idx} style={[styles.stackedAvatar, { marginLeft: idx > 0 ? -8 : 0, zIndex: 3 - idx }]}>
+                  <Avatar uri={actor.avatarUrl} name={actor.displayName} size="sm" />
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Avatar
+              uri={notification.actor?.avatarUrl}
+              name={notification.actor?.displayName ?? '?'}
+              size="md"
+            />
+          )}
+          <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }]}>
+            <Icon name={iconInfo.name} size={12} color="#FFF" fill={iconInfo.name === 'heart-filled' ? '#FFF' : undefined} />
+          </View>
         </View>
-      </View>
 
-      {/* Text */}
-      <View style={styles.rowContent}>
-        <Text style={styles.rowText} numberOfLines={2}>
-          <Text style={styles.rowActor}>{notification.actor?.displayName ?? 'Someone'}</Text>
-          {' '}
-          <Text>{notificationLabel(notification)}</Text>
-        </Text>
-        {notification.body && (
-          <Text style={styles.rowBody} numberOfLines={1}>{notification.body}</Text>
+        {/* Text */}
+        <View style={styles.rowContent}>
+          <Text style={styles.rowText} numberOfLines={2}>
+            {isAggregated ? (
+              <>
+                <Text style={styles.rowActor}>{aggregatedActors[0]?.displayName}</Text>
+                {aggregatedActors.length > 1 && (
+                  <>
+                    {', '}
+                    <Text style={styles.rowActor}>{aggregatedActors[1]?.displayName}</Text>
+                  </>
+                )}
+                {' and '}
+                <Text style={styles.rowActor}>{notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1)} others</Text>
+                {' liked your post'}
+              </>
+            ) : (
+              <>
+                <Text style={styles.rowActor}>{notification.actor?.displayName ?? 'Someone'}</Text>
+                {' '}
+                <Text>{notificationLabel(notification)}</Text>
+              </>
+            )}
+          </Text>
+          {notification.body && (
+            <Text style={styles.rowBody} numberOfLines={1}>{notification.body}</Text>
+          )}
+          <Text style={styles.rowTime}>{timeAgo}</Text>
+        </View>
+
+        {notification.type === 'FOLLOW_REQUEST' && !notification.isRead && (
+          <FollowRequestActions
+            requestId={notification.followRequestId}
+            onDone={() => {
+              readMutation.mutate();
+              queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            }}
+          />
         )}
-        <Text style={styles.rowTime}>{timeAgo}</Text>
-      </View>
-
-      {notification.type === 'FOLLOW_REQUEST' && !notification.isRead && (
-        <FollowRequestActions
-          requestId={notification.followRequestId}
-          onDone={() => {
-            readMutation.mutate();
-            queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          }}
-        />
-      )}
+      </Animated.View>
     </Pressable>
   );
 }
@@ -206,6 +321,10 @@ export default function NotificationsScreen() {
   });
 
   const notifications: Notification[] = query.data?.pages.flatMap((p) => p.data) ?? [];
+
+  // Aggregate likes and group by date
+  const aggregatedNotifications = aggregateLikes(notifications);
+  const sections = groupByDate(aggregatedNotifications);
 
   const markAllMutation = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
@@ -249,7 +368,14 @@ export default function NotificationsScreen() {
         title="Notifications"
         leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         rightActions={[{
-          icon: <Text style={{ color: colors.emerald, fontSize: 13, fontWeight: '600' }}>Mark all read</Text>,
+          component: (
+            <GradientButton
+              label="Mark all read"
+              size="sm"
+              variant="ghost"
+              onPress={() => markAllMutation.mutate()}
+            />
+          ),
           onPress: () => markAllMutation.mutate(),
           accessibilityLabel: 'Mark all notifications as read',
         }]}
@@ -263,17 +389,18 @@ export default function NotificationsScreen() {
         />
       </View>
 
-      <FlatList
-          removeClippedSubviews={true}
-        data={notifications}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <NotificationRow notification={item} />}
+        renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
+        renderSectionHeader={({ section }) => (
+          <Text style={styles.sectionHeader}>{section.title}</Text>
+        )}
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
         }}
         onEndReachedThreshold={0.4}
-        onRefresh={onRefresh}
-        refreshing={query.isRefetching && !query.isFetchingNextPage}
+        refreshControl={<RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.emerald} />}
         ListEmptyComponent={() =>
           query.isLoading ? (
             <View style={styles.skeletonList}>
@@ -299,6 +426,7 @@ export default function NotificationsScreen() {
           query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
         }
         contentContainerStyle={{ paddingBottom: 40 }}
+        stickySectionHeadersEnabled={true}
       />
     </View>
   );
@@ -310,11 +438,27 @@ const styles = StyleSheet.create({
   skeletonList: { padding: spacing.base, gap: spacing.lg },
   skeletonRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
 
+  sectionHeader: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    fontWeight: '700',
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xs,
+    backgroundColor: colors.dark.bg,
+  },
+
   row: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    gap: spacing.sm, borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.dark.border,
     position: 'relative',
+  },
+  rowInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
   },
   rowUnread: { backgroundColor: colors.active.emerald10 },
   rowPressed: { opacity: 0.7 },
@@ -323,18 +467,31 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    width: 3,
+    width: 4,
     backgroundColor: colors.emerald,
     borderTopRightRadius: 2,
     borderBottomRightRadius: 2,
+    shadowColor: colors.emerald,
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 2, height: 0 },
   },
   avatarContainer: { position: 'relative' },
+  stackedAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  stackedAvatar: {
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.dark.bg,
+  },
   iconOverlay: {
     position: 'absolute',
     bottom: -2,
     right: -2,
-    width: 18,
-    height: 18,
+    width: 22,
+    height: 22,
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',

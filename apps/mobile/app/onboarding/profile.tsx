@@ -1,11 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { Image } from 'expo-image';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withRepeat,
+  withTiming,
+  withSequence,
+} from 'react-native-reanimated';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi } from '@/services/api';
 
 const STEP = 2; // Step 2 of 4 in onboarding
@@ -18,6 +27,40 @@ export default function OnboardingProfileScreen() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [nameFocused, setNameFocused] = useState(false);
+  const [bioFocused, setBioFocused] = useState(false);
+
+  // Animated progress bar (step 2 = 50%)
+  const progressWidth = useSharedValue(0);
+  useEffect(() => {
+    progressWidth.value = withSpring(50, animation.spring.responsive);
+  }, []);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  // Avatar placeholder pulse animation
+  const pulseScale = useSharedValue(1);
+  useEffect(() => {
+    if (!user?.imageUrl) {
+      pulseScale.value = withRepeat(
+        withSequence(
+          withTiming(1.05, { duration: 1200 }),
+          withTiming(1, { duration: 1200 })
+        ),
+        -1,
+        true
+      );
+    }
+    return () => {
+      // Cleanup handled automatically
+    };
+  }, [user?.imageUrl]);
+
+  const pulseStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
 
   const handleContinue = async () => {
     const trimmedName = displayName.trim();
@@ -48,11 +91,9 @@ export default function OnboardingProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Progress dots */}
-      <View style={styles.dots}>
-        {[1, 2, 3, 4].map((n) => (
-          <View key={n} style={[styles.dot, n <= STEP && styles.dotActive]} />
-        ))}
+      {/* Animated progress bar */}
+      <View style={styles.progressTrack}>
+        <Animated.View style={[styles.progressFill, progressStyle]} />
       </View>
 
       <Text style={styles.title}>Set up your profile</Text>
@@ -66,43 +107,57 @@ export default function OnboardingProfileScreen() {
           contentFit="cover"
         />
       ) : (
-        <View style={[styles.avatar, styles.avatarPlaceholder]}>
-          <Text style={styles.avatarInitial}>
-            {(displayName[0] || '?').toUpperCase()}
-          </Text>
-        </View>
+        <Animated.View style={[styles.avatarPlaceholderWrap, pulseStyle]}>
+          <View style={[styles.avatar, styles.avatarPlaceholder]}>
+            <Icon name="camera" size="lg" color={colors.text.tertiary} />
+            <Text style={styles.avatarHintInner}>Add photo</Text>
+          </View>
+        </Animated.View>
       )}
       <Text style={styles.avatarHint}>
         You can change your photo from Settings later
       </Text>
 
-      {/* Display name */}
+      {/* Display name with icon */}
       <View style={styles.field}>
         <Text style={styles.label}>Display Name</Text>
-        <TextInput
-          style={styles.input}
-          value={displayName}
-          onChangeText={(t) => { setDisplayName(t); setError(''); }}
-          placeholder="Your name"
-          placeholderTextColor={colors.text.tertiary}
-          maxLength={50}
-          autoFocus
-          returnKeyType="next"
-        />
+        <View style={[styles.inputRow, nameFocused && styles.inputRowFocused]}>
+          <Icon
+            name="user"
+            size="sm"
+            color={nameFocused ? colors.emerald : colors.text.tertiary}
+          />
+          <TextInput
+            style={styles.inputInner}
+            value={displayName}
+            onChangeText={(t) => { setDisplayName(t); setError(''); }}
+            placeholder="Your name"
+            placeholderTextColor={colors.text.tertiary}
+            maxLength={50}
+            autoFocus
+            returnKeyType="next"
+            onFocus={() => setNameFocused(true)}
+            onBlur={() => setNameFocused(false)}
+          />
+        </View>
       </View>
 
-      {/* Bio */}
+      {/* Bio with focus glow */}
       <View style={styles.field}>
         <Text style={styles.label}>Bio <Text style={styles.optional}>(optional)</Text></Text>
-        <TextInput
-          style={[styles.input, styles.bioInput]}
-          value={bio}
-          onChangeText={setBio}
-          placeholder="Tell people a bit about yourself…"
-          placeholderTextColor={colors.text.tertiary}
-          multiline
-          maxLength={150}
-        />
+        <View style={[styles.bioRow, bioFocused && styles.bioRowFocused]}>
+          <TextInput
+            style={[styles.inputInner, styles.bioInput]}
+            value={bio}
+            onChangeText={setBio}
+            placeholder="Tell people a bit about yourself…"
+            placeholderTextColor={colors.text.tertiary}
+            multiline
+            maxLength={150}
+            onFocus={() => setBioFocused(true)}
+            onBlur={() => setBioFocused(false)}
+          />
+        </View>
         <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
       </View>
 
@@ -133,9 +188,19 @@ const styles = StyleSheet.create({
     alignItems: 'center', paddingHorizontal: spacing.xl,
     paddingTop: 60,
   },
-  dots: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
-  dot: { width: 8, height: 8, borderRadius: radius.sm, backgroundColor: colors.dark.border },
-  dotActive: { backgroundColor: colors.emerald, width: 20 },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.dark.border,
+    marginBottom: spacing.xl,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: colors.emerald,
+  },
   title: {
     color: colors.text.primary, fontSize: fontSize.xl,
     fontWeight: '700', textAlign: 'center', marginBottom: spacing.xs,
@@ -147,15 +212,21 @@ const styles = StyleSheet.create({
   avatar: {
     width: 96, height: 96, borderRadius: radius.full, marginBottom: spacing.sm,
   },
+  avatarPlaceholderWrap: {
+    marginBottom: spacing.sm,
+  },
   avatarPlaceholder: {
     backgroundColor: colors.dark.bgElevated,
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2,
     borderColor: colors.emerald,
     borderStyle: 'dashed',
+    marginBottom: 0,
   },
-  avatarInitial: {
-    color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700',
+  avatarHintInner: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    marginTop: spacing.xs,
   },
   avatarHint: {
     color: colors.text.tertiary, fontSize: fontSize.xs,
@@ -164,11 +235,47 @@ const styles = StyleSheet.create({
   field: { width: '100%', marginBottom: spacing.lg },
   label: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.xs, fontWeight: '600' },
   optional: { color: colors.text.tertiary, fontWeight: '400' },
-  input: {
-    backgroundColor: colors.dark.bgElevated, borderRadius: radius.lg,
-    color: colors.text.primary, fontSize: fontSize.base,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    borderWidth: 1, borderColor: colors.dark.border,
+  inputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.lg,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  inputRowFocused: {
+    borderColor: colors.emerald,
+    shadowColor: colors.emerald,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
+  },
+  inputInner: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+  },
+  bioRow: {
+    backgroundColor: colors.dark.bgElevated,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  bioRowFocused: {
+    borderColor: colors.emerald,
+    shadowColor: colors.emerald,
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
   },
   bioInput: { height: 80, textAlignVertical: 'top' },
   charCountWrap: { alignItems: 'flex-end', marginTop: spacing.xs },

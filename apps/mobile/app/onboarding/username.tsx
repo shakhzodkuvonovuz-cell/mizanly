@@ -2,12 +2,19 @@ import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
 } from 'react-native';
-import { Skeleton } from '@/components/ui/Skeleton';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  withRepeat,
+  cancelAnimation,
+} from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
-import { colors, spacing, fontSize, radius } from '@/theme';
+import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { authApi } from '@/services/api';
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -29,6 +36,63 @@ export default function UsernameScreen() {
   const [loading, setLoading] = useState(false);
   const debouncedUsername = useDebounce(username, 500);
 
+  // Animated progress bar (step 1 = 25%)
+  const progressWidth = useSharedValue(0);
+  useEffect(() => {
+    progressWidth.value = withSpring(25, animation.spring.responsive);
+  }, []);
+
+  const progressStyle = useAnimatedStyle(() => ({
+    width: `${progressWidth.value}%`,
+  }));
+
+  // Spinning loader animation
+  const rotation = useSharedValue(0);
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotation.value}deg` }],
+  }));
+
+  useEffect(() => {
+    if (checking) {
+      rotation.value = withRepeat(
+        withTiming(360, { duration: 800 }),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(rotation);
+      rotation.value = 0;
+    }
+  }, [checking]);
+
+  // Checkmark bounce animation
+  const checkScale = useSharedValue(0);
+  useEffect(() => {
+    if (available === true) {
+      checkScale.value = withSpring(1, animation.spring.bouncy);
+    } else {
+      checkScale.value = 0;
+    }
+  }, [available]);
+
+  const checkAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: checkScale.value }],
+  }));
+
+  // Preview card fade animation
+  const previewOpacity = useSharedValue(0);
+  useEffect(() => {
+    if (available === true && USERNAME_RE.test(username)) {
+      previewOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      previewOpacity.value = 0;
+    }
+  }, [available, username]);
+
+  const previewFadeStyle = useAnimatedStyle(() => ({
+    opacity: previewOpacity.value,
+  }));
+
   useEffect(() => {
     setAvailable(null);
     if (!USERNAME_RE.test(debouncedUsername)) return;
@@ -47,7 +111,6 @@ export default function UsernameScreen() {
     if (!isValid) return;
     setLoading(true);
     try {
-      // Store username in Clerk unsafeMetadata — register call happens in profile step
       router.push({ pathname: '/onboarding/profile', params: { username } });
     } finally {
       setLoading(false);
@@ -58,7 +121,7 @@ export default function UsernameScreen() {
     if (username.length < 3) return null;
     if (!USERNAME_RE.test(username)) return { text: 'Only letters, numbers, _ and .', color: colors.error };
     if (checking) return { text: 'Checking…', color: colors.text.secondary };
-    if (available === true) return { text: `@${username} is available`, color: colors.success };
+    if (available === true) return { text: `@${username} is available`, color: colors.emerald };
     if (available === false) return { text: 'Username taken', color: colors.error };
     return null;
   };
@@ -68,10 +131,9 @@ export default function UsernameScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.inner}>
-        <View style={styles.progress}>
-          {[1, 2, 3, 4].map((i) => (
-            <View key={i} style={[styles.dot, i === 1 && styles.dotActive]} />
-          ))}
+        {/* Animated progress bar */}
+        <View style={styles.progressTrack}>
+          <Animated.View style={[styles.progressFill, progressStyle]} />
         </View>
 
         <Text style={styles.title}>Choose your username</Text>
@@ -89,15 +151,31 @@ export default function UsernameScreen() {
             autoCorrect={false}
             maxLength={30}
           />
-          {checking && <Skeleton.Circle size={20} />}
+          {checking && (
+            <Animated.View style={spinStyle}>
+              <Icon name="loader" size="sm" color={colors.text.secondary} />
+            </Animated.View>
+          )}
+          {!checking && available === true && (
+            <Animated.View style={checkAnimStyle}>
+              <Icon name="check-circle" size="sm" color={colors.emerald} />
+            </Animated.View>
+          )}
+          {!checking && available === false && (
+            <Icon name="x" size="sm" color={colors.error} />
+          )}
         </View>
 
         {status && (
           <View style={styles.statusRow}>
             <Text style={[styles.status, { color: status.color }]}>{status.text}</Text>
-            {available === true && <Icon name="check" size="xs" color={colors.success} />}
           </View>
         )}
+
+        {/* Username preview card */}
+        <Animated.View style={[styles.previewCard, previewFadeStyle]}>
+          <Text style={styles.previewText}>@{username} · Mizanly</Text>
+        </Animated.View>
 
         <View style={styles.btnWrap}>
           <GradientButton
@@ -116,9 +194,18 @@ export default function UsernameScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   inner: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing['2xl'] },
-  progress: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing['3xl'] },
-  dot: { flex: 1, height: 6, borderRadius: 3, backgroundColor: colors.dark.border },
-  dotActive: { backgroundColor: colors.emerald, height: 8, borderRadius: 4 },
+  progressTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.dark.border,
+    marginBottom: spacing['3xl'],
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 2,
+    backgroundColor: colors.emerald,
+  },
   title: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '700', marginBottom: spacing.sm },
   subtitle: { color: colors.text.secondary, fontSize: fontSize.base, marginBottom: spacing['2xl'] },
   inputWrap: {
@@ -135,6 +222,16 @@ const styles = StyleSheet.create({
   input: { flex: 1, paddingVertical: spacing.md, color: colors.text.primary, fontSize: fontSize.base },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
   status: { fontSize: fontSize.sm },
+  previewCard: {
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.md,
+    borderWidth: 0.5,
+    borderColor: colors.dark.border,
+  },
+  previewText: { color: colors.text.secondary, fontSize: fontSize.sm },
   btnWrap: {
     marginTop: 'auto',
     marginBottom: spacing.xl,
