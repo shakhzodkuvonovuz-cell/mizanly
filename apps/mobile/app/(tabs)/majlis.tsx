@@ -77,6 +77,12 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
 
+  const TABS = [
+    { key: 'foryou', label: t('majlis.forYou') },
+    { key: 'following', label: t('majlis.following') },
+    { key: 'trending', label: t('majlis.trending') },
+  ];
+
   // Feed transition animation
   const feedOpacity = useSharedValue(1);
   const feedAnimStyle = useAnimatedStyle(() => ({
@@ -134,9 +140,9 @@ export default function MajlisScreen() {
     ) : (
       <EmptyState
         icon="message-circle"
-        title="Be the voice"
-        subtitle="Start a thread and share your thoughts"
-        actionLabel="Write"
+        title={t('majlis.emptyFeed.title')}
+        subtitle={t('majlis.emptyFeed.subtitle')}
+        actionLabel={t('majlis.emptyFeed.actionLabel')}
         onAction={() => router.push('/(screens)/create-thread')}
       />
     )
@@ -154,7 +160,7 @@ export default function MajlisScreen() {
       return (
         <View style={styles.endOfFeed}>
           <Icon name="check-circle" size="sm" color={colors.emerald} />
-          <Text style={styles.endOfFeedText}>You're all caught up</Text>
+          <Text style={styles.endOfFeedText}>{t('majlis.caughtUp')}</Text>
         </View>
       );
     }
@@ -184,13 +190,13 @@ export default function MajlisScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.logo}>Majlis</Text>
+        <Text style={styles.logo}>{t('tabs.majlis')}</Text>
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
-          accessibilityLabel="Search"
+          accessibilityLabel={t('common.search')}
           accessibilityRole="button"
-          accessibilityHint="Search for threads and people"
+          accessibilityHint={t('accessibility.searchHint')}
         >
           <Icon name="search" size="sm" color={colors.text.primary} />
         </Pressable>
@@ -207,7 +213,7 @@ export default function MajlisScreen() {
       {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0) ? (
         <View style={styles.trendingHeader}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
-          <Text style={styles.trendingHeaderText}>Trending</Text>
+          <Text style={styles.trendingHeaderText}>{t('tabs.trending')}</Text>
         </View>
       ) : null}
       {trendingHashtagsQuery.isLoading ? (
@@ -226,9 +232,9 @@ export default function MajlisScreen() {
                 haptic.light();
                 router.push(`/(screens)/hashtag/${hashtag.name}`);
               }}
-              accessibilityLabel={`Hashtag ${hashtag.name}`}
+              accessibilityLabel={t('accessibility.hashtag', { name: hashtag.name })}
               accessibilityRole="button"
-              accessibilityHint={`Browse posts tagged ${hashtag.name}`}
+              accessibilityHint={t('accessibility.hashtagHint', { name: hashtag.name })}
             >
               <Text style={styles.hashtagText}>#{hashtag.name}</Text>
             </Pressable>
@@ -266,9 +272,9 @@ export default function MajlisScreen() {
           );
           router.push('/(screens)/create-thread');
         }}
-        accessibilityLabel="Compose thread"
+        accessibilityLabel={t('accessibility.composeThread')}
         accessibilityRole="button"
-        accessibilityHint="Create a new thread"
+        accessibilityHint={t('accessibility.composeThreadHint')}
       >
         <LinearGradient
           colors={[colors.emeraldLight, colors.emerald]}

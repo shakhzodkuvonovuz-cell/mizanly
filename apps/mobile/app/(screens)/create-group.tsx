@@ -17,7 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';
+import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
 
 const MAX_GROUP_NAME = 50;
@@ -26,7 +26,7 @@ const MIN_MEMBERS = 2;
 export default function CreateGroupScreen() {
   const router = useRouter();
   const { user } = useUser();
-  const haptic = useHaptic();
+  const haptic = useHaptic();\n  const { t } = useTranslation();
   const [groupName, setGroupName] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
@@ -120,20 +120,20 @@ export default function CreateGroupScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <GlassHeader
-        title="Create Group"
+        title={t('groups.createGroup')}
         leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
       />
 
       <ScrollView contentContainerStyle={styles.content}>
         {/* Group name */}
         <View style={styles.section}>
-          <Text style={styles.label}>Group name</Text>
+          <Text style={styles.label}>{t('groups.groupName')}</Text>
           <View style={styles.nameRow}>
             <TextInput
               style={styles.nameInput}
               value={groupName}
               onChangeText={setGroupName}
-              placeholder="Enter group name"
+              placeholder={t('groups.enterGroupName')}
               placeholderTextColor={colors.text.tertiary}
               autoFocus
               maxLength={MAX_GROUP_NAME}

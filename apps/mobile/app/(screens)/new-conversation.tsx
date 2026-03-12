@@ -15,11 +15,13 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { searchApi, messagesApi } from '@/services/api';
 import type { User } from '@/types';
 
 export default function NewConversationScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,14 +49,14 @@ export default function NewConversationScreen() {
     onSuccess: (convo) => {
       router.replace(`/(screens)/conversation/${convo.id}`);
     },
-    onError: (err: Error) => Alert.alert('Error', err.message || 'Could not start conversation'),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message || t('messages.couldNotStartConversation')),
   });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <GlassHeader
-        title="New Message"
+        title={t('messages.newMessage')}
         leftAction={{ 
           icon: 'arrow-left', 
           onPress: () => router.back(),
@@ -78,18 +80,18 @@ export default function NewConversationScreen() {
             style={styles.searchInput}
             value={query}
             onChangeText={handleQueryChange}
-            placeholder="Search people…"
+            placeholder={t('common.searchPeople')}
             placeholderTextColor={colors.text.tertiary}
             autoFocus
             autoCapitalize="none"
             autoCorrect={false}
-            accessibilityLabel="Search people input"
+            accessibilityLabel={t('accessibility.searchPeopleInput')}
           />
           {query.length > 0 && (
             <Pressable
               onPress={() => { setQuery(''); setDebouncedQuery(''); }}
               hitSlop={8}
-              accessibilityLabel="Clear search query"
+              accessibilityLabel={t('accessibility.clearSearchQuery')}
               accessibilityRole="button"
             >
               <Icon name="x" size="xs" color={colors.text.secondary} />
@@ -113,9 +115,9 @@ export default function NewConversationScreen() {
       ) : searchQuery.isError ? (
         <EmptyState
           icon="flag"
-          title="Search failed"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('messages.searchFailed')}
+          subtitle={t('common.checkConnectionAndRetry')}
+          actionLabel={t('common.retry')}
           onAction={() => searchQuery.refetch()}
         />
       ) : (
@@ -137,7 +139,7 @@ export default function NewConversationScreen() {
                 onPress={() => dmMutation.mutate(item.id)}
                 disabled={dmMutation.isPending}
                 activeOpacity={0.7}
-                accessibilityLabel={`Chat with ${item.displayName}`}
+                accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
                 accessibilityRole="button"
               >
                 <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
@@ -164,11 +166,11 @@ export default function NewConversationScreen() {
           ListEmptyComponent={() =>
             debouncedQuery.trim().length >= 2 ? (
               <View style={styles.empty}>
-                <Text style={styles.emptyText}>No users found for "{debouncedQuery}"</Text>
+                <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
               </View>
             ) : (
               <View style={styles.hint}>
-                <Text style={styles.hintText}>Search by name or username</Text>
+                <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
               </View>
             )
           }

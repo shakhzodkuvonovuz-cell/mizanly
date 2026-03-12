@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Premium Toggle Switch Component
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
@@ -149,6 +150,7 @@ export default function SettingsScreen() {
   const { signOut } = useClerk();
   const { theme, setTheme } = useStore();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -256,8 +258,8 @@ export default function SettingsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Settings"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('settings.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ flex: 1, padding: spacing.base, paddingTop: insets.top + 60, gap: spacing.lg }}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -271,13 +273,13 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Settings"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        title={t('settings.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
         {/* Content Section */}
-        <SectionHeader title="Content" icon="layers" />
+        <SectionHeader title={t('settings.sections.content')} icon="layers" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -311,7 +313,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Appearance Section */}
-        <SectionHeader title="Appearance" icon="eye" />
+        <SectionHeader title={t('settings.appearance')} icon="eye" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -335,7 +337,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Profile Section */}
-        <SectionHeader title="Profile" icon="user" />
+        <SectionHeader title={t('settings.sections.profile')} icon="user" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -352,7 +354,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Privacy Section */}
-        <SectionHeader title="Privacy" icon="lock" />
+        <SectionHeader title={t('settings.privacy')} icon="lock" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -384,7 +386,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Notifications Section */}
-        <SectionHeader title="Notifications" icon="bell" />
+        <SectionHeader title={t('settings.notifications')} icon="bell" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -429,7 +431,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Wellbeing Section */}
-        <SectionHeader title="Wellbeing" icon="smile" />
+        <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -447,7 +449,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Accessibility Section */}
-        <SectionHeader title="Accessibility" icon="volume-x" />
+        <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -465,7 +467,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Blocked & Muted Section */}
-        <SectionHeader title="Blocked & Muted" icon="slash" />
+        <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -487,7 +489,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Circles Section */}
-        <SectionHeader title="Close Friends" icon="users" />
+        <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -504,7 +506,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Creator Section */}
-        <SectionHeader title="Creator" icon="bar-chart-2" />
+        <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -532,7 +534,7 @@ export default function SettingsScreen() {
         </LinearGradient>
 
         {/* Account Section */}
-        <SectionHeader title="Account" icon="user" />
+        <SectionHeader title={t('settings.account')} icon="user" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}
@@ -576,7 +578,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
 
         {/* About Section */}
-        <SectionHeader title="About" icon="info" />
+        <SectionHeader title={t('settings.about')} icon="info" />
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           start={{ x: 0, y: 0 }}

@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -60,6 +61,7 @@ const ConversationRow = memo(function ConversationRow({
   isOnline?: boolean;
   isTyping?: boolean;
 }) {
+  const { t } = useTranslation();
   const name = conversationName(item, userId);
   const avi = conversationAvatar(item, userId);
   const time = item.lastMessageAt
@@ -128,6 +130,7 @@ export default function RisalahScreen() {
   const navigation = useNavigation();
   const { user } = useUser();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const { getToken } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());

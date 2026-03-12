@@ -67,11 +67,11 @@ export default function OnboardingProfileScreen() {
   const handleContinue = async () => {
     const trimmedName = displayName.trim();
     if (!trimmedName) {
-      setError('Display name is required');
+      setError(t('onboarding.profile.errors.nameRequired'));
       return;
     }
     if (trimmedName.length < 2 || trimmedName.length > 50) {
-      setError('Name must be 2–50 characters');
+      setError(t('onboarding.profile.errors.nameLength'));
       return;
     }
 
@@ -85,7 +85,7 @@ export default function OnboardingProfileScreen() {
       });
       router.push('/onboarding/interests');
     } catch {
-      setError('Failed to save. Please try again.');
+      setError(t('onboarding.profile.errors.saveFailed'));
     } finally {
       setLoading(false);
     }

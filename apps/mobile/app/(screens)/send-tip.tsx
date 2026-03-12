@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { monetizationApi } from '@/services/monetizationApi';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
@@ -89,6 +90,7 @@ function VerifiedBadge({ size = 13 }: { size?: number }) {
 export default function SendTipScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ username?: string }>();
   const [creator, setCreator] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +113,7 @@ export default function SendTipScreen() {
   const fetchCreator = useCallback(async () => {
     const username = params.username;
     if (!username) {
-      setError('No user specified');
+      setError(t('monetization.errors.noUserSpecified'));
       setLoading(false);
       return;
     }
@@ -120,7 +122,7 @@ export default function SendTipScreen() {
       const response = await usersApi.getProfile(username);
       setCreator(response.data);
     } catch (err) {
-      setError('Failed to load creator info');
+      setError(t('monetization.errors.failedToLoadCreatorInfo'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -148,11 +150,11 @@ export default function SendTipScreen() {
 
   const handleSendTip = useCallback(async () => {
     if (!creator) {
-      Alert.alert('Error', 'Creator information not loaded');
+      Alert.alert(t('common.error'), t('monetization.errors.creatorInfoNotLoaded'));
       return;
     }
     if (tipAmount <= 0) {
-      Alert.alert('Error', 'Please select a tip amount');
+      Alert.alert(t('common.error'), t('monetization.errors.selectTipAmount'));
       return;
     }
     haptic.medium();
@@ -167,7 +169,7 @@ export default function SendTipScreen() {
       setIsSuccess(true);
       haptic.success();
     } catch (err) {
-      Alert.alert('Error', 'Failed to send tip. Please try again.');
+      Alert.alert(t('common.error'), t('monetization.errors.failedToSendTip'));
     } finally {
       setIsSending(false);
     }
@@ -182,7 +184,7 @@ export default function SendTipScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Send Tip"
+          title={t('monetization.sendTip')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -225,7 +227,7 @@ export default function SendTipScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Send Tip"
+          title={t('monetization.sendTip')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={[styles.scrollContent, { paddingTop: 100 }]}>
@@ -240,7 +242,7 @@ export default function SendTipScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Send Tip"
+          title={t('monetization.sendTip')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <EmptyState
@@ -257,7 +259,7 @@ export default function SendTipScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Send Tip"
+        title={t('monetization.sendTip')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 

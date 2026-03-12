@@ -192,8 +192,8 @@ export default function EditProfileScreen() {
         <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 44 }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load profile"
-            subtitle="Check your connection and try again"
+            title={t('editProfile.loadErrorTitle')}
+            subtitle={t('editProfile.loadErrorSubtitle')}
             actionLabel="Retry"
             onAction={() => meQuery.refetch()}
           />

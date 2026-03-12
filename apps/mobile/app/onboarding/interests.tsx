@@ -10,20 +10,21 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const INTERESTS = [
-  { id: 'quran', label: 'Quran & Tafseer', emoji: '📖' },
-  { id: 'fiqh', label: 'Islamic Jurisprudence', emoji: '⚖️' },
-  { id: 'history', label: 'Islamic History', emoji: '🕌' },
-  { id: 'family', label: 'Family & Parenting', emoji: '👨‍👩‍👧' },
-  { id: 'health', label: 'Health & Wellness', emoji: '🌿' },
-  { id: 'business', label: 'Business & Finance', emoji: '💼' },
-  { id: 'tech', label: 'Technology', emoji: '💻' },
-  { id: 'arts', label: 'Arts & Creativity', emoji: '🎨' },
-  { id: 'travel', label: 'Travel & Lifestyle', emoji: '✈️' },
-  { id: 'education', label: 'Education & Learning', emoji: '📚' },
-  { id: 'social', label: 'Community & Social', emoji: '🤝' },
-  { id: 'sports', label: 'Sports & Fitness', emoji: '⚽' },
+  { id: 'quran', label: 'onboarding.interests.quran', emoji: '📖' },
+  { id: 'fiqh', label: 'onboarding.interests.fiqh', emoji: '⚖️' },
+  { id: 'history', label: 'onboarding.interests.history', emoji: '🕌' },
+  { id: 'family', label: 'onboarding.interests.family', emoji: '👨‍👩‍👧' },
+  { id: 'health', label: 'onboarding.interests.health', emoji: '🌿' },
+  { id: 'business', label: 'onboarding.interests.business', emoji: '💼' },
+  { id: 'tech', label: 'onboarding.interests.tech', emoji: '💻' },
+  { id: 'arts', label: 'onboarding.interests.arts', emoji: '🎨' },
+  { id: 'travel', label: 'onboarding.interests.travel', emoji: '✈️' },
+  { id: 'education', label: 'onboarding.interests.education', emoji: '📚' },
+  { id: 'social', label: 'onboarding.interests.social', emoji: '🤝' },
+  { id: 'sports', label: 'onboarding.interests.sports', emoji: '⚽' },
 ];
 
 export default function InterestsScreen() {
@@ -33,6 +34,7 @@ export default function InterestsScreen() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const haptic = useHaptic();
+  const { t } = useTranslation();
 
   const toggle = (id: string) => {
     haptic.selection();
@@ -66,8 +68,8 @@ export default function InterestsScreen() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.title}>What interests you?</Text>
-        <Text style={styles.subtitle}>Pick at least 3 — this seeds your personalised feed</Text>
+        <Text style={styles.title}>{t('onboarding.interests.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.interests.subtitle')}</Text>
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
@@ -81,7 +83,7 @@ export default function InterestsScreen() {
               activeOpacity={0.7}
             >
               <Text style={styles.chipEmoji}>{item.emoji}</Text>
-              <Text style={[styles.chipLabel, on && styles.chipLabelOn]}>{item.label}</Text>
+              <Text style={[styles.chipLabel, on && styles.chipLabelOn]}>{t(item.label)}</Text>
             </TouchableOpacity>
           );
         })}

@@ -8,12 +8,14 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { authApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 
 export default function SuggestedScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const { t } = useTranslation();
   const [following, setFollowing] = useState<Set<string>>(new Set());
   const [finishing, setFinishing] = useState(false);
 
@@ -56,8 +58,8 @@ export default function SuggestedScreen() {
       </View>
 
       <View style={styles.header}>
-        <Text style={styles.title}>Follow some people</Text>
-        <Text style={styles.subtitle}>Get started with a personalised feed</Text>
+        <Text style={styles.title}>{t('onboarding.suggested.title')}</Text>
+        <Text style={styles.subtitle}>{t('onboarding.suggested.subtitle')}</Text>
       </View>
 
       {isLoading ? (
@@ -94,7 +96,7 @@ export default function SuggestedScreen() {
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
-                    {isFollowing ? 'Following' : 'Follow'}
+                    {isFollowing ? t('onboarding.suggested.following') : t('onboarding.suggested.follow')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -110,10 +112,10 @@ export default function SuggestedScreen() {
           disabled={finishing}
           activeOpacity={0.8}
         >
-          {finishing ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>Get Started</Text>}
+          {finishing ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleFinish}>
-          <Text style={styles.skip}>Skip for now</Text>
+          <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

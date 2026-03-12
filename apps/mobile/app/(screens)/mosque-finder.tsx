@@ -310,7 +310,7 @@ export default function MosqueFinderScreen() {
             {/* Results Count */}
             <View style={styles.resultsHeader}>
               <Text style={styles.resultsText}>
-                {filteredMosques.length} mosque{filteredMosques.length !== 1 ? 's' : ''} nearby
+{t('islamic.mosquesNearby', { count: filteredMosques.length })}
               </Text>
             </View>
           </>
