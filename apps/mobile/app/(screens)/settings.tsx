@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  ScrollView, Switch, Alert, Linking,
+  ScrollView, Switch, Alert, Linking, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -14,6 +16,50 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 import { useHaptic } from '@/hooks/useHaptic';
+
+// Premium Toggle Switch Component
+function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
+  const haptic = useHaptic();
+  const translateX = useSharedValue(value ? 20 : 0);
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    translateX.value = withSpring(value ? 20 : 0, { damping: 15, stiffness: 200 });
+  }, [value]);
+
+  const handlePress = () => {
+    haptic.light();
+    scale.value = withSequence(
+      withSpring(0.95, { damping: 10 }),
+      withSpring(1, { damping: 10 })
+    );
+    onValueChange(!value);
+  };
+
+  const thumbStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+  }));
+
+  return (
+    <Pressable onPress={handlePress}>
+      <LinearGradient
+        colors={value ? [colors.emerald, '#05593A'] : [colors.dark.border, colors.dark.surface]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.toggleTrack}
+      >
+        <Animated.View style={[styles.toggleThumb, thumbStyle]}>
+          {value && (
+            <LinearGradient
+              colors={['#fff', '#f0f0f0']}
+              style={styles.toggleThumbGradient}
+            />
+          )}
+        </Animated.View>
+      </LinearGradient>
+    </Pressable>
+  );
+}
 
 function Row({
   label,
@@ -24,6 +70,7 @@ function Row({
   onToggle,
   onPress,
   destructive,
+  isLast,
 }: {
   label: string;
   hint?: string;
@@ -33,42 +80,68 @@ function Row({
   onToggle?: (v: boolean) => void;
   onPress?: () => void;
   destructive?: boolean;
+  isLast?: boolean;
 }) {
   const haptic = useHaptic();
   const handlePress = onPress ? () => {
     haptic.selection();
     onPress();
   } : undefined;
+
   return (
     <TouchableOpacity
-      style={styles.row}
+      style={[styles.row, isLast && styles.rowLast]}
       onPress={handlePress}
       activeOpacity={handlePress ? 0.7 : 1}
       disabled={!handlePress && !onToggle}
     >
-      {icon ? <View style={styles.rowIcon}>{icon}</View> : null}
+      {icon ? (
+        <LinearGradient
+          colors={destructive ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+          style={styles.rowIconContainer}
+        >
+          {icon}
+        </LinearGradient>
+      ) : (
+        <View style={styles.rowIconSpacer} />
+      )}
       <View style={styles.rowText}>
         <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
         {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
       </View>
       {onToggle !== undefined && value !== undefined ? (
-        <Switch
-          value={value}
-          onValueChange={onToggle}
-          trackColor={{ false: colors.dark.border, true: colors.emerald }}
-          thumbColor="#fff"
-        />
+        <PremiumToggle value={value} onValueChange={onToggle} />
       ) : rightText ? (
         <Text style={styles.rowRightText}>{rightText}</Text>
       ) : onPress ? (
-        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        <View style={styles.rowChevron}>
+          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        </View>
       ) : null}
     </TouchableOpacity>
   );
 }
 
-function SectionHeader({ title }: { title: string }) {
-  return <Text style={styles.sectionHeader}>{title}</Text>;
+function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentProps<typeof Icon>['name'] }) {
+  return (
+    <View style={styles.sectionHeaderContainer}>
+      {icon && (
+        <LinearGradient
+          colors={[colors.gold, '#A67C00']}
+          style={styles.sectionHeaderIcon}
+        >
+          <Icon name={icon} size={12} color="#0D1117" />
+        </LinearGradient>
+      )}
+      <LinearGradient
+        colors={[colors.gold, colors.emerald, 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.sectionHeaderAccent}
+      />
+      <Text style={styles.sectionHeader}>{title}</Text>
+    </View>
+  );
 }
 
 export default function SettingsScreen() {
@@ -203,229 +276,334 @@ export default function SettingsScreen() {
       />
 
       <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
-        {/* Content */}
-        <SectionHeader title="Content" />
-        <View style={styles.card}>
+        {/* Content Section */}
+        <SectionHeader title="Content" icon="layers" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Content Preferences"
+            icon={<Icon name="settings" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/content-settings')}
           />
           <View style={styles.divider} />
           <Row
             label="Drafts"
+            icon={<Icon name="clock" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/drafts')}
           />
           <View style={styles.divider} />
           <Row
             label="Archive"
+            icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/archive')}
           />
           <View style={styles.divider} />
           <Row
             label="Watch History"
+            icon={<Icon name="play" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/watch-history')}
+            isLast
           />
-        </View>
-        {/* Appearance */}
-        <SectionHeader title="Appearance" />
-        <View style={styles.card}>
+        </LinearGradient>
+
+        {/* Appearance Section */}
+        <SectionHeader title="Appearance" icon="eye" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Appearance"
-            icon={<Icon name="eye" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="eye" size="sm" color={colors.emerald} />}
             hint="Theme, dark mode, and visual settings"
             onPress={() => router.push('/(screens)/theme-settings')}
           />
           <View style={styles.divider} />
           <Row
             label="Saved"
+            icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
             hint="Your saved posts and threads"
             onPress={() => router.push('/(screens)/saved')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Profile */}
-        <SectionHeader title="Profile" />
-        <View style={styles.card}>
+        {/* Profile Section */}
+        <SectionHeader title="Profile" icon="user" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Share Profile"
-            icon={<Icon name="share" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="share" size="sm" color={colors.emerald} />}
             hint="Share your profile via QR code or link"
             onPress={() => router.push('/(screens)/share-profile')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Privacy */}
-        <SectionHeader title="Privacy" />
-        <View style={styles.card}>
+        {/* Privacy Section */}
+        <SectionHeader title="Privacy" icon="lock" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Private Account"
+            icon={<Icon name="lock" size="sm" color={colors.emerald} />}
             hint="Only approved followers see your posts"
             value={isPrivate}
             onToggle={(v) => { setIsPrivate(v); privacyMutation.mutate({ isPrivate: v }); }}
           />
           <View style={styles.divider} />
-          <View style={styles.divider} />
           <Row
             label="Follow Requests"
+            icon={<Icon name="users" size="sm" color={colors.gold} />}
             hint="Approve or deny pending requests"
             onPress={() => router.push('/(screens)/follow-requests')}
           />
           <View style={styles.divider} />
           <Row
             label="Blocked Keywords"
+            icon={<Icon name="slash" size="sm" color={colors.error} />}
             hint="Filter comments with specific words"
             onPress={() => router.push('/(screens)/blocked-keywords')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Notifications */}
-        <SectionHeader title="Notifications" />
-        <View style={styles.card}>
+        {/* Notifications Section */}
+        <SectionHeader title="Notifications" icon="bell" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Likes"
+            icon={<Icon name="heart" size="sm" color={colors.error} />}
             value={notifyLikes}
             onToggle={(v) => { setNotifyLikes(v); notifMutation.mutate({ notifyLikes: v }); }}
           />
           <View style={styles.divider} />
           <Row
             label="Comments"
+            icon={<Icon name="message-circle" size="sm" color={colors.emerald} />}
             value={notifyComments}
             onToggle={(v) => { setNotifyComments(v); notifMutation.mutate({ notifyComments: v }); }}
           />
           <View style={styles.divider} />
           <Row
             label="New Followers"
+            icon={<Icon name="user-plus" size="sm" color={colors.gold} />}
             value={notifyFollows}
             onToggle={(v) => { setNotifyFollows(v); notifMutation.mutate({ notifyFollows: v }); }}
           />
           <View style={styles.divider} />
           <Row
             label="Mentions"
+            icon={<Icon name="at-sign" size="sm" color={colors.emerald} />}
             value={notifyMentions}
             onToggle={(v) => { setNotifyMentions(v); notifMutation.mutate({ notifyMentions: v }); }}
           />
           <View style={styles.divider} />
           <Row
             label="Messages"
+            icon={<Icon name="mail" size="sm" color={colors.gold} />}
             value={notifyMessages}
             onToggle={(v) => { setNotifyMessages(v); notifMutation.mutate({ notifyMessages: v }); }}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Wellbeing */}
-        <SectionHeader title="Wellbeing" />
-        <View style={styles.card}>
+        {/* Wellbeing Section */}
+        <SectionHeader title="Wellbeing" icon="smile" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Filter Sensitive Content"
+            icon={<Icon name="eye-off" size="sm" color={colors.emerald} />}
             hint="Hide posts marked as sensitive"
             value={sensitiveContent}
             onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Accessibility */}
-        <SectionHeader title="Accessibility" />
-        <View style={styles.card}>
+        {/* Accessibility Section */}
+        <SectionHeader title="Accessibility" icon="volume-x" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Reduce Motion"
+            icon={<Icon name="clock" size="sm" color={colors.gold} />}
             hint="Minimize animations throughout the app"
             value={reducedMotion}
             onToggle={(v) => { setReducedMotion(v); accessibilityMutation.mutate({ reducedMotion: v }); }}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Blocked & Muted */}
-        <SectionHeader title="Blocked & Muted" />
-        <View style={styles.card}>
+        {/* Blocked & Muted Section */}
+        <SectionHeader title="Blocked & Muted" icon="slash" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Blocked Accounts"
+            icon={<Icon name="x" size="sm" color={colors.error} />}
             onPress={() => router.push('/(screens)/blocked')}
           />
           <View style={styles.divider} />
           <Row
             label="Muted Accounts"
+            icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
             onPress={() => router.push('/(screens)/muted')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Circles */}
-        <SectionHeader title="Close Friends" />
-        <View style={styles.card}>
+        {/* Circles Section */}
+        <SectionHeader title="Close Friends" icon="users" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Circles"
+            icon={<Icon name="users" size="sm" color={colors.emerald} />}
             hint="Manage your close friends groups"
             onPress={() => router.push('/(screens)/circles')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Creator */}
-        <SectionHeader title="Creator" />
-        <View style={styles.card}>
+        {/* Creator Section */}
+        <SectionHeader title="Creator" icon="bar-chart-2" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Analytics"
+            icon={<Icon name="bar-chart-2" size="sm" color={colors.gold} />}
             onPress={() => router.push('/(screens)/analytics')}
           />
           <View style={styles.divider} />
           <Row
             label="Broadcast Channels"
+            icon={<Icon name="radio" size="sm" color={colors.emerald} />}
             onPress={() => router.push('/(screens)/broadcast-channels')}
           />
           <View style={styles.divider} />
           <Row
             label="My Reports"
+            icon={<Icon name="flag" size="sm" color={colors.error} />}
             onPress={() => router.push('/(screens)/my-reports')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Account */}
-        <SectionHeader title="Account" />
-        <View style={styles.card}>
+        {/* Account Section */}
+        <SectionHeader title="Account" icon="user" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row
             label="Account"
-            icon={<Icon name="user" size="sm" color={colors.text.secondary} />}
+            icon={<Icon name="user" size="sm" color={colors.emerald} />}
             hint="Manage account settings"
             onPress={() => router.push('/(screens)/account-settings')}
           />
           <View style={styles.divider} />
           <Row
             label="Deactivate Account"
+            icon={<Icon name="x" size="sm" color={colors.error} />}
             destructive
             onPress={handleDeactivate}
           />
           <View style={styles.divider} />
           <Row
             label="Delete Account"
+            icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={handleDeleteAccount}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
-        {/* Sign Out */}
+        {/* Premium Sign Out Button */}
         <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
-          <Icon name="log-out" size="sm" color={colors.error} />
-          <Text style={styles.signOutLabel}>Sign Out</Text>
+          <LinearGradient
+            colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.signOutGradient}
+          >
+            <Icon name="log-out" size="sm" color={colors.error} />
+            <Text style={styles.signOutLabel}>Sign Out</Text>
+          </LinearGradient>
         </TouchableOpacity>
 
-        {/* About */}
-        <SectionHeader title="About" />
-        <View style={styles.card}>
+        {/* About Section */}
+        <SectionHeader title="About" icon="info" />
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.card}
+        >
           <Row label="Version" rightText="1.0.0" />
           <View style={styles.divider} />
           <Row
             label="Terms of Service"
+            icon={<Icon name="file-text" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/terms')}
           />
           <View style={styles.divider} />
           <Row
             label="Privacy Policy"
+            icon={<Icon name="shield" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/privacy')}
           />
           <View style={styles.divider} />
           <Row
             label="Licenses"
+            icon={<Icon name="layers" size="sm" color={colors.text.secondary} />}
             onPress={() => Linking.openURL('https://mizanly.app/licenses')}
+            isLast
           />
-        </View>
+        </LinearGradient>
 
         <Text style={styles.version}>Mizanly v1.0.0</Text>
       </ScrollView>
@@ -475,5 +653,119 @@ const styles = StyleSheet.create({
 
   version: {
     color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,
+  },
+
+  // Premium Section Header
+  sectionHeaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.sm,
+  },
+  sectionHeaderIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sectionHeaderAccent: {
+    width: 4,
+    height: 16,
+    borderRadius: 2,
+  },
+  sectionHeader: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+
+  // Premium Toggle Switch
+  toggleTrack: {
+    width: 50,
+    height: 28,
+    borderRadius: 14,
+    padding: 4,
+    justifyContent: 'center',
+  },
+  toggleThumb: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
+  },
+  toggleThumbGradient: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+
+  // Premium Card
+  card: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.3)',
+    overflow: 'hidden',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+  },
+
+  // Premium Row
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+  },
+  rowIconSpacer: {
+    width: 32,
+    marginRight: spacing.sm,
+  },
+  rowChevron: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(45,53,72,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(45,53,72,0.5)',
+    marginLeft: spacing.base + 40,
+  },
+
+  // Premium Sign Out
+  signOutGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(248,81,73,0.3)',
   },
 });
