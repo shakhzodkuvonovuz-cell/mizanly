@@ -6,6 +6,8 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -63,27 +65,43 @@ export default function ChannelPlaylistsScreen() {
     }
   };
 
-  const renderPlaylistItem = ({ item }: { item: Playlist }) => (
-    <TouchableOpacity
-      style={styles.playlistCard}
-      activeOpacity={0.8}
-      onPress={() => router.push(`/(screens)/playlist/${item.id}`)}
-      accessibilityLabel={`Playlist: ${item.title}, ${item.videosCount} videos`}
-      accessibilityRole="button"
-    >
-      {/* Thumbnail */}
-      {item.thumbnailUrl ? (
-        <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
-      ) : (
-        <View style={[styles.thumbnail, styles.placeholderThumb]}>
-          <Icon name="layers" size="lg" color={colors.text.tertiary} />
-        </View>
-      )}
-      <View style={styles.cardInfo}>
-        <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.cardMeta}>{item.videosCount} videos</Text>
-      </View>
-    </TouchableOpacity>
+  const renderPlaylistItem = ({ item, index }: { item: Playlist; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <TouchableOpacity
+        style={styles.playlistCard}
+        activeOpacity={0.8}
+        onPress={() => router.push(`/(screens)/playlist/${item.id}`)}
+        accessibilityLabel={`Playlist: ${item.title}, ${item.videosCount} videos`}
+        accessibilityRole="button"
+      >
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.cardGradient}
+        >
+          {/* Thumbnail */}
+          {item.thumbnailUrl ? (
+            <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+          ) : (
+            <LinearGradient
+              colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+              style={[styles.thumbnail, styles.placeholderThumb]}
+            >
+              <Icon name="layers" size="lg" color={colors.gold} />
+            </LinearGradient>
+          )}
+          <View style={styles.cardInfo}>
+            <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+              style={styles.videosBadge}
+            >
+              <Icon name="video" size="xs" color={colors.emerald} />
+              <Text style={styles.cardMeta}>{item.videosCount} videos</Text>
+            </LinearGradient>
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+    </Animated.View>
   );
 
   // Loading skeleton
@@ -185,23 +203,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   playlistCard: {
+    marginBottom: spacing.sm,
+  },
+  cardGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
   },
   thumbnail: {
     width: 120,
     height: 68,
     borderRadius: radius.sm,
-    backgroundColor: colors.dark.bgCard,
   },
   placeholderThumb: {
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.dark.surface,
   },
   cardInfo: {
     flex: 1,
@@ -212,9 +235,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: spacing.xs,
   },
+  videosBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
   cardMeta: {
-    color: colors.text.secondary,
+    color: colors.emerald,
     fontSize: fontSize.sm,
+    fontWeight: '600',
   },
   skeletonContainer: {
     paddingHorizontal: spacing.base,

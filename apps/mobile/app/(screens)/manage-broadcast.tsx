@@ -3,6 +3,8 @@ import { View, Text, StyleSheet, FlatList, Pressable, Alert, RefreshControl } fr
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -127,20 +129,34 @@ export default function ManageBroadcastScreen() {
     );
   }
 
-  const renderItem = ({ item }: { item: User }) => (
-    <View style={styles.row}>
-      <Avatar uri={item.avatarUrl} name={item.displayName || item.username} size="md" />
-      <View style={styles.info}>
-        <Text style={styles.name} numberOfLines={1}>{item.displayName || item.username}</Text>
-        <Text style={styles.username} numberOfLines={1}>@{item.username}</Text>
-      </View>
-      <Pressable 
-        style={styles.actionButton}
-        onPress={() => handleAction(item)}
+  const renderItem = ({ item, index }: { item: User; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <LinearGradient
+        colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+        style={styles.row}
       >
-        <Icon name="more-horizontal" size={20} color={colors.text.secondary} />
-      </Pressable>
-    </View>
+        <LinearGradient
+          colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+          style={styles.iconBg}
+        >
+          <Icon name="user" size="sm" color={colors.emerald} />
+        </LinearGradient>
+        <View style={styles.info}>
+          <Text style={styles.name} numberOfLines={1}>{item.displayName || item.username}</Text>
+          <Text style={styles.username} numberOfLines={1}>@{item.username}</Text>
+        </View>
+        <Pressable
+          onPress={() => handleAction(item)}
+        >
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.actionButton}
+          >
+            <Icon name="more-horizontal" size={20} color={colors.text.secondary} />
+          </LinearGradient>
+        </Pressable>
+      </LinearGradient>
+    </Animated.View>
   );
 
   return (
@@ -196,9 +212,9 @@ export default function ManageBroadcastScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: colors.dark.bg 
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg
   },
   tabsWrap: {
     paddingHorizontal: spacing.base,
@@ -208,6 +224,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: spacing['2xl'],
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+    paddingTop: spacing.md,
   },
   emptyWrap: {
     marginTop: spacing['2xl'],
@@ -217,7 +236,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
+  },
+  iconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   info: {
     flex: 1,
@@ -235,5 +264,6 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     padding: spacing.xs,
+    borderRadius: radius.md,
   },
 });

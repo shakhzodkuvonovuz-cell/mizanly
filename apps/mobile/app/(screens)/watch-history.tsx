@@ -6,6 +6,8 @@ import {
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -39,46 +41,63 @@ const formatViews = (n: number) => {
   return String(n);
 };
 
-function VideoCard({ item, onPress }: { item: WatchHistoryItem; onPress: () => void }) {
+function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
   return (
-    <TouchableOpacity
-      style={styles.videoCard}
-      activeOpacity={0.8}
-      onPress={onPress}
-    >
-      {/* Thumbnail with progress bar */}
-      <View style={styles.thumbnailContainer}>
-        {item.thumbnailUrl ? (
-          <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
-        ) : (
-          <View style={[styles.thumbnail, styles.thumbnailPlaceholder]}>
-            <Icon name="video" size="lg" color={colors.text.secondary} />
-          </View>
-        )}
-        <View style={styles.durationBadge}>
-          <Text style={styles.durationText}>{formatDuration(item.duration)}</Text>
-        </View>
-        {/* Progress bar */}
-        {item.progress > 0 && !item.completed && (
-          <View style={[styles.progressBar, { width: `${item.progress * 100}%` }]} />
-        )}
-      </View>
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <TouchableOpacity
+        style={styles.videoCard}
+        activeOpacity={0.8}
+        onPress={onPress}
+      >
+        {/* Thumbnail with progress bar */}
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.thumbnailContainer}
+        >
+          {item.thumbnailUrl ? (
+            <Image source={{ uri: item.thumbnailUrl }} style={styles.thumbnail} />
+          ) : (
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={[styles.thumbnail, styles.thumbnailPlaceholder]}
+            >
+              <Icon name="video" size="lg" color={colors.emerald} />
+            </LinearGradient>
+          )}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.6)']}
+            style={styles.durationBadge}
+          >
+            <Text style={styles.durationText}>{formatDuration(item.duration)}</Text>
+          </LinearGradient>
+          {/* Progress bar */}
+          {item.progress > 0 && !item.completed && (
+            <View style={[styles.progressBar, { width: `${item.progress * 100}%` }]} />
+          )}
+        </LinearGradient>
 
-      {/* Info row */}
-      <View style={styles.infoRow}>
-        <View style={styles.videoDetails}>
-          <Text style={styles.videoTitle} numberOfLines={2}>
-            {item.title}
-          </Text>
-          <Text style={styles.channelName} numberOfLines={1}>
-            {item.channel.name}
-          </Text>
-          <Text style={styles.videoStats} numberOfLines={1}>
-            {formatViews(item.viewsCount)} views • {formatDuration(item.duration)}
-          </Text>
+        {/* Info row */}
+        <View style={styles.infoRow}>
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.channelIconBg}
+          >
+            <Icon name="user" size="sm" color={colors.emerald} />
+          </LinearGradient>
+          <View style={styles.videoDetails}>
+            <Text style={styles.videoTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+            <Text style={styles.channelName} numberOfLines={1}>
+              {item.channel.name}
+            </Text>
+            <Text style={styles.videoStats} numberOfLines={1}>
+              {formatViews(item.viewsCount)} views • {formatDuration(item.duration)}
+            </Text>
+          </View>
         </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
 
@@ -170,8 +189,8 @@ export default function WatchHistoryScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
         }
-        renderItem={({ item }) => (
-          <VideoCard item={item} onPress={() => handleVideoPress(item)} />
+        renderItem={({ item, index }) => (
+          <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
         )}
         ListEmptyComponent={() =>
           !watchHistoryQuery.isLoading ? (
@@ -213,17 +232,17 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontWeight: '600',
   },
-  listContainer: { paddingBottom: 100 },
+  listContainer: { paddingBottom: 100, gap: spacing.lg, paddingTop: spacing.sm },
   videoCard: {
     marginHorizontal: spacing.base,
-    marginBottom: spacing.lg,
   },
   thumbnailContainer: {
     position: 'relative',
     borderRadius: radius.md,
     overflow: 'hidden',
-    backgroundColor: colors.dark.surface,
     aspectRatio: 16 / 9,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
   },
   thumbnail: {
     width: '100%',
@@ -237,7 +256,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: spacing.sm,
     right: spacing.sm,
-    backgroundColor: 'rgba(0,0,0,0.8)',
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
@@ -260,6 +278,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginTop: spacing.sm,
     gap: spacing.sm,
+  },
+  channelIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   videoDetails: {
     flex: 1,

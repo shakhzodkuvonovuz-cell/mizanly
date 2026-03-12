@@ -7,6 +7,8 @@ import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -101,100 +103,130 @@ export default function GoLiveScreen() {
         contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
       >
         {/* Title input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Title</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="What are you streaming?"
-            placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel="Live stream title"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={100}
-            autoFocus
-          />
-          <View style={styles.charCountWrapper}>
-            <CharCountRing current={title.length} max={100} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <Text style={styles.inputLabel}>Title</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="What are you streaming?"
+              placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Live stream title"
+              value={title}
+              onChangeText={setTitle}
+              maxLength={100}
+              autoFocus
+            />
+            <View style={styles.charCountWrapper}>
+              <CharCountRing current={title.length} max={100} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Description input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Description (optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Tell viewers what your stream is about"
-            placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel="Live stream description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            maxLength={500}
-            numberOfLines={4}
-          />
-          <View style={styles.charCountWrapper}>
-            <CharCountRing current={description.length} max={500} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <Text style={styles.inputLabel}>Description (optional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Tell viewers what your stream is about"
+              placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Live stream description"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              maxLength={500}
+              numberOfLines={4}
+            />
+            <View style={styles.charCountWrapper}>
+              <CharCountRing current={description.length} max={500} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Live type selection */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Stream Type</Text>
-          <TouchableOpacity
-            style={styles.typeSelector}
-            onPress={() => setShowLiveTypePicker(true)}
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-              <Icon name={selectedLiveType.iconName} size="sm" color={colors.text.primary} />
+            <Text style={styles.inputLabel}>Stream Type</Text>
+            <TouchableOpacity
+              style={styles.typeSelector}
+              onPress={() => setShowLiveTypePicker(true)}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+                style={styles.typeIconBg}
+              >
+                <Icon name={selectedLiveType.iconName} size="sm" color={colors.emerald} />
+              </LinearGradient>
               <Text style={styles.typeSelectorText}>{selectedLiveType.label}</Text>
-            </View>
-            <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-          </TouchableOpacity>
-        </View>
+              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Schedule toggle */}
-        <View style={styles.inputGroup}>
-          <View style={styles.scheduleRow}>
-            <View>
-              <Text style={styles.inputLabel}>Schedule for later</Text>
-              <Text style={styles.scheduleSubtitle}>
-                Start your stream at a specific time
-              </Text>
+        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <View style={styles.scheduleRow}>
+              <View>
+                <Text style={styles.inputLabel}>Schedule for later</Text>
+                <Text style={styles.scheduleSubtitle}>
+                  Start your stream at a specific time
+                </Text>
+              </View>
+              <Switch
+                value={isScheduled}
+                onValueChange={handleScheduleToggle}
+                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                thumbColor={colors.text.primary}
+                ios_backgroundColor={colors.dark.border}
+              />
             </View>
-            <Switch
-              value={isScheduled}
-              onValueChange={handleScheduleToggle}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
-              thumbColor={colors.text.primary}
-              ios_backgroundColor={colors.dark.border}
-            />
-          </View>
 
-          {isScheduled && scheduleDate && (
-            <TouchableOpacity
-              style={styles.scheduleDisplay}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <Icon name="clock" size="sm" color={colors.emerald} />
-              <Text style={styles.scheduleText}>
-                {scheduleDate.toLocaleString([], {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </Text>
-              <Icon name="edit" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
-          )}
-        </View>
+            {isScheduled && scheduleDate && (
+              <TouchableOpacity
+                style={styles.scheduleDisplay}
+                onPress={() => setShowDatePicker(true)}
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                  style={styles.scheduleIconBg}
+                >
+                  <Icon name="clock" size="sm" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.scheduleText}>
+                  {scheduleDate.toLocaleString([], {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+                <Icon name="edit" size="sm" color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+          </LinearGradient>
+        </Animated.View>
 
-        <GradientButton
-          label={createMutation.isPending ? 'Starting…' : 'Go Live'}
-          onPress={handleGoLive}
-          disabled={!canGoLive}
-        />
+        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+          <GradientButton
+            label={createMutation.isPending ? 'Starting…' : 'Go Live'}
+            onPress={handleGoLive}
+            disabled={!canGoLive}
+          />
+        </Animated.View>
       </ScrollView>
 
       {/* Live type picker bottom sheet */}
@@ -243,9 +275,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   // Body
   body: { flex: 1 },
-  bodyContent: { padding: spacing.base, paddingBottom: 80 },
-  // Input groups
-  inputGroup: { marginBottom: spacing.lg },
+  bodyContent: { padding: spacing.base, paddingBottom: 80, gap: spacing.lg },
+  // Input cards
+  inputCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.md,
+  },
   inputLabel: {
     color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
     marginBottom: spacing.sm,
@@ -265,12 +302,19 @@ const styles = StyleSheet.create({
   },
   // Type selector
   typeSelector: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
     borderWidth: 1, borderColor: colors.dark.border,
   },
-  typeSelectorText: { color: colors.text.primary, fontSize: fontSize.base },
+  typeIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  typeSelectorText: { color: colors.text.primary, fontSize: fontSize.base, flex: 1 },
   // Schedule
   scheduleRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -280,9 +324,16 @@ const styles = StyleSheet.create({
   },
   scheduleDisplay: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.active.emerald10, borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    marginTop: spacing.sm, borderWidth: 1, borderColor: colors.emerald,
+    marginTop: spacing.sm, borderWidth: 1, borderColor: colors.dark.border,
+  },
+  scheduleIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scheduleText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
   // Sheet

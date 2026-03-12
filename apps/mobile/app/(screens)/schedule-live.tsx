@@ -9,6 +9,8 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -176,79 +178,111 @@ export default function ScheduleLiveScreen() {
         contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
       >
         {/* Title input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Title *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="What are you streaming?"
-            placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel="Live stream title"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={100}
-            autoFocus
-          />
-          <View style={styles.charCountWrapper}>
-            <CharCountRing current={title.length} max={100} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <Text style={styles.inputLabel}>Title *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="What are you streaming?"
+              placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Live stream title"
+              value={title}
+              onChangeText={setTitle}
+              maxLength={100}
+              autoFocus
+            />
+            <View style={styles.charCountWrapper}>
+              <CharCountRing current={title.length} max={100} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Description input */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Description (optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Tell viewers what your stream is about"
-            placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel="Live stream description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            maxLength={500}
-            numberOfLines={4}
-          />
-          <View style={styles.charCountWrapper}>
-            <CharCountRing current={description.length} max={500} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <Text style={styles.inputLabel}>Description (optional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Tell viewers what your stream is about"
+              placeholderTextColor={colors.text.tertiary}
+              accessibilityLabel="Live stream description"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+              maxLength={500}
+              numberOfLines={4}
+            />
+            <View style={styles.charCountWrapper}>
+              <CharCountRing current={description.length} max={500} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
         {/* Thumbnail picker */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Thumbnail (optional)</Text>
-          {thumbnail ? (
-            <View style={styles.thumbnailPreview}>
-              <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
-              <TouchableOpacity style={styles.removeThumbnail} onPress={removeThumbnail}>
-                <Icon name="x" size={12} color="#fff" />
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
+          >
+            <Text style={styles.inputLabel}>Thumbnail (optional)</Text>
+            {thumbnail ? (
+              <View style={styles.thumbnailPreview}>
+                <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
+                <TouchableOpacity style={styles.removeThumbnail} onPress={removeThumbnail}>
+                  <Icon name="x" size={12} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.thumbnailIconBg}
+                >
+                  <Icon name="image" size="lg" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.thumbnailPlaceholderText}>Add a thumbnail</Text>
+                <Text style={styles.thumbnailHint}>Recommended: 16:9 ratio</Text>
               </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
-              <Icon name="image" size="lg" color={colors.text.tertiary} />
-              <Text style={styles.thumbnailPlaceholderText}>Add a thumbnail</Text>
-              <Text style={styles.thumbnailHint}>Recommended: 16:9 ratio</Text>
-            </TouchableOpacity>
-          )}
-        </View>
+            )}
+          </LinearGradient>
+        </Animated.View>
 
         {/* Date/time picker */}
-        <View style={styles.inputGroup}>
-          <Text style={styles.inputLabel}>Schedule Time *</Text>
-          <TouchableOpacity
-            style={styles.dateSelector}
-            onPress={() => setShowDatePicker(true)}
+        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.inputCard}
           >
-            <Icon name="clock" size="sm" color={colors.emerald} />
-            <Text style={styles.dateSelectorText}>{formattedDate}</Text>
-            <Icon name="edit" size="sm" color={colors.text.tertiary} />
-          </TouchableOpacity>
-        </View>
+            <Text style={styles.inputLabel}>Schedule Time *</Text>
+            <TouchableOpacity
+              style={styles.dateSelector}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.dateIconBg}
+              >
+                <Icon name="clock" size="sm" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.dateSelectorText}>{formattedDate}</Text>
+              <Icon name="edit" size="sm" color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </LinearGradient>
+        </Animated.View>
 
-        <GradientButton
-          label={scheduleMutation.isPending ? 'Scheduling…' : 'Schedule Live'}
-          onPress={handleSchedule}
-          disabled={!canSchedule}
-        />
+        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+          <GradientButton
+            label={scheduleMutation.isPending ? 'Scheduling…' : 'Schedule Live'}
+            onPress={handleSchedule}
+            disabled={!canSchedule}
+          />
+        </Animated.View>
       </ScrollView>
 
       {/* Date picker bottom sheet */}
@@ -339,9 +373,14 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   // Body
   body: { flex: 1 },
-  bodyContent: { padding: spacing.base, paddingBottom: 80 },
-  // Input groups
-  inputGroup: { marginBottom: spacing.lg },
+  bodyContent: { padding: spacing.base, paddingBottom: 80, gap: spacing.lg },
+  // Input cards
+  inputCard: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.md,
+  },
   inputLabel: {
     color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
     marginBottom: spacing.sm,
@@ -376,6 +415,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.dark.border,
     alignItems: 'center', justifyContent: 'center', gap: spacing.sm,
   },
+  thumbnailIconBg: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   thumbnailPlaceholderText: {
     color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600',
   },
@@ -385,9 +431,16 @@ const styles = StyleSheet.create({
   // Date selector
   dateSelector: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
-    backgroundColor: colors.active.emerald10, borderRadius: radius.md,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
-    borderWidth: 1, borderColor: colors.emerald,
+    borderWidth: 1, borderColor: colors.dark.border,
+  },
+  dateIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   dateSelectorText: { flex: 1, color: colors.emerald, fontSize: fontSize.sm, fontWeight: '600' },
   // Picker sheet

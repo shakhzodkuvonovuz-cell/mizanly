@@ -10,10 +10,13 @@ import {
   Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
+  TouchableOpacity,
 } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -141,26 +144,47 @@ export default function BroadcastChannelsScreen() {
     }
   }, []);
 
-  const renderChannelItem = useCallback(({ item }: { item: BroadcastChannelWithSubscription }) => (
-    <Pressable style={styles.channelCard} onPress={() => handleChannelPress(item)}>
-      <Avatar uri={item.avatarUrl} name={item.name} size="lg" />
-      <View style={styles.channelInfo}>
-        <Text style={styles.channelName}>{item.name}</Text>
-        <Text style={styles.channelDescription} numberOfLines={2}>{item.description}</Text>
-        <Text style={styles.channelSubscribers}>
-          {item.subscribersCount.toLocaleString()} subscribers
-        </Text>
-      </View>
-      <ActionButton
-        label={item.isSubscribed ? 'Subscribed' : 'Subscribe'}
-        variant={item.isSubscribed ? 'outline' : 'primary'}
-        size="sm"
-        onPress={(e) => {
-          e.stopPropagation();
-          handleSubscribe(item);
-        }}
-      />
-    </Pressable>
+  const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+      <Pressable onPress={() => handleChannelPress(item)}>
+        <LinearGradient
+          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+          style={styles.channelCard}
+        >
+          <LinearGradient
+            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+            style={styles.avatarBg}
+          >
+            <Avatar uri={item.avatarUrl} name={item.name} size="lg" />
+          </LinearGradient>
+          <View style={styles.channelInfo}>
+            <Text style={styles.channelName}>{item.name}</Text>
+            <Text style={styles.channelDescription} numberOfLines={2}>{item.description}</Text>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+              style={styles.subscribersBadge}
+            >
+              <Icon name="users" size="xs" color={colors.gold} />
+              <Text style={styles.subscribersText}>
+                {item.subscribersCount.toLocaleString()} subscribers
+              </Text>
+            </LinearGradient>
+          </View>
+          <TouchableOpacity onPress={(e) => {
+            handleSubscribe(item);
+          }}>
+            <LinearGradient
+              colors={item.isSubscribed ? ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)'] : ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+              style={styles.subscribeBtn}
+            >
+              <Text style={[styles.subscribeText, item.isSubscribed && { color: colors.text.secondary }]}>
+                {item.isSubscribed ? 'Subscribed' : 'Subscribe'}
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
   ), [handleChannelPress, handleSubscribe]);
 
   const renderEmptyState = useCallback(() => {
@@ -362,15 +386,20 @@ const styles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.base,
+    gap: spacing.sm,
   },
   channelCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgCard,
     padding: spacing.base,
     borderRadius: radius.lg,
-    marginBottom: spacing.sm,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
     gap: spacing.md,
+  },
+  avatarBg: {
+    padding: spacing.xs,
+    borderRadius: radius.full,
   },
   channelInfo: {
     flex: 1,
@@ -386,8 +415,28 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     marginBottom: spacing.xs,
   },
-  channelSubscribers: {
-    color: colors.text.tertiary,
+  subscribersBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+  },
+  subscribersText: {
+    color: colors.gold,
     fontSize: fontSize.xs,
+    fontWeight: '600',
+  },
+  subscribeBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.md,
+  },
+  subscribeText: {
+    color: '#fff',
+    fontSize: fontSize.sm,
+    fontWeight: '600',
   },
 });

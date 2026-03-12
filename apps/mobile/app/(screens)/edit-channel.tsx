@@ -4,6 +4,8 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -140,66 +142,88 @@ export default function EditChannelScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassHeader 
-        title="Edit Channel" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+      <GlassHeader
+        title="Edit Channel"
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={[
-          styles.content, 
+          styles.content,
           { paddingTop: insets.top + 52 + spacing.xl, paddingBottom: insets.bottom + spacing['2xl'] }
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.avatarSection}>
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.avatarSection}>
           <Pressable onPress={pickImage} style={styles.avatarWrap}>
-            <Avatar uri={avatarUrl || undefined} name={name || 'Channel'} size="3xl" />
-            <View style={styles.editIconBadge}>
-              <Icon name="camera" size={16} color={colors.dark.text} />
-            </View>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.avatarBg}
+            >
+              <Avatar uri={avatarUrl || undefined} name={name || 'Channel'} size="3xl" />
+            </LinearGradient>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.6)', 'rgba(10,123,79,0.4)']}
+              style={styles.editIconBadge}
+            >
+              <Icon name="camera" size={16} color="#fff" />
+            </LinearGradient>
           </Pressable>
           <Text style={styles.avatarHint}>Tap to change photo</Text>
-        </View>
+        </Animated.View>
 
-        <Text style={styles.label}>Channel Name</Text>
-        <View style={styles.inputWrap}>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g., Quran Recitations"
-            placeholderTextColor={colors.text.secondary}
-            value={name}
-            onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
-          />
-          <View style={styles.ringWrap}>
-             <CharCountRing current={name.length} max={MAX_NAME} size={24} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            <Text style={styles.label}>Channel Name</Text>
+            <View style={styles.inputWrap}>
+              <TextInput
+                style={styles.input}
+                placeholder="e.g., Quran Recitations"
+                placeholderTextColor={colors.text.secondary}
+                value={name}
+                onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
+              />
+              <View style={styles.ringWrap}>
+                 <CharCountRing current={name.length} max={MAX_NAME} size={24} />
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
-        <Text style={styles.label}>Description (Optional)</Text>
-        <View style={[styles.inputWrap, styles.textAreaWrap]}>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Tell viewers about your channel..."
-            placeholderTextColor={colors.text.secondary}
-            value={description}
-            onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
-            multiline
-            numberOfLines={4}
-            textAlignVertical="top"
-          />
-          <View style={styles.ringWrapBottom}>
-             <CharCountRing current={description.length} max={MAX_DESC} size={24} />
-          </View>
-        </View>
+        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.card}
+          >
+            <Text style={styles.label}>Description (Optional)</Text>
+            <View style={[styles.inputWrap, styles.textAreaWrap]}>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Tell viewers about your channel..."
+                placeholderTextColor={colors.text.secondary}
+                value={description}
+                onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+              <View style={styles.ringWrapBottom}>
+                 <CharCountRing current={description.length} max={MAX_DESC} size={24} />
+              </View>
+            </View>
+          </LinearGradient>
+        </Animated.View>
 
-        <View style={styles.buttonWrap}>
-          <GradientButton 
+        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttonWrap}>
+          <GradientButton
             title={updateMutation.isPending ? "Saving..." : "Save Changes"}
             onPress={handleSave}
             disabled={updateMutation.isPending || name.trim().length === 0}
           />
-        </View>
+        </Animated.View>
       </ScrollView>
     </View>
   );
@@ -212,22 +236,26 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.base,
+    gap: spacing.lg,
   },
   avatarSection: {
     alignItems: 'center',
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.xl,
   },
   avatarWrap: {
     position: 'relative',
+  },
+  avatarBg: {
+    padding: spacing.xs,
+    borderRadius: radius.full,
   },
   editIconBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: colors.emerald,
     width: 32,
     height: 32,
-    borderRadius: radius.lg,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 3,
@@ -238,12 +266,17 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.sm,
   },
+  card: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    padding: spacing.md,
+  },
   label: {
     fontSize: fontSize.sm,
-    fontWeight: '500',
-    color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    marginTop: spacing.lg,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginBottom: spacing.sm,
   },
   inputWrap: {
     flexDirection: 'row',
@@ -276,6 +309,6 @@ const styles = StyleSheet.create({
     right: spacing.sm,
   },
   buttonWrap: {
-    marginTop: spacing['2xl'],
+    marginTop: spacing.xl,
   },
 });
