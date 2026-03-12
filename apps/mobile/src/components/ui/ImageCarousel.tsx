@@ -180,9 +180,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
     width: 24,
   },
-  dotMoving: {
-    position: 'absolute',
-    height: 8,
-    borderRadius: radius.full,
-  },
 });
