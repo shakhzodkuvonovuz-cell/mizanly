@@ -2013,6 +2013,11 @@
       "emptySubtitle": "Share your profile to grow your community",
       "count_one": "{{count}} follower",
       "count_other": "{{count}} followers"
+    },
+    "following": {
+      "emptyState": "Not following anyone yet",
+      "emptySubtitle": "Explore and follow people who inspire you",
+      "viewProfile": "View {{name}}'s profile"
     }
   }
 }

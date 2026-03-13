@@ -1758,6 +1758,11 @@
       "emptySubtitle": "شارك ملفك الشخصي لتنمية مجتمعك",
       "count_one": "متابِع واحد",
       "count_other": "{{count}} متابع"
+    },
+    "following": {
+      "emptyState": "لا تتابع أحداً بعد",
+      "emptySubtitle": "استكشف وتابع الأشخاص الذين يلهمونك",
+      "viewProfile": "عرض ملف {{name}} الشخصي"
     }
   },
   "testData": {
