@@ -157,13 +157,13 @@ Copy same structure to `ar.json` with English placeholders.
 
 ```bash
 cd apps/mobile
-npx tsc --noEmit app/\(screens\)/followers/\[userId\].tsx
+npx tsc --noEmit "app/(screens)/followers/[userId].tsx"
 ```
 
 **Step 7: Commit changes**
 
 ```bash
-git add apps/mobile/app/\(screens\)/followers/\[userId\].tsx apps/mobile/src/i18n/en.json apps/mobile/src/i18n/ar.json
+git add "apps/mobile/app/(screens)/followers/[userId].tsx" apps/mobile/src/i18n/en.json apps/mobile/src/i18n/ar.json
 git commit -m "feat: batch 36 agent 10 — i18n followers screen"
 ```
 
@@ -201,8 +201,8 @@ Add to `en.json`:
 
 ```bash
 cd apps/mobile
-npx tsc --noEmit app/\(screens\)/following/\[userId\].tsx
-git add apps/mobile/app/\(screens\)/following/\[userId\].tsx apps/mobile/src/i18n/en.json apps/mobile/src/i18n/ar.json
+npx tsc --noEmit "app/(screens)/following/[userId].tsx"
+git add "apps/mobile/app/(screens)/following/[userId].tsx" apps/mobile/src/i18n/en.json apps/mobile/src/i18n/ar.json
 git commit -m "feat: batch 36 agent 10 — i18n following screen"
 ```
 
