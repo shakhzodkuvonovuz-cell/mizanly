@@ -2018,6 +2018,19 @@
       "emptyState": "Not following anyone yet",
       "emptySubtitle": "Explore and follow people who inspire you",
       "viewProfile": "View {{name}}'s profile"
+    },
+    "hashtag-explore": {
+      "title": "Explore Hashtags",
+      "searchPlaceholder": "Search hashtags...",
+      "trending": "Trending",
+      "popular": "Popular",
+      "recent": "Recent",
+      "emptyState": "No hashtags found",
+      "noTrending": "No trending hashtags",
+      "trySearching": "Try searching for something else",
+      "checkBackLater": "Check back later",
+      "errorTitle": "Couldn't load hashtags",
+      "errorSubtitle": "Check your connection and try again"
     }
   }
 }

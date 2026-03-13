@@ -1763,6 +1763,19 @@
       "emptyState": "لا تتابع أحداً بعد",
       "emptySubtitle": "استكشف وتابع الأشخاص الذين يلهمونك",
       "viewProfile": "عرض ملف {{name}} الشخصي"
+    },
+    "hashtag-explore": {
+      "title": "استكشاف الهاشتاجات",
+      "searchPlaceholder": "ابحث عن الهاشتاجات...",
+      "trending": "الشائع",
+      "popular": "الشهير",
+      "recent": "الأحدث",
+      "emptyState": "لم يتم العثور على هاشتاجات",
+      "noTrending": "لا توجد هاشتاجات شائعة",
+      "trySearching": "حاول البحث عن شيء آخر",
+      "checkBackLater": "ارجع لاحقاً",
+      "errorTitle": "تعذر تحميل الهاشتاجات",
+      "errorSubtitle": "تحقق من اتصالك وحاول مرة أخرى"
     }
   },
   "testData": {

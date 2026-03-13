@@ -14,11 +14,13 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { hashtagsApi } from '@/services/api';
 import type { HashtagInfo } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function HashtagExploreScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -75,7 +77,7 @@ export default function HashtagExploreScreen() {
           <View style={styles.info}>
             <Text style={styles.name} numberOfLines={1}>#{item.name}</Text>
             <Text style={styles.count}>
-              {item.postsCount?.toLocaleString() || 0} <Text style={styles.countGold}>posts</Text>
+              {item.postsCount?.toLocaleString() || 0} <Text style={styles.countGold}>{t('common.posts')}</Text>
             </Text>
           </View>
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
@@ -87,17 +89,17 @@ export default function HashtagExploreScreen() {
   if (isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Explore Hashtags" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={t('screens.hashtag-explore.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
         <View style={{ height: insets.top + 52 }} />
-        <EmptyState 
-          icon="hash" 
-          title="Couldn't load hashtags" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
-          onAction={() => refetchTrending()} 
+        <EmptyState
+          icon="hash"
+          title={t('screens.hashtag-explore.errorTitle')}
+          subtitle={t('screens.hashtag-explore.errorSubtitle')}
+          actionLabel={t('common.retry')}
+          onAction={() => refetchTrending()}
         />
       </View>
     );
@@ -105,9 +107,9 @@ export default function HashtagExploreScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassHeader 
-        title="Explore Hashtags" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+      <GlassHeader
+        title={t('screens.hashtag-explore.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
       />
       
       <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
@@ -123,7 +125,7 @@ export default function HashtagExploreScreen() {
           </LinearGradient>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search hashtags..."
+            placeholder={t('screens.hashtag-explore.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -157,10 +159,10 @@ export default function HashtagExploreScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <EmptyState 
-                icon="hash" 
-                title={debouncedQuery.length > 0 ? "No hashtags found" : "No trending hashtags"} 
-                subtitle={debouncedQuery.length > 0 ? "Try searching for something else" : "Check back later"} 
+              <EmptyState
+                icon="hash"
+                title={debouncedQuery.length > 0 ? t('screens.hashtag-explore.emptyState') : t('screens.hashtag-explore.noTrending')}
+                subtitle={debouncedQuery.length > 0 ? t('screens.hashtag-explore.trySearching') : t('screens.hashtag-explore.checkBackLater')}
               />
             </View>
           }
