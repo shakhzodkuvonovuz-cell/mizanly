@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  FlatList, TextInput,
+  FlatList, TextInput, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -328,7 +328,13 @@ export default function CommunitiesScreen() {
             onPress={handleCommunityPress}
           />
         )}
-        ListEmptyComponent={(
+        ListEmptyComponent={loading ? (
+          <View style={styles.skeletonContainer}>
+            {[...Array(3)].map((_, i) => (
+              <Skeleton.PostCard key={i} />
+            ))}
+          </View>
+        ) : (
           <EmptyState
             icon="users"
             title={activeTab === 'joined' ? 'No joined communities' : 'No communities found'}
@@ -340,6 +346,7 @@ export default function CommunitiesScreen() {
             onAction={activeTab === 'joined' ? () => setActiveTab('discover') : undefined}
           />
         )}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       />
 
@@ -444,6 +451,11 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.base,
     paddingBottom: spacing['3xl'],
+    gap: spacing.md,
+  },
+
+  skeletonContainer: {
+    padding: spacing.base,
     gap: spacing.md,
   },
 

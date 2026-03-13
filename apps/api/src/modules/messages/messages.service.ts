@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
-import { MessageType } from '@prisma/client';
+import { MessageType, Notification } from '@prisma/client';
 
 const CONVERSATION_SELECT = {
   id: true,

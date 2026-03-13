@@ -75,7 +75,7 @@ export class FollowsService {
         userId: targetUserId, actorId: currentUserId,
         type: 'FOLLOW_REQUEST', followRequestId: request.id,
       })
-        .then(notification => {
+        .then((notification: Notification | null) => {
           if (notification) {
             this.pushTrigger.triggerPush(notification.id).catch(() => {});
           }
@@ -103,7 +103,7 @@ export class FollowsService {
       userId: targetUserId, actorId: currentUserId,
       type: 'FOLLOW',
     })
-      .then(notification => {
+      .then((notification: Notification | null) => {
         if (notification) {
           this.pushTrigger.triggerPush(notification.id).catch(() => {});
         }
@@ -274,7 +274,7 @@ export class FollowsService {
       userId: request.senderId, actorId: request.receiverId,
       type: 'FOLLOW_REQUEST_ACCEPTED',
     })
-      .then(notification => {
+      .then((notification: Notification | null) => {
         if (notification) {
           this.pushTrigger.triggerPush(notification.id).catch(() => {});
         }

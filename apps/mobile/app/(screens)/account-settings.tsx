@@ -96,7 +96,7 @@ export default function AccountSettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const requestDeletionMutation = useMutation({
@@ -104,26 +104,26 @@ export default function AccountSettingsScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const exportDataMutation = useMutation({
     mutationFn: () => usersApi.exportData(),
     onSuccess: (data) => {
       // In a real app, you would download the data file
-      Alert.alert('Data Ready', 'Your data export has been prepared. Check your email for download link.');
+      Alert.alert(t('accountSettings.dataReadyTitle'), t('accountSettings.dataReadyMessage'));
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleDeactivate = () => {
     Alert.alert(
-      'Deactivate Account',
-      'Your account will be hidden. You can reactivate by signing back in. Continue?',
+      t('accountSettings.deactivateAlertTitle'),
+      t('accountSettings.deactivateAlertMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Deactivate',
+          text: t('accountSettings.deactivateButton'),
           style: 'destructive',
           onPress: () => deactivateMutation.mutate(),
         },
@@ -133,19 +133,19 @@ export default function AccountSettingsScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'Your account will be scheduled for deletion in 30 days. You can cancel deletion during this period.',
+      t('accountSettings.deleteAlertTitle'),
+      t('accountSettings.deleteAlertMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Are you absolutely sure?',
-              'Type DELETE to confirm.',
+              t('accountSettings.deleteConfirmTitle'),
+              t('accountSettings.deleteConfirmMessage'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
                   text: 'Confirm Delete',
                   style: 'destructive',
@@ -166,7 +166,7 @@ export default function AccountSettingsScreen() {
       'Download Your Data',
       'This will generate a file containing all your data. It may take a few minutes.',
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
           text: 'Download',
           onPress: () => exportDataMutation.mutate(),

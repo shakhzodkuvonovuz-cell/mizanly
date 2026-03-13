@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Account {
   id: string;
@@ -73,6 +74,7 @@ const MOCK_ACCOUNTS: Account[] = [
 
 export default function AccountSwitcherScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>(MOCK_ACCOUNTS);
   const [autoSwitchOnNotification, setAutoSwitchOnNotification] = useState(false);
@@ -94,7 +96,7 @@ export default function AccountSwitcherScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Switch Account" showBackButton />
+      <GlassHeader title={t('screens.accountSwitcher.title')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -141,7 +143,7 @@ export default function AccountSwitcherScreen() {
                       style={styles.activeBadgeGradient}
                     >
                       <Icon name="check-circle" size="xs" color="#FFF" />
-                      <Text style={styles.activeBadgeText}>Active</Text>
+                      <Text style={styles.activeBadgeText}>{t('screens.accountSwitcher.activeBadge')}</Text>
                     </LinearGradient>
                   </View>
                 </View>
@@ -163,7 +165,7 @@ export default function AccountSwitcherScreen() {
         {/* Other Accounts Section */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Other Accounts</Text>
+            <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
             <Text style={styles.sectionCount}>{otherAccounts.length}</Text>
           </View>
 

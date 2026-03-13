@@ -251,9 +251,9 @@ export class CommunitiesService {
   async join(id: string, userId: string) {
     const circle = await this.prisma.circle.findUnique({
       where: { id },
-      select: { privacy: true },
+      select: { privacy: true, isBanned: true },
     });
-    if (!circle) {
+    if (!circle || circle.isBanned) {
       throw new NotFoundException('Community not found');
     }
 
@@ -293,7 +293,7 @@ export class CommunitiesService {
   async leave(id: string, userId: string) {
     const circle = await this.prisma.circle.findUnique({
       where: { id },
-      select: { ownerId: true },
+      select: { ownerId: true, isBanned: true },
     });
     if (!circle) {
       throw new NotFoundException('Community not found');
@@ -327,9 +327,9 @@ export class CommunitiesService {
     // Verify community exists and viewer has access
     const circle = await this.prisma.circle.findUnique({
       where: { id },
-      select: { privacy: true },
+      select: { privacy: true, isBanned: true },
     });
-    if (!circle) {
+    if (!circle || circle.isBanned) {
       throw new NotFoundException('Community not found');
     }
 

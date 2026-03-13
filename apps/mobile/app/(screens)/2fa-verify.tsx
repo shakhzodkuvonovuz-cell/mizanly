@@ -284,9 +284,9 @@ export default function TwoFactorVerifyScreen() {
           >
             <Icon name="circle" size="sm" color={colors.emerald} />
             <View style={styles.helpTextContainer}>
-              <Text style={styles.helpTitle}>Need help?</Text>
+              <Text style={styles.helpTitle}>{t('screens.2faVerify.helpTitle')}</Text>
               <Text style={styles.helpDescription}>
-                Open your authenticator app to get a new 6‑digit code. Codes refresh every 30 seconds.
+                {t('screens.2faVerify.helpDescription')}
               </Text>
             </View>
           </LinearGradient>
