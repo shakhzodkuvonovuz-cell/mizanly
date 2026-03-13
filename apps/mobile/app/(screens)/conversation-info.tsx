@@ -25,10 +25,10 @@ import type { Conversation, User } from '@/types';
 
 const MAX_GROUP_NAME = 50;
 
-function conversationName(convo: Conversation, myId?: string): string {
-  if (convo.isGroup) return convo.groupName ?? 'Group';
+function conversationName(convo: Conversation, myId?: string, t?: (key: string) => string): string {
+  if (convo.isGroup) return convo.groupName ?? (t ? t('common.group') : 'Group');
   const other = convo.members.find((m) => m.user.id !== myId);
-  return other?.user.displayName ?? 'Chat';
+  return other?.user.displayName ?? (t ? t('common.chat') : 'Chat');
 }
 
 function conversationAvatar(convo: Conversation, myId?: string): string | undefined {
@@ -67,7 +67,7 @@ export default function ConversationInfoScreen() {
   });
 
   const convo = convoQuery.data;
-  const name = convo ? conversationName(convo, user?.id) : '…';
+  const name = convo ? conversationName(convo, user?.id, t) : '…';
   const avatarUri = convo ? conversationAvatar(convo, user?.id) : undefined;
 
   const leaveGroupMutation = useMutation({
@@ -373,13 +373,13 @@ export default function ConversationInfoScreen() {
                 onPress={() => {
                   const other = convo?.members.find((m) => m.user.id !== user?.id);
                   if (!other) return;
-                  Alert.alert('Block user', 'Are you sure?', [
-                    { text: 'Cancel', style: 'cancel' },
+                  Alert.alert(t('conversation.blockUser'), t('conversation.blockConfirm'), [
+                    { text: t('common.cancel'), style: 'cancel' },
                     {
-                      text: 'Block', style: 'destructive', onPress: () => {
+                      text: t('common.block'), style: 'destructive', onPress: () => {
                         blocksApi.block(other.user.id)
                           .then(() => router.replace('/(tabs)/risalah'))
-                          .catch(() => Alert.alert('Error', 'Could not block user.'));
+                          .catch(() => Alert.alert(t('common.error'), t('errors.blockUserFailed')));
                       },
                     },
                   ]);

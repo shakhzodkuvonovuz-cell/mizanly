@@ -58,10 +58,10 @@ function selectMessagesReversed(data: { pages: Array<{ data: Message[]; meta: { 
   };
 }
 
-function messageTimestamp(dateStr: string): string {
+function messageTimestamp(dateStr: string, t: (key: string) => string): string {
   const d = new Date(dateStr);
   if (isToday(d)) return format(d, 'HH:mm');
-  if (isYesterday(d)) return `Yesterday ${format(d, 'HH:mm')}`;
+  if (isYesterday(d)) return `${t('common.yesterday')} ${format(d, 'HH:mm')}`;
   return format(d, 'MMM d, HH:mm');
 }
 
@@ -361,7 +361,7 @@ function MessageBubble({
   const haptic = useHaptic();
   const { t } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
-  const time = messageTimestamp(message.createdAt);
+  const time = messageTimestamp(message.createdAt, t);
   const AVATAR_SIZE = 28;
 
   const handleReactionSuccess = () => {
@@ -559,10 +559,10 @@ function MessageBubble({
   );
 }
 
-function conversationName(convo: Conversation, myId?: string): string {
-  if (convo.isGroup) return convo.groupName ?? 'Group';
+function conversationName(convo: Conversation, myId?: string, t?: (key: string) => string): string {
+  if (convo.isGroup) return convo.groupName ?? (t ? t('common.group') : 'Group');
   const other = convo.members.find((m) => m.user.id !== myId);
-  return other?.user.displayName ?? 'Chat';
+  return other?.user.displayName ?? (t ? t('common.chat') : 'Chat');
 }
 
 function conversationAvatar(convo: Conversation, myId?: string): string | undefined {
@@ -994,7 +994,7 @@ export default function ConversationScreen() {
   };
 
   const convo = convoQuery.data;
-  const name = convo ? conversationName(convo, user?.id) : '';
+  const name = convo ? conversationName(convo, user?.id, t) : '';
   const avatarUri = convo ? conversationAvatar(convo, user?.id) : undefined;
 
   // Build list items combining real messages and pending messages
@@ -1369,7 +1369,7 @@ export default function ConversationScreen() {
                       queryClient.invalidateQueries({ queryKey: ['messages', id] });
                       haptic.light();
                     })
-                    .catch(() => Alert.alert('Error', 'Could not add reaction.'));
+                    .catch(() => Alert.alert(t('common.error'), t('errors.addReactionFailed')));
                 }
                 setContextMenuMsg(null);
               }}
@@ -1508,8 +1508,8 @@ export default function ConversationScreen() {
           (conversationsQuery.data || []).filter(c => c.id !== id).map(conv => (
             <BottomSheetItem
               key={conv.id}
-              label={conversationName(conv, user?.id)}
-              icon={<Avatar uri={conversationAvatar(conv, user?.id)} name={conversationName(conv, user?.id)} size="sm" />}
+              label={conversationName(conv, user?.id, t)}
+              icon={<Avatar uri={conversationAvatar(conv, user?.id)} name={conversationName(conv, user?.id, t)} size="sm" />}
               onPress={() => {
                 if (forwardMsg && socketRef.current) {
                   socketRef.current.emit('send_message', {
@@ -1521,7 +1521,7 @@ export default function ConversationScreen() {
                   });
                   setForwardMsg(null);
                   haptic.success();
-                  Alert.alert(t('messages.forwarded'), t('messages.forwardedSuccess', { name: conversationName(conv, user?.id) }));
+                  Alert.alert(t('messages.forwarded'), t('messages.forwardedSuccess', { name: conversationName(conv, user?.id, t) }));
                 }
               }}
             />
