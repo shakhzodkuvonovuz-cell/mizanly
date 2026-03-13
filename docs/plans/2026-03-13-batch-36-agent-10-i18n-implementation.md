@@ -197,6 +197,8 @@ Add to `en.json`:
 }
 ```
 
+**Note:** Implementation reuses existing key `profile.following` instead of creating `screens.following.title` for consistency across the app. Also adds `emptySubtitle` and `viewProfile` keys for better UX.
+
 **Step 4: Test and commit**
 
 ```bash
