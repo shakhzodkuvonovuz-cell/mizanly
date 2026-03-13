@@ -84,8 +84,8 @@ export default function TwoFactorSetupScreen() {
       setSetupResponse(response);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to setup 2FA');
-      Alert.alert('Setup Failed', 'Could not generate 2FA setup data. Please try again.');
+      setError(err instanceof Error ? err.message : t('auth.setupFailed'));
+      Alert.alert(t('common.error'), t('auth.setupFailedMessage'));
     } finally {
       setLoading(false);
     }
@@ -105,13 +105,13 @@ export default function TwoFactorSetupScreen() {
       await twoFactorApi.verify({ code });
       setActiveStep('backup');
       Alert.alert(
-        '2FA Enabled',
-        'Two-factor authentication is now enabled for your account. Save your backup codes!',
-        [{ text: 'OK' }]
+        t('auth.twoFactorEnabled'),
+        t('auth.twoFactorEnabledMessage'),
+        [{ text: t('common.ok') }]
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Verification failed');
-      Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+      setError(err instanceof Error ? err.message : t('auth.verificationFailed'));
+      Alert.alert(t('common.error'), t('auth.verificationFailedMessage'));
       // Optionally shake animation
     } finally {
       setIsEnabling(false);
@@ -121,22 +121,22 @@ export default function TwoFactorSetupScreen() {
   const copyBackupCode = (code: string) => {
     // In real app: Clipboard.setString(code);
     setCopiedCodes(prev => [...prev, code]);
-    Alert.alert('Copied', `Backup code ${code} copied to clipboard.`);
+    Alert.alert(t('common.copied'), t('auth.backupCodeCopied', { code }));
   };
 
   const copyAllBackupCodes = () => {
     const allCodes = backupCodes.join('\n');
     // Clipboard.setString(allCodes);
-    Alert.alert('Copied', 'All backup codes copied to clipboard.');
+    Alert.alert(t('common.copied'), t('auth.allBackupCodesCopied'));
   };
 
   const downloadBackupCodes = () => {
     Alert.alert(
-      'Download Backup Codes',
-      'This would download a text file with your backup codes. Save it in a secure location.',
+      t('auth.downloadBackupCodes'),
+      t('auth.downloadBackupCodesMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Download', onPress: () => {} },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.download'), onPress: () => {} },
       ]
     );
   };
@@ -468,7 +468,7 @@ export default function TwoFactorSetupScreen() {
                     style={styles.backupActionGradient}
                   >
                     <Icon name="chevron-down" size="sm" color={colors.text.primary} />
-                    <Text style={styles.backupActionText}>Download</Text>
+                    <Text style={styles.backupActionText}>{t('common.download')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -481,7 +481,7 @@ export default function TwoFactorSetupScreen() {
                   colors={[colors.emerald, colors.gold]}
                   style={styles.nextButtonGradient}
                 >
-                  <Text style={styles.nextButtonText}>Done</Text>
+                  <Text style={styles.nextButtonText}>{t('common.done')}</Text>
                   <Icon name="check" size="sm" color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
