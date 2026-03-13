@@ -56,6 +56,10 @@ function CommunityCard({
     return count.toString();
   };
 
+  const emoji = community.emoji || '👥';
+  const description = community.description || '';
+  const category = community.category;
+
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(500)} style={animatedStyle}>
       <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
@@ -68,7 +72,7 @@ function CommunityCard({
             colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
             style={styles.banner}
           >
-            <Text style={styles.bannerEmoji}>{community.iconEmoji}</Text>
+            <Text style={styles.bannerEmoji}>{emoji}</Text>
             {community.isJoined && community.unreadCount && (
               <View style={styles.unreadBadge}>
                 <LinearGradient
@@ -87,7 +91,7 @@ function CommunityCard({
               colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
               style={styles.iconBg}
             >
-              <Text style={styles.iconEmoji}>{community.iconEmoji}</Text>
+              <Text style={styles.iconEmoji}>{emoji}</Text>
             </LinearGradient>
           </View>
 
@@ -95,7 +99,7 @@ function CommunityCard({
           <View style={styles.cardContent}>
             <Text style={styles.communityName}>{community.name}</Text>
             <Text style={styles.communityDescription} numberOfLines={2}>
-              {community.description}
+              {description}
             </Text>
 
             <View style={styles.communityMeta}>
@@ -103,9 +107,11 @@ function CommunityCard({
                 <Icon name="users" size="xs" color={colors.text.tertiary} />
                 <Text style={styles.memberCountText}>{formatCount(community.memberCount)}</Text>
               </View>
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{community.category}</Text>
-              </View>
+              {category && (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryText}>{category}</Text>
+                </View>
+              )}
             </View>
 
             {/* Join Button */}

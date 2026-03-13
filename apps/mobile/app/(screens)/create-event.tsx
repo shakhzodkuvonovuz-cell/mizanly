@@ -20,9 +20,12 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { eventsApi } from '@/services/eventsApi';
+import { communitiesApi } from '@/services/communitiesApi';
 import type { CreateEventDto, EventPrivacy, EventType as ApiEventType } from '@/types/events';
+import type { Community } from '@/types/communities';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Alert } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 
@@ -31,14 +34,7 @@ const { width } = Dimensions.get('window');
 type EventType = 'in-person' | 'online' | 'hybrid';
 type PrivacyType = 'public' | 'members' | 'invite';
 
-interface Community {
-  id: string;
-  name: string;
-  avatar: string | null;
-  memberCount: number;
-}
 
-const MOCK_COMMUNITIES: Community[] = []; // TODO: fetch communities from API
 
 export default function CreateEventScreen() {
   const router = useRouter();
@@ -74,7 +70,19 @@ export default function CreateEventScreen() {
   }, []);
 
   useEffect(() => {
-    // TODO: fetch communities
+    const fetchCommunities = async () => {
+      setCommunitiesLoading(true);
+      try {
+        const response = await communitiesApi.list();
+        setCommunities(response.data.data);
+      } catch (err) {
+        // Silently fail - communities optional for event creation
+        console.error('Failed to fetch communities:', err);
+      } finally {
+        setCommunitiesLoading(false);
+      }
+    };
+    fetchCommunities();
   }, []);
 
   useEffect(() => {
@@ -445,39 +453,58 @@ export default function CreateEventScreen() {
             <TouchableOpacity style={styles.communityDropdown} activeOpacity={0.8}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
-                  ? MOCK_COMMUNITIES.find(c => c.id === selectedCommunity)?.name
+                  ? communities.find(c => c.id === selectedCommunity)?.name
                   : t('events.postToCommunity')}
               </Text>
               <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
             </TouchableOpacity>
 
             <Text style={styles.sectionTitle}>{t('events.yourCommunities')}</Text>
-            {MOCK_COMMUNITIES.map((community, index) => (
-              <TouchableOpacity
-                key={community.id}
-                style={[
-                  styles.communityRow,
-                  index < MOCK_COMMUNITIES.length - 1 && styles.communityRowBorder,
-                  selectedCommunity === community.id && styles.communityRowSelected,
-                ]}
-                onPress={() => setSelectedCommunity(community.id)}
-                activeOpacity={0.8}
-              >
-                <Avatar uri={community.avatar} name={community.name} size="sm" />
-                <View style={styles.communityInfo}>
-                  <Text style={styles.communityName}>{community.name}</Text>
-                  <Text style={styles.communityMeta}>{community.memberCount.toLocaleString()} {t('events.members')}</Text>
+            {communitiesLoading ? (
+              [...Array(3)].map((_, i) => (
+                <View key={i} style={[styles.communityRow, i < 2 && styles.communityRowBorder]}>
+                  <Skeleton.Circle size={40} />
+                  <View style={styles.communityInfo}>
+                    <Skeleton.Rect width="60%" height={14} borderRadius={6} />
+                    <Skeleton.Rect width="30%" height={12} borderRadius={6} style={{ marginTop: 4 }} />
+                  </View>
                 </View>
-                {selectedCommunity === community.id && (
-                  <LinearGradient
-                    colors={[colors.emerald, colors.emeraldDark]}
-                    style={styles.checkCircle}
-                  >
-                    <Icon name="check" size="xs" color={colors.text.primary} />
-                  </LinearGradient>
-                )}
-              </TouchableOpacity>
-            ))}
+              ))
+            ) : communities.length === 0 ? (
+              <EmptyState
+                icon="users"
+                title={t('events.noCommunities')}
+                subtitle={t('events.joinCommunitiesToPost')}
+                size="sm"
+              />
+            ) : (
+              communities.map((community, index) => (
+                <TouchableOpacity
+                  key={community.id}
+                  style={[
+                    styles.communityRow,
+                    index < communities.length - 1 && styles.communityRowBorder,
+                    selectedCommunity === community.id && styles.communityRowSelected,
+                  ]}
+                  onPress={() => setSelectedCommunity(community.id)}
+                  activeOpacity={0.8}
+                >
+                  <Avatar uri={community.avatarUrl} name={community.name} size="sm" />
+                  <View style={styles.communityInfo}>
+                    <Text style={styles.communityName}>{community.name}</Text>
+                    <Text style={styles.communityMeta}>{community.memberCount.toLocaleString()} {t('events.members')}</Text>
+                  </View>
+                  {selectedCommunity === community.id && (
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.checkCircle}
+                    >
+                      <Icon name="check" size="xs" color={colors.text.primary} />
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+              ))
+            )}
           </LinearGradient>
         </Animated.View>
 
