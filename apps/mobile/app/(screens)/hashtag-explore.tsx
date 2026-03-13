@@ -91,7 +91,7 @@ export default function HashtagExploreScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.hashtag-explore.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState
@@ -109,7 +109,7 @@ export default function HashtagExploreScreen() {
     <View style={styles.container}>
       <GlassHeader
         title={t('screens.hashtag-explore.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
       />
       
       <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
