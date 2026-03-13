@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { DevicesService } from '../devices/devices.service';
+import { PushTriggerService } from './push-trigger.service';
 import { NotificationType } from '@prisma/client';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -11,6 +12,7 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private devices: DevicesService,
+    private pushTrigger: PushTriggerService,
   ) {}
 
   async getNotifications(
@@ -123,32 +125,8 @@ export class NotificationsService {
       },
     });
 
-    // Send push notification if title/body provided
-    if (params.title || params.body) {
-      this.devices.getActiveTokensForUser(params.userId).then((tokens) => {
-        if (!tokens.length) return;
-        return fetch(EXPO_PUSH_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(
-            tokens.map((to) => ({
-              to,
-              title: params.title,
-              body: params.body,
-              data: {
-                notificationId: notification.id,
-                type: params.type,
-                ...(params.postId && { postId: params.postId }),
-                ...(params.threadId && { threadId: params.threadId }),
-                ...(params.reelId && { reelId: params.reelId }),
-                ...(params.videoId && { videoId: params.videoId }),
-                ...(params.commentId && { commentId: params.commentId }),
-              },
-            })),
-          ),
-        });
-      }).catch((err) => this.logger.error('Failed to send push notification', err));
-    }
+    // Fire push notification (non-blocking)
+    this.pushTrigger.triggerPush(notification.id).catch(() => {});
 
     return notification;
   }

@@ -12,6 +12,7 @@ import Redis from 'ioredis';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PushTriggerService } from '../notifications/push-trigger.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
@@ -58,6 +59,7 @@ export class PostsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private pushTrigger: PushTriggerService,
     @Inject('REDIS') private redis: Redis,
   ) {}
 
@@ -247,14 +249,21 @@ export class PostsService {
       ]);
       for (const mentioned of mentionedUsers) {
         if (mentioned.id !== userId) {
-          this.notifications.create({
-            userId: mentioned.id,
-            actorId: userId,
-            type: 'MENTION',
-            postId: post.id,
-            title: 'Mentioned you',
-            body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
-          }).catch((err) => this.logger.error('Failed to create mention notification', err));
+          try {
+            const notification = await this.notifications.create({
+              userId: mentioned.id,
+              actorId: userId,
+              type: 'MENTION',
+              postId: post.id,
+              title: 'Mentioned you',
+              body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
+            });
+            if (notification) {
+              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+            }
+          } catch (err) {
+            this.logger.error('Failed to create mention notification', err);
+          }
         }
       }
     }
@@ -354,10 +363,17 @@ export class PostsService {
           }),
         ]);
         // Notify post owner
-        this.notifications.create({
-          userId: post.userId, actorId: userId,
-          type: 'LIKE', postId,
-        }).catch((err) => this.logger.error('Failed to create notification', err));
+        try {
+          const notification = await this.notifications.create({
+            userId: post.userId, actorId: userId,
+            type: 'LIKE', postId,
+          });
+          if (notification) {
+            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+          }
+        } catch (err) {
+          this.logger.error('Failed to create notification', err);
+        }
       } catch (err: unknown) {
         if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
           return { reaction }; // Already reacted (race condition), treat as success
@@ -529,12 +545,19 @@ export class PostsService {
       }),
     ]);
     // Notify post owner
-    this.notifications.create({
-      userId: post.userId, actorId: userId,
-      type: dto.parentId ? 'REPLY' : 'COMMENT',
-      postId, commentId: comment.id,
-      body: dto.content.substring(0, 100),
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    try {
+      const notification = await this.notifications.create({
+        userId: post.userId, actorId: userId,
+        type: dto.parentId ? 'REPLY' : 'COMMENT',
+        postId, commentId: comment.id,
+        body: dto.content.substring(0, 100),
+      });
+      if (notification) {
+        this.pushTrigger.triggerPush(notification.id).catch(() => {});
+      }
+    } catch (err) {
+      this.logger.error('Failed to create notification', err);
+    }
     return comment;
   }
 
