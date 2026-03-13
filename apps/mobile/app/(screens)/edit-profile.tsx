@@ -194,7 +194,7 @@ export default function EditProfileScreen() {
             icon="flag"
             title={t('editProfile.loadErrorTitle')}
             subtitle={t('editProfile.loadErrorSubtitle')}
-            actionLabel="Retry"
+            actionLabel={t('common.retry')}
             onAction={() => meQuery.refetch()}
           />
         </View>
@@ -216,7 +216,7 @@ export default function EditProfileScreen() {
       {/* Save button overlay on GlassHeader right area */}
       <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">
         <GradientButton
-          label="Save"
+          label={t('common.save')}
           size="sm"
           onPress={() => saveMutation.mutate()}
           loading={saveMutation.isPending || uploading}
@@ -300,7 +300,7 @@ export default function EditProfileScreen() {
                 style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
                 value={displayName}
                 onChangeText={setDisplayName}
-                placeholder="Your name"
+                placeholder={t('editProfile.namePlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 maxLength={50}
                 onFocus={() => setFocusedField('displayName')}
@@ -347,7 +347,7 @@ export default function EditProfileScreen() {
                 style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
                 value={bio}
                 onChangeText={setBio}
-                placeholder="Tell people about yourself"
+                placeholder={t('editProfile.bioPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 multiline
                 maxLength={150}
@@ -410,7 +410,7 @@ export default function EditProfileScreen() {
                   style={[styles.input, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
                   value={location}
                   onChangeText={setLocation}
-                  placeholder="Add location"
+                  placeholder={t('editProfile.locationPlaceholder')}
                   placeholderTextColor={colors.text.tertiary}
                   maxLength={100}
                   onFocus={() => setFocusedField('location')}
@@ -439,7 +439,7 @@ export default function EditProfileScreen() {
                 style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
                 value={pronouns}
                 onChangeText={setPronouns}
-                placeholder="e.g. they/them"
+                placeholder={t('editProfile.pronounsPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 maxLength={30}
                 onFocus={() => setFocusedField('pronouns')}
@@ -467,7 +467,7 @@ export default function EditProfileScreen() {
                 style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
                 value={birthday}
                 onChangeText={setBirthday}
-                placeholder="YYYY-MM-DD"
+                placeholder={t('editProfile.birthdayPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 maxLength={10}
                 onFocus={() => setFocusedField('birthday')}
@@ -572,7 +572,7 @@ export default function EditProfileScreen() {
                 >
                   <TextInput
                     style={styles.addLinkInput}
-                    placeholder="Title (e.g. My Website)"
+                    placeholder={t('editProfile.linkTitlePlaceholder')}
                     placeholderTextColor={colors.text.tertiary}
                     value={newLinkTitle}
                     onChangeText={setNewLinkTitle}

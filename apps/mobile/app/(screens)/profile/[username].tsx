@@ -474,7 +474,7 @@ export default function ProfileScreen() {
           <TouchableOpacity
             style={styles.channelRow}
             onPress={() => router.push(`/(screens)/channel/${profile.channel!.handle}`)}
-            accessibilityLabel="View channel"
+            accessibilityLabel={t('profile.viewChannelAccessibility')}
             accessibilityRole="link"
           >
             <Icon name="video" size={13} color={colors.emerald} />
@@ -563,7 +563,7 @@ export default function ProfileScreen() {
             flexDirection: 'row', alignItems: 'center',
             paddingHorizontal: spacing.base, marginTop: spacing.sm,
           }}
-          accessibilityLabel="View mutual followers"
+          accessibilityLabel={t('profile.viewMutualFollowersAccessibility')}
           accessibilityRole="link"
         >
           {/* Stacked avatars (up to 3) */}

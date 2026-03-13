@@ -110,7 +110,7 @@ export default function ManageDataScreen() {
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
     onSuccess: () => {
-      Alert.alert(t('common.cleared'), t('settings.watchHistoryClearedSuccess'));
+      Alert.alert(t('settings.cleared'), t('settings.watchHistoryClearedSuccess'));
     },
     onError: (err: Error) => {
       Alert.alert(t('common.error'), err.message);
@@ -132,7 +132,7 @@ export default function ManageDataScreen() {
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('common.request'),
+          text: t('settings.requestButton'),
           onPress: async () => {
             try {
               await accountApi.requestDataExport();
@@ -153,11 +153,11 @@ export default function ManageDataScreen() {
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('common.clear'),
+          text: t('settings.clearButton'),
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('search-history');
-            Alert.alert(t('common.cleared'), t('settings.searchHistoryCleared'));
+            Alert.alert(t('settings.cleared'), t('settings.searchHistoryCleared'));
           },
         },
       ],
@@ -171,7 +171,7 @@ export default function ManageDataScreen() {
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('common.clear'),
+          text: t('settings.clearButton'),
           style: 'destructive',
           onPress: () => clearWatchHistoryMutation.mutate(),
         },
@@ -266,7 +266,7 @@ export default function ManageDataScreen() {
             <ActionRow
               label={t('settings.clearSearchHistory')}
               description={t('settings.clearSearchHistoryDescription')}
-              buttonLabel={t('common.clear')}
+              buttonLabel={t('settings.clearButton')}
               onPress={handleClearSearchHistory}
             />
             <View style={styles.divider} />
@@ -274,7 +274,7 @@ export default function ManageDataScreen() {
             <ActionRow
               label={t('settings.clearWatchHistory')}
               description={t('settings.clearWatchHistoryDescription')}
-              buttonLabel={t('common.clear')}
+              buttonLabel={t('settings.clearButton')}
               onPress={handleClearWatchHistory}
               loading={clearWatchHistoryMutation.isPending}
             />

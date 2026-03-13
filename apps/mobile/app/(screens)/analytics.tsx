@@ -194,8 +194,8 @@ export default function AnalyticsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Creator Analytics"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('analytics.creatorAnalytics')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <ScrollView
