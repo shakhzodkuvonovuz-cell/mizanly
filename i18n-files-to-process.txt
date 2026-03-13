@@ -1,0 +1,34 @@
+# Files to process for i18n rollout - Batch 36 Agent 10
+# Generated: Fri Mar 13 22:39:44 AUSEST 2026
+# All files checked - none have existing useTranslation imports
+
+apps/mobile/app/(screens)/followers/[userId].tsx
+apps/mobile/app/(screens)/following/[userId].tsx
+apps/mobile/app/(screens)/hashtag-explore.tsx
+apps/mobile/app/(screens)/hashtag/[tag].tsx
+apps/mobile/app/(screens)/live/[id].tsx
+apps/mobile/app/(screens)/majlis-lists.tsx
+apps/mobile/app/(screens)/manage-broadcast.tsx
+apps/mobile/app/(screens)/muted.tsx
+apps/mobile/app/(screens)/mutual-followers.tsx
+apps/mobile/app/(screens)/my-reports.tsx
+apps/mobile/app/(screens)/pinned-messages.tsx
+apps/mobile/app/(screens)/playlist/[id].tsx
+apps/mobile/app/(screens)/playlists/[channelId].tsx
+apps/mobile/app/(screens)/qr-code.tsx
+apps/mobile/app/(screens)/qr-scanner.tsx
+apps/mobile/app/(screens)/report.tsx
+apps/mobile/app/(screens)/reports/[id].tsx
+apps/mobile/app/(screens)/save-to-playlist.tsx
+apps/mobile/app/(screens)/saved.tsx
+apps/mobile/app/(screens)/schedule-live.tsx
+apps/mobile/app/(screens)/schedule-post.tsx
+apps/mobile/app/(screens)/search-results.tsx
+apps/mobile/app/(screens)/share-profile.tsx
+apps/mobile/app/(screens)/sound/[id].tsx
+apps/mobile/app/(screens)/starred-messages.tsx
+apps/mobile/app/(screens)/sticker-browser.tsx
+apps/mobile/app/(screens)/theme-settings.tsx
+apps/mobile/app/(screens)/trending-audio.tsx
+apps/mobile/app/(screens)/watch-history.tsx
+apps/mobile/app/(tabs)/minbar.tsx
