@@ -344,7 +344,7 @@ export default function ContentSettingsScreen() {
             <TouchableOpacity
               style={styles.rowPressable}
               onPress={() => setDailyReminderPickerVisible(true)}
-              accessibilityLabel="Daily reminder"
+              accessibilityLabel={t('settings.dailyReminder.label')}
               accessibilityRole="button"
             >
               <View style={styles.rowContent}>
@@ -355,8 +355,8 @@ export default function ContentSettingsScreen() {
                   <Icon name="clock" size="xs" color={colors.emerald} />
                 </LinearGradient>
                 <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>Daily reminder</Text>
-                  <Text style={styles.rowHint}>Get a reminder after using app for a while</Text>
+                  <Text style={styles.rowLabel}>{t('settings.dailyReminder.label')}</Text>
+                  <Text style={styles.rowHint}>{t('settings.hints.dailyReminder')}</Text>
                 </View>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>

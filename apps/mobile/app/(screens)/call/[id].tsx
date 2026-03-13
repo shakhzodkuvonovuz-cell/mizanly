@@ -24,6 +24,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { api, callsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { CallSession } from '@/types';
 
 type CallType = 'voice' | 'video';
@@ -50,6 +51,7 @@ export default function CallScreen() {
   const userId = user?.id;
   const queryClient = useQueryClient();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const socketRef = useRef<Socket | null>(null);
   const [callStatus, setCallStatus] = useState<CallStatus>('ringing');
   const [isMuted, setIsMuted] = useState(false);
@@ -67,7 +69,7 @@ export default function CallScreen() {
   const answerMutation = useMutation({
     mutationFn: () => callsApi.answer(id),
     onSuccess: () => setCallStatus('connected'),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const endCallMutation = useMutation({
@@ -76,7 +78,7 @@ export default function CallScreen() {
       setCallStatus('ended');
       router.back();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const declineMutation = useMutation({
@@ -85,7 +87,7 @@ export default function CallScreen() {
       setCallStatus('declined');
       router.back();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   // Setup socket connection
@@ -172,23 +174,23 @@ export default function CallScreen() {
   const isIncoming = call?.callerId !== userId;
   const isVideo = call?.type === 'video';
   const otherUser = isIncoming ? call?.caller : call?.callee;
-  const displayName = otherUser?.displayName || 'User';
+  const displayName = otherUser?.displayName || t('common.user');
   const avatarUrl = otherUser?.avatarUrl;
 
   const statusText = {
-    ringing: isIncoming ? 'Ringing...' : 'Calling...',
-    connected: `Connected ${formatDuration(duration)}`,
-    ended: 'Call Ended',
-    missed: 'Missed Call',
-    declined: 'Declined',
+    ringing: isIncoming ? t('calls.ringing') : t('calls.calling'),
+    connected: t('calls.connectedDuration', { duration: formatDuration(duration) }),
+    ended: t('calls.callEnded'),
+    missed: t('calls.missedCall'),
+    declined: t('calls.declined'),
   }[callStatus];
 
   if (isLoading) {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Call"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('calls.call')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           borderless
         />
         <View style={[styles.center, { paddingTop: insets.top + 44 }]}>
@@ -214,8 +216,8 @@ export default function CallScreen() {
       />
 
       <GlassHeader
-        title={isVideo ? 'Video Call' : 'Voice Call'}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={isVideo ? t('calls.videoCall') : t('calls.voiceCall')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         borderless
       />
 
@@ -263,7 +265,7 @@ export default function CallScreen() {
               style={styles.videoPreviewGradient}
             >
               <Icon name="video" size="lg" color={colors.text.tertiary} />
-              <Text style={styles.videoPreviewText}>Video Preview</Text>
+              <Text style={styles.videoPreviewText}>{t('calls.videoPreview')}</Text>
             </LinearGradient>
           </Animated.View>
         )}
@@ -289,7 +291,7 @@ export default function CallScreen() {
                     <Icon name="x" size="xl" color={colors.text.primary} />
                   )}
                 </LinearGradient>
-                <Text style={styles.controlLabel}>Decline</Text>
+                <Text style={styles.controlLabel}>{t('calls.decline')}</Text>
               </TouchableOpacity>
 
               {/* Answer Button */}
@@ -309,7 +311,7 @@ export default function CallScreen() {
                     <Icon name="phone" size="xl" color={colors.text.primary} />
                   )}
                 </LinearGradient>
-                <Text style={styles.controlLabel}>Answer</Text>
+                <Text style={styles.controlLabel}>{t('calls.answer')}</Text>
               </TouchableOpacity>
             </>
           ) : (
@@ -326,7 +328,7 @@ export default function CallScreen() {
                 >
                   <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
                 </LinearGradient>
-                <Text style={styles.controlLabel}>{isMuted ? 'Unmute' : 'Mute'}</Text>
+                <Text style={styles.controlLabel}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
               </TouchableOpacity>
 
               {/* Speaker Button */}
@@ -341,7 +343,7 @@ export default function CallScreen() {
                 >
                   <Icon name="volume-x" size="lg" color={colors.text.primary} />
                 </LinearGradient>
-                <Text style={styles.controlLabel}>{isSpeaker ? 'Speaker Off' : 'Speaker'}</Text>
+                <Text style={styles.controlLabel}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
               </TouchableOpacity>
 
               {/* Flip Camera Button */}
@@ -357,7 +359,7 @@ export default function CallScreen() {
                   >
                     <Icon name="repeat" size="lg" color={colors.text.primary} />
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>Flip</Text>
+                  <Text style={styles.controlLabel}>{t('calls.flip')}</Text>
                 </TouchableOpacity>
               )}
 
@@ -378,7 +380,7 @@ export default function CallScreen() {
                     <Icon name="phone" size="xl" color={colors.text.primary} />
                   )}
                 </LinearGradient>
-                <Text style={styles.controlLabel}>End</Text>
+                <Text style={styles.controlLabel}>{t('calls.end')}</Text>
               </TouchableOpacity>
             </>
           )}

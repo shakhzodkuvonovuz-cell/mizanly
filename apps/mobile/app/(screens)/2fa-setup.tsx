@@ -21,6 +21,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize, animation } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -50,6 +51,7 @@ export default function TwoFactorSetupScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [setupResponse, setSetupResponse] = useState<TwoFactorSetupResponse | null>(null);
+  const { t } = useTranslation();
 
   // Refs for OTP inputs (simplified array)
   const inputRefs = Array(6).fill(null);
@@ -174,7 +176,7 @@ export default function TwoFactorSetupScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Two-Factor Authentication"
+        title={t('auth.twoFactorAuthentication')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -200,9 +202,9 @@ export default function TwoFactorSetupScreen() {
                 <Icon name="lock" size="lg" color="#fff" />
               </LinearGradient>
             </View>
-            <Text style={styles.infoTitle}>Secure Your Account</Text>
+            <Text style={styles.infoTitle}>{t('auth.secureYourAccount')}</Text>
             <Text style={styles.infoDescription}>
-              Two‑factor authentication adds an extra layer of security by requiring a verification code from your authenticator app each time you sign in.
+              {t('auth.twoFactorDescription')}
             </Text>
           </LinearGradient>
 
@@ -216,11 +218,11 @@ export default function TwoFactorSetupScreen() {
                 <Icon name="chevron-down" size="sm" color={activeStep === 'info' ? '#fff' : colors.text.tertiary} />
               </LinearGradient>
               <Text style={[styles.stepTitle, activeStep === 'info' && styles.stepTitleActive]}>
-                Step 1: Install Authenticator App
+                {t('auth.step1InstallAuthenticatorApp')}
               </Text>
             </View>
             <Text style={styles.stepDescription}>
-              If you don't already have one, download an authenticator app from the list below.
+              {t('auth.step1Description')}
             </Text>
 
             <TouchableOpacity
@@ -234,7 +236,7 @@ export default function TwoFactorSetupScreen() {
                 <View style={styles.appPickerLeft}>
                   <Icon name="phone" size="sm" color={colors.emerald} />
                   <Text style={styles.appPickerText}>
-                    {selectedApp || 'Select an authenticator app'}
+                    {selectedApp || t('auth.selectAuthenticatorApp')}
                   </Text>
                 </View>
                 <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
@@ -249,7 +251,7 @@ export default function TwoFactorSetupScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.nextButtonGradient}
               >
-                <Text style={styles.nextButtonText}>Continue</Text>
+                <Text style={styles.nextButtonText}>{t('common.continue')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.text.primary} />
               </LinearGradient>
             </TouchableOpacity>
@@ -266,11 +268,11 @@ export default function TwoFactorSetupScreen() {
                   <Icon name="layout" size="sm" color="#fff" />
                 </LinearGradient>
                 <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  Step 2: Scan QR Code
+                  {t('auth.step2ScanQRCode')}
                 </Text>
               </View>
               <Text style={styles.stepDescription}>
-                Open your authenticator app and scan this QR code.
+                {t('auth.step2Description')}
               </Text>
 
               {/* QR Code Display */}
@@ -286,12 +288,12 @@ export default function TwoFactorSetupScreen() {
                       {loading ? (
                         <>
                           <Icon name="loader" size="lg" color={colors.text.tertiary} />
-                          <Text style={styles.qrMockSubtext}>Generating QR code...</Text>
+                          <Text style={styles.qrMockSubtext}>{t('auth.generatingQRCode')}</Text>
                         </>
                       ) : (
                         <>
-                          <Text style={styles.qrMockText}>QR Code</Text>
-                          <Text style={styles.qrMockSubtext}>Scan with authenticator app</Text>
+                          <Text style={styles.qrMockText}>{t('auth.qrCode')}</Text>
+                          <Text style={styles.qrMockSubtext}>{t('auth.scanWithAuthenticatorApp')}</Text>
                         </>
                       )}
                     </View>
@@ -301,7 +303,7 @@ export default function TwoFactorSetupScreen() {
 
               {/* Manual Secret */}
               <View style={styles.secretContainer}>
-                <Text style={styles.secretLabel}>Or enter this secret manually:</Text>
+                <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
                 <TouchableOpacity onPress={() => {}}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
@@ -321,7 +323,7 @@ export default function TwoFactorSetupScreen() {
                   colors={[colors.emerald, colors.gold]}
                   style={styles.nextButtonGradient}
                 >
-                  <Text style={styles.nextButtonText}>I've scanned the code</Text>
+                  <Text style={styles.nextButtonText}>{t('auth.scannedCodeButton')}</Text>
                   <Icon name="chevron-right" size="sm" color="#fff" />
                 </LinearGradient>
               </TouchableOpacity>
@@ -339,11 +341,11 @@ export default function TwoFactorSetupScreen() {
                   <Icon name="check-circle" size="sm" color="#fff" />
                 </LinearGradient>
                 <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  Step 3: Enter Verification Code
+                  {t('auth.step3EnterVerificationCode')}
                 </Text>
               </View>
               <Text style={styles.stepDescription}>
-                Enter the 6‑digit code from your authenticator app.
+                {t('auth.step3Description')}
               </Text>
 
               {/* OTP Input */}
@@ -388,7 +390,7 @@ export default function TwoFactorSetupScreen() {
                     <Icon name="loader" size="sm" color="#fff" />
                   ) : (
                     <>
-                      <Text style={styles.nextButtonText}>Enable 2FA</Text>
+                      <Text style={styles.nextButtonText}>{t('auth.enable2FA')}</Text>
                       <Icon name="lock" size="sm" color="#fff" />
                     </>
                   )}
@@ -408,11 +410,11 @@ export default function TwoFactorSetupScreen() {
                   <Icon name="lock" size="sm" color="#fff" />
                 </LinearGradient>
                 <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  Step 4: Save Backup Codes
+                  {t('auth.step4SaveBackupCodes')}
                 </Text>
               </View>
               <Text style={styles.stepDescription}>
-                Save these backup codes in a secure place. You can use them to sign in if you lose access to your authenticator app.
+                {t('auth.step4Description')}
               </Text>
 
               {/* Backup Codes Grid */}
@@ -453,7 +455,7 @@ export default function TwoFactorSetupScreen() {
                     style={styles.backupActionGradient}
                   >
                     <Icon name="layers" size="sm" color={colors.text.primary} />
-                    <Text style={styles.backupActionText}>Copy All</Text>
+                    <Text style={styles.backupActionText}>{t('common.copyAll')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 

@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { CreatorStat } from '@/types';
 
 interface AnalyticsResponse {
@@ -60,6 +61,7 @@ function SummaryCard({ title, value, change, icon, index }: { title: string; val
 }
 
 function BarChart({ stats }: { stats: CreatorStat[] }) {
+  const { t } = useTranslation();
   if (!stats.length) return null;
 
   // Aggregate views per day (sum across spaces)
@@ -82,7 +84,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
         >
           <Icon name="bar-chart-2" size="xs" color={colors.gold} />
         </LinearGradient>
-        <Text style={styles.sectionTitle}>Engagement over time</Text>
+        <Text style={styles.sectionTitle}>{t('analytics.engagementOverTime')}</Text>
       </View>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -112,6 +114,7 @@ function BarChart({ stats }: { stats: CreatorStat[] }) {
 }
 
 function TopContentSection() {
+  const { t } = useTranslation();
   // Placeholder for top performing content
   return (
     <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.section}>
@@ -122,7 +125,7 @@ function TopContentSection() {
         >
           <Icon name="trending-up" size="xs" color={colors.emerald} />
         </LinearGradient>
-        <Text style={styles.sectionTitle}>Top Performing Content</Text>
+        <Text style={styles.sectionTitle}>{t('analytics.topPerformingContent')}</Text>
       </View>
       <LinearGradient
         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -130,8 +133,8 @@ function TopContentSection() {
       >
         <EmptyState
           icon="bar-chart-2"
-          title="No content data yet"
-          subtitle="Your top posts, reels, and threads will appear here"
+          title={t('analytics.noContentData')}
+          subtitle={t('analytics.noContentDataSubtitle')}
         />
       </LinearGradient>
     </Animated.View>
@@ -141,6 +144,7 @@ function TopContentSection() {
 export default function AnalyticsScreen() {
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useTranslation();
 
   const { data, isLoading, error, refetch } = useQuery<AnalyticsResponse>({
     queryKey: ['analytics'],
@@ -171,15 +175,15 @@ export default function AnalyticsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Creator Analytics"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('analytics.creatorAnalytics')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ paddingTop: 100 }}>
           <EmptyState
             icon="flag"
-            title="Failed to load analytics"
-            subtitle="Please try again later"
-            actionLabel="Retry"
+            title={t('analytics.failedToLoad')}
+            subtitle={t('analytics.tryAgainLater')}
+            actionLabel={t('common.retry')}
             onAction={() => refetch()}
           />
         </View>
@@ -225,30 +229,30 @@ export default function AnalyticsScreen() {
         ) : stats.length === 0 ? (
           <EmptyState
             icon="bar-chart-2"
-            title="No analytics data yet"
-            subtitle="Your engagement statistics will appear here as you post content"
-            actionLabel="Start creating"
+            title={t('analytics.noDataYet')}
+            subtitle={t('analytics.noDataSubtitle')}
+            actionLabel={t('analytics.startCreating')}
             onAction={() => router.push('/(tabs)/create')}
           />
         ) : (
           <>
             <View style={styles.cards}>
               <SummaryCard
-                title="Views"
+                title={t('analytics.views')}
                 value={formatNumber(totalViews)}
                 change={totalViews > 0 ? '+' + formatNumber(totalViews) : undefined}
                 icon="eye"
                 index={0}
               />
               <SummaryCard
-                title="Likes"
+                title={t('analytics.likes')}
                 value={formatNumber(totalLikes)}
                 change={totalLikes > 0 ? '+' + formatNumber(totalLikes) : undefined}
                 icon="heart"
                 index={1}
               />
               <SummaryCard
-                title="Followers"
+                title={t('analytics.followers')}
                 value={formatNumber(totalFollowers)}
                 change={totalFollowers > 0 ? '+' + formatNumber(totalFollowers) : undefined}
                 icon="users"

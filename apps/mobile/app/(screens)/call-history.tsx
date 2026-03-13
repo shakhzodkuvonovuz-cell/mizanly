@@ -15,6 +15,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { callsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { CallSession } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 
@@ -22,6 +23,7 @@ export default function CallHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const { user: clerkUser } = useUser();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -68,11 +70,14 @@ export default function CallHistoryScreen() {
       durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    let statusText = '';
-    if (item.status === 'missed') statusText = 'Missed';
-    else if (item.status === 'declined') statusText = 'Declined';
-    else if (item.status === 'ended') statusText = durationText;
-    else statusText = item.status;
+    const statusMap = {
+      missed: t('calls.missed'),
+      declined: t('calls.declined'),
+      ringing: t('calls.ringing'),
+      connected: t('calls.connected'),
+      ended: durationText,
+    };
+    let statusText = statusMap[item.status] || item.status;
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -128,15 +133,15 @@ export default function CallHistoryScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Calls" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('calls.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="phone" 
-          title="Couldn't load calls" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
+          title={t('calls.couldNotLoad')} 
+          subtitle={t('common.checkConnection')} 
+          actionLabel={t('common.retry')} 
           onAction={() => refetch()} 
         />
       </View>
@@ -147,8 +152,8 @@ export default function CallHistoryScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Calls" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('calls.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -163,8 +168,8 @@ export default function CallHistoryScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader 
-        title="Calls" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        title={t('calls.title')} 
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
       />
       <FlatList
         data={calls}
@@ -185,8 +190,8 @@ export default function CallHistoryScreen() {
           <View style={styles.emptyWrap}>
             <EmptyState 
               icon="phone" 
-              title="No calls yet" 
-              subtitle="Your call history will appear here" 
+              title={t('calls.noCallsYet')} 
+              subtitle={t('calls.callHistoryWillAppear')} 
             />
           </View>
         }

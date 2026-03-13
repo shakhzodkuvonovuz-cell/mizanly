@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, accountApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 
 function InfoRow({
@@ -99,6 +100,7 @@ export default function ManageDataScreen() {
   const { signOut } = useClerk();
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 300);
@@ -108,10 +110,10 @@ export default function ManageDataScreen() {
   const clearWatchHistoryMutation = useMutation({
     mutationFn: () => usersApi.clearWatchHistory(),
     onSuccess: () => {
-      Alert.alert('Cleared', 'Watch history cleared successfully.');
+      Alert.alert(t('common.cleared'), t('settings.watchHistoryClearedSuccess'));
     },
     onError: (err: Error) => {
-      Alert.alert('Error', err.message);
+      Alert.alert(t('common.error'), err.message);
     },
   });
 
@@ -120,23 +122,23 @@ export default function ManageDataScreen() {
     onSuccess: async () => {
       await signOut();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleRequestDownload = () => {
     Alert.alert(
-      'Request Data Download',
-      'We will prepare a copy of your data and notify you when it’s ready. This may take up to 48 hours.',
+      t('settings.requestDataDownload'),
+      t('settings.requestDataDownloadMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Request',
+          text: t('common.request'),
           onPress: async () => {
             try {
               await accountApi.requestDataExport();
-              Alert.alert('Request Sent', 'You will be notified when your data is ready for download.');
+              Alert.alert(t('settings.requestSent'), t('settings.requestSentMessage'));
             } catch {
-              Alert.alert('Error', 'Failed to submit data export request. Please try again.');
+              Alert.alert(t('common.error'), t('settings.requestDataExportFailed'));
             }
           },
         },
@@ -146,16 +148,16 @@ export default function ManageDataScreen() {
 
   const handleClearSearchHistory = () => {
     Alert.alert(
-      'Clear Search History',
-      'This will remove all your recent searches from this device. This cannot be undone.',
+      t('settings.clearSearchHistory'),
+      t('settings.clearSearchHistoryMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('common.clear'),
           style: 'destructive',
           onPress: async () => {
             await AsyncStorage.removeItem('search-history');
-            Alert.alert('Cleared', 'Search history cleared.');
+            Alert.alert(t('common.cleared'), t('settings.searchHistoryCleared'));
           },
         },
       ],
@@ -164,12 +166,12 @@ export default function ManageDataScreen() {
 
   const handleClearWatchHistory = () => {
     Alert.alert(
-      'Clear Watch History',
-      'This will remove all videos from your watch history. This cannot be undone.',
+      t('settings.clearWatchHistory'),
+      t('settings.clearWatchHistoryMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('common.clear'),
           style: 'destructive',
           onPress: () => clearWatchHistoryMutation.mutate(),
         },
@@ -179,21 +181,21 @@ export default function ManageDataScreen() {
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all your data. This cannot be undone.',
+      t('settings.deleteAccount'),
+      t('settings.deleteAccountMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: () => {
             Alert.alert(
-              'Are you absolutely sure?',
-              'Type DELETE to confirm.',
+              t('settings.deleteAccountConfirmTitle'),
+              t('settings.deleteAccountConfirmMessage'),
               [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'Confirm Delete',
+                  text: t('settings.confirmDelete'),
                   style: 'destructive',
                   onPress: async () => {
                     await deleteAccountMutation.mutateAsync();
@@ -216,8 +218,8 @@ export default function ManageDataScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Manage Your Data"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('settings.manageData')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       {isLoading ? (
@@ -251,37 +253,37 @@ export default function ManageDataScreen() {
           >
             {/* Download Your Data */}
             <ActionRow
-              label="Download Your Data"
-              description="Request a copy of all your data. We'll notify you when it's ready."
-              buttonLabel="Request Download"
+              label={t('settings.downloadYourData')}
+              description={t('settings.downloadYourDataDescription')}
+              buttonLabel={t('settings.requestDownload')}
               onPress={handleRequestDownload}
             />
             <View style={styles.divider} />
             {/* Connected Apps */}
-            <InfoRow label="Connected Apps" description="No connected apps" icon="layers" />
+            <InfoRow label={t('settings.connectedApps')} description={t('settings.noConnectedApps')} icon="layers" />
             <View style={styles.divider} />
             {/* Clear Search History */}
             <ActionRow
-              label="Clear Search History"
-              description="Remove all recent searches from this device."
-              buttonLabel="Clear"
+              label={t('settings.clearSearchHistory')}
+              description={t('settings.clearSearchHistoryDescription')}
+              buttonLabel={t('common.clear')}
               onPress={handleClearSearchHistory}
             />
             <View style={styles.divider} />
             {/* Clear Watch History */}
             <ActionRow
-              label="Clear Watch History"
-              description="Remove all videos from your watch history."
-              buttonLabel="Clear"
+              label={t('settings.clearWatchHistory')}
+              description={t('settings.clearWatchHistoryDescription')}
+              buttonLabel={t('common.clear')}
               onPress={handleClearWatchHistory}
               loading={clearWatchHistoryMutation.isPending}
             />
             <View style={styles.divider} />
             {/* Delete Account */}
             <ActionRow
-              label="Delete Account"
-              description="Permanently delete your account and all your data."
-              buttonLabel="Delete Account"
+              label={t('settings.deleteAccount')}
+              description={t('settings.deleteAccountDescription')}
+              buttonLabel={t('settings.deleteAccount')}
               destructive
               onPress={handleDeleteAccount}
               loading={deleteAccountMutation.isPending}
@@ -290,11 +292,11 @@ export default function ManageDataScreen() {
         </Animated.View>
 
         <Text style={styles.footerNote}>
-          For more privacy settings, visit the{' '}
-          <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel="Go to settings" accessibilityRole="link">
-            Settings
+          {t('settings.morePrivacySettingsPrefix')}{' '}
+          <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
+            {t('common.settings')}
           </Text>{' '}
-          page.
+          {t('settings.morePrivacySettingsSuffix')}
         </Text>
       </ScrollView>
       )}
