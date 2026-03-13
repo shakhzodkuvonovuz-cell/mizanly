@@ -1755,7 +1755,9 @@
       "title": "المتابِعون",
       "viewProfile": "عرض ملف {{name}} الشخصي",
       "emptyState": "لا يوجد متابعون بعد",
-      "emptySubtitle": "شارك ملفك الشخصي لتنمية مجتمعك"
+      "emptySubtitle": "شارك ملفك الشخصي لتنمية مجتمعك",
+      "count_one": "متابِع واحد",
+      "count_other": "{{count}} متابع"
     }
   },
   "testData": {

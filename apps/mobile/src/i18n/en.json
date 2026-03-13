@@ -2010,7 +2010,9 @@
       "title": "Followers",
       "viewProfile": "View {{name}}'s profile",
       "emptyState": "No followers yet",
-      "emptySubtitle": "Share your profile to grow your community"
+      "emptySubtitle": "Share your profile to grow your community",
+      "count_one": "{{count}} follower",
+      "count_other": "{{count}} followers"
     }
   }
 }
