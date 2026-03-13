@@ -9,6 +9,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -35,6 +36,7 @@ const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58
 
 export default function VideoEditorScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(12);
@@ -85,7 +87,7 @@ export default function VideoEditorScreen() {
           <View style={styles.toolPanel}>
             <View style={styles.timeInputRow}>
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeInputLabel}>Start</Text>
+                <Text style={styles.timeInputLabel}>{t('videoEditor.start')}</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={formatTime(startTime)}
@@ -93,7 +95,7 @@ export default function VideoEditorScreen() {
                 />
               </View>
               <View style={styles.timeInputContainer}>
-                <Text style={styles.timeInputLabel}>End</Text>
+                <Text style={styles.timeInputLabel}>{t('videoEditor.end')}</Text>
                 <TextInput
                   style={styles.timeInput}
                   value={formatTime(endTime)}
@@ -107,13 +109,13 @@ export default function VideoEditorScreen() {
                 style={styles.splitButtonGradient}
               >
                 <Icon name="scissors" size="sm" color={colors.text.primary} />
-                <Text style={styles.splitButtonText}>Split at Playhead</Text>
+                <Text style={styles.splitButtonText}>{t('videoEditor.splitAtPlayhead')}</Text>
               </LinearGradient>
             </TouchableOpacity>
             <TouchableOpacity style={styles.deleteButton}>
               <View style={styles.deleteButtonInner}>
                 <Icon name="trash" size="sm" color={colors.error} />
-                <Text style={styles.deleteButtonText}>Delete Selected Segment</Text>
+                <Text style={styles.deleteButtonText}>{t('videoEditor.deleteSelectedSegment')}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -122,7 +124,7 @@ export default function VideoEditorScreen() {
       case 'speed':
         return (
           <View style={styles.toolPanel}>
-            <Text style={styles.toolPanelTitle}>Playback Speed</Text>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.playbackSpeed')}</Text>
             <View style={styles.speedGrid}>
               {SPEED_OPTIONS.map((speed) => (
                 <TouchableOpacity
@@ -153,7 +155,7 @@ export default function VideoEditorScreen() {
       case 'filters':
         return (
           <View style={styles.toolPanel}>
-            <Text style={styles.toolPanelTitle}>Select Filter</Text>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.selectFilter')}</Text>
             <View style={styles.filterGrid}>
               {FILTERS.map((filter, index) => (
                 <Animated.View
@@ -184,18 +186,18 @@ export default function VideoEditorScreen() {
       case 'text':
         return (
           <View style={styles.toolPanel}>
-            <Text style={styles.toolPanelTitle}>Add Caption</Text>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.addCaption')}</Text>
             <TouchableOpacity style={styles.addTextButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.addTextButtonGradient}
               >
                 <Icon name="type" size="sm" color={colors.text.primary} />
-                <Text style={styles.addTextButtonText}>Add Text Overlay</Text>
+                <Text style={styles.addTextButtonText}>{t('videoEditor.addTextOverlay')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <Text style={styles.toolSubTitle}>Font Style</Text>
+            <Text style={styles.toolSubTitle}>{t('videoEditor.fontStyle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
               {FONT_OPTIONS.map((font) => (
                 <TouchableOpacity
@@ -221,7 +223,7 @@ export default function VideoEditorScreen() {
               ))}
             </ScrollView>
 
-            <Text style={styles.toolSubTitle}>Text Color</Text>
+            <Text style={styles.toolSubTitle}>{t('videoEditor.textColor')}</Text>
             <View style={styles.colorRow}>
               {TEXT_COLORS.map((color) => (
                 <TouchableOpacity
@@ -241,14 +243,14 @@ export default function VideoEditorScreen() {
       case 'music':
         return (
           <View style={styles.toolPanel}>
-            <Text style={styles.toolPanelTitle}>Background Music</Text>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.backgroundMusic')}</Text>
             <TouchableOpacity style={styles.libraryButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.libraryButtonGradient}
               >
                 <Icon name="music" size="sm" color={colors.emerald} />
-                <Text style={styles.libraryButtonText}>Add from Audio Library</Text>
+                <Text style={styles.libraryButtonText}>{t('videoEditor.addFromAudioLibrary')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
               </LinearGradient>
             </TouchableOpacity>
@@ -283,14 +285,14 @@ export default function VideoEditorScreen() {
       case 'volume':
         return (
           <View style={styles.toolPanel}>
-            <Text style={styles.toolPanelTitle}>Audio Levels</Text>
+            <Text style={styles.toolPanelTitle}>{t('videoEditor.audioLevels')}</Text>
 
             <View style={styles.volumeRow}>
               <View style={styles.volumeIconContainer}>
                 <Icon name="volume-2" size="sm" color={colors.text.secondary} />
               </View>
               <View style={styles.volumeLabelContainer}>
-                <Text style={styles.volumeLabel}>Original Audio</Text>
+                <Text style={styles.volumeLabel}>{t('videoEditor.originalAudio')}</Text>
                 <Text style={styles.volumeValue}>{originalVolume}%</Text>
               </View>
             </View>
@@ -304,7 +306,7 @@ export default function VideoEditorScreen() {
                 <Icon name="music" size="sm" color={colors.text.secondary} />
               </View>
               <View style={styles.volumeLabelContainer}>
-                <Text style={styles.volumeLabel}>Background Music</Text>
+                <Text style={styles.volumeLabel}>{t('videoEditor.backgroundMusic')}</Text>
                 <Text style={styles.volumeValue}>{musicVolume}%</Text>
               </View>
             </View>
@@ -322,7 +324,7 @@ export default function VideoEditorScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Edit Video" showBackButton />
+      <GlassHeader title={t('videoEditor.editVideo')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -428,7 +430,7 @@ export default function VideoEditorScreen() {
                 </View>
               </View>
 
-              <Text style={styles.dragHint}>Drag handles to trim</Text>
+              <Text style={styles.dragHint}>{t('videoEditor.dragHandlesToTrim')}</Text>
             </LinearGradient>
           </View>
         </Animated.View>
@@ -442,12 +444,12 @@ export default function VideoEditorScreen() {
             contentContainerStyle={styles.toolsContent}
           >
             {([
-              { id: 'trim', icon: 'scissors' as IconName, label: 'Trim' },
-              { id: 'speed', icon: 'fast-forward' as IconName, label: 'Speed' },
-              { id: 'filters', icon: 'sliders' as IconName, label: 'Filters' },
-              { id: 'text', icon: 'type' as IconName, label: 'Text' },
-              { id: 'music', icon: 'music' as IconName, label: 'Music' },
-              { id: 'volume', icon: 'volume-2' as IconName, label: 'Volume' },
+              { id: 'trim', icon: 'scissors' as IconName, label: t('videoEditor.trim') },
+              { id: 'speed', icon: 'fast-forward' as IconName, label: t('videoEditor.speed') },
+              { id: 'filters', icon: 'sliders' as IconName, label: t('videoEditor.filters') },
+              { id: 'text', icon: 'type' as IconName, label: t('videoEditor.text') },
+              { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
+              { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
             ].map((tool) => (
               <TouchableOpacity
                 key={tool.id}
@@ -493,7 +495,7 @@ export default function VideoEditorScreen() {
         {/* Quality Selector */}
         <Animated.View entering={FadeInUp.delay(250).duration(400)}>
           <View style={styles.qualityContainer}>
-            <Text style={styles.qualityLabel}>Export Quality</Text>
+            <Text style={styles.qualityLabel}>{t('videoEditor.exportQuality')}</Text>
             <View style={styles.qualityButtons}>
               {(['720p', '1080p', '4K'] as QualityOption[]).map((quality) => (
                 <TouchableOpacity
@@ -532,7 +534,7 @@ export default function VideoEditorScreen() {
           style={styles.bottomBarGradient}
         >
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.exportButton} onPress={handleExport} disabled={isExporting}>
             <LinearGradient
@@ -544,7 +546,7 @@ export default function VideoEditorScreen() {
               ) : (
                 <>
                   <Icon name="check" size="sm" color="#FFF" />
-                  <Text style={styles.exportButtonText}>Export</Text>
+                  <Text style={styles.exportButtonText}>{t('videoEditor.export')}</Text>
                 </>
               )}
             </LinearGradient>

@@ -17,6 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function Row({
   label,
@@ -75,6 +76,7 @@ export default function AccountSettingsScreen() {
   const { signOut } = useClerk();
   const { user: clerkUser } = useUser();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   const userQuery = useQuery({
     queryKey: ['user', 'me'],
@@ -177,8 +179,8 @@ export default function AccountSettingsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Account"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('accountSettings.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ flex: 1, padding: spacing.base, paddingTop: insets.top + 60, gap: spacing.lg }}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -193,15 +195,15 @@ export default function AccountSettingsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Account"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('accountSettings.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ flex: 1, justifyContent: 'center', paddingTop: insets.top + 60 }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load account"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('accountSettings.error.loadAccount')}
+            subtitle={t('accountSettings.error.checkConnection')}
+            actionLabel={t('common.retry')}
             onAction={() => userQuery.refetch()}
           />
         </View>
@@ -218,67 +220,67 @@ export default function AccountSettingsScreen() {
 
       <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
         {/* Account Info */}
-        <SectionHeader title="Account Info" index={0} />
+        <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
         <Animated.View entering={FadeInUp.delay(50).duration(400)}>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
             <Row
-              label="Email"
-              value={primaryEmail || 'Not set'}
+              label={t('auth.email')}
+              value={primaryEmail || t('accountSettings.notSet')}
             />
             <View style={styles.divider} />
             <Row
-              label="Phone"
-              value={primaryPhone || 'Not set'}
+              label={t('auth.phone')}
+              value={primaryPhone || t('accountSettings.notSet')}
             />
             <View style={styles.divider} />
             <Row
-              label="Joined"
+              label={t('accountSettings.joined')}
               value={joinedDate}
             />
           </LinearGradient>
         </Animated.View>
 
         {/* Data & Privacy */}
-        <SectionHeader title="Data & Privacy" index={1} />
+        <SectionHeader title={t('accountSettings.sections.dataPrivacy')} index={1} />
         <Animated.View entering={FadeInUp.delay(150).duration(400)}>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
             <Row
-              label="Download My Data"
-              hint="Export all your data as a ZIP file"
+              label={t('accountSettings.downloadMyData')}
+              hint={t('accountSettings.exportDataHint')}
               onPress={handleExportData}
             />
             <View style={styles.divider} />
             <Row
-              label="Manage Data"
-              hint="View and manage your stored data"
+              label={t('accountSettings.manageData')}
+              hint={t('accountSettings.manageDataHint')}
               onPress={() => router.push('/(screens)/manage-data')}
             />
           </LinearGradient>
         </Animated.View>
 
         {/* Account Actions */}
-        <SectionHeader title="Account Actions" index={2} />
+        <SectionHeader title={t('accountSettings.sections.accountActions')} index={2} />
         <Animated.View entering={FadeInUp.delay(250).duration(400)}>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
             <Row
-              label="Deactivate Account"
-              hint="Temporarily hide your account"
+              label={t('accountSettings.deactivateAccount')}
+              hint={t('accountSettings.deactivateHint')}
               onPress={handleDeactivate}
               destructive
             />
             <View style={styles.divider} />
             <Row
-              label="Delete Account"
-              hint="Permanently delete after 30 days"
+              label={t('accountSettings.deleteAccount')}
+              hint={t('accountSettings.deleteHint')}
               onPress={handleDeleteAccount}
               destructive
             />

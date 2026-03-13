@@ -23,6 +23,7 @@ import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/event
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Alert } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -48,6 +49,7 @@ const MOCK_COMMENTS: Comment[] = []; // TODO: fetch comments from API
 
 export default function EventDetailScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('going');
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -65,7 +67,7 @@ export default function EventDetailScreen() {
       setEvent(response.data);
       // TODO: fetch attendees and comments
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load event');
+      setError(err instanceof Error ? err.message : t('events.loadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,7 +108,7 @@ export default function EventDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Event"
+        title={t('events.event')}
         onBack={() => router.back()}
         rightAction={
           <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
@@ -134,7 +136,7 @@ export default function EventDetailScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.badgeGradient}
               >
-                <Text style={styles.badgeText}>In-Person</Text>
+                <Text style={styles.badgeText}>{t('events.inPerson')}</Text>
               </LinearGradient>
             </View>
           </View>
@@ -149,7 +151,7 @@ export default function EventDetailScreen() {
             <Avatar uri={null} name="ICC" size="md" />
             <View style={styles.hostInfo}>
               <Text style={styles.hostText}>
-                Hosted by <Text style={styles.hostName}>@icc_riyadh</Text>
+                {t('events.hostedBy')} <Text style={styles.hostName}>@icc_riyadh</Text>
               </Text>
             </View>
             <VerifiedBadge size={13} />
@@ -174,7 +176,7 @@ export default function EventDetailScreen() {
             </View>
             <TouchableOpacity style={styles.addToCalendar} activeOpacity={0.8}>
               <Icon name="calendar" size="xs" color={colors.emerald} />
-              <Text style={styles.addText}>Add</Text>
+              <Text style={styles.addText}>{t('events.add')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </Animated.View>
@@ -211,7 +213,7 @@ export default function EventDetailScreen() {
               Join us for a blessed evening of community iftar during Ramadan. We'll break our fast together, share a meal, and enjoy each other's company. All are welcome — bring your family and friends!
             </Text>
             <TouchableOpacity activeOpacity={0.8}>
-              <Text style={styles.readMore}>Read more</Text>
+              <Text style={styles.readMore}>{t('common.readMore')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </Animated.View>
@@ -222,12 +224,12 @@ export default function EventDetailScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={[styles.rsvpCard, { borderColor: colors.gold }]}
           >
-            <Text style={styles.rsvpLabel}>Are you going?</Text>
+            <Text style={styles.rsvpLabel}>{t('events.areYouGoing')}</Text>
             <View style={styles.rsvpButtons}>
               {(['going', 'maybe', 'not-going'] as const).map((status) => {
                 const styles_result = getRsvpButtonStyle(status);
                 const isSelected = rsvpStatus === status;
-                const label = status === 'not-going' ? "Can't Go" : status.charAt(0).toUpperCase() + status.slice(1);
+                const label = status === 'going' ? t('events.going') : status === 'maybe' ? t('events.maybe') : t('events.cantGo');
 
                 return (
                   <TouchableOpacity
@@ -278,9 +280,9 @@ export default function EventDetailScreen() {
               >
                 <Icon name="users" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.attendeesTitle}>Attendees</Text>
+              <Text style={styles.attendeesTitle}>{t('events.attendees')}</Text>
               <View style={styles.attendeesCount}>
-                <Text style={styles.countBadge}>47 Going · 12 Maybe · 8 Invited</Text>
+                <Text style={styles.countBadge}>47 {t('events.going')} · 12 {t('events.maybe')} · 8 {t('events.invited')}</Text>
               </View>
             </View>
 
@@ -299,7 +301,7 @@ export default function EventDetailScreen() {
             </View>
 
             <TouchableOpacity style={styles.seeAllButton} activeOpacity={0.8}>
-              <Text style={styles.seeAllText}>See All Attendees</Text>
+              <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
               <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
             </TouchableOpacity>
           </LinearGradient>
@@ -318,8 +320,8 @@ export default function EventDetailScreen() {
               >
                 <Icon name="message-circle" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.discussionTitle}>Discussion</Text>
-              <Text style={styles.commentCount}>3 comments</Text>
+              <Text style={styles.discussionTitle}>{t('events.discussion')}</Text>
+              <Text style={styles.commentCount}>{t('events.commentsCount', { count: 3 })}</Text>
             </View>
 
             {MOCK_COMMENTS.map((comment) => (
@@ -338,7 +340,7 @@ export default function EventDetailScreen() {
             <View style={styles.commentInputRow}>
               <Avatar uri={null} name="You" size="sm" />
               <View style={styles.commentInput}>
-                <Text style={styles.commentInputPlaceholder}>Add a comment...</Text>
+                <Text style={styles.commentInputPlaceholder}>{t('events.addComment')}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -356,7 +358,7 @@ export default function EventDetailScreen() {
             style={styles.shareButtonInner}
           >
             <Icon name="share" size="sm" color={colors.text.primary} />
-            <Text style={styles.shareButtonText}>Share Event</Text>
+            <Text style={styles.shareButtonText}>{t('events.shareEvent')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -366,7 +368,7 @@ export default function EventDetailScreen() {
             style={styles.rsvpConfirmButton}
           >
             <Text style={styles.rsvpConfirmText}>
-              RSVP: {rsvpStatus === 'going' ? 'Going' : rsvpStatus === 'maybe' ? 'Maybe' : "Can't Go"}
+              {t('events.rsvp')}: {rsvpStatus === 'going' ? t('events.going') : rsvpStatus === 'maybe' ? t('events.maybe') : t('events.cantGo')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

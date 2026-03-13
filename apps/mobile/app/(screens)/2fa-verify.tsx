@@ -24,6 +24,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize, animation } from '@/theme';
 import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { ValidateTwoFactorDto, BackupCodeDto } from '@/types/twoFactor';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -31,6 +32,7 @@ const { width: screenWidth } = Dimensions.get('window');
 export default function TwoFactorVerifyScreen() {
   const router = useRouter();
   const user = useUser();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<'code' | 'backup'>('code');
   const [verificationCode, setVerificationCode] = useState(['', '', '', '', '', '']);
   const [backupCode, setBackupCode] = useState('');
@@ -81,7 +83,7 @@ export default function TwoFactorVerifyScreen() {
     setLoading(true);
     setError(false);
     if (!user?.id) {
-      Alert.alert('Error', 'User not found');
+      Alert.alert(t('screens.2faVerify.errorTitle'), t('screens.2faVerify.userNotFound'));
       setLoading(false);
       return;
     }
@@ -93,14 +95,14 @@ export default function TwoFactorVerifyScreen() {
         await twoFactorApi.backup({ userId: user.id, backupCode });
       }
       Alert.alert(
-        'Verification Successful',
-        'You have successfully verified your identity.',
-        [{ text: 'Continue', onPress: () => router.back() }]
+        t('screens.2faVerify.verificationSuccessTitle'),
+        t('screens.2faVerify.verificationSuccessMessage'),
+        [{ text: t('common.continue'), onPress: () => router.back() }]
       );
     } catch (err) {
       setError(true);
       triggerShake();
-      Alert.alert('Verification Failed', 'Invalid code. Please try again.');
+      Alert.alert(t('screens.2faVerify.verificationFailedTitle'), t('screens.2faVerify.invalidCodeMessage'));
     } finally {
       setLoading(false);
     }
@@ -112,7 +114,7 @@ export default function TwoFactorVerifyScreen() {
 
   const renderCodeInput = () => (
     <>
-      <Text style={styles.inputLabel}>Enter 6‑digit code from your authenticator app</Text>
+      <Text style={styles.inputLabel}>{t('screens.2faVerify.codeInputLabel')}</Text>
       <View style={styles.otpContainer}>
         {verificationCode.map((digit, idx) => (
           <Animated.View
@@ -149,7 +151,7 @@ export default function TwoFactorVerifyScreen() {
 
   const renderBackupInput = () => (
     <>
-      <Text style={styles.inputLabel}>Enter a backup code</Text>
+      <Text style={styles.inputLabel}>{t('screens.2faVerify.backupInputLabel')}</Text>
       <Animated.View entering={SlideInDown.duration(400)} style={animatedStyle}>
         <LinearGradient
           colors={backupCode
@@ -165,7 +167,7 @@ export default function TwoFactorVerifyScreen() {
             style={[styles.backupInput, error && styles.backupInputError]}
             value={backupCode}
             onChangeText={handleBackupCodeChange}
-            placeholder="e.g., 3F7A9C"
+            placeholder={t('screens.2faVerify.backupPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             autoCapitalize="characters"
             autoCorrect={false}
@@ -179,7 +181,7 @@ export default function TwoFactorVerifyScreen() {
         </LinearGradient>
       </Animated.View>
       <Text style={styles.backupHint}>
-        Backup codes are 6‑character alphanumeric strings.
+        {t('screens.2faVerify.backupHint')}
       </Text>
     </>
   );
@@ -187,7 +189,7 @@ export default function TwoFactorVerifyScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Verify Identity"
+        title={t('screens.2faVerify.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -203,9 +205,9 @@ export default function TwoFactorVerifyScreen() {
           >
             <Icon name="lock" size="xl" color="#fff" />
           </LinearGradient>
-          <Text style={styles.heroTitle}>Two‑Factor Verification</Text>
+          <Text style={styles.heroTitle}>{t('screens.2faVerify.heroTitle')}</Text>
           <Text style={styles.heroSubtitle}>
-            Enter the verification code from your authenticator app or a backup code.
+            {t('screens.2faVerify.heroSubtitle')}
           </Text>
         </Animated.View>
 
@@ -226,7 +228,7 @@ export default function TwoFactorVerifyScreen() {
             disabled={loading}
           >
             <Text style={styles.modeToggleText}>
-              {mode === 'code' ? 'Use backup code instead' : 'Use authenticator code instead'}
+              {mode === 'code' ? t('screens.2faVerify.useBackupCodeInstead') : t('screens.2faVerify.useAuthenticatorCodeInstead')}
             </Text>
             <Icon name={mode === 'code' ? 'lock' : 'phone'} size="xs" color={colors.emerald} />
           </TouchableOpacity>
@@ -248,7 +250,7 @@ export default function TwoFactorVerifyScreen() {
                 <Icon name="loader" size="md" color="#fff" />
               ) : (
                 <>
-                  <Text style={styles.verifyText}>Verify</Text>
+                  <Text style={styles.verifyText}>{t('auth.verify')}</Text>
                   <Icon name="check" size="md" color="#fff" />
                 </>
               )}
@@ -260,17 +262,17 @@ export default function TwoFactorVerifyScreen() {
             style={styles.lostAccessLink}
             onPress={() =>
               Alert.alert(
-                'Lost Access?',
-                'If you’ve lost access to your authenticator app and backup codes, you can recover your account via email. Contact support if you need assistance.',
+                t('screens.2faVerify.lostAccessTitle'),
+                t('screens.2faVerify.lostAccessMessage'),
                 [
-                  { text: 'Cancel', style: 'cancel' },
-                  { text: 'Contact Support', onPress: () => {} },
+                  { text: t('common.cancel'), style: 'cancel' },
+                  { text: t('screens.2faVerify.lostAccessButtonContact'), onPress: () => {} },
                 ]
               )
             }
           >
             <Icon name="circle" size="xs" color={colors.text.tertiary} />
-            <Text style={styles.lostAccessText}>Lost access to both?</Text>
+            <Text style={styles.lostAccessText}>{t('screens.2faVerify.lostAccessLinkText')}</Text>
           </TouchableOpacity>
         </Animated.View>
 

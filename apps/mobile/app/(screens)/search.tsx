@@ -20,20 +20,14 @@ import { searchApi, postsApi } from '@/services/api';
 import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const SEARCH_TABS = [
-  { key: 'people', label: 'People' },
-  { key: 'hashtags', label: 'Hashtags' },
-  { key: 'posts', label: 'Posts' },
-  { key: 'threads', label: 'Threads' },
-  { key: 'reels', label: 'Reels' },
-  { key: 'videos', label: 'Videos' },
-  { key: 'channels', label: 'Channels' },
-] as const;
+const SEARCH_TAB_KEYS = ['people', 'hashtags', 'posts', 'threads', 'reels', 'videos', 'channels'] as const;
 
-type SearchTab = typeof SEARCH_TABS[number]['key'];
+type SearchTab = typeof SEARCH_TAB_KEYS[number];
 
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       style={styles.userRow}
@@ -49,17 +43,18 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
         </View>
         <Text style={styles.userHandle}>@{user.username}</Text>
         {user._count && (
-          <Text style={styles.userFollowers}>{user._count.followers} followers</Text>
+          <Text style={styles.userFollowers}>{user._count.followers} {t('search.followers')}</Text>
         )}
       </View>
       {user.isFollowing ? (
-        <Text style={styles.followingLabel}>Following</Text>
+        <Text style={styles.followingLabel}>{t('search.following')}</Text>
       ) : null}
     </Pressable>
   );
 }
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
+  const { t } = useTranslation();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -78,10 +73,10 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
       />
       <View style={styles.videoInfo}>
         <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-        <Text style={styles.videoChannel}>{video.channel?.name || 'Unknown'}</Text>
+        <Text style={styles.videoChannel}>{video.channel?.name || t('common.unknown')}</Text>
         <View style={styles.videoStats}>
           <Icon name="eye" size={14} color={colors.text.secondary} />
-          <Text style={styles.videoStat}>{video.viewsCount.toLocaleString()} views</Text>
+          <Text style={styles.videoStat}>{video.viewsCount.toLocaleString()} {t('search.views')}</Text>
           <Icon name="clock" size={14} color={colors.text.secondary} />
           <Text style={styles.videoStat}>{durationText}</Text>
         </View>
@@ -91,6 +86,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 }
 
 function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
+  const { t } = useTranslation();
   return (
     <Pressable
       style={styles.channelRow}
@@ -106,9 +102,9 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
         </View>
         <Text style={styles.channelHandle}>@{channel.handle}</Text>
         <View style={styles.channelStats}>
-          <Text style={styles.channelStat}>{channel.subscribersCount.toLocaleString()} subscribers</Text>
+          <Text style={styles.channelStat}>{channel.subscribersCount.toLocaleString()} {t('search.subscribers')}</Text>
           <Text style={styles.channelStat}>•</Text>
-          <Text style={styles.channelStat}>{channel.videosCount.toLocaleString()} videos</Text>
+          <Text style={styles.channelStat}>{channel.videosCount.toLocaleString()} {t('search.videosCount')}</Text>
         </View>
       </View>
     </Pressable>
@@ -118,6 +114,17 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
 export default function SearchScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
+
+  const SEARCH_TABS = [
+    { key: 'people' as const, label: t('search.people') },
+    { key: 'hashtags' as const, label: t('search.hashtags') },
+    { key: 'posts' as const, label: t('search.posts') },
+    { key: 'threads' as const, label: t('search.threads') },
+    { key: 'reels' as const, label: t('search.reels') },
+    { key: 'videos' as const, label: t('search.videos') },
+    { key: 'channels' as const, label: t('search.channels') },
+  ];
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
@@ -253,7 +260,7 @@ export default function SearchScreen() {
           <Icon name="search" size="xs" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search people, hashtags…"
+            placeholder={t('search.placeholder')}
             placeholderTextColor={colors.text.tertiary}
             value={query}
             onChangeText={handleQueryChange}
@@ -274,7 +281,7 @@ export default function SearchScreen() {
 
       {isSearching && (
         <TabSelector
-          tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
+          tabs={SEARCH_TABS.map((tab) => ({ key: tab.key, label: tab.label }))}
           activeKey={activeTab}
           onTabChange={(k) => setActiveTab(k as SearchTab)}
         />
@@ -295,9 +302,9 @@ export default function SearchScreen() {
       ) : searchQuery.isError ? (
         <EmptyState
           icon="flag"
-          title="Search failed"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('search.searchFailed')}
+          subtitle={t('search.checkConnection')}
+          actionLabel={t('common.retry')}
           onAction={() => searchQuery.refetch()}
         />
       ) : isSearching ? (
@@ -323,8 +330,8 @@ export default function SearchScreen() {
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="search"
-                          title={`No posts for "${debouncedQuery}"`}
-                          subtitle="Try a different search term"
+                          title={t('search.noResultsFor', { type: t('search.posts'), query: debouncedQuery })}
+                          subtitle={t('search.tryDifferent')}
                         />
                       )}
                       onEndReached={() => {
@@ -363,8 +370,8 @@ export default function SearchScreen() {
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="search"
-                          title={`No threads for "${debouncedQuery}"`}
-                          subtitle="Try a different search term"
+                          title={t('search.noResultsFor', { type: t('search.threads'), query: debouncedQuery })}
+                          subtitle={t('search.tryDifferent')}
                         />
                       )}
                       onEndReached={() => {
@@ -412,7 +419,7 @@ export default function SearchScreen() {
                           />
                           <View style={styles.reelInfo}>
                             <Text style={styles.reelCaption} numberOfLines={2}>
-                              {item.caption || 'No caption'}
+                              {item.caption || t('search.noCaption')}
                             </Text>
                             <View style={styles.reelStats}>
                               <Icon name="heart" size={14} color={colors.text.secondary} />
@@ -437,8 +444,8 @@ export default function SearchScreen() {
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="video"
-                          title={`No reels for "${debouncedQuery}"`}
-                          subtitle="Try a different search term"
+                          title={t('search.noResultsFor', { type: t('search.reels'), query: debouncedQuery })}
+                          subtitle={t('search.tryDifferent')}
                         />
                       )}
                       onEndReached={() => {
@@ -480,8 +487,8 @@ export default function SearchScreen() {
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="video"
-                          title={`No videos for "${debouncedQuery}"`}
-                          subtitle="Try a different search term"
+                          title={t('search.noResultsFor', { type: t('search.videos'), query: debouncedQuery })}
+                          subtitle={t('search.tryDifferent')}
                         />
                       )}
                       onEndReached={() => {
@@ -523,8 +530,8 @@ export default function SearchScreen() {
                       ListEmptyComponent={() => (
                         <EmptyState
                           icon="users"
-                          title={`No channels for "${debouncedQuery}"`}
-                          subtitle="Try a different search term"
+                          title={t('search.noResultsFor', { type: t('search.channels'), query: debouncedQuery })}
+                          subtitle={t('search.tryDifferent')}
                         />
                       )}
                       onEndReached={() => {
@@ -583,7 +590,7 @@ export default function SearchScreen() {
                     </View>
                     <View>
                       <Text style={styles.hashtagName}>#{item.data.name}</Text>
-                      <Text style={styles.hashtagCount}>{item.data.postsCount} posts</Text>
+                      <Text style={styles.hashtagCount}>{item.data.postsCount} {t('search.posts')}</Text>
                     </View>
                   </Pressable>
                 );
@@ -591,8 +598,8 @@ export default function SearchScreen() {
               ListEmptyComponent={() => (
                 <EmptyState
                   icon="search"
-                  title={`No ${activeTab === 'people' ? 'people' : 'hashtags'} for "${debouncedQuery}"`}
-                  subtitle="Try a different search term"
+                  title={t('search.noResultsFor', { type: activeTab === 'people' ? t('search.people') : t('search.hashtags'), query: debouncedQuery })}
+                  subtitle={t('search.tryDifferent')}
                 />
               )}
               contentContainerStyle={{ paddingBottom: 40 }}
@@ -601,7 +608,7 @@ export default function SearchScreen() {
         </>
       ) : showHistory ? (
         <View style={styles.historySection}>
-          <Text style={styles.historyTitle}>Recent searches</Text>
+          <Text style={styles.historyTitle}>{t('search.recentSearches')}</Text>
           {searchHistory.length > 0 ? (
             <>
               <FlatList
@@ -645,11 +652,11 @@ export default function SearchScreen() {
                 accessibilityRole="button"
                 accessibilityLabel="Clear all recent searches"
               >
-                <Text style={styles.clearButtonText}>Clear All</Text>
+                <Text style={styles.clearButtonText}>{t('search.clearAll')}</Text>
               </Pressable>
             </>
           ) : (
-            <Text style={styles.historyEmpty}>No recent searches</Text>
+            <Text style={styles.historyEmpty}>{t('search.noRecentSearches')}</Text>
           )}
         </View>
       ) : (
@@ -703,7 +710,7 @@ export default function SearchScreen() {
           </View>
         ) : (
           <View style={styles.discoverSection}>
-            <Text style={styles.discoverTitle}>Trending</Text>
+            <Text style={styles.discoverTitle}>{t('search.trending')}</Text>
             {trending.length > 0 ? (
               <View style={styles.trendingChips}>
                 {trending.map((item, i) => (
@@ -721,7 +728,7 @@ export default function SearchScreen() {
                 ))}
               </View>
             ) : (
-              <Text style={styles.discoverSub}>Search for people and topics</Text>
+              <Text style={styles.discoverSub}>{t('search.searchForPeopleAndTopics')}</Text>
             )}
           </View>
         )

@@ -8,6 +8,8 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PushTriggerService } from '../notifications/push-trigger.service';
+import { Notification } from '@prisma/client';
 
 @Injectable()
 export class FollowsService {
@@ -15,6 +17,7 @@ export class FollowsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private pushTrigger: PushTriggerService,
   ) {}
 
   async follow(currentUserId: string, targetUserId: string) {
@@ -71,7 +74,13 @@ export class FollowsService {
       this.notifications.create({
         userId: targetUserId, actorId: currentUserId,
         type: 'FOLLOW_REQUEST', followRequestId: request.id,
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      })
+        .then(notification => {
+          if (notification) {
+            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+          }
+        })
+        .catch((err) => this.logger.error('Failed to create notification', err));
       return { type: 'request', request };
     }
 
@@ -93,7 +102,13 @@ export class FollowsService {
     this.notifications.create({
       userId: targetUserId, actorId: currentUserId,
       type: 'FOLLOW',
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    })
+      .then(notification => {
+        if (notification) {
+          this.pushTrigger.triggerPush(notification.id).catch(() => {});
+        }
+      })
+      .catch((err) => this.logger.error('Failed to create notification', err));
 
     return { type: 'follow', follow };
   }
@@ -258,7 +273,13 @@ export class FollowsService {
     this.notifications.create({
       userId: request.senderId, actorId: request.receiverId,
       type: 'FOLLOW_REQUEST_ACCEPTED',
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    })
+      .then(notification => {
+        if (notification) {
+          this.pushTrigger.triggerPush(notification.id).catch(() => {});
+        }
+      })
+      .catch((err) => this.logger.error('Failed to create notification', err));
 
     return { message: 'Follow request accepted' };
   }

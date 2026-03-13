@@ -25,6 +25,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -38,16 +39,17 @@ interface PickedMedia {
 type AutocompleteType = 'hashtag' | 'mention' | null;
 
 type VisIconName = React.ComponentProps<typeof Icon>['name'];
-const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconName }[] = [
-  { value: 'PUBLIC', label: 'Everyone', iconName: 'globe' },
-  { value: 'FOLLOWERS', label: 'Followers', iconName: 'users' },
-  { value: 'CIRCLE', label: 'Circle', iconName: 'lock' },
+const VISIBILITY_KEYS: { value: Visibility; labelKey: string; iconName: VisIconName }[] = [
+  { value: 'PUBLIC', labelKey: 'compose.visibility.everyone', iconName: 'globe' },
+  { value: 'FOLLOWERS', labelKey: 'compose.visibility.followers', iconName: 'users' },
+  { value: 'CIRCLE', labelKey: 'compose.visibility.circle', iconName: 'lock' },
 ];
 
 export default function CreatePostScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const [content, setContent] = useState('');
   const [media, setMedia] = useState<PickedMedia[]>([]);
@@ -128,7 +130,7 @@ export default function CreatePostScreen() {
   // ── Media picker ──
   const pickMedia = async () => {
     if (media.length >= 10) {
-      Alert.alert('Limit reached', 'You can add up to 10 photos or videos.');
+      Alert.alert(t('compose.limitReached'), t('compose.mediaLimit'));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -213,18 +215,18 @@ export default function CreatePostScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Failed to create post. Please try again.');
+      Alert.alert(t('common.error'), err.message || t('compose.failedToCreatePost'));
     },
   });
 
   const canPost =
     (content.trim().length > 0 || media.length > 0) && !createMutation.isPending;
 
-  const visibilityLabel = VISIBILITY_OPTIONS.find((o) => o.value === visibility)!;
+  const visibilityOption = VISIBILITY_KEYS.find((o) => o.value === visibility)!;
   const selectedCircle = circles.find((c) => c.id === circleId);
   const pillText = visibility === 'CIRCLE' && selectedCircle
     ? selectedCircle.name
-    : visibilityLabel.label;
+    : t(visibilityOption.labelKey);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -233,9 +235,9 @@ export default function CreatePostScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
           <Icon name="x" size="md" color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Post</Text>
+        <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
         <GradientButton
-          label="Share"
+          label={t('common.share')}
           size="sm"
           onPress={() => canPost && createMutation.mutate()}
           loading={createMutation.isPending}
@@ -247,7 +249,7 @@ export default function CreatePostScreen() {
       {showDraftBanner && (
         <View style={styles.draftBanner}>
           <Icon name="clock" size="sm" color={colors.gold} />
-          <Text style={styles.draftBannerText}>Draft restored</Text>
+          <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
           <TouchableOpacity onPress={() => setShowDraftBanner(false)} hitSlop={8}>
             <Icon name="x" size="xs" color={colors.text.secondary} />
           </TouchableOpacity>
@@ -270,7 +272,7 @@ export default function CreatePostScreen() {
               onPress={() => setShowVisibility((v) => !v)}
             >
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <Icon name={visibilityLabel.iconName} size={12} color={colors.text.secondary} />
+                <Icon name={visibilityOption.iconName} size={12} color={colors.text.secondary} />
                 <Text style={styles.visibilityPillText}>{pillText}</Text>
                 <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
               </View>
@@ -280,7 +282,7 @@ export default function CreatePostScreen() {
 
         {showVisibility && (
           <View style={styles.visibilityMenu}>
-            {VISIBILITY_OPTIONS.map((opt) => (
+            {VISIBILITY_KEYS.map((opt) => (
               <TouchableOpacity
                 key={opt.value}
                 style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
@@ -292,7 +294,7 @@ export default function CreatePostScreen() {
               >
                 <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
                 <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </Text>
                 {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
               </TouchableOpacity>
@@ -309,7 +311,7 @@ export default function CreatePostScreen() {
             <Text style={styles.circlePillText}>
               {selectedCircle
                 ? selectedCircle.name
-                : 'Choose a circle…'}
+                : t('compose.chooseCircle')}
             </Text>
             <Icon name="chevron-right" size="sm" color={colors.emerald} />
           </TouchableOpacity>
@@ -319,9 +321,9 @@ export default function CreatePostScreen() {
         <TextInput
           ref={inputRef}
           style={styles.input}
-          placeholder="What's on your mind?"
+          placeholder={t('compose.whatsOnYourMind')}
           placeholderTextColor={colors.text.tertiary}
-          accessibilityLabel="Post content"
+          accessibilityLabel={t('accessibility.postContent')}
           value={content}
           onChangeText={(text) => {
             setContent(text);
@@ -416,7 +418,7 @@ export default function CreatePostScreen() {
 
       {/* Circle picker */}
       <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
-        <Text style={styles.sheetTitle}>Choose a Circle</Text>
+        <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
         {circlesQuery.isLoading ? (
           <View style={styles.skeletonList}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -431,9 +433,9 @@ export default function CreatePostScreen() {
           </View>
         ) : circles.length === 0 ? (
           <View style={styles.emptyCircles}>
-            <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
+            <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>Create a circle</Text>
+              <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
               <Icon name="chevron-right" size="sm" color={colors.emerald} />
             </TouchableOpacity>
           </View>
@@ -457,7 +459,7 @@ export default function CreatePostScreen() {
       {uploading && (
         <View style={styles.uploadOverlay}>
           <Skeleton.Circle size={48} />
-          <Text style={styles.uploadText}>Uploading media…</Text>
+          <Text style={styles.uploadText}>{t('compose.uploadingMedia')}</Text>
         </View>
       )}
 
@@ -592,12 +594,12 @@ export default function CreatePostScreen() {
                   visibility,
                   circleId,
                 });
-                Alert.alert('Saved', 'Draft saved to your account');
+                Alert.alert(t('compose.saved'), t('compose.draftSavedToAccount'));
               } catch {
-                Alert.alert('Error', 'Failed to save draft');
+                Alert.alert(t('common.error'), t('compose.failedToSaveDraft'));
               }
             }}
-            accessibilityLabel="Save draft to cloud"
+            accessibilityLabel={t('accessibility.saveDraftToCloud')}
             accessibilityRole="button"
           >
             <LinearGradient

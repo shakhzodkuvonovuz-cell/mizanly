@@ -91,10 +91,10 @@ export default function InterestsScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.count}>
-          {selected.size} selected {selected.size < 3 ? `(need ${3 - selected.size} more)` : ''}
+          {t('onboarding.interests.selectedCount', { count: selected.size })} {selected.size < 3 ? t('onboarding.interests.needMore', { count: 3 - selected.size }) : ''}
         </Text>
         <GradientButton
-          label="Continue"
+          label={t('common.continue')}
           onPress={handleContinue}
           loading={loading}
           disabled={selected.size < 3}

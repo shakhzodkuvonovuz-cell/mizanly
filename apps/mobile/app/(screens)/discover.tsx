@@ -22,19 +22,11 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { feedApi, searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
-const CATEGORIES = [
-  { key: 'all', label: 'All', emoji: '🌟' },
-  { key: 'trending', label: 'Trending', emoji: '🔥' },
-  { key: 'food', label: 'Food', emoji: '🍽️' },
-  { key: 'fashion', label: 'Fashion', emoji: '👗' },
-  { key: 'sports', label: 'Sports', emoji: '⚽' },
-  { key: 'tech', label: 'Tech', emoji: '💻' },
-  { key: 'islamic', label: 'Islamic', emoji: '🕌' },
-  { key: 'art', label: 'Art', emoji: '🎨' },
-];
+const CATEGORY_KEYS = ['all', 'trending', 'food', 'fashion', 'sports', 'tech', 'islamic', 'art'] as const;
 
-type CategoryKey = typeof CATEGORIES[number]['key'];
+type CategoryKey = typeof CATEGORY_KEYS[number];
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -45,10 +37,11 @@ const FEATURED_WIDTH = screenWidth * 0.75;
 const FEATURED_HEIGHT = FEATURED_WIDTH * (9 / 16);
 
 function TrendingHashtagsSkeleton() {
+  const { t } = useTranslation();
   const chips = Array.from({ length: 5 }, (_, i) => i);
   return (
     <View style={styles.trendingSection}>
-      <Text style={styles.sectionTitle}>Trending now</Text>
+      <Text style={styles.sectionTitle}>{t('discover.trendingNow')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.trendingList}>
         {chips.map((i) => (
           <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} style={{ marginRight: spacing.sm }} />
@@ -60,6 +53,7 @@ function TrendingHashtagsSkeleton() {
 
 function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   if (!hashtags.length) return null;
 
@@ -67,7 +61,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
     <View style={styles.trendingSection}>
       <View style={styles.sectionTitleRow}>
         <Icon name="trending-up" size="sm" color={colors.gold} />
-        <Text style={styles.sectionTitle}>Trending now</Text>
+        <Text style={styles.sectionTitle}>{t('discover.trendingNow')}</Text>
       </View>
       <FlatList
             removeClippedSubviews={true}
@@ -97,7 +91,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   );
 }
 
-function CategoryPills({ active, onSelect }: { active: CategoryKey; onSelect: (c: CategoryKey) => void }) {
+function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: string; label: string; emoji: string }[] }) {
   return (
     <View style={styles.categoriesSection}>
       <ScrollView
@@ -105,7 +99,7 @@ function CategoryPills({ active, onSelect }: { active: CategoryKey; onSelect: (c
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.categoriesList}
       >
-        {CATEGORIES.map((cat) => {
+        {categories.map((cat) => {
           const isActive = active === cat.key;
           return (
             <Pressable
@@ -187,12 +181,13 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
 
 function FeaturedSection({ items }: { items: FeaturedItem[] }) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   if (!items.length) return null;
 
   return (
     <View style={styles.featuredSection}>
-      <Text style={styles.sectionTitle}>Featured</Text>
+      <Text style={styles.sectionTitle}>{t('discover.featured')}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -290,8 +285,20 @@ function ExploreGridSkeleton() {
 
 export default function DiscoverScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
+
+  const CATEGORIES = [
+    { key: 'all', label: t('discover.all'), emoji: '🌟' },
+    { key: 'trending', label: t('discover.trending'), emoji: '🔥' },
+    { key: 'food', label: t('discover.categories.food'), emoji: '🍽️' },
+    { key: 'fashion', label: t('discover.categories.fashion'), emoji: '👗' },
+    { key: 'sports', label: t('discover.categories.sports'), emoji: '⚽' },
+    { key: 'tech', label: t('discover.categories.tech'), emoji: '💻' },
+    { key: 'islamic', label: t('discover.categories.islamic'), emoji: '🕌' },
+    { key: 'art', label: t('discover.categories.art'), emoji: '🎨' },
+  ];
 
   // Fetch trending hashtags
   const {
@@ -371,15 +378,15 @@ export default function DiscoverScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Discover"
-          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: 'Search' }]}
+          title={t('discover.title')}
+          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="flag"
-          title="Failed to load discover feed"
-          subtitle="Please try again later"
-          actionLabel="Retry"
+          title={t('discover.loadFailed')}
+          subtitle={t('discover.tryAgainLater')}
+          actionLabel={t('common.retry')}
           onAction={() => { refetchTrending(); refetchExplore(); }}
         />
       </View>
@@ -389,8 +396,8 @@ export default function DiscoverScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Discover"
-        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: 'Search' }]}
+        title={t('discover.title')}
+        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
       />
 
       <View style={styles.headerSpacer} />
@@ -404,19 +411,19 @@ export default function DiscoverScreen() {
         renderItem={({ item }) => <ExploreGridItem item={item} />}
         ListHeaderComponent={
           <>
-            <CategoryPills active={activeCategory} onSelect={setActiveCategory} />
+            <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />
             {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
             {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
-            <Text style={styles.sectionTitle}>Explore</Text>
+            <Text style={styles.sectionTitle}>{t('discover.explore')}</Text>
           </>
         }
         ListEmptyComponent={
           isEmpty ? (
             <EmptyState
               icon="globe"
-              title="Nothing to discover yet"
-              subtitle="Follow more creators or check back later"
-              actionLabel="Find people"
+              title={t('discover.nothingYet')}
+              subtitle={t('discover.followMoreCreators')}
+              actionLabel={t('discover.findPeople')}
               onAction={() => router.push('/(screens)/search' as never)}
             />
           ) : null
@@ -430,7 +437,7 @@ export default function DiscoverScreen() {
             </View>
           ) : exploreItems.length > 0 ? (
             <View style={styles.footer}>
-              <Text style={styles.footerText}>You've reached the end</Text>
+              <Text style={styles.footerText}>{t('discover.reachedEnd')}</Text>
             </View>
           ) : null
         }

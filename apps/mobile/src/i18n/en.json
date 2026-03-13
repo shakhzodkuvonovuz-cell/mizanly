@@ -400,7 +400,16 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "deleteCommentTitle": "Delete Comment",
+    "deleteCommentMessage": "Are you sure you want to delete this comment?",
+    "replyingTo": "Replying to @{{username}}",
+    "replyToUser": "Reply to @{{username}}...",
+    "addComment": "Add a comment...",
+    "startConversation": "Start the conversation",
+    "firstToShare": "Be the first to share your thoughts",
+    "couldNotLoadContent": "Could not load this content",
+    "goBack": "Go Back"
   },
   "majlis": {
     "forYou": "For You",
@@ -486,7 +495,8 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "newThread": "New Thread"
   },
   "risalah": {
     "messages": "Messages",
@@ -1891,5 +1901,108 @@
     "livermorium": "Livermorium",
     "tennessine": "Tennessine",
     "oganesson": "Oganesson"
+  },
+  "onboarding": {
+    "interests": {
+      "title": "What are you interested in?",
+      "subtitle": "Choose at least 3 topics to personalize your feed",
+      "selectedCount": "{{count}} selected",
+      "needMore": "(need {{count}} more)",
+      "quran": "Quran",
+      "fiqh": "Fiqh",
+      "history": "History",
+      "family": "Family",
+      "health": "Health",
+      "business": "Business",
+      "tech": "Technology",
+      "arts": "Arts",
+      "travel": "Travel",
+      "education": "Education",
+      "social": "Social",
+      "sports": "Sports"
+    },
+    "username": {
+      "title": "Choose your username",
+      "subtitle": "This is how people will find you on Mizanly",
+      "placeholder": "username",
+      "checking": "Checking...",
+      "available": "is available",
+      "taken": "This username is taken",
+      "preview": "Your profile will be mizanly.com/@{{username}}",
+      "validation": {
+        "invalidChars": "Only lowercase letters, numbers, dots, and underscores (3-30 chars)"
+      }
+    },
+    "profile": {
+      "title": "Set up your profile",
+      "subtitle": "Tell the community a bit about yourself",
+      "addPhoto": "Add photo",
+      "avatarHint": "You can change this later in settings",
+      "displayName": "Display Name",
+      "namePlaceholder": "Your name",
+      "bioLabel": "Bio",
+      "optional": "(optional)",
+      "bioPlaceholder": "Tell us about yourself...",
+      "skip": "Skip for now",
+      "errors": {
+        "nameRequired": "Display name is required",
+        "nameLength": "Name must be 2-50 characters",
+        "saveFailed": "Failed to save profile. Please try again."
+      }
+    },
+    "suggested": {
+      "title": "People to follow",
+      "subtitle": "Follow some accounts to get started",
+      "follow": "Follow",
+      "following": "Following",
+      "getStarted": "Get Started",
+      "skipForNow": "Skip for now"
+    }
+  },
+  "accessibility": {
+    "threadContent": "Thread content",
+    "threadContinuation": "Thread continuation",
+    "postContent": "Post content",
+    "saveDraftToCloud": "Save draft to cloud",
+    "cancelEditing": "Cancel editing",
+    "saveComment": "Save comment",
+    "replyToComment": "Reply to comment",
+    "editComment": "Edit comment",
+    "deleteComment": "Delete comment",
+    "unlikeComment": "Unlike comment",
+    "likeComment": "Like comment",
+    "cancelReply": "Cancel reply",
+    "commentTextInput": "Comment text input",
+    "sendComment": "Send comment"
+  },
+  "compose": {
+    "whatsOnYourMind": "What's on your mind?",
+    "continueThread": "Continue the thread\u2026",
+    "addToThread": "Add to thread\u2026",
+    "failedToPostThread": "Failed to post thread.",
+    "failedToCreatePost": "Failed to create post. Please try again.",
+    "discardThread": "Discard thread?",
+    "unsavedContent": "You have unsaved content.",
+    "keepEditing": "Keep editing",
+    "discard": "Discard",
+    "chooseCircle": "Choose a Circle",
+    "noCirclesYet": "You haven't created any circles yet.",
+    "createCircle": "Create a circle",
+    "poll": "Poll",
+    "askQuestion": "Ask a question\u2026",
+    "addOption": "+ Add option",
+    "allowMultipleAnswers": "Allow multiple answers",
+    "draftRestored": "Draft restored",
+    "uploadingMedia": "Uploading media\u2026",
+    "limitReached": "Limit reached",
+    "mediaLimit": "You can add up to 10 photos or videos.",
+    "saved": "Saved",
+    "draftSavedToAccount": "Draft saved to your account",
+    "failedToSaveDraft": "Failed to save draft",
+    "visibility": {
+      "everyone": "Everyone",
+      "followers": "Followers",
+      "circle": "Circle"
+    }
   }
 }

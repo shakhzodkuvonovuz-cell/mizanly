@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView,
   FlatList, TextInput,
@@ -16,83 +16,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { Badge } from '@/components/ui/Badge';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { communitiesApi } from '@/services/communitiesApi';
+import type { Community } from '@/types/communities';
 
 const CATEGORIES = [
   'All', 'Islamic', 'Tech', 'Sports', 'Art', 'Food', 'Local', 'Education', 'Health'
 ];
 
-interface Community {
-  id: string;
-  name: string;
-  description: string;
-  memberCount: number;
-  bannerUrl?: string;
-  iconUrl?: string;
-  iconEmoji: string;
-  category: string;
-  isJoined: boolean;
-  unreadCount?: number;
-}
 
-// Mock data
-const MOCK_COMMUNITIES: Community[] = [
-  {
-    id: '1',
-    name: 'Islamic Reminders Daily',
-    description: 'Daily Islamic reminders, hadith, and reflections to strengthen your faith',
-    memberCount: 124500,
-    iconEmoji: '🕌',
-    category: 'Islamic',
-    isJoined: true,
-    unreadCount: 5,
-  },
-  {
-    id: '2',
-    name: 'Muslim Developers',
-    description: 'A community for Muslim software engineers, designers, and tech enthusiasts',
-    memberCount: 8900,
-    iconEmoji: '💻',
-    category: 'Tech',
-    isJoined: false,
-  },
-  {
-    id: '3',
-    name: 'Halal Foodies',
-    description: 'Share halal restaurants, recipes, and food reviews from around the world',
-    memberCount: 45200,
-    iconEmoji: '🍽️',
-    category: 'Food',
-    isJoined: true,
-    unreadCount: 12,
-  },
-  {
-    id: '4',
-    name: 'Islamic Art Gallery',
-    description: 'Beautiful Islamic art, calligraphy, and architecture from around the world',
-    memberCount: 23100,
-    iconEmoji: '🎨',
-    category: 'Art',
-    isJoined: false,
-  },
-  {
-    id: '5',
-    name: 'Muslim Athletes',
-    description: 'Sports discussions, fitness tips, and motivation for Muslim athletes',
-    memberCount: 18700,
-    iconEmoji: '⚽',
-    category: 'Sports',
-    isJoined: false,
-  },
-  {
-    id: '6',
-    name: 'Local Community - NYC',
-    description: 'Muslim community events, meetups, and announcements in New York City',
-    memberCount: 5600,
-    iconEmoji: '🗽',
-    category: 'Local',
-    isJoined: true,
-  },
-];
 
 function CommunityCard({
   community,
@@ -232,8 +163,34 @@ export default function CommunitiesScreen() {
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [activeCategory, setActiveCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [communities, setCommunities] = useState(MOCK_COMMUNITIES);
+  const [communities, setCommunities] = useState<Community[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const fetchCommunities = useCallback(async (cursor?: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await communitiesApi.list(cursor);
+      setCommunities(prev => cursor ? [...prev, ...response.data] : response.data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load communities');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCommunities();
+  }, [fetchCommunities]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchCommunities();
+  }, [fetchCommunities]);
 
   const filteredCommunities = communities.filter(community => {
     const matchesTab = activeTab === 'discover' || community.isJoined;
@@ -245,11 +202,27 @@ export default function CommunitiesScreen() {
 
   const joinedCount = communities.filter(c => c.isJoined).length;
 
-  const handleJoin = useCallback((id: string) => {
+  const handleJoin = useCallback(async (id: string) => {
+    const community = communities.find(c => c.id === id);
+    if (!community) return;
+    // Optimistic update
     setCommunities(prev => prev.map(c =>
       c.id === id ? { ...c, isJoined: !c.isJoined } : c
     ));
-  }, []);
+    try {
+      if (community.isJoined) {
+        await communitiesApi.leave(id);
+      } else {
+        await communitiesApi.join(id);
+      }
+    } catch (err) {
+      // Revert on error
+      setCommunities(prev => prev.map(c =>
+        c.id === id ? { ...c, isJoined: community.isJoined } : c
+      ));
+      // Show error toast maybe
+    }
+  }, [communities]);
 
   const handleCommunityPress = useCallback((community: Community) => {
     // Navigate to community detail

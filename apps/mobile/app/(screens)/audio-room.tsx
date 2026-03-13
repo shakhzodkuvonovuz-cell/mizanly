@@ -21,6 +21,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { audioRoomsApi } from '@/services/audioRoomsApi';
 import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -58,6 +59,7 @@ export default function AudioRoomScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useTranslation();
 
   const pulseAnim = useSharedValue(1);
 
@@ -89,8 +91,8 @@ export default function AudioRoomScreen() {
       setRoom(roomRes.data);
       setParticipants(participantsRes.data.data);
     } catch (err) {
-      setError('Failed to load audio room');
-      Alert.alert('Error', 'Failed to load audio room');
+      setError(t('audioRoom.failedToLoad'));
+      Alert.alert(t('common.error'), t('audioRoom.failedToLoad'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -172,7 +174,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.toggleMute(room.id);
       fetchData(); // refresh participants
     } catch (err) {
-      Alert.alert('Error', 'Failed to toggle mute');
+      Alert.alert(t('common.error'), t('audioRoom.failedToToggleMute'));
     }
   };
 
@@ -182,7 +184,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.toggleHand(room.id);
       fetchData(); // refresh participants
     } catch (err) {
-      Alert.alert('Error', 'Failed to raise hand');
+      Alert.alert(t('common.error'), t('audioRoom.failedToRaiseHand'));
     }
   };
 
@@ -192,7 +194,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.leave(room.id);
       router.back();
     } catch (err) {
-      Alert.alert('Error', 'Failed to leave room');
+      Alert.alert(t('common.error'), t('audioRoom.failedToLeaveRoom'));
     }
   };
 
@@ -202,7 +204,7 @@ export default function AudioRoomScreen() {
       await audioRoomsApi.changeRole(room.id, { userId, role: 'speaker' });
       fetchData();
     } catch (err) {
-      Alert.alert('Error', 'Failed to accept hand');
+      Alert.alert(t('common.error'), t('audioRoom.failedToAcceptHand'));
     }
   };
 
@@ -210,7 +212,7 @@ export default function AudioRoomScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <GlassHeader title="Audio Room" onBack={() => router.back()} />
+        <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} />
           <Skeleton.Rect width="100%" height={150} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
@@ -224,11 +226,11 @@ export default function AudioRoomScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <GlassHeader title="Audio Room" onBack={() => router.back()} />
+        <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
           <Text style={{ color: colors.error, fontSize: fontSize.md, marginBottom: spacing.md }}>{error}</Text>
           <TouchableOpacity onPress={fetchData}>
-            <Text style={{ color: colors.emerald }}>Retry</Text>
+            <Text style={{ color: colors.emerald }}>{t('common.retry')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -242,7 +244,7 @@ export default function AudioRoomScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Audio Room"
+        title={t('tabs.audioRooms')}
         onBack={() => router.back()}
         rightAction={
           <TouchableOpacity style={styles.menuButton} activeOpacity={0.8}>
@@ -270,7 +272,7 @@ export default function AudioRoomScreen() {
             <View style={styles.hostRow}>
               <Avatar uri={room.host.avatarUrl} name={room.host.name} size="md" />
               <View style={styles.hostInfo}>
-                <Text style={styles.hostLabel}>Hosted by @{room.host.username}</Text>
+                <Text style={styles.hostLabel}>{t('audioRoom.hostedBy', { username: room.host.username })}</Text>
               </View>
               <LinearGradient
                 colors={[colors.gold, colors.goldLight]}
@@ -291,16 +293,16 @@ export default function AudioRoomScreen() {
                   colors={['rgba(248,81,73,0.3)', 'rgba(248,81,73,0.15)']}
                   style={styles.liveTextBg}
                 >
-                  <Text style={styles.liveText}>LIVE</Text>
+                  <Text style={styles.liveText}>{t('audioRoom.live')}</Text>
                 </LinearGradient>
               </View>
 
               <View style={styles.statsRow}>
                 <Icon name="users" size="xs" color={colors.gold} />
-                <Text style={styles.listenerCount}>{participants.length} listening</Text>
+                <Text style={styles.listenerCount}>{t('audioRoom.listening', { count: participants.length })}</Text>
                 <Text style={styles.dot}>·</Text>
                 <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.startedText}>Started {formatTimeAgo(room.startedAt)}</Text>
+                <Text style={styles.startedText}>{t('audioRoom.started', { timeAgo: formatTimeAgo(room.startedAt) })}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -319,7 +321,7 @@ export default function AudioRoomScreen() {
               >
                 <Icon name="mic" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>Speakers</Text>
+              <Text style={styles.sectionTitle}>{t('audioRoom.speakers')}</Text>
             </View>
 
             <View style={styles.speakersGrid}>
@@ -376,7 +378,7 @@ export default function AudioRoomScreen() {
               >
                 <Icon name="users" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>Listeners</Text>
+              <Text style={styles.sectionTitle}>{t('audioRoom.listeners')}</Text>
               <View style={styles.countBadge}>
                 <Text style={styles.countText}>{listenerData.length}</Text>
               </View>
@@ -414,7 +416,7 @@ export default function AudioRoomScreen() {
               >
                 <Icon name="edit" size="xs" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>Raised Hands</Text>
+              <Text style={styles.sectionTitle}>{t('audioRoom.raisedHands')}</Text>
               <View style={[styles.countBadge, { backgroundColor: colors.gold }]}>
                 <Text style={[styles.countText, { color: colors.dark.bg }]}>{raisedHandData.length}</Text>
               </View>
@@ -437,11 +439,11 @@ export default function AudioRoomScreen() {
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.acceptButton}
                     >
-                      <Text style={styles.acceptText}>Accept</Text>
+                      <Text style={styles.acceptText}>{t('common.accept')}</Text>
                     </LinearGradient>
                   </TouchableOpacity>
                   <TouchableOpacity activeOpacity={0.8}>
-                    <Text style={styles.declineText}>Decline</Text>
+                    <Text style={styles.declineText}>{t('common.decline')}</Text>
                   </TouchableOpacity>
                 </View>
               </Animated.View>

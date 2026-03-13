@@ -19,6 +19,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CANVAS_H = SCREEN_H * 0.7;
@@ -72,6 +73,7 @@ interface Sticker {
 export default function CreateStoryScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   // ── Media state ──
   const [mediaUri, setMediaUri] = useState<string | null>(null);
@@ -128,9 +130,9 @@ export default function CreateStoryScreen() {
 
   const handleClose = () => {
     if (hasContent) {
-      Alert.alert('Discard Story?', 'You have unsaved changes.', [
-        { text: 'Keep Editing', style: 'cancel' },
-        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+      Alert.alert(t('stories.discardStory'), t('stories.unsavedChanges'), [
+        { text: t('stories.keepEditing'), style: 'cancel' },
+        { text: t('common.discard'), style: 'destructive', onPress: () => router.back() },
       ]);
     } else {
       router.back();
@@ -276,7 +278,7 @@ export default function CreateStoryScreen() {
       queryClient.invalidateQueries({ queryKey: ['stories'] });
       router.back();
     },
-    onError: () => Alert.alert('Error', 'Failed to publish story. Try again.'),
+    onError: () => Alert.alert(t('common.error'), t('stories.failedToPublish')),
   });
 
   const currentFont = FONTS[fontIndex];
@@ -299,9 +301,9 @@ export default function CreateStoryScreen() {
       <Pressable
         key={sticker.id}
         onLongPress={() => {
-          Alert.alert('Remove Sticker?', '', [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Remove', style: 'destructive', onPress: () => removeSticker(sticker.id) },
+          Alert.alert(t('stories.removeSticker'), '', [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('common.remove'), style: 'destructive', onPress: () => removeSticker(sticker.id) },
           ]);
         }}
         style={[
@@ -335,7 +337,7 @@ export default function CreateStoryScreen() {
               paddingVertical: spacing.md, marginTop: spacing.sm,
             }}>
               <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: fontSize.xs, textAlign: 'center' }}>
-                Tap to respond
+                {t('stories.tapToRespond')}
               </Text>
             </View>
           </View>
@@ -347,7 +349,7 @@ export default function CreateStoryScreen() {
               {String(sticker.data.title)}
             </Text>
             <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 2 }}>
-              {sticker.data.endsAt ? String(sticker.data.endsAt) : 'No end date set'}
+              {sticker.data.endsAt ? String(sticker.data.endsAt) : t('stories.noEndDateSet')}
             </Text>
           </View>
         )}
@@ -371,7 +373,7 @@ export default function CreateStoryScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Icon name="map-pin" size="xs" color="#000" />
             <Text style={{ color: '#000', fontSize: fontSize.sm, fontWeight: '600', marginLeft: 4 }}>
-              Location
+              {t('common.location')}
             </Text>
           </View>
         )}
@@ -406,7 +408,7 @@ export default function CreateStoryScreen() {
         <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close" accessibilityRole="button">
           <Icon name="x" size="md" color={colors.text.primary} />
         </Pressable>
-        <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 }}>New Story</Text>
+        <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 }}>{t('stories.newStory')}</Text>
         <View style={{ flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' }}>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'text' ? null : 'text')}
@@ -424,7 +426,7 @@ export default function CreateStoryScreen() {
               fontSize: fontSize.xs,
               color: colors.text.secondary,
               marginTop: 2,
-            }}>Text</Text>
+            }}>{t('stories.text')}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'sticker' ? null : 'sticker')}
@@ -434,7 +436,7 @@ export default function CreateStoryScreen() {
               backgroundColor: activeTool === 'sticker' ? colors.active.emerald20 : 'transparent',
               borderRadius: radius.full,
             }}
-            accessibilityLabel="Add sticker"
+            accessibilityLabel={t('stories.addSticker')}
             accessibilityRole="button"
           >
             <Icon name="smile" size="sm" color={activeTool === 'sticker' ? colors.emerald : colors.text.primary} />
@@ -442,7 +444,7 @@ export default function CreateStoryScreen() {
               fontSize: fontSize.xs,
               color: colors.text.secondary,
               marginTop: 2,
-            }}>Sticker</Text>
+            }}>{t('stories.sticker')}</Text>
           </Pressable>
           <Pressable
             onPress={() => setActiveTool(activeTool === 'filter' ? null : 'filter')}
@@ -452,7 +454,7 @@ export default function CreateStoryScreen() {
               backgroundColor: activeTool === 'filter' ? colors.active.emerald20 : 'transparent',
               borderRadius: radius.full,
             }}
-            accessibilityLabel="Add filter"
+            accessibilityLabel={t('stories.addFilter')}
             accessibilityRole="button"
           >
             <Icon name="layers" size="sm" color={activeTool === 'filter' ? colors.emerald : colors.text.primary} />
@@ -460,7 +462,7 @@ export default function CreateStoryScreen() {
               fontSize: fontSize.xs,
               color: colors.text.secondary,
               marginTop: 2,
-            }}>Filter</Text>
+            }}>{t('stories.filter')}</Text>
           </Pressable>
         </View>
       </View>
@@ -525,7 +527,7 @@ export default function CreateStoryScreen() {
               <Text style={{
                 color: colors.text.secondary,
                 fontSize: fontSize.xs,
-              }}>Drag to move · Pinch to resize</Text>
+              }}>{t('stories.dragToMoveAndResize')}</Text>
             </View>
           </Animated.View>
         )}
@@ -537,13 +539,13 @@ export default function CreateStoryScreen() {
         {/* No media: pick or shoot */}
         {!mediaUri && activeTool === null && (
           <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
-            <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel="Pick from gallery" accessibilityRole="button">
+            <Pressable onPress={pickMedia} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.pickFromGallery')} accessibilityRole="button">
               <Icon name="image" size="sm" color={colors.emerald} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Gallery</Text>
+              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.gallery')}</Text>
             </Pressable>
-            <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel="Take photo" accessibilityRole="button">
+            <Pressable onPress={takePhoto} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.takePhoto')} accessibilityRole="button">
               <Icon name="camera" size="sm" color={colors.emerald} />
-              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Camera</Text>
+              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.camera')}</Text>
             </Pressable>
           </View>
         )}
@@ -551,7 +553,7 @@ export default function CreateStoryScreen() {
         {/* BG gradient picker (text-only stories) */}
         {!mediaUri && (
           <View style={{ marginBottom: spacing.md }}>
-            <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>Background</Text>
+            <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginBottom: spacing.sm }}>{t('stories.background')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {BG_GRADIENTS.map((g, i) => {
                 const isActive = i === bgGradientIndex;
@@ -607,9 +609,9 @@ export default function CreateStoryScreen() {
         )}
 
         {mediaUri && activeTool === null && (
-          <Pressable onPress={pickMedia} style={toolBtnStyle} accessibilityLabel="Change media" accessibilityRole="button">
+          <Pressable onPress={pickMedia} style={toolBtnStyle} accessibilityLabel={t('stories.changeMedia')} accessibilityRole="button">
             <Icon name="image" size="sm" color={colors.text.secondary} />
-            <Text style={{ color: colors.text.secondary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>Change Media</Text>
+            <Text style={{ color: colors.text.secondary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.changeMedia')}</Text>
           </Pressable>
         )}
 
@@ -619,7 +621,7 @@ export default function CreateStoryScreen() {
             <TextInput
               value={text}
               onChangeText={setText}
-              placeholder="Add text..."
+              placeholder={t('stories.addTextPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               multiline
               maxLength={200}
@@ -707,14 +709,14 @@ export default function CreateStoryScreen() {
         {activeTool === 'sticker' && !activeStickerEditor && (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
             {[
-              { type: 'poll' as StickerType, icon: 'bar-chart-2' as const, label: 'Poll' },
-              { type: 'question' as StickerType, icon: 'at-sign' as const, label: 'Question' },
-              { type: 'countdown' as StickerType, icon: 'clock' as const, label: 'Countdown' },
-              { type: 'quiz' as StickerType, icon: 'check-circle' as const, label: 'Quiz' },
-              { type: 'slider' as StickerType, icon: 'trending-up' as const, label: 'Slider' },
-              { type: 'mention' as StickerType, icon: 'at-sign' as const, label: 'Mention' },
-              { type: 'hashtag' as StickerType, icon: 'hash' as const, label: 'Hashtag' },
-              { type: 'location' as StickerType, icon: 'map-pin' as const, label: 'Location' },
+              { type: 'poll' as StickerType, icon: 'bar-chart-2' as const, label: t('stories.poll') },
+              { type: 'question' as StickerType, icon: 'at-sign' as const, label: t('stories.question') },
+              { type: 'countdown' as StickerType, icon: 'clock' as const, label: t('stories.countdown') },
+              { type: 'quiz' as StickerType, icon: 'check-circle' as const, label: t('stories.quiz') },
+              { type: 'slider' as StickerType, icon: 'trending-up' as const, label: t('stories.slider') },
+              { type: 'mention' as StickerType, icon: 'at-sign' as const, label: t('stories.mention') },
+              { type: 'hashtag' as StickerType, icon: 'hash' as const, label: t('stories.hashtag') },
+              { type: 'location' as StickerType, icon: 'map-pin' as const, label: t('common.location') },
             ].map(item => (
               <Pressable key={item.type} onPress={() => {
                 if (item.type === 'location') {
@@ -736,8 +738,8 @@ export default function CreateStoryScreen() {
         {/* ── Sticker editors ── */}
         {activeStickerEditor === 'poll' && (
           <View>
-            <Text style={editorTitle}>Create Poll</Text>
-            <TextInput value={pollQuestion} onChangeText={setPollQuestion} placeholder="Ask a question..."
+            <Text style={editorTitle}>{t('stories.createPoll')}</Text>
+            <TextInput value={pollQuestion} onChangeText={setPollQuestion} placeholder={t('stories.askAQuestion')}
               placeholderTextColor={colors.text.tertiary} maxLength={100}
               style={editorInput} />
             {pollOptions.map((opt, i) => (
@@ -748,15 +750,15 @@ export default function CreateStoryScreen() {
             ))}
             {pollOptions.length < 4 && (
               <Pressable onPress={() => setPollOptions([...pollOptions, ''])} style={{ marginTop: spacing.sm }}>
-                <Text style={{ color: colors.emerald, fontSize: fontSize.sm }}>+ Add option</Text>
+                <Text style={{ color: colors.emerald, fontSize: fontSize.sm }}>{t('stories.addOption')}</Text>
               </Pressable>
             )}
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitPoll} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Poll</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addPoll')}</Text>
               </Pressable>
             </View>
           </View>
@@ -764,15 +766,15 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'question' && (
           <View>
-            <Text style={editorTitle}>Ask a Question</Text>
-            <TextInput value={questionPrompt} onChangeText={setQuestionPrompt} placeholder="Your question..."
+            <Text style={editorTitle}>{t('stories.askAQuestionTitle')}</Text>
+            <TextInput value={questionPrompt} onChangeText={setQuestionPrompt} placeholder={t('stories.yourQuestion')}
               placeholderTextColor={colors.text.tertiary} maxLength={100} style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitQuestion} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Question</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addQuestion')}</Text>
               </Pressable>
             </View>
           </View>
@@ -780,17 +782,17 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'countdown' && (
           <View>
-            <Text style={editorTitle}>Countdown</Text>
-            <TextInput value={countdownTitle} onChangeText={setCountdownTitle} placeholder="Countdown name..."
+            <Text style={editorTitle}>{t('stories.countdown')}</Text>
+            <TextInput value={countdownTitle} onChangeText={setCountdownTitle} placeholder={t('stories.countdownName')}
               placeholderTextColor={colors.text.tertiary} maxLength={60} style={editorInput} />
-            <TextInput value={countdownDate} onChangeText={setCountdownDate} placeholder="End date (YYYY-MM-DD)"
+            <TextInput value={countdownDate} onChangeText={setCountdownDate} placeholder={t('stories.endDate')}
               placeholderTextColor={colors.text.tertiary} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitCountdown} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Countdown</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addCountdown')}</Text>
               </Pressable>
             </View>
           </View>
@@ -798,8 +800,8 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'quiz' && (
           <View>
-            <Text style={editorTitle}>Create Quiz</Text>
-            <TextInput value={quizQuestion} onChangeText={setQuizQuestion} placeholder="Quiz question..."
+            <Text style={editorTitle}>{t('stories.createQuiz')}</Text>
+            <TextInput value={quizQuestion} onChangeText={setQuizQuestion} placeholder={t('stories.quizQuestion')}
               placeholderTextColor={colors.text.tertiary} maxLength={100} style={editorInput} />
             {quizOptions.map((opt, i) => (
               <Pressable key={i} onPress={() => setQuizCorrectIndex(i)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
@@ -818,14 +820,14 @@ export default function CreateStoryScreen() {
               </Pressable>
             ))}
             <Text style={{ color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: spacing.xs }}>
-              Tap the circle to mark the correct answer
+              {t('stories.tapToMarkCorrect')}
             </Text>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitQuiz} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Quiz</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addQuiz')}</Text>
               </Pressable>
             </View>
           </View>
@@ -833,15 +835,15 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'mention' && (
           <View>
-            <Text style={editorTitle}>Mention Someone</Text>
+            <Text style={editorTitle}>{t('stories.mentionSomeone')}</Text>
             <TextInput value={mentionUsername} onChangeText={setMentionUsername} placeholder="@username"
               placeholderTextColor={colors.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitMention} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Mention</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addMention')}</Text>
               </Pressable>
             </View>
           </View>
@@ -849,15 +851,15 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'hashtag' && (
           <View>
-            <Text style={editorTitle}>Add Hashtag</Text>
+            <Text style={editorTitle}>{t('stories.addHashtag')}</Text>
             <TextInput value={hashtagText} onChangeText={setHashtagText} placeholder="#hashtag"
               placeholderTextColor={colors.text.tertiary} autoCapitalize="none" style={editorInput} />
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitHashtag} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Hashtag</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addHashtag')}</Text>
               </Pressable>
             </View>
           </View>
@@ -865,10 +867,10 @@ export default function CreateStoryScreen() {
 
         {activeStickerEditor === 'slider' && (
           <View>
-            <Text style={editorTitle}>Create Slider</Text>
-            <TextInput value={sliderQuestion} onChangeText={setSliderQuestion} placeholder="Ask a question..."
+            <Text style={editorTitle}>{t('stories.createSlider')}</Text>
+            <TextInput value={sliderQuestion} onChangeText={setSliderQuestion} placeholder={t('stories.askAQuestion')}
               placeholderTextColor={colors.text.tertiary} maxLength={100} style={editorInput} />
-            <TextInput value={sliderEmoji} onChangeText={setSliderEmoji} placeholder="Emoji (optional)"
+            <TextInput value={sliderEmoji} onChangeText={setSliderEmoji} placeholder={t('stories.emojiOptional')}
               placeholderTextColor={colors.text.tertiary} maxLength={2} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
               <TextInput value={sliderMin} onChangeText={setSliderMin} placeholder="Min"
@@ -880,10 +882,10 @@ export default function CreateStoryScreen() {
             </View>
             <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.md }}>
               <Pressable onPress={() => setActiveStickerEditor(null)} style={[editorBtn, { backgroundColor: colors.dark.surface }]}>
-                <Text style={{ color: colors.text.primary }}>Cancel</Text>
+                <Text style={{ color: colors.text.primary }}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable onPress={submitSlider} style={[editorBtn, { backgroundColor: colors.emerald, flex: 1 }]}>
-                <Text style={{ color: '#fff', fontWeight: '600' }}>Add Slider</Text>
+                <Text style={{ color: '#fff', fontWeight: '600' }}>{t('stories.addSlider')}</Text>
               </Pressable>
             </View>
           </View>
@@ -903,7 +905,7 @@ export default function CreateStoryScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Icon name="users" size="sm" color={closeFriendsOnly ? colors.emerald : colors.text.secondary} />
               <Text style={{ color: closeFriendsOnly ? colors.emerald : colors.text.primary, marginLeft: spacing.sm, fontSize: fontSize.sm }}>
-                Close Friends Only
+                {t('stories.closeFriendsOnly')}
               </Text>
             </View>
             <View style={{
@@ -918,7 +920,7 @@ export default function CreateStoryScreen() {
 
           {/* Publish button */}
           <GradientButton
-            label="Share Story"
+            label={t('stories.shareStory')}
             onPress={() => publishMutation.mutate()}
             loading={publishMutation.isPending}
             disabled={!mediaUri && !text.trim()}

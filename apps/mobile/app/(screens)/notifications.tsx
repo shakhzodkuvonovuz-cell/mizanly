@@ -24,27 +24,28 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type NotifIconName = React.ComponentProps<typeof Icon>['name'];
 
-function notificationLabel(n: Notification): string {
+function notificationLabel(n: Notification, t: (key: string) => string): string {
   switch (n.type) {
-    case 'LIKE':            return 'liked your post';
-    case 'COMMENT':         return 'commented on your post';
-    case 'FOLLOW':          return 'started following you';
-    case 'FOLLOW_REQUEST':  return 'requested to follow you';
-    case 'FOLLOW_REQUEST_ACCEPTED': return 'accepted your follow request';
-    case 'MENTION':         return 'mentioned you';
-    case 'REPLY':           return 'replied to your comment';
-    case 'REPOST':          return 'reposted your thread';
-    case 'QUOTE_POST':      return 'quoted your thread';
-    case 'THREAD_REPLY':    return 'replied to your thread';
-    case 'CIRCLE_INVITE':   return 'invited you to a circle';
-    case 'CIRCLE_JOIN':     return 'joined your circle';
-    case 'MESSAGE':         return 'sent you a message';
-    case 'CHANNEL_POST':    return 'posted in a channel';
-    case 'LIVE_STARTED':    return 'went live';
-    default:                return 'interacted with you';
+    case 'LIKE':            return t('notifications.likedYourPost');
+    case 'COMMENT':         return t('notifications.commentedOnPost');
+    case 'FOLLOW':          return t('notifications.startedFollowing');
+    case 'FOLLOW_REQUEST':  return t('notifications.requestedToFollow');
+    case 'FOLLOW_REQUEST_ACCEPTED': return t('notifications.acceptedFollowRequest');
+    case 'MENTION':         return t('notifications.mentionedYou');
+    case 'REPLY':           return t('notifications.repliedToComment');
+    case 'REPOST':          return t('notifications.repostedThread');
+    case 'QUOTE_POST':      return t('notifications.quotedThread');
+    case 'THREAD_REPLY':    return t('notifications.repliedToThread');
+    case 'CIRCLE_INVITE':   return t('notifications.invitedToCircle');
+    case 'CIRCLE_JOIN':     return t('notifications.joinedCircle');
+    case 'MESSAGE':         return t('notifications.sentMessage');
+    case 'CHANNEL_POST':    return t('notifications.postedInChannel');
+    case 'LIVE_STARTED':    return t('notifications.wentLive');
+    default:                return t('notifications.interactedWithYou');
   }
 }
 
@@ -72,7 +73,7 @@ function notificationTarget(n: Notification): string | null {
 }
 
 // Group notifications by date
-function groupByDate(items: Notification[]): { title: string; data: Notification[] }[] {
+function groupByDate(items: Notification[], labels: { today: string; yesterday: string; thisWeek: string; earlier: string }): { title: string; data: Notification[] }[] {
   const today: Notification[] = [];
   const yesterday: Notification[] = [];
   const thisWeek: Notification[] = [];
@@ -89,10 +90,10 @@ function groupByDate(items: Notification[]): { title: string; data: Notification
   });
 
   return [
-    today.length > 0 && { title: 'Today', data: today },
-    yesterday.length > 0 && { title: 'Yesterday', data: yesterday },
-    thisWeek.length > 0 && { title: 'This Week', data: thisWeek },
-    earlier.length > 0 && { title: 'Earlier', data: earlier },
+    today.length > 0 && { title: labels.today, data: today },
+    yesterday.length > 0 && { title: labels.yesterday, data: yesterday },
+    thisWeek.length > 0 && { title: labels.thisWeek, data: thisWeek },
+    earlier.length > 0 && { title: labels.earlier, data: earlier },
   ].filter(Boolean) as { title: string; data: Notification[] }[];
 }
 
@@ -116,7 +117,7 @@ function aggregateLikes(items: Notification[]): AggregatedNotification[] {
         result.push({
           ...group[0],
           _aggregatedActors: group.map((g) => ({
-            displayName: g.actor?.displayName ?? 'Someone',
+            displayName: g.actor?.displayName ?? '',
             username: g.actor?.username ?? '',
             avatarUrl: g.actor?.avatarUrl,
           })),
@@ -136,6 +137,7 @@ function aggregateLikes(items: Notification[]): AggregatedNotification[] {
 function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
   const haptic = useHaptic();
+  const { t } = useTranslation();
 
   const acceptMutation = useMutation({
     mutationFn: () => followsApi.acceptRequest(requestId!),
@@ -150,7 +152,7 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
   if (done) {
     return (
       <Text style={styles.requestDone}>
-        {done === 'accepted' ? 'Accepted' : 'Declined'}
+        {done === 'accepted' ? t('notifications.accepted') : t('notifications.declined')}
       </Text>
     );
   }
@@ -158,14 +160,14 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
   return (
     <View style={styles.requestActions}>
       <GradientButton
-        label="Accept"
+        label={t('notifications.accept')}
         size="sm"
         onPress={() => acceptMutation.mutate()}
         loading={acceptMutation.isPending}
         disabled={declineMutation.isPending}
       />
       <GradientButton
-        label="Decline"
+        label={t('notifications.decline')}
         variant="ghost"
         size="sm"
         onPress={() => declineMutation.mutate()}
@@ -180,6 +182,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const iconInfo = notificationIcon(notification.type);
 
   // Entrance animation
@@ -224,7 +227,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
       onPress={handlePress}
       android_ripple={{ color: colors.active.emerald10 }}
       accessibilityRole="button"
-      accessibilityLabel={`View notification from ${notification.actor?.displayName ?? 'Someone'}`}
+      accessibilityLabel={`View notification from ${notification.actor?.displayName ?? t('notifications.someone')}`}
     >
       <Animated.View style={[styles.rowInner, entranceStyle]}>
         {/* Unread accent bar */}
@@ -265,14 +268,14 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
                   </>
                 )}
                 {' and '}
-                <Text style={styles.rowActor}>{notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1)} others</Text>
-                {' liked your post'}
+                <Text style={styles.rowActor}>{notification._aggregatedCount! - (aggregatedActors.length > 1 ? 2 : 1)} {t('notifications.others')}</Text>
+                {' '}{t('notifications.likedYourPost')}
               </>
             ) : (
               <>
-                <Text style={styles.rowActor}>{notification.actor?.displayName ?? 'Someone'}</Text>
+                <Text style={styles.rowActor}>{notification.actor?.displayName ?? t('notifications.someone')}</Text>
                 {' '}
-                <Text>{notificationLabel(notification)}</Text>
+                <Text>{notificationLabel(notification, t)}</Text>
               </>
             )}
           </Text>
@@ -298,16 +301,17 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
 
 type NotifFilter = 'all' | 'mentions' | 'verified';
 
-const NOTIF_TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'mentions', label: 'Mentions' },
-  { key: 'verified', label: 'Verified' },
-];
-
 export default function NotificationsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
+
+  const NOTIF_TABS = [
+    { key: 'all', label: t('notifications.all') },
+    { key: 'mentions', label: t('notifications.mentions') },
+    { key: 'verified', label: t('notifications.verified') },
+  ];
   const setUnread = useStore((s) => s.setUnreadNotifications);
   const [filter, setFilter] = useState<NotifFilter>('all');
 
@@ -324,7 +328,12 @@ export default function NotificationsScreen() {
 
   // Aggregate likes and group by date
   const aggregatedNotifications = aggregateLikes(notifications);
-  const sections = groupByDate(aggregatedNotifications);
+  const sections = groupByDate(aggregatedNotifications, {
+    today: t('notifications.today'),
+    yesterday: t('notifications.yesterday'),
+    thisWeek: t('notifications.thisWeek'),
+    earlier: t('notifications.earlier'),
+  });
 
   const markAllMutation = useMutation({
     mutationFn: () => notificationsApi.markAllRead(),
@@ -346,15 +355,15 @@ export default function NotificationsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Notifications"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('notifications.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
         <View style={{ paddingTop: headerHeight, flex: 1, justifyContent: 'center' }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load content"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('notifications.loadFailed')}
+            subtitle={t('notifications.checkConnection')}
+            actionLabel={t('common.retry')}
             onAction={() => query.refetch()}
           />
         </View>
@@ -365,19 +374,19 @@ export default function NotificationsScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Notifications"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('notifications.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         rightActions={[{
           component: (
             <GradientButton
-              label="Mark all read"
+              label={t('notifications.markAllRead')}
               size="sm"
               variant="ghost"
               onPress={() => markAllMutation.mutate()}
             />
           ),
           onPress: () => markAllMutation.mutate(),
-          accessibilityLabel: 'Mark all notifications as read',
+          accessibilityLabel: t('notifications.markAllReadAccessibility'),
         }]}
       />
 
@@ -417,8 +426,8 @@ export default function NotificationsScreen() {
           ) : (
             <EmptyState
               icon="bell"
-              title="No notifications yet"
-              subtitle="When people interact with your content, you'll see it here"
+              title={t('notifications.noNotifications')}
+              subtitle={t('notifications.noNotificationsSubtitle')}
             />
           )
         }

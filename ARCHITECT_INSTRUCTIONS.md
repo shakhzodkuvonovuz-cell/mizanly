@@ -1,7 +1,7 @@
-# BATCH 35: Tests + Push Notifications + i18n Rollout — 14 Parallel Agents
+# BATCH 36: Payments + Moderation + Push Wiring + Communities — 10 Agents
 
 **Date:** 2026-03-13
-**Theme:** Infrastructure hardening. Three workstreams running in parallel: unit tests for critical backend modules, server-side push notification delivery, and i18n rollout across all screens. All agents create NEW files or modify ONLY their listed files. Zero conflicts.
+**Theme:** Revenue enablement, safety infrastructure, and filling the last major feature gap. All agents create NEW files or modify ONLY their listed files. Zero conflicts.
 
 ---
 
@@ -9,474 +9,363 @@
 
 1. Read `CLAUDE.md` first — mandatory rules
 2. No `any` in non-test code. No `@ts-ignore`. No `@ts-expect-error`.
-3. Test files (*.spec.ts) MAY use `as any` for mocks — this is the ONLY exception
-4. NEVER modify any file not explicitly listed in your agent task
-5. After completing: `git add -A && git commit -m "feat: batch 35 agent N — <description>"`
+3. NEVER modify any file not explicitly listed in your agent task
+4. After completing: `git add -A && git commit -m "feat: batch 36 agent N — <description>"`
 
 ---
 
-## WORKSTREAM A: BACKEND UNIT TESTS (Agents 1-5)
+## AGENT 1: Stripe Payment Backend Module
 
-### Test Pattern (follow for ALL test agents)
+**Creates:**
+- `apps/api/src/modules/payments/payments.module.ts`
+- `apps/api/src/modules/payments/payments.controller.ts`
+- `apps/api/src/modules/payments/payments.service.ts`
+- `apps/api/src/modules/payments/stripe-webhook.controller.ts`
 
-```typescript
-import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../prisma/prisma.service';
-import { SomeService } from './some.service';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+**Prisma:** No new models needed. Uses existing `Tip`, `MembershipSubscription` models. Add payment fields via raw SQL or Prisma @map if needed — but prefer NOT modifying schema. Store Stripe IDs in existing `status` fields or a simple JSON metadata approach.
 
-describe('SomeService', () => {
-  let service: SomeService;
-  let prisma: PrismaService;
+**Endpoints (6):**
+```
+POST   /payments/create-payment-intent    — Create Stripe PaymentIntent for tip (auth, body: { amount, currency, receiverId })
+POST   /payments/create-subscription      — Create Stripe Subscription for membership (auth, body: { tierId, paymentMethodId })
+DELETE /payments/cancel-subscription       — Cancel Stripe Subscription (auth, body: { subscriptionId })
+GET    /payments/payment-methods           — List user's saved payment methods (auth)
+POST   /payments/attach-payment-method     — Attach payment method to customer (auth, body: { paymentMethodId })
+POST   /payments/webhooks/stripe           — Stripe webhook handler (NO auth — uses Stripe signature verification)
+```
 
-  const mockPrismaService = {
-    someModel: {
-      create: jest.fn(),
-      findUnique: jest.fn(),
-      findMany: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      count: jest.fn(),
-    },
+**Service patterns:**
+- Use `stripe` npm package: `import Stripe from 'stripe'`
+- Initialize: `new Stripe(process.env.STRIPE_SECRET_KEY)`
+- Create Stripe Customer on first payment (store customerId in User model or cache)
+- PaymentIntent for one-time tips
+- Subscription for recurring memberships
+- Webhook handler: `payment_intent.succeeded` → update Tip status, `invoice.paid` → extend subscription, `customer.subscription.deleted` → cancel subscription
+
+**Webhook controller:**
+- Use `@RawBody()` decorator for signature verification
+- Verify with `stripe.webhooks.constructEvent(rawBody, sig, webhookSecret)`
+- Log all events, only process known types
+
+**env vars needed:** `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` (user will add to .env)
+
+**~400-500 lines total**
+
+---
+
+## AGENT 2: Mobile Payment Sheet Integration
+
+**Creates:**
+- `apps/mobile/src/services/paymentsApi.ts`
+- `apps/mobile/src/types/payments.ts`
+- `apps/mobile/src/hooks/usePayment.ts`
+
+**paymentsApi.ts:** Mirror backend payment endpoints.
+
+**types/payments.ts:**
+```tsx
+export interface PaymentIntent {
+  clientSecret: string;
+  amount: number;
+  currency: string;
+}
+
+export interface PaymentMethod {
+  id: string;
+  brand: string;  // visa, mastercard, etc.
+  last4: string;
+  expiryMonth: number;
+  expiryYear: number;
+}
+
+export interface CreatePaymentIntentDto {
+  amount: number;
+  currency: string;
+  receiverId: string;
+}
+
+export interface CreateSubscriptionDto {
+  tierId: string;
+  paymentMethodId: string;
+}
+```
+
+**usePayment.ts (~150 lines):**
+```tsx
+// Hook that wraps @stripe/stripe-react-native
+// Uses initPaymentSheet + presentPaymentSheet for one-time payments
+// Uses confirmPayment for subscriptions
+// Manages loading/error states
+// Returns: { payTip, subscribeTier, loading, error }
+
+import { useStripe } from '@stripe/stripe-react-native';
+import { paymentsApi } from '@/services/paymentsApi';
+
+export function usePayment() {
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const payTip = async (receiverId: string, amount: number) => {
+    setLoading(true);
+    try {
+      const { data } = await paymentsApi.createPaymentIntent({ amount, currency: 'usd', receiverId });
+      await initPaymentSheet({ paymentIntentClientSecret: data.clientSecret, merchantDisplayName: 'Mizanly' });
+      const result = await presentPaymentSheet();
+      if (result.error) throw new Error(result.error.message);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Payment failed');
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        SomeService,
-        { provide: PrismaService, useValue: mockPrismaService },
-      ],
-    }).compile();
+  const subscribeTier = async (tierId: string, paymentMethodId: string) => { ... };
 
-    service = module.get<SomeService>(SomeService);
-    prisma = module.get<PrismaService>(PrismaService);
-    jest.clearAllMocks();
-  });
-
-  describe('create', () => {
-    it('should create successfully', async () => {
-      const mockData = { id: '1', title: 'Test' };
-      mockPrismaService.someModel.create.mockResolvedValue(mockData);
-      const result = await service.create('user1', { title: 'Test' });
-      expect(result).toEqual(mockData);
-      expect(mockPrismaService.someModel.create).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ title: 'Test' }) })
-      );
-    });
-
-    it('should throw NotFoundException when not found', async () => {
-      mockPrismaService.someModel.findUnique.mockResolvedValue(null);
-      await expect(service.getById('bad-id')).rejects.toThrow(NotFoundException);
-    });
-
-    it('should throw ForbiddenException when not owner', async () => {
-      mockPrismaService.someModel.findUnique.mockResolvedValue({ id: '1', userId: 'other-user' });
-      await expect(service.delete('not-owner', '1')).rejects.toThrow(ForbiddenException);
-    });
-  });
-});
+  return { payTip, subscribeTier, loading, error };
+}
 ```
 
-**Test coverage targets per agent:**
-- Happy path for every service method
-- Error cases: not found, forbidden, bad request
-- Edge cases: empty results, pagination boundaries
+**~250-350 lines total across 3 files**
 
 ---
 
-## AGENT 1: Events Module Tests
+## AGENT 3: Content Moderation Service Backend
 
 **Creates:**
-- `apps/api/src/modules/events/events.service.spec.ts`
+- `apps/api/src/modules/moderation/moderation.module.ts`
+- `apps/api/src/modules/moderation/moderation.controller.ts`
+- `apps/api/src/modules/moderation/moderation.service.ts`
+- `apps/api/src/modules/moderation/word-filter.ts`
 
-**Test the EventsService methods:**
-1. `create()` — creates event, returns with user relation
-2. `list()` — returns paginated events, handles cursor + empty
-3. `getById()` — returns event with counts; throws NotFoundException when missing
-4. `update()` — updates event; throws ForbiddenException if not owner; throws NotFoundException
-5. `delete()` — deletes event; throws ForbiddenException if not owner
-6. `rsvp()` — creates/updates RSVP; throws NotFoundException for missing event; handles private event access
-7. `removeRsvp()` — removes RSVP; throws NotFoundException
-8. `listAttendees()` — returns paginated attendees
+**Endpoints (5):**
+```
+POST   /moderation/check-text       — Check text for violations (auth, body: { text, context? })
+POST   /moderation/check-image      — Check image URL for violations (auth, body: { imageUrl })
+GET    /moderation/queue             — Get pending moderation queue (admin only)
+PATCH  /moderation/review/:id        — Review flagged content (admin only, body: { action: 'approve'|'remove'|'warn' })
+GET    /moderation/stats             — Moderation stats (admin only)
+```
 
-**Mock:** PrismaService with event, eventRSVP, user models.
-**~250-350 lines**
-
----
-
-## AGENT 2: Monetization Module Tests
-
-**Creates:**
-- `apps/api/src/modules/monetization/monetization.service.spec.ts`
-
-**Test the MonetizationService methods:**
-1. `sendTip()` — creates tip with 10% platform fee; throws BadRequestException for self-tip; throws BadRequestException for invalid amount; throws NotFoundException for missing receiver
-2. `getSentTips()` — returns paginated sent tips
-3. `getReceivedTips()` — returns paginated received tips
-4. `getTipStats()` — returns aggregated stats (total earned, sent, top supporters)
-5. `createTier()` — creates membership tier
-6. `getUserTiers()` — returns user's tiers
-7. `updateTier()` — updates tier; throws ForbiddenException if not owner
-8. `deleteTier()` — deletes tier; throws ForbiddenException if not owner
-9. `toggleTier()` — toggles active/inactive
-10. `subscribe()` — creates subscription; throws BadRequestException for duplicate
-11. `unsubscribe()` — removes subscription; throws NotFoundException
-12. `getSubscribers()` — returns paginated subscribers
-
-**Mock:** PrismaService with tip, membershipTier, membershipSubscription, user models.
-**~350-450 lines**
-
----
-
-## AGENT 3: Two-Factor Module Tests
-
-**Creates:**
-- `apps/api/src/modules/two-factor/two-factor.service.spec.ts`
-
-**Test the TwoFactorService methods:**
-1. `setup()` — generates secret + QR + backup codes; throws BadRequestException if already enabled
-2. `verify()` — enables 2FA with valid code; throws BadRequestException for invalid code
-3. `validate()` — validates TOTP code; returns { valid: false } for bad code
-4. `disable()` — disables 2FA; throws BadRequestException if not enabled; throws for wrong confirmation code
-5. `useBackupCode()` — validates and removes backup code; throws for invalid code
-6. `getStatus()` — returns enabled/disabled state
-
-**Mock:** PrismaService with twoFactorSecret model. Also mock `otplib.authenticator` (generate, verify) and `qrcode.toDataURL`.
-**~250-350 lines**
-
----
-
-## AGENT 4: Audio Rooms Module Tests
-
-**Creates:**
-- `apps/api/src/modules/audio-rooms/audio-rooms.service.spec.ts`
-
-**Test the AudioRoomsService methods:**
-1. `create()` — creates room + auto-adds host as participant with role='host'
-2. `list()` — returns active rooms with pagination
-3. `getById()` — returns room with participants; throws NotFoundException
-4. `endRoom()` — sets status='ended'; throws ForbiddenException if not host
-5. `join()` — adds participant as listener; throws BadRequestException if already joined
-6. `leave()` — removes participant
-7. `changeRole()` — promotes/demotes; throws ForbiddenException if not host
-8. `toggleHand()` — toggles handRaised; throws BadRequestException if not listener
-9. `toggleMute()` — toggles mute for self or host muting others
-10. `listParticipants()` — returns participants by role
-
-**Mock:** PrismaService with audioRoom, audioRoomParticipant models.
-**~350-450 lines**
-
----
-
-## AGENT 5: Islamic Module Tests
-
-**Creates:**
-- `apps/api/src/modules/islamic/islamic.service.spec.ts`
-
-**Test the IslamicService methods:**
-1. `getPrayerTimes()` — calculates times for given lat/lng/method; handles edge cases (high latitude)
-2. `getPrayerMethods()` — returns all calculation methods
-3. `getDailyHadith()` — returns hadith based on day-of-year rotation
-4. `getHadith()` — returns specific hadith; throws NotFoundException for invalid ID
-5. `listHadiths()` — returns paginated hadiths
-6. `getMosques()` — returns nearby mosques sorted by distance
-7. `calculateZakat()` — correct calculation (2.5% above nisab); returns 0 below nisab
-8. `getRamadanInfo()` — returns Ramadan status and timing info
-
-**No PrismaService mock needed** — this service uses static data.
-**~200-300 lines**
-
----
-
-## WORKSTREAM B: SERVER-SIDE PUSH NOTIFICATIONS (Agents 6-7)
-
-### AGENT 6: Push Notification Service Backend
-
-**Creates:**
-- `apps/api/src/modules/notifications/push.service.ts`
-
-**This is a NEW service file in the existing notifications module.** Do NOT modify `notifications.service.ts` or `notifications.controller.ts`.
-
-**Implementation:**
+**word-filter.ts:**
 ```typescript
-import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
+// Static list of prohibited terms (slurs, spam patterns, etc.)
+// Categories: hate_speech, spam, nsfw_text, harassment, self_harm
+// Returns: { flagged: boolean, categories: string[], severity: 'low'|'medium'|'high', matches: string[] }
 
-// Expo push notification API (no SDK needed, just HTTP)
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+const PROHIBITED_PATTERNS: { pattern: RegExp; category: string; severity: string }[] = [
+  // Hate speech patterns
+  // Spam patterns (repeated chars, known spam phrases)
+  // NSFW text patterns
+  // URL spam patterns
+];
 
-interface ExpoPushMessage {
-  to: string;          // ExpoPushToken
-  title: string;
-  body: string;
-  data?: Record<string, string>;
-  sound?: 'default' | null;
-  badge?: number;
-  channelId?: string;
-  priority?: 'default' | 'normal' | 'high';
-  categoryId?: string;
-}
-
-interface ExpoPushTicket {
-  status: 'ok' | 'error';
-  id?: string;
-  message?: string;
-  details?: { error: string };
-}
-
-@Injectable()
-export class PushService {
-  private readonly logger = new Logger(PushService.name);
-
-  constructor(private prisma: PrismaService) {}
-
-  // Send push to a specific user (fetches their device tokens)
-  async sendToUser(userId: string, notification: { title: string; body: string; data?: Record<string, string> }): Promise<void>
-
-  // Send push to multiple users
-  async sendToUsers(userIds: string[], notification: { title: string; body: string; data?: Record<string, string> }): Promise<void>
-
-  // Batch send (Expo supports up to 100 per request)
-  private async sendBatch(messages: ExpoPushMessage[]): Promise<ExpoPushTicket[]>
-
-  // Build notification for different types
-  buildLikeNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> }
-  buildCommentNotification(actorName: string, postId: string, preview: string): { ... }
-  buildFollowNotification(actorName: string, userId: string): { ... }
-  buildMessageNotification(senderName: string, conversationId: string, preview: string): { ... }
-  buildMentionNotification(actorName: string, targetId: string, targetType: string): { ... }
-  buildTipNotification(senderName: string, amount: number): { ... }
-  buildEventNotification(eventTitle: string, eventId: string): { ... }
-  buildPrayerNotification(prayerName: string): { ... }
-}
+export function checkText(text: string): TextCheckResult { ... }
 ```
 
-**Key details:**
-- Use native `fetch()` to call Expo Push API (no firebase-admin needed for Expo)
-- Fetch device tokens from Device model via PrismaService
-- Batch messages (max 100 per API call)
-- Log errors but don't throw (push failures shouldn't break main flow)
-- Handle expired/invalid tokens (remove from DB)
+**Service patterns:**
+- `checkText()`: Run word filter, return violations
+- `checkImage()`: For now, return `{ safe: true }` placeholder (real image moderation = external API like AWS Rekognition, add later)
+- `flagContent()`: Create moderation record in DB
+- Queue management for admin review
+- Auto-action on high-severity: hide content immediately, notify user
+- Stats: flagged today, reviewed, auto-removed, false positives
 
-**~300-400 lines**
+**Prisma:** Uses existing `Report` model for flagged content queue. If Report model doesn't have needed fields, store moderation metadata in the `details` field.
+
+**~500-600 lines total**
 
 ---
 
-## AGENT 7: Wire Push into Notification Events
-
-**Creates:**
-- `apps/api/src/modules/notifications/push-trigger.service.ts`
-
-**This service listens to notification creation and triggers push delivery.**
-
-```typescript
-import { Injectable } from '@nestjs/common';
-import { PushService } from './push.service';
-import { PrismaService } from '../../prisma/prisma.service';
-
-@Injectable()
-export class PushTriggerService {
-  constructor(
-    private push: PushService,
-    private prisma: PrismaService,
-  ) {}
-
-  // Called after a notification is created in the DB
-  async triggerPush(notificationId: string): Promise<void> {
-    const notification = await this.prisma.notification.findUnique({
-      where: { id: notificationId },
-      include: { actor: true },
-    });
-    if (!notification) return;
-
-    const actorName = notification.actor?.displayName || 'Someone';
-
-    switch (notification.type) {
-      case 'like':
-        await this.push.sendToUser(notification.userId,
-          this.push.buildLikeNotification(actorName, notification.postId!));
-        break;
-      case 'comment':
-        await this.push.sendToUser(notification.userId,
-          this.push.buildCommentNotification(actorName, notification.postId!, notification.content || ''));
-        break;
-      case 'follow':
-        await this.push.sendToUser(notification.userId,
-          this.push.buildFollowNotification(actorName, notification.actorId!));
-        break;
-      case 'message':
-        await this.push.sendToUser(notification.userId,
-          this.push.buildMessageNotification(actorName, notification.conversationId || '', notification.content || ''));
-        break;
-      case 'mention':
-        await this.push.sendToUser(notification.userId,
-          this.push.buildMentionNotification(actorName, notification.postId || notification.threadId || '', notification.postId ? 'post' : 'thread'));
-        break;
-      // Add more types as needed
-    }
-  }
-}
-```
-
-**Also update the notifications module to register new services:**
-
-**Modifies:** `apps/api/src/modules/notifications/notifications.module.ts`
-- Add `PushService` and `PushTriggerService` to providers array
-- Import them at top of file
-
-**~200-300 lines for push-trigger.service.ts + ~5 lines changed in module**
-
----
-
-## WORKSTREAM C: i18n ROLLOUT (Agents 8-14)
-
-### i18n Pattern (use in ALL i18n agents)
-
-```tsx
-// Add this import near top of file (after React imports):
-import { useTranslation } from '@/hooks/useTranslation';
-
-// Add inside component function (near other hooks):
-const { t } = useTranslation();
-
-// Replace hardcoded strings:
-// BEFORE: <Text>Settings</Text>
-// AFTER:  <Text>{t('settings.title')}</Text>
-
-// BEFORE: placeholder="Search..."
-// AFTER:  placeholder={t('common.search')}
-
-// BEFORE: <EmptyState title="No posts yet" subtitle="Create your first post" />
-// AFTER:  <EmptyState title={t('saf.emptyFeed')} subtitle={t('saf.emptyFeedSubtitle')} />
-```
-
-**Rules for i18n agents:**
-- Import `useTranslation` from `@/hooks/useTranslation`
-- Call `const { t } = useTranslation()` inside the component
-- Replace ALL user-visible hardcoded English strings with `t('key')` calls
-- Use existing keys from `src/i18n/en.json` where they exist
-- For strings not in en.json yet, use descriptive keys (e.g., `t('audioRoom.joinRoom')`) — we'll add them in a follow-up
-- Do NOT touch non-visible strings (console.log, error messages for devs, API paths)
-- Do NOT change component structure, styling, or logic — ONLY string replacements
-- Preserve string interpolation: `{`${count} followers`}` → `{t('profile.followersCount', { count })}`
-
----
-
-## AGENT 8: i18n — Tab Screens + Layout
+## AGENT 4: Push Trigger Wiring — Posts + Likes + Comments
 
 **Modifies:**
-- `apps/mobile/app/(tabs)/saf.tsx`
-- `apps/mobile/app/(tabs)/bakra.tsx`
-- `apps/mobile/app/(tabs)/majlis.tsx`
-- `apps/mobile/app/(tabs)/risalah.tsx`
-- `apps/mobile/app/(tabs)/create.tsx`
-- `apps/mobile/app/(tabs)/_layout.tsx`
+- `apps/api/src/modules/posts/posts.service.ts`
+- `apps/api/src/modules/notifications/notifications.service.ts`
 
-Replace all hardcoded tab labels, headers, filter labels (e.g., "Following", "For You", "Trending", "Messages") with `t()` calls.
+**What to do:** Add `PushTriggerService` injection and call `triggerPush()` after creating notifications.
 
-**~50-100 lines changed across 6 files**
+**In notifications.service.ts:**
+1. Import `PushTriggerService` from `./push-trigger.service`
+2. Inject in constructor: `private pushTrigger: PushTriggerService`
+3. After every `this.prisma.notification.create(...)` call, add:
+   ```typescript
+   // Fire push notification (non-blocking)
+   this.pushTrigger.triggerPush(notification.id).catch(() => {});
+   ```
+
+**Important:** Find ALL places where notifications are created and add the trigger. Search for `prisma.notification.create` in the service.
+
+**~20-40 lines changed across 2 files**
 
 ---
 
-## AGENT 9: i18n — Auth + Onboarding
+## AGENT 5: Push Trigger Wiring — Follows + Messages
 
 **Modifies:**
-- `apps/mobile/app/(auth)/sign-in.tsx`
-- `apps/mobile/app/(auth)/sign-up.tsx`
-- `apps/mobile/app/onboarding/step1.tsx`
-- `apps/mobile/app/onboarding/step2.tsx`
-- `apps/mobile/app/onboarding/step3.tsx`
-- `apps/mobile/app/onboarding/step4.tsx`
+- `apps/api/src/modules/follows/follows.service.ts`
+- `apps/api/src/modules/messages/messages.service.ts`
 
-Replace all auth strings ("Sign In", "Sign Up", "Forgot Password?", "Welcome", etc.) with `t()` calls.
+**Same pattern as Agent 4:** Import PushTriggerService, inject, call triggerPush after notification creation.
 
-**~60-100 lines changed across 6 files**
+**In follows.service.ts:** After follow notification create → `triggerPush(notification.id)`
+**In messages.service.ts:** After message notification create → `triggerPush(notification.id)`
 
----
+**Important:** Also add the import of `NotificationsModule` or direct `PushTriggerService` import in the respective modules if not already available. Check if follows.module.ts and messages.module.ts need to import NotificationsModule.
 
-## AGENT 10: i18n — Profile + Settings Screens
-
-**Modifies (ONLY these files):**
-- `apps/mobile/app/(screens)/profile/[username].tsx`
-- `apps/mobile/app/(screens)/edit-profile.tsx`
-- `apps/mobile/app/(screens)/settings.tsx`
-- `apps/mobile/app/(screens)/content-settings.tsx`
-- `apps/mobile/app/(screens)/manage-data.tsx`
-- `apps/mobile/app/(screens)/analytics.tsx`
-
-Replace "Edit Profile", "Settings", "Followers", "Following", "Posts", "Save", etc.
-
-**~80-120 lines changed across 6 files**
+**~20-40 lines changed across 2 files**
 
 ---
 
-## AGENT 11: i18n — Saf + Majlis Screens
+## AGENT 6: Communities Backend Module
 
-**Modifies (ONLY these files):**
-- `apps/mobile/app/(screens)/post/[id].tsx`
-- `apps/mobile/app/(screens)/comments.tsx`
-- `apps/mobile/app/(screens)/story-viewer.tsx`
-- `apps/mobile/app/(screens)/story-create.tsx`
-- `apps/mobile/app/(screens)/thread/[id].tsx`
-- `apps/mobile/app/(screens)/compose-thread.tsx`
+**Creates:**
+- `apps/api/src/modules/communities/communities.module.ts`
+- `apps/api/src/modules/communities/communities.controller.ts`
+- `apps/api/src/modules/communities/communities.service.ts`
 
-Replace "Comments", "Reply", "Like", "Share", "What's happening?", etc.
+**Note:** Check if a `Community` model exists in Prisma schema. If not, use a simple approach:
+- Communities can be stored using the existing `Circle` model (circles are basically communities)
+- OR create endpoints that work with a minimal data structure
 
-**~80-120 lines changed across 6 files**
+**Endpoints (8):**
+```
+POST   /communities              — Create community (auth, body: { name, description, coverUrl?, rules?, isPrivate })
+GET    /communities              — List communities (optional auth, cursor pagination)
+GET    /communities/:id          — Get community detail (optional auth)
+PATCH  /communities/:id          — Update community (auth, owner/admin only)
+DELETE /communities/:id          — Delete community (auth, owner only)
+POST   /communities/:id/join     — Join community (auth)
+DELETE /communities/:id/leave    — Leave community (auth)
+GET    /communities/:id/members  — List members (optional auth, pagination)
+```
 
----
+**Service patterns:**
+- Use Circle model if it has the right fields, or use a generic approach
+- Owner = creator, can assign admins
+- Private communities require approval to join
+- Member counts in list response
 
-## AGENT 12: i18n — Risalah (Messaging) Screens
-
-**Modifies (ONLY these files):**
-- `apps/mobile/app/(screens)/conversation/[id].tsx`
-- `apps/mobile/app/(screens)/new-message.tsx`
-- `apps/mobile/app/(screens)/group-info.tsx`
-- `apps/mobile/app/(screens)/group-create.tsx`
-- `apps/mobile/app/(screens)/call.tsx`
-- `apps/mobile/app/(screens)/calls-history.tsx`
-
-Replace "Type a message...", "New Message", "Group Info", "Calling...", etc.
-
-**~80-120 lines changed across 6 files**
-
----
-
-## AGENT 13: i18n — Bakra + Minbar (Video) Screens
-
-**Modifies (ONLY these files):**
-- `apps/mobile/app/(screens)/reel/[id].tsx`
-- `apps/mobile/app/(screens)/video/[id].tsx`
-- `apps/mobile/app/(screens)/channel/[id].tsx`
-- `apps/mobile/app/(screens)/go-live.tsx`
-- `apps/mobile/app/(screens)/duet-create.tsx`
-- `apps/mobile/app/(screens)/stitch-create.tsx`
-
-Replace "Live", "Subscribe", "Views", "Share", etc.
-
-**~80-120 lines changed across 6 files**
+**~400-500 lines total**
 
 ---
 
-## AGENT 14: i18n — Islamic + Monetization + Utility Screens
+## AGENT 7: Wire Communities into Screens
+
+**Modifies:**
+- `apps/mobile/app/(screens)/communities.tsx`
+- `apps/mobile/app/(screens)/create-event.tsx` (remove MOCK_COMMUNITIES, wire to real API)
+
+**Creates:**
+- `apps/mobile/src/services/communitiesApi.ts`
+- `apps/mobile/src/types/communities.ts`
+
+**communities.tsx:** Replace mock data with real API calls to communitiesApi.
+**create-event.tsx:** Replace `MOCK_COMMUNITIES` (line 40) with real fetch from communitiesApi.
+
+**~100-200 lines changed/created**
+
+---
+
+## AGENT 8: i18n Rollout — Remaining Screens Batch 1 (20 files)
 
 **Modifies (ONLY these files):**
-- `apps/mobile/app/(screens)/prayer-times.tsx`
-- `apps/mobile/app/(screens)/hadith.tsx`
-- `apps/mobile/app/(screens)/mosque-finder.tsx`
-- `apps/mobile/app/(screens)/send-tip.tsx`
-- `apps/mobile/app/(screens)/membership-tiers.tsx`
-- `apps/mobile/app/(screens)/2fa-setup.tsx`
-- `apps/mobile/app/(screens)/audio-room.tsx`
-- `apps/mobile/app/(screens)/create-event.tsx`
-- `apps/mobile/app/(screens)/event-detail.tsx`
-- `apps/mobile/app/(screens)/search.tsx`
-- `apps/mobile/app/(screens)/notifications.tsx`
-- `apps/mobile/app/(screens)/discover.tsx`
+- `apps/mobile/app/(screens)/2fa-verify.tsx`
+- `apps/mobile/app/(screens)/account-switcher.tsx`
+- `apps/mobile/app/(screens)/archive.tsx`
+- `apps/mobile/app/(screens)/blocked.tsx`
+- `apps/mobile/app/(screens)/blocked-keywords.tsx`
+- `apps/mobile/app/(screens)/bookmark-collections.tsx`
+- `apps/mobile/app/(screens)/bookmark-folders.tsx`
+- `apps/mobile/app/(screens)/camera.tsx`
+- `apps/mobile/app/(screens)/circles.tsx`
+- `apps/mobile/app/(screens)/close-friends.tsx`
+- `apps/mobile/app/(screens)/communities.tsx` (only if Agent 7 hasn't added it)
+- `apps/mobile/app/(screens)/dhikr-counter.tsx`
+- `apps/mobile/app/(screens)/drafts.tsx`
+- `apps/mobile/app/(screens)/enable-tips.tsx`
+- `apps/mobile/app/(screens)/follow-requests.tsx`
+- `apps/mobile/app/(screens)/image-editor.tsx`
+- `apps/mobile/app/(screens)/islamic-calendar.tsx`
+- `apps/mobile/app/(screens)/quran-share.tsx`
+- `apps/mobile/app/(screens)/zakat-calculator.tsx`
+- `apps/mobile/app/(screens)/ramadan-mode.tsx`
 
-Replace "Prayer Times", "Daily Hadith", "Send Tip", "Search", "Notifications", etc.
+**Pattern:** Add `import { useTranslation } from '@/hooks/useTranslation'` + `const { t } = useTranslation()` + replace all hardcoded English strings with `t()` calls.
 
-**~120-180 lines changed across 12 files**
+**~200-300 lines changed across 20 files**
+
+---
+
+## AGENT 9: i18n Rollout — Remaining Screens Batch 2 (20 files)
+
+**Modifies (ONLY these files):**
+- `apps/mobile/app/(screens)/account-settings.tsx`
+- `apps/mobile/app/(screens)/appeal-moderation.tsx`
+- `apps/mobile/app/(screens)/audio-library.tsx`
+- `apps/mobile/app/(screens)/broadcast-channels.tsx`
+- `apps/mobile/app/(screens)/broadcast/[id].tsx`
+- `apps/mobile/app/(screens)/caption-editor.tsx`
+- `apps/mobile/app/(screens)/chat-theme-picker.tsx`
+- `apps/mobile/app/(screens)/collab-requests.tsx`
+- `apps/mobile/app/(screens)/community-posts.tsx`
+- `apps/mobile/app/(screens)/conversation-media.tsx`
+- `apps/mobile/app/(screens)/create-broadcast.tsx`
+- `apps/mobile/app/(screens)/create-playlist.tsx`
+- `apps/mobile/app/(screens)/create-post.tsx`
+- `apps/mobile/app/(screens)/create-reel.tsx`
+- `apps/mobile/app/(screens)/create-thread.tsx`
+- `apps/mobile/app/(screens)/create-video.tsx`
+- `apps/mobile/app/(screens)/edit-channel.tsx`
+- `apps/mobile/app/(screens)/green-screen-editor.tsx`
+- `apps/mobile/app/(screens)/video-editor.tsx`
+- `apps/mobile/app/(screens)/voice-recorder.tsx`
+
+**Same i18n pattern as Agent 8.**
+
+**~200-300 lines changed across 20 files**
+
+---
+
+## AGENT 10: i18n Rollout — Remaining Screens Batch 3 (16 files)
+
+**Modifies (ONLY these files):**
+- `apps/mobile/app/(screens)/followers/[userId].tsx`
+- `apps/mobile/app/(screens)/following/[userId].tsx`
+- `apps/mobile/app/(screens)/hashtag-explore.tsx`
+- `apps/mobile/app/(screens)/hashtag/[tag].tsx`
+- `apps/mobile/app/(screens)/live/[id].tsx`
+- `apps/mobile/app/(screens)/majlis-lists.tsx`
+- `apps/mobile/app/(screens)/manage-broadcast.tsx`
+- `apps/mobile/app/(screens)/muted.tsx`
+- `apps/mobile/app/(screens)/mutual-followers.tsx`
+- `apps/mobile/app/(screens)/my-reports.tsx`
+- `apps/mobile/app/(screens)/pinned-messages.tsx`
+- `apps/mobile/app/(screens)/playlist/[id].tsx`
+- `apps/mobile/app/(screens)/playlists/[channelId].tsx`
+- `apps/mobile/app/(screens)/qr-code.tsx`
+- `apps/mobile/app/(screens)/qr-scanner.tsx`
+- `apps/mobile/app/(screens)/report.tsx`
+- `apps/mobile/app/(screens)/reports/[id].tsx`
+- `apps/mobile/app/(screens)/save-to-playlist.tsx`
+- `apps/mobile/app/(screens)/saved.tsx`
+- `apps/mobile/app/(screens)/schedule-live.tsx`
+- `apps/mobile/app/(screens)/schedule-post.tsx`
+- `apps/mobile/app/(screens)/search-results.tsx`
+- `apps/mobile/app/(screens)/share-profile.tsx`
+- `apps/mobile/app/(screens)/sound/[id].tsx`
+- `apps/mobile/app/(screens)/starred-messages.tsx`
+- `apps/mobile/app/(screens)/sticker-browser.tsx`
+- `apps/mobile/app/(screens)/theme-settings.tsx`
+- `apps/mobile/app/(screens)/trending-audio.tsx`
+- `apps/mobile/app/(screens)/watch-history.tsx`
+- `apps/mobile/app/(tabs)/minbar.tsx`
+
+**Same i18n pattern. Skip any file that already has useTranslation.**
+
+**~200-400 lines changed**
 
 ---
 
@@ -484,55 +373,27 @@ Replace "Prayer Times", "Daily Hadith", "Send Tip", "Search", "Notifications", e
 
 | Agent | Files | Type |
 |-------|-------|------|
-| 1 | events.service.spec.ts (NEW) | Test |
-| 2 | monetization.service.spec.ts (NEW) | Test |
-| 3 | two-factor.service.spec.ts (NEW) | Test |
-| 4 | audio-rooms.service.spec.ts (NEW) | Test |
-| 5 | islamic.service.spec.ts (NEW) | Test |
-| 6 | push.service.ts (NEW) | Push |
-| 7 | push-trigger.service.ts (NEW) + notifications.module.ts (MODIFY) | Push |
-| 8 | (tabs)/*.tsx + _layout.tsx | i18n |
-| 9 | (auth)/*.tsx + onboarding/*.tsx | i18n |
-| 10 | profile, edit-profile, settings, content-settings, manage-data, analytics | i18n |
-| 11 | post/[id], comments, story-viewer, story-create, thread/[id], compose-thread | i18n |
-| 12 | conversation/[id], new-message, group-info, group-create, call, calls-history | i18n |
-| 13 | reel/[id], video/[id], channel/[id], go-live, duet-create, stitch-create | i18n |
-| 14 | prayer-times, hadith, mosque-finder, send-tip, membership-tiers, 2fa-setup, audio-room, create-event, event-detail, search, notifications, discover | i18n |
+| 1 | modules/payments/ (4 NEW files) | Backend |
+| 2 | services/paymentsApi.ts, types/payments.ts, hooks/usePayment.ts (3 NEW) | Mobile |
+| 3 | modules/moderation/ (4 NEW files) | Backend |
+| 4 | posts.service.ts, notifications.service.ts (MODIFY) | Backend |
+| 5 | follows.service.ts, messages.service.ts (MODIFY) | Backend |
+| 6 | modules/communities/ (3 NEW files) | Backend |
+| 7 | communities.tsx, create-event.tsx (MODIFY) + communitiesApi.ts, communities types (NEW) | Mobile |
+| 8 | 20 screen files (MODIFY — i18n) | Mobile |
+| 9 | 20 screen files (MODIFY — i18n) | Mobile |
+| 10 | ~30 remaining screen files + minbar tab (MODIFY — i18n) | Mobile |
 
 **ZERO file conflicts between any agents.**
 
 ---
 
-## VERIFICATION CHECKLIST
-
-**Tests (Agents 1-5):**
-- [ ] Each spec file compiles and follows Jest/NestJS test pattern
-- [ ] Mocks PrismaService correctly
-- [ ] Tests happy path for every service method
-- [ ] Tests error cases (NotFoundException, ForbiddenException, BadRequestException)
-- [ ] `as any` ONLY used for mock typing
-
-**Push (Agents 6-7):**
-- [ ] push.service.ts uses Expo Push API correctly
-- [ ] Handles batch sending (max 100 per request)
-- [ ] Handles expired tokens
-- [ ] push-trigger.service.ts maps all notification types
-- [ ] notifications.module.ts updated with new providers
-- [ ] 0 `as any` in non-test code
-
-**i18n (Agents 8-14):**
-- [ ] `useTranslation` imported in every modified file
-- [ ] `const { t } = useTranslation()` called inside component
-- [ ] ALL user-visible strings replaced with `t()` calls
-- [ ] No changes to component structure, styling, or logic
-- [ ] String interpolation preserved (using i18next params)
-- [ ] 0 `as any`
-
----
-
 ## POST-BATCH TASKS
 
-1. Run tests: `cd apps/api && npm test` — verify all 5 new spec files pass
-2. Add any missing i18n keys to `en.json` and `ar.json`
-3. Verify push service works with Expo Go test device
-4. Consider adding `push-trigger` calls in notification creation endpoints (separate wiring batch)
+1. Register new modules in `app.module.ts`: PaymentsModule, ModerationModule, CommunitiesModule
+2. `cd apps/api && npm install stripe`
+3. `cd apps/mobile && npm install @stripe/stripe-react-native`
+4. Add env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
+5. Run `npx prisma db push` if any schema changes needed
+6. Fill missing i18n keys in en.json and ar.json
+7. Test Stripe webhook with `stripe listen --forward-to localhost:3000/api/v1/payments/webhooks/stripe`

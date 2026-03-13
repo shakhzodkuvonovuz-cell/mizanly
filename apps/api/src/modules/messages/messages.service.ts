@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { PushTriggerService } from '../notifications/push-trigger.service';
 import { MessageType } from '@prisma/client';
 
 const CONVERSATION_SELECT = {
@@ -68,7 +69,7 @@ const MESSAGE_SELECT = {
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService, private pushTrigger: PushTriggerService) {}
 
   async getConversations(userId: string) {
     const memberships = await this.prisma.conversationMember.findMany({

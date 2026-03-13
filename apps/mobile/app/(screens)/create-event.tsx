@@ -24,6 +24,7 @@ import type { CreateEventDto, EventPrivacy, EventType as ApiEventType } from '@/
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Alert } from 'react-native';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -41,6 +42,7 @@ const MOCK_COMMUNITIES: Community[] = []; // TODO: fetch communities from API
 
 export default function CreateEventScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [eventType, setEventType] = useState<EventType>('in-person');
@@ -103,9 +105,9 @@ export default function CreateEventScreen() {
       const response = await eventsApi.create(dto);
       router.push(`/(screens)/event-detail?id=${response.data.id}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create event';
+      const message = err instanceof Error ? err.message : t('events.createFailed');
       setError(message);
-      Alert.alert('Error', 'Failed to create event. Please try again.');
+      Alert.alert(t('common.error'), t('events.createFailedRetry'));
     } finally {
       setSubmitting(false);
     }
@@ -145,7 +147,7 @@ export default function CreateEventScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Create Event" onBack={() => router.back()} />
+      <GlassHeader title={t('events.createEvent')} onBack={() => router.back()} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -166,17 +168,17 @@ export default function CreateEventScreen() {
               <View style={styles.coverContent}>
                 <Icon name="camera" size={48} color={colors.gold} />
                 <Text style={styles.coverTitle}>
-                  {hasCover ? 'Change Cover Photo' : 'Add Cover Photo'}
+                  {hasCover ? t('events.changeCoverPhoto') : t('events.addCoverPhoto')}
                 </Text>
                 {!hasCover && (
-                  <Text style={styles.coverHint}>Tap to upload</Text>
+                  <Text style={styles.coverHint}>{t('events.tapToUpload')}</Text>
                 )}
               </View>
             </LinearGradient>
             {hasCover && (
               <View style={styles.coverOverlay}>
                 <TouchableOpacity style={styles.changeButton} activeOpacity={0.8}>
-                  <Text style={styles.changeText}>Change</Text>
+                  <Text style={styles.changeText}>{t('common.change')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -196,11 +198,11 @@ export default function CreateEventScreen() {
               >
                 <Icon name="pencil" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Event Name</Text>
+              <Text style={styles.formLabel}>{t('events.eventName')}</Text>
             </View>
             <TextInput
               style={styles.titleInput}
-              placeholder="What's the event called?"
+              placeholder={t('events.eventNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={title}
               onChangeText={setTitle}
@@ -225,11 +227,11 @@ export default function CreateEventScreen() {
               >
                 <Icon name="edit" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Description</Text>
+              <Text style={styles.formLabel}>{t('events.description')}</Text>
             </View>
             <TextInput
               style={styles.descriptionInput}
-              placeholder="What's this event about?"
+              placeholder={t('events.descriptionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={description}
               onChangeText={setDescription}
@@ -257,11 +259,11 @@ export default function CreateEventScreen() {
               >
                 <Icon name="calendar" size="xs" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Date & Time</Text>
+              <Text style={styles.formLabel}>{t('events.dateTime')}</Text>
             </View>
 
             <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('start')} activeOpacity={0.8}>
-              <Text style={styles.dateLabel}>Start</Text>
+              <Text style={styles.dateLabel}>{t('events.start')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
@@ -271,7 +273,7 @@ export default function CreateEventScreen() {
             <View style={styles.dateDivider} />
 
             <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('end')} activeOpacity={0.8}>
-              <Text style={styles.dateLabel}>End</Text>
+              <Text style={styles.dateLabel}>{t('events.end')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
@@ -279,7 +281,7 @@ export default function CreateEventScreen() {
             </TouchableOpacity>
 
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>All Day</Text>
+              <Text style={styles.toggleLabel}>{t('events.allDay')}</Text>
               <Switch
                 value={allDay}
                 onValueChange={setAllDay}
@@ -303,11 +305,11 @@ export default function CreateEventScreen() {
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Location</Text>
+              <Text style={styles.formLabel}>{t('events.location')}</Text>
             </View>
 
             <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Online Event</Text>
+              <Text style={styles.toggleLabel}>{t('events.onlineEvent')}</Text>
               <Switch
                 value={isOnline}
                 onValueChange={setIsOnline}
@@ -318,7 +320,7 @@ export default function CreateEventScreen() {
 
             <TextInput
               style={styles.locationInput}
-              placeholder={isOnline ? "Add meeting URL" : "Add location"}
+              placeholder={isOnline ? t('events.addMeetingUrl') : t('events.addLocation')}
               placeholderTextColor={colors.text.tertiary}
               value={location}
               onChangeText={setLocation}
@@ -339,35 +341,38 @@ export default function CreateEventScreen() {
               >
                 <Icon name="layers" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Event Type</Text>
+              <Text style={styles.formLabel}>{t('events.eventType')}</Text>
             </View>
 
             <View style={styles.pillRow}>
-              {(['in-person', 'online', 'hybrid'] as EventType[]).map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={styles.pillButton}
-                  onPress={() => setEventType(type)}
-                  activeOpacity={0.8}
-                >
-                  {eventType === type ? (
-                    <LinearGradient
-                      colors={[colors.emerald, colors.emeraldDark]}
-                      style={styles.pillGradient}
-                    >
-                      <Text style={[styles.pillText, styles.pillTextActive]}>
-                        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', '-')}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles.pillInner}>
-                      <Text style={styles.pillText}>
-                        {type.charAt(0).toUpperCase() + type.slice(1).replace('-', '-')}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+              {(['in-person', 'online', 'hybrid'] as EventType[]).map((type) => {
+                const eventTypeLabel = type === 'in-person' ? t('events.inPerson') : type === 'online' ? t('events.online') : t('events.hybrid');
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={styles.pillButton}
+                    onPress={() => setEventType(type)}
+                    activeOpacity={0.8}
+                  >
+                    {eventType === type ? (
+                      <LinearGradient
+                        colors={[colors.emerald, colors.emeraldDark]}
+                        style={styles.pillGradient}
+                      >
+                        <Text style={[styles.pillText, styles.pillTextActive]}>
+                          {eventTypeLabel}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.pillInner}>
+                        <Text style={styles.pillText}>
+                          {eventTypeLabel}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </LinearGradient>
         </Animated.View>
@@ -385,35 +390,38 @@ export default function CreateEventScreen() {
               >
                 <Icon name={getPrivacyIcon()} size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Privacy</Text>
+              <Text style={styles.formLabel}>{t('events.privacy')}</Text>
             </View>
 
             <View style={styles.pillRow}>
-              {(['public', 'members', 'invite'] as PrivacyType[]).map((type) => (
-                <TouchableOpacity
-                  key={type}
-                  style={styles.pillButton}
-                  onPress={() => setPrivacy(type)}
-                  activeOpacity={0.8}
-                >
-                  {privacy === type ? (
-                    <LinearGradient
-                      colors={[colors.emerald, colors.emeraldDark]}
-                      style={styles.pillGradient}
-                    >
-                      <Text style={[styles.pillText, styles.pillTextActive]}>
-                        {type === 'members' ? 'Members' : type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles.pillInner}>
-                      <Text style={styles.pillText}>
-                        {type === 'members' ? 'Members' : type.charAt(0).toUpperCase() + type.slice(1)}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              ))}
+              {(['public', 'members', 'invite'] as PrivacyType[]).map((type) => {
+                const privacyLabel = type === 'public' ? t('events.public') : type === 'members' ? t('events.members') : t('events.inviteOnly');
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    style={styles.pillButton}
+                    onPress={() => setPrivacy(type)}
+                    activeOpacity={0.8}
+                  >
+                    {privacy === type ? (
+                      <LinearGradient
+                        colors={[colors.emerald, colors.emeraldDark]}
+                        style={styles.pillGradient}
+                      >
+                        <Text style={[styles.pillText, styles.pillTextActive]}>
+                          {privacyLabel}
+                        </Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.pillInner}>
+                        <Text style={styles.pillText}>
+                          {privacyLabel}
+                        </Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </LinearGradient>
         </Animated.View>
@@ -431,19 +439,19 @@ export default function CreateEventScreen() {
               >
                 <Icon name="users" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Community</Text>
+              <Text style={styles.formLabel}>{t('events.community')}</Text>
             </View>
 
             <TouchableOpacity style={styles.communityDropdown} activeOpacity={0.8}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
                   ? MOCK_COMMUNITIES.find(c => c.id === selectedCommunity)?.name
-                  : 'Post to community'}
+                  : t('events.postToCommunity')}
               </Text>
               <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
             </TouchableOpacity>
 
-            <Text style={styles.sectionTitle}>Your Communities</Text>
+            <Text style={styles.sectionTitle}>{t('events.yourCommunities')}</Text>
             {MOCK_COMMUNITIES.map((community, index) => (
               <TouchableOpacity
                 key={community.id}
@@ -458,7 +466,7 @@ export default function CreateEventScreen() {
                 <Avatar uri={community.avatar} name={community.name} size="sm" />
                 <View style={styles.communityInfo}>
                   <Text style={styles.communityName}>{community.name}</Text>
-                  <Text style={styles.communityMeta}>{community.memberCount.toLocaleString()} members</Text>
+                  <Text style={styles.communityMeta}>{community.memberCount.toLocaleString()} {t('events.members')}</Text>
                 </View>
                 {selectedCommunity === community.id && (
                   <LinearGradient
@@ -486,13 +494,13 @@ export default function CreateEventScreen() {
               >
                 <Icon name="bell" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formLabel}>Reminders</Text>
+              <Text style={styles.formLabel}>{t('events.reminders')}</Text>
             </View>
 
             <View style={styles.toggleRow}>
               <View style={styles.reminderLabel}>
                 <Icon name="clock" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
-                <Text style={styles.toggleLabel}>Remind 1 hour before</Text>
+                <Text style={styles.toggleLabel}>{t('events.remind1Hour')}</Text>
               </View>
               <Switch
                 value={reminder1h}
@@ -505,7 +513,7 @@ export default function CreateEventScreen() {
             <View style={styles.toggleRow}>
               <View style={styles.reminderLabel}>
                 <Icon name="calendar" size="xs" color={colors.text.secondary} style={styles.reminderIcon} />
-                <Text style={styles.toggleLabel}>Remind 1 day before</Text>
+                <Text style={styles.toggleLabel}>{t('events.remind1Day')}</Text>
               </View>
               <Switch
                 value={reminder1d}
@@ -524,31 +532,31 @@ export default function CreateEventScreen() {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity activeOpacity={0.8}>
-          <Text style={styles.draftText}>Save Draft</Text>
+          <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
         </TouchableOpacity>
         <TouchableOpacity activeOpacity={0.8} onPress={handleSubmit} disabled={submitting}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.createButton}
           >
-            <Text style={styles.createText}>{submitting ? 'Creating...' : 'Create Event'}</Text>
+            <Text style={styles.createText}>{submitting ? t('events.creating') : t('events.createEvent')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>
 
       {/* Date Picker Bottom Sheet */}
       <BottomSheet visible={showDatePicker !== null} onClose={() => setShowDatePicker(null)} snapPoint={0.6}>
-        <Text style={styles.sheetTitle}>Select Date & Time</Text>
+        <Text style={styles.sheetTitle}>{t('events.selectDateTime')}</Text>
         <View style={styles.datePickerPlaceholder}>
           <Text style={styles.datePickerText}>
-            Date/time picker would appear here
+            {t('events.datePickerPlaceholder')}
           </Text>
           <Text style={styles.datePickerHint}>
-            For simplicity, we'll schedule for selected date.
+            {t('events.datePickerHint')}
           </Text>
           <TouchableOpacity style={styles.confirmButton} onPress={() => handleDateSelect(tempDate)}>
             <LinearGradient colors={[colors.emerald, colors.emeraldDark]} style={styles.confirmButtonGradient}>
-              <Text style={styles.confirmButtonText}>Confirm</Text>
+              <Text style={styles.confirmButtonText}>{t('common.confirm')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

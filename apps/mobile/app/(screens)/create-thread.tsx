@@ -23,13 +23,14 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 type VisIconName = React.ComponentProps<typeof Icon>['name'];
-const VISIBILITY_OPTIONS: { value: Visibility; label: string; iconName: VisIconName }[] = [
-  { value: 'PUBLIC', label: 'Everyone', iconName: 'globe' },
-  { value: 'FOLLOWERS', label: 'Followers', iconName: 'users' },
-  { value: 'CIRCLE', label: 'Circle', iconName: 'lock' },
+const VISIBILITY_KEYS: { value: Visibility; labelKey: string; iconName: VisIconName }[] = [
+  { value: 'PUBLIC', labelKey: 'compose.visibility.everyone', iconName: 'globe' },
+  { value: 'FOLLOWERS', labelKey: 'compose.visibility.followers', iconName: 'users' },
+  { value: 'CIRCLE', labelKey: 'compose.visibility.circle', iconName: 'lock' },
 ];
 
 const CHAR_LIMIT = 500;
@@ -82,6 +83,7 @@ function ThreadPart({
   setShowAutocomplete,
   inputRef,
 }: ThreadPartProps) {
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 100)} style={styles.part}>
       <View style={styles.partLeft}>
@@ -108,9 +110,9 @@ function ThreadPart({
           <TextInput
             ref={(ref) => inputRef(index, ref)}
             style={styles.partInput}
-            placeholder={index === 0 ? "What's on your mind?" : 'Continue the thread…'}
+            placeholder={index === 0 ? t('compose.whatsOnYourMind') : t('compose.continueThread')}
             placeholderTextColor={colors.text.tertiary}
-            accessibilityLabel={index === 0 ? "Thread content" : "Thread continuation"}
+            accessibilityLabel={index === 0 ? t('accessibility.threadContent') : t('accessibility.threadContinuation')}
             value={part.content}
             onChangeText={(text) => {
               onChange(text);
@@ -253,6 +255,7 @@ export default function CreateThreadScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const [parts, setParts] = useState<ChainPart[]>([{ content: '', media: [] }]);
   const [visibility, setVisibility] = useState<Visibility>('PUBLIC');
@@ -413,7 +416,7 @@ export default function CreateThreadScreen() {
       router.back();
     },
     onError: (err: Error) => {
-      Alert.alert('Error', err.message || 'Failed to post thread.');
+      Alert.alert(t('common.error'), err.message || t('compose.failedToPostThread'));
     },
   });
 
@@ -422,9 +425,9 @@ export default function CreateThreadScreen() {
   const handleBack = () => {
     const hasContent = parts.some((p) => p.content.trim() || p.media.length > 0);
     if (hasContent) {
-      Alert.alert('Discard thread?', 'You have unsaved content.', [
-        { text: 'Keep editing' },
-        { text: 'Discard', style: 'destructive', onPress: () => {
+      Alert.alert(t('compose.discardThread'), t('compose.unsavedContent'), [
+        { text: t('compose.keepEditing') },
+        { text: t('compose.discard'), style: 'destructive', onPress: () => {
           AsyncStorage.removeItem(THREAD_DRAFT_KEY).catch(() => {});
           router.back();
         }},
@@ -441,9 +444,9 @@ export default function CreateThreadScreen() {
         <TouchableOpacity onPress={handleBack} hitSlop={8}>
           <Icon name="x" size="md" color={colors.text.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>New Thread</Text>
+        <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
         <GradientButton
-          label="Post"
+          label={t('common.post')}
           size="sm"
           onPress={() => canPost && createMutation.mutate()}
           loading={createMutation.isPending}
@@ -459,11 +462,11 @@ export default function CreateThreadScreen() {
         >
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <Icon name={VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
+            <Icon name={VISIBILITY_KEYS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
             <Text style={styles.visPillText}>
               {visibility === 'CIRCLE' && selectedCircle
                 ? selectedCircle.name
-                : VISIBILITY_OPTIONS.find((o) => o.value === visibility)!.label}
+                : t(VISIBILITY_KEYS.find((o) => o.value === visibility)!.labelKey)}
             </Text>
             <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
           </View>
@@ -472,7 +475,7 @@ export default function CreateThreadScreen() {
 
       {showVisibility && (
         <View style={styles.visMenu}>
-          {VISIBILITY_OPTIONS.map((opt) => (
+          {VISIBILITY_KEYS.map((opt) => (
             <TouchableOpacity
               key={opt.value}
               style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
@@ -483,7 +486,7 @@ export default function CreateThreadScreen() {
               }}
             >
               <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
-              <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{opt.label}</Text>
+              <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{t(opt.labelKey)}</Text>
               {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
             </TouchableOpacity>
           ))}
@@ -492,7 +495,7 @@ export default function CreateThreadScreen() {
 
       {/* Circle picker */}
       <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
-        <Text style={styles.sheetTitle}>Choose a Circle</Text>
+        <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
         {circlesQuery.isLoading ? (
           <View style={styles.skeletonList}>
             {Array.from({ length: 3 }).map((_, i) => (
@@ -507,9 +510,9 @@ export default function CreateThreadScreen() {
           </View>
         ) : circles.length === 0 ? (
           <View style={styles.emptyCircles}>
-            <Text style={styles.emptyCirclesText}>You haven't created any circles yet.</Text>
+            <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
             <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>Create a circle</Text>
+              <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
               <Icon name="chevron-right" size="sm" color={colors.emerald} />
             </TouchableOpacity>
           </View>
@@ -566,7 +569,7 @@ export default function CreateThreadScreen() {
                   >
                     <Icon name="bar-chart-2" size="sm" color="#0D1117" />
                   </LinearGradient>
-                  <Text style={styles.pollFormTitle}>Poll</Text>
+                  <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
                   <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                     <LinearGradient
                       colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
@@ -578,7 +581,7 @@ export default function CreateThreadScreen() {
                 </View>
                 <TextInput
                   style={styles.pollQuestion}
-                  placeholder="Ask a question…"
+                  placeholder={t('compose.askQuestion')}
                   placeholderTextColor={colors.text.tertiary}
                   value={poll.question}
                   onChangeText={(t) => setPoll((p) => p ? { ...p, question: t } : p)}
@@ -614,7 +617,7 @@ export default function CreateThreadScreen() {
                     style={styles.pollAddOption}
                     onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
                   >
-                    <Text style={styles.pollAddOptionText}>+ Add option</Text>
+                    <Text style={styles.pollAddOptionText}>{t('compose.addOption')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity
@@ -624,7 +627,7 @@ export default function CreateThreadScreen() {
                   <View style={[styles.pollCheckbox, poll.allowMultiple && styles.pollCheckboxOn]}>
                     {poll.allowMultiple && <Icon name="check" size={12} color="#fff" />}
                   </View>
-                  <Text style={styles.pollAllowMultipleText}>Allow multiple answers</Text>
+                  <Text style={styles.pollAllowMultipleText}>{t('compose.allowMultipleAnswers')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -652,7 +655,7 @@ export default function CreateThreadScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.addPartTextContainer}
             >
-              <Text style={styles.addPartText}>Add to thread…</Text>
+              <Text style={styles.addPartText}>{t('compose.addToThread')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
