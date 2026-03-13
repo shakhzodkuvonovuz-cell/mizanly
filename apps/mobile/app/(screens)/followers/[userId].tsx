@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { User, PaginatedResponse } from '@/types';
 
 function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
@@ -27,9 +28,11 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
   onFollow: () => void;
   index?: number;
 }) {
+  const { t } = useTranslation();
+
   return (
     <Animated.View entering={FadeInUp.delay(index * 20).duration(300)}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityLabel={`View ${user.displayName}'s profile`} accessibilityRole="link">
+      <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityLabel={t('screens.followers.viewProfile', { name: user.displayName })} accessibilityRole="link">
         <LinearGradient
           colors={user.isFollowing ? ['rgba(10,123,79,0.08)', 'rgba(10,123,79,0.02)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
           style={styles.row}
@@ -44,7 +47,7 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
           </View>
           {!isMe && (
             <GradientButton
-              label={user.isFollowing ? 'Following' : 'Follow'}
+              label={user.isFollowing ? t('profile.following') : t('common.follow')}
               variant={user.isFollowing ? 'secondary' : 'primary'}
               size="sm"
               onPress={onFollow}
@@ -61,6 +64,7 @@ export default function FollowersScreen() {
   const router = useRouter();
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const followersQuery = useInfiniteQuery({
     queryKey: ['followers', userId],
@@ -96,14 +100,14 @@ export default function FollowersScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Followers"
+          title={t('profile.followers')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('saf.couldNotLoadContent')}
+          subtitle={t('common.networkError')}
+          actionLabel={t('common.retry')}
           onAction={() => followersQuery.refetch()}
         />
       </SafeAreaView>
@@ -113,7 +117,7 @@ export default function FollowersScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Followers"
+        title={t('profile.followers')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -149,7 +153,7 @@ export default function FollowersScreen() {
               ))}
             </View>
           ) : (
-            <EmptyState icon="users" title="No followers yet" subtitle="Share your profile to grow your community" />
+            <EmptyState icon="users" title={t('screens.followers.emptyState')} subtitle={t('screens.followers.emptySubtitle')} />
           )
         }
         ListFooterComponent={() =>

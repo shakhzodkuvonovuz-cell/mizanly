@@ -2004,5 +2004,13 @@
       "followers": "Followers",
       "circle": "Circle"
     }
+  },
+  "screens": {
+    "followers": {
+      "title": "Followers",
+      "viewProfile": "View {{name}}'s profile",
+      "emptyState": "No followers yet",
+      "emptySubtitle": "Share your profile to grow your community"
+    }
   }
 }

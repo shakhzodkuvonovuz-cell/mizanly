@@ -681,7 +681,7 @@
     "charity": "Charity"
   },
   "profile": {
-    "followers": "Followers",
+    "followers": "المتابِعون",
     "following": "المتابَعون",
     "posts": "منشورات",
     "editProfile": "Edit Profile",
@@ -1749,6 +1749,16 @@
     "dim": "Dim",
     "light": "فاتح",
     "dark": "مظلم",
+  },
+  "screens": {
+    "followers": {
+      "title": "المتابِعون",
+      "viewProfile": "عرض ملف {{name}} الشخصي",
+      "emptyState": "لا يوجد متابعون بعد",
+      "emptySubtitle": "شارك ملفك الشخصي لتنمية مجتمعك"
+    }
+  },
+  "testData": {
     "white": "White",
     "black": "Black",
     "gray": "Gray",
