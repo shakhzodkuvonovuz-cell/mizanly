@@ -51,6 +51,9 @@ import { MonetizationModule } from './modules/monetization/monetization.module';
 import { TwoFactorModule } from './modules/two-factor/two-factor.module';
 import { AudioRoomsModule } from './modules/audio-rooms/audio-rooms.module';
 import { IslamicModule } from './modules/islamic/islamic.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
+import { CommunitiesModule } from './modules/communities/communities.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -114,6 +117,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     TwoFactorModule,
     AudioRoomsModule,
     IslamicModule,
+    PaymentsModule,
+    ModerationModule,
+    CommunitiesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
