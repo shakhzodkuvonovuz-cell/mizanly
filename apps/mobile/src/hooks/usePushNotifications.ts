@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
+import { router } from 'expo-router';
+import type { Subscription } from 'expo-notifications';
 import { devicesApi } from '@/services/api';
 
 export function usePushNotifications(isSignedIn: boolean) {

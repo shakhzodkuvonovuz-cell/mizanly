@@ -104,6 +104,7 @@ export class NotificationsService {
     commentId?: string;
     reelId?: string;
     videoId?: string;
+    conversationId?: string;
     followRequestId?: string;
     title?: string;
     body?: string;
@@ -119,6 +120,7 @@ export class NotificationsService {
         commentId: params.commentId,
         reelId: params.reelId,
         videoId: params.videoId,
+        conversationId: params.conversationId,
         followRequestId: params.followRequestId,
         title: params.title,
         body: params.body,

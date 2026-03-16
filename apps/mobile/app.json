@@ -35,7 +35,9 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-router",
+      ["expo-router", {
+        "origin": "https://mizanly.app"
+      }],
       "expo-image-picker",
       "expo-camera",
       ["expo-av", { "microphonePermission": "Allow Mizanly to access your microphone for voice notes and video." }],
