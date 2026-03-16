@@ -24,6 +24,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -32,6 +33,7 @@ export default function BroadcastChannelScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [channel, setChannel] = useState<BroadcastChannelWithSubscription | null>(null);
   const [messages, setMessages] = useState<BroadcastMessage[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
@@ -192,7 +194,7 @@ export default function BroadcastChannelScreen() {
                 style={styles.pinBadge}
               >
                 <Icon name="map-pin" size="xs" color={colors.emerald} />
-                <Text style={styles.pinTextEmerald}>Pinned</Text>
+                <Text style={styles.pinTextEmerald}>{t('broadcast.pinned')}</Text>
               </LinearGradient>
             )}
           </View>
@@ -204,9 +206,9 @@ export default function BroadcastChannelScreen() {
   const renderEmptyState = useCallback(() => (
     <EmptyState
       icon="message-circle"
-      title="No messages yet"
-      subtitle="Be the first to send a message"
-      actionLabel="Refresh"
+      title={t('broadcast.emptyState.noMessages')}
+      subtitle={t('broadcast.emptyState.beFirst')}
+      actionLabel={t('common.refresh')}
       onAction={handleRefresh}
     />
   ), [handleRefresh]);
@@ -227,18 +229,18 @@ export default function BroadcastChannelScreen() {
     ))
   ), []);
 
-  const headerTitle = channel ? channel.name : 'Channel';
+  const headerTitle = channel ? channel.name : t('broadcast.channel');
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <GlassHeader
         title={headerTitle}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         rightAction={{
           icon: channel?.isMuted ? 'volume-x' : 'bell',
           onPress: handleToggleMute,
-          accessibilityLabel: channel?.isMuted ? 'Unmute' : 'Mute',
+          accessibilityLabel: channel?.isMuted ? t('broadcast.unmute') : t('broadcast.mute'),
         }}
       />
       <View style={styles.container}>
@@ -256,19 +258,19 @@ export default function BroadcastChannelScreen() {
               >
                 <Icon name="users" size="xs" color={colors.gold} />
                 <Text style={styles.channelSubscribers}>
-                  {channel.subscribersCount.toLocaleString()} subscribers
+                  {channel.subscribersCount.toLocaleString()} {t('broadcast.subscribers')}
                 </Text>
               </LinearGradient>
               <View style={styles.channelActions}>
                 <GradientButton
-                  label={channel.isSubscribed ? 'Subscribed' : 'Subscribe'}
+                  label={channel.isSubscribed ? t('broadcast.subscribed') : t('broadcast.subscribe')}
                   variant={channel.isSubscribed ? 'secondary' : 'primary'}
                   onPress={handleSubscribe}
                 />
                 {channel.isMuted && (
                   <Pressable style={styles.muteBadge}>
                     <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
-                    <Text style={styles.muteText}>Muted</Text>
+                    <Text style={styles.muteText}>{t('broadcast.muted')}</Text>
                   </Pressable>
                 )}
               </View>
@@ -302,7 +304,7 @@ export default function BroadcastChannelScreen() {
           <View style={styles.composeContainer}>
             <TextInput
               style={styles.composeInput}
-              placeholder="Send a message..."
+              placeholder={t('broadcast.sendMessagePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={newMessage}
               onChangeText={setNewMessage}
@@ -327,13 +329,13 @@ export default function BroadcastChannelScreen() {
         >
           {selectedMessage?.user?.id === channel?.userId && (
             <BottomSheetItem
-              label={selectedMessage?.isPinned ? 'Unpin message' : 'Pin message'}
+              label={selectedMessage?.isPinned ? t('broadcast.unpinMessage') : t('broadcast.pinMessage')}
               icon={<Icon name="map-pin" size="md" color={colors.text.primary} />}
               onPress={handlePinMessage}
             />
           )}
           <BottomSheetItem
-            label="Delete message"
+            label={t('broadcast.deleteMessage')}
             icon={<Icon name="trash" size="md" color={colors.error} />}
             onPress={handleDeleteMessage}
             destructive

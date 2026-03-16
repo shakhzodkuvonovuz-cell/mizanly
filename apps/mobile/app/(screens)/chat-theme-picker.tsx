@@ -17,6 +17,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -82,6 +83,7 @@ const PHOTOS: ThemeOption[] = [
 
 export default function ChatThemePickerScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('solid');
   const [selectedTheme, setSelectedTheme] = useState<string>('default');
   const [opacity, setOpacity] = useState(30);
@@ -99,6 +101,17 @@ export default function ChatThemePickerScreen() {
       GRADIENTS.find(t => t.id === selectedTheme) ||
       { color: colors.dark.bg }
     );
+  };
+
+  const getTranslatedThemeName = (id: string) => {
+    const theme = SOLID_COLORS.find(t => t.id === id) ||
+      GRADIENTS.find(t => t.id === id) ||
+      PATTERNS.find(t => t.id === id) ||
+      PHOTOS.find(t => t.id === id);
+    if (theme) {
+      return t(`chatThemePicker.themeName.${id}`);
+    }
+    return t('chatThemePicker.custom');
   };
 
   const renderColorItem = ({ item, index }: { item: ThemeOption; index: number }) => {
@@ -128,7 +141,7 @@ export default function ChatThemePickerScreen() {
               </LinearGradient>
             )}
           </View>
-          <Text style={styles.themeName}>{item.name}</Text>
+          <Text style={styles.themeName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -158,7 +171,7 @@ export default function ChatThemePickerScreen() {
               </View>
             )}
           </LinearGradient>
-          <Text style={styles.themeName}>{item.name}</Text>
+          <Text style={styles.themeName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -179,7 +192,7 @@ export default function ChatThemePickerScreen() {
             style={styles.patternInner}
           >
             <Icon name={item.icon || 'layers'} size="md" color={colors.emerald} />
-            <Text style={styles.patternName}>{item.name}</Text>
+            <Text style={styles.patternName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
           </LinearGradient>
           {isSelected && (
             <View style={styles.patternCheck}>
@@ -206,12 +219,12 @@ export default function ChatThemePickerScreen() {
             <View style={styles.uploadContent}>
               <Icon name="image" size="lg" color={colors.emerald} />
               <Icon name="plus" size="xs" color={colors.gold} style={styles.uploadPlus} />
-              <Text style={styles.uploadText}>{item.name}</Text>
+              <Text style={styles.uploadText}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
             </View>
           ) : (
             <View style={styles.photoContent}>
               <Icon name="image" size="md" color={colors.text.tertiary} />
-              <Text style={styles.themeName}>{item.name}</Text>
+              <Text style={styles.themeName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
             </View>
           )}
           {isSelected && !isUpload && (
@@ -228,7 +241,7 @@ export default function ChatThemePickerScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Chat Theme" onBack={() => router.back()} />
+      <GlassHeader title={t('chatThemePicker.title')} onBack={() => router.back()} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -254,7 +267,7 @@ export default function ChatThemePickerScreen() {
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.2)']}
                   style={styles.receivedMessage}
                 >
-                  <Text style={styles.messageText}>Hey! Have you seen the new design?</Text>
+                  <Text style={styles.messageText}>{t('chatThemePicker.preview.message1')}</Text>
                 </LinearGradient>
               </View>
               <View style={[styles.messageRow, styles.sentRow]}>
@@ -262,7 +275,7 @@ export default function ChatThemePickerScreen() {
                   colors={[colors.emerald, colors.emeraldDark]}
                   style={styles.sentMessage}
                 >
-                  <Text style={styles.sentMessageText}>Yes! It looks amazing ✨</Text>
+                  <Text style={styles.sentMessageText}>{t('chatThemePicker.preview.message2')}</Text>
                 </LinearGradient>
               </View>
               <View style={styles.messageRow}>
@@ -270,16 +283,13 @@ export default function ChatThemePickerScreen() {
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.2)']}
                   style={styles.receivedMessage}
                 >
-                  <Text style={styles.messageText}>Love the emerald accents</Text>
+                  <Text style={styles.messageText}>{t('chatThemePicker.preview.message3')}</Text>
                 </LinearGradient>
               </View>
             </View>
           </LinearGradient>
           <Text style={styles.currentLabel}>
-            Current: {SOLID_COLORS.find(t => t.id === selectedTheme)?.name ||
-              GRADIENTS.find(t => t.id === selectedTheme)?.name ||
-              PATTERNS.find(t => t.id === selectedTheme)?.name ||
-              'Custom'}
+            {t('chatThemePicker.current')} {getTranslatedThemeName(selectedTheme)}
           </Text>
         </View>
 
@@ -303,11 +313,11 @@ export default function ChatThemePickerScreen() {
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.tabGradient}
                     >
-                      <Text style={[styles.tabText, styles.tabTextActive]}>{tab.label}</Text>
+                      <Text style={[styles.tabText, styles.tabTextActive]}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
                     </LinearGradient>
                   ) : (
                     <View style={styles.tabInner}>
-                      <Text style={styles.tabText}>{tab.label}</Text>
+                      <Text style={styles.tabText}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
                     </View>
                   )}
                 </TouchableOpacity>
@@ -377,11 +387,11 @@ export default function ChatThemePickerScreen() {
               >
                 <Icon name="sliders" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.controlsTitle}>Appearance</Text>
+              <Text style={styles.controlsTitle}>{t('chatThemePicker.appearance')}</Text>
             </View>
 
             <View style={styles.sliderRow}>
-              <Text style={styles.sliderLabel}>Wallpaper Opacity</Text>
+              <Text style={styles.sliderLabel}>{t('chatThemePicker.wallpaperOpacity')}</Text>
               <Text style={styles.sliderValue}>{opacity}%</Text>
             </View>
             <View style={styles.sliderTrack}>
@@ -389,7 +399,7 @@ export default function ChatThemePickerScreen() {
             </View>
 
             <View style={[styles.sliderRow, { marginTop: spacing.lg }]}>
-              <Text style={styles.sliderLabel}>Message Blur</Text>
+              <Text style={styles.sliderLabel}>{t('chatThemePicker.messageBlur')}</Text>
               <Text style={styles.sliderValue}>{blur}%</Text>
             </View>
             <View style={styles.sliderTrack}>
@@ -405,14 +415,14 @@ export default function ChatThemePickerScreen() {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity activeOpacity={0.8}>
-          <Text style={styles.resetText}>Reset to Default</Text>
+          <Text style={styles.resetText}>{t('chatThemePicker.resetToDefault')}</Text>
         </TouchableOpacity>
         <TouchableOpacity activeOpacity={0.8}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.applyButton}
           >
-            <Text style={styles.applyText}>Apply</Text>
+            <Text style={styles.applyText}>{t('chatThemePicker.apply')}</Text>
           </LinearGradient>
         </TouchableOpacity>
       </View>

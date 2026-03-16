@@ -9,6 +9,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -45,6 +46,7 @@ const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58
 
 export default function CaptionEditorScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [captions, setCaptions] = useState<Caption[]>(MOCK_CAPTIONS);
   const [currentTime, setCurrentTime] = useState(12);
@@ -96,7 +98,7 @@ export default function CaptionEditorScreen() {
       id: Date.now().toString(),
       startTime: newStart,
       endTime: newStart + 4,
-      text: 'New caption...',
+      text: t('captionEditor.newCaption'),
     };
     setCaptions([...captions, newCaption]);
   };
@@ -143,7 +145,7 @@ export default function CaptionEditorScreen() {
             value={item.text}
             onChangeText={(text) => handleCaptionTextChange(item.id, text)}
             multiline
-            placeholder="Enter caption text..."
+            placeholder={t('captionEditor.placeholder')}
             placeholderTextColor={colors.text.tertiary}
           />
         </LinearGradient>
@@ -177,7 +179,7 @@ export default function CaptionEditorScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Edit Captions" showBackButton />
+      <GlassHeader title={t('captionEditor.title')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -207,7 +209,7 @@ export default function CaptionEditorScreen() {
                         color: selectedColor,
                       }
                     ]}>
-                      {getCurrentCaption()?.text || 'Caption preview appears here'}
+                      {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
                     </Text>
                   </View>
                 )}
@@ -221,7 +223,7 @@ export default function CaptionEditorScreen() {
                       color: selectedColor,
                     }
                   ]}>
-                    {getCurrentCaption()?.text || 'Caption preview appears here'}
+                    {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
                   </Text>
                 )}
                 {selectedBackground === 'None' && (
@@ -236,7 +238,7 @@ export default function CaptionEditorScreen() {
                       textShadowRadius: 2,
                     }
                   ]}>
-                    {getCurrentCaption()?.text || 'Caption preview appears here'}
+                    {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
                   </Text>
                 )}
               </View>
@@ -298,14 +300,14 @@ export default function CaptionEditorScreen() {
         {/* Caption List */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>Captions ({captions.length})</Text>
+            <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
             <TouchableOpacity style={styles.addCaptionButton} onPress={handleAddCaption}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={styles.addCaptionGradient}
               >
                 <Icon name="circle-plus" size="xs" color={colors.emerald} />
-                <Text style={styles.addCaptionText}>Add</Text>
+                <Text style={styles.addCaptionText}>{t('common.add')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>
@@ -336,11 +338,11 @@ export default function CaptionEditorScreen() {
                     <Icon name="type" size="sm" color={colors.emerald} />
                   </LinearGradient>
                 </View>
-                <Text style={styles.styleTitle}>Style</Text>
+                <Text style={styles.styleTitle}>{t('captionEditor.style')}</Text>
               </View>
 
               {/* Font Selector */}
-              <Text style={styles.styleLabel}>Font</Text>
+              <Text style={styles.styleLabel}>{t('captionEditor.font')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
                 {FONT_OPTIONS.map((font) => (
                   <TouchableOpacity
@@ -359,7 +361,7 @@ export default function CaptionEditorScreen() {
                         styles.selectorButtonText,
                         selectedFont === font && styles.selectorButtonTextActive
                       ]}>
-                        {font}
+                        {t(`captionEditor.fontOption.${font.toLowerCase()}`)}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -367,7 +369,7 @@ export default function CaptionEditorScreen() {
               </ScrollView>
 
               {/* Size Selector */}
-              <Text style={styles.styleLabel}>Size</Text>
+              <Text style={styles.styleLabel}>{t('captionEditor.size')}</Text>
               <View style={styles.selectorRow}>
                 {SIZE_OPTIONS.map((size) => (
                   <TouchableOpacity
@@ -386,7 +388,7 @@ export default function CaptionEditorScreen() {
                         styles.selectorButtonText,
                         selectedSize === size && styles.selectorButtonTextActive
                       ]}>
-                        {size}
+                        {t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -394,7 +396,7 @@ export default function CaptionEditorScreen() {
               </View>
 
               {/* Position Selector */}
-              <Text style={styles.styleLabel}>Position</Text>
+              <Text style={styles.styleLabel}>{t('captionEditor.position')}</Text>
               <View style={styles.selectorRow}>
                 {POSITION_OPTIONS.map((position) => (
                   <TouchableOpacity
@@ -413,7 +415,7 @@ export default function CaptionEditorScreen() {
                         styles.selectorButtonText,
                         selectedPosition === position && styles.selectorButtonTextActive
                       ]}>
-                        {position}
+                        {t(`captionEditor.positionOption.${position.toLowerCase()}`)}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -421,7 +423,7 @@ export default function CaptionEditorScreen() {
               </View>
 
               {/* Background Selector */}
-              <Text style={styles.styleLabel}>Background</Text>
+              <Text style={styles.styleLabel}>{t('captionEditor.background')}</Text>
               <View style={styles.selectorRow}>
                 {BACKGROUND_OPTIONS.map((bg) => (
                   <TouchableOpacity
@@ -440,7 +442,7 @@ export default function CaptionEditorScreen() {
                         styles.selectorButtonText,
                         selectedBackground === bg && styles.selectorButtonTextActive
                       ]}>
-                        {bg}
+                        {t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
@@ -448,7 +450,7 @@ export default function CaptionEditorScreen() {
               </View>
 
               {/* Color Picker */}
-              <Text style={styles.styleLabel}>Color</Text>
+              <Text style={styles.styleLabel}>{t('captionEditor.color')}</Text>
               <View style={styles.colorRow}>
                 {TEXT_COLORS.map((color) => (
                   <TouchableOpacity
@@ -488,12 +490,12 @@ export default function CaptionEditorScreen() {
               {isGenerating ? (
                 <>
                   <Skeleton.Circle size={16} />
-                  <Text style={styles.autoGenText}>Processing...</Text>
+                  <Text style={styles.autoGenText}>{t('captionEditor.processing')}</Text>
                 </>
               ) : (
                 <>
                   <Icon name="mic" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.autoGenText}>Auto-Generate</Text>
+                  <Text style={styles.autoGenText}>{t('captionEditor.autoGenerate')}</Text>
                 </>
               )}
             </LinearGradient>
@@ -505,7 +507,7 @@ export default function CaptionEditorScreen() {
               style={styles.saveGradient}
             >
               <Icon name="check" size="sm" color="#FFF" />
-              <Text style={styles.saveText}>Save</Text>
+              <Text style={styles.saveText}>{t('common.save')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </LinearGradient>

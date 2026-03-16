@@ -15,12 +15,14 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi, channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function CreatePlaylistScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ channelId?: string }>();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const [title, setTitle] = useState('');
@@ -49,17 +51,17 @@ export default function CreatePlaylistScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert('Error', 'Failed to create playlist. Please try again.');
+      Alert.alert(t('common.error'), t('createPlaylist.createError'));
     },
   });
 
   const handleCreate = () => {
     if (!title.trim()) {
-      Alert.alert('Required', 'Please enter a title for the playlist.');
+      Alert.alert(t('common.required'), t('createPlaylist.titleRequired'));
       return;
     }
     if (!channelId) {
-      Alert.alert('Error', 'Channel not found. Cannot create playlist.');
+      Alert.alert(t('common.error'), t('createPlaylist.channelNotFound'));
       return;
     }
     createMutation.mutate({
@@ -74,15 +76,15 @@ export default function CreatePlaylistScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="New Playlist" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('createPlaylist.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="flag"
-          title="Could not load channel" 
-          subtitle="You need a channel to create a playlist." 
-          actionLabel="Go Back" 
+          title={t('createPlaylist.errorTitle')} 
+          subtitle={t('createPlaylist.errorSubtitle')} 
+          actionLabel={t('common.goBack')} 
           onAction={() => router.back()} 
         />
       </View>
@@ -93,8 +95,8 @@ export default function CreatePlaylistScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="New Playlist" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('createPlaylist.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -109,8 +111,8 @@ export default function CreatePlaylistScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader 
-        title="New Playlist" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        title={t('createPlaylist.title')} 
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
       />
       
       <ScrollView
@@ -129,7 +131,7 @@ export default function CreatePlaylistScreen() {
             >
               <Icon name="edit" size="sm" color={colors.gold} />
             </LinearGradient>
-            <Text style={styles.label}>Title</Text>
+            <Text style={styles.label}>{t('createPlaylist.label.title')}</Text>
           </View>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -137,7 +139,7 @@ export default function CreatePlaylistScreen() {
           >
             <TextInput
               style={styles.input}
-              placeholder="e.g., Favorite Nasheeds"
+              placeholder={t('createPlaylist.placeholder.title')}
               placeholderTextColor={colors.text.tertiary}
               value={title}
               onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
@@ -157,7 +159,7 @@ export default function CreatePlaylistScreen() {
             >
               <Icon name="file-text" size="sm" color={colors.gold} />
             </LinearGradient>
-            <Text style={styles.label}>Description (Optional)</Text>
+            <Text style={styles.label}>{t('createPlaylist.label.description')}</Text>
           </View>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -165,7 +167,7 @@ export default function CreatePlaylistScreen() {
           >
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="What's this playlist about?"
+              placeholder={t('createPlaylist.placeholder.description')}
               placeholderTextColor={colors.text.tertiary}
               value={description}
               onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
@@ -194,9 +196,9 @@ export default function CreatePlaylistScreen() {
               </LinearGradient>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.toggleTitle}>{isPublic ? 'Public Playlist' : 'Private Playlist'}</Text>
+              <Text style={styles.toggleTitle}>{t(isPublic ? 'createPlaylist.toggle.publicTitle' : 'createPlaylist.toggle.privateTitle')}</Text>
               <Text style={styles.toggleDesc}>
-                {isPublic ? 'Anyone can search for and view this playlist' : 'Only you can see this playlist'}
+                {t(isPublic ? 'createPlaylist.toggle.publicDescription' : 'createPlaylist.toggle.privateDescription')}
               </Text>
             </View>
             <Switch
@@ -211,7 +213,7 @@ export default function CreatePlaylistScreen() {
         {/* Create Button */}
         <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrap}>
           <GradientButton
-            title={createMutation.isPending ? "Creating..." : "Create Playlist"}
+            title={createMutation.isPending ? t('createPlaylist.creating') : t('createPlaylist.create')}
             onPress={handleCreate}
             disabled={createMutation.isPending || title.trim().length === 0 || !channelId}
           />

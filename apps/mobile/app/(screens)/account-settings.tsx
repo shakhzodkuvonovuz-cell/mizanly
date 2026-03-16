@@ -147,7 +147,7 @@ export default function AccountSettingsScreen() {
               [
                 { text: t('common.cancel'), style: 'cancel' },
                 {
-                  text: 'Confirm Delete',
+                  text: t('accountSettings.deleteConfirmButton'),
                   style: 'destructive',
                   onPress: async () => {
                     await requestDeletionMutation.mutateAsync();
@@ -163,12 +163,12 @@ export default function AccountSettingsScreen() {
 
   const handleExportData = () => {
     Alert.alert(
-      'Download Your Data',
-      'This will generate a file containing all your data. It may take a few minutes.',
+      t('accountSettings.downloadDataTitle'),
+      t('accountSettings.downloadDataMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Download',
+          text: t('common.download'),
           onPress: () => exportDataMutation.mutate(),
         },
       ],
@@ -214,8 +214,8 @@ export default function AccountSettingsScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Account"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        title={t('accountSettings.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>

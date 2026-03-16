@@ -17,12 +17,14 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function EditChannelScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   // If a handle is passed, use it, otherwise fetch the user's channels and pick the first one
   const params = useLocalSearchParams<{ handle?: string }>();
@@ -67,7 +69,7 @@ export default function EditChannelScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert('Error', 'Failed to update channel. Please try again.');
+      Alert.alert(t('common.error'), t('screens.editChannel.failedToUpdate'));
     },
   });
 
@@ -85,13 +87,13 @@ export default function EditChannelScreen() {
         haptic.light();
       }
     } catch (e) {
-      Alert.alert('Error', 'Failed to pick image');
+      Alert.alert(t('common.error'), t('screens.editChannel.failedToPickImage'));
     }
   };
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Required', 'Please enter a name for the channel.');
+      Alert.alert(t('screens.editChannel.required'), t('screens.editChannel.pleaseEnterName'));
       return;
     }
     updateMutation.mutate({
@@ -108,15 +110,15 @@ export default function EditChannelScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Edit Channel" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.editChannel.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="flag"
-          title="Could not load channel" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Go Back" 
+          title={t('screens.editChannel.couldNotLoad')}
+          subtitle={t('screens.editChannel.checkConnection')}
+          actionLabel={t('common.back')} 
           onAction={() => router.back()} 
         />
       </View>
@@ -127,8 +129,8 @@ export default function EditChannelScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Edit Channel" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.editChannel.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md, alignItems: 'center' }}>
@@ -143,8 +145,8 @@ export default function EditChannelScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Edit Channel"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('screens.editChannel.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <ScrollView
@@ -169,7 +171,7 @@ export default function EditChannelScreen() {
               <Icon name="camera" size={16} color="#fff" />
             </LinearGradient>
           </Pressable>
-          <Text style={styles.avatarHint}>Tap to change photo</Text>
+          <Text style={styles.avatarHint}>{t('screens.editChannel.tapToChangePhoto')}</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(100).duration(400)}>
@@ -177,11 +179,11 @@ export default function EditChannelScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
-            <Text style={styles.label}>Channel Name</Text>
+            <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
             <View style={styles.inputWrap}>
               <TextInput
                 style={styles.input}
-                placeholder="e.g., Quran Recitations"
+                placeholder={t('screens.editChannel.namePlaceholder')}
                 placeholderTextColor={colors.text.secondary}
                 value={name}
                 onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
@@ -198,11 +200,11 @@ export default function EditChannelScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.card}
           >
-            <Text style={styles.label}>Description (Optional)</Text>
+            <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
             <View style={[styles.inputWrap, styles.textAreaWrap]}>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Tell viewers about your channel..."
+                placeholder={t('screens.editChannel.descriptionPlaceholder')}
                 placeholderTextColor={colors.text.secondary}
                 value={description}
                 onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
@@ -219,7 +221,7 @@ export default function EditChannelScreen() {
 
         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttonWrap}>
           <GradientButton
-            title={updateMutation.isPending ? "Saving..." : "Save Changes"}
+            title={updateMutation.isPending ? t('screens.editChannel.saving') : t('screens.editChannel.saveChanges')}
             onPress={handleSave}
             disabled={updateMutation.isPending || name.trim().length === 0}
           />

@@ -17,6 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi, uploadApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // Slugify helper
 const slugify = (text: string): string => {
@@ -29,6 +30,7 @@ const slugify = (text: string): string => {
 export default function CreateBroadcastScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Form state
   const [name, setName] = useState('');
@@ -89,7 +91,7 @@ export default function CreateBroadcastScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Failed to create channel. Please try again.');
+      Alert.alert(t('common.error'), err.message || t('createBroadcast.createError'));
     },
   });
 
@@ -102,8 +104,8 @@ export default function CreateBroadcastScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Create Channel"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        title={t('createBroadcast.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
       <ScrollView
         style={styles.body}
@@ -125,11 +127,11 @@ export default function CreateBroadcastScreen() {
                   style={styles.avatarPlaceholder}
                 >
                   <Icon name="camera" size="xl" color={colors.emerald} />
-                  <Text style={styles.avatarPlaceholderText}>Channel photo</Text>
+                  <Text style={styles.avatarPlaceholderText}>{t('createBroadcast.avatarPlaceholder')}</Text>
                 </LinearGradient>
               )}
             </TouchableOpacity>
-            <Text style={styles.avatarHint}>Optional. Tap to add a channel photo.</Text>
+            <Text style={styles.avatarHint}>{t('createBroadcast.avatarHint')}</Text>
           </LinearGradient>
         </Animated.View>
 
@@ -146,18 +148,18 @@ export default function CreateBroadcastScreen() {
               >
                 <Icon name="edit" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.sectionLabel}>Channel Name</Text>
+              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.name')}</Text>
               <CharCountRing current={nameCount} max={50} size={24} />
             </View>
             <TextInput
               style={styles.input}
               value={name}
               onChangeText={setName}
-              placeholder="e.g., Tech News Daily"
+              placeholder={t('createBroadcast.placeholder.name')}
               placeholderTextColor={colors.text.tertiary}
               maxLength={50}
               autoCorrect={false}
-              accessibilityLabel="Channel name"
+              accessibilityLabel={t('createBroadcast.accessibility.name')}
             />
           </LinearGradient>
         </Animated.View>
@@ -175,7 +177,7 @@ export default function CreateBroadcastScreen() {
               >
                 <Icon name="link" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.sectionLabel}>Channel URL</Text>
+              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.url')}</Text>
               <CharCountRing current={slugCount} max={30} size={24} />
             </View>
             <View style={styles.slugContainer}>
@@ -184,15 +186,15 @@ export default function CreateBroadcastScreen() {
                 style={[styles.input, styles.slugInput]}
                 value={slug}
                 onChangeText={(text) => setSlug(slugify(text))}
-                placeholder="tech-news-daily"
+                placeholder={t('createBroadcast.placeholder.url')}
                 placeholderTextColor={colors.text.tertiary}
                 maxLength={30}
                 autoCapitalize="none"
                 autoCorrect={false}
-                accessibilityLabel="Channel URL slug"
+                accessibilityLabel={t('createBroadcast.accessibility.url')}
               />
             </View>
-            <Text style={styles.hint}>Letters, numbers, and hyphens only. This will be your channel's web address.</Text>
+            <Text style={styles.hint}>{t('createBroadcast.hint.url')}</Text>
           </LinearGradient>
         </Animated.View>
 
@@ -209,19 +211,19 @@ export default function CreateBroadcastScreen() {
               >
                 <Icon name="edit" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.sectionLabel}>Description</Text>
+              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.description')}</Text>
               <CharCountRing current={descCount} max={200} size={24} />
             </View>
             <TextInput
               style={[styles.input, styles.multiline]}
               value={description}
               onChangeText={setDescription}
-              placeholder="What is this channel about? (optional)"
+              placeholder={t('createBroadcast.placeholder.description')}
               placeholderTextColor={colors.text.tertiary}
               multiline
               maxLength={200}
               textAlignVertical="top"
-              accessibilityLabel="Channel description"
+              accessibilityLabel={t('createBroadcast.accessibility.description')}
             />
           </LinearGradient>
         </Animated.View>
@@ -239,14 +241,14 @@ export default function CreateBroadcastScreen() {
               <Icon name="info" size="xs" color={colors.gold} />
             </LinearGradient>
             <Text style={styles.noteText}>
-              Channels are public. Anyone can subscribe and view your messages.
+              {t('createBroadcast.note')}
             </Text>
           </LinearGradient>
         </Animated.View>
 
         {/* Create button */}
         <GradientButton
-          label={createMutation.isPending || uploading ? 'Creating...' : 'Create'}
+          label={createMutation.isPending || uploading ? t('createBroadcast.creating') : t('createBroadcast.create')}
           onPress={() => isValid && createMutation.mutate()}
           disabled={!isValid}
           style={{ marginBottom: spacing.xl }}

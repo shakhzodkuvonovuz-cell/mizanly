@@ -13,6 +13,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -128,7 +129,7 @@ function AudioCard({
           <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
           <View style={styles.trackMeta}>
             <Text style={styles.trackDuration}>{track.duration}</Text>
-            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} uses</Text>
+            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
           </View>
         </View>
 
@@ -138,7 +139,7 @@ function AudioCard({
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : colors.text.tertiary} />
           </TouchableOpacity>
           <GradientButton
-            label="Use"
+            label={t('audioLibrary.use')}
             size="sm"
             onPress={onSelect}
             style={styles.useButton}
@@ -151,6 +152,7 @@ function AudioCard({
 
 export default function AudioLibraryScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('Trending');
   const [favoritesOnly, setFavoritesOnly] = useState(false);
@@ -191,8 +193,8 @@ export default function AudioLibraryScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Audio Library"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        title={t('audioLibrary.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       {/* Search Bar */}
@@ -204,7 +206,7 @@ export default function AudioLibraryScreen() {
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search sounds..."
+            placeholder={t('audioLibrary.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -228,7 +230,7 @@ export default function AudioLibraryScreen() {
           onPress={() => setFavoritesOnly(!favoritesOnly)}
         >
           <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : colors.text.tertiary} />
-          <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>Favorites</Text>
+          <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
         </TouchableOpacity>
         {CATEGORIES.map((category) => (
           <TouchableOpacity
@@ -237,7 +239,7 @@ export default function AudioLibraryScreen() {
             onPress={() => setActiveCategory(category)}
           >
             <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
-              {category}
+              {t(`audioLibrary.category.${category.toLowerCase()}`)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -262,8 +264,8 @@ export default function AudioLibraryScreen() {
         ListEmptyComponent={(
           <EmptyState
             icon="music"
-            title="No audio found"
-            subtitle="Try a different search or category"
+            title={t('audioLibrary.emptyState.title')}
+            subtitle={t('audioLibrary.emptyState.subtitle')}
           />
         )}
         showsVerticalScrollIndicator={false}
@@ -287,7 +289,7 @@ export default function AudioLibraryScreen() {
                 </Text>
               </View>
               <TouchableOpacity onPress={handleUseSound} style={styles.nowPlayingUseButton}>
-                <Text style={styles.nowPlayingUseText}>Use this sound</Text>
+                <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
                 <Icon name="chevron-right" size="xs" color="#fff" />
               </TouchableOpacity>
             </View>
@@ -311,11 +313,11 @@ export default function AudioLibraryScreen() {
               <Text style={styles.selectedTrackArtist}>{selectedTrack.artist}</Text>
               <View style={styles.selectedTrackMeta}>
                 <Text style={styles.selectedTrackMetaText}>{selectedTrack.duration}</Text>
-                <Text style={styles.selectedTrackMetaText}>{selectedTrack.useCount.toLocaleString()} uses</Text>
-                <Text style={styles.selectedTrackMetaText}>{selectedTrack.category}</Text>
+                <Text style={styles.selectedTrackMetaText}>{selectedTrack.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
+                <Text style={styles.selectedTrackMetaText}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
               </View>
               <GradientButton
-                label="Use This Sound"
+                label={t('audioLibrary.useThisSound')}
                 onPress={handleUseSound}
                 style={styles.selectedTrackButton}
               />
@@ -323,7 +325,7 @@ export default function AudioLibraryScreen() {
                 onPress={() => setSelectedTrack(null)}
                 style={styles.selectedTrackCancel}
               >
-                <Text style={styles.selectedTrackCancelText}>Cancel</Text>
+                <Text style={styles.selectedTrackCancelText}>{t('common.cancel')}</Text>
               </TouchableOpacity>
             </LinearGradient>
           </Animated.View>

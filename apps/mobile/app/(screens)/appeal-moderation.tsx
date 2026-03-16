@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -37,13 +38,7 @@ interface AppealHistory {
   status: AppealStatus;
 }
 
-const APPEAL_REASONS: { id: AppealReason; label: string }[] = [
-  { id: 'no-violation', label: "This content doesn't violate guidelines" },
-  { id: 'out-of-context', label: 'This was taken out of context' },
-  { id: 'educational', label: 'This is educational/newsworthy content' },
-  { id: 'posted-by-mistake', label: 'This was posted by mistake and has been edited' },
-  { id: 'other', label: 'Other' },
-];
+// APPEAL_REASONS moved inside component
 
 const MOCK_HISTORY: AppealHistory = {
   id: '1',
@@ -54,9 +49,18 @@ const MOCK_HISTORY: AppealHistory = {
 
 export default function AppealModerationScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [selectedReason, setSelectedReason] = useState<AppealReason | null>(null);
   const [details, setDetails] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  const APPEAL_REASONS: { id: AppealReason; label: string }[] = [
+    { id: 'no-violation', label: t('appealModeration.reason.noViolation') },
+    { id: 'out-of-context', label: t('appealModeration.reason.outOfContext') },
+    { id: 'educational', label: t('appealModeration.reason.educational') },
+    { id: 'posted-by-mistake', label: t('appealModeration.reason.postedByMistake') },
+    { id: 'other', label: t('appealModeration.reason.other') },
+  ];
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -68,11 +72,11 @@ export default function AppealModerationScreen() {
   const getStatusBadge = (status: AppealStatus) => {
     switch (status) {
       case 'submitted':
-        return { colors: [colors.dark.surface, colors.dark.surface] as [string, string], text: 'Submitted' };
+        return { colors: [colors.dark.surface, colors.dark.surface] as [string, string], text: t('appealModeration.status.submitted') };
       case 'review':
-        return { colors: [colors.gold, colors.goldLight] as [string, string], text: 'Under Review' };
+        return { colors: [colors.gold, colors.goldLight] as [string, string], text: t('appealModeration.status.underReview') };
       case 'decision':
-        return { colors: [colors.emerald, colors.emeraldDark] as [string, string], text: 'Decision Made' };
+        return { colors: [colors.emerald, colors.emeraldDark] as [string, string], text: t('appealModeration.status.decisionMade') };
     }
   };
 
@@ -92,7 +96,7 @@ export default function AppealModerationScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Appeal Decision" onBack={() => router.back()} />
+      <GlassHeader title={t('appealModeration.title')} onBack={() => router.back()} />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -112,15 +116,15 @@ export default function AppealModerationScreen() {
               <Icon name="flag" size="sm" color={colors.error} />
             </LinearGradient>
             <View style={styles.actionContent}>
-              <Text style={styles.actionTitle}>Your post was removed</Text>
+              <Text style={styles.actionTitle}>{t('appealModeration.actionTitle')}</Text>
               <Text style={styles.actionReason}>
-                Reason: Community guidelines violation — Misleading content
+                {t('appealModeration.actionReason')}
               </Text>
               <View style={styles.actionMeta}>
                 <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.actionDate}>Removed on: March 12, 2026</Text>
+                <Text style={styles.actionDate}>{t('appealModeration.actionDate')}</Text>
               </View>
-              <Text style={styles.actionId}>Violation ID: #MOD-2847</Text>
+              <Text style={styles.actionId}>{t('appealModeration.actionId')}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -131,7 +135,7 @@ export default function AppealModerationScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.contentCard}
           >
-            <Text style={styles.contentHeader}>Affected Content</Text>
+            <Text style={styles.contentHeader}>{t('appealModeration.contentHeader')}</Text>
 
             <View style={styles.contentPreview}>
               <View style={styles.contentTextContainer}>
@@ -146,7 +150,7 @@ export default function AppealModerationScreen() {
 
             <TouchableOpacity style={styles.guidelinesLink} activeOpacity={0.8}>
               <Icon name="link" size="xs" color={colors.emerald} />
-              <Text style={styles.guidelinesText}>View Guidelines</Text>
+              <Text style={styles.guidelinesText}>{t('appealModeration.guidelinesText')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </Animated.View>
@@ -164,11 +168,11 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="pencil" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>Your Appeal</Text>
+              <Text style={styles.formTitle}>{t('appealModeration.formTitle')}</Text>
             </View>
 
             {/* Reason Selector */}
-            <Text style={styles.reasonLabel}>Why do you disagree?</Text>
+            <Text style={styles.reasonLabel}>{t('appealModeration.reasonLabel')}</Text>
             {APPEAL_REASONS.map((reason, index) => (
               <TouchableOpacity
                 key={reason.id}
@@ -208,7 +212,7 @@ export default function AppealModerationScreen() {
               >
                 <TextInput
                   style={styles.detailsInput}
-                  placeholder="Provide additional context for your appeal..."
+                  placeholder={t('appealModeration.detailsPlaceholder')}
                   placeholderTextColor={colors.text.tertiary}
                   value={details}
                   onChangeText={setDetails}
@@ -238,17 +242,17 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="paperclip" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>Supporting Evidence</Text>
+              <Text style={styles.formTitle}>{t('appealModeration.evidenceTitle')}</Text>
             </View>
 
-            <Text style={styles.evidenceLabel}>Attach supporting evidence (optional)</Text>
+            <Text style={styles.evidenceLabel}>{t('appealModeration.evidenceLabel')}</Text>
 
             <View style={styles.evidenceButtons}>
               <TouchableOpacity style={styles.evidenceButton} activeOpacity={0.8}>
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="image" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />
-                  <Text style={styles.evidenceButtonText}>Upload Image</Text>
+                  <Text style={styles.evidenceButtonText}>{t('appealModeration.uploadImage')}</Text>
                 </View>
               </TouchableOpacity>
 
@@ -256,7 +260,7 @@ export default function AppealModerationScreen() {
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="paperclip" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />
-                  <Text style={styles.evidenceButtonText}>Upload Document</Text>
+                  <Text style={styles.evidenceButtonText}>{t('appealModeration.uploadDocument')}</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -276,12 +280,12 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="clock" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>Appeal History</Text>
+              <Text style={styles.formTitle}>{t('appealModeration.historyTitle')}</Text>
             </View>
 
             <View style={styles.historyEntry}>
               <View style={styles.historyHeader}>
-                <Text style={styles.historyTitle}>Appeal #{MOCK_HISTORY.number}</Text>
+                <Text style={styles.historyTitle}>{t('appealModeration.appealNumber')}{MOCK_HISTORY.number}</Text>
                 <LinearGradient
                   colors={getStatusBadge(MOCK_HISTORY.status).colors}
                   style={styles.statusBadge}
@@ -296,7 +300,7 @@ export default function AppealModerationScreen() {
                   </Text>
                 </LinearGradient>
               </View>
-              <Text style={styles.historyDate}>Submitted {MOCK_HISTORY.submittedDate}</Text>
+              <Text style={styles.historyDate}>{t('appealModeration.submitted')} {MOCK_HISTORY.submittedDate}</Text>
 
               {/* Timeline */}
               <View style={styles.timeline}>
@@ -322,7 +326,7 @@ export default function AppealModerationScreen() {
                           step === MOCK_HISTORY.status && styles.timelineLabelActive,
                         ]}
                       >
-                        {step === 'submitted' ? 'Submitted' : step === 'review' ? 'Under Review' : 'Decision'}
+                        {step === 'submitted' ? t('appealModeration.status.submitted') : step === 'review' ? t('appealModeration.status.underReview') : t('appealModeration.status.decision')}
                       </Text>
                     </View>
                   );
@@ -345,20 +349,20 @@ export default function AppealModerationScreen() {
               >
                 <Icon name="check-circle" size="xs" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.formTitle}>Important Notes</Text>
+              <Text style={styles.formTitle}>{t('appealModeration.importantNotes')}</Text>
             </View>
 
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>Appeals are typically reviewed within 24-48 hours</Text>
+              <Text style={styles.noteText}>{t('appealModeration.note1')}</Text>
             </View>
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>You can submit one appeal per moderation action</Text>
+              <Text style={styles.noteText}>{t('appealModeration.note2')}</Text>
             </View>
             <View style={styles.noteItem}>
               <View style={styles.noteBullet} />
-              <Text style={styles.noteText}>Our team reviews each appeal carefully and fairly</Text>
+              <Text style={styles.noteText}>{t('appealModeration.note3')}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -370,7 +374,7 @@ export default function AppealModerationScreen() {
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
-          <Text style={styles.cancelText}>Cancel</Text>
+          <Text style={styles.cancelText}>{t('common.cancel')}</Text>
         </TouchableOpacity>
         <TouchableOpacity disabled={isSubmitDisabled} activeOpacity={0.8}>
           <LinearGradient
@@ -378,7 +382,7 @@ export default function AppealModerationScreen() {
             style={[styles.submitButton, isSubmitDisabled && styles.submitButtonDisabled]}
           >
             <Text style={[styles.submitText, isSubmitDisabled && styles.submitTextDisabled]}>
-              Submit Appeal
+              {t('appealModeration.submitAppeal')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

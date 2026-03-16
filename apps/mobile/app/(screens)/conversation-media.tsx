@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Message } from '@/types';
 
 type TabKey = 'media' | 'links' | 'docs';
@@ -58,6 +59,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
   onVideoPress: () => void;
 }) {
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
+  const { t } = useTranslation();
 
   return (
     <AnimatedPressable
@@ -65,7 +67,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
       onPress={item.type === 'image' ? onImagePress : onVideoPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
-      accessibilityLabel={item.type === 'image' ? 'View image' : 'Play video'}
+      accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.viewImage') : t('conversationMedia.accessibility.playVideo')}
       accessibilityRole="button"
     >
       <Image
@@ -73,7 +75,7 @@ function ScaleMediaItem({ item, onImagePress, onVideoPress }: {
         style={styles.mediaThumbnail}
         contentFit="cover"
         transition={200}
-        accessibilityLabel={item.type === 'image' ? 'Image shared in conversation' : 'Video thumbnail'}
+        accessibilityLabel={item.type === 'image' ? t('conversationMedia.accessibility.imageShared') : t('conversationMedia.accessibility.videoThumbnail')}
         accessibilityRole="image"
       />
       {item.type === 'video' && (
@@ -104,6 +106,7 @@ function isVideoMediaType(mediaType?: string): boolean {
 export default function ConversationMediaScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>('media');
   const [lightboxVisible, setLightboxVisible] = useState(false);
   const [lightboxImages, setLightboxImages] = useState<string[]>([]);
@@ -213,9 +216,9 @@ export default function ConversationMediaScreen() {
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const tabs = [
-    { key: 'media', label: `Media (${mediaItems.length})` },
-    { key: 'links', label: `Links (${linkItems.length})` },
-    { key: 'docs', label: `Docs (${docItems.length})` },
+    { key: 'media', label: `${t('conversationMedia.tab.media')} (${mediaItems.length})` },
+    { key: 'links', label: `${t('conversationMedia.tab.links')} (${linkItems.length})` },
+    { key: 'docs', label: `${t('conversationMedia.tab.docs')} (${docItems.length})` },
   ] as const;
 
   const renderMediaItem = ({ item, index }: { item: MediaItem; index: number }) => (
@@ -238,7 +241,7 @@ export default function ConversationMediaScreen() {
         style={styles.linkItem}
         onPress={() => handleOpenLink(item.url)}
         activeOpacity={0.7}
-        accessibilityLabel={`Open link: ${item.url}`}
+        accessibilityLabel={`${t('conversationMedia.accessibility.openLink')} ${item.url}`}
         accessibilityRole="link"
       >
         <LinearGradient
@@ -266,7 +269,7 @@ export default function ConversationMediaScreen() {
         style={styles.docItem}
         onPress={() => handleOpenLink(item.url)}
         activeOpacity={0.7}
-        accessibilityLabel={`Open document: ${item.fileName}`}
+        accessibilityLabel={`${t('conversationMedia.accessibility.openDocument')} ${item.fileName}`}
         accessibilityRole="link"
       >
         <LinearGradient
@@ -296,14 +299,14 @@ export default function ConversationMediaScreen() {
   const renderEmpty = () => {
     const icons = { media: 'image', links: 'link', docs: 'paperclip' } as const;
     const titles = {
-      media: 'No media yet',
-      links: 'No links yet',
-      docs: 'No documents yet',
+      media: t('conversationMedia.emptyState.noMedia'),
+      links: t('conversationMedia.emptyState.noLinks'),
+      docs: t('conversationMedia.emptyState.noDocs'),
     } as const;
     const subtitles = {
-      media: 'Images and videos shared in this conversation will appear here.',
-      links: 'Links shared in this conversation will appear here.',
-      docs: 'File attachments shared in this conversation will appear here.',
+      media: t('conversationMedia.emptyState.mediaSubtitle'),
+      links: t('conversationMedia.emptyState.linksSubtitle'),
+      docs: t('conversationMedia.emptyState.docsSubtitle'),
     } as const;
     return (
       <EmptyState
@@ -327,9 +330,9 @@ export default function ConversationMediaScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <EmptyState
           icon="slash"
-          title="Failed to load media"
-          subtitle="Please pull to refresh"
-          actionLabel="Retry"
+          title={t('conversationMedia.error.loadMedia')}
+          subtitle={t('conversationMedia.error.pullToRefresh')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </SafeAreaView>
@@ -339,8 +342,8 @@ export default function ConversationMediaScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Media"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('conversationMedia.title')}
+        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       {/* Tabs */}

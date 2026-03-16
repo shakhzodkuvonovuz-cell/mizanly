@@ -22,6 +22,7 @@ import { Autocomplete } from '@/components/ui/Autocomplete';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const VIDEO_PREVIEW_WIDTH = SCREEN_W - spacing.base * 2;
@@ -43,6 +44,7 @@ export default function CreateReelScreen() {
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
+  const { t } = useTranslation();
 
   const [caption, setCaption] = useState('');
   const [video, setVideo] = useState<PickedVideo | null>(null);
@@ -61,7 +63,7 @@ export default function CreateReelScreen() {
     (async () => {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission required', 'Please grant access to your media library to upload videos.');
+        Alert.alert(t('createReel.permissionRequired'), t('createReel.permissionMessage'));
       }
     })();
   }, []);
@@ -193,17 +195,17 @@ export default function CreateReelScreen() {
     },
     onError: (error: Error) => {
       haptic.error();
-      Alert.alert('Upload failed', error.message || 'Something went wrong');
+      Alert.alert(t('createReel.uploadFailed'), error.message || t('common.somethingWentWrong'));
     },
   });
 
   const handleUpload = () => {
     if (!video) {
-      Alert.alert('No video', 'Please select a video first');
+      Alert.alert(t('createReel.noVideo'), t('createReel.selectVideoFirst'));
       return;
     }
     if (caption.length > 500) {
-      Alert.alert('Caption too long', 'Maximum 500 characters');
+      Alert.alert(t('createReel.captionTooLong'), t('createReel.maxCharacters', { max: 500 }));
       return;
     }
     uploadMutation.mutate();
@@ -212,9 +214,9 @@ export default function CreateReelScreen() {
   const handleBack = () => {
     const hasContent = !!video || caption.trim().length > 0;
     if (hasContent) {
-      Alert.alert('Discard reel?', 'You have unsaved content.', [
-        { text: 'Keep editing' },
-        { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+      Alert.alert(t('createReel.discardTitle'), t('createReel.discardMessage'), [
+        { text: t('createReel.keepEditing') },
+        { text: t('createReel.discard'), style: 'destructive', onPress: () => router.back() },
       ]);
     } else {
       router.back();
@@ -229,9 +231,9 @@ export default function CreateReelScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Create Reel"
-        leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: 'Back' }}
-        rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: 'Share' }]}
+        title={t('createReel.title')}
+        leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
+        rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: t('common.share') }]}
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
@@ -306,8 +308,8 @@ export default function CreateReelScreen() {
               <View style={styles.uploadIconContainer}>
                 <Icon name="video" size="xl" color={colors.emerald} />
               </View>
-              <Text style={styles.uploadText}>Select video</Text>
-              <Text style={styles.uploadSubtext}>Up to 60 seconds, vertical (9:16)</Text>
+              <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
+              <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         )}
@@ -321,7 +323,7 @@ export default function CreateReelScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.sectionAccent}
             />
-            <Text style={styles.sectionLabel}>Caption</Text>
+            <Text style={styles.sectionLabel}>{t('createReel.caption')}</Text>
           </View>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -332,7 +334,7 @@ export default function CreateReelScreen() {
             <TextInput
               ref={captionInputRef}
               style={styles.captionInput}
-              placeholder="Add a caption..."
+              placeholder={t('createReel.captionPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={caption}
               onChangeText={handleCaptionChange}
@@ -364,7 +366,7 @@ export default function CreateReelScreen() {
               >
                 <Icon name="hash" size="md" color={colors.emerald} />
               </LinearGradient>
-              <Text style={styles.toolbarLabel}>Hashtag</Text>
+              <Text style={styles.toolbarLabel}>{t('createReel.hashtag')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -377,7 +379,7 @@ export default function CreateReelScreen() {
               >
                 <Icon name="at-sign" size="md" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.toolbarLabel}>Mention</Text>
+              <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.toolbarButton} disabled>
@@ -387,7 +389,7 @@ export default function CreateReelScreen() {
               >
                 <Icon name="music" size="md" color={colors.text.tertiary} />
               </LinearGradient>
-              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Sound</Text>
+              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.sound')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.toolbarButton} disabled>
@@ -397,7 +399,7 @@ export default function CreateReelScreen() {
               >
                 <Icon name="repeat" size="md" color={colors.text.tertiary} />
               </LinearGradient>
-              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>Duet</Text>
+              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.duet')}</Text>
             </TouchableOpacity>
           </LinearGradient>
         </View>
@@ -412,7 +414,7 @@ export default function CreateReelScreen() {
                 end={{ x: 1, y: 0 }}
                 style={styles.sectionAccent}
               />
-              <Text style={styles.sectionLabel}>Tags</Text>
+              <Text style={styles.sectionLabel}>{t('createReel.tags')}</Text>
             </View>
             <View style={styles.tagsRow}>
               {hashtags.map(tag => (

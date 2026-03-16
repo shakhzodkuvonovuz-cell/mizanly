@@ -9,6 +9,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -62,6 +63,7 @@ const VIDEO_BACKGROUNDS = [
 
 export default function GreenScreenEditorScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('solid');
   const [selectedBackground, setSelectedBackground] = useState<string>('Emerald');
@@ -76,11 +78,11 @@ export default function GreenScreenEditorScreen() {
   }, []);
 
   const categories: { id: CategoryType; label: string }[] = [
-    { id: 'solid', label: 'Solid Colors' },
-    { id: 'gradients', label: 'Gradients' },
-    { id: 'images', label: 'Images' },
-    { id: 'videos', label: 'Videos' },
-    { id: 'custom', label: 'Custom' },
+    { id: 'solid', label: t('screens.greenScreen.solidColors') },
+    { id: 'gradients', label: t('screens.greenScreen.gradients') },
+    { id: 'images', label: t('screens.greenScreen.images') },
+    { id: 'videos', label: t('screens.greenScreen.videos') },
+    { id: 'custom', label: t('screens.greenScreen.custom') },
   ];
 
   const getBackgroundStyle = () => {
@@ -227,8 +229,8 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="plus" size="xs" color="#FFF" />
                   </View>
                 </View>
-                <Text style={styles.uploadButtonText}>Upload Image</Text>
-                <Text style={styles.uploadButtonSubtext}>JPG, PNG up to 10MB</Text>
+                <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadImage')}</Text>
+                <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.imageFormats')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
@@ -243,17 +245,17 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="plus" size="xs" color="#FFF" />
                   </View>
                 </View>
-                <Text style={styles.uploadButtonText}>Upload Video</Text>
-                <Text style={styles.uploadButtonSubtext}>MP4 up to 100MB</Text>
+                <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadVideo')}</Text>
+                <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.videoFormats')}</Text>
               </LinearGradient>
             </TouchableOpacity>
 
             <View style={styles.recentSection}>
-              <Text style={styles.recentTitle}>Recent Uploads</Text>
+              <Text style={styles.recentTitle}>{t('screens.greenScreen.recentUploads')}</Text>
               <EmptyState
                 icon="image"
-                title="No uploads yet"
-                subtitle="Your recent uploads will appear here"
+                title={t('screens.greenScreen.noUploadsYet')}
+                subtitle={t('screens.greenScreen.recentUploadsHint')}
               />
             </View>
           </View>
@@ -271,7 +273,7 @@ export default function GreenScreenEditorScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Green Screen" showBackButton />
+      <GlassHeader title={t('screens.greenScreen.title')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -292,7 +294,7 @@ export default function GreenScreenEditorScreen() {
                   <View style={styles.subjectSilhouette}>
                     <Icon name="user" size="xl" color={colors.dark.surface} />
                   </View>
-                  <Text style={styles.subjectHint}>Subject Area</Text>
+                  <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
                 </View>
 
                 {/* Record Button Overlay */}
@@ -321,7 +323,7 @@ export default function GreenScreenEditorScreen() {
                   <View style={styles.subjectSilhouette}>
                     <Icon name="user" size="xl" color={colors.dark.surface} />
                   </View>
-                  <Text style={styles.subjectHint}>Subject Area</Text>
+                  <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
                 </View>
 
                 {/* Record Button Overlay */}
@@ -409,12 +411,12 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="sliders" size="sm" color={colors.emerald} />
                   </LinearGradient>
                 </View>
-                <Text style={styles.sliderTitle}>Adjustments</Text>
+                <Text style={styles.sliderTitle}>{t('screens.greenScreen.adjustments')}</Text>
               </View>
 
               {/* Background Blur */}
               <View style={styles.sliderRow}>
-                <Text style={styles.sliderLabel}>Background Blur</Text>
+                <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
                 <Text style={styles.sliderValue}>{blurIntensity}%</Text>
               </View>
               <View style={styles.sliderTrack}>
@@ -429,7 +431,7 @@ export default function GreenScreenEditorScreen() {
 
               {/* Edge Smoothing */}
               <View style={[styles.sliderRow, styles.sliderRowSecond]}>
-                <Text style={styles.sliderLabel}>Edge Smoothing</Text>
+                <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
                 <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
               </View>
               <View style={styles.sliderTrack}>
@@ -456,14 +458,14 @@ export default function GreenScreenEditorScreen() {
           style={styles.bottomBarGradient}
         >
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera')}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.applyButtonGradient}
             >
-              <Text style={styles.applyButtonText}>Apply & Record</Text>
+              <Text style={styles.applyButtonText}>{t('screens.greenScreen.applyAndRecord')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </LinearGradient>

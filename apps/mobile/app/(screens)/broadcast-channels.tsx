@@ -29,6 +29,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -38,6 +39,7 @@ export default function BroadcastChannelsScreen() {
   const navigation = useNavigation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabKey>('discover');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -54,7 +56,7 @@ export default function BroadcastChannelsScreen() {
       loadMyChannels(true);
       router.push(`/(screens)/broadcast/${data.id}` as never);
     },
-    onError: () => Alert.alert('Error', 'Failed to create channel'),
+    onError: () => Alert.alert(t('common.error'), t('broadcastChannels.createError')),
   });
   const [discoverChannels, setDiscoverChannels] = useState<BroadcastChannelWithSubscription[]>([]);
   const [myChannels, setMyChannels] = useState<BroadcastChannelWithSubscription[]>([]);
@@ -166,7 +168,7 @@ export default function BroadcastChannelsScreen() {
             >
               <Icon name="users" size="xs" color={colors.gold} />
               <Text style={styles.subscribersText}>
-                {item.subscribersCount.toLocaleString()} subscribers
+                {item.subscribersCount.toLocaleString()} {t('broadcastChannels.subscribers')}
               </Text>
             </LinearGradient>
           </View>
@@ -178,7 +180,7 @@ export default function BroadcastChannelsScreen() {
               style={styles.subscribeBtn}
             >
               <Text style={[styles.subscribeText, item.isSubscribed && { color: colors.text.secondary }]}>
-                {item.isSubscribed ? 'Subscribed' : 'Subscribe'}
+                {item.isSubscribed ? t('broadcastChannels.subscribed') : t('broadcastChannels.subscribe')}
               </Text>
             </LinearGradient>
           </TouchableOpacity>
@@ -193,9 +195,9 @@ export default function BroadcastChannelsScreen() {
         return (
           <EmptyState
             icon="flag"
-            title="Couldn't load content"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('common.error.loadContent')}
+            subtitle={t('common.error.checkConnection')}
+            actionLabel={t('common.retry')}
             onAction={() => loadDiscoverChannels(true)}
           />
         );
@@ -203,9 +205,9 @@ export default function BroadcastChannelsScreen() {
       return (
         <EmptyState
           icon="users"
-          title="No channels found"
-          subtitle="Try again later or search for something else"
-          actionLabel="Refresh"
+          title={t('broadcastChannels.emptyState.noChannels')}
+          subtitle={t('broadcastChannels.emptyState.tryLater')}
+          actionLabel={t('common.refresh')}
           onAction={() => handleRefresh()}
         />
       );
@@ -214,9 +216,9 @@ export default function BroadcastChannelsScreen() {
       return (
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('common.error.loadContent')}
+          subtitle={t('common.error.checkConnection')}
+          actionLabel={t('common.retry')}
           onAction={() => loadMyChannels(true)}
         />
       );
@@ -224,9 +226,9 @@ export default function BroadcastChannelsScreen() {
     return (
       <EmptyState
         icon="bell"
-        title="You haven't joined any channels"
-        subtitle="Discover channels and subscribe to get updates"
-        actionLabel="Discover channels"
+        title={t('broadcastChannels.emptyState.noJoinedChannels')}
+        subtitle={t('broadcastChannels.emptyState.discoverChannels')}
+        actionLabel={t('broadcastChannels.discoverChannels')}
         onAction={() => setActiveTab('discover')}
       />
     );
@@ -263,9 +265,9 @@ export default function BroadcastChannelsScreen() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <GlassHeader
-        title="Channels"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: 'Create channel' }]}
+        title={t('broadcastChannels.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: t('broadcastChannels.createChannel') }]}
       />
       <View style={styles.container}>
         <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
@@ -273,7 +275,7 @@ export default function BroadcastChannelsScreen() {
           <TextInput
             ref={searchInputRef}
             style={styles.searchInput}
-            placeholder="Search channels"
+            placeholder={t('broadcastChannels.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -289,8 +291,8 @@ export default function BroadcastChannelsScreen() {
 
         <TabSelector
           tabs={[
-            { key: 'discover', label: 'Discover' },
-            { key: 'my', label: 'My Channels' },
+            { key: 'discover', label: t('broadcastChannels.tab.discover') },
+            { key: 'my', label: t('broadcastChannels.tab.myChannels') },
           ]}
           activeKey={activeTab}
           onTabChange={setActiveTab}
@@ -320,10 +322,10 @@ export default function BroadcastChannelsScreen() {
       </View>
       <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
         <View style={{ padding: spacing.base, gap: spacing.md }}>
-          <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>Create Channel</Text>
+          <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
           <TextInput
             style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
-            placeholder="Channel name"
+            placeholder={t('broadcastChannels.channelNamePlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={newChannelName}
             onChangeText={setNewChannelName}
@@ -331,7 +333,7 @@ export default function BroadcastChannelsScreen() {
           />
           <TextInput
             style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
-            placeholder="Description (optional)"
+            placeholder={t('broadcastChannels.descriptionPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={newChannelDesc}
             onChangeText={setNewChannelDesc}
@@ -339,7 +341,7 @@ export default function BroadcastChannelsScreen() {
             multiline
           />
           <GradientButton
-            label="Create"
+            label={t('broadcastChannels.createButton')}
             onPress={() => createMutation.mutate()}
             loading={createMutation.isPending}
             disabled={!newChannelName.trim()}

@@ -23,6 +23,7 @@ import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const POST_MAX_LENGTH = 5000;
 
@@ -137,6 +138,7 @@ export default function CommunityPostsScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [composeText, setComposeText] = useState('');
   const [showCreateSheet, setShowCreateSheet] = useState(false);
@@ -180,7 +182,7 @@ export default function CommunityPostsScreen() {
       setShowCreateSheet(false);
     },
     onError: (error) => {
-      Alert.alert('Error', 'Failed to create post. Please try again.');
+      Alert.alert(t('common.error'), t('communityPosts.createError'));
       console.error('Create post error:', error);
     },
   });
@@ -217,7 +219,7 @@ export default function CommunityPostsScreen() {
       queryClient.invalidateQueries({ queryKey: ['channel-posts', handle] });
     },
     onError: (error) => {
-      Alert.alert('Error', 'Failed to delete post. Please try again.');
+      Alert.alert(t('common.error'), t('communityPosts.deleteError'));
       console.error('Delete post error:', error);
     },
   });
@@ -258,15 +260,15 @@ export default function CommunityPostsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Community Posts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('communityPosts.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('common.error.loadContent')}
+          subtitle={t('common.error.checkConnection')}
+          actionLabel={t('common.retry')}
           onAction={() => handleRefresh()}
         />
       </View>
@@ -277,8 +279,8 @@ export default function CommunityPostsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Community Posts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('communityPosts.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={styles.headerSpacer} />
         {renderSkeleton()}
@@ -293,8 +295,8 @@ export default function CommunityPostsScreen() {
     >
       <View style={styles.container}>
         <GlassHeader
-          title="Community Posts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('communityPosts.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={styles.headerSpacer} />
 
@@ -317,7 +319,7 @@ export default function CommunityPostsScreen() {
                       <Pressable
                         style={styles.mediaPreviewClose}
                         onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== idx))}
-                        accessibilityLabel="Remove selected media"
+                        accessibilityLabel={t('communityPosts.removeSelectedMedia')}
                         accessibilityRole="button"
                       >
                         <Icon name="x" size="xs" color={colors.text.primary} />
@@ -335,7 +337,7 @@ export default function CommunityPostsScreen() {
                 <TextInput
                   ref={composeInputRef}
                   style={styles.composeInput}
-                  placeholder="Share something with your community..."
+                  placeholder={t('communityPosts.placeholder')}
                   placeholderTextColor={colors.text.tertiary}
                   value={composeText}
                   onChangeText={setComposeText}
@@ -380,8 +382,8 @@ export default function CommunityPostsScreen() {
             <View style={styles.emptyState}>
               <EmptyState
                 icon="message-circle"
-                title="It's quiet here... for now"
-                subtitle={isOwnChannel ? "Share your first thought and spark a conversation with your community" : "No posts yet — check back soon for updates"}
+                title={t('communityPosts.emptyState.quiet')}
+                subtitle={isOwnChannel ? t('communityPosts.emptyState.ownerHint') : t('communityPosts.emptyState.memberHint')}
               />
             </View>
           }
@@ -395,7 +397,7 @@ export default function CommunityPostsScreen() {
           snapPoint={0.6}
         >
           <BottomSheetItem
-            label="Add Image"
+            label={t('communityPosts.addImage')}
             icon={<Icon name="image" size="md" color={colors.text.primary} />}
             onPress={async () => {
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
@@ -407,7 +409,7 @@ export default function CommunityPostsScreen() {
             }}
           />
           <BottomSheetItem
-            label="Add Video"
+            label={t('communityPosts.addVideo')}
             icon={<Icon name="video" size="md" color={colors.text.primary} />}
             onPress={async () => {
               const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
@@ -418,9 +420,9 @@ export default function CommunityPostsScreen() {
             }}
           />
           <BottomSheetItem
-            label="Add Poll"
+            label={t('communityPosts.addPoll')}
             icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
-            onPress={() => Alert.alert('Polls', 'Poll creation is coming in the next update.')}
+            onPress={() => Alert.alert(t('communityPosts.polls'), t('communityPosts.pollsComing'))}
           />
         </BottomSheet>
 
@@ -431,14 +433,14 @@ export default function CommunityPostsScreen() {
         >
           {isOwnChannel && selectedPost && (
             <BottomSheetItem
-              label="Delete Post"
+              label={t('communityPosts.deletePost')}
               icon={<Icon name="trash" size="sm" color={colors.error} />}
               onPress={() => handleDeletePost(selectedPost.id)}
             />
           )}
           {selectedPost?.content && (
             <BottomSheetItem
-              label="Copy Text"
+              label={t('communityPosts.copyText')}
               icon={<Icon name="link" size="sm" color={colors.text.primary} />}
               onPress={() => handleCopyText(selectedPost.content!)}
             />

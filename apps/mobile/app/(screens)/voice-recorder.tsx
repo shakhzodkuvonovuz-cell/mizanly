@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const MAX_TIME = 300; // 5 minutes
 
@@ -20,6 +21,7 @@ export default function VoiceRecorderScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [state, setState] = useState<State>('idle');
   const [time, setTime] = useState(0);
   const [uri, setUri] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export default function VoiceRecorderScreen() {
   const start = useCallback(async () => {
     const { granted } = await Audio.requestPermissionsAsync();
     if (!granted) {
-      Alert.alert('Permission needed', 'Microphone access is required.');
+      Alert.alert(t('screens.voiceRecorder.permissionNeeded'), t('screens.voiceRecorder.microphoneRequired'));
       return;
     }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
@@ -80,7 +82,7 @@ export default function VoiceRecorderScreen() {
     await rec.stopAndUnloadAsync();
     const u = rec.getURI();
     if (!u) {
-      Alert.alert('Error', 'Recording failed.');
+      Alert.alert(t('common.error'), t('screens.voiceRecorder.recordingFailed'));
       setState('idle');
       return;
     }
@@ -122,10 +124,10 @@ export default function VoiceRecorderScreen() {
 
   const cancel = useCallback(() => {
     if (state !== 'idle') {
-      Alert.alert('Discard Recording', 'Are you sure you want to discard this recording?', [
-        { text: 'Keep', style: 'cancel' },
+      Alert.alert(t('screens.voiceRecorder.discardRecording'), t('screens.voiceRecorder.discardConfirm'), [
+        { text: t('screens.voiceRecorder.keep'), style: 'cancel' },
         {
-          text: 'Discard',
+          text: t('screens.voiceRecorder.discard'),
           style: 'destructive',
           onPress: () => {
             sound.current?.unloadAsync();
@@ -149,8 +151,8 @@ export default function VoiceRecorderScreen() {
   return (
     <SafeAreaView style={s.container} edges={['top', 'bottom']}>
       <GlassHeader
-        title="Voice Recorder"
-        leftAction={{ icon: 'arrow-left', onPress: cancel, accessibilityLabel: 'Back' }}
+        title={t('screens.voiceRecorder.title')}
+        leftAction={{ icon: 'arrow-left', onPress: cancel, accessibilityLabel: t('common.back') }}
       />
 
       <View style={[s.content, { paddingTop: insets.top + 52 }]}>
@@ -172,7 +174,7 @@ export default function VoiceRecorderScreen() {
               </LinearGradient>
               <Text style={s.timerText}>{format(time)}</Text>
               <Text style={s.timerSubtext}>
-                {isRecording ? 'Recording…' : isPlaying ? 'Playing…' : isRecorded ? 'Recorded' : 'Ready to record'}
+                {isRecording ? t('screens.voiceRecorder.recording') : isPlaying ? t('screens.voiceRecorder.playing') : isRecorded ? t('screens.voiceRecorder.recorded') : t('screens.voiceRecorder.readyToRecord')}
               </Text>
             </View>
 
@@ -209,12 +211,12 @@ export default function VoiceRecorderScreen() {
 
             <Text style={s.hintText}>
               {isRecording
-                ? 'Tap to stop recording'
+                ? t('screens.voiceRecorder.tapToStop')
                 : isPlaying
-                  ? 'Tap to stop playback'
+                  ? t('screens.voiceRecorder.tapToStopPlayback')
                   : isRecorded
-                    ? 'Tap to listen'
-                    : 'Tap to start recording (max 5 minutes)'}
+                    ? t('screens.voiceRecorder.tapToListen')
+                    : t('screens.voiceRecorder.tapToStart')}
             </Text>
           </LinearGradient>
         </Animated.View>
@@ -222,13 +224,13 @@ export default function VoiceRecorderScreen() {
 
       <View style={s.footer}>
         <GradientButton
-          label={state === 'idle' ? 'Cancel' : 'Discard'}
+          label={state === 'idle' ? t('common.cancel') : t('screens.voiceRecorder.discard')}
           onPress={cancel}
           variant="secondary"
           disabled={uploading}
         />
         <GradientButton
-          label={uploading ? '…' : 'Send'}
+          label={uploading ? '…' : t('screens.voiceRecorder.send')}
           onPress={send}
           disabled={!uri || uploading}
         />

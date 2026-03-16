@@ -17,6 +17,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { collabsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { PostCollab, Post, User } from '@/types';
 
 type CollabItem = PostCollab & { post: Post };
@@ -30,6 +31,7 @@ type TabKey = 'pending' | 'accepted';
 export default function CollabRequestsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabKey>('pending');
   const [refreshing, setRefreshing] = useState(false);
@@ -59,19 +61,19 @@ export default function CollabRequestsScreen() {
       queryClient.invalidateQueries({ queryKey: ['collabs', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['collabs', 'accepted'] });
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const declineMutation = useMutation({
     mutationFn: (collabId: string) => collabsApi.decline(collabId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['collabs', 'pending'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const removeMutation = useMutation({
     mutationFn: (collabId: string) => collabsApi.remove(collabId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['collabs', 'accepted'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const onRefresh = async () => {
@@ -83,33 +85,33 @@ export default function CollabRequestsScreen() {
 
   const confirmAccept = (collab: CollabItem) => {
     Alert.alert(
-      'Accept collaboration?',
-      `You'll be added as a collaborator to "${collab.post.content?.substring(0, 50) ?? 'this post'}".`,
+      t('collabRequests.acceptAlert.title'),
+      t('collabRequests.acceptAlert.message', { postPreview: collab.post.content?.substring(0, 50) ?? t('collabRequests.thisPost') }),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Accept', onPress: () => acceptMutation.mutate(collab.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('collabRequests.accept'), onPress: () => acceptMutation.mutate(collab.id) },
       ],
     );
   };
 
   const confirmDecline = (collab: CollabItem) => {
     Alert.alert(
-      'Decline invitation?',
-      'The post owner will be notified.',
+      t('collabRequests.declineAlert.title'),
+      t('collabRequests.declineAlert.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Decline', onPress: () => declineMutation.mutate(collab.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('collabRequests.decline'), onPress: () => declineMutation.mutate(collab.id) },
       ],
     );
   };
 
   const confirmRemove = (collab: CollabItem) => {
     Alert.alert(
-      'Remove collaboration?',
-      'You will no longer be listed as a collaborator on this post.',
+      t('collabRequests.removeAlert.title'),
+      t('collabRequests.removeAlert.message'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Remove', onPress: () => removeMutation.mutate(collab.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('collabRequests.remove'), onPress: () => removeMutation.mutate(collab.id) },
       ],
     );
   };
@@ -141,7 +143,7 @@ export default function CollabRequestsScreen() {
                 </LinearGradient>
               )}
               <Text style={styles.postContent} numberOfLines={2}>
-                {post.content || 'No caption'}
+                {post.content || t('collabRequests.noCaption')}
               </Text>
             </View>
             <View style={styles.actionRow}>
@@ -153,7 +155,7 @@ export default function CollabRequestsScreen() {
                   onPress={() => confirmAccept(item)}
                   disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
                 >
-                  <Text style={styles.actionBtnText}>Accept</Text>
+                  <Text style={styles.actionBtnText}>{t('collabRequests.accept')}</Text>
                 </Pressable>
               </LinearGradient>
               <LinearGradient
@@ -164,7 +166,7 @@ export default function CollabRequestsScreen() {
                   onPress={() => confirmDecline(item)}
                   disabled={declineMutation.isPending && declineMutation.variables === item.id}
                 >
-                  <Text style={[styles.actionBtnText, { color: colors.error }]}>Decline</Text>
+                  <Text style={[styles.actionBtnText, { color: colors.error }]}>{t('collabRequests.decline')}</Text>
                 </Pressable>
               </LinearGradient>
             </View>
@@ -195,11 +197,11 @@ export default function CollabRequestsScreen() {
           )}
           <View style={styles.info}>
             <Text style={styles.postContent} numberOfLines={3}>
-              {post.content || 'No caption'}
+              {post.content || t('collabRequests.noCaption')}
             </Text>
             <View style={styles.postMeta}>
               <Icon name="user" size="xs" color={colors.text.secondary} />
-              <Text style={styles.metaText}>by @{post.user.username}</Text>
+              <Text style={styles.metaText}>{t('collabRequests.by')} @{post.user.username}</Text>
               <Text style={styles.metaDot}>•</Text>
               <Text style={styles.metaText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
             </View>
@@ -212,7 +214,7 @@ export default function CollabRequestsScreen() {
                 colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
                 style={styles.removeBtnGradient}
               >
-                <Text style={styles.removeBtnText}>Remove</Text>
+                <Text style={styles.removeBtnText}>{t('collabRequests.remove')}</Text>
               </LinearGradient>
             </Pressable>
           </View>
@@ -222,8 +224,8 @@ export default function CollabRequestsScreen() {
   };
 
   const tabs = [
-    { key: 'pending', label: 'Pending' },
-    { key: 'accepted', label: 'Accepted' },
+    { key: 'pending', label: t('collabRequests.tab.pending') },
+    { key: 'accepted', label: t('collabRequests.tab.accepted') },
   ] as const;
 
   const isLoading = activeTab === 'pending' ? pendingQuery.isLoading : acceptedQuery.isLoading;
@@ -237,14 +239,14 @@ export default function CollabRequestsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Collaboration Requests"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('collabRequests.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('common.error.loadContent')}
+          subtitle={t('common.error.checkConnection')}
+          actionLabel={t('common.retry')}
           onAction={() => activeTab === 'pending' ? pendingQuery.refetch() : acceptedQuery.refetch()}
         />
       </SafeAreaView>
@@ -254,8 +256,8 @@ export default function CollabRequestsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Collaboration Requests"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        title={t('collabRequests.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <TabSelector
@@ -308,11 +310,11 @@ export default function CollabRequestsScreen() {
           ListEmptyComponent={() => (
             <EmptyState
               icon="users"
-              title={activeTab === 'pending' ? 'No pending invites' : 'No accepted collaborations'}
+              title={activeTab === 'pending' ? t('collabRequests.emptyState.noPendingInvites') : t('collabRequests.emptyState.noAcceptedCollaborations')}
               subtitle={
                 activeTab === 'pending'
-                  ? 'Invitations to collaborate on posts will appear here.'
-                  : 'Posts you collaborate on will appear here.'
+                  ? t('collabRequests.emptyState.pendingSubtitle')
+                  : t('collabRequests.emptyState.acceptedSubtitle')
               }
             />
           )}
