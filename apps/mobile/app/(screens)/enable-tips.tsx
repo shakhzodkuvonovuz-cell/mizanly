@@ -24,6 +24,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { monetizationApi } from '@/services/monetizationApi';
 import { settingsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -79,6 +80,7 @@ export default function EnableTipsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const { t } = useTranslation();
   const [isEnabled, setIsEnabled] = useState(true);
   const [minTipAmount, setMinTipAmount] = useState(2);
   const [customAmount, setCustomAmount] = useState('');
@@ -106,7 +108,7 @@ export default function EnableTipsScreen() {
       // For now, simulate loading
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
-      setError('Failed to load tip settings');
+      setError(t('screens.enableTips.errorLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -140,9 +142,9 @@ export default function EnableTipsScreen() {
       // });
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
       haptic.success();
-      Alert.alert('Success', 'Tip settings saved successfully');
+      Alert.alert(t('common.success'), t('screens.enableTips.saveSuccess'));
     } catch (err) {
-      Alert.alert('Error', 'Failed to save settings. Please try again.');
+      Alert.alert(t('common.error'), t('screens.enableTips.saveError'));
     } finally {
       setSubmitting(false);
     }
@@ -156,9 +158,9 @@ export default function EnableTipsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Creator Tips"
+        title={t('screens.enableTips.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        rightActions={[{ icon: 'gift', onPress: () => {}, accessibilityLabel: 'Tips' }]}
+        rightActions={[{ icon: 'gift', onPress: () => {}, accessibilityLabel: t('screens.enableTips.tipsLabel') }]}
       />
 
       <ScrollView
@@ -178,14 +180,14 @@ export default function EnableTipsScreen() {
               <Icon name="gift" size="lg" color={colors.gold} />
             </LinearGradient>
 
-            <Text style={styles.heroTitle}>Earn from your audience</Text>
+            <Text style={styles.heroTitle}>{t('screens.enableTips.heroTitle')}</Text>
             <Text style={styles.heroSubtitle}>
-              Let your followers show appreciation by sending you tips
+              {t('screens.enableTips.heroSubtitle')}
             </Text>
 
             {/* Main Toggle */}
             <View style={styles.mainToggleRow}>
-              <Text style={styles.mainToggleLabel}>{isEnabled ? 'Enabled' : 'Disabled'}</Text>
+              <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
               <TouchableOpacity
                 onPress={() => {
                   haptic.medium();
@@ -225,7 +227,7 @@ export default function EnableTipsScreen() {
                   >
                     <Icon name="circle" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.configTitle}>Minimum Tip Amount</Text>
+                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.minimumTipAmount')}</Text>
                 </View>
 
                 {/* Preset Amounts */}
@@ -274,7 +276,7 @@ export default function EnableTipsScreen() {
                       setCustomAmount(text.replace(/[^0-9]/g, ''));
                       if (text) setMinTipAmount(parseInt(text) || 0);
                     }}
-                    placeholder="Custom amount"
+                    placeholder={t('screens.enableTips.customAmountPlaceholder')}
                     placeholderTextColor={colors.text.tertiary}
                     keyboardType="number-pad"
                   />
@@ -295,28 +297,28 @@ export default function EnableTipsScreen() {
                   >
                     <Icon name="eye" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.configTitle}>Display Settings</Text>
+                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.displaySettings')}</Text>
                 </View>
 
                 <CustomToggle
                   value={displaySettings.showOnProfile}
                   onValueChange={() => toggleDisplaySetting('showOnProfile')}
-                  label="Show tip button on profile"
-                  description="Let visitors tip you from your profile page"
+                  label={t('screens.enableTips.toggleLabel.showOnProfile')}
+                  description={t('screens.enableTips.toggleDescription.showOnProfile')}
                 />
                 <View style={styles.toggleDivider} />
                 <CustomToggle
                   value={displaySettings.showOnPosts}
                   onValueChange={() => toggleDisplaySetting('showOnPosts')}
-                  label="Show tip button on posts"
-                  description="Add tip option to your posts"
+                  label={t('screens.enableTips.toggleLabel.showOnPosts')}
+                  description={t('screens.enableTips.toggleDescription.showOnPosts')}
                 />
                 <View style={styles.toggleDivider} />
                 <CustomToggle
                   value={displaySettings.showTopSupporters}
                   onValueChange={() => toggleDisplaySetting('showTopSupporters')}
-                  label="Show top supporters on profile"
-                  description="Display your biggest supporters publicly"
+                  label={t('screens.enableTips.toggleLabel.showTopSupporters')}
+                  description={t('screens.enableTips.toggleDescription.showTopSupporters')}
                 />
               </LinearGradient>
             </Animated.View>
@@ -334,7 +336,7 @@ export default function EnableTipsScreen() {
                   >
                     <Icon name="mail" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.configTitle}>Thank You Message</Text>
+                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.thankYouMessage')}</Text>
                 </View>
 
                 <LinearGradient
@@ -345,7 +347,7 @@ export default function EnableTipsScreen() {
                     style={styles.messageInput}
                     value={thankYouMessage}
                     onChangeText={setThankYouMessage}
-                    placeholder="Thank you for your generous support! 🤲"
+                    placeholder={t('screens.enableTips.thankYouPlaceholder')}
                     placeholderTextColor={colors.text.tertiary}
                     multiline
                     numberOfLines={3}
@@ -372,7 +374,7 @@ export default function EnableTipsScreen() {
                   >
                     <Icon name="link" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.configTitle}>Payment Method</Text>
+                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
                 </View>
 
                 <TouchableOpacity
@@ -395,7 +397,7 @@ export default function EnableTipsScreen() {
                         isConnected && styles.connectButtonTextConnected,
                       ]}
                     >
-                      {isConnected ? 'Connected ✓' : 'Connect payment method'}
+                      {isConnected ? t('screens.enableTips.connected') : t('screens.enableTips.connectPaymentMethod')}
                     </Text>
                   </LinearGradient>
                 </TouchableOpacity>
@@ -406,7 +408,7 @@ export default function EnableTipsScreen() {
                     isConnected ? styles.connectionStatusConnected : styles.connectionStatusDisconnected,
                   ]}
                 >
-                  {isConnected ? 'Ready to receive tips' : 'Required to receive tips'}
+                  {isConnected ? t('screens.enableTips.readyToReceiveTips') : t('screens.enableTips.requiredToReceiveTips')}
                 </Text>
               </LinearGradient>
             </Animated.View>
@@ -421,7 +423,7 @@ export default function EnableTipsScreen() {
                 colors={[colors.emerald, colors.emeraldDark]}
                 style={styles.saveButton}
               >
-                <Text style={styles.saveButtonText}>Save Settings</Text>
+                <Text style={styles.saveButtonText}>{t('screens.enableTips.saveSettings')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </Animated.View>

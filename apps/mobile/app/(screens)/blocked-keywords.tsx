@@ -15,11 +15,13 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { BlockedKeyword } from '@/types';
 
 export default function BlockedKeywordsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [newWord, setNewWord] = useState('');
 
   const [refreshing, setRefreshing] = useState(false);
@@ -35,13 +37,13 @@ export default function BlockedKeywordsScreen() {
       setNewWord('');
       queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] });
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => settingsApi.deleteBlockedKeyword(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked-keywords'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleAdd = useCallback(() => {
@@ -57,24 +59,28 @@ export default function BlockedKeywordsScreen() {
   }, [refetch]);
 
   const handleDelete = useCallback((id: string, word: string) => {
-    Alert.alert('Remove keyword', `Remove "${word}" from blocked keywords?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
-    ]);
+    Alert.alert(
+      t('screens.blockedKeywords.removeAlertTitle'),
+      t('screens.blockedKeywords.removeAlertMessage', { word }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('screens.blockedKeywords.removeButton'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+      ]
+    );
   }, [deleteMutation]);
 
   if (isError) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Blocked Keywords"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.blockedKeywords.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.blockedKeywords.errorTitle')}
+          subtitle={t('screens.blockedKeywords.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </SafeAreaView>
@@ -84,8 +90,8 @@ export default function BlockedKeywordsScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Blocked Keywords"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('screens.blockedKeywords.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       <KeyboardAvoidingView
@@ -93,7 +99,7 @@ export default function BlockedKeywordsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Text style={styles.hint}>
-          Comments and replies containing these words will be hidden automatically.
+          {t('screens.blockedKeywords.hint')}
         </Text>
 
         {/* Add new keyword row */}
@@ -109,28 +115,28 @@ export default function BlockedKeywordsScreen() {
               <Icon name="plus" size="sm" color={colors.emerald} style={styles.inputIcon} />
               <TextInput
                 style={styles.input}
-                placeholder="Add a keyword…"
+                placeholder={t('screens.blockedKeywords.placeholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={newWord}
                 onChangeText={setNewWord}
                 onSubmitEditing={handleAdd}
                 returnKeyType="done"
                 autoCapitalize="none"
-                accessibilityLabel="Add a keyword"
+                accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
                 maxLength={50}
               />
             </LinearGradient>
             <TouchableOpacity
               onPress={handleAdd}
               disabled={!newWord.trim() || addMutation.isPending}
-              accessibilityLabel="Add keyword"
+              accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
               accessibilityRole="button"
             >
               <LinearGradient
                 colors={(!newWord.trim() || addMutation.isPending) ? ['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)'] : ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)']}
                 style={[styles.addBtn, (!newWord.trim() || addMutation.isPending) && styles.addBtnDisabled]}
               >
-                <Text style={styles.addBtnText}>Add</Text>
+                <Text style={styles.addBtnText}>{t('screens.blockedKeywords.addButton')}</Text>
               </LinearGradient>
             </TouchableOpacity>
           </LinearGradient>
@@ -169,7 +175,7 @@ export default function BlockedKeywordsScreen() {
                     onPress={() => handleDelete(item.id, item.word)}
                     hitSlop={8}
                     disabled={deleteMutation.isPending}
-                    accessibilityLabel="Remove keyword"
+                    accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
                     accessibilityRole="button"
                   >
                     <LinearGradient
@@ -186,8 +192,8 @@ export default function BlockedKeywordsScreen() {
             ListEmptyComponent={
               <EmptyState
                 icon="slash"
-                title="No blocked keywords"
-                subtitle="Add words above to filter out unwanted comments"
+                title={t('screens.blockedKeywords.emptyTitle')}
+                subtitle={t('screens.blockedKeywords.emptySubtitle')}
               />
             }
           />

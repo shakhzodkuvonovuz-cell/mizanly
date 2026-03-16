@@ -12,6 +12,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -19,6 +20,7 @@ type CameraMode = 'photo' | 'video' | 'story';
 
 export default function CameraScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<CameraMode>('photo');
   const [isRecording, setIsRecording] = useState(false);
   const [flashOn, setFlashOn] = useState(false);
@@ -129,8 +131,8 @@ export default function CameraScreen() {
           end={{ x: 1, y: 1 }}
         />
         <View style={styles.cameraOverlay}>
-          <Text style={styles.cameraOverlayText}>Camera Preview</Text>
-          <Text style={styles.cameraOverlaySubtext}>expo-camera integration ready</Text>
+          <Text style={styles.cameraOverlayText}>{t('screens.camera.previewText')}</Text>
+          <Text style={styles.cameraOverlaySubtext}>{t('screens.camera.previewSubtext')}</Text>
         </View>
 
         {/* Grid lines for composition */}
@@ -188,7 +190,7 @@ export default function CameraScreen() {
               onPress={() => setMode(m)}
             >
               <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
-                {m.charAt(0).toUpperCase() + m.slice(1)}
+                {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -239,9 +241,7 @@ export default function CameraScreen() {
 
         {/* Mode hint */}
         <Text style={styles.modeHint}>
-          {mode === 'photo' ? 'Tap to capture photo' :
-           mode === 'video' ? 'Tap and hold to record' :
-           'Tap to capture story'}
+          {t(`screens.camera.hint${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
         </Text>
       </SafeAreaView>
     </View>

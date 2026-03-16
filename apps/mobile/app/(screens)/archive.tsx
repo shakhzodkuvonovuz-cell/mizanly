@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { storiesApi } from '@/services/api';
 import type { Story } from '@/types';
 import { useStore } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
@@ -27,6 +28,7 @@ export default function ArchiveScreen() {
   const queryClient = useQueryClient();
   const user = useStore((s) => s.user);
   const userId = user?.id;
+  const { t } = useTranslation();
 
   const [selectedStory, setSelectedStory] = useState<Story | null>(null);
   const [bottomSheetVisible, setBottomSheetVisible] = useState(false);
@@ -78,11 +80,11 @@ export default function ArchiveScreen() {
   const handleUnarchive = useCallback(() => {
     if (!selectedStory) return;
     Alert.alert(
-      'Unarchive Story',
-      'This story will be restored to your profile. Are you sure?',
+      {t('screens.archive.unarchiveAlertTitle')},
+      {t('screens.archive.unarchiveAlertMessage')},
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Unarchive', style: 'default', onPress: () => unarchiveMutation.mutate(selectedStory.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('screens.archive.unarchiveButton'), style: 'default', onPress: () => unarchiveMutation.mutate(selectedStory.id) },
       ]
     );
   }, [selectedStory, unarchiveMutation]);
@@ -90,11 +92,11 @@ export default function ArchiveScreen() {
   const handleDelete = useCallback(() => {
     if (!selectedStory) return;
     Alert.alert(
-      'Delete Story',
-      'This story will be permanently deleted. This action cannot be undone.',
+      {t('screens.archive.deleteAlertTitle')},
+      {t('screens.archive.deleteAlertMessage')},
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(selectedStory.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(selectedStory.id) },
       ]
     );
   }, [selectedStory, deleteMutation]);
@@ -142,12 +144,12 @@ export default function ArchiveScreen() {
   if (isError) {
     return (
       <View style={styles.container as ViewStyle}>
-        <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.archive.errorTitle')}
+          subtitle={t('screens.archive.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </View>
@@ -157,7 +159,7 @@ export default function ArchiveScreen() {
   if (isLoading) {
     return (
       <View style={styles.container as ViewStyle}>
-        <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         {renderSkeleton()}
       </View>
     );
@@ -165,7 +167,7 @@ export default function ArchiveScreen() {
 
   return (
     <View style={styles.container as ViewStyle}>
-      <GlassHeader title="Archive" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+      <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
       <FlatList
           removeClippedSubviews={true}
@@ -179,8 +181,8 @@ export default function ArchiveScreen() {
           <View style={styles.emptyState}>
             <EmptyState
               icon="clock"
-              title="No archived stories"
-              subtitle="Stories you archive will appear here"
+              title={t('screens.archive.emptyTitle')}
+              subtitle={t('screens.archive.emptySubtitle')}
             />
           </View>
         }
@@ -198,12 +200,12 @@ export default function ArchiveScreen() {
         onClose={() => setBottomSheetVisible(false)}
       >
         <BottomSheetItem
-          label="Unarchive"
+          label={t('screens.archive.unarchiveLabel')}
           icon={<Icon name="repeat" size="md" color={colors.text.primary} />}
           onPress={handleUnarchive}
         />
         <BottomSheetItem
-          label="Delete"
+          label={t('common.delete')}
           icon={<Icon name="trash" size="md" color={colors.error} />}
           onPress={handleDelete}
           destructive

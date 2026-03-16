@@ -8,6 +8,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -23,19 +24,24 @@ const HIJRI_MONTHS_ARABIC = [
   'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
 ];
 
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_KEYS = [
+  'screens.islamicCalendar.sun', 'screens.islamicCalendar.mon',
+  'screens.islamicCalendar.tue', 'screens.islamicCalendar.wed',
+  'screens.islamicCalendar.thu', 'screens.islamicCalendar.fri',
+  'screens.islamicCalendar.sat',
+];
 
 // Mock events data
 const ISLAMIC_EVENTS = [
-  { day: 1, month: 0, name: 'Islamic New Year', type: 'important' },
-  { day: 10, month: 0, name: 'Day of Ashura', type: 'important' },
-  { day: 12, month: 2, name: 'Mawlid al-Nabi', type: 'important' },
-  { day: 27, month: 6, name: 'Isra and Mi\'raj', type: 'important' },
-  { day: 1, month: 8, name: 'First Day of Ramadan', type: 'important' },
-  { day: 27, month: 8, name: 'Laylat al-Qadr', type: 'important' },
-  { day: 1, month: 9, name: 'Eid al-Fitr', type: 'eid' },
-  { day: 8, month: 11, name: 'Day of Arafah', type: 'important' },
-  { day: 9, month: 11, name: 'Eid al-Adha', type: 'eid' },
+  { day: 1, month: 0, name: 'screens.islamicCalendar.islamicNewYear', type: 'important' },
+  { day: 10, month: 0, name: 'screens.islamicCalendar.dayOfAshura', type: 'important' },
+  { day: 12, month: 2, name: 'screens.islamicCalendar.mawlidAlNabi', type: 'important' },
+  { day: 27, month: 6, name: 'screens.islamicCalendar.israAndMiraj', type: 'important' },
+  { day: 1, month: 8, name: 'screens.islamicCalendar.firstDayOfRamadan', type: 'important' },
+  { day: 27, month: 8, name: 'screens.islamicCalendar.laylatAlQadr', type: 'important' },
+  { day: 1, month: 9, name: 'screens.islamicCalendar.eidAlFitr', type: 'eid' },
+  { day: 8, month: 11, name: 'screens.islamicCalendar.dayOfArafah', type: 'important' },
+  { day: 9, month: 11, name: 'screens.islamicCalendar.eidAlAdha', type: 'eid' },
 ];
 
 // Generate mock calendar days
@@ -117,7 +123,7 @@ function CalendarDay({
   );
 }
 
-function EventCard({ event, index }: { event: typeof ISLAMIC_EVENTS[0]; index: number }) {
+function EventCard({ event, index, t }: { event: typeof ISLAMIC_EVENTS[0]; index: number; t: (key: string, params?: Record<string, unknown>) => string }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
       <LinearGradient
@@ -134,7 +140,7 @@ function EventCard({ event, index }: { event: typeof ISLAMIC_EVENTS[0]; index: n
           <Icon name={event.type === 'eid' ? 'star' : 'flag'} size="sm" color={event.type === 'eid' ? colors.gold : colors.emerald} />
         </LinearGradient>
         <View style={styles.eventInfo}>
-          <Text style={[styles.eventName, event.type === 'eid' && styles.eventNameEid]}>{event.name}</Text>
+          <Text style={[styles.eventName, event.type === 'eid' && styles.eventNameEid]}>{t(event.name)}</Text>
           <Text style={styles.eventDate}>{HIJRI_MONTHS[event.month]} {event.day}</Text>
         </View>
         <View style={[
@@ -144,7 +150,7 @@ function EventCard({ event, index }: { event: typeof ISLAMIC_EVENTS[0]; index: n
           <Text style={[
             styles.eventBadgeText,
             event.type === 'eid' && styles.eventBadgeTextEid,
-          ]}>{event.type === 'eid' ? 'EID' : 'EVENT'}</Text>
+          ]}>{event.type === 'eid' ? t('screens.islamicCalendar.badgeEid') : t('screens.islamicCalendar.badgeEvent')}</Text>
         </View>
       </LinearGradient>
     </Animated.View>
@@ -153,6 +159,7 @@ function EventCard({ event, index }: { event: typeof ISLAMIC_EVENTS[0]; index: n
 
 export default function IslamicCalendarScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [currentMonth, setCurrentMonth] = useState(8); // Ramadan
   const [currentYear, setCurrentYear] = useState(1446);
 
@@ -183,7 +190,7 @@ export default function IslamicCalendarScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Islamic Calendar"
+        title={t('screens.islamicCalendar.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -202,10 +209,10 @@ export default function IslamicCalendarScreen() {
           >
             <View style={styles.currentDateContent}>
               <Text style={styles.currentHijriDate}>15 {HIJRI_MONTHS_ARABIC[8]} 1446</Text>
-              <Text style={styles.currentHijriSub}>15 Ramadan 1446 AH</Text>
+              <Text style={styles.currentHijriSub}>{t('screens.islamicCalendar.currentHijriSub')}</Text>
               <View style={styles.currentGregorian}>
                 <Icon name="calendar" size="xs" color="rgba(255,255,255,0.7)" />
-                <Text style={styles.currentGregorianText}>Friday, March 14, 2025</Text>
+                <Text style={styles.currentGregorianText}>{t('screens.islamicCalendar.currentGregorianDate')}</Text>
               </View>
             </View>
 
@@ -252,8 +259,8 @@ export default function IslamicCalendarScreen() {
 
             {/* Weekday Headers */}
             <View style={styles.weekdayHeader}>
-              {WEEKDAYS.map((day) => (
-                <Text key={day} style={styles.weekdayText}>{day}</Text>
+              {WEEKDAY_KEYS.map((dayKey) => (
+                <Text key={dayKey} style={styles.weekdayText}>{t(dayKey)}</Text>
               ))}
             </View>
 
@@ -275,15 +282,15 @@ export default function IslamicCalendarScreen() {
             <View style={styles.calendarLegend}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: colors.emerald }]} />
-                <Text style={styles.legendText}>Today</Text>
+                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendToday')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: colors.gold }]} />
-                <Text style={styles.legendText}>Eid</Text>
+                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendEid')}</Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, { backgroundColor: colors.emerald, opacity: 0.5 }]} />
-                <Text style={styles.legendText}>Important</Text>
+                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendImportant')}</Text>
               </View>
             </View>
           </LinearGradient>
@@ -298,11 +305,11 @@ export default function IslamicCalendarScreen() {
             >
               <Icon name="flag" size="xs" color={colors.gold} />
             </LinearGradient>
-            <Text style={styles.sectionTitle}>Upcoming Events</Text>
+            <Text style={styles.sectionTitle}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
           </View>
 
           {upcomingEvents.map((event, index) => (
-            <EventCard key={event.name} event={event} index={index} />
+            <EventCard key={event.name} event={event} index={index} t={t} />
           ))}
         </View>
 
@@ -314,7 +321,7 @@ export default function IslamicCalendarScreen() {
               style={styles.quickLinkGradient}
             >
               <Icon name="clock" size="sm" color={colors.emerald} />
-              <Text style={styles.quickLinkText}>Prayer Times</Text>
+              <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.prayerTimes')}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -324,7 +331,7 @@ export default function IslamicCalendarScreen() {
               style={styles.quickLinkGradient}
             >
               <Icon name="book-open" size="sm" color={colors.gold} />
-              <Text style={styles.quickLinkText}>Quran</Text>
+              <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.quran')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>

@@ -15,6 +15,7 @@ import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { circlesApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const EMOJIS = ['⭕', '⭐', '🌙', '🤝', '💚', '🕌', '📿', '🏠', '💼', '🎓'];
 
@@ -36,6 +37,7 @@ function CreateSheet({
 }) {
   const [name, setName] = useState('');
   const [emoji, setEmoji] = useState('⭕');
+  const { t } = useTranslation();
 
   const createMutation = useMutation({
     mutationFn: () => circlesApi.create(name.trim(), emoji),
@@ -45,12 +47,12 @@ function CreateSheet({
       onCreated();
       onClose();
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   return (
     <BottomSheet visible={visible} onClose={onClose}>
-      <Text style={styles.sheetTitle}>New Circle</Text>
+      <Text style={styles.sheetTitle}>{t('screens.circles.newCircleTitle')}</Text>
 
       {/* Emoji picker */}
       <View style={styles.emojiRow}>
@@ -76,7 +78,7 @@ function CreateSheet({
         style={styles.nameInput}
         value={name}
         onChangeText={setName}
-        placeholder="Circle name (e.g. Family, Close Friends)"
+        placeholder={t('screens.circles.circleNamePlaceholder')}
         placeholderTextColor={colors.text.tertiary}
         maxLength={40}
         autoFocus
@@ -95,7 +97,7 @@ function CreateSheet({
           {createMutation.isPending ? (
             <ActivityIndicator color={colors.text.primary} size="small" />
           ) : (
-            <Text style={styles.createBtnText}>Create Circle</Text>
+            <Text style={styles.createBtnText}>{t('screens.circles.createCircleButton')}</Text>
           )}
         </LinearGradient>
       </TouchableOpacity>
@@ -106,6 +108,7 @@ function CreateSheet({
 export default function CirclesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [showCreate, setShowCreate] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,17 +128,17 @@ export default function CirclesScreen() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => circlesApi.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-circles'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleDelete = (circle: Circle) => {
     Alert.alert(
-      `Delete "${circle.name}"?`,
-      'This will remove the circle and all its members.',
+      t('screens.circles.deleteAlertTitle', { name: circle.name }),
+      t('screens.circles.deleteAlertMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete', style: 'destructive',
+          text: t('screens.circles.deleteButton'), style: 'destructive',
           onPress: () => deleteMutation.mutate(circle.id),
         },
       ],
@@ -146,14 +149,14 @@ export default function CirclesScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Circles"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.circles.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.circles.errorTitle')}
+          subtitle={t('screens.circles.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => circlesQuery.refetch()}
         />
       </View>
@@ -163,13 +166,13 @@ export default function CirclesScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Circles"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: 'Create circle' }]}
+        title={t('screens.circles.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: t('screens.circles.createCircleLabel') }]}
       />
 
       <Text style={[styles.subtitle, { marginTop: insets.top + 52 }]}>
-        Share posts with specific groups of people
+        {t('screens.circles.subtitle')}
       </Text>
 
       {circlesQuery.isLoading ? (
@@ -212,7 +215,7 @@ export default function CirclesScreen() {
                   <View style={styles.memberBadge}>
                     <Icon name="users" size="xs" color={colors.text.tertiary} />
                     <Text style={styles.circleMemberCount}>
-                      {item._count?.members ?? 0} members
+                      {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
                     </Text>
                   </View>
                 </View>
@@ -234,9 +237,9 @@ export default function CirclesScreen() {
           ListEmptyComponent={() => (
             <EmptyState
               icon="users"
-              title="No circles yet"
-              subtitle="Create circles to share posts with specific groups"
-              actionLabel="Create your first circle"
+              title={t('screens.circles.emptyTitle')}
+              subtitle={t('screens.circles.emptySubtitle')}
+              actionLabel={t('screens.circles.createFirstCircleButton')}
               onAction={() => setShowCreate(true)}
             />
           )}

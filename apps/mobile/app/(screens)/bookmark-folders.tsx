@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const SCREEN_W = Dimensions.get('window').width;
 const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
@@ -30,6 +31,7 @@ type FolderCardProps = {
 
 function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
   const itemCount = folder.itemIds.length;
+  const { t } = useTranslation();
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
     <TouchableOpacity onPress={onPress} onLongPress={onLongPress} activeOpacity={0.85} style={styles.folderCard}>
@@ -38,7 +40,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
       </View>
       <Text style={styles.folderName} numberOfLines={1}>{folder.name}</Text>
       <Text style={styles.folderCount}>
-        {itemCount} {itemCount === 1 ? 'item' : 'items'}
+        {t('screens.bookmarkFolders.itemsCount', { count: itemCount })}
       </Text>
     </TouchableOpacity>
   );
@@ -47,6 +49,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
 export default function BookmarkFoldersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   const [foldersMap, setFoldersMap] = useState<Record<string, { name: string, itemIds: string[] }>>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,7 +73,7 @@ export default function BookmarkFoldersScreen() {
       }
     } catch (error) {
       console.error('Failed to load bookmark folders:', error);
-      Alert.alert('Error', 'Could not load folders');
+      Alert.alert(t('common.error'), t('screens.bookmarkFolders.loadError'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,7 +92,7 @@ export default function BookmarkFoldersScreen() {
   const handleCreateFolder = useCallback(async () => {
     const trimmed = newFolderName.trim();
     if (!trimmed) {
-      Alert.alert('Error', 'Folder name cannot be empty');
+      Alert.alert(t('common.error'), t('screens.bookmarkFolders.emptyNameError'));
       return;
     }
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
@@ -101,18 +104,18 @@ export default function BookmarkFoldersScreen() {
       setCreateSheetVisible(false);
     } catch (error) {
       console.error('Failed to create folder:', error);
-      Alert.alert('Error', 'Could not create folder');
+      Alert.alert(t('common.error'), t('screens.bookmarkFolders.createError'));
     }
   }, [foldersMap, newFolderName]);
 
   const handleDeleteFolder = useCallback(async (folderId: string) => {
     Alert.alert(
-      'Delete Folder',
-      'Are you sure you want to delete this folder? The saved items will not be removed.',
+      t('screens.bookmarkFolders.deleteAlertTitle'),
+      t('screens.bookmarkFolders.deleteAlertMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('screens.bookmarkFolders.deleteButton'),
           style: 'destructive',
           onPress: async () => {
             const updated = { ...foldersMap };
@@ -132,7 +135,7 @@ export default function BookmarkFoldersScreen() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Bookmark Folders" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <View style={[styles.skeletonGrid, { paddingTop: insets.top + 52 }]}>
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton.Rect key={i} width={FOLDER_CARD_WIDTH} height={FOLDER_CARD_WIDTH} borderRadius={radius.md} />
@@ -144,7 +147,7 @@ export default function BookmarkFoldersScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassHeader title="Bookmark Folders" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+      <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
       <FlatList
           removeClippedSubviews={true}
@@ -165,9 +168,9 @@ export default function BookmarkFoldersScreen() {
         ListEmptyComponent={() => (
           <EmptyState
             icon="bookmark"
-            title="No folders yet"
-            subtitle="Organize your saved content into folders"
-            actionLabel="Create Folder"
+            title={t('screens.bookmarkFolders.emptyTitle')}
+            subtitle={t('screens.bookmarkFolders.emptySubtitle')}
+            actionLabel={t('screens.bookmarkFolders.createFolderButton')}
             onAction={() => setCreateSheetVisible(true)}
           />
         )}
@@ -179,7 +182,7 @@ export default function BookmarkFoldersScreen() {
         style={styles.fab}
         onPress={() => setCreateSheetVisible(true)}
         hitSlop={8}
-        accessibilityLabel="Create new folder"
+        accessibilityLabel={t('screens.bookmarkFolders.createFolderLabel')}
       >
         <Icon name="plus" size="lg" color="#fff" />
       </Pressable>
@@ -187,10 +190,10 @@ export default function BookmarkFoldersScreen() {
       {/* Create Folder BottomSheet */}
       <BottomSheet visible={createSheetVisible} onClose={() => setCreateSheetVisible(false)}>
         <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Create Folder</Text>
+          <Text style={styles.sheetTitle}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
           <TextInput
             style={styles.input}
-            placeholder="Folder name"
+            placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={newFolderName}
             onChangeText={setNewFolderName}
@@ -198,10 +201,10 @@ export default function BookmarkFoldersScreen() {
           />
           <View style={styles.sheetButtons}>
             <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
-              <Text style={styles.cancelText}>Cancel</Text>
+              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
-              <Text style={styles.createText}>Create</Text>
+              <Text style={styles.createText}>{t('screens.bookmarkFolders.createButton')}</Text>
             </Pressable>
           </View>
         </View>

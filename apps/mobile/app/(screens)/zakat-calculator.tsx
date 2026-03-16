@@ -21,6 +21,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -44,10 +45,11 @@ interface DeductionInput {
 }
 
 function StepIndicator({ currentStep }: { currentStep: Step }) {
+  const { t } = useTranslation();
   const steps = [
-    { num: 1, label: 'Assets' },
-    { num: 2, label: 'Deductions' },
-    { num: 3, label: 'Result' },
+    { num: 1, label: t('screens.zakatCalculator.stepAssets') },
+    { num: 2, label: t('screens.zakatCalculator.stepDeductions') },
+    { num: 3, label: t('screens.zakatCalculator.stepResult') },
   ];
 
   return (
@@ -151,6 +153,7 @@ function InputCard({
 
 export default function ZakatCalculatorScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [currentStep, setCurrentStep] = useState<Step>(1);
@@ -226,7 +229,7 @@ export default function ZakatCalculatorScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Zakat Calculator"
+        title={t('screens.zakatCalculator.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -252,7 +255,7 @@ export default function ZakatCalculatorScreen() {
                 <Icon name="calculator" size="sm" color={colors.emerald} />
               </LinearGradient>
               <Text style={styles.infoText}>
-                Calculate your annual Zakat obligation (2.5% of eligible wealth above Nisab)
+                {t('screens.zakatCalculator.infoBannerText')}
               </Text>
             </LinearGradient>
           </Animated.View>
@@ -263,39 +266,39 @@ export default function ZakatCalculatorScreen() {
           {/* Step 1: Assets */}
           {currentStep === 1 && (
             <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>Enter your assets</Text>
+              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterYourAssets')}</Text>
 
               <InputCard
                 icon="circle"
-                label="Cash & Bank Balances"
+                label={t('screens.zakatCalculator.cashAndBank')}
                 value={assets.cash}
                 onChangeText={(v) => updateAsset('cash', v)}
                 delay={100}
               />
               <InputCard
                 icon="layers"
-                label="Gold & Silver Value"
+                label={t('screens.zakatCalculator.goldAndSilver')}
                 value={assets.gold}
                 onChangeText={(v) => updateAsset('gold', v)}
                 delay={150}
               />
               <InputCard
                 icon="bar-chart-2"
-                label="Investments & Stocks"
+                label={t('screens.zakatCalculator.investmentsAndStocks')}
                 value={assets.investments}
                 onChangeText={(v) => updateAsset('investments', v)}
                 delay={200}
               />
               <InputCard
                 icon="briefcase"
-                label="Business Inventory"
+                label={t('screens.zakatCalculator.businessInventory')}
                 value={assets.inventory}
                 onChangeText={(v) => updateAsset('inventory', v)}
                 delay={250}
               />
               <InputCard
                 icon="home"
-                label="Property for Rent/Sale"
+                label={t('screens.zakatCalculator.propertyForRentSale')}
                 value={assets.property}
                 onChangeText={(v) => updateAsset('property', v)}
                 delay={300}
@@ -307,7 +310,7 @@ export default function ZakatCalculatorScreen() {
                   colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
                   style={styles.previewCard}
                 >
-                  <Text style={styles.previewLabel}>Total Assets</Text>
+                  <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
                   <Text style={styles.previewValue}>{formatCurrency(totalAssets)}</Text>
                 </LinearGradient>
               </Animated.View>
@@ -319,7 +322,7 @@ export default function ZakatCalculatorScreen() {
                     colors={[colors.emerald, colors.emeraldDark]}
                     style={styles.nextButton}
                   >
-                    <Text style={styles.nextButtonText}>Next: Deductions</Text>
+                    <Text style={styles.nextButtonText}>{t('screens.zakatCalculator.nextDeductions')}</Text>
                     <Icon name="chevron-right" size="sm" color={colors.text.primary} />
                   </LinearGradient>
                 </TouchableOpacity>
@@ -330,18 +333,18 @@ export default function ZakatCalculatorScreen() {
           {/* Step 2: Deductions */}
           {currentStep === 2 && (
             <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>Enter deductions</Text>
+              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterDeductions')}</Text>
 
               <InputCard
                 icon="credit-card"
-                label="Outstanding Debts"
+                label={t('screens.zakatCalculator.outstandingDebts')}
                 value={deductions.debts}
                 onChangeText={(v) => updateDeduction('debts', v)}
                 delay={100}
               />
               <InputCard
                 icon="clock"
-                label="Immediate Expenses"
+                label={t('screens.zakatCalculator.immediateExpenses')}
                 value={deductions.expenses}
                 onChangeText={(v) => updateDeduction('expenses', v)}
                 delay={150}
@@ -354,18 +357,18 @@ export default function ZakatCalculatorScreen() {
                   style={styles.previewCard}
                 >
                   <View style={styles.previewRow}>
-                    <Text style={styles.previewLabel}>Total Assets</Text>
+                    <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
                     <Text style={styles.previewValueSmall}>{formatCurrency(totalAssets)}</Text>
                   </View>
                   <View style={styles.previewRow}>
-                    <Text style={styles.previewLabel}>Total Deductions</Text>
+                    <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
                     <Text style={[styles.previewValueSmall, styles.negativeValue]}>
                       -{formatCurrency(totalDeductions)}
                     </Text>
                   </View>
                   <View style={styles.previewDivider} />
                   <View style={styles.previewRow}>
-                    <Text style={[styles.previewLabel, styles.boldLabel]}>Net Zakatable Wealth</Text>
+                    <Text style={[styles.previewLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netZakatableWealth')}</Text>
                     <Text style={[styles.previewValue, styles.emeraldValue]}>
                       {formatCurrency(netWealth)}
                     </Text>
@@ -381,7 +384,7 @@ export default function ZakatCalculatorScreen() {
                     style={styles.backButtonGradient}
                   >
                     <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.backButtonText}>Back</Text>
+                    <Text style={styles.backButtonText}>{t('common.back')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -390,7 +393,7 @@ export default function ZakatCalculatorScreen() {
                     colors={[colors.emerald, colors.emeraldDark]}
                     style={styles.calculateButtonGradient}
                   >
-                    <Text style={styles.calculateButtonText}>Calculate Zakat</Text>
+                    <Text style={styles.calculateButtonText}>{t('screens.zakatCalculator.calculateZakat')}</Text>
                     <Icon name="check-circle" size="sm" color={colors.text.primary} />
                   </LinearGradient>
                 </TouchableOpacity>
@@ -401,7 +404,7 @@ export default function ZakatCalculatorScreen() {
           {/* Step 3: Result */}
           {currentStep === 3 && (
             <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>Your Zakat calculation</Text>
+              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.yourZakatCalculation')}</Text>
 
               {/* Result Card */}
               <LinearGradient
@@ -410,28 +413,28 @@ export default function ZakatCalculatorScreen() {
               >
                 {/* Calculation Summary */}
                 <View style={styles.calculationRow}>
-                  <Text style={styles.calculationLabel}>Total Assets</Text>
+                  <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
                   <Text style={styles.calculationValue}>{formatCurrency(totalAssets)}</Text>
                 </View>
                 <View style={styles.calculationRow}>
-                  <Text style={styles.calculationLabel}>Total Deductions</Text>
+                  <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
                   <Text style={styles.calculationValue}>{formatCurrency(totalDeductions)}</Text>
                 </View>
                 <View style={styles.calculationDivider} />
                 <View style={styles.calculationRow}>
-                  <Text style={[styles.calculationLabel, styles.boldLabel]}>Net Wealth</Text>
+                  <Text style={[styles.calculationLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netWealth')}</Text>
                   <Text style={[styles.calculationValue, styles.boldValue]}>{formatCurrency(netWealth)}</Text>
                 </View>
 
                 {/* Nisab Display */}
                 <View style={styles.nisabContainer}>
-                  <Text style={styles.nisabTitle}>Current Nisab Threshold</Text>
+                  <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
                   <View style={styles.nisabRow}>
-                    <Text style={styles.nisabLabel}>Gold Nisab:</Text>
+                    <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldNisab')}</Text>
                     <Text style={styles.nisabValue}>{formatCurrency(NISAB_GOLD)}</Text>
                   </View>
                   <View style={styles.nisabRow}>
-                    <Text style={styles.nisabLabel}>Silver Nisab:</Text>
+                    <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.silverNisab')}</Text>
                     <Text style={styles.nisabValue}>{formatCurrency(NISAB_SILVER)}</Text>
                   </View>
                 </View>
@@ -439,14 +442,14 @@ export default function ZakatCalculatorScreen() {
                 {/* Final Result */}
                 {isAboveNisab ? (
                   <View style={styles.zakatDueContainer}>
-                    <Text style={styles.zakatDueLabel}>Zakat Due (2.5%)</Text>
+                    <Text style={styles.zakatDueLabel}>{t('screens.zakatCalculator.zakatDue')}</Text>
                     <Text style={styles.zakatDueValue}>{formatCurrency(zakatDue)}</Text>
                   </View>
                 ) : (
                   <View style={styles.belowNisabContainer}>
                     <Icon name="check-circle" size="md" color={colors.gold} />
                     <Text style={styles.belowNisabText}>
-                      Your wealth is below the Nisab threshold. No Zakat is due.
+                      {t('screens.zakatCalculator.belowNisabMessage')}
                     </Text>
                   </View>
                 )}
@@ -460,7 +463,7 @@ export default function ZakatCalculatorScreen() {
                 >
                   <Icon name="book-open" size="sm" color={colors.emerald} />
                   <Text style={styles.educationText}>
-                    Zakat is 2.5% of wealth held for one lunar year above the Nisab threshold
+                    {t('screens.zakatCalculator.educationNote')}
                   </Text>
                 </LinearGradient>
               </Animated.View>
@@ -473,7 +476,7 @@ export default function ZakatCalculatorScreen() {
                     style={styles.actionButtonHalfGradient}
                   >
                     <Icon name="repeat" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.actionButtonHalfText}>Recalculate</Text>
+                    <Text style={styles.actionButtonHalfText}>{t('screens.zakatCalculator.recalculate')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
 
@@ -483,7 +486,7 @@ export default function ZakatCalculatorScreen() {
                     style={styles.actionButtonHalfGradient}
                   >
                     <Icon name="share" size="sm" color={colors.text.primary} />
-                    <Text style={styles.shareButtonText}>Share</Text>
+                    <Text style={styles.shareButtonText}>{t('common.share')}</Text>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>

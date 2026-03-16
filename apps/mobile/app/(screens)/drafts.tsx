@@ -10,6 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { draftsApi } from '@/services/api';
 
 type DraftItem = {
@@ -20,12 +21,6 @@ type DraftItem = {
   updatedAt: string;
 };
 
-const SPACE_LABELS: Record<string, string> = {
-  SAF: 'Post',
-  MAJLIS: 'Thread',
-  BAKRA: 'Reel',
-  MINBAR: 'Video',
-};
 
 const SPACE_ICONS: Record<string, React.ComponentProps<typeof Icon>['name']> = {
   SAF: 'image',
@@ -38,6 +33,7 @@ export default function DraftsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useTranslation();
 
   const { data: drafts, isLoading, isError, refetch } = useQuery({
     queryKey: ['drafts'],
@@ -56,9 +52,9 @@ export default function DraftsScreen() {
   }, [queryClient]);
 
   const handleDelete = (id: string) => {
-    Alert.alert('Delete draft?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+    Alert.alert(t('screens.drafts.deleteAlertTitle'), t('screens.drafts.deleteAlertMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
     ]);
   };
 
@@ -75,14 +71,14 @@ export default function DraftsScreen() {
 
   const renderDraft = ({ item, index }: { item: DraftItem; index: number }) => {
     const data = item.data as Record<string, string>;
-    const preview = data.content ?? data.caption ?? data.title ?? 'Untitled draft';
+    const preview = data.content ?? data.caption ?? data.title ?? t('screens.drafts.untitledDraft');
     const time = formatDistanceToNowStrict(new Date(item.updatedAt), { addSuffix: true });
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
         <Pressable
           onPress={() => handleOpen(item)}
-          accessibilityLabel={`Draft: ${preview}`}
+          accessibilityLabel={t('screens.drafts.draftLabel', { preview })}
           accessibilityRole="button"
         >
           <LinearGradient
@@ -96,7 +92,7 @@ export default function DraftsScreen() {
               <Icon name={SPACE_ICONS[item.space] ?? 'image'} size="sm" color={colors.emerald} />
             </LinearGradient>
             <View style={styles.draftContent}>
-              <Text style={styles.draftType}>{SPACE_LABELS[item.space] ?? 'Draft'}</Text>
+              <Text style={styles.draftType}>{t(`screens.drafts.spaceLabels.${item.space}`, { defaultValue: 'Draft' })}</Text>
               <Text style={styles.draftPreview} numberOfLines={2}>{preview}</Text>
               <Text style={styles.draftTime}>{time}</Text>
             </View>
@@ -104,7 +100,7 @@ export default function DraftsScreen() {
               style={styles.draftDeleteBtn}
               onPress={() => handleDelete(item.id)}
               hitSlop={8}
-              accessibilityLabel="Delete draft"
+              accessibilityLabel={t('screens.drafts.deleteDraftLabel')}
               accessibilityRole="button"
             >
               <LinearGradient
@@ -124,15 +120,15 @@ export default function DraftsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Drafts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.drafts.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.drafts.errorTitle')}
+          subtitle={t('screens.drafts.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </View>
@@ -142,8 +138,8 @@ export default function DraftsScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Drafts"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('screens.drafts.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
       <View style={styles.headerSpacer} />
 
@@ -156,8 +152,8 @@ export default function DraftsScreen() {
       ) : !drafts?.length ? (
         <EmptyState
           icon="layers"
-          title="No drafts saved yet"
-          subtitle="When you start creating and save for later, your drafts will appear here"
+          title={t('screens.drafts.emptyTitle')}
+          subtitle={t('screens.drafts.emptySubtitle')}
         />
       ) : (
         <FlatList

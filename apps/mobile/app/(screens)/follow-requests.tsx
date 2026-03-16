@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { FollowRequest } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 function RequestRow({
   request,
@@ -31,6 +32,7 @@ function RequestRow({
   index: number;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const { follower } = request;
 
   return (
@@ -63,7 +65,7 @@ function RequestRow({
                   colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                   style={styles.acceptBtn}
                 >
-                  <Text style={styles.acceptText}>Confirm</Text>
+                  <Text style={styles.acceptText}>{t('screens.followRequests.confirm')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity onPress={onDecline}>
@@ -71,7 +73,7 @@ function RequestRow({
                   colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
                   style={styles.declineBtn}
                 >
-                  <Text style={styles.declineText}>Delete</Text>
+                  <Text style={styles.declineText}>{t('common.delete')}</Text>
                 </LinearGradient>
               </TouchableOpacity>
             </>
@@ -86,6 +88,7 @@ export default function FollowRequestsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const requestsQuery = useQuery({
     queryKey: ['follow-requests'],
@@ -97,13 +100,13 @@ export default function FollowRequestsScreen() {
   const acceptMutation = useMutation({
     mutationFn: (id: string) => followsApi.acceptRequest(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-requests'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const declineMutation = useMutation({
     mutationFn: (id: string) => followsApi.declineRequest(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['follow-requests'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -118,12 +121,12 @@ export default function FollowRequestsScreen() {
   if (requestsQuery.isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Follow Requests" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.followRequests.errorTitle')}
+          subtitle={t('screens.followRequests.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => requestsQuery.refetch()}
         />
       </View>
@@ -132,7 +135,7 @@ export default function FollowRequestsScreen() {
 
   return (
     <View style={styles.container}>
-      <GlassHeader title="Follow Requests" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+      <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
       {requestsQuery.isLoading ? (
         <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
@@ -169,8 +172,8 @@ export default function FollowRequestsScreen() {
           ListEmptyComponent={() => (
             <EmptyState
               icon="user"
-              title="No pending requests"
-              subtitle="Follow requests from people who want to follow your private account will appear here."
+              title={t('screens.followRequests.emptyTitle')}
+              subtitle={t('screens.followRequests.emptySubtitle')}
             />
           )}
         />

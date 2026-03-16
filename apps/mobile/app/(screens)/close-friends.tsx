@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/Badge';
 import { colors, spacing, fontSize, fonts, radius } from '@/theme';
 import { followsApi, circlesApi } from '@/services/api';
 import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CLOSE_FRIENDS_CIRCLE_NAME = 'Close Friends';
 
@@ -87,6 +88,7 @@ export default function CloseFriendsScreen() {
   const queryClient = useQueryClient();
   const { user: clerkUser } = useUser();
   const currentUserId = clerkUser?.id;
+  const { t } = useTranslation();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
@@ -213,18 +215,18 @@ export default function CloseFriendsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Close Friends"
+          title={t('screens.closeFriends.title')}
           leftAction={{
             icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.back'),
           }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.closeFriends.errorTitle')}
+          subtitle={t('screens.closeFriends.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => followersQuery.refetch()}
         />
       </View>
@@ -235,11 +237,11 @@ export default function CloseFriendsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Close Friends"
+          title={t('screens.closeFriends.title')}
           leftAction={{
             icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('common.back'),
           }}
         />
         <View style={[styles.skeletonList, { paddingTop: headerHeight + spacing.base }]}>
@@ -264,11 +266,11 @@ export default function CloseFriendsScreen() {
         leftAction={{
           icon: 'arrow-left',
           onPress: () => router.back(),
-          accessibilityLabel: 'Go back',
+          accessibilityLabel: t('common.back'),
         }}
         titleComponent={
           <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>Close Friends</Text>
+            <Text style={styles.headerTitle}>{t('screens.closeFriends.title')}</Text>
             <Badge count={memberIds.length} color={colors.emerald} size="sm" />
           </View>
         }
@@ -283,7 +285,7 @@ export default function CloseFriendsScreen() {
           <Icon name="search" size="sm" color={colors.text.secondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search followers..."
+            placeholder={t('screens.closeFriends.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -306,14 +308,14 @@ export default function CloseFriendsScreen() {
         <View style={styles.statItem}>
           <Icon name="users" size="xs" color={colors.emerald} />
           <Text style={styles.statsText}>
-            {closeFriendsInList.length} of {filteredFollowers.length} shown
+            {t('screens.closeFriends.statsShown', { shown: closeFriendsInList.length, total: filteredFollowers.length })}
           </Text>
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
           <Icon name="heart" size="xs" color={colors.gold} />
           <Text style={[styles.statsText, styles.statsTextAccent]}>
-            {memberIds.length} close friends
+            {t('screens.closeFriends.statsCloseFriends', { count: memberIds.length })}
           </Text>
         </View>
       </LinearGradient>
@@ -343,8 +345,8 @@ export default function CloseFriendsScreen() {
           followersQuery.isLoading ? null : (
             <EmptyState
               icon="users"
-              title={searchQuery ? "No one matches your search" : "Your inner circle starts here"}
-              subtitle={searchQuery ? "Try searching by name or username" : "Once people follow you, you can add your closest friends to this special list"}
+              title={searchQuery ? t('screens.closeFriends.emptySearchTitle') : t('screens.closeFriends.emptyDefaultTitle')}
+              subtitle={searchQuery ? t('screens.closeFriends.emptySearchSubtitle') : t('screens.closeFriends.emptyDefaultSubtitle')}
             />
           )
         }

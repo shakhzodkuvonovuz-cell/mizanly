@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -53,6 +54,7 @@ function PhraseButton({
   isSelected: boolean;
   onPress: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
       <LinearGradient
@@ -70,7 +72,7 @@ function PhraseButton({
           {phrase.latin}
         </Text>
         <Text style={styles.phraseArabic}>{phrase.arabic}</Text>
-        <Text style={styles.phraseMeaning}>{phrase.meaning}</Text>
+        <Text style={styles.phraseMeaning}>{t(`screens.dhikrCounter.phraseMeaning.${phrase.id}`)}</Text>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -109,6 +111,7 @@ function StatCard({
 export default function DhikrCounterScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState(PRESET_PHRASES[0]);
   const [count, setCount] = useState(0);
@@ -189,7 +192,7 @@ export default function DhikrCounterScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Dhikr Counter"
+        title={t('screens.dhikrCounter.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -236,7 +239,7 @@ export default function DhikrCounterScreen() {
 
                   {/* Hint Text */}
                   {!hasStarted && (
-                    <Text style={styles.tapHint}>Tap to count</Text>
+                    <Text style={styles.tapHint}>{t('screens.dhikrCounter.tapHint')}</Text>
                   )}
                 </View>
               </LinearGradient>
@@ -274,7 +277,7 @@ export default function DhikrCounterScreen() {
           >
             <View style={styles.progressHeader}>
               <Text style={styles.progressTitle}>
-                {isComplete ? 'Set complete!' : `${count}/${DAILY_GOAL} — Keep going`}
+                {isComplete ? t('screens.dhikrCounter.setComplete') : t('screens.dhikrCounter.progressTitle', { count, goal: DAILY_GOAL })}
               </Text>
               {isComplete && <Icon name="check-circle" size="sm" color={colors.gold} />}
             </View>
@@ -293,18 +296,18 @@ export default function DhikrCounterScreen() {
             </View>
 
             <Text style={styles.progressSubtitle}>
-              Standard dhikr sets are 33 repetitions
+              {t('screens.dhikrCounter.progressSubtitle')}
             </Text>
           </LinearGradient>
         </Animated.View>
 
         {/* Daily Summary */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <Text style={styles.summaryTitle}>Daily Summary</Text>
+          <Text style={styles.summaryTitle}>{t('screens.dhikrCounter.summaryTitle')}</Text>
           <View style={styles.statsRow}>
-            <StatCard icon="bar-chart-2" label="Total Counts" value={stats.totalCount} delay={350} />
-            <StatCard icon="check-circle" label="Sets Done" value={stats.setsCompleted} delay={400} />
-            <StatCard icon="trending-up" label="Day Streak" value={stats.streak} delay={450} />
+            <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={stats.totalCount} delay={350} />
+            <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={stats.setsCompleted} delay={400} />
+            <StatCard icon="trending-up" label={t('screens.dhikrCounter.stats.dayStreak')} value={stats.streak} delay={450} />
           </View>
         </Animated.View>
 

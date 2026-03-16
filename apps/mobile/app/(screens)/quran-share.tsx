@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -65,6 +66,7 @@ function GeometricPattern() {
 
 export default function QuranShareScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [currentSurah, setCurrentSurah] = useState(SURAHS[0]);
   const [currentVerse, setCurrentVerse] = useState(1);
   const [showSurahPicker, setShowSurahPicker] = useState(false);
@@ -99,7 +101,7 @@ export default function QuranShareScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Share Quran"
+        title={t('screens.quranShare.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         rightAction={{ icon: 'share', onPress: () => setShowShareOptions(true) }}
       />
@@ -130,8 +132,8 @@ export default function QuranShareScreen() {
                 <Text style={styles.surahName}>{currentSurah.name}</Text>
               </View>
               <View style={styles.surahMeta}>
-                <Text style={styles.surahNumber}>Surah {currentSurah.number}</Text>
-                <Text style={styles.verseCount}>{currentSurah.verses} verses</Text>
+                <Text style={styles.surahNumber}>{t('screens.quranShare.surahNumber', { number: currentSurah.number })}</Text>
+                <Text style={styles.verseCount}>{t('screens.quranShare.versesCount', { count: currentSurah.verses })}</Text>
               </View>
               <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
             </LinearGradient>
@@ -157,7 +159,7 @@ export default function QuranShareScreen() {
             colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
             style={styles.verseIndicator}
           >
-            <Text style={styles.verseNumber}>Verse {currentVerse}</Text>
+            <Text style={styles.verseNumber}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
           </LinearGradient>
 
           <TouchableOpacity
@@ -239,7 +241,7 @@ export default function QuranShareScreen() {
               style={styles.shareButtonGradient}
             >
               <Icon name="share" size="sm" color="#fff" />
-              <Text style={styles.shareButtonText}>Share This Verse</Text>
+              <Text style={styles.shareButtonText}>{t('screens.quranShare.shareThisVerse')}</Text>
             </LinearGradient>
           </TouchableOpacity>
 
@@ -252,7 +254,7 @@ export default function QuranShareScreen() {
               style={styles.copyButtonGradient}
             >
               <Icon name="link" size="sm" color={colors.text.secondary} />
-              <Text style={styles.copyButtonText}>Copy Text</Text>
+              <Text style={styles.copyButtonText}>{t('screens.quranShare.copyText')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -262,7 +264,7 @@ export default function QuranShareScreen() {
       <BottomSheet visible={showSurahPicker} onClose={() => setShowSurahPicker(false)}>
         <View style={styles.surahSearchBar}>
           <Icon name="search" size="sm" color={colors.text.tertiary} />
-          <Text style={styles.surahSearchPlaceholder}>Search surahs...</Text>
+          <Text style={styles.surahSearchPlaceholder}>{t('screens.quranShare.searchSurahs')}</Text>
         </View>
         {SURAHS.map((surah) => (
           <BottomSheetItem
@@ -284,24 +286,24 @@ export default function QuranShareScreen() {
 
       {/* Share Options Bottom Sheet */}
       <BottomSheet visible={showShareOptions} onClose={() => setShowShareOptions(false)}>
-        <Text style={styles.shareSheetTitle}>Share Quran Verse</Text>
+        <Text style={styles.shareSheetTitle}>{t('screens.quranShare.shareQuranVerse')}</Text>
         <BottomSheetItem
-          label="Share as Post"
+          label={t('screens.quranShare.shareAsPost')}
           icon={<Icon name="image" size="sm" color={colors.emerald} />}
           onPress={handleShareAsPost}
         />
         <BottomSheetItem
-          label="Share as Story"
+          label={t('screens.quranShare.shareAsStory')}
           icon={<Icon name="play" size="sm" color={colors.gold} />}
           onPress={handleShareAsStory}
         />
         <BottomSheetItem
-          label="Copy Text"
+          label={t('screens.quranShare.copyText')}
           icon={<Icon name="link" size="sm" color={colors.text.secondary} />}
           onPress={handleCopyText}
         />
         <BottomSheetItem
-          label="Share Image"
+          label={t('screens.quranShare.shareImage')}
           icon={<Icon name="share" size="sm" color={colors.emerald} />}
           onPress={() => setShowShareOptions(false)}
         />

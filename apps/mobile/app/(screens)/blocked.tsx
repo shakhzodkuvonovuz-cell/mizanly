@@ -16,6 +16,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { blocksApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface BlockedUser {
   id: string;
@@ -35,6 +36,7 @@ type BlockedPage = PaginatedResponse<User>;
 export default function BlockedScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const query = useInfiniteQuery({
     queryKey: ['blocked'],
@@ -48,7 +50,7 @@ export default function BlockedScreen() {
   const unblockMutation = useMutation({
     mutationFn: (userId: string) => blocksApi.unblock(userId),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['blocked'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const [refreshing, setRefreshing] = useState(false);
@@ -60,11 +62,11 @@ export default function BlockedScreen() {
 
   const confirmUnblock = (item: BlockedUser) => {
     Alert.alert(
-      `Unblock @${item.blocked.username}?`,
-      'They will be able to see your posts and follow you again.',
+      t('screens.blocked.unblockAlertTitle', { username: item.blocked.username }),
+      t('screens.blocked.unblockAlertMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Unblock', onPress: () => unblockMutation.mutate(item.blocked.id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('screens.blocked.unblockButton'), onPress: () => unblockMutation.mutate(item.blocked.id) },
       ],
     );
   };
@@ -73,14 +75,14 @@ export default function BlockedScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Blocked Accounts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.blocked.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.blocked.errorTitle')}
+          subtitle={t('screens.blocked.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => query.refetch()}
         />
       </SafeAreaView>
@@ -90,8 +92,8 @@ export default function BlockedScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Blocked Accounts"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('screens.blocked.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
       />
 
       {query.isLoading ? (
@@ -136,13 +138,13 @@ export default function BlockedScreen() {
                     </View>
                   </View>
                   <GradientButton
-                    label="Unblock"
+                    label={t('screens.blocked.unblockButton')}
                     variant="primary"
                     size="sm"
                     onPress={() => confirmUnblock(item)}
                     loading={unblockMutation.isPending && unblockMutation.variables === u.id}
                     disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
-                    accessibilityLabel={`Unblock ${u.displayName}`}
+                    accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
                     accessibilityRole="button"
                   />
                 </LinearGradient>
@@ -163,8 +165,8 @@ export default function BlockedScreen() {
           ListEmptyComponent={() => (
             <EmptyState
               icon="slash"
-              title="No blocked accounts"
-              subtitle="Accounts you block won't be able to see your content"
+              title={t('screens.blocked.emptyTitle')}
+              subtitle={t('screens.blocked.emptySubtitle')}
             />
           )}
         />

@@ -13,6 +13,7 @@ import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -42,6 +43,7 @@ const ASPECT_RATIOS: { value: AspectRatio; label: string; ratio: number }[] = [
 
 export default function ImageEditorScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<EditTab>('filter');
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('normal');
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>('free');
@@ -72,7 +74,7 @@ export default function ImageEditorScreen() {
 
   const renderCropTab = () => (
     <View style={styles.tabContent}>
-      <Text style={styles.tabTitle}>Aspect Ratio</Text>
+      <Text style={styles.tabTitle}>{t('screens.imageEditor.aspectRatio')}</Text>
       <View style={styles.aspectRow}>
         {ASPECT_RATIOS.map((ar) => (
           <TouchableOpacity
@@ -84,13 +86,13 @@ export default function ImageEditorScreen() {
               <View style={[styles.aspectInner, aspectRatio === ar.value && styles.aspectInnerActive]} />
             </View>
             <Text style={[styles.aspectLabel, aspectRatio === ar.value && styles.aspectLabelActive]}>
-              {ar.label}
+              {t(`screens.imageEditor.aspectRatio.${ar.value}`)}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      <Text style={styles.tabTitle}>Crop Frame</Text>
+      <Text style={styles.tabTitle}>{t('screens.imageEditor.cropFrame')}</Text>
       <View style={styles.cropFrameContainer}>
         <LinearGradient
           colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -102,7 +104,7 @@ export default function ImageEditorScreen() {
             <View style={[styles.corner, styles.cornerBottomLeft]} />
             <View style={[styles.corner, styles.cornerBottomRight]} />
           </View>
-          <Text style={styles.cropHint}>Drag corners to adjust</Text>
+          <Text style={styles.cropHint}>{t('screens.imageEditor.dragCornersHint')}</Text>
         </LinearGradient>
       </View>
     </View>
@@ -129,7 +131,7 @@ export default function ImageEditorScreen() {
               <Text style={styles.filterPreviewText}>Aa</Text>
             </LinearGradient>
             <Text style={[styles.filterName, selectedFilter === filter.id && styles.filterNameActive]}>
-              {filter.name}
+              {t(`screens.imageEditor.filter.${filter.id}`)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -140,9 +142,9 @@ export default function ImageEditorScreen() {
   const renderAdjustTab = () => (
     <View style={styles.tabContent}>
       {[
-        { label: 'Brightness', value: brightness, setValue: setBrightness, icon: 'sun' as IconName },
-        { label: 'Contrast', value: contrast, setValue: setContrast, icon: 'circle' as IconName },
-        { label: 'Saturation', value: saturation, setValue: setSaturation, icon: 'droplet' as IconName },
+        { label: t('screens.imageEditor.brightness'), value: brightness, setValue: setBrightness, icon: 'sun' as IconName },
+        { label: t('screens.imageEditor.contrast'), value: contrast, setValue: setContrast, icon: 'circle' as IconName },
+        { label: t('screens.imageEditor.saturation'), value: saturation, setValue: setSaturation, icon: 'droplet' as IconName },
       ].map((slider) => (
         <View key={slider.label} style={styles.sliderContainer}>
           <View style={styles.sliderHeader}>
@@ -185,7 +187,7 @@ export default function ImageEditorScreen() {
 
       {/* Header */}
       <GlassHeader
-        title="Edit"
+        title={t('screens.imageEditor.title')}
         leftAction={{ icon: 'x', onPress: handleCancel }}
         rightAction={{ icon: 'check', onPress: handleDone }}
       />
@@ -198,7 +200,7 @@ export default function ImageEditorScreen() {
             style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
           >
             <Icon name="image" size="xl" color={colors.text.tertiary} />
-            <Text style={styles.imagePlaceholderText}>Your Image</Text>
+            <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
           </LinearGradient>
 
           {/* Crop Frame Overlay */}
@@ -239,7 +241,7 @@ export default function ImageEditorScreen() {
                 <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : colors.text.tertiary} />
               </LinearGradient>
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                {t(`screens.imageEditor.tab.${tab}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -257,7 +259,7 @@ export default function ImageEditorScreen() {
 
         {/* Done Button */}
         <GradientButton
-          label="Done"
+          label={t('common.done')}
           onPress={handleDone}
           style={styles.doneButton}
         />

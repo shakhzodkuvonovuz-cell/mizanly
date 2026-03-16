@@ -132,7 +132,7 @@ export default function AccountSwitcherScreen() {
 
                     {/* Stats */}
                     <Text style={styles.heroStats}>
-                      {activeAccount.followers} followers · {activeAccount.following} following · {activeAccount.posts} posts
+                      {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} · ${activeAccount.following} ${t('screens.accountSwitcher.following')} · ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
                     </Text>
                   </View>
 
@@ -221,7 +221,7 @@ export default function AccountSwitcherScreen() {
                           colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
                           style={styles.switchButtonGradient}
                         >
-                          <Text style={styles.switchButtonText}>Switch</Text>
+                          <Text style={styles.switchButtonText}>{t('screens.accountSwitcher.switchButton')}</Text>
                         </LinearGradient>
                       </TouchableOpacity>
                     </View>
@@ -242,8 +242,8 @@ export default function AccountSwitcherScreen() {
               <View style={styles.addAccountIcon}>
                 <Icon name="circle-plus" size="xl" color={colors.emerald} />
               </View>
-              <Text style={styles.addAccountText}>Add Account</Text>
-              <Text style={styles.addAccountSubtext}>Sign in to another account</Text>
+              <Text style={styles.addAccountText}>{t('screens.accountSwitcher.addAccount')}</Text>
+              <Text style={styles.addAccountSubtext}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
             </LinearGradient>
           </TouchableOpacity>
         </Animated.View>
@@ -265,14 +265,14 @@ export default function AccountSwitcherScreen() {
                     <Icon name="settings" size="sm" color={colors.emerald} />
                   </LinearGradient>
                 </View>
-                <Text style={styles.managementTitle}>Account Management</Text>
+                <Text style={styles.managementTitle}>{t('screens.accountSwitcher.managementTitle')}</Text>
               </View>
 
               {/* Manage Accounts Row */}
               <TouchableOpacity style={styles.managementRow}>
                 <View style={styles.managementRowLeft}>
                   <Icon name="users" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.managementRowText}>Manage Accounts</Text>
+                  <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
                 </View>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
               </TouchableOpacity>
@@ -281,7 +281,7 @@ export default function AccountSwitcherScreen() {
               <TouchableOpacity style={styles.managementRow}>
                 <View style={styles.managementRowLeft}>
                   <Icon name="user" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.managementRowText}>Default Account</Text>
+                  <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
                 </View>
                 <View style={styles.managementRowRight}>
                   <Text style={[styles.managementRowValue, {color: colors.text.tertiary}]}>
@@ -295,7 +295,7 @@ export default function AccountSwitcherScreen() {
               <View style={styles.toggleRow}>
                 <View style={styles.toggleRowLeft}>
                   <Icon name="bell" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.toggleRowText}>Auto-switch on notification</Text>
+                  <Text style={styles.toggleRowText}>{t('screens.accountSwitcher.autoSwitchToggle')}</Text>
                 </View>
                 <Switch
                   value={autoSwitchOnNotification}
@@ -325,10 +325,10 @@ export default function AccountSwitcherScreen() {
               </View>
               <View style={styles.securityContent}>
                 <Text style={styles.securityText}>
-                  Each account has its own login and security settings
+                  {t('screens.accountSwitcher.securityText')}
                 </Text>
                 <TouchableOpacity>
-                  <Text style={styles.signOutAllText}>Sign out of all accounts</Text>
+                  <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
                 </TouchableOpacity>
               </View>
             </LinearGradient>

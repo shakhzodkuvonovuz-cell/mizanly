@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/Badge';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const CATEGORIES = [
   'All', 'Islamic', 'Tech', 'Sports', 'Art', 'Food', 'Local', 'Education', 'Health'
@@ -36,6 +37,7 @@ function CommunityCard({
   onJoin: (id: string) => void;
   onPress: (community: Community) => void;
 }) {
+  const { t } = useTranslation();
   const scaleAnim = useSharedValue(1);
 
   const handlePress = () => {
@@ -109,7 +111,7 @@ function CommunityCard({
               </View>
               {category && (
                 <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{category}</Text>
+                  <Text style={styles.categoryText}>{t(`screens.communities.category.${category.toLowerCase()}`)}</Text>
                 </View>
               )}
             </View>
@@ -124,7 +126,7 @@ function CommunityCard({
                 style={styles.joinButtonGradient}
               >
                 <Text style={[styles.joinButtonText, community.isJoined && styles.joinButtonTextJoined]}>
-                  {community.isJoined ? 'Joined' : 'Join'}
+                  {community.isJoined ? t('screens.communities.joinButtonJoined') : t('screens.communities.joinButtonJoin')}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -174,6 +176,7 @@ export default function CommunitiesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const { t } = useTranslation();
 
   const fetchCommunities = useCallback(async (cursor?: string) => {
     setLoading(true);
@@ -182,12 +185,12 @@ export default function CommunitiesScreen() {
       const response = await communitiesApi.list(cursor);
       setCommunities(prev => cursor ? [...prev, ...response.data] : response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load communities');
+      setError(err instanceof Error ? err.message : t('screens.communities.errorLoadFailed'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     fetchCommunities();
@@ -242,8 +245,8 @@ export default function CommunitiesScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Communities"
-        subtitle={activeTab === 'joined' ? `${joinedCount} joined` : undefined}
+        title={t('screens.communities.title')}
+        subtitle={activeTab === 'joined' ? t('screens.communities.joinedCount', { count: joinedCount }) : undefined}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
 
@@ -256,7 +259,7 @@ export default function CommunitiesScreen() {
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search communities..."
+            placeholder={t('screens.communities.searchPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -280,7 +283,7 @@ export default function CommunitiesScreen() {
             style={styles.tabGradient}
           >
             <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : colors.text.tertiary} />
-            <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>Discover</Text>
+            <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
           </LinearGradient>
         </TouchableOpacity>
 
@@ -294,7 +297,7 @@ export default function CommunitiesScreen() {
           >
             <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : colors.text.tertiary} />
             <Text style={[styles.tabText, activeTab === 'joined' && styles.tabTextActive]}>
-              Joined {joinedCount > 0 && `(${joinedCount})`}
+              {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -314,7 +317,7 @@ export default function CommunitiesScreen() {
               onPress={() => setActiveCategory(category)}
             >
               <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
-                {category}
+                {t(`screens.communities.category.${category.toLowerCase()}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -343,12 +346,12 @@ export default function CommunitiesScreen() {
         ) : (
           <EmptyState
             icon="users"
-            title={activeTab === 'joined' ? 'No joined communities' : 'No communities found'}
+            title={activeTab === 'joined' ? t('screens.communities.emptyJoinedTitle') : t('screens.communities.emptyDiscoverTitle')}
             subtitle={activeTab === 'joined'
-              ? 'Discover and join communities to connect with others'
-              : 'Try a different search or category'
+              ? t('screens.communities.emptyJoinedSubtitle')
+              : t('screens.communities.emptyDiscoverSubtitle')
             }
-            actionLabel={activeTab === 'joined' ? 'Discover' : undefined}
+            actionLabel={activeTab === 'joined' ? t('screens.communities.tabDiscover') : undefined}
             onAction={activeTab === 'joined' ? () => setActiveTab('discover') : undefined}
           />
         )}

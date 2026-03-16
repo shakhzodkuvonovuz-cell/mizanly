@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -36,20 +37,20 @@ interface PrayerTime {
 }
 
 const RAMADAN_SCHEDULE: PrayerTime[] = [
-  { name: 'Suhoor ends (Fajr)', time: '5:23 AM', isHighlighted: true },
-  { name: 'Sunrise', time: '6:45 AM' },
-  { name: 'Dhuhr', time: '12:30 PM' },
-  { name: 'Asr', time: '3:45 PM' },
-  { name: 'Iftar (Maghrib)', time: '6:12 PM', isHighlighted: true },
-  { name: 'Isha', time: '7:35 PM' },
-  { name: 'Taraweeh', time: '8:00 PM', isHighlighted: true },
+  { name: 'screens.ramadanMode.suhoorEndsFajr', time: '5:23 AM', isHighlighted: true },
+  { name: 'screens.ramadanMode.sunrise', time: '6:45 AM' },
+  { name: 'screens.ramadanMode.dhuhr', time: '12:30 PM' },
+  { name: 'screens.ramadanMode.asr', time: '3:45 PM' },
+  { name: 'screens.ramadanMode.iftarMaghrib', time: '6:12 PM', isHighlighted: true },
+  { name: 'screens.ramadanMode.isha', time: '7:35 PM' },
+  { name: 'screens.ramadanMode.taraweeh', time: '8:00 PM', isHighlighted: true },
 ];
 
 const INITIAL_GOALS: DailyGoal[] = [
-  { id: 'quran', icon: 'book-open', label: 'Read 1 Juz of Quran', completed: false },
-  { id: 'dhikr', icon: 'circle', label: 'Make Dhikr 100x', completed: true },
-  { id: 'sadaqah', icon: 'gift', label: 'Give Sadaqah', completed: false },
-  { id: 'taraweeh', icon: 'moon', label: 'Pray Taraweeh', completed: false },
+  { id: 'quran', icon: 'book-open', label: 'screens.ramadanMode.goalReadQuran', completed: false },
+  { id: 'dhikr', icon: 'circle', label: 'screens.ramadanMode.goalDhikr', completed: true },
+  { id: 'sadaqah', icon: 'gift', label: 'screens.ramadanMode.goalSadaqah', completed: false },
+  { id: 'taraweeh', icon: 'moon', label: 'screens.ramadanMode.goalTaraweeh', completed: false },
 ];
 
 function CountdownDisplay({
@@ -110,7 +111,7 @@ function CountdownDisplay({
   );
 }
 
-function ScheduleItem({ prayer, index }: { prayer: PrayerTime; index: number }) {
+function ScheduleItem({ prayer, index, t }: { prayer: PrayerTime; index: number; t: (key: string) => string }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)} style={styles.scheduleItem}>
       <View style={styles.scheduleIconContainer}>
@@ -124,7 +125,7 @@ function ScheduleItem({ prayer, index }: { prayer: PrayerTime; index: number }) 
             prayer.isCurrent && styles.scheduleNameCurrent,
           ]}
         >
-          {prayer.name}
+          {t(prayer.name)}
         </Text>
         <Text style={[styles.scheduleTime, prayer.isCurrent && styles.scheduleTimeCurrent]}>
           {prayer.time}
@@ -132,7 +133,7 @@ function ScheduleItem({ prayer, index }: { prayer: PrayerTime; index: number }) 
       </View>
       {prayer.isCurrent && (
         <LinearGradient colors={[colors.emerald, colors.emeraldLight]} style={styles.currentBadge}>
-          <Text style={styles.currentBadgeText}>Now</Text>
+          <Text style={styles.currentBadgeText}>{t('screens.ramadanMode.now')}</Text>
         </LinearGradient>
       )}
     </Animated.View>
@@ -149,6 +150,7 @@ function GoalItem({
   index: number;
 }) {
   const haptic = useHaptic();
+  const { t } = useTranslation();
 
   return (
     <Animated.View entering={FadeInUp.delay(200 + index * 60).duration(300)}>
@@ -183,7 +185,7 @@ function GoalItem({
               goal.completed && styles.goalLabelCompleted,
             ]}
           >
-            {goal.label}
+            {t(goal.label)}
           </Text>
 
           <View style={styles.checkContainer}>
@@ -203,6 +205,7 @@ function GoalItem({
 
 export default function RamadanModeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [currentDay, setCurrentDay] = useState(15);
@@ -243,9 +246,9 @@ export default function RamadanModeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <GlassHeader
-        title="Ramadan"
+        title={t('screens.ramadanMode.title')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        rightActions={[{ icon: 'moon', onPress: () => {}, accessibilityLabel: 'Ramadan' }]}
+        rightActions={[{ icon: 'moon', onPress: () => {}, accessibilityLabel: t('screens.ramadanMode.title') }]}
       />
 
       <ScrollView
@@ -267,11 +270,11 @@ export default function RamadanModeScreen() {
             </LinearGradient>
 
             {/* Title */}
-            <Text style={styles.heroTitle}>Ramadan 1446 AH</Text>
+            <Text style={styles.heroTitle}>{t('screens.ramadanMode.heroTitle')}</Text>
 
             {/* Day Counter */}
             <View style={styles.dayCounter}>
-              <Text style={styles.dayText}>Day {currentDay} of 30</Text>
+              <Text style={styles.dayText}>{t('screens.ramadanMode.dayOfTotal', { day: currentDay, total: 30 })}</Text>
               <View style={styles.progressContainer}>
                 <View style={styles.progressTrack}>
                   <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -287,14 +290,14 @@ export default function RamadanModeScreen() {
         {/* Dual Countdown Timers */}
         <View style={styles.countdownRow}>
           <CountdownDisplay
-            label="Iftar in"
+            label={t('screens.ramadanMode.iftarIn')}
             time={iftarCountdown}
             icon="sun"
             iconColor={colors.gold}
             isUrgent={isIftarUrgent}
           />
           <CountdownDisplay
-            label="Suhoor ends in"
+            label={t('screens.ramadanMode.suhoorEndsIn')}
             time={suhoorCountdown}
             icon="moon"
             iconColor={colors.emerald}
@@ -303,20 +306,20 @@ export default function RamadanModeScreen() {
 
         {/* Today's Schedule */}
         <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <Text style={styles.sectionTitle}>Today's Schedule</Text>
+          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.todaysSchedule')}</Text>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.scheduleCard}
           >
             {RAMADAN_SCHEDULE.map((prayer, index) => (
-              <ScheduleItem key={prayer.name} prayer={prayer} index={index} />
+              <ScheduleItem key={prayer.name} prayer={prayer} index={index} t={t} />
             ))}
           </LinearGradient>
         </Animated.View>
 
         {/* Fasting Tracker */}
         <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-          <Text style={styles.sectionTitle}>Fasting Tracker</Text>
+          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.fastingTracker')}</Text>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.trackerCard}
@@ -354,15 +357,15 @@ export default function RamadanModeScreen() {
 
             {/* Summary */}
             <View style={styles.trackerSummary}>
-              <Text style={styles.trackerSummaryText}>22 days fasted</Text>
-              <Text style={styles.trackerRemaining}>8 days remaining</Text>
+              <Text style={styles.trackerSummaryText}>{t('screens.ramadanMode.daysFasted', { count: 22 })}</Text>
+              <Text style={styles.trackerRemaining}>{t('screens.ramadanMode.daysRemaining', { count: 8 })}</Text>
             </View>
           </LinearGradient>
         </Animated.View>
 
         {/* Daily Goals */}
         <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-          <Text style={styles.sectionTitle}>Daily Goals</Text>
+          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.dailyGoals')}</Text>
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.goalsCard}

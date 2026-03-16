@@ -15,6 +15,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -22,6 +23,7 @@ export default function BookmarkCollectionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
 
   const { data: collections, isLoading, isError, refetch } = useQuery({
@@ -67,7 +69,7 @@ export default function BookmarkCollectionsScreen() {
             <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
             <View style={styles.countBadge}>
               <Icon name="bookmark" size={10} color={colors.text.tertiary} />
-              <Text style={styles.count}>{item.count} saved</Text>
+              <Text style={styles.count}>{t('screens.bookmarkCollections.savedCount', { count: item.count })}</Text>
             </View>
           </View>
         </LinearGradient>
@@ -79,15 +81,15 @@ export default function BookmarkCollectionsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Saved Collections" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.bookmarkCollections.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="bookmark" 
-          title="Couldn't load collections" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
+          title={t('screens.bookmarkCollections.errorTitle')} 
+          subtitle={t('screens.bookmarkCollections.errorSubtitle')} 
+          actionLabel={t('common.retry')} 
           onAction={() => refetch()} 
         />
       </View>
@@ -99,8 +101,8 @@ export default function BookmarkCollectionsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Saved Collections"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.bookmarkCollections.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md }}>
@@ -121,8 +123,8 @@ export default function BookmarkCollectionsScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader 
-        title="Saved Collections" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        title={t('screens.bookmarkCollections.title')} 
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
       />
       
       <FlatList
@@ -140,8 +142,8 @@ export default function BookmarkCollectionsScreen() {
           <View style={styles.emptyWrap}>
             <EmptyState 
               icon="bookmark" 
-              title="No collections" 
-              subtitle="Save posts, videos, and threads directly to collections" 
+              title={t('screens.bookmarkCollections.emptyTitle')} 
+              subtitle={t('screens.bookmarkCollections.emptySubtitle')} 
             />
           </View>
         }
