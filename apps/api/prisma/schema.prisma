@@ -491,7 +491,12 @@ model Reel {
   userId   String
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   videoUrl     String
-  streamId     String?
+  streamId       String?
+  hlsUrl         String?
+  dashUrl        String?
+  qualities      String[]    @default([])
+  isLooping      Boolean     @default(true)
+  normalizeAudio Boolean     @default(false)
   thumbnailUrl String?
   duration     Float
   width        Int        @default(1080)
@@ -703,7 +708,12 @@ model Video {
   title        String  @db.VarChar(200)
   description  String? @db.VarChar(10000)
   videoUrl     String
-  streamId     String?
+  streamId       String?
+  hlsUrl         String?
+  dashUrl        String?
+  qualities      String[]    @default([])
+  isLooping      Boolean     @default(false)
+  normalizeAudio Boolean     @default(false)
   thumbnailUrl String?
   duration     Float
   width        Int?
