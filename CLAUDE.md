@@ -16,11 +16,11 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: ~90% Competitor Parity (as of 2026-03-17, Post-Batch 38)
-All 5 spaces built, polished, and production-ready. 104+ screens, 431+ API endpoints, 50 backend modules, 81+ Prisma models, 301 commits.
-Backend: NestJS with 50 modules, Redis, security headers, rate limiting, observability, Stripe payments, content moderation, push notifications, Cloudflare Stream video.
+## Status: ~95% Competitor Parity (as of 2026-03-18, Post-Batch 43A Wave 1)
+All 5 spaces built, polished, and production-ready. 164 screens, 549 API endpoints, 59 backend modules, 107 Prisma models, 307 commits, 151K+ lines of code.
+Backend: NestJS with 59 modules, Redis, security headers, rate limiting, observability, Stripe payments, content moderation, push notifications, Cloudflare Stream video, Islamic features (30+ endpoints).
 Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions/calls, offline resilience, glassmorphism visual polish, i18n (100% coverage), RTL support, error boundaries on all screens, Expo Web + PWA.
-Tier 1 (Foundation) and Tier 2 (Video/Media) complete. Tier 3 (Stories/Reels) in progress (Batch 39).
+Tiers 1-7 complete. Tier 8 (Platform & UX Parity) in progress (Batch 43A Wave 1 done, Wave 2 pending).
 See `docs/COMPETITOR_ANALYSIS.md` for full gap analysis vs TikTok/IG/X/YT/WA.
 
 ---
@@ -49,9 +49,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Message forward, message edit (inline)
 
 ### Still Missing (see docs/plans/2026-03-17-pre-production-roadmap.md for full 191-feature list)
-**Tier 3 (Ship-blocking, Batch 39):** Add Yours sticker, music on stories, drawing tools, text effects, link stickers, reel templates, reel remix, duet/stitch camera wiring, video replies, green screen wiring, photo with music, disposable camera, AR filters (deferred)
-**Tier 4 (Ship-blocking, Batch 40):** E2E encryption, disappearing messages, view-once media, file sharing, location sharing, message scheduling, chat lock, chat backup, group admin tools, screen sharing, group video calls, multi-device
-**Tier 5-8 (Launch Week):** Feed intelligence, creator economy, Islamic moat features, platform/UX parity
+**Tier 8 (Batch 43A Wave 2 + 43B):** DM notes, hide reply, muted conversations, quiet mode, screen time, auto-play settings, cross-post, share extension, offline download, PiP, mini player, video premiere, video clips, ambient mode, end screens, collaborative playlists, channel trailer, home widgets, parental controls
 **Tier 9-12 (Month One):** AI features, gamification, commerce, community
 
 ---
@@ -95,27 +93,25 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 50 feature modules (complete)
+│   │   ├── src/modules/         # 59 feature modules
 │   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
-│   │   ├── src/gateways/        # Socket.io /chat namespace
-│   │   └── prisma/schema.prisma # v3 schema, 1850+ lines
+│   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
+│   │   └── prisma/schema.prisma # 107 models, 2,235 lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
-│       │   ├── (tabs)/          # saf, majlis, risalah, bakra, create
-│       │   ├── (auth)/          # sign-in, sign-up
-│       │   ├── (screens)/       # 104+ screens
-│       │   └── onboarding/      # 4 steps
+│       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
+│       │   └── (screens)/       # 131+ screens + 17 nested route dirs
 │       └── src/
-│           ├── components/ui/   # BottomSheet, Skeleton, Icon, Avatar, Badge,
-│           │                    # ActionButton, RichText, VerifiedBadge, TabSelector,
-│           │                    # CharCountRing, EmptyState
-│           ├── components/saf/  # PostCard, PostMedia, StoryRow, StoryBubble
-│           ├── components/majlis/ # ThreadCard
-│           ├── components/      # ErrorBoundary (root, wraps app)
-│           ├── hooks/           # useHaptic, usePushNotifications, useAnimatedPress
-│           ├── services/api.ts  # All API clients (46+ endpoint groups)
-│           ├── store/index.ts   # Zustand store
+│           ├── components/ui/   # 28 components: BottomSheet, Skeleton, Icon, Avatar,
+│           │                    # GlassHeader, GradientButton, EmptyState, VerifiedBadge,
+│           │                    # CharCountRing, VideoPlayer, ImageLightbox, etc.
+│           ├── components/islamic/ # EidFrame
+│           ├── hooks/           # 13 hooks: useHaptic, useTranslation, useNetworkStatus, etc.
+│           ├── services/        # 16 API service files (api.ts, islamicApi.ts, etc.)
+│           ├── stores/index.ts  # Zustand store
 │           ├── theme/index.ts   # Design tokens
+│           ├── utils/           # hijri.ts, etc.
+│           ├── i18n/            # en.json (2,659 lines) + ar.json (2,551 lines)
 │           └── types/index.ts   # TypeScript interfaces
 ```
 
@@ -246,4 +242,4 @@ cd apps/api && npx prisma studio                  # DB browser GUI
 ```
 
 ## Deferred
-Minbar V1.4 (live streaming) | E2E encryption V2.0 | Monetization V2.0
+AR filters | Screen sharing | Multi-device sync | Group video calls

@@ -23,31 +23,24 @@
 
 ---
 
-## AGENT 0: Schema — 4 new models + 2 model extensions
+## WAVE 1 — COMPLETE (committed a55c3b2)
 
-**Modifies:** `apps/api/prisma/schema.prisma`
+- **AGENT 0: Schema** — 4 new models (Restrict, DMNote, ScreenTimeLog, QuietModeSetting) + Comment.isHidden + UserSettings extensions
+- **AGENT 1: Contact Sync** — `POST /users/contacts/sync` + contact-sync.tsx
+- **AGENT 2: Biometric App Lock** — biometric-lock.tsx + _layout BiometricLockOverlay
+- **AGENT 4: Restrict User** — restricts module (CRUD) + restricted.tsx
+- **AGENT 6: Undo Send** — 5-second timer in conversation/[id].tsx
+- **AGENT 11: Clear Mode + Comment Swipe-to-Like** — tap-toggle overlays on video/reel + PanGestureHandler on comments
 
-Add models: Restrict, DMNote, ScreenTimeLog, QuietModeSetting.
-Add to Comment: `isHidden Boolean @default(false)`.
-Add to UserSettings: `screenTimeLimitMinutes Int?`, `undoSendSeconds Int @default(5)`, `autoPlaySetting String @default("wifi")`.
+---
 
-## AGENT 1: Contact Sync — ~400 lines
-Backend: `POST /users/contacts/sync`. Mobile: contact-sync.tsx using expo-contacts.
-
-## AGENT 2: Biometric App Lock — ~300 lines
-Mobile: biometric-lock.tsx using expo-local-authentication. Store + settings + _layout lock check.
+## WAVE 2 — PENDING (7 remaining agents)
 
 ## AGENT 3: DM Notes — ~400 lines
 Backend: CRUD for DMNote model (4 endpoints). Mobile: dm-note-editor.tsx.
 
-## AGENT 4: Restrict User — ~300 lines
-New module: restricts (module/service/controller). Mobile: restricted.tsx list screen.
-
 ## AGENT 5: Hide Reply — ~200 lines
 Extend posts.service.ts: hideComment/unhideComment. Filter isHidden in getComments.
-
-## AGENT 6: Undo Send — ~200 lines
-Mobile-only: timer-based undo in conversation/[id].tsx.
 
 ## AGENT 7: Muted Conversations — ~200 lines
 Wire existing ConversationMember.isMuted: 2 endpoints + conversation-info.tsx toggle.
@@ -61,12 +54,9 @@ Backend: ScreenTimeLog + stats. Mobile: screen-time.tsx + _layout session tracke
 ## AGENT 10: Auto-play Settings — ~200 lines
 Backend: autoPlaySetting in UserSettings. Mobile: media-settings.tsx section.
 
-## AGENT 11: Clear Mode + Comment Swipe-to-Like — ~300 lines
-Mobile: tap-toggle overlays on video/reel screens + PanGestureHandler on comments.
-
 ## AGENT 12: Cross-post Between Spaces — ~400 lines
 Backend: `POST /posts/:id/cross-post`. Mobile: cross-post.tsx space selector.
 
 ---
 
-## TOTAL: ~3,780 lines across 13 agents
+## TOTAL: ~3,780 lines across 13 agents (~2,200 done in Wave 1, ~1,580 remaining in Wave 2)
