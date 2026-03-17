@@ -20,9 +20,11 @@ import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { ActionButton } from '@/components/ui/ActionButton';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { PostMedia } from './PostMedia';
 import { FloatingHearts } from '@/components/ui/FloatingHearts';
 import { colors, spacing, fontSize, animation, radius } from '@/theme';
+import { aiApi } from '@/services/api';
 import { postsApi, feedApi } from '@/services/api';
 import * as Clipboard from 'expo-clipboard';
 import type { Post } from '@/types';
@@ -41,6 +43,9 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
   const [localLikes, setLocalLikes] = useState(post.likesCount);
   const [localSaved, setLocalSaved] = useState(post.isSaved ?? false);
   const [showMenu, setShowMenu] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const { t: tr } = useTranslation();
 
   // Sync local state when server data changes (e.g. after feed refetch or FlashList recycle)
   useEffect(() => {
@@ -241,12 +246,40 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
 
       {/* Caption */}
       {post.content ? (
-        <RichText
-          text={post.content}
-          style={styles.content}
-          numberOfLines={5}
-          onPostPress={() => router.push(`/(screens)/post/${post.id}`)}
-        />
+        <>
+          <RichText
+            text={translatedText || post.content}
+            style={styles.content}
+            numberOfLines={5}
+            onPostPress={() => router.push(`/(screens)/post/${post.id}`)}
+          />
+          {/* Translate button */}
+          {post.content.length > 10 && (
+            <TouchableOpacity
+              style={styles.translateBtn}
+              onPress={async () => {
+                if (translatedText) {
+                  setTranslatedText(null);
+                  return;
+                }
+                setIsTranslating(true);
+                try {
+                  const result = await aiApi.translate(post.content, 'en', post.id, 'post');
+                  setTranslatedText(typeof result === 'string' ? result : (result as { translatedText?: string })?.translatedText || post.content);
+                } catch {
+                  // Translation failed silently
+                } finally {
+                  setIsTranslating(false);
+                }
+              }}
+            >
+              <Icon name="globe" size="xs" color={colors.text.tertiary} />
+              <Text style={styles.translateText}>
+                {isTranslating ? tr('ai.translating') : translatedText ? tr('ai.showOriginal') : tr('ai.translate')}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </>
       ) : null}
 
       {/* Media with double-tap to like */}
@@ -424,6 +457,18 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     paddingHorizontal: spacing.base,
     paddingBottom: spacing.sm,
+  },
+  translateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.sm,
+  },
+  translateText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontWeight: '500',
   },
   mediaContainer: {
     backgroundColor: colors.dark.bg, // Black background for pillarboxing if needed
