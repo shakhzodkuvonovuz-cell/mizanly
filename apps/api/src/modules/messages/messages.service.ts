@@ -90,13 +90,13 @@ export class MessagesService {
   }
 
   async getConversation(conversationId: string, userId: string) {
-    await this.requireMembership(conversationId, userId);
+    const membership = await this.requireMembership(conversationId, userId);
     const convo = await this.prisma.conversation.findUnique({
       where: { id: conversationId },
       select: CONVERSATION_SELECT,
     });
     if (!convo) throw new NotFoundException('Conversation not found');
-    return convo;
+    return { ...convo, isMuted: membership.isMuted, isArchived: membership.isArchived };
   }
 
   async getMessages(
