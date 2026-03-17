@@ -390,6 +390,18 @@ model User {
   treasuriesCreated CommunityTreasury[] @relation("TreasuryCreator")
   treasuryContributions TreasuryContribution[] @relation("TreasuryContributor")
   premiumSubscription PremiumSubscription?
+  localBoards      LocalBoard[]          @relation("BoardCreator")
+  mentorOf         Mentorship[]          @relation("MentorOf")
+  menteeOf         Mentorship[]          @relation("MenteeOf")
+  studyCircles     StudyCircle[]         @relation("CircleLeader")
+  fatwaQuestions   FatwaQuestion[]       @relation("FatwaAsker")
+  volunteerOpps    VolunteerOpportunity[] @relation("VolunteerOrganizer")
+  islamicEvents    IslamicEvent[]        @relation("EventOrganizer")
+  reputation       UserReputation?
+  voicePosts       VoicePost[]
+  watchParties     WatchParty[]
+  sharedCollections SharedCollection[]   @relation("CollectionCreator")
+  waqfFunds        WaqfFund[]            @relation("WaqfCreator")
 
   @@index([username])
   @@index([clerkId])
@@ -2900,4 +2912,179 @@ model PremiumSubscription {
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@map("premium_subscriptions")
+}
+
+// ── Community & Safety Models (Tier 12) ─────────────────
+
+model LocalBoard {
+  id           String   @id @default(uuid())
+  name         String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  city         String
+  country      String
+  lat          Float?
+  lng          Float?
+  membersCount Int      @default(0)
+  postsCount   Int      @default(0)
+  createdById  String
+  createdAt    DateTime @default(now())
+  creator      User     @relation("BoardCreator", fields: [createdById], references: [id])
+  @@index([city, country])
+  @@map("local_boards")
+}
+
+model Mentorship {
+  id          String   @id @default(uuid())
+  mentorId    String
+  menteeId    String
+  status      String   @default("pending") // pending | active | completed | cancelled
+  topic       String   // new_muslim | quran | arabic | fiqh | general
+  notes       String?  @db.VarChar(1000)
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  mentor      User     @relation("MentorOf", fields: [mentorId], references: [id])
+  mentee      User     @relation("MenteeOf", fields: [menteeId], references: [id])
+  @@unique([mentorId, menteeId])
+  @@map("mentorships")
+}
+
+model StudyCircle {
+  id           String   @id @default(uuid())
+  leaderId     String
+  title        String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  topic        String   // quran | hadith | fiqh | seerah | arabic | tafsir
+  schedule     String?  @db.VarChar(200) // "Every Sunday 7 PM"
+  isOnline     Boolean  @default(true)
+  maxMembers   Int      @default(20)
+  membersCount Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  leader       User     @relation("CircleLeader", fields: [leaderId], references: [id])
+  @@index([topic, isActive])
+  @@map("study_circles")
+}
+
+model FatwaQuestion {
+  id         String   @id @default(uuid())
+  askerId    String
+  question   String   @db.VarChar(2000)
+  madhab     String?  // hanafi | maliki | shafii | hanbali | any
+  language   String   @default("en")
+  status     String   @default("pending") // pending | answered | closed
+  answerId   String?
+  answeredBy String?
+  answeredAt DateTime?
+  createdAt  DateTime @default(now())
+  asker      User     @relation("FatwaAsker", fields: [askerId], references: [id])
+  @@index([status, madhab])
+  @@map("fatwa_questions")
+}
+
+model VolunteerOpportunity {
+  id           String   @id @default(uuid())
+  organizerId  String
+  title        String   @db.VarChar(200)
+  description  String   @db.VarChar(2000)
+  category     String   // disaster_relief | mosque | education | food_bank | cleanup | other
+  location     String?
+  lat          Float?
+  lng          Float?
+  date         DateTime?
+  spotsTotal   Int      @default(10)
+  spotsFilled  Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  organizer    User     @relation("VolunteerOrganizer", fields: [organizerId], references: [id])
+  @@index([category, isActive])
+  @@map("volunteer_opportunities")
+}
+
+model IslamicEvent {
+  id          String   @id @default(uuid())
+  organizerId String
+  title       String   @db.VarChar(200)
+  description String?  @db.VarChar(2000)
+  eventType   String   // eid_prayer | iftar | lecture | quran_competition | fundraiser | social | other
+  location    String?
+  lat         Float?
+  lng         Float?
+  startDate   DateTime
+  endDate     DateTime?
+  isOnline    Boolean  @default(false)
+  streamUrl   String?
+  attendeeCount Int    @default(0)
+  coverUrl    String?
+  createdAt   DateTime @default(now())
+  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id])
+  @@index([eventType, startDate])
+  @@map("islamic_events")
+}
+
+model UserReputation {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  score          Int      @default(0)
+  helpfulCount   Int      @default(0)
+  reportedCount  Int      @default(0)
+  warningCount   Int      @default(0)
+  tier           String   @default("newcomer") // newcomer | member | trusted | guardian | elder
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("user_reputations")
+}
+
+model VoicePost {
+  id          String   @id @default(uuid())
+  userId      String
+  audioUrl    String
+  duration    Float    // seconds
+  transcript  String?  @db.Text
+  likesCount  Int      @default(0)
+  commentsCount Int    @default(0)
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@map("voice_posts")
+}
+
+model WatchParty {
+  id          String   @id @default(uuid())
+  hostId      String
+  videoId     String
+  title       String   @db.VarChar(200)
+  isActive    Boolean  @default(false)
+  viewerCount Int      @default(0)
+  startedAt   DateTime?
+  endedAt     DateTime?
+  createdAt   DateTime @default(now())
+  host        User     @relation(fields: [hostId], references: [id])
+  @@map("watch_parties")
+}
+
+model SharedCollection {
+  id          String   @id @default(uuid())
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(300)
+  createdById String
+  isPublic    Boolean  @default(false)
+  itemCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  creator     User     @relation("CollectionCreator", fields: [createdById], references: [id])
+  @@map("shared_collections")
+}
+
+model WaqfFund {
+  id           String   @id @default(uuid())
+  title        String   @db.VarChar(200)
+  description  String   @db.VarChar(2000)
+  goalAmount   Float
+  raisedAmount Float    @default(0)
+  createdById  String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  creator      User     @relation("WaqfCreator", fields: [createdById], references: [id])
+  @@map("waqf_funds")
 }
