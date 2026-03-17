@@ -361,7 +361,7 @@ function MessageBubble({
   const { user } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
   const time = messageTimestamp(message.createdAt, t);
   const AVATAR_SIZE = 28;
@@ -442,13 +442,13 @@ function MessageBubble({
           <Text style={styles.senderName}>{message.sender.displayName}</Text>
         )}
         {(message.isForwarded || message.forwardedFrom) && (
-          <View style={styles.forwardedLabel}>
+          <View style={[styles.forwardedLabel, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="share" size={10} color={colors.text.tertiary} />
             <Text style={styles.forwardedText}>{t('messages.forwarded')}</Text>
           </View>
         )}
         {message.replyTo && (
-          <View style={[styles.replyPreview, styles.replyPreviewEmeraldBorder]}>
+          <View style={[styles.replyPreview, rtlBorderStart(isRTL, 3, colors.emerald)]}>
             <Text style={[styles.replyPreviewUser, !isOwn && styles.replyPreviewUserOther]}>
               {message.replyTo.sender.username}
             </Text>
@@ -482,7 +482,7 @@ function MessageBubble({
             )}
           </>
         )}
-        <View style={styles.bubbleMeta}>
+        <View style={[styles.bubbleMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
           {message.editedAt && (
             <Text style={[styles.editedLabel, isOwn && styles.editedLabelOwn]}>{t('messages.edited')}</Text>
           )}

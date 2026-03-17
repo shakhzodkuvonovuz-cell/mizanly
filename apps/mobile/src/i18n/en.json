@@ -2058,6 +2058,12 @@
       "successMessage": "Thank you. We will review this content.",
       "errorTitle": "Error"
     },
+    "playlist": {
+      "title": "Playlist",
+      "notFound": "Playlist not found",
+      "videos": "video",
+      "videosPlural": "videos"
+    },
     "saved": {
       "title": "Saved",
       "tabPosts": "Posts",

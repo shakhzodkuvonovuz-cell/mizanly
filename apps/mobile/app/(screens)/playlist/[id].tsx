@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { PlaylistItem } from '@/types';
 
 const formatDuration = (sec: number) => {
@@ -26,6 +27,7 @@ const formatDuration = (sec: number) => {
 export default function PlaylistDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
 
   const insets = useSafeAreaInsets();
@@ -137,7 +139,7 @@ export default function PlaylistDetailScreen() {
       >
         <Icon name="video" size="xs" color={colors.emerald} />
         <Text style={styles.videoCount}>
-          {playlist?.videosCount ?? items.length} video{(playlist?.videosCount ?? items.length) !== 1 ? 's' : ''}
+          {playlist?.videosCount ?? items.length} {(playlist?.videosCount ?? items.length) !== 1 ? t('screens.playlist.videosPlural') : t('screens.playlist.videos')}
         </Text>
       </LinearGradient>
     </Animated.View>
@@ -147,7 +149,7 @@ export default function PlaylistDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Playlist" 
+          title={t('screens.playlist.title')} 
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
@@ -155,7 +157,7 @@ export default function PlaylistDetailScreen() {
           }} 
         />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
-          <EmptyState icon="layers" title="Playlist not found" />
+          <EmptyState icon="layers" title={t('screens.playlist.notFound')} />
         </View>
       </View>
     );
@@ -166,7 +168,7 @@ export default function PlaylistDetailScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Playlist" 
+          title={t('screens.playlist.title')} 
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),

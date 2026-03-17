@@ -1825,6 +1825,12 @@
       "successMessage": "شكراً لك. سنراجع هذا المحتوى.",
       "errorTitle": "خطأ"
     },
+    "playlist": {
+      "title": "قائمة التشغيل",
+      "notFound": "قائمة التشغيل غير موجودة",
+      "videos": "فيديو",
+      "videosPlural": "فيديوهات"
+    },
     "saved": {
       "title": "المحفوظات",
       "tabPosts": "منشورات",
