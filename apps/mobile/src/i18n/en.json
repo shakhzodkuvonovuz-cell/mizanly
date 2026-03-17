@@ -2882,5 +2882,18 @@
     "screenTime": "Screen Time",
     "changePin": "Change PIN",
     "unlinkAccount": "Unlink Account"
+  },
+  "pip": {
+    "enter": "Picture-in-Picture",
+    "exit": "Exit PiP",
+    "notSupported": "PiP not supported on this device",
+    "activeHint": "Video playing in picture-in-picture"
+  },
+  "ambient": {
+    "title": "Ambient Mode",
+    "toggle": "Ambient Mode",
+    "on": "Ambient mode on",
+    "off": "Ambient mode off",
+    "hint": "Background color subtly matches the video"
   }
 }

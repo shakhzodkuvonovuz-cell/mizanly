@@ -143,6 +143,7 @@ export default function MediaSettingsScreen() {
   const [settings, setSettings] = useState<MediaSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [autoPlay, setAutoPlay] = useState<'wifi' | 'always' | 'never'>('wifi');
+  const [ambientMode, setAmbientMode] = useState(useStore.getState().ambientModeEnabled);
 
   // Load auto-play setting
   useEffect(() => {
@@ -362,6 +363,24 @@ export default function MediaSettingsScreen() {
                 ))}
               </View>
 
+              {/* Ambient Mode */}
+              <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.ambientSection}>
+                <SettingRow
+                  icon="eye"
+                  label={t('ambient.toggle')}
+                  value={ambientMode}
+                  onToggle={(v: boolean) => {
+                    useStore.getState().setAmbientModeEnabled(v);
+                    setAmbientMode(v);
+                    haptic.light();
+                  }}
+                  isRTL={isRTL}
+                />
+                <Text style={[styles.ambientHint, { textAlign: rtlTextAlign(isRTL) }]}>
+                  {t('ambient.hint')}
+                </Text>
+              </Animated.View>
+
               {/* Footer */}
               <Animated.View entering={FadeInDown.delay(320).duration(300)}>
                 <Text style={[styles.footerText, { textAlign: rtlTextAlign(isRTL) }]}>
@@ -474,6 +493,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
   },
   // Footer
+  ambientSection: {
+    marginTop: spacing.xl,
+  },
+  ambientHint: {
+    fontFamily: fonts.body,
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
   footerText: {
     fontFamily: fonts.body,
     fontSize: fontSize.sm,

@@ -107,6 +107,16 @@ interface AppState {
   addToDownloadQueue: (id: string) => void;
   removeFromDownloadQueue: (id: string) => void;
 
+  // PiP
+  isPiPActive: boolean;
+  setIsPiPActive: (active: boolean) => void;
+  pipVideoId: string | null;
+  setPiPVideoId: (id: string | null) => void;
+
+  // Ambient mode
+  ambientModeEnabled: boolean;
+  setAmbientModeEnabled: (enabled: boolean) => void;
+
   // Parental controls
   isChildAccount: boolean;
   setIsChildAccount: (v: boolean) => void;
@@ -240,6 +250,16 @@ export const useStore = create<AppState>()(
         downloadQueue: s.downloadQueue.filter((d) => d !== id),
       })),
 
+      // PiP
+      isPiPActive: false,
+      setIsPiPActive: (isPiPActive) => set({ isPiPActive }),
+      pipVideoId: null,
+      setPiPVideoId: (pipVideoId) => set({ pipVideoId }),
+
+      // Ambient mode
+      ambientModeEnabled: false,
+      setAmbientModeEnabled: (ambientModeEnabled) => set({ ambientModeEnabled }),
+
       // Parental controls
       isChildAccount: false,
       setIsChildAccount: (isChildAccount) => set({ isChildAccount }),
@@ -286,6 +306,7 @@ export const useStore = create<AppState>()(
         biometricLockEnabled: state.biometricLockEnabled,
         screenTimeLimitMinutes: state.screenTimeLimitMinutes,
         autoPlaySetting: state.autoPlaySetting,
+        ambientModeEnabled: state.ambientModeEnabled,
       }),
     }
   )
@@ -317,5 +338,8 @@ export const useScreenTimeSessionStart = () => useStore((s) => s.screenTimeSessi
 export const useScreenTimeLimitMinutes = () => useStore((s) => s.screenTimeLimitMinutes);
 export const useAutoPlaySetting = () => useStore((s) => s.autoPlaySetting);
 export const useDownloadQueue = () => useStore((s) => s.downloadQueue);
+export const useIsPiPActive = () => useStore((s) => s.isPiPActive);
+export const usePiPVideoId = () => useStore((s) => s.pipVideoId);
+export const useAmbientModeEnabled = () => useStore((s) => s.ambientModeEnabled);
 export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
 export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);

@@ -15,6 +15,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { usePiP } from '@/hooks/usePiP';
 
 type PlaybackSpeed = 0.25 | 0.5 | 1 | 1.25 | 1.5 | 2;
 type VideoQuality = 'auto' | '360p' | '720p' | '1080p' | '4k';
@@ -27,8 +28,10 @@ interface VideoPlayerProps {
   qualities?: string[];
   isLooping?: boolean;
   autoPlay?: boolean;
+  enablePiP?: boolean;
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
+  onPiPEnter?: () => void;
 }
 
 export function VideoPlayer({
@@ -39,8 +42,10 @@ export function VideoPlayer({
   qualities,
   isLooping,
   autoPlay = false,
+  enablePiP,
   onProgress,
   onComplete,
+  onPiPEnter,
 }: VideoPlayerProps) {
   const videoRef = useRef<Video>(null);
   const [status, setStatus] = useState<AVPlaybackStatus | null>(null);
@@ -58,6 +63,10 @@ export function VideoPlayer({
   const [looping, setLooping] = useState(isLooping ?? false);
 
   const haptic = useHaptic();
+  const { isPiPSupported, enterPiP } = usePiP({
+    isPlaying,
+    onPiPChange: (active) => { if (active) onPiPEnter?.(); },
+  });
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const seekBarWidthRef = useRef<number>(1);
 
@@ -240,6 +249,12 @@ export function VideoPlayer({
                 {qualities && qualities.length > 0 && (
                   <TouchableOpacity onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}>
                     <Text style={styles.speedText}>{selectedQuality === 'auto' ? 'Auto' : selectedQuality}</Text>
+                  </TouchableOpacity>
+                )}
+                {enablePiP && isPiPSupported && (
+                  <TouchableOpacity onPress={() => { enterPiP(); haptic.light(); }} style={styles.iconButton}
+                    accessibilityLabel="Picture in Picture" accessibilityRole="button">
+                    <Icon name="layers" size="md" color={colors.text.primary} />
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={toggleFullscreen} style={styles.iconButton}>
