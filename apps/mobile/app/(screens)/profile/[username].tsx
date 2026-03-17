@@ -541,7 +541,7 @@ export default function ProfileScreen() {
       )}
 
       {/* Stats card */}
-      <View style={styles.statsCard}>
+      <View style={[styles.statsCard, { flexDirection: rtlFlexRow(isRTL) }]}>
         <StatItem
           num={profile._count?.followers ?? 0}
           label={t('profile.followers')}
@@ -562,21 +562,21 @@ export default function ProfileScreen() {
         <Pressable
           onPress={() => router.push(`/(screens)/mutual-followers?username=${username}` as never)}
           style={{
-            flexDirection: 'row', alignItems: 'center',
+            flexDirection: rtlFlexRow(isRTL), alignItems: 'center',
             paddingHorizontal: spacing.base, marginTop: spacing.sm,
           }}
           accessibilityLabel={t('profile.viewMutualFollowersAccessibility')}
           accessibilityRole="link"
         >
           {/* Stacked avatars (up to 3) */}
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: rtlFlexRow(isRTL) }}>
             {mutualFollowers.slice(0, 3).map((u: User, i: number) => (
-              <View key={u.id} style={{ marginLeft: i > 0 ? -10 : 0, zIndex: 3 - i }}>
+              <View key={u.id} style={{ ...rtlMargin(isRTL, i > 0 ? -10 : 0, 0), zIndex: 3 - i }}>
                 <Avatar uri={u.avatarUrl} name={u.displayName} size="xs" />
               </View>
             ))}
           </View>
-          <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, marginLeft: spacing.sm, flex: 1 }}>
+          <Text style={{ color: colors.text.secondary, fontSize: fontSize.xs, ...rtlMargin(isRTL, spacing.sm, 0), flex: 1, textAlign: rtlTextAlign(isRTL) }}>
             {mutualFollowers.length === 1
               ? t('profile.followedByOne', { displayName: mutualFollowers[0]?.displayName })
               : t('profile.followedByMany', {
@@ -637,12 +637,12 @@ export default function ProfileScreen() {
   );
 
   const renderHeaderActions = () => (
-    <View style={styles.header}>
+    <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
       <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn} accessibilityLabel={t('common.back')} accessibilityRole="button">
-        <Icon name="arrow-left" size="md" color={colors.text.primary} />
+        <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
       </Pressable>
       <Text style={styles.headerUsername}>@{username}</Text>
-      <View style={styles.headerActions}>
+      <View style={[styles.headerActions, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable hitSlop={8} onPress={() => setShowShareSheet(true)} accessibilityLabel={t('profile.shareProfile')} accessibilityRole="button">
           <Icon name="share" size="sm" color={colors.text.primary} />
         </Pressable>
@@ -678,9 +678,9 @@ export default function ProfileScreen() {
           accessibilityLabel={`View thread by ${thread.user?.username}`}
           accessibilityRole="button"
         >
-          <Text style={styles.threadContent} numberOfLines={3}>{thread.content}</Text>
-          <View style={styles.threadMeta}>
-            <View style={styles.threadMetaItem}>
+          <Text style={[styles.threadContent, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={3}>{thread.content}</Text>
+          <View style={[styles.threadMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <View style={[styles.threadMetaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="heart" size={12} color={colors.text.tertiary} />
               <Text style={styles.threadMetaText}>{thread.likesCount}</Text>
             </View>
