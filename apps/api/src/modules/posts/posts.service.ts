@@ -523,7 +523,7 @@ export class PostsService {
 
   async getComments(postId: string, cursor?: string, limit = 20) {
     const comments = await this.prisma.comment.findMany({
-      where: { postId, parentId: null, isRemoved: false },
+      where: { postId, parentId: null, isRemoved: false, isHidden: false },
       include: {
         user: {
           select: {
@@ -796,6 +796,52 @@ export class PostsService {
       data: { isPinned: false },
     });
     return updated;
+  }
+
+  // ── Hide Reply ──
+  async hideComment(commentId: string, userId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { select: { userId: true } } },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.post.userId !== userId) throw new ForbiddenException('Only post author can hide comments');
+    return this.prisma.comment.update({ where: { id: commentId }, data: { isHidden: true } });
+  }
+
+  async unhideComment(commentId: string, userId: string) {
+    const comment = await this.prisma.comment.findUnique({
+      where: { id: commentId },
+      include: { post: { select: { userId: true } } },
+    });
+    if (!comment) throw new NotFoundException('Comment not found');
+    if (comment.post.userId !== userId) throw new ForbiddenException('Only post author can unhide comments');
+    return this.prisma.comment.update({ where: { id: commentId }, data: { isHidden: false } });
+  }
+
+  async getHiddenComments(postId: string, userId: string, cursor?: string, limit = 20) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.userId !== userId) throw new ForbiddenException('Only post author can view hidden comments');
+
+    const comments = await this.prisma.comment.findMany({
+      where: { postId, isHidden: true, isRemoved: false },
+      include: {
+        user: {
+          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+        },
+        _count: { select: { replies: true } },
+      },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+    const hasMore = comments.length > limit;
+    const items = hasMore ? comments.slice(0, limit) : comments;
+    return {
+      data: items,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
   }
 
   async getShareLink(postId: string) {

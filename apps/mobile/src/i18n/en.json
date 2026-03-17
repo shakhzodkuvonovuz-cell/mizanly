@@ -2677,5 +2677,13 @@
     "noNote": "No active note",
     "posted": "Note posted!",
     "deleted": "Note deleted"
+  },
+  "hideReply": {
+    "hide": "Hide reply",
+    "unhide": "Unhide reply",
+    "hidden": "Reply hidden",
+    "unhidden": "Reply visible again",
+    "viewHidden": "View hidden replies",
+    "noHidden": "No hidden replies"
   }
 }

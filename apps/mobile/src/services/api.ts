@@ -290,6 +290,12 @@ export const postsApi = {
     api.post(`/posts/${postId}/comments/${commentId}/pin`),
   unpinComment: (postId: string, commentId: string) =>
     api.delete(`/posts/${postId}/comments/${commentId}/pin`),
+  hideComment: (postId: string, commentId: string) =>
+    api.post(`/posts/${postId}/comments/${commentId}/hide`),
+  unhideComment: (postId: string, commentId: string) =>
+    api.delete(`/posts/${postId}/comments/${commentId}/hide`),
+  getHiddenComments: (postId: string, cursor?: string) =>
+    api.get<PaginatedResponse<Comment>>(`/posts/${postId}/comments/hidden${qs({ cursor })}`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/posts/${id}/share-link`),
   shareAsStory: (id: string) => api.post(`/posts/${id}/share-as-story`),

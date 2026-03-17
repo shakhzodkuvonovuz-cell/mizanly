@@ -307,6 +307,45 @@ export class PostsController {
     return this.postsService.unpinComment(id, commentId, userId);
   }
 
+  // ── Hide Reply ──
+  @Post(':id/comments/:commentId/hide')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Hide a comment on your post (author only)' })
+  hideComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.hideComment(commentId, userId);
+  }
+
+  @Delete(':id/comments/:commentId/hide')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unhide a comment on your post (author only)' })
+  unhideComment(
+    @Param('id') id: string,
+    @Param('commentId') commentId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.postsService.unhideComment(commentId, userId);
+  }
+
+  @Get(':id/comments/hidden')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get hidden comments on your post (author only)' })
+  getHiddenComments(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.postsService.getHiddenComments(id, userId, cursor);
+  }
+
   @Get(':id/share-link')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
