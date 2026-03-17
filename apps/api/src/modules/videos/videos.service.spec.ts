@@ -4,6 +4,7 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { VideosService } from './videos.service';
+import { StreamService } from '../stream/stream.service';
 import { VideoStatus, VideoCategory } from '@prisma/client';
 
 describe('VideosService', () => {
@@ -71,6 +72,19 @@ describe('VideosService', () => {
           provide: NotificationsService,
           useValue: {
             create: jest.fn(),
+          },
+        },
+        {
+          provide: StreamService,
+          useValue: {
+            uploadFromUrl: jest.fn().mockResolvedValue('mock-stream-id'),
+            deleteVideo: jest.fn().mockResolvedValue(undefined),
+            getPlaybackUrls: jest.fn().mockResolvedValue({
+              hlsUrl: 'https://mock.stream/video.m3u8',
+              dashUrl: 'https://mock.stream/video.mpd',
+              thumbnailUrl: 'https://mock.stream/thumb.jpg',
+              qualities: ['360p', '720p', '1080p'],
+            }),
           },
         },
         {
