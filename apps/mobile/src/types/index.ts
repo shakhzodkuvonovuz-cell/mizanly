@@ -794,6 +794,16 @@ export interface WatchLaterItem {
   addedAt: string;
 }
 
+// ── DM Notes ──
+export interface DMNote {
+  id: string;
+  userId: string;
+  content: string;
+  expiresAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type SearchSuggestionType = 'user' | 'hashtag' | 'post' | 'thread' | 'reel' | 'video';
 
 export interface SearchSuggestion {

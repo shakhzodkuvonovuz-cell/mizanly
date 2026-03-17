@@ -10,6 +10,7 @@ import type {
   CallSession, StickerPack, StickerItem, PostCollab,
   ChannelPost, AudioTrack, FeedDismissal,
   HashtagInfo, BookmarkCollection, SearchSuggestion, ModerationLogEntry,
+  DMNote,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -533,6 +534,12 @@ export const messagesApi = {
   unpin: (conversationId: string, messageId: string) => api.delete(`/messages/${conversationId}/${messageId}/pin`),
   toggleStar: (conversationId: string, messageId: string) => api.post(`/messages/${conversationId}/${messageId}/star`),
   getPinned: (conversationId: string) => api.get<Message[]>(`/messages/${conversationId}/pinned`),
+  // DM Notes
+  createDMNote: (content: string, expiresInHours?: number) =>
+    api.post<DMNote>('/messages/notes', { content, expiresInHours }),
+  getMyDMNote: () => api.get<DMNote | null>('/messages/notes/me'),
+  deleteDMNote: () => api.delete<{ deleted: boolean }>('/messages/notes/me'),
+  getContactDMNotes: () => api.get<DMNote[]>('/messages/notes/contacts'),
 };
 
 // ── Notifications ──

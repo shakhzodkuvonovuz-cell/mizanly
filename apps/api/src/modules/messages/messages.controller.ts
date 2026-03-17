@@ -21,6 +21,7 @@ import { MessagesService } from './messages.service';
 import { MuteConversationDto } from './dto/mute-conversation.dto';
 import { ArchiveConversationDto } from './dto/archive-conversation.dto';
 import { CreateDmDto } from './dto/create-dm.dto';
+import { CreateDMNoteDto } from './dto/dm-note.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -476,5 +477,34 @@ export class MessagesController {
     @Body() body: { tone: string | null },
   ) {
     return this.messagesService.setCustomTone(conversationId, userId, body.tone);
+  }
+
+  // ── DM Notes ──
+  @Post('notes')
+  @ApiOperation({ summary: 'Create or update your DM note' })
+  async createDMNote(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateDMNoteDto,
+  ) {
+    return this.messagesService.createDMNote(userId, dto.content, dto.expiresInHours);
+  }
+
+  @Get('notes/me')
+  @ApiOperation({ summary: 'Get your current DM note' })
+  async getMyDMNote(@CurrentUser('id') userId: string) {
+    return this.messagesService.getDMNote(userId);
+  }
+
+  @Delete('notes/me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete your DM note' })
+  async deleteDMNote(@CurrentUser('id') userId: string) {
+    return this.messagesService.deleteDMNote(userId);
+  }
+
+  @Get('notes/contacts')
+  @ApiOperation({ summary: 'Get DM notes from your conversation contacts' })
+  async getContactDMNotes(@CurrentUser('id') userId: string) {
+    return this.messagesService.getDMNotesForContacts(userId);
   }
 }

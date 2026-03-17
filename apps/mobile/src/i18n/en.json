@@ -2655,5 +2655,27 @@
   "clearMode": {
     "show": "Tap to show controls",
     "hide": "Tap to hide controls"
+  },
+  "dmNotes": {
+    "title": "DM Note",
+    "placeholder": "Share a thought...",
+    "expiry": "Expires in",
+    "expiryOptions": {
+      "1h": "1 hour",
+      "4h": "4 hours",
+      "12h": "12 hours",
+      "24h": "24 hours",
+      "48h": "48 hours",
+      "72h": "72 hours"
+    },
+    "post": "Post Note",
+    "update": "Update Note",
+    "delete": "Delete Note",
+    "deleteConfirm": "Delete this note?",
+    "preview": "Preview",
+    "currentNote": "Your current note",
+    "noNote": "No active note",
+    "posted": "Note posted!",
+    "deleted": "Note deleted"
   }
 }

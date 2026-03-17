@@ -655,6 +655,50 @@ export class MessagesService {
     });
   }
 
+  // ── DM Notes ──
+  async createDMNote(userId: string, content: string, expiresInHours = 24) {
+    const expiresAt = new Date(Date.now() + expiresInHours * 60 * 60 * 1000);
+    return this.prisma.dMNote.upsert({
+      where: { userId },
+      create: { userId, content, expiresAt },
+      update: { content, expiresAt },
+    });
+  }
+
+  async getDMNote(userId: string) {
+    const note = await this.prisma.dMNote.findUnique({ where: { userId } });
+    if (!note || note.expiresAt < new Date()) return null;
+    return note;
+  }
+
+  async deleteDMNote(userId: string) {
+    const note = await this.prisma.dMNote.findUnique({ where: { userId } });
+    if (!note) throw new NotFoundException('Note not found');
+    await this.prisma.dMNote.delete({ where: { userId } });
+    return { deleted: true };
+  }
+
+  async getDMNotesForContacts(userId: string) {
+    // Get user IDs from conversations
+    const memberships = await this.prisma.conversationMember.findMany({
+      where: { userId },
+      select: { conversationId: true },
+    });
+    const convIds = memberships.map((m) => m.conversationId);
+    const otherMembers = await this.prisma.conversationMember.findMany({
+      where: { conversationId: { in: convIds }, userId: { not: userId } },
+      select: { userId: true },
+    });
+    const contactIds = [...new Set(otherMembers.map((m) => m.userId))];
+
+    return this.prisma.dMNote.findMany({
+      where: {
+        userId: { in: contactIds },
+        expiresAt: { gt: new Date() },
+      },
+    });
+  }
+
   // ── Message Expiry Job ──
   async processExpiredMessages() {
     const now = new Date();
