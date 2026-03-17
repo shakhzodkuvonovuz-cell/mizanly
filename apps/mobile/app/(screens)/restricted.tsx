@@ -1,0 +1,254 @@
+import { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Alert,
+  RefreshControl,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Avatar } from '@/components/ui/Avatar';
+import { Icon } from '@/components/ui/Icon';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { colors, spacing, fontSize, radius } from '@/theme';
+import { restrictsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
+
+interface RestrictedUser {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+interface RestrictedPage {
+  data: RestrictedUser[];
+  meta: { hasMore: boolean; cursor?: string };
+}
+
+export default function RestrictedScreen() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { t } = useTranslation();
+
+  const query = useInfiniteQuery({
+    queryKey: ['restricted'],
+    queryFn: ({ pageParam }) =>
+      restrictsApi.getRestricted(pageParam as string | undefined),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last: RestrictedPage) =>
+      last.meta?.hasMore ? (last.meta.cursor ?? undefined) : undefined,
+  });
+
+  const restricted = query.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const unrestrictMutation = useMutation({
+    mutationFn: (userId: string) => restrictsApi.unrestrict(userId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['restricted'] }),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
+  });
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await query.refetch();
+    setRefreshing(false);
+  };
+
+  const confirmUnrestrict = (user: RestrictedUser) => {
+    Alert.alert(
+      t('screens.restricted.unrestrict'),
+      t('screens.restricted.info'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('screens.restricted.unrestrict'),
+          onPress: () => unrestrictMutation.mutate(user.id),
+        },
+      ],
+    );
+  };
+
+  if (query.isError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('screens.restricted.title')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back'),
+          }}
+        />
+        <EmptyState
+          icon="alert-circle"
+          title={t('screens.restricted.errorTitle')}
+          subtitle={t('screens.restricted.errorSubtitle')}
+          actionLabel={t('common.retry')}
+          onAction={() => query.refetch()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('screens.restricted.title')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back'),
+          }}
+        />
+
+        <Text style={styles.infoText}>{t('screens.restricted.info')}</Text>
+
+        {query.isLoading ? (
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 6 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton.Circle size={46} />
+                <View style={{ flex: 1, gap: spacing.sm }}>
+                  <Skeleton.Rect width={120} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews
+            data={restricted}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            onEndReached={() => {
+              if (query.hasNextPage && !query.isFetchingNextPage) {
+                query.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={colors.emerald}
+              />
+            }
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                <View style={styles.row}>
+                  <Avatar
+                    uri={item.avatarUrl}
+                    name={item.displayName}
+                    size="md"
+                  />
+                  <View style={styles.info}>
+                    <Text style={styles.name}>{item.displayName}</Text>
+                    <View style={styles.usernameBadge}>
+                      <Icon name="eye-off" size={10} color={colors.gold} />
+                      <Text style={styles.username}>@{item.username}</Text>
+                    </View>
+                  </View>
+                  <GradientButton
+                    label={t('screens.restricted.unrestrict')}
+                    variant="ghost"
+                    size="sm"
+                    onPress={() => confirmUnrestrict(item)}
+                    loading={
+                      unrestrictMutation.isPending &&
+                      unrestrictMutation.variables === item.id
+                    }
+                    disabled={
+                      unrestrictMutation.isPending &&
+                      unrestrictMutation.variables === item.id
+                    }
+                    accessibilityLabel={t('screens.restricted.unrestrict')}
+                    accessibilityRole="button"
+                  />
+                </View>
+              </Animated.View>
+            )}
+            ListFooterComponent={() =>
+              query.isFetchingNextPage ? (
+                <View style={styles.skeletonRow}>
+                  <Skeleton.Circle size={46} />
+                  <View style={{ flex: 1, gap: spacing.sm }}>
+                    <Skeleton.Rect width={120} height={14} />
+                    <Skeleton.Rect width={80} height={11} />
+                  </View>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="eye-off"
+                title={t('screens.restricted.emptyTitle')}
+                subtitle={t('screens.restricted.emptySubtitle')}
+              />
+            )}
+          />
+        )}
+      </SafeAreaView>
+    </ScreenErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.dark.bg },
+  infoText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    lineHeight: 18,
+  },
+  list: { padding: spacing.base, gap: spacing.sm, paddingBottom: 40 },
+  skeletonList: { padding: spacing.base, gap: spacing.md },
+  skeletonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.dark.bgCard,
+    borderRadius: radius.lg,
+    borderWidth: 0.5,
+    borderColor: 'rgba(200,150,62,0.15)',
+    marginBottom: spacing.sm,
+  },
+  info: { flex: 1 },
+  name: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
+  usernameBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: 2,
+  },
+  username: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+});

@@ -791,4 +791,17 @@ export class UsersService {
       exportedAt: new Date().toISOString(),
     };
   }
+
+  async findByPhoneNumbers(userId: string, phoneNumbers: string[]) {
+    const normalized = phoneNumbers.map(p => p.replace(/\D/g, '').slice(-10));
+    const users = await this.prisma.user.findMany({
+      where: { phone: { in: normalized }, id: { not: userId } },
+      select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+    });
+    const follows = await this.prisma.follow.findMany({
+      where: { followerId: userId, followingId: { in: users.map(u => u.id) } },
+    });
+    const followedSet = new Set(follows.map(f => f.followingId));
+    return users.map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));
+  }
 }

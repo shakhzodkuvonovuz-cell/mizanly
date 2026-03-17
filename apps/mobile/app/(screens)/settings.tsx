@@ -392,6 +392,12 @@ export default function SettingsScreen() {
               icon={<Icon name="slash" size="sm" color={colors.error} />}
               hint={t('settings.hints.blockedKeywords')}
               onPress={() => router.push('/(screens)/blocked-keywords')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('biometric.settingsLabel')}
+              icon={<Icon name="lock" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/biometric-lock')}
               isLast
             />
           </LinearGradient>

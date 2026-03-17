@@ -14,6 +14,7 @@ import Animated, {
   withSpring,
   withSequence,
   withDelay,
+  withTiming,
   interpolate,
   FadeIn,
   FadeInUp,
@@ -66,6 +67,32 @@ export default function VideoDetailScreen() {
   const [duration, setDuration] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [showVideoControls, setShowVideoControls] = useState(false);
+
+  // Clear mode state
+  const [clearMode, setClearMode] = useState(false);
+  const clearModeToastShown = useRef(false);
+  const overlayOpacity = useSharedValue(1);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const handleClearModeToggle = useCallback(() => {
+    setClearMode((prev) => {
+      const next = !prev;
+      overlayOpacity.value = withTiming(next ? 0 : 1, { duration: 300 });
+      if (!clearModeToastShown.current) {
+        clearModeToastShown.current = true;
+        Alert.alert(
+          '',
+          next ? t('clearMode.hide') : t('clearMode.show'),
+          [{ text: 'OK' }],
+          { cancelable: true }
+        );
+      }
+      return next;
+    });
+  }, [t, overlayOpacity]);
 
   // Store selectors for mini player
   const miniPlayerVideo = useStore(s => s.miniPlayerVideo);
@@ -521,7 +548,7 @@ export default function VideoDetailScreen() {
           <View style={styles.videoContainer}>
             <TouchableOpacity
               activeOpacity={1}
-              onPress={(e) => handleVideoDoubleTap(e)}
+              onPress={handleClearModeToggle}
               style={styles.videoWrapper}
             >
               <Video
@@ -565,7 +592,7 @@ export default function VideoDetailScreen() {
               ))}
 
               {/* Cinematic title overlay (fades on scroll) */}
-              <Animated.View style={styles.videoTitleOverlay}>
+              <Animated.View style={[styles.videoTitleOverlay, overlayAnimatedStyle]}>
                 <LinearGradient
                   colors={['transparent', 'rgba(13,17,23,0.9)']}
                   style={styles.videoTitleGradient}
@@ -579,7 +606,7 @@ export default function VideoDetailScreen() {
           </View>
 
           {/* Title & stats with cinematic styling */}
-          <View style={styles.content}>
+          <Animated.View style={[styles.content, overlayAnimatedStyle]}>
             {/* Gold accent divider */}
             <View style={styles.titleAccentContainer}>
               <LinearGradient
@@ -788,7 +815,7 @@ export default function VideoDetailScreen() {
                 <Text style={styles.noComments}>{t('comments.emptyCombined')}</Text>
               )}
             </View>
-          </View>
+          </Animated.View>
         </ScrollView>
 
         {/* Mini Player */}

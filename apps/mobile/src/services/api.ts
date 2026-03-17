@@ -232,6 +232,7 @@ export const usersApi = {
     api.post('/users/me/cancel-deletion'),
   updateDailyReminder: (enabled: boolean, time?: string) => api.patch('/users/settings/daily-reminder', { enabled, time }),
   updateNasheedMode: (nasheedMode: boolean) => api.patch<{ id: string; nasheedMode: boolean }>('/users/me/nasheed-mode', { nasheedMode }),
+  syncContacts: (phoneNumbers: string[]) => api.post<Array<{ id: string; username: string; displayName: string; avatarUrl: string | null; isVerified: boolean; isFollowing: boolean }>>('/users/contacts/sync', { phoneNumbers }),
 };
 
 // ── Follows ──
@@ -617,6 +618,22 @@ export const mutesApi = {
   getMuted: (cursor?: string) => api.get<PaginatedResponse<MutedUser>>(`/mutes${qs({ cursor })}`),
   mute: (userId: string) => api.post(`/mutes/${userId}`),
   unmute: (userId: string) => api.delete(`/mutes/${userId}`),
+};
+
+// ── Restricts ──
+export const restrictsApi = {
+  restrict: (userId: string) => api.post(`/restricts/${userId}`, {}),
+  unrestrict: (userId: string) => api.delete(`/restricts/${userId}`),
+  getRestricted: (cursor?: string) =>
+    api.get<{
+      data: Array<{
+        id: string;
+        username: string;
+        displayName: string;
+        avatarUrl: string | null;
+      }>;
+      meta: { hasMore: boolean; cursor?: string };
+    }>(`/restricts${qs({ cursor })}`),
 };
 
 // ── Settings ──

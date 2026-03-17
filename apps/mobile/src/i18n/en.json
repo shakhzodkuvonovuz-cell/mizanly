@@ -2216,6 +2216,16 @@
       "errorTitle": "Could not load muted accounts",
       "errorSubtitle": "Pull to refresh"
     },
+    "restricted": {
+      "title": "Restricted Accounts",
+      "restrict": "Restrict",
+      "unrestrict": "Unrestrict",
+      "emptyTitle": "No restricted accounts",
+      "emptySubtitle": "Accounts you restrict will appear here",
+      "info": "Restricted accounts can see your profile but their interactions are hidden from you",
+      "errorTitle": "Could not load restricted accounts",
+      "errorSubtitle": "Pull to refresh"
+    },
     "mutual-followers": {
       "title": "Followers you know",
       "emptyTitle": "No mutual followers",
@@ -2616,5 +2626,34 @@
     "shareProgress": "Share Progress",
     "noActive": "No active challenges",
     "stats": "Your Stats"
+  },
+  "contactSync": {
+    "title": "Find Friends",
+    "scanning": "Scanning contacts...",
+    "found": "{{count}} friends found on Mizanly",
+    "noResults": "No friends found on Mizanly",
+    "permissionNeeded": "Allow access to contacts to find friends",
+    "follow": "Follow",
+    "following": "Following"
+  },
+  "biometric": {
+    "title": "App Lock",
+    "settingsLabel": "App Lock",
+    "enable": "Enable Biometric Lock",
+    "faceId": "Face ID",
+    "fingerprint": "Fingerprint",
+    "testAuth": "Test Authentication",
+    "notAvailable": "Biometric authentication is not available on this device",
+    "notEnrolled": "No biometrics enrolled. Set up Face ID or fingerprint in device settings.",
+    "unlockPrompt": "Unlock Mizanly"
+  },
+  "undoSend": {
+    "sending": "Sending message...",
+    "undo": "Undo",
+    "cancelled": "Message cancelled"
+  },
+  "clearMode": {
+    "show": "Tap to show controls",
+    "hide": "Tap to hide controls"
   }
 }

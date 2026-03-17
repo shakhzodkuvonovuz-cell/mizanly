@@ -3,7 +3,14 @@ import {
   View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
 } from 'react-native';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  interpolate,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
@@ -53,6 +60,18 @@ function CommentRow({
   const canDelete = isOwn || isPostAuthor;
   const canEdit = isOwn; // only comment author can edit their own text
 
+  // Swipe-to-like gesture
+  const translateX = useSharedValue(0);
+
+  const swipeRowStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const heartRevealStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(translateX.value, [0, 50], [0, 1]),
+    transform: [{ scale: interpolate(translateX.value, [0, 50], [0.5, 1]) }],
+  }));
+
   const likeMutation = useMutation({
     mutationFn: () =>
       localLiked
@@ -67,6 +86,24 @@ function CommentRow({
       setLocalLikes((p) => (localLiked ? p + 1 : p - 1));
     },
   });
+
+  const handleSwipeLike = () => {
+    if (!viewerId || localLiked) return;
+    haptic.medium();
+    likeMutation.mutate();
+  };
+
+  const panGesture = Gesture.Pan()
+    .activeOffsetX(10)
+    .onUpdate((e) => {
+      translateX.value = Math.max(0, e.translationX);
+    })
+    .onEnd((e) => {
+      if (e.translationX > 50) {
+        runOnJS(handleSwipeLike)();
+      }
+      translateX.value = withSpring(0, { damping: 15, stiffness: 300 });
+    });
 
   const deleteMutation = useMutation({
     mutationFn: () => postsApi.deleteComment(postId, comment.id),
@@ -88,7 +125,12 @@ function CommentRow({
   };
 
   return (
-    <View style={[styles.commentRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+    <GestureDetector gesture={panGesture}>
+    <View style={styles.swipeContainer}>
+      <Animated.View style={[styles.swipeHeartIcon, heartRevealStyle]}>
+        <Icon name="heart-filled" size="md" color={colors.error} />
+      </Animated.View>
+      <Animated.View style={[{ flexDirection: rtlFlexRow(isRTL) }, styles.commentRow, swipeRowStyle]}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
         <View style={[
@@ -164,7 +206,9 @@ function CommentRow({
           />
         </TouchableOpacity>
       )}
+    </Animated.View>
     </View>
+    </GestureDetector>
   );
 }
 
@@ -380,9 +424,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,
   },
   commentsTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '700' },
+  swipeContainer: {
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  swipeHeartIcon: {
+    position: 'absolute',
+    left: spacing.base,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0,
+  },
   commentRow: {
     flexDirection: 'row', paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm, gap: spacing.sm,
+    backgroundColor: colors.dark.bg,
   },
   commentBody: { flex: 1 },
   commentBubble: {

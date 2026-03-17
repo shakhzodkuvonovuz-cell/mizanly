@@ -16,6 +16,7 @@ import { Throttle } from '@nestjs/throttler';
 import { UsersService } from './users.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ReportDto } from './dto/report.dto';
+import { ContactSyncDto } from './dto/contact-sync.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -193,6 +194,14 @@ export class UsersController {
   @ApiOperation({ summary: 'Creator analytics overview' })
   getAnalytics(@CurrentUser('id') userId: string) {
     return this.usersService.getAnalytics(userId);
+  }
+
+  @Post('contacts/sync')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Find friends from phone contacts' })
+  async syncContacts(@CurrentUser('id') userId: string, @Body() dto: ContactSyncDto) {
+    return this.usersService.findByPhoneNumbers(userId, dto.phoneNumbers);
   }
 
   // currentUserId extracted from verified auth context — never from query params

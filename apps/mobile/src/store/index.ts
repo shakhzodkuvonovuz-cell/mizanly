@@ -75,6 +75,10 @@ interface AppState {
   archivedConversationsCount: number;
   setArchivedConversationsCount: (count: number) => void;
 
+  // Biometric lock
+  biometricLockEnabled: boolean;
+  setBiometricLockEnabled: (enabled: boolean) => void;
+
   // Recording state
   isRecording: boolean;
   setIsRecording: (v: boolean) => void;
@@ -179,6 +183,10 @@ export const useStore = create<AppState>()(
       archivedConversationsCount: 0,
       setArchivedConversationsCount: (archivedConversationsCount) => set({ archivedConversationsCount }),
 
+      // Biometric lock
+      biometricLockEnabled: false,
+      setBiometricLockEnabled: (biometricLockEnabled) => set({ biometricLockEnabled }),
+
       // Recording state
       isRecording: false,
       setIsRecording: (isRecording) => set({ isRecording }),
@@ -211,6 +219,7 @@ export const useStore = create<AppState>()(
         miniPlayerPlaying: false,
         isRecording: false,
         nasheedMode: false,
+        biometricLockEnabled: false,
       }),
     }),
     {
@@ -225,6 +234,7 @@ export const useStore = create<AppState>()(
         searchHistory: state.searchHistory,
         mutedChannelIds: state.mutedChannelIds,
         nasheedMode: state.nasheedMode,
+        biometricLockEnabled: state.biometricLockEnabled,
       }),
     }
   )
@@ -251,3 +261,4 @@ export const useMiniPlayerVideo = () => useStore((s) => s.miniPlayerVideo);
 export const useMiniPlayerProgress = () => useStore((s) => s.miniPlayerProgress);
 export const useMiniPlayerPlaying = () => useStore((s) => s.miniPlayerPlaying);
 export const useNasheedMode = () => useStore((s) => s.nasheedMode);
+export const useBiometricLockEnabled = () => useStore((s) => s.biometricLockEnabled);

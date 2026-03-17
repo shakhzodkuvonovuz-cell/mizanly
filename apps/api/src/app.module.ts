@@ -63,6 +63,7 @@ import { ChatExportModule } from './modules/chat-export/chat-export.module';
 import { CreatorModule } from './modules/creator/creator.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
+import { RestrictsModule } from './modules/restricts/restricts.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -138,6 +139,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     CreatorModule,
     GiftsModule,
     PromotionsModule,
+    RestrictsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

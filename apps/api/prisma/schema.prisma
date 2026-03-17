@@ -852,6 +852,7 @@ model Comment {
   repliesCount Int @default(0)
   isPinned  Boolean @default(false)
   isRemoved Boolean @default(false)
+  isHidden  Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   reactions      CommentReaction[]
@@ -1660,6 +1661,10 @@ model UserSettings {
   dailyTimeLimit     Int?
   restrictedMode     Boolean @default(false)
   sensitiveContent   Boolean @default(false)
+  // Screen Time & Playback
+  screenTimeLimitMinutes Int?
+  undoSendSeconds        Int     @default(5)
+  autoPlaySetting        String  @default("wifi")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   @@map("user_settings")
@@ -2179,4 +2184,52 @@ model ScholarVerification {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   @@map("scholar_verifications")
+}
+
+// ============================================================
+// PLATFORM UX — Restrict, DM Notes, Screen Time, Quiet Mode
+// ============================================================
+
+model Restrict {
+  restricterId  String
+  restrictedId  String
+  createdAt     DateTime @default(now())
+  @@id([restricterId, restrictedId])
+  @@index([restrictedId])
+  @@map("restricts")
+}
+
+model DMNote {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  content   String   @db.VarChar(60)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@map("dm_notes")
+}
+
+model ScreenTimeLog {
+  id           String   @id @default(uuid())
+  userId       String
+  date         DateTime @db.Date
+  totalSeconds Int      @default(0)
+  sessions     Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@unique([userId, date])
+  @@index([userId, date(sort: Desc)])
+  @@map("screen_time_logs")
+}
+
+model QuietModeSetting {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  isActive    Boolean  @default(false)
+  autoReply   String?  @db.VarChar(200)
+  startTime   String?
+  endTime     String?
+  isScheduled Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@map("quiet_mode_settings")
 }

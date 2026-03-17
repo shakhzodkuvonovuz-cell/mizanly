@@ -11,7 +11,11 @@ import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated from 'react-native-reanimated';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { RichText } from '@/components/ui/RichText';
@@ -125,6 +129,32 @@ export default function ReelDetailScreen() {
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const { animatedStyle, handlePressIn, handlePressOut } = useAnimatedPress();
+
+  // Clear mode state
+  const [clearMode, setClearMode] = useState(false);
+  const clearModeToastShown = useRef(false);
+  const overlayOpacity = useSharedValue(1);
+
+  const overlayAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: overlayOpacity.value,
+  }));
+
+  const handleClearModeToggle = useCallback(() => {
+    setClearMode((prev) => {
+      const next = !prev;
+      overlayOpacity.value = withTiming(next ? 0 : 1, { duration: 300 });
+      if (!clearModeToastShown.current) {
+        clearModeToastShown.current = true;
+        Alert.alert(
+          '',
+          next ? t('clearMode.hide') : t('clearMode.show'),
+          [{ text: 'OK' }],
+          { cancelable: true }
+        );
+      }
+      return next;
+    });
+  }, [t, overlayOpacity]);
 
   // Record view when component mounts
   useEffect(() => {
@@ -258,7 +288,7 @@ export default function ReelDetailScreen() {
     reelQuery.data ? (
       <View style={styles.reelContainer}>
         {/* Video Player */}
-        <View style={styles.videoContainer}>
+        <Pressable onPress={handleClearModeToggle} style={styles.videoContainer}>
           <Video
             ref={videoRef}
             source={{ uri: reelQuery.data.hlsUrl || reelQuery.data.videoUrl }}
@@ -290,7 +320,7 @@ export default function ReelDetailScreen() {
           />
 
           {/* Reel Info Overlay */}
-          <View style={styles.reelInfoOverlay}>
+          <Animated.View style={[styles.reelInfoOverlay, overlayAnimatedStyle]}>
             <View style={styles.reelHeader}>
               <Avatar
                 uri={reelQuery.data.user.avatarUrl}
@@ -360,8 +390,8 @@ export default function ReelDetailScreen() {
                 accessibilityLabel="Bookmark"
               />
             </View>
-          </View>
-        </View>
+          </Animated.View>
+        </Pressable>
 
         {/* Comments Header */}
         <View style={styles.commentsHeader}>
@@ -379,7 +409,7 @@ export default function ReelDetailScreen() {
         </View>
       </View>
     ) : null
-  ), [reelQuery.data, reelQuery.isLoading, isPlaying, animatedStyle]);
+  ), [reelQuery.data, reelQuery.isLoading, isPlaying, animatedStyle, overlayAnimatedStyle, handleClearModeToggle]);
 
   const listEmpty = useMemo(() => (
     !commentsQuery.isLoading && reelQuery.data ? (

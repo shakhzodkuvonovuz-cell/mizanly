@@ -13,6 +13,7 @@ import Animated, {
   withTiming,
   Easing,
   FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
@@ -851,6 +852,52 @@ export default function ConversationScreen() {
   }, [id, queryClient]);
 
   const [isSending, setIsSending] = useState(false);
+  const [undoPending, setUndoPending] = useState<{
+    id: string;
+    content: string;
+    replyToId?: string;
+    timer: ReturnType<typeof setTimeout>;
+    encryptedContent?: string;
+    encNonce?: string;
+    isEncrypted?: boolean;
+  } | null>(null);
+
+  // Clean up undo timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoPending?.timer) clearTimeout(undoPending.timer);
+    };
+  }, [undoPending]);
+
+  const handleUndoSend = useCallback(() => {
+    if (!undoPending) return;
+    clearTimeout(undoPending.timer);
+    // Remove the optimistic pending message
+    setPendingMessages(prev => prev.filter(p => p.id !== undoPending.id));
+    setUndoPending(null);
+    haptic.light();
+  }, [undoPending, haptic]);
+
+  const commitSend = useCallback((pending: {
+    id: string;
+    content: string;
+    replyToId?: string;
+    encryptedContent?: string;
+    encNonce?: string;
+    isEncrypted?: boolean;
+  }) => {
+    if (!isOffline && socketRef.current?.connected) {
+      socketRef.current.emit('send_message', {
+        conversationId: id,
+        content: pending.encryptedContent ?? pending.content,
+        replyToId: pending.replyToId,
+        messageType: 'TEXT',
+        clientId: pending.id,
+        ...(pending.isEncrypted ? { isEncrypted: true, encNonce: pending.encNonce } : {}),
+      });
+    }
+    setUndoPending(null);
+  }, [id, isOffline]);
 
   const handleSend = useCallback(async () => {
     if (!text.trim() || isSending) return;
@@ -891,25 +938,32 @@ export default function ConversationScreen() {
       replyToId: replyTo?.id,
     };
     setPendingMessages(prev => [...prev, pendingMessage]);
+    const savedReplyToId = replyTo?.id;
     setText('');
     setReplyTo(null);
     setIsSending(false);
 
-    // If online, attempt to send via socket
-    if (!isOffline && socketRef.current?.connected) {
-      socketRef.current.emit('send_message', {
-        conversationId: id,
-        content: messageContent,
-        replyToId: replyTo?.id,
-        messageType: 'TEXT',
-        clientId: pendingId,
-        ...(messageIsEncrypted ? { isEncrypted: true, encNonce } : {}),
-      });
-    } else {
-      // Offline or socket not connected: message stays pending
-      // Will be retried when network returns (see useEffect below)
+    // Cancel any existing undo timer before starting a new one
+    if (undoPending?.timer) {
+      clearTimeout(undoPending.timer);
+      // Immediately commit the previous pending message
+      commitSend(undoPending);
     }
-  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, isEncrypted, encryptionReady]);
+
+    // Start 5-second undo window
+    const undoPayload = {
+      id: pendingId,
+      content: text.trim(),
+      replyToId: savedReplyToId,
+      encryptedContent: messageIsEncrypted ? messageContent : undefined,
+      encNonce: messageIsEncrypted ? encNonce : undefined,
+      isEncrypted: messageIsEncrypted || undefined,
+    };
+    const timer = setTimeout(() => {
+      commitSend(undoPayload);
+    }, 5000);
+    setUndoPending({ ...undoPayload, timer });
+  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, isEncrypted, encryptionReady, undoPending, commitSend]);
 
   // Retry pending messages when network comes back online
   useEffect(() => {
@@ -1322,6 +1376,24 @@ export default function ConversationScreen() {
             onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
           />
           </>
+        )}
+
+        {/* Undo send bar */}
+        {undoPending && (
+          <Animated.View
+            entering={FadeIn}
+            exiting={FadeOut}
+            style={styles.undoSendBar}
+          >
+            <Text style={styles.undoSendText}>
+              {t('undoSend.sending')}
+            </Text>
+            <Pressable onPress={handleUndoSend} hitSlop={8}>
+              <Text style={styles.undoSendAction}>
+                {t('undoSend.undo')}
+              </Text>
+            </Pressable>
+          </Animated.View>
         )}
 
         {/* Input area */}
@@ -2076,5 +2148,25 @@ const styles = StyleSheet.create({
   encryptionBannerText: {
     color: colors.emerald,
     fontSize: fontSize.xs,
+  },
+  undoSendBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.dark.bgCard,
+    padding: spacing.sm,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.xs,
+  },
+  undoSendText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  undoSendAction: {
+    color: colors.emerald,
+    fontSize: fontSize.base,
+    fontWeight: '600',
   },
 });

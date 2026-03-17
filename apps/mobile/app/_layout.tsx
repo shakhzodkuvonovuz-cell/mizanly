@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { I18nManager, Alert, AppState, AppStateStatus, Platform } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { I18nManager, Alert, AppState, AppStateStatus, Platform, View, Text, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useFonts } from 'expo-font';
 import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
@@ -16,6 +17,10 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
+import { Icon } from '@/components/ui/Icon';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { useStore } from '@/store';
+import { colors } from '@/theme';
 
 // Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
 // Most React Native flex layouts auto-mirror when this is enabled.
@@ -117,6 +122,64 @@ function AppStateHandler() {
   return null;
 }
 
+function BiometricLockOverlay() {
+  const biometricLockEnabled = useStore((s) => s.biometricLockEnabled);
+  const [isLocked, setIsLocked] = useState(false);
+
+  const authenticate = useCallback(async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Unlock Mizanly',
+      fallbackLabel: 'Use passcode',
+    });
+    setIsLocked(!result.success);
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+      if (state === 'active' && biometricLockEnabled) {
+        setIsLocked(true);
+        const result = await LocalAuthentication.authenticateAsync({
+          promptMessage: 'Unlock Mizanly',
+          fallbackLabel: 'Use passcode',
+        });
+        setIsLocked(!result.success);
+      }
+    });
+    return () => sub.remove();
+  }, [biometricLockEnabled]);
+
+  if (!isLocked) return null;
+
+  return (
+    <View style={lockStyles.overlay}>
+      <Icon name="lock" size="xl" color={colors.emerald} />
+      <Text style={lockStyles.text}>Tap to unlock</Text>
+      <View style={lockStyles.buttonWrap}>
+        <GradientButton label="Unlock" onPress={authenticate} />
+      </View>
+    </View>
+  );
+}
+
+const lockStyles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.dark.bg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+  },
+  text: {
+    color: colors.text.secondary,
+    fontSize: 16,
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  buttonWrap: {
+    marginTop: 8,
+  },
+});
+
 export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
@@ -147,6 +210,7 @@ export default function RootLayout() {
               <OfflineBanner />
               <AuthGuard />
               <AppStateHandler />
+              <BiometricLockOverlay />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />
