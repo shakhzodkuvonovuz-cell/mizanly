@@ -389,12 +389,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
     paddingHorizontal: spacing.md, paddingVertical: spacing.sm,
   },
-  commentBubbleOP: {
-    borderLeftWidth: 2, borderLeftColor: colors.emerald,
-  },
-  commentBubbleDefault: {
-    borderLeftWidth: 2, borderLeftColor: 'transparent',
-  },
+  commentBubbleOP: {},
+  commentBubbleDefault: {},
   commentUser: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '700', marginBottom: 2 },
   commentText: { color: colors.text.primary, fontSize: fontSize.sm, lineHeight: 19 },
   commentEditInput: { borderBottomWidth: 0.5, borderBottomColor: colors.emerald, paddingBottom: 2 },
