@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Image,
   Platform,
-  useWindowDimensions,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -14,186 +13,274 @@ import Animated, {
   withSpring,
   withTiming,
   runOnJS,
+  interpolate,
+  Extrapolation,
   FadeInDown,
   SlideOutDown,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
+import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation, tabBar, glass } from '@/theme';
 
-export interface MiniPlayerProps {
-  videoTitle: string;
-  channelName: string;
-  thumbnailUri?: string;
-  isPlaying: boolean;
-  progress: number;           // 0-1
-  onPlayPause: () => void;
-  onClose: () => void;
-  onExpand: () => void;       // Return to full player
-}
+const PROGRESS_BAR_HEIGHT = 3;
+const CONTENT_HEIGHT = 64;
+const MINI_PLAYER_HEIGHT = PROGRESS_BAR_HEIGHT + CONTENT_HEIGHT;
+const DISMISS_Y_THRESHOLD = 150;
+const DISMISS_X_THRESHOLD = 150;
 
-const MINI_PLAYER_HEIGHT = 64;
-const EXPAND_THRESHOLD = -80; // Swipe up distance to trigger expand
-const DISMISS_THRESHOLD = 100; // Swipe right distance to dismiss
-
-export function MiniPlayer({
-  videoTitle,
-  channelName,
-  thumbnailUri,
-  isPlaying,
-  progress,
-  onPlayPause,
-  onClose,
-  onExpand,
-}: MiniPlayerProps) {
+export function MiniPlayer() {
+  const router = useRouter();
   const haptic = useHaptic();
-  const insets = useSafeAreaInsets();
-  const { width: screenWidth } = useWindowDimensions();
+  const videoRef = useRef<Video>(null);
 
-  const [visible, setVisible] = useState(true);
-  const translateY = useSharedValue(0);
+  // Store selectors
+  const miniPlayerVideo = useStore((s) => s.miniPlayerVideo);
+  const miniPlayerProgress = useStore((s) => s.miniPlayerProgress);
+  const miniPlayerPlaying = useStore((s) => s.miniPlayerPlaying);
+  const setMiniPlayerProgress = useStore((s) => s.setMiniPlayerProgress);
+  const setMiniPlayerPlaying = useStore((s) => s.setMiniPlayerPlaying);
+  const closeMiniPlayer = useStore((s) => s.closeMiniPlayer);
+
+  // Animated values for gestures
   const translateX = useSharedValue(0);
-  const context = useSharedValue({ x: 0, y: 0 });
+  const translateY = useSharedValue(0);
+  const gestureContext = useSharedValue({ x: 0, y: 0 });
 
-  const bottomOffset = tabBar.height - insets.bottom; // position above tab bar
+  // Entry animation
+  const entryProgress = useSharedValue(0);
+
+  useEffect(() => {
+    if (miniPlayerVideo) {
+      entryProgress.value = withSpring(1, animation.spring.responsive);
+    } else {
+      entryProgress.value = 0;
+      translateX.value = 0;
+      translateY.value = 0;
+    }
+  }, [miniPlayerVideo, entryProgress, translateX, translateY]);
+
+  const handlePlaybackStatusUpdate = useCallback(
+    (status: AVPlaybackStatus) => {
+      if (status.isLoaded) {
+        if (
+          status.positionMillis !== undefined &&
+          status.durationMillis &&
+          status.durationMillis > 0
+        ) {
+          const progress = status.positionMillis / status.durationMillis;
+          if (Number.isFinite(progress)) {
+            setMiniPlayerProgress(progress);
+          }
+        }
+        if (status.didJustFinish) {
+          setMiniPlayerPlaying(false);
+        }
+      }
+    },
+    [setMiniPlayerProgress, setMiniPlayerPlaying],
+  );
+
+  const handlePlayPause = useCallback(() => {
+    haptic.light();
+    if (miniPlayerPlaying) {
+      videoRef.current?.pauseAsync();
+      setMiniPlayerPlaying(false);
+    } else {
+      videoRef.current?.playAsync();
+      setMiniPlayerPlaying(true);
+    }
+  }, [haptic, miniPlayerPlaying, setMiniPlayerPlaying]);
 
   const handleClose = useCallback(() => {
     haptic.light();
-    setVisible(false);
-    setTimeout(onClose, 250);
-  }, [haptic, onClose]);
+    videoRef.current?.stopAsync().catch(() => {});
+    closeMiniPlayer();
+  }, [haptic, closeMiniPlayer]);
 
-  const handleExpand = useCallback(() => {
+  const handleTapExpand = useCallback(() => {
+    if (!miniPlayerVideo) return;
     haptic.light();
-    onExpand();
-  }, [haptic, onExpand]);
+    const videoId = miniPlayerVideo.id;
+    // Close mini player first, then navigate
+    closeMiniPlayer();
+    router.push(`/(screens)/video/${videoId}` as never);
+  }, [haptic, miniPlayerVideo, closeMiniPlayer, router]);
 
+  // Gesture: pan to dismiss
   const panGesture = Gesture.Pan()
     .onStart(() => {
-      context.value = { x: translateX.value, y: translateY.value };
+      gestureContext.value = { x: translateX.value, y: translateY.value };
     })
     .onUpdate((event) => {
-      translateX.value = context.value.x + event.translationX;
-      translateY.value = context.value.y + event.translationY;
+      translateX.value = gestureContext.value.x + event.translationX;
+      // Only allow downward swipe (clamp up to 0)
+      translateY.value = Math.max(
+        0,
+        gestureContext.value.y + event.translationY,
+      );
     })
     .onEnd((event) => {
-      // Swipe up to expand
-      if (event.translationY < EXPAND_THRESHOLD && event.velocityY < -500) {
-        runOnJS(handleExpand)();
-        translateX.value = withSpring(0, animation.spring.responsive);
-        translateY.value = withSpring(0, animation.spring.responsive);
-        return;
-      }
-
-      // Swipe right to dismiss
-      if (event.translationX > DISMISS_THRESHOLD || event.velocityX > 800) {
+      // Swipe down to dismiss
+      if (event.translationY > DISMISS_Y_THRESHOLD) {
         runOnJS(handleClose)();
         return;
       }
 
-      // Return to original position
+      // Swipe left or right to dismiss
+      if (Math.abs(event.translationX) > DISMISS_X_THRESHOLD) {
+        runOnJS(handleClose)();
+        return;
+      }
+
+      // Spring back to position
       translateX.value = withSpring(0, animation.spring.responsive);
       translateY.value = withSpring(0, animation.spring.responsive);
     });
 
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: translateX.value },
-      { translateY: translateY.value },
-    ],
-  }));
+  // Tap gesture for expanding
+  const tapGesture = Gesture.Tap().onEnd(() => {
+    runOnJS(handleTapExpand)();
+  });
 
+  // Compose gestures: pan has priority, tap on content area
+  const composedGesture = Gesture.Race(panGesture, tapGesture);
+
+  // Animated container style
+  const containerAnimatedStyle = useAnimatedStyle(() => {
+    const opacity = interpolate(
+      Math.max(Math.abs(translateX.value), translateY.value),
+      [0, DISMISS_X_THRESHOLD],
+      [1, 0.3],
+      Extrapolation.CLAMP,
+    );
+
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+      ],
+      opacity,
+    };
+  });
+
+  // Progress bar animated width
   const progressBarStyle = useAnimatedStyle(() => ({
-    width: `${progress * 100}%`,
+    width: `${miniPlayerProgress * 100}%`,
   }));
 
-  if (!visible) return null;
-
-  const renderContent = () => (
-    <View style={styles.contentRow}>
-      {/* Thumbnail */}
-      <View style={styles.thumbnailContainer}>
-        {thumbnailUri ? (
-          <Image source={{ uri: thumbnailUri }} style={styles.thumbnail} resizeMode="cover" />
-        ) : (
-          <View style={styles.thumbnailPlaceholder}>
-            <Icon name="video" size="md" color={colors.text.secondary} />
-          </View>
-        )}
-        <TouchableOpacity
-          onPress={onPlayPause}
-          style={styles.playButtonOverlay}
-          accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-        >
-          <Icon name={isPlaying ? 'pause' : 'play'} size={16} color={colors.text.primary} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Title & channel */}
-      <View style={styles.textContainer}>
-        <Text style={styles.title} numberOfLines={1}>
-          {videoTitle}
-        </Text>
-        <Text style={styles.channel} numberOfLines={1}>
-          {channelName}
-        </Text>
-      </View>
-
-      {/* Action buttons */}
-      <View style={styles.actions}>
-        <TouchableOpacity
-          onPress={onPlayPause}
-          style={styles.actionButton}
-          accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
-        >
-          <Icon name={isPlaying ? 'pause' : 'play'} size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleClose}
-          style={styles.actionButton}
-          accessibilityLabel="Close mini player"
-        >
-          <Icon name="x" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+  if (!miniPlayerVideo) return null;
 
   return (
     <Animated.View
       entering={FadeInDown.duration(animation.timing.normal)}
       exiting={SlideOutDown.duration(animation.timing.fast)}
-      style={[
-        styles.container,
-        containerStyle,
-        {
-          bottom: bottomOffset,
-          left: spacing.base,
-          right: spacing.base,
-        },
-      ]}
+      style={[styles.container, containerAnimatedStyle]}
     >
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={StyleSheet.absoluteFill}>
+      <GestureDetector gesture={composedGesture}>
+        <Animated.View style={styles.inner}>
           {/* Glass background */}
           {Platform.OS === 'ios' ? (
-            <BlurView intensity={glass.medium.blurIntensity} tint="dark" style={StyleSheet.absoluteFill} />
+            <BlurView
+              intensity={glass.medium.blurIntensity}
+              tint="dark"
+              style={StyleSheet.absoluteFill}
+            />
           ) : (
             <LinearGradient
               colors={[glass.heavy.overlayColor, 'rgba(13, 17, 23, 0.85)']}
               style={StyleSheet.absoluteFill}
             />
           )}
-          {/* Border */}
-          <View style={styles.border} />
-          {/* Progress bar */}
-          <Animated.View style={[styles.progressBar, progressBarStyle]} />
-          {/* Content */}
-          {renderContent()}
+
+          {/* Border overlay */}
+          <View style={styles.borderOverlay} />
+
+          {/* Progress bar track */}
+          <View style={styles.progressTrack}>
+            <Animated.View style={[styles.progressFillWrap, progressBarStyle]}>
+              <LinearGradient
+                colors={[colors.emerald, colors.emeraldLight]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.progressFill}
+              />
+            </Animated.View>
+          </View>
+
+          {/* Content row */}
+          <View style={styles.contentRow}>
+            {/* Thumbnail */}
+            <View style={styles.thumbnailContainer}>
+              {miniPlayerVideo.thumbnailUri ? (
+                <Image
+                  source={{ uri: miniPlayerVideo.thumbnailUri }}
+                  style={styles.thumbnail}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={styles.thumbnailPlaceholder}>
+                  <Icon
+                    name="video"
+                    size="md"
+                    color={colors.text.secondary}
+                  />
+                </View>
+              )}
+            </View>
+
+            {/* Title + channel */}
+            <View style={styles.textContainer}>
+              <Text style={styles.title} numberOfLines={1}>
+                {miniPlayerVideo.title}
+              </Text>
+              <Text style={styles.channel} numberOfLines={1}>
+                {miniPlayerVideo.channelName}
+              </Text>
+            </View>
+
+            {/* Play/Pause button */}
+            <TouchableOpacity
+              onPress={handlePlayPause}
+              style={styles.actionButton}
+              accessibilityLabel={miniPlayerPlaying ? 'Pause' : 'Play'}
+              accessibilityRole="button"
+            >
+              <Icon
+                name={miniPlayerPlaying ? 'pause' : 'play'}
+                size="md"
+                color={colors.text.primary}
+              />
+            </TouchableOpacity>
+
+            {/* Close button */}
+            <TouchableOpacity
+              onPress={handleClose}
+              style={styles.actionButton}
+              accessibilityLabel="Close mini player"
+              accessibilityRole="button"
+            >
+              <Icon name="x" size="md" color={colors.text.secondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Hidden audio-only Video component for playback */}
+          <Video
+            ref={videoRef}
+            source={{ uri: miniPlayerVideo.videoUrl }}
+            style={styles.hiddenVideo}
+            resizeMode={ResizeMode.CONTAIN}
+            shouldPlay={miniPlayerPlaying}
+            onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+            positionMillis={
+              miniPlayerProgress > 0 ? Math.round(miniPlayerProgress * 1000 * 60) : undefined
+            }
+          />
         </Animated.View>
       </GestureDetector>
     </Animated.View>
@@ -203,31 +290,35 @@ export function MiniPlayer({
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
+    bottom: tabBar.height,
+    left: 0,
+    right: 0,
     height: MINI_PLAYER_HEIGHT,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
     zIndex: 9999,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.dark.border,
+    backgroundColor: colors.dark.bgElevated,
   },
-  border: {
+  inner: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  borderOverlay: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: glass.medium.borderColor,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.dark.border,
     pointerEvents: 'none',
   },
-  progressBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    height: 2,
-    backgroundColor: colors.emerald,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
+  progressTrack: {
+    height: PROGRESS_BAR_HEIGHT,
+    backgroundColor: colors.dark.surface,
+  },
+  progressFillWrap: {
+    height: PROGRESS_BAR_HEIGHT,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    flex: 1,
   },
   contentRow: {
     flexDirection: 'row',
@@ -239,11 +330,9 @@ const styles = StyleSheet.create({
   thumbnailContainer: {
     width: 48,
     height: 48,
-    borderRadius: radius.md,
+    borderRadius: radius.sm,
     overflow: 'hidden',
-    backgroundColor: colors.dark.bgCard,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: colors.dark.surface,
   },
   thumbnail: {
     width: '100%',
@@ -254,15 +343,7 @@ const styles = StyleSheet.create({
     height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.dark.bgElevated,
-  },
-  playButtonOverlay: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    backgroundColor: colors.dark.surface,
   },
   textContainer: {
     flex: 1,
@@ -270,28 +351,25 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.text.primary,
-    fontSize: fontSize.base,
-    fontFamily: 'DMSans-Medium',
+    fontSize: fontSize.sm,
+    fontWeight: '600',
     marginBottom: 2,
   },
   channel: {
     color: colors.text.secondary,
-    fontSize: fontSize.sm,
-    fontFamily: 'DMSans',
-  },
-  actions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+    fontSize: fontSize.xs,
   },
   actionButton: {
     width: 40,
     height: 40,
     borderRadius: radius.full,
-    backgroundColor: colors.glass.dark,
-    borderWidth: 1,
-    borderColor: colors.glass.border,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  hiddenVideo: {
+    width: 0,
+    height: 0,
+    position: 'absolute',
+    opacity: 0,
   },
 });

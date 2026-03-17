@@ -34,7 +34,6 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { videosApi, channelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/components/ui/VideoControls';
-import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -102,6 +101,31 @@ export default function VideoDetailScreen() {
   const setMiniPlayerProgress = useStore(s => s.setMiniPlayerProgress);
   const setMiniPlayerPlaying = useStore(s => s.setMiniPlayerPlaying);
   const closeMiniPlayer = useStore(s => s.closeMiniPlayer);
+
+  // Close mini player if opening the same video that is already in the mini player
+  useEffect(() => {
+    const currentMiniVideo = useStore.getState().miniPlayerVideo;
+    if (currentMiniVideo?.id === id) {
+      useStore.getState().closeMiniPlayer();
+    }
+  }, [id]);
+
+  // Back handler: when user presses back while video is playing, shrink to mini player
+  const handleBack = useCallback(() => {
+    if (isPlaying && video) {
+      const store = useStore.getState();
+      store.setMiniPlayerVideo({
+        id: video.id,
+        title: video.title,
+        channelName: video.channel?.name || '',
+        thumbnailUri: video.thumbnailUrl || undefined,
+        videoUrl: video.hlsUrl || video.videoUrl,
+      });
+      store.setMiniPlayerPlaying(true);
+      store.setMiniPlayerProgress(progressRef.current);
+    }
+    router.back();
+  }, [isPlaying, video, router]);
 
   // Animated scroll value for parallax effect
   const scrollY = useSharedValue(0);
@@ -260,16 +284,6 @@ export default function VideoDetailScreen() {
       // Optionally navigate away? Or just keep video screen open
     }
   }, [video, isPlaying]);
-
-  const handleExpandMiniPlayer = useCallback(() => {
-    // Already on video screen, maybe scroll to top?
-    // No action needed
-  }, []);
-
-  const handleCloseMiniPlayer = useCallback(() => {
-    videoRef.current?.pauseAsync();
-    closeMiniPlayer();
-  }, [closeMiniPlayer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -525,7 +539,7 @@ export default function VideoDetailScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('video.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+          leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.goBack') }}
           rightActions={[
             { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
             { icon: 'flag', onPress: handleReport, accessibilityLabel: t('common.report') },
@@ -817,32 +831,6 @@ export default function VideoDetailScreen() {
             </View>
           </Animated.View>
         </ScrollView>
-
-        {/* Mini Player */}
-        {miniPlayerVideo && (
-          <MiniPlayer
-            videoTitle={miniPlayerVideo.title}
-            channelName={miniPlayerVideo.channelName}
-            thumbnailUri={miniPlayerVideo.thumbnailUri}
-            isPlaying={miniPlayerPlaying}
-            progress={miniPlayerProgress}
-            onPlayPause={() => {
-              if (miniPlayerPlaying) {
-                setMiniPlayerPlaying(false);
-                videoRef.current?.pauseAsync();
-              } else {
-                setMiniPlayerPlaying(true);
-                videoRef.current?.playAsync();
-              }
-            }}
-            onClose={handleCloseMiniPlayer}
-            onExpand={() => {
-              // Navigate back to video screen if not already there
-              // For now, just close mini player and keep video screen open
-              closeMiniPlayer();
-            }}
-          />
-        )}
 
         {/* Comments bottom sheet */}
         <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>
