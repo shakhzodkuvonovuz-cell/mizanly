@@ -684,7 +684,7 @@ export default function ProfileScreen() {
               <Icon name="heart" size={12} color={colors.text.tertiary} />
               <Text style={styles.threadMetaText}>{thread.likesCount}</Text>
             </View>
-            <View style={styles.threadMetaItem}>
+            <View style={[styles.threadMetaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Icon name="message-circle" size={12} color={colors.text.tertiary} />
               <Text style={styles.threadMetaText}>{thread.repliesCount}</Text>
             </View>

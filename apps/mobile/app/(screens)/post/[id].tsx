@@ -22,6 +22,7 @@ import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow, rtlTextAlign, rtlBorderStart } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -41,7 +42,7 @@ function CommentRow({
   onDeleted: () => void;
 }) {
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const [editing, setEditing] = useState(false);
@@ -87,16 +88,16 @@ function CommentRow({
   };
 
   return (
-    <View style={styles.commentRow}>
+    <View style={[styles.commentRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       <Avatar uri={comment.user.avatarUrl} name={comment.user.displayName} size="sm" />
       <View style={styles.commentBody}>
         <View style={[
           styles.commentBubble,
           !!postAuthorId && comment.user.id === postAuthorId
-            ? styles.commentBubbleOP
-            : styles.commentBubbleDefault,
+            ? rtlBorderStart(isRTL, 2, colors.emerald)
+            : rtlBorderStart(isRTL, 2, 'transparent'),
         ]}>
-          <Text style={styles.commentUser}>{comment.user.displayName}</Text>
+          <Text style={[styles.commentUser, { textAlign: rtlTextAlign(isRTL) }]}>{comment.user.displayName}</Text>
           {editing ? (
             <TextInput
               style={[styles.commentText, styles.commentEditInput]}
@@ -111,7 +112,7 @@ function CommentRow({
           )}
         </View>
         {editing ? (
-          <View style={styles.commentMeta}>
+          <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
             <TouchableOpacity onPress={() => setEditing(false)} accessibilityLabel={t('accessibility.cancelEditing')} accessibilityRole="button">
               <Text style={styles.commentAction}>{t('common.cancel')}</Text>
             </TouchableOpacity>
@@ -125,7 +126,7 @@ function CommentRow({
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={styles.commentMeta}>
+          <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Text style={styles.commentTime}>{timeAgo}</Text>
             {localLikes > 0 && (
               <Text style={styles.commentLikesLabel}>{t('saf.likes', { count: localLikes })}</Text>
@@ -176,7 +177,7 @@ export default function PostDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const postQuery = useQuery({
     queryKey: ['post', id],
@@ -241,7 +242,7 @@ export default function PostDetailScreen() {
       <View>
         <PostCard post={postQuery.data} viewerId={user?.id} />
         <View style={styles.commentsHeader}>
-          <Text style={styles.commentsTitle}>
+          <Text style={[styles.commentsTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('saf.comments', { count: postQuery.data.commentsCount })}
           </Text>
         </View>
@@ -323,8 +324,8 @@ export default function PostDetailScreen() {
         {user && (
           <View style={styles.inputWrap}>
             {replyTo && (
-              <View style={styles.replyBanner}>
-                <Text style={styles.replyBannerText}>
+              <View style={[styles.replyBanner, { flexDirection: rtlFlexRow(isRTL) }]}>
+                <Text style={[styles.replyBannerText, { textAlign: rtlTextAlign(isRTL) }]}>
                   {t('saf.replyingTo', { username: replyTo.username })}
                 </Text>
                 <Pressable onPress={() => setReplyTo(null)} hitSlop={8} accessibilityLabel={t('accessibility.cancelReply')} accessibilityRole="button">
@@ -332,7 +333,7 @@ export default function PostDetailScreen() {
                 </Pressable>
               </View>
             )}
-            <View style={styles.inputRow}>
+            <View style={[styles.inputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Avatar uri={user.imageUrl} name={user.fullName ?? t('common.me')} size="sm" />
               <TextInput
                 ref={inputRef}
