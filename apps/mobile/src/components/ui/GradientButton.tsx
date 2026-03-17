@@ -3,7 +3,6 @@ import {
   Pressable,
   Text,
   StyleSheet,
-  ActivityIndicator,
   View,
 } from 'react-native';
 import Animated, {
@@ -15,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fontSize, fonts, spacing, radius, animation } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { IconName } from '@/components/ui/Icon';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -102,10 +102,7 @@ export function GradientButton({
   const renderContent = () => (
     <View style={[styles.content, { height: config.height }]}>
       {loading ? (
-        <ActivityIndicator
-          size="small"
-          color={textColor}
-        />
+        <Skeleton.Rect width={config.iconSize} height={config.iconSize} borderRadius={config.iconSize / 2} />
       ) : (
         <>
           {icon ? (

@@ -313,6 +313,12 @@ export default function SettingsScreen() {
               label={t('settings.watchHistory')}
               icon={<Icon name="play" size="sm" color={colors.gold} />}
               onPress={() => router.push('/(screens)/watch-history')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('nasheed.settingsLabel')}
+              icon={<Icon name="mic" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/nasheed-mode')}
               isLast
             />
           </LinearGradient>

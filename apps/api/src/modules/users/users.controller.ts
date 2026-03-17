@@ -285,6 +285,17 @@ export class UsersController {
     return this.usersService.cancelAccountDeletion(userId);
   }
 
+  @Patch('me/nasheed-mode')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle nasheed mode' })
+  updateNasheedMode(
+    @CurrentUser('id') userId: string,
+    @Body() body: { nasheedMode: boolean },
+  ) {
+    return this.usersService.updateNasheedMode(userId, body.nasheedMode);
+  }
+
   @Get('me/export-data')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()

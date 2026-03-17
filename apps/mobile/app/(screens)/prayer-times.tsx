@@ -1,11 +1,12 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl, Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -14,7 +15,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, radius, fontSize } from '@/theme';
 
 import { islamicApi } from '@/services/islamicApi';
-import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo } from '@/types/islamic';
+import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -195,19 +196,43 @@ function PrayerCard({
   );
 }
 
+const REMINDER_OPTIONS = [0, 5, 10, 15, 30];
+const ADHAN_STYLES: Array<{ key: string; value: string }> = [
+  { key: 'makkah', value: 'prayerNotifications.makkah' },
+  { key: 'madinah', value: 'prayerNotifications.madinah' },
+  { key: 'alaqsa', value: 'prayerNotifications.alaqsa' },
+];
+
 export default function PrayerTimesScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [prayerTimes, setPrayerTimes] = useState<ApiPrayerTimes | null>(null);
   const [calculationMethod, setCalculationMethod] = useState('MWL');
   const [showMethodPicker, setShowMethodPicker] = useState(false);
+  const [showNotifSettings, setShowNotifSettings] = useState(false);
+  const [showAdhanStylePicker, setShowAdhanStylePicker] = useState(false);
+  const [showReminderPicker, setShowReminderPicker] = useState(false);
   const [qiblaDirection] = useState(45); // Degrees from North
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [currentPrayerIndex, setCurrentPrayerIndex] = useState(0);
   const [prayerMethods, setPrayerMethods] = useState<PrayerMethodInfo[]>([]);
+
+  const { data: notifSettings } = useQuery({
+    queryKey: ['prayer-notification-settings'],
+    queryFn: () => islamicApi.getPrayerNotificationSettings(),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<PrayerNotificationSetting>) =>
+      islamicApi.updatePrayerNotificationSettings(data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prayer-notification-settings'] }),
+  });
+
+  const settings = notifSettings?.data;
 
   const prayerList = useMemo(() => {
     if (!prayerTimes) return [];
@@ -329,8 +354,9 @@ export default function PrayerTimesScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Prayer Times"
+          title={t('islamic.prayerTimes')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          rightAction={{ icon: 'settings', onPress: () => setShowNotifSettings(true) }}
         />
 
         <ScrollView
@@ -398,55 +424,59 @@ export default function PrayerTimesScreen() {
 
           {/* Qibla Compass */}
           <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-              style={styles.qiblaCard}
-            >
-              <View style={styles.qiblaHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                  style={styles.qiblaIconBg}
-                >
-                  <Icon name="map-pin" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
-              </View>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/qibla-compass')}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+                style={styles.qiblaCard}
+              >
+                <View style={styles.qiblaHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                    style={styles.qiblaIconBg}
+                  >
+                    <Icon name="map-pin" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
+                  <View style={{ flex: 1 }} />
+                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                </View>
 
-              <View style={styles.compassContainer}>
-                {/* Compass circle */}
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.3)']}
-                  style={styles.compassCircle}
-                >
-                  {/* Cardinal directions */}
-                  <Text style={[styles.compassDirection, styles.compassN]}>N</Text>
-                  <Text style={[styles.compassDirection, styles.compassE]}>E</Text>
-                  <Text style={[styles.compassDirection, styles.compassS]}>S</Text>
-                  <Text style={[styles.compassDirection, styles.compassW]}>W</Text>
+                <View style={styles.compassContainer}>
+                  {/* Compass circle */}
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.3)']}
+                    style={styles.compassCircle}
+                  >
+                    {/* Cardinal directions */}
+                    <Text style={[styles.compassDirection, styles.compassN]}>N</Text>
+                    <Text style={[styles.compassDirection, styles.compassE]}>E</Text>
+                    <Text style={[styles.compassDirection, styles.compassS]}>S</Text>
+                    <Text style={[styles.compassDirection, styles.compassW]}>W</Text>
 
-                  {/* Qibla arrow */}
-                  <View style={[styles.qiblaArrow, { transform: [{ rotate: `${qiblaDirection}deg` }] }]}>
+                    {/* Qibla arrow */}
+                    <View style={[styles.qiblaArrow, { transform: [{ rotate: `${qiblaDirection}deg` }] }]}>
+                      <LinearGradient
+                        colors={[colors.emerald, colors.gold]}
+                        style={styles.arrowHead}
+                      />
+                      <View style={styles.arrowTail} />
+                    </View>
+
+                    {/* Center dot */}
                     <LinearGradient
                       colors={[colors.emerald, colors.gold]}
-                      style={styles.arrowHead}
-                    />
-                    <View style={styles.arrowTail} />
-                  </View>
-
-                  {/* Center dot */}
-                  <LinearGradient
-                    colors={[colors.emerald, colors.gold]}
-                    style={styles.compassCenter}
-                  >
-                    <Text style={styles.qiblaIcon}>🕋</Text>
+                      style={styles.compassCenter}
+                    >
+                      <Icon name="map-pin" size="xs" color="#fff" />
+                    </LinearGradient>
                   </LinearGradient>
-                </LinearGradient>
 
-                <Text style={styles.qiblaDirectionText}>
-                  {qiblaDirection}° from North
-                </Text>
-              </View>
-            </LinearGradient>
+                  <Text style={styles.qiblaDirectionText}>
+                    {qiblaDirection}° from North
+                  </Text>
+                </View>
+              </LinearGradient>
+            </TouchableOpacity>
           </Animated.View>
 
           {/* All Prayers List */}
@@ -519,8 +549,101 @@ export default function PrayerTimesScreen() {
             />
           ))}
         </BottomSheet>
+
+        {/* Prayer Notification Settings Bottom Sheet */}
+        <BottomSheet visible={showNotifSettings} onClose={() => setShowNotifSettings(false)}>
+          <Text style={styles.settingsTitle}>{t('prayerNotifications.settings')}</Text>
+
+          {/* DND during prayer */}
+          <View style={styles.settingsRow}>
+            <View style={styles.settingsRowText}>
+              <Text style={styles.settingsLabel}>{t('prayerNotifications.dndDuringPrayer')}</Text>
+              <Text style={styles.settingsDescription}>{t('prayerNotifications.dndDescription')}</Text>
+            </View>
+            <Switch
+              value={settings?.dndDuringPrayer ?? false}
+              onValueChange={(val) => updateMutation.mutate({ dndDuringPrayer: val })}
+              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          {/* Adhan alerts */}
+          <View style={styles.settingsRow}>
+            <View style={styles.settingsRowText}>
+              <Text style={styles.settingsLabel}>{t('prayerNotifications.adhanAlerts')}</Text>
+              <Text style={styles.settingsDescription}>{t('prayerNotifications.adhanDescription')}</Text>
+            </View>
+            <Switch
+              value={settings?.adhanEnabled ?? false}
+              onValueChange={(val) => updateMutation.mutate({ adhanEnabled: val })}
+              trackColor={{ false: colors.dark.border, true: colors.emerald }}
+              thumbColor="#fff"
+            />
+          </View>
+
+          {/* Adhan style */}
+          <BottomSheetItem
+            label={`${t('prayerNotifications.adhanStyle')}: ${t(`prayerNotifications.${settings?.adhanStyle ?? 'makkah'}`)}`}
+            icon={<Icon name="volume-x" size="sm" color={colors.gold} />}
+            onPress={() => {
+              setShowNotifSettings(false);
+              setShowAdhanStylePicker(true);
+            }}
+          />
+
+          {/* Reminder before prayer */}
+          <BottomSheetItem
+            label={`${t('prayerNotifications.reminderBefore')}: ${
+              (settings?.reminderMinutes ?? 15) === 0
+                ? t('prayerNotifications.none')
+                : t('prayerNotifications.minutes', { count: settings?.reminderMinutes ?? 15 })
+            }`}
+            icon={<Icon name="bell" size="sm" color={colors.gold} />}
+            onPress={() => {
+              setShowNotifSettings(false);
+              setShowReminderPicker(true);
+            }}
+          />
+        </BottomSheet>
+
+        {/* Adhan Style Picker */}
+        <BottomSheet visible={showAdhanStylePicker} onClose={() => setShowAdhanStylePicker(false)}>
+          <Text style={styles.settingsTitle}>{t('prayerNotifications.adhanStyle')}</Text>
+          {ADHAN_STYLES.map((style) => (
+            <BottomSheetItem
+              key={style.key}
+              label={t(style.value)}
+              onPress={() => {
+                updateMutation.mutate({ adhanStyle: style.key });
+                setShowAdhanStylePicker(false);
+              }}
+              icon={settings?.adhanStyle === style.key ? (
+                <Icon name="check" size="sm" color={colors.emerald} />
+              ) : undefined}
+            />
+          ))}
+        </BottomSheet>
+
+        {/* Reminder Picker */}
+        <BottomSheet visible={showReminderPicker} onClose={() => setShowReminderPicker(false)}>
+          <Text style={styles.settingsTitle}>{t('prayerNotifications.reminderBefore')}</Text>
+          {REMINDER_OPTIONS.map((mins) => (
+            <BottomSheetItem
+              key={mins}
+              label={mins === 0 ? t('prayerNotifications.none') : t('prayerNotifications.minutes', { count: mins })}
+              onPress={() => {
+                updateMutation.mutate({ reminderMinutes: mins });
+                setShowReminderPicker(false);
+              }}
+              icon={settings?.reminderMinutes === mins ? (
+                <Icon name="check" size="sm" color={colors.emerald} />
+              ) : undefined}
+            />
+          ))}
+        </BottomSheet>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -889,5 +1012,37 @@ const styles = StyleSheet.create({
   dateSubtext: {
     color: colors.text.tertiary,
     fontSize: fontSize.sm,
+  },
+
+  // Settings
+  settingsTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.md,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  settingsRowText: {
+    flex: 1,
+    marginRight: spacing.md,
+  },
+  settingsLabel: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '500',
+  },
+  settingsDescription: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
 });

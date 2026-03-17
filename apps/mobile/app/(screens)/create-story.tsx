@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, TextInput, ScrollView, Dimensions, Platform, Alert, ViewStyle, TextStyle } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -27,6 +27,8 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { EidFrame } from '@/components/islamic/EidFrame';
+import type { Occasion } from '@/components/islamic/EidFrame';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CANVAS_H = SCREEN_H * 0.7;
@@ -81,6 +83,22 @@ export default function CreateStoryScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const { eidFrame: eidFrameParam } = useLocalSearchParams<{ eidFrame?: string }>();
+
+  // ── Eid Frame state ──
+  const [eidFrameOccasion, setEidFrameOccasion] = useState<Occasion | null>(
+    (eidFrameParam as Occasion) || null
+  );
+  const [showEidFramePicker, setShowEidFramePicker] = useState(false);
+
+  const EID_OCCASIONS: Array<{ id: Occasion; label: string }> = [
+    { id: 'eid-fitr', label: 'Eid al-Fitr' },
+    { id: 'eid-adha', label: 'Eid al-Adha' },
+    { id: 'ramadan', label: 'Ramadan' },
+    { id: 'mawlid', label: 'Mawlid' },
+    { id: 'isra-miraj', label: "Isra' & Mi'raj" },
+    { id: 'hijri-new-year', label: 'Islamic New Year' },
+  ];
 
   // ── Media state ──
   const [mediaUri, setMediaUri] = useState<string | null>(null);
@@ -492,12 +510,26 @@ export default function CreateStoryScreen() {
             <Icon name="edit" size="sm" color={textEffects.length > 0 ? colors.emerald : colors.text.primary} />
             <Text style={{ fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 2 }}>{t('story.effects')}</Text>
           </Pressable>
+          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowEidFramePicker(true)}>
+            <Icon name="star" size="sm" color={eidFrameOccasion ? colors.emerald : colors.text.primary} />
+            <Text style={{ fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 2 }}>{t('eidCards.pickOccasion')}</Text>
+          </Pressable>
         </View>
       </View>
 
       {/* ── Canvas ── */}
       <View style={{ height: CANVAS_H, marginHorizontal: spacing.sm, borderRadius: radius.lg, overflow: 'hidden' }}>
-        {mediaUri ? (
+        {eidFrameOccasion ? (
+          <EidFrame occasion={eidFrameOccasion}>
+            {mediaUri ? (
+              <View style={{ flex: 1 }}>
+                <Image source={{ uri: mediaUri }} style={[{ width: '100%', height: '100%' }, currentFilter.style]} contentFit="cover" />
+              </View>
+            ) : (
+              <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={{ flex: 1 }} />
+            )}
+          </EidFrame>
+        ) : mediaUri ? (
           <View style={{ flex: 1 }}>
             <Image source={{ uri: mediaUri }} style={[{ width: '100%', height: '100%' }, currentFilter.style]} contentFit="cover" />
           </View>
@@ -1030,6 +1062,28 @@ export default function CreateStoryScreen() {
       onClose={() => setShowTextEffects(false)}
       onAdd={(effect) => { setTextEffects(prev => [...prev, effect]); setShowTextEffects(false); }}
     />
+    <BottomSheet visible={showEidFramePicker} onClose={() => setShowEidFramePicker(false)}>
+      <View style={{ padding: spacing.base }}>
+        <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', marginBottom: spacing.md }}>
+          {t('eidCards.pickOccasion')}
+        </Text>
+        {eidFrameOccasion && (
+          <BottomSheetItem
+            icon="x"
+            label={t('common.cancel')}
+            onPress={() => { setEidFrameOccasion(null); setShowEidFramePicker(false); }}
+          />
+        )}
+        {EID_OCCASIONS.map((occ) => (
+          <BottomSheetItem
+            key={occ.id}
+            icon="star"
+            label={occ.label}
+            onPress={() => { setEidFrameOccasion(occ.id); setShowEidFramePicker(false); }}
+          />
+        ))}
+      </View>
+    </BottomSheet>
     </ScreenErrorBoundary>
   );
 }

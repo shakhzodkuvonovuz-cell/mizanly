@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable,
-  TextInput, FlatList, ActivityIndicator, Alert, RefreshControl,
+  TextInput, FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -153,7 +153,7 @@ export default function NewConversationScreen() {
                     <Text style={styles.handle}>@{item.username}</Text>
                   </View>
                   {dmMutation.isPending && dmMutation.variables === item.id ? (
-                    <ActivityIndicator color={colors.emerald} size="small" />
+                    <Skeleton.Circle size={36} />
                   ) : (
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}

@@ -1,5 +1,29 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
+import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
+import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
+import { CreateCampaignDto, CreateDonationDto } from './dto/charity.dto';
+import { CreateHajjProgressDto, UpdateHajjProgressDto } from './dto/hajj.dto';
+import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
+import { UpdateContentFilterDto } from './dto/content-filter.dto';
+import { SaveDhikrSessionDto, CreateDhikrChallengeDto } from './dto/dhikr.dto';
 import * as hadiths from './data/hadiths.json';
+import * as hajjGuideData from './data/hajj-guide.json';
+import * as tafsirJson from './data/tafsir.json';
+
+export interface TafsirSource {
+  name: string;
+  madhab: string;
+  textEn: string;
+  textAr: string;
+}
+
+export interface TafsirEntry {
+  surahNumber: number;
+  verseNumber: number;
+  verse: string;
+  tafsirSources: TafsirSource[];
+}
 
 export interface PrayerTimesRequest {
   lat: number;
@@ -99,6 +123,8 @@ export interface RamadanInfoResponse {
 
 @Injectable()
 export class IslamicService {
+  constructor(private readonly prisma: PrismaService) {}
+
   private readonly hadiths: Hadith[] = hadiths;
   private readonly prayerMethods: CalculationMethod[] = [
     {
@@ -337,5 +363,407 @@ export class IslamicService {
 
   private toRad(deg: number): number {
     return deg * (Math.PI / 180);
+  }
+
+  async getPrayerNotificationSettings(userId: string) {
+    let settings = await this.prisma.prayerNotificationSetting.findUnique({
+      where: { userId },
+    });
+    if (!settings) {
+      settings = await this.prisma.prayerNotificationSetting.create({
+        data: { userId },
+      });
+    }
+    return settings;
+  }
+
+  async updatePrayerNotificationSettings(userId: string, dto: UpdatePrayerNotificationDto) {
+    return this.prisma.prayerNotificationSetting.upsert({
+      where: { userId },
+      update: dto,
+      create: { userId, ...dto },
+    });
+  }
+
+  // ── Quran Reading Plans ──
+
+  async createReadingPlan(userId: string, dto: CreateQuranPlanDto) {
+    const days = dto.planType === '30day' ? 30 : dto.planType === '60day' ? 60 : 90;
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + days);
+
+    return this.prisma.quranReadingPlan.create({
+      data: {
+        userId,
+        planType: dto.planType,
+        startDate,
+        endDate,
+      },
+    });
+  }
+
+  async getActiveReadingPlan(userId: string) {
+    return this.prisma.quranReadingPlan.findFirst({
+      where: { userId, isComplete: false },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async getReadingPlanHistory(userId: string, cursor?: string, limit = 20) {
+    const plans = await this.prisma.quranReadingPlan.findMany({
+      where: { userId, isComplete: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const hasMore = plans.length > limit;
+    if (hasMore) plans.pop();
+    return { data: plans, meta: { hasMore, cursor: plans[plans.length - 1]?.id } };
+  }
+
+  async updateReadingPlan(userId: string, planId: string, dto: UpdateQuranPlanDto) {
+    const plan = await this.prisma.quranReadingPlan.findFirst({
+      where: { id: planId, userId },
+    });
+    if (!plan) throw new NotFoundException('Reading plan not found');
+    return this.prisma.quranReadingPlan.update({
+      where: { id: planId },
+      data: dto,
+    });
+  }
+
+  async deleteReadingPlan(userId: string, planId: string) {
+    const plan = await this.prisma.quranReadingPlan.findFirst({
+      where: { id: planId, userId },
+    });
+    if (!plan) throw new NotFoundException('Reading plan not found');
+    return this.prisma.quranReadingPlan.delete({ where: { id: planId } });
+  }
+
+  // ── Charity / Sadaqah ──
+
+  async createCampaign(userId: string, dto: CreateCampaignDto) {
+    return this.prisma.charityCampaign.create({
+      data: { userId, ...dto },
+    });
+  }
+
+  async listCampaigns(cursor?: string, limit = 20) {
+    const campaigns = await this.prisma.charityCampaign.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const hasMore = campaigns.length > limit;
+    if (hasMore) campaigns.pop();
+    return { data: campaigns, meta: { hasMore, cursor: campaigns[campaigns.length - 1]?.id } };
+  }
+
+  async getCampaign(campaignId: string) {
+    const campaign = await this.prisma.charityCampaign.findUnique({
+      where: { id: campaignId },
+    });
+    if (!campaign) throw new NotFoundException('Campaign not found');
+    return campaign;
+  }
+
+  async createDonation(userId: string, dto: CreateDonationDto) {
+    const donation = await this.prisma.charityDonation.create({
+      data: {
+        userId,
+        campaignId: dto.campaignId,
+        recipientUserId: dto.recipientUserId,
+        amount: dto.amount,
+        currency: dto.currency || 'usd',
+        status: 'completed',
+      },
+    });
+
+    // Update campaign raised amount if applicable
+    if (dto.campaignId) {
+      await this.prisma.$executeRaw`UPDATE "charity_campaigns" SET "raisedAmount" = "raisedAmount" + ${dto.amount}, "donorCount" = "donorCount" + 1 WHERE id = ${dto.campaignId}`;
+    }
+
+    return donation;
+  }
+
+  async getMyDonations(userId: string, cursor?: string, limit = 20) {
+    const donations = await this.prisma.charityDonation.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const hasMore = donations.length > limit;
+    if (hasMore) donations.pop();
+    return { data: donations, meta: { hasMore, cursor: donations[donations.length - 1]?.id } };
+  }
+
+  // ── Hajj & Umrah ──
+
+  private hajjGuide = hajjGuideData;
+
+  getHajjGuide() {
+    return this.hajjGuide;
+  }
+
+  async getHajjProgress(userId: string) {
+    return this.prisma.hajjProgress.findFirst({
+      where: { userId },
+      orderBy: { year: 'desc' },
+    });
+  }
+
+  async createHajjProgress(userId: string, dto: CreateHajjProgressDto) {
+    return this.prisma.hajjProgress.create({
+      data: { userId, year: dto.year },
+    });
+  }
+
+  async updateHajjProgress(userId: string, progressId: string, dto: UpdateHajjProgressDto) {
+    const progress = await this.prisma.hajjProgress.findFirst({
+      where: { id: progressId, userId },
+    });
+    if (!progress) throw new NotFoundException('Hajj progress not found');
+    return this.prisma.hajjProgress.update({
+      where: { id: progressId },
+      data: dto,
+    });
+  }
+
+  // ── Tafsir ──
+
+  private tafsirData: TafsirEntry[] = tafsirJson as TafsirEntry[];
+
+  getTafsir(surahNumber: number, verseNumber: number, source?: string): TafsirEntry {
+    const entry = this.tafsirData.find(
+      (t) => t.surahNumber === surahNumber && t.verseNumber === verseNumber,
+    );
+    if (!entry) throw new NotFoundException('Tafsir not available for this verse');
+
+    if (source) {
+      const filtered = entry.tafsirSources.filter(
+        (s) => s.name.toLowerCase() === source.toLowerCase(),
+      );
+      return { ...entry, tafsirSources: filtered };
+    }
+    return entry;
+  }
+
+  getTafsirSources(): Array<{ name: string }> {
+    const sources = new Set<string>();
+    for (const entry of this.tafsirData) {
+      for (const s of entry.tafsirSources) {
+        sources.add(s.name);
+      }
+    }
+    return Array.from(sources).map((name) => ({ name }));
+  }
+
+  // ── Scholar Verification ──
+
+  async applyScholarVerification(userId: string, dto: ApplyScholarVerificationDto) {
+    const existing = await this.prisma.scholarVerification.findUnique({ where: { userId } });
+    if (existing) throw new BadRequestException('Application already submitted');
+    return this.prisma.scholarVerification.create({
+      data: { userId, ...dto },
+    });
+  }
+
+  async getScholarVerificationStatus(userId: string) {
+    return this.prisma.scholarVerification.findUnique({ where: { userId } });
+  }
+
+  // ── Content Filter ──
+
+  async getContentFilterSettings(userId: string) {
+    let settings = await this.prisma.contentFilterSetting.findUnique({ where: { userId } });
+    if (!settings) {
+      settings = await this.prisma.contentFilterSetting.create({ data: { userId } });
+    }
+    return settings;
+  }
+
+  async updateContentFilterSettings(userId: string, dto: UpdateContentFilterDto) {
+    return this.prisma.contentFilterSetting.upsert({
+      where: { userId },
+      update: dto,
+      create: { userId, ...dto },
+    });
+  }
+
+  // ── Dhikr Social ──
+
+  async saveDhikrSession(userId: string, dto: SaveDhikrSessionDto) {
+    return this.prisma.dhikrSession.create({
+      data: {
+        userId,
+        phrase: dto.phrase,
+        count: dto.count,
+        target: dto.target || 33,
+        completedAt: dto.count >= (dto.target || 33) ? new Date() : null,
+      },
+    });
+  }
+
+  async getDhikrStats(userId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [totalResult, todayResult, sessions] = await Promise.all([
+      this.prisma.dhikrSession.aggregate({
+        where: { userId },
+        _sum: { count: true },
+      }),
+      this.prisma.dhikrSession.aggregate({
+        where: { userId, createdAt: { gte: today } },
+        _sum: { count: true },
+      }),
+      this.prisma.dhikrSession.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 90,
+        select: { createdAt: true, count: true },
+      }),
+    ]);
+
+    // Calculate streak (consecutive days with sessions)
+    let streak = 0;
+    const dayMs = 86400000;
+    let checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+
+    const sessionDates = new Set(
+      sessions.map((s: { createdAt: Date }) => {
+        const d = new Date(s.createdAt);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime();
+      }),
+    );
+
+    while (sessionDates.has(checkDate.getTime())) {
+      streak++;
+      checkDate = new Date(checkDate.getTime() - dayMs);
+    }
+
+    return {
+      totalCount: totalResult._sum.count || 0,
+      todayCount: todayResult._sum.count || 0,
+      streak,
+      setsCompleted: sessions.filter((s: { count: number }) => s.count >= 33).length,
+    };
+  }
+
+  async getDhikrLeaderboard(period: string = 'week') {
+    const since = new Date();
+    if (period === 'day') {
+      since.setHours(0, 0, 0, 0);
+    } else {
+      since.setDate(since.getDate() - 7);
+    }
+
+    const results = await this.prisma.dhikrSession.groupBy({
+      by: ['userId'],
+      where: { createdAt: { gte: since } },
+      _sum: { count: true },
+      orderBy: { _sum: { count: 'desc' } },
+      take: 20,
+    });
+
+    const userIds = results.map((r: { userId: string }) => r.userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, displayName: true, avatarUrl: true },
+    });
+
+    const userMap = new Map(users.map((u: { id: string; displayName: string | null; avatarUrl: string | null }) => [u.id, u]));
+
+    return results.map((r: { userId: string; _sum: { count: number | null } }) => ({
+      userId: r.userId,
+      totalCount: r._sum.count || 0,
+      user: userMap.get(r.userId) || null,
+    }));
+  }
+
+  async createDhikrChallenge(userId: string, dto: CreateDhikrChallengeDto) {
+    return this.prisma.dhikrChallenge.create({
+      data: {
+        userId,
+        title: dto.title,
+        phrase: dto.phrase,
+        targetTotal: dto.targetTotal,
+        expiresAt: dto.expiresAt ? new Date(dto.expiresAt) : null,
+      },
+    });
+  }
+
+  async listActiveChallenges(cursor?: string, limit = 20) {
+    const challenges = await this.prisma.dhikrChallenge.findMany({
+      where: {
+        OR: [
+          { expiresAt: null },
+          { expiresAt: { gt: new Date() } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    });
+    const hasMore = challenges.length > limit;
+    if (hasMore) challenges.pop();
+    return { data: challenges, meta: { hasMore, cursor: challenges[challenges.length - 1]?.id } };
+  }
+
+  async getChallengeDetail(challengeId: string) {
+    const challenge = await this.prisma.dhikrChallenge.findUnique({ where: { id: challengeId } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
+
+    const participants = await this.prisma.dhikrChallengeParticipant.findMany({
+      where: { challengeId },
+      orderBy: { contributed: 'desc' },
+      take: 20,
+    });
+
+    const userIds = participants.map((p: { userId: string }) => p.userId);
+    const users = await this.prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, displayName: true, avatarUrl: true },
+    });
+    const userMap = new Map(users.map((u: { id: string; displayName: string | null; avatarUrl: string | null }) => [u.id, u]));
+
+    return {
+      ...challenge,
+      topContributors: participants.map((p: { userId: string; contributed: number }) => ({
+        ...p,
+        user: userMap.get(p.userId) || null,
+      })),
+    };
+  }
+
+  async joinChallenge(userId: string, challengeId: string) {
+    const existing = await this.prisma.dhikrChallengeParticipant.findUnique({
+      where: { userId_challengeId: { userId, challengeId } },
+    });
+    if (existing) throw new BadRequestException('Already joined');
+
+    await this.prisma.dhikrChallengeParticipant.create({
+      data: { userId, challengeId },
+    });
+    await this.prisma.$executeRaw`UPDATE "dhikr_challenges" SET "participantCount" = "participantCount" + 1 WHERE id = ${challengeId}`;
+    return { joined: true };
+  }
+
+  async contributeToChallenge(userId: string, challengeId: string, count: number) {
+    const participant = await this.prisma.dhikrChallengeParticipant.findUnique({
+      where: { userId_challengeId: { userId, challengeId } },
+    });
+    if (!participant) throw new BadRequestException('Not a participant');
+
+    await this.prisma.$executeRaw`UPDATE "dhikr_challenge_participants" SET contributed = contributed + ${count} WHERE "userId" = ${userId} AND "challengeId" = ${challengeId}`;
+    await this.prisma.$executeRaw`UPDATE "dhikr_challenges" SET "currentTotal" = "currentTotal" + ${count} WHERE id = ${challengeId}`;
+
+    return { contributed: count };
   }
 }

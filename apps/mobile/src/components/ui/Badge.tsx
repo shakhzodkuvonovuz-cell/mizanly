@@ -5,7 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import { colors, animation, spacing } from '@/theme';
+import { colors, animation, spacing, radius } from '@/theme';
 
 interface BadgeProps {
   count: number;
@@ -45,7 +45,7 @@ export function Badge({ count, color = colors.error, size = 'sm', style }: Badge
           backgroundColor: color,
           minWidth: minW,
           height: h,
-          borderRadius: h / 2,
+          borderRadius: radius.full,
           shadowColor: color,
           shadowOffset: { width: 0, height: 0 },
           shadowOpacity: 0.4,

@@ -1,29 +1,24 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
+import { BottomSheet } from '@/components/ui/BottomSheet';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-
-const { width: screenWidth } = Dimensions.get('window');
-
-const HIJRI_MONTHS = [
-  'Muharram', 'Safar', 'Rabi\' al-Awwal', 'Rabi\' al-Thani',
-  'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', 'Sha\'ban',
-  'Ramadan', 'Shawwal', 'Dhu al-Qi\'dah', 'Dhu al-Hijjah'
-];
-
-const HIJRI_MONTHS_ARABIC = [
-  'المحرم', 'صفر', 'ربيع الأول', 'ربيع الثاني',
-  'جمادى الأولى', 'جمادى الآخرة', 'رجب', 'شعبان',
-  'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
-];
+import {
+  gregorianToHijri,
+  getHijriMonthName,
+  formatHijriDate,
+  HIJRI_MONTHS_EN,
+  HIJRI_MONTHS_AR,
+} from '@/utils/hijri';
 
 const WEEKDAY_KEYS = [
   'screens.islamicCalendar.sun', 'screens.islamicCalendar.mon',
@@ -32,25 +27,69 @@ const WEEKDAY_KEYS = [
   'screens.islamicCalendar.sat',
 ];
 
-// Mock events data
-const ISLAMIC_EVENTS = [
-  { day: 1, month: 0, name: 'screens.islamicCalendar.islamicNewYear', type: 'important' },
-  { day: 10, month: 0, name: 'screens.islamicCalendar.dayOfAshura', type: 'important' },
-  { day: 12, month: 2, name: 'screens.islamicCalendar.mawlidAlNabi', type: 'important' },
-  { day: 27, month: 6, name: 'screens.islamicCalendar.israAndMiraj', type: 'important' },
-  { day: 1, month: 8, name: 'screens.islamicCalendar.firstDayOfRamadan', type: 'important' },
-  { day: 27, month: 8, name: 'screens.islamicCalendar.laylatAlQadr', type: 'important' },
-  { day: 1, month: 9, name: 'screens.islamicCalendar.eidAlFitr', type: 'eid' },
-  { day: 8, month: 11, name: 'screens.islamicCalendar.dayOfArafah', type: 'important' },
-  { day: 9, month: 11, name: 'screens.islamicCalendar.eidAlAdha', type: 'eid' },
+interface IslamicEvent {
+  day: number;
+  month: number; // 0-based index (0 = Muharram)
+  name: string;
+  type: 'important' | 'eid';
+  description: string;
+}
+
+// Events data with i18n keys
+const ISLAMIC_EVENTS: IslamicEvent[] = [
+  { day: 1, month: 0, name: 'screens.islamicCalendar.islamicNewYear', type: 'important', description: 'screens.islamicCalendar.descIslamicNewYear' },
+  { day: 10, month: 0, name: 'screens.islamicCalendar.dayOfAshura', type: 'important', description: 'screens.islamicCalendar.descDayOfAshura' },
+  { day: 12, month: 2, name: 'screens.islamicCalendar.mawlidAlNabi', type: 'important', description: 'screens.islamicCalendar.descMawlidAlNabi' },
+  { day: 27, month: 6, name: 'screens.islamicCalendar.israAndMiraj', type: 'important', description: 'screens.islamicCalendar.descIsraAndMiraj' },
+  { day: 1, month: 8, name: 'screens.islamicCalendar.firstDayOfRamadan', type: 'important', description: 'screens.islamicCalendar.descFirstDayOfRamadan' },
+  { day: 27, month: 8, name: 'screens.islamicCalendar.laylatAlQadr', type: 'important', description: 'screens.islamicCalendar.descLaylatAlQadr' },
+  { day: 1, month: 9, name: 'screens.islamicCalendar.eidAlFitr', type: 'eid', description: 'screens.islamicCalendar.descEidAlFitr' },
+  { day: 8, month: 11, name: 'screens.islamicCalendar.dayOfArafah', type: 'important', description: 'screens.islamicCalendar.descDayOfArafah' },
+  { day: 9, month: 11, name: 'screens.islamicCalendar.eidAlAdha', type: 'eid', description: 'screens.islamicCalendar.descEidAlAdha' },
 ];
 
-// Generate mock calendar days
-function generateDaysInMonth(month: number, year: number) {
-  const daysInMonth = [30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29][month];
-  const startDayOfWeek = 5; // Mock: month starts on Friday
+/**
+ * Compute the day-of-week the first day of a Hijri month falls on.
+ * Uses an approximation based on the Kuwaiti algorithm cycle.
+ */
+function getStartDayOfHijriMonth(month: number, year: number): number {
+  // Total days from Hijri epoch to start of given month/year
+  // Each Hijri year ~ 354.36667 days, months alternate 30/29
+  const yearsElapsed = year - 1;
+  const leapYears = Math.floor((11 * yearsElapsed + 3) / 30);
+  let totalDays = yearsElapsed * 354 + leapYears;
+  for (let m = 0; m < month; m++) {
+    totalDays += m % 2 === 0 ? 30 : 29;
+  }
+  // Hijri epoch (1 Muharram 1 AH) ~ Friday (day 5) in Julian calendar
+  // Adjusted to approximate alignment
+  return (totalDays + 5) % 7;
+}
 
-  const days: Array<{ day: number | null; isToday: boolean; hasEvent: boolean; eventType?: string }> = [];
+function getDaysInHijriMonth(month: number, year: number): number {
+  // Odd months (1-indexed: 1,3,5,7,9,11) have 30 days, even have 29
+  // Exception: month 12 in leap years has 30
+  const isLeapYear = (11 * year + 14) % 30 < 11;
+  if (month === 11 && isLeapYear) return 30; // 0-based month 11 = Dhu al-Hijjah
+  return month % 2 === 0 ? 30 : 29;
+}
+
+// Generate calendar days using real Hijri computation
+function generateDaysInMonth(
+  month: number,
+  year: number,
+  todayHijri: { month: number; day: number; year: number },
+) {
+  const daysInMonth = getDaysInHijriMonth(month, year);
+  const startDayOfWeek = getStartDayOfHijriMonth(month, year);
+
+  const days: Array<{
+    day: number | null;
+    isToday: boolean;
+    hasEvent: boolean;
+    eventType?: string;
+    event?: IslamicEvent;
+  }> = [];
 
   // Empty slots for days before month starts
   for (let i = 0; i < startDayOfWeek; i++) {
@@ -60,11 +99,16 @@ function generateDaysInMonth(month: number, year: number) {
   // Actual days
   for (let day = 1; day <= daysInMonth; day++) {
     const event = ISLAMIC_EVENTS.find(e => e.day === day && e.month === month);
+    const isToday =
+      todayHijri.year === year &&
+      todayHijri.month === month + 1 && // todayHijri.month is 1-based
+      todayHijri.day === day;
     days.push({
       day,
-      isToday: day === 15, // Mock: today is 15th
+      isToday,
       hasEvent: !!event,
       eventType: event?.type,
+      event,
     });
   }
 
@@ -77,18 +121,20 @@ function CalendarDay({
   hasEvent,
   eventType,
   index,
+  onPress,
 }: {
   day: number | null;
   isToday: boolean;
   hasEvent: boolean;
   eventType?: string;
   index: number;
+  onPress?: () => void;
 }) {
   if (day === null) {
     return <View style={styles.dayCell} />;
   }
 
-  return (
+  const content = (
     <Animated.View entering={FadeInUp.delay(index * 20).duration(300)} style={styles.dayCell}>
       <View style={[
         styles.dayContent,
@@ -122,9 +168,30 @@ function CalendarDay({
       </View>
     </Animated.View>
   );
+
+  if (hasEvent && onPress) {
+    return (
+      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+        {content}
+      </TouchableOpacity>
+    );
+  }
+
+  return content;
 }
 
-function EventCard({ event, index, t }: { event: typeof ISLAMIC_EVENTS[0]; index: number; t: (key: string, params?: Record<string, unknown>) => string }) {
+function EventCard({
+  event,
+  index,
+  t,
+  isRTL,
+}: {
+  event: IslamicEvent;
+  index: number;
+  t: (key: string, params?: Record<string, unknown>) => string;
+  isRTL: boolean;
+}) {
+  const monthNames = isRTL ? HIJRI_MONTHS_AR : HIJRI_MONTHS_EN;
   return (
     <Animated.View entering={FadeInUp.delay(index * 100).duration(500)} style={styles.eventCard}>
       <LinearGradient
@@ -142,7 +209,7 @@ function EventCard({ event, index, t }: { event: typeof ISLAMIC_EVENTS[0]; index
         </LinearGradient>
         <View style={styles.eventInfo}>
           <Text style={[styles.eventName, event.type === 'eid' && styles.eventNameEid]}>{t(event.name)}</Text>
-          <Text style={styles.eventDate}>{HIJRI_MONTHS[event.month]} {event.day}</Text>
+          <Text style={styles.eventDate}>{monthNames[event.month]} {event.day}</Text>
         </View>
         <View style={[
           styles.eventBadge,
@@ -160,11 +227,35 @@ function EventCard({ event, index, t }: { event: typeof ISLAMIC_EVENTS[0]; index
 
 export default function IslamicCalendarScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
-  const [currentMonth, setCurrentMonth] = useState(8); // Ramadan
-  const [currentYear, setCurrentYear] = useState(1446);
+  const { t, isRTL } = useTranslation();
 
-  const days = generateDaysInMonth(currentMonth, currentYear);
+  // Get today's real Hijri date
+  const todayHijri = useMemo(() => gregorianToHijri(new Date()), []);
+  const todayFormatted = useMemo(
+    () => formatHijriDate(new Date(), isRTL ? 'ar' : 'en'),
+    [isRTL],
+  );
+  const todayGregorian = useMemo(() => {
+    const now = new Date();
+    return now.toLocaleDateString(isRTL ? 'ar' : 'en', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  }, [isRTL]);
+
+  // Month state: 0-based (0 = Muharram), year is Hijri year
+  const [currentMonth, setCurrentMonth] = useState(todayHijri.month - 1); // convert 1-based to 0-based
+  const [currentYear, setCurrentYear] = useState(todayHijri.year);
+
+  // Event detail bottom sheet
+  const [selectedEvent, setSelectedEvent] = useState<IslamicEvent | null>(null);
+
+  const days = useMemo(
+    () => generateDaysInMonth(currentMonth, currentYear, todayHijri),
+    [currentMonth, currentYear, todayHijri],
+  );
 
   const handlePrevMonth = useCallback(() => {
     if (currentMonth === 0) {
@@ -184,15 +275,26 @@ export default function IslamicCalendarScreen() {
     }
   }, [currentMonth]);
 
-  const upcomingEvents = ISLAMIC_EVENTS.filter(e =>
-    e.month > currentMonth || (e.month === currentMonth && e.day >= 15)
-  ).slice(0, 3);
+  const monthEvents = useMemo(
+    () => ISLAMIC_EVENTS.filter(e => e.month === currentMonth),
+    [currentMonth],
+  );
+
+  const upcomingEvents = useMemo(() => {
+    const todayMonth = todayHijri.month - 1; // 0-based
+    return ISLAMIC_EVENTS.filter(e =>
+      e.month > todayMonth ||
+      (e.month === todayMonth && e.day >= todayHijri.day),
+    ).slice(0, 3);
+  }, [todayHijri]);
+
+  const monthNames = isRTL ? HIJRI_MONTHS_AR : HIJRI_MONTHS_EN;
 
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title={t('screens.islamicCalendar.title')}
+          title={t('hijri.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -210,11 +312,11 @@ export default function IslamicCalendarScreen() {
               end={{ x: 1, y: 1 }}
             >
               <View style={styles.currentDateContent}>
-                <Text style={styles.currentHijriDate}>15 {HIJRI_MONTHS_ARABIC[8]} 1446</Text>
-                <Text style={styles.currentHijriSub}>{t('screens.islamicCalendar.currentHijriSub')}</Text>
+                <Text style={styles.currentHijriDate}>{todayFormatted}</Text>
+                <Text style={styles.currentHijriSub}>{t('hijri.today')}</Text>
                 <View style={styles.currentGregorian}>
                   <Icon name="calendar" size="xs" color="rgba(255,255,255,0.7)" />
-                  <Text style={styles.currentGregorianText}>{t('screens.islamicCalendar.currentGregorianDate')}</Text>
+                  <Text style={styles.currentGregorianText}>{todayGregorian}</Text>
                 </View>
               </View>
 
@@ -245,8 +347,8 @@ export default function IslamicCalendarScreen() {
                 </TouchableOpacity>
 
                 <View style={styles.monthTitleContainer}>
-                  <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_ARABIC[currentMonth]}</Text>
-                  <Text style={styles.monthTitle}>{HIJRI_MONTHS[currentMonth]} {currentYear}</Text>
+                  <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_AR[currentMonth]}</Text>
+                  <Text style={styles.monthTitle}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
                 <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButton}>
@@ -276,6 +378,7 @@ export default function IslamicCalendarScreen() {
                     hasEvent={dayData.hasEvent}
                     eventType={dayData.eventType}
                     index={index}
+                    onPress={dayData.event ? () => setSelectedEvent(dayData.event ?? null) : undefined}
                   />
                 ))}
               </View>
@@ -310,9 +413,16 @@ export default function IslamicCalendarScreen() {
               <Text style={styles.sectionTitle}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
             </View>
 
-            {upcomingEvents.map((event, index) => (
-              <EventCard key={event.name} event={event} index={index} t={t} />
-            ))}
+            {upcomingEvents.length === 0 ? (
+              <EmptyState
+                icon="calendar"
+                title={t('hijri.noEvents')}
+              />
+            ) : (
+              upcomingEvents.map((event, index) => (
+                <EventCard key={event.name} event={event} index={index} t={t} isRTL={isRTL} />
+              ))
+            )}
           </View>
 
           {/* Quick Links */}
@@ -338,8 +448,45 @@ export default function IslamicCalendarScreen() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+
+        {/* Event Detail BottomSheet */}
+        <BottomSheet
+          visible={!!selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+        >
+          {selectedEvent && (
+            <View style={styles.eventSheetContent}>
+              <LinearGradient
+                colors={
+                  selectedEvent.type === 'eid'
+                    ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
+                    : ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']
+                }
+                style={styles.eventSheetIconBg}
+              >
+                <Icon
+                  name={selectedEvent.type === 'eid' ? 'star' : 'flag'}
+                  size="md"
+                  color={selectedEvent.type === 'eid' ? colors.gold : colors.emerald}
+                />
+              </LinearGradient>
+              <Text style={[
+                styles.eventSheetTitle,
+                selectedEvent.type === 'eid' && { color: colors.gold },
+              ]}>
+                {t(selectedEvent.name)}
+              </Text>
+              <Text style={styles.eventSheetDate}>
+                {monthNames[selectedEvent.month]} {selectedEvent.day}
+              </Text>
+              <Text style={styles.eventSheetDescription}>
+                {t(selectedEvent.description)}
+              </Text>
+            </View>
+          )}
+        </BottomSheet>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -627,7 +774,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(10,123,79,0.2)',
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: radius.sm,
   },
   eventBadgeEid: {
     backgroundColor: 'rgba(200,150,62,0.2)',
@@ -665,5 +812,38 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '500',
+  },
+
+  // Event Detail BottomSheet
+  eventSheetContent: {
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
+  eventSheetIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  eventSheetTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  eventSheetDate: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    marginBottom: spacing.md,
+  },
+  eventSheetDescription: {
+    color: colors.text.secondary,
+    fontSize: fontSize.base,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });

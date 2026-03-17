@@ -1,15 +1,19 @@
 import {
   Controller,
   Get,
+  Post,
+  Patch,
+  Delete,
   Query,
   Param,
+  Body,
   UseGuards,
   ParseFloatPipe,
   ParseIntPipe,
   Optional,
   DefaultValuePipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { IsNumber, IsOptional, IsString, IsIn, Min, Max } from 'class-validator';
 import { IslamicService } from './islamic.service';
 import {
@@ -21,6 +25,15 @@ import {
   RamadanInfoResponse,
 } from './islamic.service';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
+import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
+import { CreateCampaignDto, CreateDonationDto } from './dto/charity.dto';
+import { CreateHajjProgressDto, UpdateHajjProgressDto } from './dto/hajj.dto';
+import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
+import { UpdateContentFilterDto } from './dto/content-filter.dto';
+import { SaveDhikrSessionDto, CreateDhikrChallengeDto, ContributeDhikrDto } from './dto/dhikr.dto';
 
 class PrayerTimesQueryDto {
   @ApiQuery({ name: 'lat', required: true, description: 'Latitude', example: 24.7136 })
@@ -153,5 +166,268 @@ export class IslamicController {
       lat: query.lat,
       lng: query.lng,
     });
+  }
+
+  @Get('prayer-notifications/settings')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get prayer notification settings' })
+  async getPrayerNotificationSettings(@CurrentUser('id') userId: string) {
+    return this.islamicService.getPrayerNotificationSettings(userId);
+  }
+
+  @Patch('prayer-notifications/settings')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update prayer notification settings' })
+  async updatePrayerNotificationSettings(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdatePrayerNotificationDto,
+  ) {
+    return this.islamicService.updatePrayerNotificationSettings(userId, dto);
+  }
+
+  // ── Quran Reading Plans ──
+
+  @Post('quran-plans')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a Quran reading plan' })
+  async createReadingPlan(
+    @CurrentUser('id') userId: string,
+    @Body() dto: CreateQuranPlanDto,
+  ) {
+    return this.islamicService.createReadingPlan(userId, dto);
+  }
+
+  @Get('quran-plans/active')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get active reading plan' })
+  async getActiveReadingPlan(@CurrentUser('id') userId: string) {
+    return this.islamicService.getActiveReadingPlan(userId);
+  }
+
+  @Get('quran-plans/history')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get completed reading plans' })
+  async getReadingPlanHistory(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.islamicService.getReadingPlanHistory(userId, cursor, limit);
+  }
+
+  @Patch('quran-plans/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update reading plan progress' })
+  async updateReadingPlan(
+    @CurrentUser('id') userId: string,
+    @Param('id') planId: string,
+    @Body() dto: UpdateQuranPlanDto,
+  ) {
+    return this.islamicService.updateReadingPlan(userId, planId, dto);
+  }
+
+  @Delete('quran-plans/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a reading plan' })
+  async deleteReadingPlan(
+    @CurrentUser('id') userId: string,
+    @Param('id') planId: string,
+  ) {
+    return this.islamicService.deleteReadingPlan(userId, planId);
+  }
+
+  // ── Charity / Sadaqah ──
+
+  @Post('charity/campaigns')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a charity campaign' })
+  async createCampaign(@CurrentUser('id') userId: string, @Body() dto: CreateCampaignDto) {
+    return this.islamicService.createCampaign(userId, dto);
+  }
+
+  @Get('charity/campaigns')
+  @ApiOperation({ summary: 'List active charity campaigns' })
+  async listCampaigns(@Query('cursor') cursor?: string, @Query('limit') limit?: number) {
+    return this.islamicService.listCampaigns(cursor, limit);
+  }
+
+  @Get('charity/campaigns/:id')
+  @ApiOperation({ summary: 'Get campaign details' })
+  async getCampaign(@Param('id') id: string) {
+    return this.islamicService.getCampaign(id);
+  }
+
+  @Post('charity/donate')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Make a donation' })
+  async createDonation(@CurrentUser('id') userId: string, @Body() dto: CreateDonationDto) {
+    return this.islamicService.createDonation(userId, dto);
+  }
+
+  @Get('charity/my-donations')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get my donation history' })
+  async getMyDonations(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.islamicService.getMyDonations(userId, cursor);
+  }
+
+  // ── Hajj & Umrah ──
+
+  @Get('hajj/guide')
+  @ApiOperation({ summary: 'Get Hajj step-by-step guide' })
+  async getHajjGuide() {
+    return this.islamicService.getHajjGuide();
+  }
+
+  @Get('hajj/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user Hajj progress' })
+  async getHajjProgress(@CurrentUser('id') userId: string) {
+    return this.islamicService.getHajjProgress(userId);
+  }
+
+  @Post('hajj/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Start Hajj tracker for a year' })
+  async createHajjProgress(@CurrentUser('id') userId: string, @Body() dto: CreateHajjProgressDto) {
+    return this.islamicService.createHajjProgress(userId, dto);
+  }
+
+  @Patch('hajj/progress/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update Hajj progress' })
+  async updateHajjProgress(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateHajjProgressDto,
+  ) {
+    return this.islamicService.updateHajjProgress(userId, id, dto);
+  }
+
+  // ── Tafsir ──
+
+  @Get('tafsir/sources')
+  @ApiOperation({ summary: 'List available tafsir sources' })
+  async getTafsirSources() {
+    return this.islamicService.getTafsirSources();
+  }
+
+  @Get('tafsir/:surah/:verse')
+  @ApiOperation({ summary: 'Get tafsir for a verse' })
+  async getTafsir(
+    @Param('surah') surah: string,
+    @Param('verse') verse: string,
+    @Query('source') source?: string,
+  ) {
+    return this.islamicService.getTafsir(parseInt(surah), parseInt(verse), source);
+  }
+
+  // ── Scholar Verification ──
+
+  @Post('scholar-verification/apply')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Apply for scholar verification' })
+  async applyScholarVerification(@CurrentUser('id') userId: string, @Body() dto: ApplyScholarVerificationDto) {
+    return this.islamicService.applyScholarVerification(userId, dto);
+  }
+
+  @Get('scholar-verification/status')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check scholar verification status' })
+  async getScholarVerificationStatus(@CurrentUser('id') userId: string) {
+    return this.islamicService.getScholarVerificationStatus(userId);
+  }
+
+  // ── Content Filter ──
+
+  @Get('content-filter/settings')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get content filter settings' })
+  async getContentFilterSettings(@CurrentUser('id') userId: string) {
+    return this.islamicService.getContentFilterSettings(userId);
+  }
+
+  @Patch('content-filter/settings')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update content filter settings' })
+  async updateContentFilterSettings(@CurrentUser('id') userId: string, @Body() dto: UpdateContentFilterDto) {
+    return this.islamicService.updateContentFilterSettings(userId, dto);
+  }
+
+  // ── Dhikr Social ──
+
+  @Post('dhikr/sessions')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Save a dhikr session' })
+  async saveDhikrSession(@CurrentUser('id') userId: string, @Body() dto: SaveDhikrSessionDto) {
+    return this.islamicService.saveDhikrSession(userId, dto);
+  }
+
+  @Get('dhikr/stats')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get dhikr stats' })
+  async getDhikrStats(@CurrentUser('id') userId: string) {
+    return this.islamicService.getDhikrStats(userId);
+  }
+
+  @Get('dhikr/leaderboard')
+  @ApiOperation({ summary: 'Get dhikr leaderboard' })
+  async getDhikrLeaderboard(@Query('period') period?: string) {
+    return this.islamicService.getDhikrLeaderboard(period);
+  }
+
+  @Post('dhikr/challenges')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a dhikr challenge' })
+  async createDhikrChallenge(@CurrentUser('id') userId: string, @Body() dto: CreateDhikrChallengeDto) {
+    return this.islamicService.createDhikrChallenge(userId, dto);
+  }
+
+  @Get('dhikr/challenges')
+  @ApiOperation({ summary: 'List active challenges' })
+  async listActiveChallenges(@Query('cursor') cursor?: string) {
+    return this.islamicService.listActiveChallenges(cursor);
+  }
+
+  @Get('dhikr/challenges/:id')
+  @ApiOperation({ summary: 'Get challenge detail' })
+  async getChallengeDetail(@Param('id') id: string) {
+    return this.islamicService.getChallengeDetail(id);
+  }
+
+  @Post('dhikr/challenges/:id/join')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Join a challenge' })
+  async joinChallenge(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.islamicService.joinChallenge(userId, id);
+  }
+
+  @Post('dhikr/challenges/:id/contribute')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Contribute to a challenge' })
+  async contributeToChallenge(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ContributeDhikrDto) {
+    return this.islamicService.contributeToChallenge(userId, id, dto.count);
   }
 }

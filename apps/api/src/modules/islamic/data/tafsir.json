@@ -1,0 +1,396 @@
+[
+  {
+    "surahNumber": 1,
+    "verseNumber": 1,
+    "verse": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This is the opening verse of the Quran, known as the Basmala. It is recited to seek blessings from Allah before beginning any action. The name 'Allah' refers to the one true God, while 'Ar-Rahman' and 'Ar-Raheem' both derive from mercy — the former indicating all-encompassing mercy to all creation, and the latter a special mercy reserved for the believers.",
+        "textAr": "هذه الآية الافتتاحية للقرآن الكريم، وتُعرف بالبسملة. تُقرأ لطلب البركة من الله قبل البدء في أي عمل. واسم «الله» يشير إلى الإله الحق الواحد، أما «الرحمن» و«الرحيم» فكلاهما مشتق من الرحمة — الأول يدل على الرحمة الشاملة لجميع الخلق، والثاني رحمة خاصة بالمؤمنين."
+      },
+      {
+        "name": "Al-Tabari",
+        "madhab": "general",
+        "textEn": "The meaning of 'Bismillah' is: I begin with the name of Allah. Every action should be started in the name of God to sanctify it and seek His aid. Ar-Rahman is a name exclusive to Allah, denoting infinite mercy that encompasses everything in existence, while Ar-Raheem denotes the continuous bestowal of mercy.",
+        "textAr": "معنى «بسم الله» أي: أبتدئ باسم الله. وكل عمل ينبغي أن يُبدأ باسم الله لتقديسه وطلب عونه. والرحمن اسم خاص بالله يدل على الرحمة الواسعة التي تشمل كل شيء في الوجود، والرحيم يدل على استمرار إفاضة الرحمة."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 2,
+    "verse": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "All praise and thanks belong to Allah, Lord of all creation. Al-Hamd encompasses both praise for Allah's attributes and gratitude for His blessings. 'Rabb al-Aalameen' means He is the Lord, Creator, Sustainer, and Provider of everything that exists — humans, jinn, angels, animals, and all worlds seen and unseen.",
+        "textAr": "جميع أنواع المحامد والشكر لله رب العالمين. والحمد يشمل الثناء على صفات الله والشكر على نعمه. ورب العالمين يعني أنه الخالق والمدبر والرازق لكل ما في الوجود من إنس وجن وملائكة وحيوان وجميع العوالم المرئية وغير المرئية."
+      },
+      {
+        "name": "Al-Qurtubi",
+        "madhab": "maliki",
+        "textEn": "Al-Hamd means praise and gratitude combined. It is both a statement of fact — that all praise inherently belongs to Allah — and a command to praise Him. Rabb means the one who nurtures, sustains, and guides creation from its inception to its perfection. The plural 'Aalameen' includes every category of creation throughout all time.",
+        "textAr": "الحمد يجمع بين الثناء والشكر. وهو إخبار بأن الحمد كله لله حقاً، وأمر بحمده. والرب هو الذي يربي ويدبر ويهدي الخلق من بدايته إلى كماله. وجمع «العالمين» يشمل كل صنف من المخلوقات عبر جميع الأزمان."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 3,
+    "verse": "الرَّحْمَٰنِ الرَّحِيمِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "After establishing that He is the Lord of all worlds, Allah describes Himself with the two attributes of mercy. Ar-Rahman indicates that His mercy extends to all of creation without distinction — believers and disbelievers alike receive His sustenance. Ar-Raheem indicates the special mercy reserved for the believers in the Hereafter.",
+        "textAr": "بعد تأكيد أنه رب العالمين، وصف الله نفسه بصفتي الرحمة. الرحمن يدل على أن رحمته تسع جميع الخلق دون تمييز — المؤمن والكافر يتلقيان رزقه. والرحيم يدل على الرحمة الخاصة المدخرة للمؤمنين في الآخرة."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 4,
+    "verse": "مَالِكِ يَوْمِ الدِّينِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Allah is the sole Owner and Master of the Day of Judgment. On that Day, no one will have any authority or intercession except by His permission. This verse instills consciousness of accountability and reminds humanity that all sovereignty on the Day of Reckoning belongs exclusively to Allah.",
+        "textAr": "الله هو المالك الوحيد ليوم الدين. في ذلك اليوم لا يملك أحد شيئاً ولا شفاعة إلا بإذنه. هذه الآية تغرس الوعي بالمساءلة وتذكّر الإنسان بأن كل السيادة يوم الحساب لله وحده."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 5,
+    "verse": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This is the central pivot of the Fatiha, shifting from praise to supplication. The servant declares exclusive worship and exclusive reliance upon Allah. Placing the object before the verb emphasizes exclusivity — we worship none but You and seek help from none but You. This verse encapsulates the essence of Tawheed (monotheism).",
+        "textAr": "هذا هو المحور المركزي للفاتحة، حيث ينتقل من الثناء إلى الدعاء. يعلن العبد العبادة والاستعانة لله وحده. وتقديم المفعول على الفعل يفيد الحصر — لا نعبد إلا إياك ولا نستعين إلا بك. وهذه الآية تختصر جوهر التوحيد."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 6,
+    "verse": "اهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This is the greatest supplication a person can make — asking Allah for guidance to the straight path. The 'straight path' is Islam, the Quran, and the way of the Prophet Muhammad. It includes guidance to find the truth and the strength to follow it. Muslims repeat this supplication at least seventeen times daily in their prayers.",
+        "textAr": "هذا أعظم دعاء يمكن للإنسان أن يدعو به — سؤال الله الهداية إلى الصراط المستقيم. والصراط المستقيم هو الإسلام والقرآن وطريقة النبي محمد. ويشمل الهداية لمعرفة الحق والقوة لاتباعه. ويردد المسلمون هذا الدعاء سبع عشرة مرة يومياً على الأقل في صلاتهم."
+      }
+    ]
+  },
+  {
+    "surahNumber": 1,
+    "verseNumber": 7,
+    "verse": "صِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This verse clarifies the straight path as the path of those whom Allah has blessed — the prophets, the truthful, the martyrs, and the righteous. It distinguishes this path from those who earned Allah's anger by knowing the truth but rejecting it, and from those who went astray by being ignorant of the truth and not seeking it.",
+        "textAr": "هذه الآية توضح أن الصراط المستقيم هو صراط الذين أنعم الله عليهم — من النبيين والصديقين والشهداء والصالحين. وتميز هذا الصراط عن صراط الذين غضب الله عليهم لأنهم عرفوا الحق ورفضوه، وعن صراط الضالين الذين جهلوا الحق ولم يطلبوه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 2,
+    "verseNumber": 255,
+    "verse": "اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ ۚ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This is Ayat al-Kursi, the greatest verse in the Quran as stated by the Prophet. It affirms the absolute oneness of Allah and His two supreme names: Al-Hayy (the Ever-Living) and Al-Qayyum (the Self-Sustaining Sustainer of all). Neither drowsiness nor sleep overtakes Him, demonstrating His perfect vigilance over all creation at every moment.",
+        "textAr": "هذه آية الكرسي، أعظم آية في القرآن الكريم كما أخبر النبي صلى الله عليه وسلم. تؤكد وحدانية الله المطلقة واسميه الأعظمين: الحي والقيوم. لا تأخذه سنة ولا نوم، مما يدل على كمال حراسته لجميع الخلق في كل لحظة."
+      },
+      {
+        "name": "Al-Tabari",
+        "madhab": "general",
+        "textEn": "Al-Hayy means the Ever-Living who never dies and whose life has no beginning or end. Al-Qayyum means the Self-Sustaining who sustains all of creation — nothing exists independently of Him. His kursi (footstool) extends over the heavens and the earth, and He is never wearied by preserving them both.",
+        "textAr": "الحي: الذي لا يموت أبداً وحياته لا بداية لها ولا نهاية. القيوم: القائم بنفسه المقيم لجميع الخلق — لا يوجد شيء مستقل عنه. وسع كرسيه السماوات والأرض ولا يئوده حفظهما."
+      }
+    ]
+  },
+  {
+    "surahNumber": 2,
+    "verseNumber": 285,
+    "verse": "آمَنَ الرَّسُولُ بِمَا أُنزِلَ إِلَيْهِ مِن رَّبِّهِ وَالْمُؤْمِنُونَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This verse affirms that the Messenger believed in everything revealed to him from his Lord, and so did the believers. They all believe in Allah, His angels, His books, and His messengers, making no distinction between any of the messengers. The Prophet said that whoever recites these last two verses of Surah Al-Baqarah at night, they will suffice him.",
+        "textAr": "تؤكد هذه الآية أن الرسول آمن بكل ما أُنزل إليه من ربه، وكذلك المؤمنون. كلهم يؤمنون بالله وملائكته وكتبه ورسله لا يفرقون بين أحد من رسله. وقال النبي صلى الله عليه وسلم: من قرأ الآيتين الأخيرتين من سورة البقرة في ليلة كفتاه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 2,
+    "verseNumber": 286,
+    "verse": "لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Allah does not burden any soul beyond its capacity. This verse is a source of immense comfort — every obligation in Islam is within human ability to fulfill. Each person earns the reward for the good they do and bears the consequence of the evil they commit. The verse ends with a beautiful supplication asking Allah not to burden us as He burdened those before us.",
+        "textAr": "لا يكلف الله نفساً إلا وسعها. هذه الآية مصدر طمأنينة عظيمة — كل تكليف في الإسلام في حدود قدرة الإنسان. لكل نفس ما كسبت من خير وعليها ما اكتسبت من شر. وتنتهي الآية بدعاء جميل يسأل الله ألا يحملنا ما لا طاقة لنا به كما حمل الذين من قبلنا."
+      },
+      {
+        "name": "Al-Qurtubi",
+        "madhab": "maliki",
+        "textEn": "This is one of the most merciful verses in the Quran. It establishes the principle that Islamic law is built on ease, not hardship. When the companions feared being held accountable for their inner thoughts, this verse was revealed to clarify that Allah's justice only holds people accountable for what they can control.",
+        "textAr": "هذه من أرحم آيات القرآن. تؤسس مبدأ أن الشريعة الإسلامية مبنية على اليسر لا العسر. عندما خاف الصحابة المحاسبة على ما في أنفسهم، نزلت هذه الآية لتوضح أن عدل الله لا يحاسب الناس إلا على ما يملكون التحكم فيه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 36,
+    "verseNumber": 1,
+    "verse": "يس",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Ya-Sin is one of the Huruf al-Muqatta'at (disconnected letters) that appear at the beginning of certain surahs. Their exact meaning is known only to Allah. Surah Ya-Sin is called the 'Heart of the Quran' as mentioned in a hadith, because of its profound themes of resurrection, prophethood, and the signs of Allah in creation.",
+        "textAr": "يس من الحروف المقطعة التي تظهر في بداية بعض السور. ومعناها الدقيق لا يعلمه إلا الله. وسورة يس تُسمى «قلب القرآن» كما ورد في الحديث، لما تحتويه من موضوعات عميقة عن البعث والنبوة وآيات الله في الخلق."
+      }
+    ]
+  },
+  {
+    "surahNumber": 55,
+    "verseNumber": 13,
+    "verse": "فَبِأَيِّ آلَاءِ رَبِّكُمَا تُكَذِّبَانِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "This refrain is repeated 31 times in Surah Ar-Rahman, addressed to both humans and jinn. It is a rhetorical question challenging them: which of the favors of your Lord will you deny? Each repetition follows the mention of a specific blessing — from creation, to sustenance, to the wonders of the universe — compelling the listener to reflect on and acknowledge Allah's countless blessings.",
+        "textAr": "هذه الآية المتكررة تتكرر 31 مرة في سورة الرحمن، موجهة للإنس والجن معاً. وهو استفهام إنكاري يتحداهم: أي نعم ربكما تكذبان؟ كل تكرار يأتي بعد ذكر نعمة معينة — من الخلق إلى الرزق إلى عجائب الكون — ليحمل السامع على التأمل والاعتراف بنعم الله التي لا تُحصى."
+      }
+    ]
+  },
+  {
+    "surahNumber": 67,
+    "verseNumber": 1,
+    "verse": "تَبَارَكَ الَّذِي بِيَدِهِ الْمُلْكُ وَهُوَ عَلَىٰ كُلِّ شَيْءٍ قَدِيرٌ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Blessed and Exalted is He in whose Hand is all dominion, and He has power over all things. The word 'Tabarak' conveys the abundance of Allah's goodness and the exaltation of His majesty. The Prophet said that Surah Al-Mulk is a protector that saves one from the punishment of the grave, making its regular recitation highly recommended.",
+        "textAr": "تبارك وتعالى الذي بيده الملك وهو على كل شيء قدير. وكلمة «تبارك» تدل على كثرة خير الله وعلو جلاله. وقال النبي صلى الله عليه وسلم إن سورة الملك مانعة تنجي من عذاب القبر، مما يجعل قراءتها المنتظمة مستحبة جداً."
+      }
+    ]
+  },
+  {
+    "surahNumber": 112,
+    "verseNumber": 1,
+    "verse": "قُلْ هُوَ اللَّهُ أَحَدٌ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Say: He is Allah, the One. This surah is equivalent to one-third of the Quran because it encapsulates the entirety of Tawheed (monotheism). 'Ahad' means uniquely One — there is nothing comparable to Him in His essence, attributes, or actions. This surah was revealed in response to the polytheists who asked the Prophet about Allah's nature.",
+        "textAr": "قل هو الله أحد. هذه السورة تعدل ثلث القرآن لأنها تختصر التوحيد بأكمله. و«أحد» تعني الواحد المتفرد — لا شبيه له في ذاته ولا صفاته ولا أفعاله. نزلت هذه السورة رداً على المشركين الذين سألوا النبي عن صفة الله."
+      },
+      {
+        "name": "Al-Tabari",
+        "madhab": "general",
+        "textEn": "The command 'Qul' (Say) indicates this is a divinely dictated response. Allah instructs His Prophet to declare His absolute oneness. 'Ahad' is more emphatic than 'Wahid' — it negates any possibility of there being a second, any partner, or any equal. It is the purest expression of monotheism in the Quran.",
+        "textAr": "الأمر «قل» يدل على أنه رد إلهي موحى به. يأمر الله نبيه بإعلان وحدانيته المطلقة. و«أحد» أبلغ من «واحد» — تنفي أي احتمال لوجود ثانٍ أو شريك أو نظير. وهي أصفى تعبير عن التوحيد في القرآن."
+      }
+    ]
+  },
+  {
+    "surahNumber": 112,
+    "verseNumber": 2,
+    "verse": "اللَّهُ الصَّمَدُ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "As-Samad means the Eternal, Absolute, upon whom all creatures depend for their needs. He is the Master who is perfect in His sovereignty, the Most Noble who is perfect in His nobility. He neither eats nor drinks, as He is Self-Sufficient and free from all needs, while everything in existence is in need of Him.",
+        "textAr": "الصمد هو الدائم المطلق الذي يعتمد عليه جميع المخلوقات في حوائجهم. هو السيد الكامل في سيادته، الأشرف الكامل في شرفه. لا يأكل ولا يشرب لأنه غني عن كل حاجة، بينما كل شيء في الوجود محتاج إليه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 112,
+    "verseNumber": 3,
+    "verse": "لَمْ يَلِدْ وَلَمْ يُولَدْ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "He neither begets nor is He begotten. This verse directly refutes the claims of those who attributed children to Allah. He is transcendent above having offspring because He has no equal and no need for continuation through progeny. Likewise, He was not born of anyone, as He is the First with no beginning — eternal and uncreated.",
+        "textAr": "لم يلد ولم يولد. هذه الآية ترد مباشرة على من نسب الولد لله. هو متعالٍ عن اتخاذ الولد لأنه لا مثيل له ولا حاجة له للاستمرار بالذرية. وكذلك لم يولد من أحد، فهو الأول الذي لا بداية له — أزلي غير مخلوق."
+      }
+    ]
+  },
+  {
+    "surahNumber": 112,
+    "verseNumber": 4,
+    "verse": "وَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "And there is none comparable to Him. This final verse seals the declaration of absolute monotheism. No one is equal to Allah in any way — not in His essence, His attributes, His actions, or His rights. This comprehensive negation of any likeness to Allah completes the theological foundation that Surah Al-Ikhlas establishes.",
+        "textAr": "ولم يكن له كفواً أحد. هذه الآية الأخيرة تختم إعلان التوحيد المطلق. لا أحد يساوي الله في أي شيء — لا في ذاته ولا صفاته ولا أفعاله ولا حقوقه. هذا النفي الشامل لأي مماثلة لله يُكمل الأساس العقدي الذي تؤسسه سورة الإخلاص."
+      }
+    ]
+  },
+  {
+    "surahNumber": 113,
+    "verseNumber": 1,
+    "verse": "قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Say: I seek refuge in the Lord of the daybreak. Al-Falaq refers to the break of dawn, symbolizing the splitting of darkness by light. By beginning with the creation of dawn, Allah reminds us that He alone dispels darkness — both literal and metaphorical. This surah, along with An-Nas, are known as Al-Mu'awwidhatayn (the two protections).",
+        "textAr": "قل أعوذ برب الفلق. والفلق هو انبلاج الفجر، رمزاً لانشقاق الظلام بالنور. بالبدء بخلق الفجر، يذكّرنا الله بأنه وحده يبدد الظلام — الحقيقي والمجازي. وهذه السورة مع سورة الناس تُعرفان بالمعوذتين."
+      }
+    ]
+  },
+  {
+    "surahNumber": 113,
+    "verseNumber": 2,
+    "verse": "مِن شَرِّ مَا خَلَقَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "From the evil of what He has created. This is a comprehensive refuge from every type of evil in all of creation — including evil humans, jinn, animals, natural disasters, and harmful substances. It acknowledges that while Allah created everything, some things contain harm, and protection from that harm is sought from the Creator Himself.",
+        "textAr": "من شر ما خلق. هذا استعاذة شاملة من كل أنواع الشر في جميع المخلوقات — بما في ذلك شرار الإنس والجن والحيوانات والكوارث الطبيعية والمواد الضارة. وتقر بأن الله خلق كل شيء وبعض الأشياء فيها ضرر، والحماية من ذلك الضرر تُطلب من الخالق نفسه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 113,
+    "verseNumber": 3,
+    "verse": "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "And from the evil of the darkness when it settles. The 'ghasiq' refers to the night when it becomes dark, as harmful creatures and evildoers are most active in darkness. Some scholars interpret this as the moon when it sets, since the Prophet once pointed to the moon and said, 'Seek refuge from this when it sets.'",
+        "textAr": "ومن شر غاسق إذا وقب. والغاسق هو الليل حين يُظلم، لأن المؤذيات والأشرار أنشط في الظلام. وفسره بعض العلماء بالقمر حين يغيب، لأن النبي صلى الله عليه وسلم أشار إلى القمر مرة وقال: استعيذوا من هذا إذا وقب."
+      }
+    ]
+  },
+  {
+    "surahNumber": 113,
+    "verseNumber": 4,
+    "verse": "وَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "And from the evil of those who blow on knots. This refers to those who practice sorcery by tying knots and blowing on them with incantations. It affirms the reality of magic as something harmful that one must seek Allah's protection against. The Prophet himself was once afflicted by magic and was cured by the recitation of these protective surahs.",
+        "textAr": "ومن شر النفاثات في العقد. يشير إلى من يمارسن السحر بعقد العُقد والنفث فيها بالرُّقى. وتؤكد واقعية السحر كشيء مؤذٍ يجب الاستعاذة بالله منه. وقد أصيب النبي نفسه بالسحر مرة وشُفي بقراءة هذه السور الحامية."
+      }
+    ]
+  },
+  {
+    "surahNumber": 113,
+    "verseNumber": 5,
+    "verse": "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "And from the evil of an envier when he envies. Envy (hasad) is the desire for the removal of blessings from others. It is a destructive spiritual disease that can manifest in real harm through the evil eye. The Prophet taught that the evil eye is real and that one should seek protection through these verses and regular remembrance of Allah.",
+        "textAr": "ومن شر حاسد إذا حسد. والحسد هو تمني زوال النعمة عن الآخرين. وهو مرض روحي مدمر يمكن أن يتجلى في ضرر حقيقي من خلال العين. وعلّم النبي أن العين حق وأن على المرء الاستعاذة بهذه الآيات والمداومة على ذكر الله."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 1,
+    "verse": "قُلْ أَعُوذُ بِرَبِّ النَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Say: I seek refuge in the Lord of mankind. This is the final surah of the Quran, and it seeks protection specifically from the whispering of Shaytan. Allah is described with three attributes: Lord of mankind, King of mankind, and God of mankind — each emphasizing a different aspect of His absolute authority and care over humanity.",
+        "textAr": "قل أعوذ برب الناس. هذه آخر سورة في القرآن، وتطلب الحماية تحديداً من وسوسة الشيطان. ووصف الله بثلاث صفات: رب الناس وملك الناس وإله الناس — كل صفة تبرز جانباً مختلفاً من سلطته المطلقة وعنايته بالبشرية."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 2,
+    "verse": "مَلِكِ النَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "The King of mankind. After 'Lord' (Rabb), Allah describes Himself as 'King' (Malik), indicating His sovereign authority over all people. While a lord nurtures and provides, a king rules and governs. Allah combines both qualities — He not only sustains humanity but rules over them with perfect justice and wisdom.",
+        "textAr": "ملك الناس. بعد «رب»، وصف الله نفسه بـ«ملك»، دلالة على سلطته السيادية على جميع الناس. فالرب يربي ويرزق، والملك يحكم ويدبر. والله يجمع الصفتين — فهو لا يرزق البشرية فحسب بل يحكمهم بعدل وحكمة تامين."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 3,
+    "verse": "إِلَٰهِ النَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "The God of mankind. This is the highest of the three descriptions — Ilah means the one truly worthy of worship. While all of creation has a Lord and King, the believers recognize Him as their God whom they worship voluntarily with love, hope, and fear. This triple description establishes the complete basis for seeking His protection.",
+        "textAr": "إله الناس. هذا أعلى الأوصاف الثلاثة — الإله هو المعبود بحق. فكل الخلق لهم رب وملك، لكن المؤمنين يعترفون به إلهاً يعبدونه طوعاً بالمحبة والرجاء والخوف. وهذا الوصف الثلاثي يؤسس القاعدة الكاملة لطلب حمايته."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 4,
+    "verse": "مِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "From the evil of the retreating whisperer. The 'waswas' is Shaytan who whispers evil suggestions into the hearts of people. He is called 'khannas' (the retreating one) because he retreats and shrinks away when Allah is remembered. This teaches that the most powerful weapon against satanic whispers is the constant remembrance of Allah (dhikr).",
+        "textAr": "من شر الوسواس الخناس. والوسواس هو الشيطان الذي يوسوس في صدور الناس بالشر. وسُمي «الخناس» لأنه يتراجع وينكمش عند ذكر الله. وهذا يعلّم أن أقوى سلاح ضد الوساوس الشيطانية هو المداومة على ذكر الله."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 5,
+    "verse": "الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "Who whispers in the breasts of mankind. Shaytan's method is not force but subtle suggestion — he whispers into the chest (heart/mind) to plant doubts, desires, and evil thoughts. The use of 'sudur' (breasts/chests) rather than 'qulub' (hearts) indicates he targets the area around the heart, trying to penetrate its defenses.",
+        "textAr": "الذي يوسوس في صدور الناس. طريقة الشيطان ليست الإكراه بل الإيحاء الخفي — يوسوس في الصدر ليزرع الشكوك والشهوات والأفكار السيئة. واستخدام «صدور» بدل «قلوب» يدل على أنه يستهدف المنطقة حول القلب محاولاً اختراق حصونه."
+      }
+    ]
+  },
+  {
+    "surahNumber": 114,
+    "verseNumber": 6,
+    "verse": "مِنَ الْجِنَّةِ وَالنَّاسِ",
+    "tafsirSources": [
+      {
+        "name": "Ibn Kathir",
+        "madhab": "general",
+        "textEn": "From among the jinn and mankind. This final verse reveals that whisperers come from two sources: the jinn (devils) and evil humans. Just as Shaytan whispers, there are human 'devils' who also whisper evil suggestions, temptations, and misguidance. This comprehensive ending reminds believers to be vigilant against harmful influences from both the unseen and visible worlds.",
+        "textAr": "من الجنة والناس. هذه الآية الأخيرة تكشف أن الموسوسين من مصدرين: الجن (الشياطين) والإنس الأشرار. فكما يوسوس الشيطان، هناك «شياطين إنس» يوسوسون أيضاً بالشر والفتن والضلال. هذه الخاتمة الشاملة تذكّر المؤمنين بالحذر من التأثيرات الضارة من العالم الغيبي والمرئي معاً."
+      }
+    ]
+  }
+]

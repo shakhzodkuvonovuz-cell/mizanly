@@ -9,6 +9,19 @@ import type {
   RamadanInfo,
   QuranSurah,
   QuranVerse,
+  PrayerNotificationSetting,
+  QuranReadingPlan,
+  CharityCampaign,
+  CharityDonation,
+  HajjStep,
+  HajjProgress,
+  TafsirEntry,
+  ScholarVerification,
+  ContentFilterSetting,
+  DhikrStats,
+  DhikrLeaderboardEntry,
+  DhikrChallenge,
+  DhikrChallengeDetail,
 } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 
@@ -49,4 +62,80 @@ export const islamicApi = {
 
   getSurahVerses: (surahNumber: number, translation?: string) =>
     api.get<QuranVerse[]>(`/islamic/quran/surahs/${surahNumber}/verses${qs({ translation })}`),
+
+  getPrayerNotificationSettings: () =>
+    api.get<PrayerNotificationSetting>('/islamic/prayer-notifications/settings'),
+
+  updatePrayerNotificationSettings: (data: Partial<PrayerNotificationSetting>) =>
+    api.patch<PrayerNotificationSetting>('/islamic/prayer-notifications/settings', data),
+
+  createReadingPlan: (planType: string) =>
+    api.post<QuranReadingPlan>('/islamic/quran-plans', { planType }),
+  getActiveReadingPlan: () =>
+    api.get<QuranReadingPlan | null>('/islamic/quran-plans/active'),
+  getReadingPlanHistory: (cursor?: string) =>
+    api.get<PaginatedResponse<QuranReadingPlan>>(`/islamic/quran-plans/history${cursor ? `?cursor=${cursor}` : ''}`),
+  updateReadingPlan: (planId: string, data: { currentJuz?: number; currentPage?: number; isComplete?: boolean }) =>
+    api.patch<QuranReadingPlan>(`/islamic/quran-plans/${planId}`, data),
+  deleteReadingPlan: (planId: string) =>
+    api.delete(`/islamic/quran-plans/${planId}`),
+
+  // ── Charity / Sadaqah ──
+
+  createCampaign: (data: { title: string; description?: string; goalAmount: number; imageUrl?: string }) =>
+    api.post<CharityCampaign>('/islamic/charity/campaigns', data),
+  listCampaigns: (cursor?: string) =>
+    api.get<PaginatedResponse<CharityCampaign>>(`/islamic/charity/campaigns${cursor ? `?cursor=${cursor}` : ''}`),
+  getCampaign: (id: string) => api.get<CharityCampaign>(`/islamic/charity/campaigns/${id}`),
+  donate: (data: { campaignId?: string; amount: number; currency?: string }) =>
+    api.post<CharityDonation>('/islamic/charity/donate', data),
+  getMyDonations: (cursor?: string) =>
+    api.get<PaginatedResponse<CharityDonation>>(`/islamic/charity/my-donations${cursor ? `?cursor=${cursor}` : ''}`),
+
+  // ── Hajj & Umrah ──
+
+  getHajjGuide: () => api.get<HajjStep[]>('/islamic/hajj/guide'),
+  getHajjProgress: () => api.get<HajjProgress | null>('/islamic/hajj/progress'),
+  createHajjProgress: (year: number) => api.post<HajjProgress>('/islamic/hajj/progress', { year }),
+  updateHajjProgress: (id: string, data: { currentStep?: number; checklistJson?: string; notes?: string }) =>
+    api.patch<HajjProgress>(`/islamic/hajj/progress/${id}`, data),
+
+  // ── Tafsir ──
+
+  getTafsir: (surah: number, verse: number, source?: string) =>
+    api.get<TafsirEntry>(`/islamic/tafsir/${surah}/${verse}${source ? `?source=${source}` : ''}`),
+  getTafsirSources: () =>
+    api.get<Array<{ name: string }>>('/islamic/tafsir/sources'),
+
+  // ── Scholar Verification ──
+
+  applyScholarVerification: (data: { institution: string; specialization?: string; madhab?: string; documentUrls: string[] }) =>
+    api.post<ScholarVerification>('/islamic/scholar-verification/apply', data),
+  getScholarVerificationStatus: () =>
+    api.get<ScholarVerification | null>('/islamic/scholar-verification/status'),
+
+  // ── Content Filter ──
+
+  getContentFilterSettings: () =>
+    api.get<ContentFilterSetting>('/islamic/content-filter/settings'),
+  updateContentFilterSettings: (data: Partial<ContentFilterSetting>) =>
+    api.patch<ContentFilterSetting>('/islamic/content-filter/settings', data),
+
+  // ── Dhikr Social ──
+
+  saveDhikrSession: (data: { phrase: string; count: number; target?: number }) =>
+    api.post('/islamic/dhikr/sessions', data),
+  getDhikrStats: () => api.get<DhikrStats>('/islamic/dhikr/stats'),
+  getDhikrLeaderboard: (period?: string) =>
+    api.get<DhikrLeaderboardEntry[]>(`/islamic/dhikr/leaderboard${period ? `?period=${period}` : ''}`),
+  createDhikrChallenge: (data: { title: string; phrase: string; targetTotal: number; expiresAt?: string }) =>
+    api.post<DhikrChallenge>('/islamic/dhikr/challenges', data),
+  listDhikrChallenges: (cursor?: string) =>
+    api.get<PaginatedResponse<DhikrChallenge>>(`/islamic/dhikr/challenges${cursor ? `?cursor=${cursor}` : ''}`),
+  getDhikrChallenge: (id: string) =>
+    api.get<DhikrChallengeDetail>(`/islamic/dhikr/challenges/${id}`),
+  joinDhikrChallenge: (id: string) =>
+    api.post(`/islamic/dhikr/challenges/${id}/join`, {}),
+  contributeToDhikrChallenge: (id: string, count: number) =>
+    api.post(`/islamic/dhikr/challenges/${id}/contribute`, { count }),
 };

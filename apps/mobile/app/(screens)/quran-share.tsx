@@ -308,6 +308,15 @@ export default function QuranShareScreen() {
                         </Text>
                       </LinearGradient>
                     </View>
+
+                    {/* Tafsir Button */}
+                    <TouchableOpacity
+                      onPress={() => router.push(`/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}`)}
+                      style={styles.tafsirButton}
+                    >
+                      <Icon name="book-open" size="sm" color={colors.gold} />
+                      <Text style={styles.tafsirButtonText}>{t('tafsir.viewTafsir')}</Text>
+                    </TouchableOpacity>
                   </>
                 ) : (
                   <EmptyState
@@ -603,6 +612,25 @@ const styles = StyleSheet.create({
   },
   referenceText: {
     color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '500',
+  },
+
+  // Tafsir Button
+  tafsirButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: 'rgba(200,150,62,0.3)',
+  },
+  tafsirButtonText: {
+    color: colors.gold,
     fontSize: fontSize.sm,
     fontWeight: '500',
   },

@@ -760,6 +760,14 @@ export class UsersService {
     return { cancelled: true };
   }
 
+  async updateNasheedMode(userId: string, enabled: boolean) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { nasheedMode: enabled },
+      select: { id: true, nasheedMode: true },
+    });
+  }
+
   async exportData(userId: string) {
     const [posts, threads, reels, videos, messages, comments, reelComments, videoComments] = await Promise.all([
       this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, postType: true, mediaUrls: true, createdAt: true } }),

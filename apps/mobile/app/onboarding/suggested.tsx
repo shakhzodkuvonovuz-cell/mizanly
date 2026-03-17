@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
@@ -112,7 +112,7 @@ export default function SuggestedScreen() {
           disabled={finishing}
           activeOpacity={0.8}
         >
-          {finishing ? <ActivityIndicator color={colors.text.primary} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
+          {finishing ? <Skeleton.Rect width={24} height={24} borderRadius={radius.full} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
         </TouchableOpacity>
         <TouchableOpacity onPress={handleFinish}>
           <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>

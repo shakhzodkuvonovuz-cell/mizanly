@@ -25,6 +25,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
+import { formatHijriDate } from '@/utils/hijri';
 import type { Post, StoryGroup } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -194,7 +195,10 @@ export default function SafScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
-        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
+        <View>
+          <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
+          <Text style={styles.hijriDate}>{formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}</Text>
+        </View>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
@@ -298,6 +302,11 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xl,
     fontFamily: 'PlayfairDisplay-Bold',
     letterSpacing: -1,
+  },
+  hijriDate: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
   notifBadge: {

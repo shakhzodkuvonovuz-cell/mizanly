@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, Alert,
-  ActivityIndicator, TextInput, FlatList, RefreshControl,
+  TextInput, FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -355,7 +355,7 @@ export default function ConversationInfoScreen() {
                 <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
                   {leaveGroupMutation.isPending
                     ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                        <ActivityIndicator color={colors.error} />
+                        <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                       </View>
                     : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                         <LinearGradient
@@ -434,7 +434,7 @@ export default function ConversationInfoScreen() {
               disabled={!newGroupName.trim() || updateGroupMutation.isPending}
             >
               {updateGroupMutation.isPending ? (
-                <ActivityIndicator color={colors.text.primary} />
+                <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
               )}
@@ -553,7 +553,7 @@ export default function ConversationInfoScreen() {
               disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}
             >
               {addMembersMutation.isPending ? (
-                <ActivityIndicator color={colors.text.primary} />
+                <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <Text style={styles.sheetButtonText}>
                   {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}

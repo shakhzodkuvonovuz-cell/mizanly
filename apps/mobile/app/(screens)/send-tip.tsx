@@ -7,7 +7,6 @@ import {
   RefreshControl,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   Dimensions,
   Alert,
 } from 'react-native';
@@ -410,7 +409,7 @@ export default function SendTipScreen() {
                 end={{ x: 1, y: 0 }}
               >
                 {isSending ? (
-                  <ActivityIndicator color={colors.text.primary} size="small" />
+                  <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                 ) : (
                   <>
                     <Text style={styles.sendButtonText}>{t('monetization.sendAmount', { amount: total.toFixed(2) })}</Text>

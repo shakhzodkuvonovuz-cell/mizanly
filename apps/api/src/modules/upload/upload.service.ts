@@ -34,6 +34,7 @@ export class UploadService {
     contentType: string,
     folder: UploadFolder,
     expiresIn = 300,
+    maxFileSize?: number,
   ) {
     this.validateContentType(contentType);
 
@@ -44,6 +45,7 @@ export class UploadService {
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
+      ...(maxFileSize ? { ContentLength: maxFileSize } : {}),
     });
 
     const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn });

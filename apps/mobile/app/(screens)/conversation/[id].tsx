@@ -404,14 +404,14 @@ function MessageBubble({
   // Corner radius system (WhatsApp style)
   const ownRadius = {
     borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: isGroupStart ? 20 : 4,
+    borderTopRightRadius: isGroupStart ? radius.xl : 4,
     borderBottomLeftRadius: radius.lg,
-    borderBottomRightRadius: isGroupEnd ? 4 : 20,
+    borderBottomRightRadius: isGroupEnd ? 4 : radius.xl,
   };
   const otherRadius = {
-    borderTopLeftRadius: isGroupStart ? 20 : 4,
+    borderTopLeftRadius: isGroupStart ? radius.xl : 4,
     borderTopRightRadius: radius.lg,
-    borderBottomLeftRadius: isGroupEnd ? 4 : 20,
+    borderBottomLeftRadius: isGroupEnd ? 4 : radius.xl,
     borderBottomRightRadius: radius.lg,
   };
 

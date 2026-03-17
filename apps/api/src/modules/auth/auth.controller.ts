@@ -20,6 +20,7 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Complete profile after Clerk signup' })
@@ -31,6 +32,7 @@ export class AuthController {
   }
 
   @Get('me')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current authenticated user' })
@@ -39,7 +41,7 @@ export class AuthController {
   }
 
   @Get('check-username')
-  @Throttle({ default: { ttl: 60000, limit: 20 } })
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Check if username is available' })
   checkUsername(@Query('username') username: string) {
     return this.authService.checkUsername(username);

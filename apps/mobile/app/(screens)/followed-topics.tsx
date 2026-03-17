@@ -7,7 +7,6 @@ import {
   Pressable,
   StyleSheet,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -161,7 +160,7 @@ function FollowedTopicsContent() {
               }
             >
               {isToggling ? (
-                <ActivityIndicator size="small" color={colors.emerald} />
+                <Skeleton.Rect width={60} height={16} borderRadius={radius.sm} />
               ) : (
                 <Text
                   style={[
@@ -238,7 +237,7 @@ function FollowedTopicsContent() {
 
         {searching ? (
           <View style={styles.searchingRow}>
-            <ActivityIndicator size="small" color={colors.emerald} />
+            <Skeleton.Rect width={20} height={20} borderRadius={radius.full} />
             <Text style={styles.searchingText}>
               {t('followedTopics.searching', 'Searching...')}
             </Text>

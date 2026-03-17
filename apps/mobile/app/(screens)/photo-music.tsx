@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, Dimensions,
-  ScrollView, Alert, TextInput, ActivityIndicator, RefreshControl,
+  ScrollView, Alert, TextInput, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -20,6 +20,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { CharCountRing } from '@/components/ui/CharCountRing';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { MusicPicker } from '@/components/story/MusicPicker';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius, fonts, shadow } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
@@ -330,7 +331,7 @@ function PhotoMusicScreen() {
             icon: canPost ? (
               <View style={styles.postButtonHeader}>
                 {isPosting ? (
-                  <ActivityIndicator size="small" color={colors.text.onColor} />
+                  <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                 ) : (
                   <Text style={styles.postButtonText}>{t('photoMusic.post')}</Text>
                 )}

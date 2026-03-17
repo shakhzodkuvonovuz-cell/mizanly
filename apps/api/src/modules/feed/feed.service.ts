@@ -69,4 +69,37 @@ export class FeedService {
     await this.prisma.feedDismissal.delete({ where: { userId_contentId_contentType: { userId, contentId, contentType } } }).catch(() => {});
     return { undismissed: true };
   }
+
+  /**
+   * Load user's content filter settings for feed filtering.
+   * Returns null if the user has no custom settings.
+   */
+  async getContentFilter(userId: string) {
+    return this.prisma.contentFilterSetting.findUnique({
+      where: { userId },
+    });
+  }
+
+  /**
+   * Build Prisma where-clause additions based on the user's content filter settings.
+   * Callers can spread these into their existing `where` object.
+   */
+  async buildContentFilterWhere(userId: string): Promise<Record<string, unknown>> {
+    const contentFilter = await this.getContentFilter(userId);
+    if (!contentFilter) return {};
+
+    const where: Record<string, unknown> = {};
+
+    if (contentFilter.hideMusic) {
+      // Exclude posts with audio tracks
+      where.audioTrackId = null;
+    }
+
+    if (contentFilter.strictnessLevel === 'strict' || contentFilter.strictnessLevel === 'family') {
+      // Exclude posts with content warnings
+      where.contentWarning = null;
+    }
+
+    return where;
+  }
 }

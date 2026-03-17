@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Dimensions, Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
@@ -260,7 +259,7 @@ function DisposableCameraScreen() {
           rightActions={[
             {
               icon: isPosting ? (
-                <ActivityIndicator size="small" color={colors.text.primary} />
+                <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <Text style={styles.shareHeaderText}>{t('disposable.share')}</Text>
               ),
@@ -402,7 +401,7 @@ function DisposableCameraScreen() {
               end={{ x: 1, y: 1 }}
             >
               {isCapturing ? (
-                <ActivityIndicator size="small" color={colors.text.onColor} />
+                <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <Icon name="camera" size="lg" color={colors.text.onColor} />
               )}

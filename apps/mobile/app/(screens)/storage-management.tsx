@@ -6,7 +6,6 @@ import {
   ScrollView,
   Pressable,
   Alert,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -132,7 +131,7 @@ function StorageCategoryRow({
         accessibilityLabel={t('storage.clearCategory', { category: label })}
       >
         {isClearing ? (
-          <ActivityIndicator size="small" color={colors.emerald} />
+          <Skeleton.Rect width={40} height={16} borderRadius={radius.sm} />
         ) : (
           <Text style={[styles.clearButtonText, size === 0 && styles.clearButtonTextDisabled]}>
             {t('storage.clear')}
@@ -365,7 +364,7 @@ export default function StorageManagementScreen() {
               accessibilityLabel={t('storage.clearAllCache')}
             >
               {clearing === 'all' ? (
-                <ActivityIndicator size="small" color={colors.error} />
+                <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
               ) : (
                 <>
                   <Icon name="trash" size="sm" color={totalUsed === 0 ? colors.text.tertiary : colors.error} />

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, ActivityIndicator, Alert, Switch, Platform, KeyboardAvoidingView,
+  ScrollView, Alert, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -603,7 +603,7 @@ export default function EditProfileScreen() {
                         disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
                       >
                         {addLinkMutation.isPending ? (
-                          <ActivityIndicator color={colors.text.primary} size="small" />
+                          <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                         ) : (
                           <Text style={styles.addLinkSaveText}>Add</Text>
                         )}

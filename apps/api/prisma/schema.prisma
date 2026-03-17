@@ -255,6 +255,9 @@ model User {
   banExpiresAt  DateTime?
   warningsCount Int       @default(0)
 
+  isScholarVerified Boolean @default(false)
+  nasheedMode       Boolean @default(false)
+
   isDeactivated Boolean   @default(false)
   deactivatedAt DateTime?
   isDeleted     Boolean   @default(false)
@@ -1022,6 +1025,7 @@ model BroadcastMessage {
   reactionsCount Int @default(0)
   isPinned Boolean @default(false)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   channel BroadcastChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
   sender  User             @relation(fields: [senderId], references: [id], onDelete: Cascade)
   @@index([channelId, createdAt(sort: Desc)])
@@ -1053,6 +1057,7 @@ model LiveSession {
   recordingUrl String?
   isRecorded   Boolean @default(true)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   participants LiveParticipant[]
   @@index([hostId, createdAt(sort: Desc)])
   @@index([status])
@@ -1259,6 +1264,7 @@ model Hashtag {
   threadsCount Int    @default(0)
   videosCount  Int    @default(0)
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   @@index([name])
   @@index([postsCount(sort: Desc)])
   @@map("hashtags")
@@ -1514,6 +1520,7 @@ model CallSession {
   endedAt   DateTime?
   duration  Int?
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   participants CallParticipant[]
   @@map("call_sessions")
 }
@@ -1683,6 +1690,7 @@ model ChannelPost {
   commentsCount Int @default(0)
   isPinned      Boolean @default(false)
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
   @@index([channelId, createdAt(sort: Desc)])
   @@map("channel_posts")
 }
@@ -1827,6 +1835,7 @@ model AudioRoom {
   isRecording  Boolean   @default(false)
   participants AudioRoomParticipant[]
   createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   @@index([hostId])
   @@index([status])
   @@map("audio_rooms")
@@ -2030,4 +2039,144 @@ model PostReminder {
   @@unique([postId, userId])
   @@index([remindAt])
   @@map("post_reminders")
+}
+
+// ============================================================
+// ISLAMIC MOAT FEATURES
+// Quran plans, Dhikr, Charity, Hajj, Prayer, Content Filter, Scholar
+// ============================================================
+
+model QuranReadingPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  planType    String
+  startDate   DateTime
+  endDate     DateTime
+  currentJuz  Int      @default(1)
+  currentPage Int      @default(1)
+  isComplete  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([userId])
+  @@map("quran_reading_plans")
+}
+
+model DhikrSession {
+  id          String    @id @default(uuid())
+  userId      String
+  phrase      String
+  count       Int
+  target      Int       @default(33)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("dhikr_sessions")
+}
+
+model DhikrChallenge {
+  id               String    @id @default(uuid())
+  userId           String
+  title            String
+  phrase           String
+  targetTotal      Int
+  currentTotal     Int       @default(0)
+  participantCount Int       @default(0)
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  @@index([createdAt(sort: Desc)])
+  @@map("dhikr_challenges")
+}
+
+model DhikrChallengeParticipant {
+  userId      String
+  challengeId String
+  contributed Int      @default(0)
+  joinedAt    DateTime @default(now())
+  @@id([userId, challengeId])
+  @@index([challengeId])
+  @@map("dhikr_challenge_participants")
+}
+
+model CharityDonation {
+  id              String   @id @default(uuid())
+  userId          String
+  recipientUserId String?
+  campaignId      String?
+  amount          Int
+  currency        String   @default("usd")
+  stripePaymentId String?
+  status          String   @default("pending")
+  createdAt       DateTime @default(now())
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([recipientUserId])
+  @@map("charity_donations")
+}
+
+model CharityCampaign {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  description  String?
+  goalAmount   Int
+  raisedAmount Int      @default(0)
+  donorCount   Int      @default(0)
+  imageUrl     String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@index([userId])
+  @@index([isActive, createdAt(sort: Desc)])
+  @@map("charity_campaigns")
+}
+
+model HajjProgress {
+  id            String   @id @default(uuid())
+  userId        String
+  year          Int
+  currentStep   Int      @default(0)
+  checklistJson String   @default("{}")
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@unique([userId, year])
+  @@map("hajj_progress")
+}
+
+model PrayerNotificationSetting {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  dndDuringPrayer Boolean  @default(false)
+  adhanEnabled    Boolean  @default(false)
+  adhanStyle      String   @default("makkah")
+  reminderMinutes Int      @default(15)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@map("prayer_notification_settings")
+}
+
+model ContentFilterSetting {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  strictnessLevel String   @default("moderate")
+  blurHaram       Boolean  @default(true)
+  hideMusic       Boolean  @default(false)
+  hideMixedGender Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@map("content_filter_settings")
+}
+
+model ScholarVerification {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  institution    String
+  specialization String?
+  madhab         String?
+  verifiedAt     DateTime?
+  status         String    @default("pending")
+  documentUrls   String[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  @@map("scholar_verifications")
 }

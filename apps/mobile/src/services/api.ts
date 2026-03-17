@@ -231,6 +231,7 @@ export const usersApi = {
   cancelAccountDeletion: () =>
     api.post('/users/me/cancel-deletion'),
   updateDailyReminder: (enabled: boolean, time?: string) => api.patch('/users/settings/daily-reminder', { enabled, time }),
+  updateNasheedMode: (nasheedMode: boolean) => api.patch<{ id: string; nasheedMode: boolean }>('/users/me/nasheed-mode', { nasheedMode }),
 };
 
 // ── Follows ──

@@ -99,3 +99,144 @@ export interface QuranVerse {
   translation: string;
   transliteration?: string;
 }
+
+export interface QuranRoomState {
+  hostId: string;
+  currentSurah: number;
+  currentVerse: number;
+  reciterId: string | null;
+  participantCount: number;
+}
+
+export interface PrayerNotificationSetting {
+  id: string;
+  userId: string;
+  dndDuringPrayer: boolean;
+  adhanEnabled: boolean;
+  adhanStyle: string;
+  reminderMinutes: number;
+}
+
+export interface QuranReadingPlan {
+  id: string;
+  userId: string;
+  planType: string;
+  startDate: string;
+  endDate: string;
+  currentJuz: number;
+  currentPage: number;
+  isComplete: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CharityCampaign {
+  id: string;
+  userId: string;
+  title: string;
+  description: string | null;
+  goalAmount: number;
+  raisedAmount: number;
+  donorCount: number;
+  imageUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface CharityDonation {
+  id: string;
+  userId: string;
+  campaignId: string | null;
+  amount: number;
+  currency: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface HajjStep {
+  step: number;
+  name: string;
+  nameAr: string;
+  description: string;
+  descriptionAr: string;
+  duas: Array<{ arabic: string; transliteration: string; english: string }>;
+  checklist: string[];
+}
+
+export interface HajjProgress {
+  id: string;
+  userId: string;
+  year: number;
+  currentStep: number;
+  checklistJson: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TafsirSource {
+  name: string;
+  madhab: string;
+  textEn: string;
+  textAr: string;
+}
+
+export interface TafsirEntry {
+  surahNumber: number;
+  verseNumber: number;
+  verse: string;
+  tafsirSources: TafsirSource[];
+}
+
+export interface ScholarVerification {
+  id: string;
+  userId: string;
+  institution: string;
+  specialization: string | null;
+  madhab: string | null;
+  status: string;
+  verifiedAt: string | null;
+  createdAt: string;
+}
+
+export interface ContentFilterSetting {
+  id: string;
+  userId: string;
+  strictnessLevel: string;
+  blurHaram: boolean;
+  hideMusic: boolean;
+  hideMixedGender: boolean;
+}
+
+export interface DhikrStats {
+  totalCount: number;
+  todayCount: number;
+  streak: number;
+  setsCompleted: number;
+}
+
+export interface DhikrLeaderboardEntry {
+  userId: string;
+  totalCount: number;
+  user: { id: string; displayName: string | null; avatarUrl: string | null } | null;
+}
+
+export interface DhikrChallenge {
+  id: string;
+  userId: string;
+  title: string;
+  phrase: string;
+  targetTotal: number;
+  currentTotal: number;
+  participantCount: number;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+export interface DhikrChallengeDetail extends DhikrChallenge {
+  topContributors: Array<{
+    userId: string;
+    contributed: number;
+    user: { id: string; displayName: string | null; avatarUrl: string | null } | null;
+  }>;
+}

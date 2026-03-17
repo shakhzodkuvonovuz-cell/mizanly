@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Dimensions,
+  Share,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,6 +21,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -27,6 +30,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { islamicApi } from '@/services/islamicApi';
 
 const { width } = Dimensions.get('window');
 
@@ -39,12 +43,6 @@ const PRESET_PHRASES = [
 ];
 
 const DAILY_GOAL = 33;
-
-interface DailyStats {
-  totalCount: number;
-  setsCompleted: number;
-  streak: number;
-}
 
 function PhraseButton({
   phrase,
@@ -113,29 +111,47 @@ export default function DhikrCounterScreen() {
   const router = useRouter();
   const haptic = useHaptic();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedPhrase, setSelectedPhrase] = useState(PRESET_PHRASES[0]);
   const [count, setCount] = useState(0);
   const [hasStarted, setHasStarted] = useState(false);
-  const [stats, setStats] = useState<DailyStats>({
-    totalCount: 247,
-    setsCompleted: 7,
-    streak: 12,
-  });
+  const sessionSavedRef = useRef(false);
 
   const counterScale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
   const shimmerOpacity = useSharedValue(0);
 
-  const onRefresh = useCallback(() => {
+  // Fetch stats from API
+  const { data: statsData, refetch: refetchStats } = useQuery({
+    queryKey: ['dhikr-stats'],
+    queryFn: () => islamicApi.getDhikrStats(),
+  });
+
+  const stats = {
+    totalCount: statsData?.todayCount ?? 0,
+    setsCompleted: statsData?.setsCompleted ?? 0,
+    streak: statsData?.streak ?? 0,
+  };
+
+  // Save session mutation
+  const saveSessionMutation = useMutation({
+    mutationFn: (data: { phrase: string; count: number; target?: number }) =>
+      islamicApi.saveDhikrSession(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['dhikr-stats'] });
+    },
+  });
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    await refetchStats();
+    setRefreshing(false);
+  }, [refetchStats]);
 
   const handleTap = useCallback(() => {
     haptic.light();
     setCount(prev => prev + 1);
-    setStats(prev => ({ ...prev, totalCount: prev.totalCount + 1 }));
     setHasStarted(true);
 
     // Pulse animation
@@ -146,17 +162,46 @@ export default function DhikrCounterScreen() {
   }, [haptic, counterScale]);
 
   const handleReset = useCallback(() => {
+    // Save session before resetting if count > 0
+    if (count > 0 && !sessionSavedRef.current) {
+      saveSessionMutation.mutate({
+        phrase: selectedPhrase.id,
+        count,
+        target: DAILY_GOAL,
+      });
+    }
     haptic.medium();
     setCount(0);
     setHasStarted(false);
-  }, [haptic]);
+    sessionSavedRef.current = false;
+  }, [haptic, count, selectedPhrase.id, saveSessionMutation]);
 
   const selectPhrase = useCallback((phrase: typeof PRESET_PHRASES[0]) => {
+    // Save session before switching phrase if count > 0
+    if (count > 0 && !sessionSavedRef.current) {
+      saveSessionMutation.mutate({
+        phrase: selectedPhrase.id,
+        count,
+        target: DAILY_GOAL,
+      });
+    }
     haptic.light();
     setSelectedPhrase(phrase);
     setCount(0);
     setHasStarted(false);
-  }, [haptic]);
+    sessionSavedRef.current = false;
+  }, [haptic, count, selectedPhrase.id, saveSessionMutation]);
+
+  const handleShareProgress = useCallback(async () => {
+    haptic.light();
+    try {
+      await Share.share({
+        message: `${selectedPhrase.arabic} - ${count}/${DAILY_GOAL}\n${t('dhikr.streak', { count: stats.streak })}\nMizanly - Dhikr Counter`,
+      });
+    } catch (_e) {
+      // User cancelled share
+    }
+  }, [haptic, selectedPhrase.arabic, count, stats.streak, t]);
 
   // Calculate progress
   const progress = Math.min(count / DAILY_GOAL, 1);
@@ -167,8 +212,14 @@ export default function DhikrCounterScreen() {
   }, [progress, progressWidth]);
 
   useEffect(() => {
-    if (isComplete) {
+    if (isComplete && !sessionSavedRef.current) {
       haptic.success();
+      sessionSavedRef.current = true;
+      saveSessionMutation.mutate({
+        phrase: selectedPhrase.id,
+        count,
+        target: DAILY_GOAL,
+      });
       shimmerOpacity.value = withSequence(
         withTiming(1, { duration: 300 }),
         withTiming(0, { duration: 300 }),
@@ -176,7 +227,7 @@ export default function DhikrCounterScreen() {
         withTiming(0, { duration: 500 })
       );
     }
-  }, [isComplete, haptic, shimmerOpacity]);
+  }, [isComplete, haptic, shimmerOpacity, count, selectedPhrase.id, saveSessionMutation]);
 
   const counterAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: counterScale.value }],
@@ -209,7 +260,7 @@ export default function DhikrCounterScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.phraseSelector}
             >
-              {PRESET_PHRASES.map((phrase, index) => (
+              {PRESET_PHRASES.map((phrase) => (
                 <PhraseButton
                   key={phrase.id}
                   phrase={phrase}
@@ -218,6 +269,24 @@ export default function DhikrCounterScreen() {
                 />
               ))}
             </ScrollView>
+          </Animated.View>
+
+          {/* Daily Stats Bar */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <View style={styles.dailyStatsBar}>
+              <View style={styles.dailyStatItem}>
+                <Icon name="trending-up" size="xs" color={colors.gold} />
+                <Text style={styles.dailyStatText}>
+                  {t('dhikr.streak', { count: stats.streak })}
+                </Text>
+              </View>
+              <View style={styles.dailyStatItem}>
+                <Icon name="bar-chart-2" size="xs" color={colors.emerald} />
+                <Text style={styles.dailyStatText}>
+                  {t('dhikr.todayCount', { count: (statsData?.todayCount ?? 0) + count })}
+                </Text>
+              </View>
+            </View>
           </Animated.View>
 
           {/* Counter Circle */}
@@ -303,11 +372,39 @@ export default function DhikrCounterScreen() {
             </LinearGradient>
           </Animated.View>
 
+          {/* Action Buttons Row */}
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <View style={styles.actionRow}>
+              <TouchableOpacity onPress={handleShareProgress} activeOpacity={0.8} style={styles.actionButtonWrapper}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.actionButton}
+                >
+                  <Icon name="share" size="sm" color={colors.emerald} />
+                  <Text style={styles.actionButtonText}>{t('dhikr.shareProgress')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => router.push('/(screens)/dhikr-challenges')}
+                activeOpacity={0.8}
+                style={styles.actionButtonWrapper}
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.actionButton}
+                >
+                  <Icon name="users" size="sm" color={colors.gold} />
+                  <Text style={styles.actionButtonText}>{t('dhikr.challenges')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+
           {/* Daily Summary */}
           <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-            <Text style={styles.summaryTitle}>{t('screens.dhikrCounter.summaryTitle')}</Text>
+            <Text style={styles.summaryTitle}>{t('dhikr.stats')}</Text>
             <View style={styles.statsRow}>
-              <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={stats.totalCount} delay={350} />
+              <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={statsData?.totalCount ?? stats.totalCount} delay={350} />
               <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={stats.setsCompleted} delay={400} />
               <StatCard icon="trending-up" label={t('screens.dhikrCounter.stats.dayStreak')} value={stats.streak} delay={450} />
             </View>
@@ -317,7 +414,7 @@ export default function DhikrCounterScreen() {
           <View style={{ height: spacing.xxl }} />
         </ScrollView>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -371,6 +468,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.xs,
     color: colors.text.tertiary,
+  },
+  dailyStatsBar: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.lg,
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+  },
+  dailyStatItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  dailyStatText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
   },
   counterContainer: {
     alignItems: 'center',
@@ -478,6 +592,30 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSize.sm,
     color: colors.text.tertiary,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+  },
+  actionButtonWrapper: {
+    flex: 1,
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+  },
+  actionButtonText: {
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSize.sm,
+    color: colors.text.primary,
   },
   summaryTitle: {
     fontFamily: fonts.bodySemiBold,

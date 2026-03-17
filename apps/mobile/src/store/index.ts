@@ -40,6 +40,10 @@ interface AppState {
   addFollowedHashtag(tag: string): void;
   removeFollowedHashtag(tag: string): void;
 
+  // Nasheed mode
+  nasheedMode: boolean;
+  setNasheedMode: (enabled: boolean) => void;
+
   // Active call
   activeCallId: string | null;
   setActiveCallId: (id: string | null) => void;
@@ -130,6 +134,10 @@ export const useStore = create<AppState>()(
         followedHashtags: s.followedHashtags.filter(t => t !== tag),
       })),
 
+      // Nasheed mode
+      nasheedMode: false,
+      setNasheedMode: (nasheedMode) => set({ nasheedMode }),
+
       // Active call
       activeCallId: null,
       setActiveCallId: (activeCallId) => set({ activeCallId }),
@@ -202,6 +210,7 @@ export const useStore = create<AppState>()(
         miniPlayerProgress: 0,
         miniPlayerPlaying: false,
         isRecording: false,
+        nasheedMode: false,
       }),
     }),
     {
@@ -215,6 +224,7 @@ export const useStore = create<AppState>()(
         recentStickerPackIds: state.recentStickerPackIds,
         searchHistory: state.searchHistory,
         mutedChannelIds: state.mutedChannelIds,
+        nasheedMode: state.nasheedMode,
       }),
     }
   )
@@ -240,3 +250,4 @@ export const useIsRecording = () => useStore((s) => s.isRecording);
 export const useMiniPlayerVideo = () => useStore((s) => s.miniPlayerVideo);
 export const useMiniPlayerProgress = () => useStore((s) => s.miniPlayerProgress);
 export const useMiniPlayerPlaying = () => useStore((s) => s.miniPlayerPlaying);
+export const useNasheedMode = () => useStore((s) => s.nasheedMode);

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TouchableOpacity,
-  ActivityIndicator, Alert, Dimensions,
+  Alert, Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
@@ -298,7 +298,7 @@ export default function CallScreen() {
                     style={styles.declineGradient}
                   >
                     {declineMutation.isPending ? (
-                      <ActivityIndicator color={colors.text.primary} size="small" />
+                      <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
                       <Icon name="x" size="xl" color={colors.text.primary} />
                     )}
@@ -318,7 +318,7 @@ export default function CallScreen() {
                     style={styles.answerGradient}
                   >
                     {answerMutation.isPending ? (
-                      <ActivityIndicator color={colors.text.primary} size="small" />
+                      <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
                       <Icon name="phone" size="xl" color={colors.text.primary} />
                     )}
@@ -387,7 +387,7 @@ export default function CallScreen() {
                     style={styles.endCallGradient}
                   >
                     {endCallMutation.isPending ? (
-                      <ActivityIndicator color={colors.text.primary} size="small" />
+                      <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
                     ) : (
                       <Icon name="phone" size="xl" color={colors.text.primary} />
                     )}

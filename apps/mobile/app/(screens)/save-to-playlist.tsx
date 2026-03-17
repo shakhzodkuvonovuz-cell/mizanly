@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, RefreshControl,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
@@ -154,7 +154,7 @@ export default function SaveToPlaylistScreen() {
               </View>
             </View>
             {isLoading || inclusionLoading ? (
-              <ActivityIndicator size="small" color={colors.emerald} />
+              <Skeleton.Circle size={36} />
             ) : (
               <LinearGradient
                 colors={isInPlaylist ? [colors.emerald, colors.gold] : ['transparent', 'transparent']}

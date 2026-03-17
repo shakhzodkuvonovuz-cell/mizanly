@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsString, IsIn } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsNumber, Max } from 'class-validator';
 import { UploadService } from './upload.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -20,6 +20,11 @@ class PresignDto {
 
   @IsIn(['avatars', 'covers', 'posts', 'stories', 'messages', 'reels', 'videos', 'thumbnails', 'misc'])
   folder: 'avatars' | 'covers' | 'posts' | 'stories' | 'messages' | 'reels' | 'videos' | 'thumbnails' | 'misc';
+
+  @IsOptional()
+  @IsNumber()
+  @Max(104857600) // 100 MB
+  maxFileSize?: number;
 }
 
 @ApiTags('Upload')
@@ -36,7 +41,7 @@ export class UploadController {
     @CurrentUser('id') userId: string,
     @Body() dto: PresignDto,
   ) {
-    return this.uploadService.getPresignedUrl(userId, dto.contentType, dto.folder);
+    return this.uploadService.getPresignedUrl(userId, dto.contentType, dto.folder, 300, dto.maxFileSize);
   }
 
   @Delete(':key(*)')

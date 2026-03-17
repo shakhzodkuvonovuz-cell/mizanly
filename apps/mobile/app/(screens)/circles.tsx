@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, ActivityIndicator, Alert, TextInput, RefreshControl,
+  FlatList, Alert, TextInput, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -96,7 +96,7 @@ function CreateSheet({
           style={styles.createBtnGradient}
         >
           {createMutation.isPending ? (
-            <ActivityIndicator color={colors.text.primary} size="small" />
+            <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
           ) : (
             <Text style={styles.createBtnText}>{t('screens.circles.createCircleButton')}</Text>
           )}

@@ -6,7 +6,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, avatar as avatarSizes, animation } from '@/theme';
+import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
@@ -68,26 +68,26 @@ export function Avatar({
             {
               width: dim,
               height: dim,
-              borderRadius: dim / 2,
+              borderRadius: radius.full,
               padding: ringWidth,
             },
           ]}
         >
-          <View style={[styles.ringInner, { borderRadius: (dim - ringWidth * 2) / 2 }]}>
+          <View style={[styles.ringInner, { borderRadius: radius.full }]}>
             <View
               style={[
                 styles.inner,
                 {
                   width: innerDim,
                   height: innerDim,
-                  borderRadius: innerDim / 2,
+                  borderRadius: radius.full,
                 },
               ]}
             >
               {uri ? (
                 <Image
                   source={{ uri }}
-                  style={[styles.img, { width: innerDim, height: innerDim, borderRadius: innerDim / 2 }]}
+                  style={[styles.img, { width: innerDim, height: innerDim, borderRadius: radius.full }]}
                   contentFit="cover"
                 />
               ) : (
@@ -102,7 +102,7 @@ export function Avatar({
         <View
           style={[
             styles.wrap,
-            { width: dim, height: dim, borderRadius: dim / 2 },
+            { width: dim, height: dim, borderRadius: radius.full },
             showRing && {
               borderWidth: ringWidth,
               borderColor: ringColor ?? colors.emerald,
@@ -116,7 +116,7 @@ export function Avatar({
               {
                 width: showRing ? innerDim : dim,
                 height: showRing ? innerDim : dim,
-                borderRadius: (showRing ? innerDim : dim) / 2,
+                borderRadius: radius.full,
               },
             ]}
           >
@@ -128,7 +128,7 @@ export function Avatar({
                   {
                     width: showRing ? innerDim : dim,
                     height: showRing ? innerDim : dim,
-                    borderRadius: (showRing ? innerDim : dim) / 2,
+                    borderRadius: radius.full,
                   },
                 ]}
                 contentFit="cover"
@@ -149,7 +149,7 @@ export function Avatar({
             {
               width: onlineDotSize,
               height: onlineDotSize,
-              borderRadius: onlineDotSize / 2,
+              borderRadius: radius.full,
               borderWidth: Math.max(2, onlineDotSize * 0.2),
               bottom: showRing ? 0 : -1,
               right: showRing ? 0 : -1,

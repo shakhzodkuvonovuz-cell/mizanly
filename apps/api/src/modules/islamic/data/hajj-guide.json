@@ -1,0 +1,65 @@
+[
+  {
+    "step": 0, "name": "Ihram", "nameAr": "الإحرام",
+    "description": "Enter the sacred state of Ihram. Perform ghusl, wear ihram garments, and make the intention for Hajj.",
+    "descriptionAr": "الدخول في حالة الإحرام المقدسة. أداء الغسل ولبس ملابس الإحرام ونية الحج.",
+    "duas": [
+      { "arabic": "لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ", "transliteration": "Labbayk Allahumma labbayk, labbayk la shareeka laka labbayk, innal hamda wan ni'mata laka wal mulk, la shareeka lak", "english": "Here I am, O Allah, here I am. Here I am, You have no partner, here I am. Verily all praise, grace, and sovereignty belong to You. You have no partner." }
+    ],
+    "checklist": ["Perform ghusl (ritual bath)", "Wear ihram garments", "Pray two rak'ahs", "Make niyyah (intention)", "Recite Talbiyah continuously"]
+  },
+  {
+    "step": 1, "name": "Tawaf", "nameAr": "الطواف",
+    "description": "Circumambulate the Kaaba seven times counter-clockwise, starting from the Black Stone corner.",
+    "descriptionAr": "الطواف حول الكعبة سبعة أشواط عكس اتجاه عقارب الساعة، بدءاً من ركن الحجر الأسود.",
+    "duas": [
+      { "arabic": "رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ", "transliteration": "Rabbana atina fid-dunya hasanatan wa fil-akhirati hasanatan wa qina adhaban-nar", "english": "Our Lord, give us good in this world and good in the Hereafter, and protect us from the torment of the Fire." }
+    ],
+    "checklist": ["Start at the Black Stone", "Complete 7 circuits", "Pray 2 rak'ahs behind Maqam Ibrahim", "Drink Zamzam water"]
+  },
+  {
+    "step": 2, "name": "Sa'i", "nameAr": "السعي",
+    "description": "Walk seven times between the hills of Safa and Marwah, commemorating Hajar's search for water.",
+    "descriptionAr": "السعي سبعة أشواط بين الصفا والمروة، تخليداً لذكرى بحث هاجر عن الماء.",
+    "duas": [
+      { "arabic": "إِنَّ الصَّفَا وَالْمَرْوَةَ مِن شَعَائِرِ اللَّهِ", "transliteration": "Innas-Safa wal-Marwata min sha'a'irillah", "english": "Indeed, Safa and Marwah are among the symbols of Allah." }
+    ],
+    "checklist": ["Start at Safa", "Walk to Marwah (1 lap)", "Complete 7 laps (end at Marwah)", "Make du'a at each hill"]
+  },
+  {
+    "step": 3, "name": "Day of Tarwiyah (Mina)", "nameAr": "يوم التروية (منى)",
+    "description": "On the 8th of Dhul Hijjah, proceed to Mina and spend the night in prayer and reflection.",
+    "descriptionAr": "في اليوم الثامن من ذي الحجة، التوجه إلى منى وقضاء الليل في الصلاة والتأمل.",
+    "duas": [
+      { "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى", "transliteration": "Allahumma inni as'alukal-huda wat-tuqa wal-'afafa wal-ghina", "english": "O Allah, I ask You for guidance, piety, chastity, and self-sufficiency." }
+    ],
+    "checklist": ["Travel to Mina", "Pray Dhuhr, Asr, Maghrib, Isha (shortened)", "Pray Fajr", "Rest and prepare for Arafat"]
+  },
+  {
+    "step": 4, "name": "Day of Arafat", "nameAr": "يوم عرفة",
+    "description": "The most important day of Hajj. Stand at Arafat from noon to sunset, supplicating to Allah.",
+    "descriptionAr": "أهم يوم في الحج. الوقوف بعرفة من الظهر حتى غروب الشمس، والدعاء والتضرع لله.",
+    "duas": [
+      { "arabic": "لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ", "transliteration": "La ilaha illallahu wahdahu la shareeka lah, lahul-mulku wa lahul-hamdu wa huwa 'ala kulli shay'in qadeer", "english": "There is no god but Allah alone, with no partner. To Him belongs sovereignty and praise, and He has power over all things." }
+    ],
+    "checklist": ["Arrive at Arafat before noon", "Pray Dhuhr and Asr combined", "Make du'a extensively", "Stay until sunset", "Depart for Muzdalifah after sunset"]
+  },
+  {
+    "step": 5, "name": "Muzdalifah", "nameAr": "المزدلفة",
+    "description": "After Arafat, proceed to Muzdalifah. Pray Maghrib and Isha combined, collect pebbles for Rami.",
+    "descriptionAr": "بعد عرفة، التوجه إلى مزدلفة. صلاة المغرب والعشاء جمعاً، وجمع الحصى للرمي.",
+    "duas": [
+      { "arabic": "رَبَّنَا تَقَبَّلْ مِنَّا إِنَّكَ أَنتَ السَّمِيعُ الْعَلِيمُ", "transliteration": "Rabbana taqabbal minna innaka antas-samee'ul-'aleem", "english": "Our Lord, accept from us. Indeed, You are the All-Hearing, the All-Knowing." }
+    ],
+    "checklist": ["Pray Maghrib and Isha (combined)", "Collect 49+ pebbles", "Rest under the sky", "Depart after Fajr"]
+  },
+  {
+    "step": 6, "name": "Rami & Final Rites", "nameAr": "رمي الجمرات والطواف",
+    "description": "Stone the Jamarat, perform sacrifice, shave/cut hair, perform Tawaf al-Ifadah and Sa'i.",
+    "descriptionAr": "رمي الجمرات، ذبح الأضحية، الحلق أو التقصير، طواف الإفاضة والسعي.",
+    "duas": [
+      { "arabic": "بِسْمِ اللَّهِ، اللَّهُ أَكْبَرُ", "transliteration": "Bismillahi, Allahu Akbar", "english": "In the name of Allah, Allah is the Greatest." }
+    ],
+    "checklist": ["Stone Jamarat al-Aqaba (7 pebbles)", "Perform sacrifice (Qurbani)", "Shave or trim hair", "Perform Tawaf al-Ifadah", "Perform Sa'i", "Stone all 3 Jamarat (Days 11-13)", "Perform Tawaf al-Wada (farewell)"]
+  }
+]

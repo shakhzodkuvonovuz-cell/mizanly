@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: THUMB_SIZE,
     height: THUMB_SIZE,
-    borderRadius: THUMB_SIZE / 2,
+    borderRadius: radius.full,
     backgroundColor: colors.dark.bgCard,
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,0 +1,559 @@
+import { useState, useCallback, useMemo } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Share,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  FadeInUp, FadeInDown, useSharedValue, useAnimatedStyle,
+  withRepeat, withTiming, withSequence,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Icon } from '@/components/ui/Icon';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { colors, spacing, radius, fontSize } from '@/theme';
+import { islamicApi } from '@/services/islamicApi';
+import type { HajjStep, HajjProgress } from '@/types/islamic';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+
+const TOTAL_STEPS = 7;
+
+function PulseCircle({ children, active }: { children: React.ReactNode; active: boolean }) {
+  const pulseScale = useSharedValue(1);
+
+  if (active) {
+    pulseScale.value = withRepeat(
+      withSequence(
+        withTiming(1.15, { duration: 800 }),
+        withTiming(1, { duration: 800 }),
+      ),
+      -1,
+      true,
+    );
+  }
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: active ? pulseScale.value : 1 }],
+  }));
+
+  return <Animated.View style={animatedStyle}>{children}</Animated.View>;
+}
+
+function HajjCompanionContent() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [showResetSheet, setShowResetSheet] = useState(false);
+  const [showYearPicker, setShowYearPicker] = useState(false);
+  const currentYear = new Date().getFullYear();
+
+  const guideQuery = useQuery({
+    queryKey: ['hajj-guide'],
+    queryFn: () => islamicApi.getHajjGuide(),
+  });
+
+  const progressQuery = useQuery({
+    queryKey: ['hajj-progress'],
+    queryFn: () => islamicApi.getHajjProgress(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (year: number) => islamicApi.createHajjProgress(year),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hajj-progress'] });
+      setShowYearPicker(false);
+    },
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: () => {
+      const progress = progressQuery.data?.data ?? progressQuery.data;
+      if (!progress) return Promise.resolve(null);
+      return islamicApi.updateHajjProgress(progress.id, {
+        currentStep: 0,
+        checklistJson: '{}',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hajj-progress'] });
+      setShowResetSheet(false);
+    },
+  });
+
+  const guide: HajjStep[] = useMemo(() => {
+    const raw = guideQuery.data;
+    if (!raw) return [];
+    return (Array.isArray(raw) ? raw : (raw as Record<string, unknown>).data as HajjStep[] | undefined) ?? [];
+  }, [guideQuery.data]);
+
+  const progress: HajjProgress | null = useMemo(() => {
+    const raw = progressQuery.data;
+    if (!raw) return null;
+    if ('data' in (raw as Record<string, unknown>) && (raw as Record<string, unknown>).data !== undefined) {
+      return (raw as Record<string, unknown>).data as HajjProgress | null;
+    }
+    return raw as HajjProgress;
+  }, [progressQuery.data]);
+
+  const currentStep = progress?.currentStep ?? 0;
+  const progressPercent = Math.round((currentStep / TOTAL_STEPS) * 100);
+
+  const onRefresh = useCallback(() => {
+    guideQuery.refetch();
+    progressQuery.refetch();
+  }, [guideQuery, progressQuery]);
+
+  const handleShare = useCallback(async () => {
+    try {
+      await Share.share({
+        message: `${t('hajj.title')}: ${t('hajj.progress', { percent: progressPercent })}`,
+      });
+    } catch {
+      // ignore
+    }
+  }, [t, progressPercent]);
+
+  const isLoading = guideQuery.isLoading || progressQuery.isLoading;
+  const isRefreshing = guideQuery.isRefetching || progressQuery.isRefetching;
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('hajj.title')} showBack />
+        <View style={styles.skeletonContainer}>
+          <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
+          <View style={{ height: spacing.lg }} />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <View key={i} style={styles.skeletonStep}>
+              <Skeleton.Circle size={48} />
+              <View style={{ marginLeft: spacing.base, flex: 1 }}>
+                <Skeleton.Text width="60%" />
+                <View style={{ height: spacing.xs }} />
+                <Skeleton.Text width="40%" />
+              </View>
+            </View>
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!progress) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('hajj.title')} showBack />
+        <ScrollView
+          contentContainerStyle={styles.centeredContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
+            />
+          }
+        >
+          <Animated.View entering={FadeInUp.duration(400)}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.10)']}
+              style={styles.startCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <Icon name="map-pin" size="xl" color={colors.emerald} />
+              <Text style={styles.startTitle}>{t('hajj.title')}</Text>
+              <Text style={styles.startSubtitle}>
+                {t('hajj.year')}: {currentYear}
+              </Text>
+              <TouchableOpacity
+                style={styles.startButton}
+                onPress={() => createMutation.mutate(currentYear)}
+                activeOpacity={0.7}
+              >
+                <LinearGradient
+                  colors={[colors.emerald, '#0A6B42']}
+                  style={styles.startButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.startButtonText}>{t('hajj.startTracker')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <GlassHeader title={t('hajj.title')} showBack />
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.emerald}
+          />
+        }
+      >
+        {/* Progress card */}
+        <Animated.View entering={FadeInDown.duration(400)}>
+          <LinearGradient
+            colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.10)']}
+            style={styles.progressCard}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressDay}>
+                {t('hajj.day', { day: currentStep + 1 })}
+              </Text>
+              <Text style={styles.progressYear}>
+                {t('hajj.year')}: {progress.year}
+              </Text>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={styles.progressBarBg}>
+                <LinearGradient
+                  colors={[colors.emerald, colors.gold]}
+                  style={[styles.progressBarFill, { width: `${progressPercent}%` }]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                />
+              </View>
+              <Text style={styles.progressPercent}>
+                {t('hajj.progress', { percent: progressPercent })}
+              </Text>
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        {/* Step timeline */}
+        <View style={styles.timeline}>
+          {guide.map((step, index) => {
+            const isCompleted = index < currentStep;
+            const isCurrent = index === currentStep;
+            const isLast = index === guide.length - 1;
+
+            return (
+              <Animated.View
+                key={step.step}
+                entering={FadeInUp.delay(index * 80).duration(300)}
+              >
+                <TouchableOpacity
+                  style={styles.stepRow}
+                  activeOpacity={0.7}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/(screens)/hajj-step',
+                      params: { step: step.step },
+                    })
+                  }
+                >
+                  {/* Timeline line */}
+                  {!isLast && (
+                    <View
+                      style={[
+                        styles.timelineLine,
+                        {
+                          backgroundColor: isCompleted
+                            ? colors.emerald
+                            : colors.dark.border,
+                        },
+                      ]}
+                    />
+                  )}
+
+                  {/* Step circle */}
+                  <PulseCircle active={isCurrent}>
+                    <View
+                      style={[
+                        styles.stepCircle,
+                        isCompleted && styles.stepCircleCompleted,
+                        isCurrent && styles.stepCircleCurrent,
+                      ]}
+                    >
+                      {isCompleted ? (
+                        <Icon name="check" size="sm" color="#fff" />
+                      ) : (
+                        <Text
+                          style={[
+                            styles.stepNumber,
+                            isCurrent && styles.stepNumberCurrent,
+                          ]}
+                        >
+                          {index + 1}
+                        </Text>
+                      )}
+                    </View>
+                  </PulseCircle>
+
+                  {/* Step info */}
+                  <View style={styles.stepInfo}>
+                    <Text style={styles.stepNameAr}>{step.nameAr}</Text>
+                    <Text style={styles.stepName}>{step.name}</Text>
+                    <Text style={styles.stepDesc} numberOfLines={2}>
+                      {step.description}
+                    </Text>
+                  </View>
+
+                  <Icon
+                    name="chevron-right"
+                    size="sm"
+                    color={colors.text.tertiary}
+                  />
+                </TouchableOpacity>
+              </Animated.View>
+            );
+          })}
+        </View>
+
+        {/* Action buttons */}
+        <View style={styles.actions}>
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={handleShare}
+            activeOpacity={0.7}
+          >
+            <Icon name="share" size="sm" color={colors.emerald} />
+            <Text style={styles.shareButtonText}>
+              {t('hajj.shareProgress')}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={() => setShowResetSheet(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.resetButtonText}>{t('hajj.reset')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{ height: spacing['2xl'] }} />
+      </ScrollView>
+
+      <BottomSheet visible={showResetSheet} onClose={() => setShowResetSheet(false)}>
+        <BottomSheetItem
+          label={t('hajj.reset')}
+          icon={<Icon name="trash" size="sm" color={colors.error} />}
+          onPress={() => resetMutation.mutate()}
+          destructive
+        />
+        <BottomSheetItem
+          label={t('common.cancel')}
+          icon={<Icon name="x" size="sm" color={colors.text.secondary} />}
+          onPress={() => setShowResetSheet(false)}
+        />
+      </BottomSheet>
+
+      <BottomSheet visible={showYearPicker} onClose={() => setShowYearPicker(false)}>
+        {[currentYear - 1, currentYear, currentYear + 1].map((yr) => (
+          <BottomSheetItem
+            key={yr}
+            label={`${yr}`}
+            onPress={() => createMutation.mutate(yr)}
+          />
+        ))}
+      </BottomSheet>
+    </SafeAreaView>
+  );
+}
+
+export default function HajjCompanionScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <HajjCompanionContent />
+    </ScreenErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.dark.bg,
+  },
+  skeletonContainer: {
+    padding: spacing.base,
+  },
+  skeletonStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.base,
+  },
+  centeredContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.base,
+  },
+  scrollContent: {
+    padding: spacing.base,
+  },
+  startCard: {
+    borderRadius: radius.lg,
+    padding: spacing['2xl'],
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  startTitle: {
+    fontSize: fontSize.xl,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginTop: spacing.sm,
+  },
+  startSubtitle: {
+    fontSize: fontSize.base,
+    color: colors.text.secondary,
+  },
+  startButton: {
+    marginTop: spacing.base,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  startButtonGradient: {
+    paddingHorizontal: spacing['2xl'],
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+  },
+  startButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  progressCard: {
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  progressDay: {
+    fontSize: fontSize.lg,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  progressYear: {
+    fontSize: fontSize.sm,
+    color: colors.text.secondary,
+  },
+  progressBarContainer: {
+    gap: spacing.xs,
+  },
+  progressBarBg: {
+    height: 8,
+    backgroundColor: colors.dark.surface,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    borderRadius: radius.full,
+  },
+  progressPercent: {
+    fontSize: fontSize.xs,
+    color: colors.gold,
+    fontWeight: '600',
+    textAlign: 'right',
+  },
+  timeline: {
+    marginTop: spacing.sm,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+  },
+  timelineLine: {
+    position: 'absolute',
+    left: 23,
+    top: 56,
+    width: 2,
+    height: 48,
+  },
+  stepCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.dark.border,
+  },
+  stepCircleCompleted: {
+    backgroundColor: colors.emerald,
+    borderColor: colors.emerald,
+  },
+  stepCircleCurrent: {
+    borderColor: colors.gold,
+    borderWidth: 3,
+  },
+  stepNumber: {
+    fontSize: fontSize.base,
+    fontWeight: '700',
+    color: colors.text.secondary,
+  },
+  stepNumberCurrent: {
+    color: colors.gold,
+  },
+  stepInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  stepNameAr: {
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    color: colors.text.primary,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  stepName: {
+    fontSize: fontSize.sm,
+    color: colors.emerald,
+    fontWeight: '600',
+  },
+  stepDesc: {
+    fontSize: fontSize.xs,
+    color: colors.text.tertiary,
+    lineHeight: 16,
+  },
+  actions: {
+    marginTop: spacing.xl,
+    gap: spacing.md,
+  },
+  shareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.emerald,
+  },
+  shareButtonText: {
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    color: colors.emerald,
+  },
+  resetButton: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  resetButtonText: {
+    fontSize: fontSize.sm,
+    color: colors.text.tertiary,
+  },
+});
