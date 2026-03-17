@@ -21,6 +21,8 @@ import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
+import { settingsApi } from '@/services/api';
+import { useStore } from '@/store';
 
 const STORAGE_KEY = 'mizanly_media_settings';
 
@@ -140,6 +142,14 @@ export default function MediaSettingsScreen() {
 
   const [settings, setSettings] = useState<MediaSettings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
+  const [autoPlay, setAutoPlay] = useState<'wifi' | 'always' | 'never'>('wifi');
+
+  // Load auto-play setting
+  useEffect(() => {
+    settingsApi.getAutoPlay().then(res => {
+      if (res?.autoPlaySetting) setAutoPlay(res.autoPlaySetting as 'wifi' | 'always' | 'never');
+    }).catch(() => {});
+  }, []);
 
   const loadSettings = useCallback(async () => {
     try {
@@ -311,6 +321,47 @@ export default function MediaSettingsScreen() {
                 ))}
               </View>
 
+              {/* Auto-play Section */}
+              <SectionHeader
+                title={t('autoPlaySettings.title')}
+                index={4}
+                isRTL={isRTL}
+              />
+              <View style={styles.sectionCard}>
+                {(['wifi', 'always', 'never'] as const).map((option) => (
+                  <Pressable
+                    key={option}
+                    style={[styles.settingRow, { flexDirection: rtlFlexRow(isRTL) }]}
+                    onPress={() => {
+                      haptic.light();
+                      setAutoPlay(option);
+                      settingsApi.updateAutoPlay(option).catch(() => {});
+                      useStore.getState().setAutoPlaySetting(option);
+                    }}
+                  >
+                    <View style={styles.settingIcon}>
+                      <Icon
+                        name={option === 'wifi' ? 'globe' : option === 'always' ? 'play' : 'slash'}
+                        size="sm"
+                        color={autoPlay === option ? colors.emerald : colors.text.secondary}
+                      />
+                    </View>
+                    <Text
+                      style={[
+                        styles.settingLabel,
+                        { textAlign: rtlTextAlign(isRTL) },
+                        autoPlay === option && { color: colors.emerald },
+                      ]}
+                    >
+                      {t(`autoPlaySettings.${option}`)}
+                    </Text>
+                    <View style={[styles.radioOuter, autoPlay === option && styles.radioOuterActive]}>
+                      {autoPlay === option && <View style={styles.radioInner} />}
+                    </View>
+                  </Pressable>
+                ))}
+              </View>
+
               {/* Footer */}
               <Animated.View entering={FadeInDown.delay(320).duration(300)}>
                 <Text style={[styles.footerText, { textAlign: rtlTextAlign(isRTL) }]}>
@@ -402,6 +453,25 @@ const styles = StyleSheet.create({
   },
   settingLabelDisabled: {
     color: colors.text.tertiary,
+  },
+  // Radio buttons
+  radioOuter: {
+    width: 22,
+    height: 22,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: colors.dark.border,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  radioOuterActive: {
+    borderColor: colors.emerald,
+  },
+  radioInner: {
+    width: 12,
+    height: 12,
+    borderRadius: radius.full,
+    backgroundColor: colors.emerald,
   },
   // Footer
   footerText: {

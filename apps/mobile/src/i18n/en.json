@@ -2685,5 +2685,67 @@
     "unhidden": "Reply visible again",
     "viewHidden": "View hidden replies",
     "noHidden": "No hidden replies"
+  },
+  "muteConversation": {
+    "mute": "Mute Conversation",
+    "unmute": "Unmute Conversation",
+    "muted": "Conversation muted",
+    "unmuted": "Conversation unmuted",
+    "hint": "You won't receive notifications for this conversation"
+  },
+  "crossPost": {
+    "title": "Cross-post",
+    "selectSpaces": "Select spaces to share to",
+    "captionOverride": "Caption (optional)",
+    "captionPlaceholder": "Write a different caption...",
+    "post": "Cross-post",
+    "posting": "Cross-posting...",
+    "success": "Cross-posted successfully!",
+    "noSpaces": "Select at least one space",
+    "saf": "Saf (Feed)",
+    "majlis": "Majlis (Threads)",
+    "bakra": "Bakra (Reels)",
+    "minbar": "Minbar (Videos)"
+  },
+  "quietMode": {
+    "title": "Quiet Mode",
+    "settingsLabel": "Quiet Mode",
+    "settingsHint": "Pause notifications and set auto-reply",
+    "enable": "Enable Quiet Mode",
+    "schedule": "Schedule",
+    "scheduleHint": "Automatically enable during set hours",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "autoReply": "Auto-reply Message",
+    "autoReplyPlaceholder": "I'm taking a break. I'll respond later.",
+    "autoReplyHint": "Sent to people who message you",
+    "infoTitle": "How it works",
+    "infoBody": "When Quiet Mode is on, you won't receive push notifications. People who message you will see your auto-reply.",
+    "active": "Quiet Mode is on",
+    "scheduled": "Scheduled: {{start}} - {{end}}"
+  },
+  "screenTime": {
+    "title": "Screen Time",
+    "settingsLabel": "Screen Time",
+    "settingsHint": "Track your daily usage",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "avgDaily": "Daily Average",
+    "sessions": "Sessions",
+    "dailyLimit": "Daily Limit",
+    "noLimit": "No limit",
+    "setLimit": "Set Daily Limit",
+    "limitReached": "You've reached your daily limit",
+    "takeBreak": "Take a Break Reminders",
+    "takeBreakHint": "Get reminded when you've been scrolling too long",
+    "hours": "{{count}}h",
+    "minutes": "{{count}}m"
+  },
+  "autoPlaySettings": {
+    "title": "Auto-play",
+    "wifi": "WiFi only",
+    "always": "Always",
+    "never": "Never",
+    "hint": "Control when videos and reels play automatically"
   }
 }

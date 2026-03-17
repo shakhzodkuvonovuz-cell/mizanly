@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, Alert,
-  TextInput, FlatList, RefreshControl,
+  TextInput, FlatList, RefreshControl, Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -103,6 +103,20 @@ export default function ConversationInfoScreen() {
       Alert.alert(t('common.error'), t('conversation.failedToRemoveMember'));
     },
   });
+
+  const muteMutation = useMutation({
+    mutationFn: (muted: boolean) => messagesApi.mute(id, muted),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['conversation', id] });
+      queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+
+  const handleToggleMute = () => {
+    haptic.light();
+    const newMuted = !convo?.isMuted;
+    muteMutation.mutate(newMuted);
+  };
 
   const pickAvatar = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -345,8 +359,40 @@ export default function ConversationInfoScreen() {
             </Animated.View>
           )}
 
+          {/* Mute toggle */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.optionsCardGlass}
+            >
+              <View style={styles.muteRow}>
+                <View style={styles.muteLeft}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.actionIconBg}
+                  >
+                    <Icon name="volume-x" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <View style={styles.muteTextWrap}>
+                    <Text style={styles.muteLabel}>
+                      {convo.isMuted ? t('muteConversation.unmute') : t('muteConversation.mute')}
+                    </Text>
+                    <Text style={styles.muteHint}>{t('muteConversation.hint')}</Text>
+                  </View>
+                </View>
+                <Switch
+                  value={convo.isMuted ?? false}
+                  onValueChange={handleToggleMute}
+                  disabled={muteMutation.isPending}
+                  trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                  thumbColor={colors.text.primary}
+                />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
           {/* Actions */}
-          <Animated.View entering={FadeInUp.delay(240).duration(400)}>
+          <Animated.View entering={FadeInUp.delay(280).duration(400)}>
             <LinearGradient
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.optionsCardGlass}
@@ -689,6 +735,22 @@ const styles = StyleSheet.create({
     color: colors.text.primary,
     fontSize: fontSize.xs,
     fontWeight: '600',
+  },
+
+  muteRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  muteLeft: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1,
+  },
+  muteTextWrap: {
+    flex: 1,
+  },
+  muteLabel: {
+    color: colors.text.primary, fontSize: fontSize.base, fontWeight: '500',
+  },
+  muteHint: {
+    color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2,
   },
 
   actionRow: {

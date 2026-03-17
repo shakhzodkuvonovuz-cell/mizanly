@@ -299,6 +299,8 @@ export const postsApi = {
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/posts/${id}/share-link`),
   shareAsStory: (id: string) => api.post(`/posts/${id}/share-as-story`),
+  crossPost: (id: string, data: { targetSpaces: string[]; captionOverride?: string }) =>
+    api.post<Post[]>(`/posts/${id}/cross-post`, data),
 };
 
 // ── Stories (Saf) ──
@@ -659,6 +661,19 @@ export const settingsApi = {
   getBlockedKeywords: () => api.get<BlockedKeyword[]>('/settings/blocked-keywords'),
   addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { word }),
   deleteBlockedKeyword: (id: string) => api.delete(`/settings/blocked-keywords/${id}`),
+  getQuietMode: () => api.get<any>('/settings/quiet-mode'),
+  updateQuietMode: (data: { isActive?: boolean; autoReply?: string; startTime?: string; endTime?: string; isScheduled?: boolean }) =>
+    api.patch<any>('/settings/quiet-mode', data),
+  logScreenTime: (seconds: number) =>
+    api.post('/settings/screen-time/log', { seconds }),
+  getScreenTimeStats: () =>
+    api.get<{ daily: Array<{ date: string; totalSeconds: number; sessions: number }>; totalSeconds: number; totalSessions: number; avgDailySeconds: number; limitMinutes: number | null }>('/settings/screen-time/stats'),
+  setScreenTimeLimit: (limitMinutes: number | null) =>
+    api.patch('/settings/screen-time/limit', { limitMinutes }),
+  getAutoPlay: () =>
+    api.get<{ autoPlaySetting: string }>('/settings/auto-play'),
+  updateAutoPlay: (autoPlaySetting: 'wifi' | 'always' | 'never') =>
+    api.patch('/settings/auto-play', { autoPlaySetting }),
 };
 
 // ── Admin ──

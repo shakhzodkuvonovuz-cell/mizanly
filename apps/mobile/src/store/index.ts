@@ -79,6 +79,16 @@ interface AppState {
   biometricLockEnabled: boolean;
   setBiometricLockEnabled: (enabled: boolean) => void;
 
+  // Screen time
+  screenTimeSessionStart: number | null;
+  setScreenTimeSessionStart: (ts: number | null) => void;
+  screenTimeLimitMinutes: number | null;
+  setScreenTimeLimitMinutes: (limit: number | null) => void;
+
+  // Auto-play
+  autoPlaySetting: 'wifi' | 'always' | 'never';
+  setAutoPlaySetting: (s: 'wifi' | 'always' | 'never') => void;
+
   // Recording state
   isRecording: boolean;
   setIsRecording: (v: boolean) => void;
@@ -187,6 +197,16 @@ export const useStore = create<AppState>()(
       biometricLockEnabled: false,
       setBiometricLockEnabled: (biometricLockEnabled) => set({ biometricLockEnabled }),
 
+      // Screen time
+      screenTimeSessionStart: null,
+      setScreenTimeSessionStart: (screenTimeSessionStart) => set({ screenTimeSessionStart }),
+      screenTimeLimitMinutes: null,
+      setScreenTimeLimitMinutes: (screenTimeLimitMinutes) => set({ screenTimeLimitMinutes }),
+
+      // Auto-play
+      autoPlaySetting: 'wifi',
+      setAutoPlaySetting: (autoPlaySetting) => set({ autoPlaySetting }),
+
       // Recording state
       isRecording: false,
       setIsRecording: (isRecording) => set({ isRecording }),
@@ -235,6 +255,8 @@ export const useStore = create<AppState>()(
         mutedChannelIds: state.mutedChannelIds,
         nasheedMode: state.nasheedMode,
         biometricLockEnabled: state.biometricLockEnabled,
+        screenTimeLimitMinutes: state.screenTimeLimitMinutes,
+        autoPlaySetting: state.autoPlaySetting,
       }),
     }
   )
@@ -262,3 +284,6 @@ export const useMiniPlayerProgress = () => useStore((s) => s.miniPlayerProgress)
 export const useMiniPlayerPlaying = () => useStore((s) => s.miniPlayerPlaying);
 export const useNasheedMode = () => useStore((s) => s.nasheedMode);
 export const useBiometricLockEnabled = () => useStore((s) => s.biometricLockEnabled);
+export const useScreenTimeSessionStart = () => useStore((s) => s.screenTimeSessionStart);
+export const useScreenTimeLimitMinutes = () => useStore((s) => s.screenTimeLimitMinutes);
+export const useAutoPlaySetting = () => useStore((s) => s.autoPlaySetting);

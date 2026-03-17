@@ -849,4 +849,36 @@ export class PostsService {
     if (!post || post.isRemoved) throw new NotFoundException('Post not found');
     return { url: `https://mizanly.app/post/${postId}` };
   }
+
+  async crossPost(userId: string, postId: string, dto: { targetSpaces: string[]; captionOverride?: string }) {
+    const post = await this.prisma.post.findFirst({ where: { id: postId, userId } });
+    if (!post) throw new NotFoundException('Post not found');
+    if (post.isRemoved) throw new BadRequestException('Cannot cross-post a removed post');
+
+    const validSpaces = ['SAF', 'MAJLIS', 'BAKRA', 'MINBAR'];
+    const targets = dto.targetSpaces.filter(s => validSpaces.includes(s) && s !== post.space);
+    if (targets.length === 0) throw new BadRequestException('No valid target spaces');
+
+    const newPosts = [];
+    for (const space of targets) {
+      const newPost = await this.prisma.post.create({
+        data: {
+          userId,
+          content: dto.captionOverride ?? post.content,
+          mediaUrls: post.mediaUrls,
+          mediaTypes: post.mediaTypes,
+          thumbnailUrl: post.thumbnailUrl,
+          mediaWidth: post.mediaWidth,
+          mediaHeight: post.mediaHeight,
+          postType: post.postType,
+          space: space as any,
+          hashtags: post.hashtags,
+          mentions: post.mentions,
+        },
+        select: POST_SELECT,
+      });
+      newPosts.push(newPost);
+    }
+    return newPosts;
+  }
 }

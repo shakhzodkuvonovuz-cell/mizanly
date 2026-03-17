@@ -461,6 +461,20 @@ export default function SettingsScreen() {
               hint={t('settings.hints.filterSensitiveContent')}
               value={sensitiveContent}
               onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('quietMode.settingsLabel')}
+              icon={<Icon name="volume-x" size="sm" color={colors.emerald} />}
+              hint={t('quietMode.settingsHint')}
+              onPress={() => router.push('/(screens)/quiet-mode')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('screenTime.settingsLabel')}
+              icon={<Icon name="clock" size="sm" color={colors.gold} />}
+              hint={t('screenTime.settingsHint')}
+              onPress={() => router.push('/(screens)/screen-time')}
               isLast
             />
           </LinearGradient>

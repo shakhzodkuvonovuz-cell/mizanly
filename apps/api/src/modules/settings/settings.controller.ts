@@ -17,6 +17,7 @@ import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import { UpdateNotificationsDto } from './dto/update-notifications.dto';
 import { UpdateAccessibilityDto } from './dto/update-accessibility.dto';
 import { UpdateWellbeingDto } from './dto/update-wellbeing.dto';
+import { UpdateQuietModeDto } from './dto/quiet-mode.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -75,6 +76,21 @@ export class SettingsController {
     return this.settingsService.updateWellbeing(userId, dto);
   }
 
+  @Get('auto-play')
+  @ApiOperation({ summary: 'Get auto-play setting' })
+  getAutoPlay(@CurrentUser('id') userId: string) {
+    return this.settingsService.getAutoPlaySetting(userId);
+  }
+
+  @Patch('auto-play')
+  @ApiOperation({ summary: 'Update auto-play setting (wifi | always | never)' })
+  updateAutoPlay(
+    @CurrentUser('id') userId: string,
+    @Body() body: { autoPlaySetting: string },
+  ) {
+    return this.settingsService.updateAutoPlaySetting(userId, body.autoPlaySetting);
+  }
+
   @Get('blocked-keywords')
   @ApiOperation({ summary: 'List blocked keyword filters' })
   getBlockedKeywords(@CurrentUser('id') userId: string) {
@@ -98,5 +114,44 @@ export class SettingsController {
     @Param('id') id: string,
   ) {
     return this.settingsService.removeBlockedKeyword(userId, id);
+  }
+
+  @Post('screen-time/log')
+  @ApiOperation({ summary: 'Log a screen time session' })
+  logScreenTime(
+    @CurrentUser('id') userId: string,
+    @Body() body: { seconds: number },
+  ) {
+    return this.settingsService.logScreenTime(userId, body.seconds);
+  }
+
+  @Get('screen-time/stats')
+  @ApiOperation({ summary: 'Get weekly screen time stats' })
+  getScreenTimeStats(@CurrentUser('id') userId: string) {
+    return this.settingsService.getScreenTimeStats(userId);
+  }
+
+  @Patch('screen-time/limit')
+  @ApiOperation({ summary: 'Set daily screen time limit' })
+  setScreenTimeLimit(
+    @CurrentUser('id') userId: string,
+    @Body() body: { limitMinutes: number | null },
+  ) {
+    return this.settingsService.setScreenTimeLimit(userId, body.limitMinutes);
+  }
+
+  @Get('quiet-mode')
+  @ApiOperation({ summary: 'Get quiet mode settings' })
+  getQuietMode(@CurrentUser('id') userId: string) {
+    return this.settingsService.getQuietMode(userId);
+  }
+
+  @Patch('quiet-mode')
+  @ApiOperation({ summary: 'Update quiet mode settings' })
+  updateQuietMode(
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateQuietModeDto,
+  ) {
+    return this.settingsService.updateQuietMode(userId, dto);
   }
 }

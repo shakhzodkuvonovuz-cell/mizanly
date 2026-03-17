@@ -18,6 +18,7 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { AddCommentDto } from './dto/add-comment.dto';
 import { ReportDto } from './dto/report.dto';
+import { CrossPostDto } from './dto/cross-post.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -352,5 +353,18 @@ export class PostsController {
   @ApiOperation({ summary: 'Get shareable link for a post' })
   getShareLink(@Param('id') id: string) {
     return this.postsService.getShareLink(id);
+  }
+
+  @Post(':id/cross-post')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Cross-post to other spaces (Saf, Majlis, Bakra, Minbar)' })
+  crossPost(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: CrossPostDto,
+  ) {
+    return this.postsService.crossPost(userId, id, dto);
   }
 }
