@@ -2295,6 +2295,12 @@
     "tennessine": "Tennessine",
     "oganesson": "Oganesson"
   },
+  "createReel": {
+    "selectThumbnail": "اختر غلاف",
+    "customThumbnail": "مخصص",
+    "normalizeAudio": "تسوية الصوت",
+    "normalizeAudioDesc": "مستويات صوت متسقة"
+  },
   "createVideo": {
     "selectThumbnail": "اختر صورة مصغرة",
     "customThumbnail": "مخصص",

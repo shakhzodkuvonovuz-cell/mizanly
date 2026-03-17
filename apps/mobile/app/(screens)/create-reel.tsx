@@ -11,6 +11,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { useUser } from '@clerk/clerk-expo';
 import * as ImagePicker from 'expo-image-picker';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { Video, ResizeMode } from 'expo-av';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
@@ -52,6 +53,9 @@ export default function CreateReelScreen() {
   const [thumbnailUri, setThumbnailUri] = useState<string | null>(null);
   const [hashtags, setHashtags] = useState<string[]>([]);
   const [mentions, setMentions] = useState<string[]>([]);
+  const [thumbnailOptions, setThumbnailOptions] = useState<string[]>([]);
+  const [customThumbnail, setCustomThumbnail] = useState(false);
+  const [normalizeAudio, setNormalizeAudio] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState<AutocompleteType>(null);
   const [autocompleteAnchor, setAutocompleteAnchor] = useState(0);
@@ -68,6 +72,28 @@ export default function CreateReelScreen() {
       }
     })();
   }, []);
+
+  const generateFrames = async (videoUri: string, durationMs: number) => {
+    const frameCount = Math.min(6, Math.max(3, Math.floor(durationMs / 1000)));
+    const interval = durationMs / (frameCount + 1);
+    const frames: string[] = [];
+
+    for (let i = 1; i <= frameCount; i++) {
+      try {
+        const { uri: frameUri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
+          time: Math.floor(interval * i),
+        });
+        frames.push(frameUri);
+      } catch {
+        // Skip failed frames
+      }
+    }
+
+    setThumbnailOptions(frames);
+    if (frames.length > 0) {
+      setThumbnailUri(frames[0]);
+    }
+  };
 
   const pickVideo = useCallback(async () => {
     haptic.light();
@@ -88,8 +114,8 @@ export default function CreateReelScreen() {
         width: asset.width,
         height: asset.height,
       });
-      // Generate thumbnail from first frame
-      setThumbnailUri(asset.uri); // expo-av can extract thumbnail, but for simplicity use video URI
+      // Generate thumbnail frames for picker
+      generateFrames(asset.uri, (asset.duration || 0) * 1000);
     }
   }, [haptic]);
 
@@ -180,6 +206,7 @@ export default function CreateReelScreen() {
           caption,
           hashtags,
           mentions,
+          normalizeAudio,
           // audioTrackId: undefined,
           // isDuet: false,
           // isStitch: false,
@@ -316,6 +343,43 @@ export default function CreateReelScreen() {
             </TouchableOpacity>
           )}
 
+          {/* Thumbnail filmstrip */}
+          {video && thumbnailOptions.length > 0 && (
+            <View style={styles.thumbnailSection}>
+              <Text style={styles.sectionLabel}>{t('createReel.selectThumbnail')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
+                {thumbnailOptions.map((frame, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => { setThumbnailUri(frame); setCustomThumbnail(false); }}
+                    style={[
+                      styles.thumbnailFrame,
+                      thumbnailUri === frame && !customThumbnail && styles.thumbnailFrameSelected,
+                    ]}
+                  >
+                    <Image source={{ uri: frame }} style={styles.thumbnailImage} />
+                  </TouchableOpacity>
+                ))}
+                <TouchableOpacity
+                  onPress={async () => {
+                    const result = await ImagePicker.launchImageLibraryAsync({
+                      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                      quality: 0.8,
+                    });
+                    if (!result.canceled && result.assets[0]) {
+                      setThumbnailUri(result.assets[0].uri);
+                      setCustomThumbnail(true);
+                    }
+                  }}
+                  style={[styles.thumbnailFrame, styles.uploadThumbnailButton]}
+                >
+                  <Icon name="image" size="md" color={colors.text.secondary} />
+                  <Text style={styles.uploadThumbnailText}>{t('createReel.customThumbnail')}</Text>
+                </TouchableOpacity>
+              </ScrollView>
+            </View>
+          )}
+
           {/* Caption with glassmorphism card */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
@@ -446,6 +510,19 @@ export default function CreateReelScreen() {
               </View>
             </View>
           )}
+          {/* Normalize audio toggle */}
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.toggleLabel}>{t('createReel.normalizeAudio')}</Text>
+              <Text style={styles.toggleSubtitle}>{t('createReel.normalizeAudioDesc')}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => setNormalizeAudio(!normalizeAudio)}
+              style={[styles.toggle, normalizeAudio && styles.toggleActive]}
+            >
+              <View style={[styles.toggleThumb, normalizeAudio && styles.toggleThumbActive]} />
+            </TouchableOpacity>
+          </View>
         </ScrollView>
 
         {/* Autocomplete sheets */}
@@ -729,5 +806,78 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontSize: fontSize.sm,
     fontWeight: '500',
+  },
+
+  // Thumbnail filmstrip
+  thumbnailSection: {
+    marginTop: spacing.base,
+    marginBottom: spacing.base,
+  },
+  thumbnailFrame: {
+    width: 64,
+    height: 114,
+    borderRadius: radius.sm,
+    overflow: 'hidden' as const,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  thumbnailFrameSelected: {
+    borderColor: colors.emerald,
+  },
+  thumbnailImage: {
+    width: '100%' as const,
+    height: '100%' as const,
+  },
+  uploadThumbnailButton: {
+    backgroundColor: colors.dark.bgCard,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    borderStyle: 'dashed' as const,
+    borderColor: colors.dark.border,
+  },
+  uploadThumbnailText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
+  },
+
+  // Normalize audio toggle
+  toggleRow: {
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.dark.border,
+  },
+  toggleLabel: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '500' as const,
+  },
+  toggleSubtitle: {
+    color: colors.text.secondary,
+    fontSize: fontSize.xs,
+    marginTop: 2,
+  },
+  toggle: {
+    width: 48,
+    height: 28,
+    borderRadius: radius.full,
+    backgroundColor: colors.dark.surface,
+    justifyContent: 'center' as const,
+    padding: 2,
+  },
+  toggleActive: {
+    backgroundColor: colors.emerald,
+  },
+  toggleThumb: {
+    width: 24,
+    height: 24,
+    borderRadius: radius.full,
+    backgroundColor: colors.text.primary,
+  },
+  toggleThumbActive: {
+    alignSelf: 'flex-end' as const,
   },
 });
