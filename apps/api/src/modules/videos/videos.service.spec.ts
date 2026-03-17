@@ -158,6 +158,7 @@ describe('VideosService', () => {
           duration: dto.duration,
           category: dto.category || VideoCategory.OTHER,
           tags: dto.tags || [],
+          normalizeAudio: false,
           status: VideoStatus.PROCESSING,
           publishedAt: expect.any(Date),
         },
