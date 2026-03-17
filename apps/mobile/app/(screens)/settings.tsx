@@ -316,6 +316,12 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             <Row
+              label={t('downloads.title')}
+              icon={<Icon name="layers" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/downloads')}
+            />
+            <View style={styles.divider} />
+            <Row
               label={t('nasheed.settingsLabel')}
               icon={<Icon name="mic" size="sm" color={colors.gold} />}
               onPress={() => router.push('/(screens)/nasheed-mode')}
@@ -398,6 +404,13 @@ export default function SettingsScreen() {
               label={t('biometric.settingsLabel')}
               icon={<Icon name="lock" size="sm" color={colors.emerald} />}
               onPress={() => router.push('/(screens)/biometric-lock')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('parentalControls.settingsLabel')}
+              icon={<Icon name="users" size="sm" color={colors.gold} />}
+              hint={t('parentalControls.settingsHint')}
+              onPress={() => router.push('/(screens)/parental-controls')}
               isLast
             />
           </LinearGradient>

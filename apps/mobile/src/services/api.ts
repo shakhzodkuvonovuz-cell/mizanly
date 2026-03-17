@@ -10,7 +10,7 @@ import type {
   CallSession, StickerPack, StickerItem, PostCollab,
   ChannelPost, AudioTrack, FeedDismissal,
   HashtagInfo, BookmarkCollection, SearchSuggestion, ModerationLogEntry,
-  DMNote,
+  DMNote, OfflineDownload,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -394,6 +394,10 @@ export const channelsApi = {
     api.get<PaginatedResponse<User>>(`/channels/${channelId}/subscribers${qs({ cursor })}`).then(r => r.data),
   getRecommended: (limit?: number) =>
     api.get<Channel[]>(`/channels/recommended${qs({ limit })}`).then(r => r.data),
+  setTrailer: (handle: string, videoId: string) =>
+    api.put(`/channels/${handle}/trailer`, { videoId }).then(r => r.data),
+  removeTrailer: (handle: string) =>
+    api.delete(`/channels/${handle}/trailer`).then(r => r.data),
 };
 
 // ── Videos (Minbar) ──
@@ -1067,4 +1071,42 @@ export const watchHistoryApi = {
 // ── Account ──
 export const accountApi = {
   requestDataExport: () => api.post('/account/export'),
+};
+
+// ── Downloads (Offline) ──
+export const downloadsApi = {
+  request: (dto: { contentId: string; contentType: string; quality?: string }) =>
+    api.post('/downloads', dto),
+  getAll: (params?: { status?: string; cursor?: string }) =>
+    api.get(`/downloads${qs(params || {})}`),
+  getUrl: (id: string) =>
+    api.get<{ url: string }>(`/downloads/${id}/url`),
+  updateProgress: (id: string, progress: number, fileSize?: number) =>
+    api.patch(`/downloads/${id}/progress`, { progress, fileSize }),
+  delete: (id: string) =>
+    api.delete(`/downloads/${id}`),
+  getStorage: () =>
+    api.get<{ usedBytes: number; count: number }>('/downloads/storage'),
+};
+
+// ── Parental Controls ──
+export const parentalApi = {
+  linkChild: (dto: { childUserId: string; pin: string }) =>
+    api.post('/parental-controls/link', dto),
+  unlinkChild: (childId: string, pin: string) =>
+    api.delete(`/parental-controls/link/${childId}`, { pin }),
+  getChildren: () =>
+    api.get('/parental-controls/children'),
+  getParent: () =>
+    api.get('/parental-controls/parent'),
+  updateControls: (childId: string, dto: Record<string, unknown>) =>
+    api.patch(`/parental-controls/${childId}`, dto),
+  verifyPin: (childId: string, pin: string) =>
+    api.post(`/parental-controls/${childId}/pin`, { pin }),
+  changePin: (childId: string, currentPin: string, newPin: string) =>
+    api.patch(`/parental-controls/${childId}/pin`, { currentPin, newPin }),
+  getRestrictions: (childId: string) =>
+    api.get(`/parental-controls/${childId}/restrictions`),
+  getDigest: (childId: string) =>
+    api.get(`/parental-controls/${childId}/digest`),
 };

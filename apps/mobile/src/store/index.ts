@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { User, Conversation } from '@/types';
+import type { User, Conversation, ParentalRestrictions } from '@/types';
 
 interface AppState {
   // Auth
@@ -101,6 +101,17 @@ interface AppState {
   setMiniPlayerProgress: (progress: number) => void;
   setMiniPlayerPlaying: (playing: boolean) => void;
   closeMiniPlayer: () => void;
+
+  // Download queue
+  downloadQueue: string[];
+  addToDownloadQueue: (id: string) => void;
+  removeFromDownloadQueue: (id: string) => void;
+
+  // Parental controls
+  isChildAccount: boolean;
+  setIsChildAccount: (v: boolean) => void;
+  parentalRestrictions: ParentalRestrictions | null;
+  setParentalRestrictions: (r: ParentalRestrictions | null) => void;
 
   logout: () => void;
 }
@@ -220,6 +231,21 @@ export const useStore = create<AppState>()(
       setMiniPlayerPlaying: (miniPlayerPlaying) => set({ miniPlayerPlaying }),
       closeMiniPlayer: () => set({ miniPlayerVideo: null, miniPlayerProgress: 0, miniPlayerPlaying: false }),
 
+      // Download queue
+      downloadQueue: [],
+      addToDownloadQueue: (id) => set((s) => ({
+        downloadQueue: s.downloadQueue.includes(id) ? s.downloadQueue : [...s.downloadQueue, id],
+      })),
+      removeFromDownloadQueue: (id) => set((s) => ({
+        downloadQueue: s.downloadQueue.filter((d) => d !== id),
+      })),
+
+      // Parental controls
+      isChildAccount: false,
+      setIsChildAccount: (isChildAccount) => set({ isChildAccount }),
+      parentalRestrictions: null,
+      setParentalRestrictions: (parentalRestrictions) => set({ parentalRestrictions }),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -240,6 +266,9 @@ export const useStore = create<AppState>()(
         isRecording: false,
         nasheedMode: false,
         biometricLockEnabled: false,
+        downloadQueue: [],
+        isChildAccount: false,
+        parentalRestrictions: null,
       }),
     }),
     {
@@ -287,3 +316,6 @@ export const useBiometricLockEnabled = () => useStore((s) => s.biometricLockEnab
 export const useScreenTimeSessionStart = () => useStore((s) => s.screenTimeSessionStart);
 export const useScreenTimeLimitMinutes = () => useStore((s) => s.screenTimeLimitMinutes);
 export const useAutoPlaySetting = () => useStore((s) => s.autoPlaySetting);
+export const useDownloadQueue = () => useStore((s) => s.downloadQueue);
+export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
+export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);

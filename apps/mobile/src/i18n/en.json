@@ -2825,5 +2825,19 @@
     "urlPreview": "Link Preview",
     "noContent": "No content to share",
     "success": "Shared successfully!"
+  },
+  "widgets": {
+    "prayerTimes": "Prayer Times",
+    "prayerTimesDesc": "Shows next prayer time with countdown",
+    "unread": "Unread",
+    "unreadDesc": "Shows unread message and notification counts",
+    "setupHint": "Add widgets from your home screen",
+    "nextPrayer": "Next: {{prayer}}",
+    "minutesRemaining": "{{minutes}} min"
+  },
+  "miniPlayer": {
+    "playing": "Now playing",
+    "paused": "Paused",
+    "swipeToDismiss": "Swipe down to dismiss"
   }
 }

@@ -2717,5 +2717,14 @@
     "urlPreview": "معاينة الرابط",
     "noContent": "لا يوجد محتوى للمشاركة",
     "success": "تمت المشاركة بنجاح!"
+  },
+  "widgets": {
+    "prayerTimes": "أوقات الصلاة",
+    "prayerTimesDesc": "يعرض وقت الصلاة التالية مع العد التنازلي",
+    "unread": "غير مقروء",
+    "unreadDesc": "يعرض عدد الرسائل والإشعارات غير المقروءة",
+    "setupHint": "أضف الأدوات من شاشتك الرئيسية",
+    "nextPrayer": "التالي: {{prayer}}",
+    "minutesRemaining": "{{minutes}} دقيقة"
   }
 }

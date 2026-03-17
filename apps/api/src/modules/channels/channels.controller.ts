@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Put,
   Delete,
   Body,
   Param,
@@ -17,6 +18,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ChannelsService } from './channels.service';
 import { CreateChannelDto } from './dto/create-channel.dto';
 import { UpdateChannelDto } from './dto/update-channel.dto';
+import { SetTrailerDto } from './dto/set-trailer.dto';
 
 @ApiTags('Channels (Minbar)')
 @Controller('channels')
@@ -130,6 +132,29 @@ export class ChannelsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.channelsService.getSubscribers(handle, userId, cursor);
+  }
+
+  @Put(':handle/trailer')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set channel trailer video (owner only)' })
+  setTrailer(
+    @Param('handle') handle: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: SetTrailerDto,
+  ) {
+    return this.channelsService.setTrailer(handle, userId, dto.videoId);
+  }
+
+  @Delete(':handle/trailer')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove channel trailer video (owner only)' })
+  removeTrailer(
+    @Param('handle') handle: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.channelsService.removeTrailer(handle, userId);
   }
 
   @Get('recommended')

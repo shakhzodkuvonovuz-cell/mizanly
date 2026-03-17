@@ -175,6 +175,7 @@ export default function ChannelScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showTrailerPicker, setShowTrailerPicker] = useState(false);
 
   // Fetch channel
   const channelQuery = useQuery({
@@ -210,6 +211,22 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
     mutationFn: () => channel?.isSubscribed ? channelsApi.unsubscribe(handle) : channelsApi.subscribe(handle),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channel', handle] }),
   });
+
+  const setTrailerMutation = useMutation({
+    mutationFn: (videoId: string) => channelsApi.setTrailer(handle, videoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channel', handle] });
+      setShowTrailerPicker(false);
+    },
+  });
+
+  const removeTrailerMutation = useMutation({
+    mutationFn: () => channelsApi.removeTrailer(handle),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['channel', handle] }),
+  });
+
+  const isOwner = !!user && !!channel && user.id === channel.userId;
+  const showTrailerSection = !!channel?.trailerVideo && !channel.isSubscribed && !isOwner;
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -362,6 +379,46 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         </View>
       )}
 
+      {/* Channel Trailer Section (non-subscribers only) */}
+      {showTrailerSection && channel.trailerVideo && (
+        <Animated.View entering={FadeInUp.delay(150)} style={styles.trailerContainer}>
+          <Text style={styles.trailerSectionTitle}>{t('channelTrailer.title')}</Text>
+          <TouchableOpacity
+            style={styles.trailerCard}
+            activeOpacity={0.9}
+            onPress={() => router.push(`/(screens)/video/${channel.trailerVideo!.id}`)}
+          >
+            {channel.trailerVideo.thumbnailUrl ? (
+              <Image source={{ uri: channel.trailerVideo.thumbnailUrl }} style={styles.trailerThumbnail} />
+            ) : (
+              <View style={[styles.trailerThumbnail, styles.trailerThumbnailPlaceholder]}>
+                <Icon name="video" size="xl" color={colors.text.secondary} />
+              </View>
+            )}
+            <LinearGradient
+              colors={['transparent', 'rgba(13,17,23,0.7)', 'rgba(13,17,23,0.95)']}
+              locations={[0.2, 0.6, 1]}
+              style={styles.trailerGradient}
+            >
+              <View style={styles.trailerOverlay}>
+                <View style={styles.trailerPlayButton}>
+                  <Icon name="play" size="lg" color="#fff" />
+                </View>
+                <Text style={styles.trailerTitle} numberOfLines={2}>{channel.trailerVideo.title}</Text>
+                <Text style={styles.trailerCta}>{t('channelTrailer.subscribeToUnlock')}</Text>
+              </View>
+            </LinearGradient>
+            {channel.trailerVideo.duration > 0 && (
+              <View style={styles.trailerDurationBadge}>
+                <Text style={styles.durationText}>
+                  {Math.floor(channel.trailerVideo.duration / 60)}:{Math.floor(channel.trailerVideo.duration % 60).toString().padStart(2, '0')}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
       {/* Featured Video Section */}
       {featuredVideo && activeTab === 'videos' && (
         <FeaturedVideoCard
@@ -379,7 +436,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         />
       </View>
     </View>
-  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab, CHANNEL_TABS]);
+  ), [channel, handle, subscribeMutation.isPending, featuredVideo, activeTab, CHANNEL_TABS, showTrailerSection, t]);
 
   if (channelQuery.isLoading) {
     return (
@@ -517,6 +574,27 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>Channel options</Text>
           </View>
+          {isOwner && (
+            <BottomSheetItem
+              label={t('channelTrailer.setTrailer')}
+              icon={<Icon name="video" size="sm" color={colors.text.primary} />}
+              onPress={() => {
+                setShowMenu(false);
+                setShowTrailerPicker(true);
+              }}
+            />
+          )}
+          {isOwner && !!channel?.trailerVideoId && (
+            <BottomSheetItem
+              label={t('channelTrailer.removeTrailer')}
+              icon={<Icon name="trash" size="sm" color={colors.error} />}
+              onPress={() => {
+                setShowMenu(false);
+                removeTrailerMutation.mutate();
+              }}
+              destructive
+            />
+          )}
           <BottomSheetItem
             label={t('channel.reportChannel')}
             icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
@@ -565,8 +643,72 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             }}
           />
         </BottomSheet>
+
+        {/* Trailer picker bottom sheet (owner only) */}
+        <BottomSheet visible={showTrailerPicker} onClose={() => setShowTrailerPicker(false)} snapPoint={0.7}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{t('channelTrailer.setTrailer')}</Text>
+          </View>
+          <Text style={styles.trailerPickerHint}>{t('channelTrailer.selectVideo')}</Text>
+          {channel?.trailerVideoId && (
+            <View style={styles.trailerPickerCurrent}>
+              <Icon name="check-circle" size="sm" color={colors.emerald} />
+              <Text style={styles.trailerPickerCurrentText}>{t('channelTrailer.currentTrailer')}</Text>
+            </View>
+          )}
+          <FlatList
+            data={videos}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+              const isCurrentTrailer = channel?.trailerVideoId === item.id;
+              const mins = Math.floor(item.duration / 60);
+              const secs = Math.floor(item.duration % 60);
+              return (
+                <TouchableOpacity
+                  style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    haptic.light();
+                    setTrailerMutation.mutate(item.id);
+                  }}
+                  disabled={setTrailerMutation.isPending}
+                >
+                  <View style={styles.trailerPickerThumbWrap}>
+                    {item.thumbnailUrl ? (
+                      <Image source={{ uri: item.thumbnailUrl }} style={styles.trailerPickerThumb} />
+                    ) : (
+                      <View style={[styles.trailerPickerThumb, styles.trailerThumbnailPlaceholder]}>
+                        <Icon name="video" size="sm" color={colors.text.tertiary} />
+                      </View>
+                    )}
+                  </View>
+                  <View style={styles.trailerPickerInfo}>
+                    <Text style={styles.trailerPickerTitle} numberOfLines={2}>{item.title}</Text>
+                    <Text style={styles.trailerPickerMeta}>
+                      {mins}:{secs.toString().padStart(2, '0')}
+                    </Text>
+                  </View>
+                  {isCurrentTrailer && (
+                    <Icon name="check-circle" size="sm" color={colors.emerald} />
+                  )}
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <EmptyState
+                icon="video"
+                title={t('channel.noVideosYet')}
+                subtitle={t('channel.noVideosSubtitle')}
+              />
+            }
+            refreshControl={
+              <RefreshControl refreshing={false} onRefresh={() => videosQuery.refetch()} tintColor={colors.emerald} />
+            }
+            showsVerticalScrollIndicator={false}
+          />
+        </BottomSheet>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -999,5 +1141,129 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
+  },
+
+  // Channel Trailer styles
+  trailerContainer: {
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.md,
+  },
+  trailerSectionTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.md,
+    fontWeight: '700',
+    marginBottom: spacing.sm,
+  },
+  trailerCard: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.surface,
+    position: 'relative',
+  },
+  trailerThumbnail: {
+    width: '100%',
+    height: FEATURED_HEIGHT,
+  },
+  trailerThumbnailPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.dark.bgCard,
+  },
+  trailerGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: FEATURED_HEIGHT * 0.7,
+    justifyContent: 'flex-end',
+    padding: spacing.md,
+  },
+  trailerOverlay: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  trailerPlayButton: {
+    width: 56,
+    height: 56,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(10,123,79,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xs,
+  },
+  trailerTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  trailerCta: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  trailerDurationBadge: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.8)',
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+
+  // Trailer picker styles
+  trailerPickerHint: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  trailerPickerCurrent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.sm,
+  },
+  trailerPickerCurrentText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
+  trailerPickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+  },
+  trailerPickerItemActive: {
+    backgroundColor: 'rgba(10,123,79,0.10)',
+  },
+  trailerPickerThumbWrap: {
+    width: 100,
+    height: 56,
+    borderRadius: radius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.dark.bgCard,
+  },
+  trailerPickerThumb: {
+    width: 100,
+    height: 56,
+  },
+  trailerPickerInfo: {
+    flex: 1,
+  },
+  trailerPickerTitle: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  trailerPickerMeta: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
   },
 });

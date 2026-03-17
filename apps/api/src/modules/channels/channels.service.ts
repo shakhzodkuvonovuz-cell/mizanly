@@ -28,6 +28,7 @@ const CHANNEL_SELECT = {
   totalViews: true,
   isVerified: true,
   createdAt: true,
+  trailerVideoId: true,
   user: {
     select: {
       id: true,
@@ -37,6 +38,15 @@ const CHANNEL_SELECT = {
       isVerified: true,
     },
   },
+};
+
+const TRAILER_VIDEO_SELECT = {
+  id: true,
+  title: true,
+  thumbnailUrl: true,
+  hlsUrl: true,
+  videoUrl: true,
+  duration: true,
 };
 
 @Injectable()
@@ -97,7 +107,23 @@ export class ChannelsService {
       isSubscribed = !!subscription;
     }
 
-    return { ...channel, isSubscribed };
+    // Manually fetch trailer video (no Prisma relation to avoid ambiguity)
+    let trailerVideo: {
+      id: string;
+      title: string;
+      thumbnailUrl: string | null;
+      hlsUrl: string | null;
+      videoUrl: string;
+      duration: number;
+    } | null = null;
+    if (channel.trailerVideoId) {
+      trailerVideo = await this.prisma.video.findUnique({
+        where: { id: channel.trailerVideoId },
+        select: TRAILER_VIDEO_SELECT,
+      });
+    }
+
+    return { ...channel, trailerVideo, isSubscribed };
   }
 
   async update(handle: string, userId: string, dto: UpdateChannelDto) {
@@ -422,5 +448,45 @@ export class ChannelsService {
       ...ch,
       isSubscribed: false, // already excluded subscribed channels
     }));
+  }
+
+  async setTrailer(handle: string, userId: string, videoId: string) {
+    const channel = await this.prisma.channel.findUnique({
+      where: { handle },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException();
+
+    // Verify the video belongs to this channel
+    const video = await this.prisma.video.findUnique({
+      where: { id: videoId },
+      select: { id: true, channelId: true },
+    });
+    if (!video) throw new NotFoundException('Video not found');
+    if (video.channelId !== channel.id) {
+      throw new BadRequestException('Video does not belong to this channel');
+    }
+
+    await this.prisma.channel.update({
+      where: { handle },
+      data: { trailerVideoId: videoId },
+    });
+
+    return { trailerVideoId: videoId };
+  }
+
+  async removeTrailer(handle: string, userId: string) {
+    const channel = await this.prisma.channel.findUnique({
+      where: { handle },
+    });
+    if (!channel) throw new NotFoundException('Channel not found');
+    if (channel.userId !== userId) throw new ForbiddenException();
+
+    await this.prisma.channel.update({
+      where: { handle },
+      data: { trailerVideoId: null },
+    });
+
+    return { trailerVideoId: null };
   }
 }

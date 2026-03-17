@@ -64,6 +64,8 @@ import { CreatorModule } from './modules/creator/creator.module';
 import { GiftsModule } from './modules/gifts/gifts.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { RestrictsModule } from './modules/restricts/restricts.module';
+import { ParentalControlsModule } from './modules/parental-controls/parental-controls.module';
+import { DownloadsModule } from './modules/downloads/downloads.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -140,6 +142,8 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     GiftsModule,
     PromotionsModule,
     RestrictsModule,
+    ParentalControlsModule,
+    DownloadsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

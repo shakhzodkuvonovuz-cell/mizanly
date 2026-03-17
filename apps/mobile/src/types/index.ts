@@ -215,6 +215,15 @@ export interface Reel {
 export type VideoStatus = 'DRAFT' | 'PROCESSING' | 'PUBLISHED' | 'UNLISTED' | 'PRIVATE';
 export type VideoCategory = 'EDUCATION' | 'QURAN' | 'LECTURE' | 'VLOG' | 'NEWS' | 'DOCUMENTARY' | 'ENTERTAINMENT' | 'SPORTS' | 'COOKING' | 'TECH' | 'OTHER';
 
+export interface ChannelTrailerVideo {
+  id: string;
+  title: string;
+  thumbnailUrl: string | null;
+  hlsUrl: string | null;
+  videoUrl: string;
+  duration: number;
+}
+
 export interface Channel {
   id: string;
   userId: string;
@@ -228,6 +237,8 @@ export interface Channel {
   totalViews: number;
   isVerified: boolean;
   createdAt: string;
+  trailerVideoId?: string | null;
+  trailerVideo?: ChannelTrailerVideo | null;
   user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
   isSubscribed?: boolean;
 }
@@ -824,4 +835,61 @@ export interface SearchSuggestion {
   displayName?: string;
   count?: number;
   extra?: string;
+}
+
+// ── Offline Downloads ──
+export interface OfflineDownload {
+  id: string;
+  userId: string;
+  contentType: 'post' | 'video' | 'reel';
+  contentId: string;
+  quality: string;
+  fileSize: number;
+  status: 'pending' | 'downloading' | 'complete' | 'failed' | 'paused';
+  progress: number;
+  filePath: string | null;
+  expiresAt: string | null;
+  createdAt: string;
+}
+
+// ── Parental Controls ──
+export interface ParentalControl {
+  id: string;
+  parentUserId: string;
+  childUserId: string;
+  restrictedMode: boolean;
+  maxAgeRating: string;
+  dailyLimitMinutes: number | null;
+  dmRestriction: string;
+  canGoLive: boolean;
+  canPost: boolean;
+  canComment: boolean;
+  activityDigest: boolean;
+  lastDigestAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  child?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+    isChildAccount: boolean;
+  };
+  parent?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+}
+
+export interface ParentalRestrictions {
+  isLinked: boolean;
+  restrictedMode: boolean;
+  maxAgeRating: string;
+  dailyLimitMinutes: number | null;
+  dmRestriction: string;
+  canGoLive: boolean;
+  canPost: boolean;
+  canComment: boolean;
 }
