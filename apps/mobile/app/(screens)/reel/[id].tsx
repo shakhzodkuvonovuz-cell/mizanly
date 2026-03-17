@@ -261,11 +261,11 @@ export default function ReelDetailScreen() {
         <View style={styles.videoContainer}>
           <Video
             ref={videoRef}
-            source={{ uri: reelQuery.data.videoUrl }}
+            source={{ uri: reelQuery.data.hlsUrl || reelQuery.data.videoUrl }}
             style={styles.video}
             resizeMode={ResizeMode.COVER}
             shouldPlay={isPlaying}
-            isLooping
+            isLooping={reelQuery.data.isLooping ?? true}
             useNativeControls={false}
           />
 

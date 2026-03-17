@@ -528,7 +528,7 @@ export default function VideoDetailScreen() {
             >
               <Video
                 ref={videoRef}
-                source={{ uri: video.videoUrl }}
+                source={{ uri: video.hlsUrl || video.videoUrl }}
                 style={styles.videoPlayer}
                 resizeMode={ResizeMode.CONTAIN}
                 useNativeControls={false}
@@ -536,7 +536,7 @@ export default function VideoDetailScreen() {
                 rate={speed}
                 volume={volume}
                 isMuted={volume === 0}
-                isLooping={false}
+                isLooping={video.isLooping ?? false}
                 onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
               />
               <VideoControls

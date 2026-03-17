@@ -162,11 +162,11 @@ const ReelItem = memo(function ReelItem({
       <View style={styles.videoContainer}>
         <Video
           ref={handleVideoRef}
-          source={{ uri: item.videoUrl }}
+          source={{ uri: item.hlsUrl || item.videoUrl }}
           style={styles.video}
           resizeMode={ResizeMode.COVER}
           shouldPlay={isActive}
-          isLooping
+          isLooping={item.isLooping ?? true}
           useNativeControls={false}
           onPlaybackStatusUpdate={(status: AVPlaybackStatus) => {
             if (status.isLoaded) {
