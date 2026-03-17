@@ -12,12 +12,19 @@ import { CreateReelDto } from './dto/create-reel.dto';
 import { Prisma, ReelStatus, ReactionType, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 
 const REEL_SELECT = {
   id: true,
   videoUrl: true,
+  streamId: true,
+  hlsUrl: true,
+  dashUrl: true,
+  qualities: true,
+  isLooping: true,
+  normalizeAudio: true,
   thumbnailUrl: true,
   duration: true,
   caption: true,
@@ -54,6 +61,7 @@ export class ReelsService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
+    private stream: StreamService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
@@ -87,6 +95,7 @@ export class ReelsService {
           audioTrackId: dto.audioTrackId,
           isDuet: dto.isDuet || false,
           isStitch: dto.isStitch || false,
+          normalizeAudio: dto.normalizeAudio ?? false,
           status: ReelStatus.PROCESSING,
           // Schema fields with defaults - Prisma will use defaults if omitted
           // width: 1080,
@@ -127,16 +136,25 @@ export class ReelsService {
       }
     }
 
-    // Video processing deferred — mark as READY immediately for MVP
-    const updatedReel = await this.prisma.reel.update({
-      where: { id: reel.id },
-      data: { status: ReelStatus.READY },
-      select: REEL_SELECT,
-    });
+    // Kick off Cloudflare Stream ingestion (async)
+    this.stream.uploadFromUrl(dto.videoUrl, { title: dto.caption ?? 'Reel', creatorId: userId })
+      .then(async (streamId) => {
+        await this.prisma.reel.update({
+          where: { id: reel.id },
+          data: { streamId },
+        });
+        this.logger.log(`Reel ${reel.id} submitted to Stream as ${streamId}`);
+      })
+      .catch((err) => {
+        this.logger.error(`Stream upload failed for reel ${reel.id}`, err);
+        this.prisma.reel.update({
+          where: { id: reel.id },
+          data: { status: 'READY' },
+        }).catch(() => {});
+      });
 
     return {
-      ...updatedReel,
-      status: ReelStatus.READY,
+      ...reel,
       isLiked: false,
       isBookmarked: false,
     };
@@ -277,6 +295,14 @@ export class ReelsService {
       }),
       this.prisma.$executeRaw`UPDATE "User" SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${userId}`,
     ]);
+
+    // Clean up from Cloudflare Stream
+    if (reel.streamId) {
+      this.stream.deleteVideo(reel.streamId).catch((err) => {
+        this.logger.warn(`Failed to delete Stream reel ${reel.streamId}`, err);
+      });
+    }
+
     return { deleted: true };
   }
 

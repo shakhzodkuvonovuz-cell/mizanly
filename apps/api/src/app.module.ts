@@ -54,6 +54,7 @@ import { IslamicModule } from './modules/islamic/islamic.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { CommunitiesModule } from './modules/communities/communities.module';
+import { StreamModule } from './modules/stream/stream.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -120,6 +121,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     PaymentsModule,
     ModerationModule,
     CommunitiesModule,
+    StreamModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

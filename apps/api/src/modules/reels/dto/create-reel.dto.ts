@@ -59,4 +59,9 @@ export class CreateReelDto {
   @IsOptional()
   @IsBoolean()
   isStitch?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  normalizeAudio?: boolean;
 }

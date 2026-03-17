@@ -13,6 +13,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 
 const VIDEO_SELECT = {
@@ -22,6 +23,12 @@ const VIDEO_SELECT = {
   title: true,
   description: true,
   videoUrl: true,
+  streamId: true,
+  hlsUrl: true,
+  dashUrl: true,
+  qualities: true,
+  isLooping: true,
+  normalizeAudio: true,
   thumbnailUrl: true,
   duration: true,
   category: true,
@@ -64,6 +71,7 @@ export class VideosService {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
+    private stream: StreamService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -110,6 +118,7 @@ export class VideosService {
           duration: dto.duration,
           category: dto.category || VideoCategory.OTHER,
           tags: dto.tags || [],
+          normalizeAudio: dto.normalizeAudio ?? false,
           status: VideoStatus.PROCESSING,
           publishedAt: new Date(),
         },
@@ -121,16 +130,26 @@ export class VideosService {
       }),
     ]);
 
-    // Video processing deferred — mark as PUBLISHED immediately for MVP
-    // For now, just mark as PUBLISHED
-    const updatedVideo = await this.prisma.video.update({
-      where: { id: video[0].id },
-      data: { status: VideoStatus.PUBLISHED },
-      select: VIDEO_SELECT,
-    });
+    // Kick off Cloudflare Stream ingestion (async — don't block response)
+    this.stream.uploadFromUrl(dto.videoUrl, { title: dto.title, creatorId: userId })
+      .then(async (streamId) => {
+        await this.prisma.video.update({
+          where: { id: video[0].id },
+          data: { streamId },
+        });
+        this.logger.log(`Video ${video[0].id} submitted to Stream as ${streamId}`);
+      })
+      .catch((err) => {
+        this.logger.error(`Stream upload failed for video ${video[0].id}`, err);
+        // Fall back to PUBLISHED with raw R2 URL
+        this.prisma.video.update({
+          where: { id: video[0].id },
+          data: { status: 'PUBLISHED' },
+        }).catch(() => {});
+      });
 
     return {
-      ...updatedVideo,
+      ...video[0],
       isLiked: false,
       isDisliked: false,
       isBookmarked: false,
@@ -319,6 +338,14 @@ export class VideosService {
         WHERE id = ${video.channelId}
       `,
     ]);
+
+    // Clean up from Cloudflare Stream
+    if (video.streamId) {
+      this.stream.deleteVideo(video.streamId).catch((err) => {
+        this.logger.warn(`Failed to delete Stream video ${video.streamId}`, err);
+      });
+    }
+
     return { deleted: true };
   }
 

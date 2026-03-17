@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsEnum,
   IsArray,
+  IsBoolean,
   MaxLength,
   IsUUID,
   ArrayMaxSize,
@@ -52,4 +53,9 @@ export class CreateVideoDto {
   @IsString({ each: true })
   @ArrayMaxSize(20)
   tags?: string[];
+
+  @ApiProperty({ required: false })
+  @IsOptional()
+  @IsBoolean()
+  normalizeAudio?: boolean;
 }
