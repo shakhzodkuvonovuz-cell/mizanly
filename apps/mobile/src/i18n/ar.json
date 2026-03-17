@@ -2863,5 +2863,61 @@
     "deleteAll": "إزالة الكل",
     "empty": "لا توجد شاشات نهاية",
     "emptySubtitle": "أضف بطاقات تظهر في نهاية الفيديو لزيادة التفاعل"
+  },
+  "ai": {
+    "title": "مساعد الذكاء الاصطناعي",
+    "tabs": {
+      "captions": "التعليقات",
+      "hashtags": "الهاشتاقات",
+      "ideas": "الأفكار"
+    },
+    "captionPlaceholder": "صف منشورك أو الصق مسودتك...",
+    "hashtagPlaceholder": "أدخل محتوى منشورك...",
+    "generate": "توليد",
+    "suggestions": "الاقتراحات",
+    "copyAll": "نسخ الكل",
+    "bestTime": "أفضل وقت للنشر",
+    "emptyTitle": "اقتراحات بالذكاء الاصطناعي",
+    "emptySubtitle": "أدخل المحتوى واضغط توليد",
+    "translate": "ترجمة",
+    "translating": "جاري الترجمة...",
+    "translatedFrom": "مترجم من {{language}}",
+    "showOriginal": "عرض الأصلي",
+    "selectLanguage": "اختر اللغة",
+    "smartReply": "رد ذكي",
+    "refreshReplies": "تحديث الاقتراحات",
+    "summary": "ملخص",
+    "showFull": "عرض الكامل",
+    "spaceRecommendation": "مُقترح: {{space}}",
+    "spaceReason": "{{reason}}",
+    "moderate": {
+      "safe": "المحتوى يبدو جيداً!",
+      "flagged": "المحتوى قد يحتاج مراجعة",
+      "suggestion": "اقتراح: {{text}}"
+    },
+    "avatar": {
+      "title": "صورة رمزية بالذكاء الاصطناعي",
+      "currentPhoto": "صورتك الحالية",
+      "selectStyle": "اختر النمط",
+      "styleDefault": "افتراضي",
+      "styleAnime": "أنمي",
+      "styleWatercolor": "ألوان مائية",
+      "styleIslamic": "فن إسلامي",
+      "generate": "توليد الصورة",
+      "generating": "جاري التوليد...",
+      "setProfile": "تعيين كصورة ملف",
+      "gallery": "صورك الرمزية",
+      "empty": "لا توجد صور رمزية بعد",
+      "emptySubtitle": "أنشئ أول صورة رمزية بالذكاء الاصطناعي"
+    },
+    "captions": {
+      "title": "ترجمات الفيديو بالذكاء الاصطناعي",
+      "generate": "توليد الترجمات",
+      "generating": "جاري نسخ الصوت...",
+      "complete": "الترجمات جاهزة!",
+      "failed": "فشل توليد الترجمات",
+      "language": "لغة الترجمة",
+      "toggle": "عرض الترجمات"
+    }
   }
 }

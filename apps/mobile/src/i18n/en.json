@@ -2971,5 +2971,61 @@
     "deleteAll": "Remove All",
     "empty": "No end screens",
     "emptySubtitle": "Add cards that appear at the end of your video to boost engagement"
+  },
+  "ai": {
+    "title": "AI Assistant",
+    "tabs": {
+      "captions": "Captions",
+      "hashtags": "Hashtags",
+      "ideas": "Ideas"
+    },
+    "captionPlaceholder": "Describe your post or paste your draft...",
+    "hashtagPlaceholder": "Enter your post content...",
+    "generate": "Generate",
+    "suggestions": "Suggestions",
+    "copyAll": "Copy All",
+    "bestTime": "Best Posting Time",
+    "emptyTitle": "AI-powered suggestions",
+    "emptySubtitle": "Enter your content and tap Generate",
+    "translate": "Translate",
+    "translating": "Translating...",
+    "translatedFrom": "Translated from {{language}}",
+    "showOriginal": "Show Original",
+    "selectLanguage": "Select Language",
+    "smartReply": "Smart Reply",
+    "refreshReplies": "Refresh suggestions",
+    "summary": "TLDR",
+    "showFull": "Show Full",
+    "spaceRecommendation": "Recommended: {{space}}",
+    "spaceReason": "{{reason}}",
+    "moderate": {
+      "safe": "Content looks good!",
+      "flagged": "Content may need review",
+      "suggestion": "Suggestion: {{text}}"
+    },
+    "avatar": {
+      "title": "AI Avatar",
+      "currentPhoto": "Your Current Photo",
+      "selectStyle": "Choose Style",
+      "styleDefault": "Default",
+      "styleAnime": "Anime",
+      "styleWatercolor": "Watercolor",
+      "styleIslamic": "Islamic Art",
+      "generate": "Generate Avatar",
+      "generating": "Generating...",
+      "setProfile": "Set as Profile",
+      "gallery": "Your Avatars",
+      "empty": "No avatars yet",
+      "emptySubtitle": "Generate your first AI avatar"
+    },
+    "captions": {
+      "title": "AI Video Captions",
+      "generate": "Generate Captions",
+      "generating": "Transcribing audio...",
+      "complete": "Captions ready!",
+      "failed": "Caption generation failed",
+      "language": "Caption Language",
+      "toggle": "Show Captions"
+    }
   }
 }

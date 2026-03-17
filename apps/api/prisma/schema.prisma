@@ -372,6 +372,7 @@ model User {
   playlistCollabs  PlaylistCollaborator[] @relation("PlaylistCollaborators")
   parentControls   ParentalControl[]      @relation("ParentControls")
   childControl     ParentalControl?       @relation("ChildControls")
+  aiAvatars        AiAvatar[]
 
   @@index([username])
   @@index([clerkId])
@@ -782,6 +783,7 @@ model Video {
   premiere          VideoPremiere?
   clips             VideoClip[]
   endScreens        EndScreen[]
+  aiCaptions        AiCaption[]
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -2486,4 +2488,47 @@ model ParentalControl {
 
   @@unique([parentUserId, childUserId])
   @@map("parental_controls")
+}
+
+// ── AI Models (Tier 9) ──────────────────────────────────
+
+model AiTranslation {
+  id             String   @id @default(uuid())
+  contentType    String // post | thread | comment | video_description
+  contentId      String
+  sourceLanguage String
+  targetLanguage String
+  translatedText String   @db.Text
+  createdAt      DateTime @default(now())
+
+  @@unique([contentId, targetLanguage])
+  @@index([contentId])
+  @@map("ai_translations")
+}
+
+model AiCaption {
+  id         String   @id @default(uuid())
+  videoId    String
+  language   String
+  srtContent String   @db.Text
+  status     String   @default("pending") // pending | processing | complete | failed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  video      Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([videoId, language])
+  @@map("ai_captions")
+}
+
+model AiAvatar {
+  id        String   @id @default(uuid())
+  userId    String
+  sourceUrl String
+  avatarUrl String
+  style     String   @default("default") // default | anime | watercolor | islamic_art
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ai_avatars")
 }

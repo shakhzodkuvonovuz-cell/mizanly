@@ -549,6 +549,27 @@ export default function SettingsScreen() {
             />
           </LinearGradient>
 
+          {/* AI Section */}
+          <SectionHeader title="AI" icon="loader" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('ai.title')}
+              icon={<Icon name="loader" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/ai-assistant')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('ai.avatar.title')}
+              icon={<Icon name="user" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/ai-avatar')}
+            />
+          </LinearGradient>
+
           {/* Creator Section */}
           <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
           <LinearGradient

@@ -935,3 +935,52 @@ export interface EndScreen {
   position: string;
   showAtSeconds: number;
 }
+
+// AI types
+export interface AiCaptionSuggestion {
+  caption: string;
+  tone: 'casual' | 'professional' | 'funny' | 'inspirational';
+}
+
+export interface AiModerationResult {
+  safe: boolean;
+  flags: string[];
+  confidence: number;
+  suggestion: string | null;
+  category: string | null;
+}
+
+export interface AiSmartReply {
+  text: string;
+  tone: 'friendly' | 'formal' | 'emoji' | 'brief';
+}
+
+export interface AiSpaceRouting {
+  recommendedSpace: 'SAF' | 'MAJLIS' | 'BAKRA' | 'MINBAR';
+  confidence: number;
+  reason: string;
+}
+
+export interface AiTranslation {
+  id: string;
+  contentId: string;
+  targetLanguage: string;
+  translatedText: string;
+}
+
+export interface AiCaption {
+  id: string;
+  videoId: string;
+  language: string;
+  srtContent: string;
+  status: 'pending' | 'processing' | 'complete' | 'failed';
+}
+
+export interface AiAvatar {
+  id: string;
+  userId: string;
+  sourceUrl: string;
+  avatarUrl: string;
+  style: string;
+  createdAt: string;
+}
