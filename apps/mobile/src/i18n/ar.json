@@ -2920,6 +2920,36 @@
       "toggle": "عرض الترجمات"
     }
   },
+  "marketplace": {
+    "title": "السوق",
+    "searchPlaceholder": "ابحث عن المنتجات...",
+    "empty": "لا توجد منتجات",
+    "emptySub": "جرّب بحثاً مختلفاً أو فئة أخرى",
+    "muslimOwned": "مملوك لمسلم",
+    "halalCertified": "حلال معتمد",
+    "reviews": "{{count}} تقييم",
+    "buyNow": "اشترِ الآن",
+    "seller": "البائع"
+  },
+  "orders": {
+    "title": "طلباتي",
+    "empty": "لا توجد طلبات بعد",
+    "emptySub": "ستظهر مشترياتك هنا",
+    "pending": "قيد الانتظار",
+    "paid": "مدفوع",
+    "shipped": "تم الشحن",
+    "delivered": "تم التسليم",
+    "cancelled": "ملغي"
+  },
+  "series": {
+    "discoverTitle": "المسلسلات",
+    "episodes": "حلقات",
+    "followers": "متابعين",
+    "follow": "تابع",
+    "following": "متابَع",
+    "empty": "لا توجد مسلسلات",
+    "emptySub": "تحقق لاحقاً لمحتوى جديد"
+  },
   "gamification": {
     "streaks": {
       "title": "السلاسل",
@@ -3027,6 +3057,29 @@
       "fitness": "اللياقة",
       "cooking": "الطبخ",
       "learning": "التعلم"
+    },
+    "marketplace": {
+      "title": "السوق",
+      "empty": "لا توجد منتجات",
+      "emptySubtitle": "تصفح الفئات أو جرّب بحثاً مختلفاً",
+      "muslimOwned": "مملوك لمسلم",
+      "halalCertified": "حلال معتمد",
+      "reviews": "{{count}} تقييم",
+      "paymentOptions": "خيارات الدفع",
+      "buyNow": "اشترِ الآن",
+      "seller": "البائع",
+      "description": "الوصف",
+      "installment": "دفع على {{count}} أقساط"
+    },
+    "orders": {
+      "title": "طلباتي",
+      "empty": "لا توجد طلبات بعد",
+      "emptySubtitle": "ستظهر مشترياتك هنا",
+      "pending": "قيد الانتظار",
+      "paid": "مدفوع",
+      "shipped": "تم الشحن",
+      "delivered": "تم التسليم",
+      "cancelled": "ملغي"
     }
   }
 }

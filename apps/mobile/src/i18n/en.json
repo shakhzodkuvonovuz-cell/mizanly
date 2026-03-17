@@ -3028,6 +3028,36 @@
       "toggle": "Show Captions"
     }
   },
+  "marketplace": {
+    "title": "Marketplace",
+    "searchPlaceholder": "Search products...",
+    "empty": "No products found",
+    "emptySub": "Try a different search or category",
+    "muslimOwned": "Muslim-owned",
+    "halalCertified": "Halal Certified",
+    "reviews": "{{count}} reviews",
+    "buyNow": "Buy Now",
+    "seller": "Seller"
+  },
+  "orders": {
+    "title": "My Orders",
+    "empty": "No orders yet",
+    "emptySub": "Your orders will appear here",
+    "pending": "Pending",
+    "paid": "Paid",
+    "shipped": "Shipped",
+    "delivered": "Delivered",
+    "cancelled": "Cancelled"
+  },
+  "series": {
+    "discoverTitle": "Series",
+    "episodes": "episodes",
+    "followers": "followers",
+    "follow": "Follow",
+    "following": "Following",
+    "empty": "No series found",
+    "emptySub": "Check back later for new content"
+  },
   "gamification": {
     "streaks": {
       "title": "Streaks",
@@ -3135,6 +3165,29 @@
       "fitness": "Fitness",
       "cooking": "Cooking",
       "learning": "Learning"
+    },
+    "marketplace": {
+      "title": "Marketplace",
+      "empty": "No products found",
+      "emptySubtitle": "Browse categories or try a different search",
+      "muslimOwned": "Muslim-owned",
+      "halalCertified": "Halal Certified",
+      "reviews": "{{count}} reviews",
+      "paymentOptions": "Payment Options",
+      "buyNow": "Buy Now",
+      "seller": "Seller",
+      "description": "Description",
+      "installment": "{{count}}x payment"
+    },
+    "orders": {
+      "title": "My Orders",
+      "empty": "No orders yet",
+      "emptySubtitle": "Your purchases will appear here",
+      "pending": "Pending",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
     }
   }
 }
