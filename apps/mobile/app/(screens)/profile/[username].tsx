@@ -33,6 +33,7 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlAbsoluteEnd } from '@/utils/rtl';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 4) / 3;
@@ -149,7 +150,7 @@ export default function ProfileScreen() {
   const { user: clerkUser } = useUser();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const PROFILE_TABS = [
     { key: 'posts', label: t('profile.posts') },
     { key: 'threads', label: t('profile.threads') },
@@ -331,7 +332,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
           </Pressable>
         </View>
         <Skeleton.ProfileHeader />
@@ -344,7 +345,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
           </Pressable>
         </View>
         <EmptyState
@@ -363,7 +364,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('common.back')} accessibilityRole="button">
-            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+            <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
           </Pressable>
         </View>
         <EmptyState icon="user" title={t('profile.userNotFound')} />
@@ -395,11 +396,11 @@ export default function ProfileScreen() {
       </Animated.View>
 
       {/* Avatar row with emerald ring */}
-      <View style={styles.avatarRow}>
+      <View style={[styles.avatarRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={styles.avatarRing}>
           <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
         {isOwnProfile ? (
-          <View style={{ flexDirection: 'row' }}>
+          <View style={{ flexDirection: rtlFlexRow(isRTL) }}>
             <Pressable
               style={styles.editBtn}
               onPress={() => router.push('/(screens)/edit-profile')}
@@ -413,7 +414,7 @@ export default function ProfileScreen() {
               style={{
                 backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
                 paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
-                marginLeft: spacing.sm,
+                ...rtlMargin(isRTL, spacing.sm, 0),
               }}
               accessibilityLabel={t('profile.archive')}
               accessibilityRole="button"
@@ -422,7 +423,7 @@ export default function ProfileScreen() {
             </Pressable>
           </View>
         ) : (
-          <View style={styles.actionBtns}>
+          <View style={[styles.actionBtns, { flexDirection: rtlFlexRow(isRTL) }]}>
             <FollowButton
               isFollowing={isFollowing}
               isPending={followMutation.isPending}
@@ -451,15 +452,15 @@ export default function ProfileScreen() {
 
       {/* Name + handle */}
       <View style={styles.nameSection}>
-        <View style={styles.nameRow}>
-          <Text style={styles.displayName}>{profile.displayName}</Text>
+        <View style={[styles.nameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Text style={[styles.displayName, { textAlign: rtlTextAlign(isRTL) }]}>{profile.displayName}</Text>
           {profile.isVerified && <VerifiedBadge size={18} />}
         </View>
-        <Text style={styles.handle}>@{profile.username}</Text>
+        <Text style={[styles.handle, { textAlign: rtlTextAlign(isRTL) }]}>@{profile.username}</Text>
         {profile.bio ? <RichText text={profile.bio} style={styles.bio} /> : null}
         {profile.website ? (
           <TouchableOpacity
-            style={styles.websiteRow}
+            style={[styles.websiteRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => {
               const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
               Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
@@ -473,7 +474,7 @@ export default function ProfileScreen() {
         ) : null}
         {profile.channel && (
           <TouchableOpacity
-            style={styles.channelRow}
+            style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => router.push(`/(screens)/channel/${profile.channel!.handle}`)}
             accessibilityLabel={t('profile.viewChannelAccessibility')}
             accessibilityRole="link"
@@ -487,7 +488,7 @@ export default function ProfileScreen() {
             {profile.profileLinks.map((link: any) => (
               <Pressable
                 key={link.id}
-                style={styles.profileLinkRow}
+                style={[styles.profileLinkRow, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => {
                   const url = link.url.startsWith('http') ? link.url : `https://${link.url}`;
                   Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));

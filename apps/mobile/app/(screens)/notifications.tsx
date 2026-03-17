@@ -25,6 +25,7 @@ import { notificationsApi, followsApi } from '@/services/api';
 import { useStore } from '@/store';
 import type { Notification } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlMargin, rtlBorderStart, rtlAbsoluteStart } from '@/utils/rtl';
 
 type NotifIconName = React.ComponentProps<typeof Icon>['name'];
 
@@ -137,7 +138,7 @@ function aggregateLikes(items: Notification[]): AggregatedNotification[] {
 function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDone: () => void }) {
   const [done, setDone] = useState<'accepted' | 'declined' | null>(null);
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const acceptMutation = useMutation({
     mutationFn: () => followsApi.acceptRequest(requestId!),
@@ -158,7 +159,7 @@ function FollowRequestActions({ requestId, onDone }: { requestId?: string; onDon
   }
 
   return (
-    <View style={styles.requestActions}>
+    <View style={[styles.requestActions, { flexDirection: rtlFlexRow(isRTL) }]}>
       <GradientButton
         label={t('notifications.accept')}
         size="sm"
@@ -182,7 +183,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const iconInfo = notificationIcon(notification.type);
 
   // Entrance animation
@@ -229,9 +230,9 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
       accessibilityRole="button"
       accessibilityLabel={`View notification from ${notification.actor?.displayName ?? t('notifications.someone')}`}
     >
-      <Animated.View style={[styles.rowInner, entranceStyle]}>
+      <Animated.View style={[styles.rowInner, { flexDirection: rtlFlexRow(isRTL) }, entranceStyle]}>
         {/* Unread accent bar */}
-        {!notification.isRead && <View style={styles.unreadBar} />}
+        {!notification.isRead && <View style={[styles.unreadBar, rtlAbsoluteStart(isRTL, 0)]} />}
 
         {/* Actor avatar(s) with icon overlay */}
         <View style={styles.avatarContainer}>
@@ -250,14 +251,14 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
               size="md"
             />
           )}
-          <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }]}>
+          <View style={[styles.iconOverlay, { backgroundColor: iconInfo.color }, isRTL ? { left: -2, right: undefined } : undefined]}>
             <Icon name={iconInfo.name} size={12} color="#FFF" fill={iconInfo.name === 'heart-filled' ? '#FFF' : undefined} />
           </View>
         </View>
 
         {/* Text */}
         <View style={styles.rowContent}>
-          <Text style={styles.rowText} numberOfLines={2}>
+          <Text style={[styles.rowText, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={2}>
             {isAggregated ? (
               <>
                 <Text style={styles.rowActor}>{aggregatedActors[0]?.displayName}</Text>
@@ -305,7 +306,7 @@ export default function NotificationsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const NOTIF_TABS = [
     { key: 'all', label: t('notifications.all') },
@@ -403,7 +404,7 @@ export default function NotificationsScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
         renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionHeader}>{section.title}</Text>
+          <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{section.title}</Text>
         )}
         onEndReached={() => {
           if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
@@ -414,7 +415,7 @@ export default function NotificationsScreen() {
           query.isLoading ? (
             <View style={styles.skeletonList}>
               {Array.from({ length: 8 }).map((_, i) => (
-                <View key={i} style={styles.skeletonRow}>
+                <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <Skeleton.Circle size={40} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Skeleton.Rect width="80%" height={14} />
@@ -473,7 +474,6 @@ const styles = StyleSheet.create({
   rowPressed: { opacity: 0.7 },
   unreadBar: {
     position: 'absolute',
-    left: 0,
     top: 0,
     bottom: 0,
     width: 4,

@@ -21,29 +21,30 @@ import { PostCard } from '@/components/saf/PostCard';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlArrow } from '@/utils/rtl';
 
 const SEARCH_TAB_KEYS = ['people', 'hashtags', 'posts', 'threads', 'reels', 'videos', 'channels'] as const;
 
 type SearchTab = typeof SEARCH_TAB_KEYS[number];
 
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   return (
     <Pressable
-      style={styles.userRow}
+      style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`View profile of ${user.displayName}`}
     >
       <Avatar uri={user.avatarUrl} name={user.displayName} size="md" showOnline />
       <View style={styles.userInfo}>
-        <View style={styles.userNameRow}>
-          <Text style={styles.userName}>{user.displayName}</Text>
+        <View style={[styles.userNameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Text style={[styles.userName, { textAlign: rtlTextAlign(isRTL) }]}>{user.displayName}</Text>
           {user.isVerified && <VerifiedBadge size={13} />}
         </View>
-        <Text style={styles.userHandle}>@{user.username}</Text>
+        <Text style={[styles.userHandle, { textAlign: rtlTextAlign(isRTL) }]}>@{user.username}</Text>
         {user._count && (
-          <Text style={styles.userFollowers}>{user._count.followers} {t('search.followers')}</Text>
+          <Text style={[styles.userFollowers, { textAlign: rtlTextAlign(isRTL) }]}>{user._count.followers} {t('search.followers')}</Text>
         )}
       </View>
       {user.isFollowing ? (
@@ -54,14 +55,14 @@ function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
 }
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
 
   return (
     <Pressable
-      style={styles.videoRow}
+      style={[styles.videoRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`View video: ${video.title}`}
@@ -72,9 +73,9 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
         resizeMode="cover"
       />
       <View style={styles.videoInfo}>
-        <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-        <Text style={styles.videoChannel}>{video.channel?.name || t('common.unknown')}</Text>
-        <View style={styles.videoStats}>
+        <Text style={[styles.videoTitle, { textAlign: rtlTextAlign(isRTL) }]} numberOfLines={2}>{video.title}</Text>
+        <Text style={[styles.videoChannel, { textAlign: rtlTextAlign(isRTL) }]}>{video.channel?.name || t('common.unknown')}</Text>
+        <View style={[styles.videoStats, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="eye" size={14} color={colors.text.secondary} />
           <Text style={styles.videoStat}>{video.viewsCount.toLocaleString()} {t('search.views')}</Text>
           <Icon name="clock" size={14} color={colors.text.secondary} />
@@ -86,22 +87,22 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 }
 
 function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => void }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   return (
     <Pressable
-      style={styles.channelRow}
+      style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`View channel: ${channel.name}`}
     >
       <Avatar uri={channel.avatarUrl} name={channel.name} size="lg" />
       <View style={styles.channelInfo}>
-        <View style={styles.channelNameRow}>
-          <Text style={styles.channelName}>{channel.name}</Text>
+        <View style={[styles.channelNameRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Text style={[styles.channelName, { textAlign: rtlTextAlign(isRTL) }]}>{channel.name}</Text>
           {channel.isVerified && <VerifiedBadge size={13} />}
         </View>
-        <Text style={styles.channelHandle}>@{channel.handle}</Text>
-        <View style={styles.channelStats}>
+        <Text style={[styles.channelHandle, { textAlign: rtlTextAlign(isRTL) }]}>@{channel.handle}</Text>
+        <View style={[styles.channelStats, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.channelStat}>{channel.subscribersCount.toLocaleString()} {t('search.subscribers')}</Text>
           <Text style={styles.channelStat}>•</Text>
           <Text style={styles.channelStat}>{channel.videosCount.toLocaleString()} {t('search.videosCount')}</Text>
@@ -114,7 +115,7 @@ function ChannelRow({ channel, onPress }: { channel: Channel; onPress: () => voi
 export default function SearchScreen() {
   const router = useRouter();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const SEARCH_TABS = [
     { key: 'people' as const, label: t('search.people') },
@@ -252,14 +253,14 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          <Icon name={rtlArrow(isRTL, 'back')} size="md" color={colors.text.primary} />
         </Pressable>
-        <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
+        <View style={[styles.searchBox, isFocused && styles.searchBoxFocused, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="search" size="xs" color={colors.text.tertiary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { textAlign: rtlTextAlign(isRTL) }]}
             placeholder={t('search.placeholder')}
             placeholderTextColor={colors.text.tertiary}
             value={query}
@@ -290,7 +291,7 @@ export default function SearchScreen() {
       {searchQuery.isLoading ? (
         <View style={styles.skeletonList}>
           {Array.from({ length: 6 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
+            <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Skeleton.Circle size={40} />
               <View style={{ flex: 1, gap: 6 }}>
                 <Skeleton.Rect width={120} height={14} />
@@ -577,7 +578,7 @@ export default function SearchScreen() {
                 }
                 return (
                   <Pressable
-                    style={styles.hashtagRow}
+                    style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {
                       haptic.light();
                       router.push(`/(screens)/hashtag/${item.data.name}`);
@@ -589,8 +590,8 @@ export default function SearchScreen() {
                       <Icon name="hash" size="sm" color={colors.emerald} />
                     </View>
                     <View>
-                      <Text style={styles.hashtagName}>#{item.data.name}</Text>
-                      <Text style={styles.hashtagCount}>{item.data.postsCount} {t('search.posts')}</Text>
+                      <Text style={[styles.hashtagName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.data.name}</Text>
+                      <Text style={[styles.hashtagCount, { textAlign: rtlTextAlign(isRTL) }]}>{item.data.postsCount} {t('search.posts')}</Text>
                     </View>
                   </Pressable>
                 );
@@ -608,7 +609,7 @@ export default function SearchScreen() {
         </>
       ) : showHistory ? (
         <View style={styles.historySection}>
-          <Text style={styles.historyTitle}>{t('search.recentSearches')}</Text>
+          <Text style={[styles.historyTitle, { textAlign: rtlTextAlign(isRTL) }]}>{t('search.recentSearches')}</Text>
           {searchHistory.length > 0 ? (
             <>
               <FlatList
@@ -616,9 +617,9 @@ export default function SearchScreen() {
                 data={searchHistory}
                 keyExtractor={(item, i) => `history-${i}`}
                 renderItem={({ item }) => (
-                  <View style={styles.historyItem}>
+                  <View style={[styles.historyItem, { flexDirection: rtlFlexRow(isRTL) }]}>
                     <Pressable
-                      style={styles.historyText}
+                      style={[styles.historyText, { flexDirection: rtlFlexRow(isRTL) }]}
                       onPress={() => {
                         setQuery(item);
                         setDebouncedQuery(item);
@@ -710,7 +711,7 @@ export default function SearchScreen() {
           </View>
         ) : (
           <View style={styles.discoverSection}>
-            <Text style={styles.discoverTitle}>{t('search.trending')}</Text>
+            <Text style={[styles.discoverTitle, { textAlign: rtlTextAlign(isRTL) }]}>{t('search.trending')}</Text>
             {trending.length > 0 ? (
               <View style={styles.trendingChips}>
                 {trending.map((item, i) => (

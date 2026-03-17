@@ -17,6 +17,7 @@ import { settingsApi, usersApi } from '@/services/api';
 import { useStore } from "@/store";
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlChevron, rtlMargin } from '@/utils/rtl';
 
 // Premium Toggle Switch Component
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
@@ -84,6 +85,7 @@ function Row({
   isLast?: boolean;
 }) {
   const haptic = useHaptic();
+  const { isRTL } = useTranslation();
   const handlePress = onPress ? () => {
     haptic.selection();
     onPress();
@@ -91,7 +93,7 @@ function Row({
 
   return (
     <TouchableOpacity
-      style={[styles.row, isLast && styles.rowLast]}
+      style={[styles.row, { flexDirection: rtlFlexRow(isRTL) }, isLast && styles.rowLast]}
       onPress={handlePress}
       activeOpacity={handlePress ? 0.7 : 1}
       disabled={!handlePress && !onToggle}
@@ -99,16 +101,16 @@ function Row({
       {icon ? (
         <LinearGradient
           colors={destructive ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
-          style={styles.rowIconContainer}
+          style={[styles.rowIconContainer, rtlMargin(isRTL, 0, spacing.sm)]}
         >
           {icon}
         </LinearGradient>
       ) : (
-        <View style={styles.rowIconSpacer} />
+        <View style={[styles.rowIconSpacer, rtlMargin(isRTL, 0, spacing.sm)]} />
       )}
-      <View style={styles.rowText}>
-        <Text style={[styles.rowLabel, destructive && styles.destructive]}>{label}</Text>
-        {hint ? <Text style={styles.rowHint}>{hint}</Text> : null}
+      <View style={[styles.rowText, rtlMargin(isRTL, 0, spacing.md)]}>
+        <Text style={[styles.rowLabel, { textAlign: rtlTextAlign(isRTL) }, destructive && styles.destructive]}>{label}</Text>
+        {hint ? <Text style={[styles.rowHint, { textAlign: rtlTextAlign(isRTL) }]}>{hint}</Text> : null}
       </View>
       {onToggle !== undefined && value !== undefined ? (
         <PremiumToggle value={value} onValueChange={onToggle} />
@@ -116,7 +118,7 @@ function Row({
         <Text style={styles.rowRightText}>{rightText}</Text>
       ) : onPress ? (
         <View style={styles.rowChevron}>
-          <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+          <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
         </View>
       ) : null}
     </TouchableOpacity>
@@ -124,8 +126,9 @@ function Row({
 }
 
 function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentProps<typeof Icon>['name'] }) {
+  const { isRTL } = useTranslation();
   return (
-    <View style={styles.sectionHeaderContainer}>
+    <View style={[styles.sectionHeaderContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
       {icon && (
         <LinearGradient
           colors={[colors.gold, '#A67C00']}
@@ -136,11 +139,11 @@ function SectionHeader({ title, icon }: { title: string; icon?: React.ComponentP
       )}
       <LinearGradient
         colors={[colors.gold, colors.emerald, 'transparent']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
+        start={isRTL ? { x: 1, y: 0 } : { x: 0, y: 0 }}
+        end={isRTL ? { x: 0, y: 0 } : { x: 1, y: 0 }}
         style={styles.sectionHeaderAccent}
       />
-      <Text style={styles.sectionHeader}>{title}</Text>
+      <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{title}</Text>
     </View>
   );
 }
@@ -150,7 +153,7 @@ export default function SettingsScreen() {
   const { signOut } = useClerk();
   const { theme, setTheme } = useStore();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const settingsQuery = useQuery({
     queryKey: ['settings'],
@@ -737,11 +740,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.sm,
   },
   rowIconSpacer: {
     width: 32,
-    marginRight: spacing.sm,
   },
   rowChevron: {
     width: 28,
