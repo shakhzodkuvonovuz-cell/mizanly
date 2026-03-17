@@ -25,4 +25,13 @@ config.resolver.blockList = [
   /apps\/api\/.*/,
 ];
 
+// Web platform support — ensure .web.tsx/.web.ts extensions resolve first on web
+config.resolver.sourceExts = [
+  ...(config.resolver.sourceExts || []),
+  'mjs', // Some web-only ESM packages use .mjs
+];
+
+// Resolve platform-specific extensions (.web.tsx before .tsx)
+config.resolver.resolverMainFields = ['browser', 'main'];
+
 module.exports = config;

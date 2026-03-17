@@ -7,7 +7,7 @@ import {
   Platform,
 } from 'react-native';
 import Animated from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import { WebSafeBlurView } from '@/components/ui/WebSafeBlurView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
@@ -116,11 +116,11 @@ export function GlassHeader({
     </View>
   );
 
-  if (Platform.OS === 'ios') {
+  if (Platform.OS === 'ios' || Platform.OS === 'web') {
     return (
-      <BlurView intensity={60} tint="dark" style={styles.container}>
+      <WebSafeBlurView intensity={60} tint="dark" style={styles.container}>
         {headerContent}
-      </BlurView>
+      </WebSafeBlurView>
     );
   }
 
