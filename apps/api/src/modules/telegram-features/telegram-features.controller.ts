@@ -118,4 +118,68 @@ export class TelegramFeaturesController {
   getAdminLog(@Param('id') conversationId: string, @Query('cursor') cursor?: string) {
     return this.service.getAdminLog(conversationId, cursor);
   }
+
+  // ── Group Topics ────────────────────────────────────────
+
+  @Post('conversations/:id/topics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Create topic in group' })
+  createTopic(@CurrentUser('id') userId: string, @Param('id') conversationId: string,
+    @Body() dto: { name: string; iconColor?: string }) {
+    return this.service.createTopic(conversationId, userId, dto);
+  }
+
+  @Get('conversations/:id/topics')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get group topics' })
+  getTopics(@Param('id') conversationId: string) {
+    return this.service.getTopics(conversationId);
+  }
+
+  @Patch('topics/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Update topic' })
+  updateTopic(@CurrentUser('id') userId: string, @Param('id') id: string,
+    @Body() dto: { name?: string; iconColor?: string; isPinned?: boolean; isClosed?: boolean }) {
+    return this.service.updateTopic(id, userId, dto);
+  }
+
+  @Delete('topics/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Delete topic' })
+  deleteTopic(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.service.deleteTopic(id, userId);
+  }
+
+  // ── Custom Emoji Packs ──────────────────────────────────
+
+  @Post('emoji-packs')
+  @UseGuards(ClerkAuthGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Create emoji pack' })
+  createEmojiPack(@CurrentUser('id') userId: string, @Body() dto: { name: string; description?: string }) {
+    return this.service.createEmojiPack(userId, dto);
+  }
+
+  @Post('emoji-packs/:id/emojis')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Add emoji to pack' })
+  addEmoji(@CurrentUser('id') userId: string, @Param('id') packId: string,
+    @Body() dto: { shortcode: string; imageUrl: string; isAnimated?: boolean }) {
+    return this.service.addEmojiToPack(packId, userId, dto);
+  }
+
+  @Get('emoji-packs')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Browse emoji packs' })
+  getEmojiPacks(@Query('cursor') cursor?: string) {
+    return this.service.getEmojiPacks(cursor);
+  }
+
+  @Get('emoji-packs/me')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get my emoji packs' })
+  getMyEmojiPacks(@CurrentUser('id') userId: string) {
+    return this.service.getMyEmojiPacks(userId);
+  }
 }

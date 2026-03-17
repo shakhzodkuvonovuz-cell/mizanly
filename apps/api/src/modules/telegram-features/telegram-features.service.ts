@@ -165,4 +165,82 @@ export class TelegramFeaturesService {
       data: { groupId, adminId, action, targetId, details },
     });
   }
+
+  // ── Group Topics ────────────────────────────────────────
+
+  async createTopic(conversationId: string, userId: string, dto: { name: string; iconColor?: string }) {
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!member) throw new NotFoundException('Not a member');
+
+    const count = await this.prisma.groupTopic.count({ where: { conversationId } });
+    if (count >= 100) throw new BadRequestException('Maximum 100 topics per group');
+
+    return this.prisma.groupTopic.create({
+      data: { conversationId, name: dto.name, iconColor: dto.iconColor, createdById: userId },
+    });
+  }
+
+  async getTopics(conversationId: string) {
+    return this.prisma.groupTopic.findMany({
+      where: { conversationId },
+      orderBy: [{ isPinned: 'desc' }, { lastMessageAt: 'desc' }],
+    });
+  }
+
+  async updateTopic(topicId: string, userId: string, dto: { name?: string; iconColor?: string; isPinned?: boolean; isClosed?: boolean }) {
+    return this.prisma.groupTopic.update({ where: { id: topicId }, data: dto });
+  }
+
+  async deleteTopic(topicId: string, userId: string) {
+    return this.prisma.groupTopic.delete({ where: { id: topicId } });
+  }
+
+  // ── Custom Emoji Packs ──────────────────────────────────
+
+  async createEmojiPack(userId: string, dto: { name: string; description?: string }) {
+    return this.prisma.customEmojiPack.create({
+      data: { creatorId: userId, name: dto.name, description: dto.description },
+    });
+  }
+
+  async addEmojiToPack(packId: string, userId: string, dto: { shortcode: string; imageUrl: string; isAnimated?: boolean }) {
+    const pack = await this.prisma.customEmojiPack.findFirst({ where: { id: packId, creatorId: userId } });
+    if (!pack) throw new NotFoundException();
+
+    const count = await this.prisma.customEmoji.count({ where: { packId } });
+    if (count >= 120) throw new BadRequestException('Maximum 120 emoji per pack');
+
+    return this.prisma.customEmoji.create({
+      data: { packId, shortcode: dto.shortcode, imageUrl: dto.imageUrl, isAnimated: dto.isAnimated || false },
+    });
+  }
+
+  async getEmojiPacks(cursor?: string, limit = 20) {
+    const where: Record<string, unknown> = { isPublic: true };
+    if (cursor) where.id = { lt: cursor };
+
+    const packs = await this.prisma.customEmojiPack.findMany({
+      where,
+      orderBy: { usageCount: 'desc' },
+      take: limit + 1,
+      include: {
+        creator: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+        emojis: { take: 5 },
+      },
+    });
+
+    const hasMore = packs.length > limit;
+    if (hasMore) packs.pop();
+    return { data: packs, meta: { cursor: packs[packs.length - 1]?.id || null, hasMore } };
+  }
+
+  async getMyEmojiPacks(userId: string) {
+    return this.prisma.customEmojiPack.findMany({
+      where: { creatorId: userId },
+      include: { emojis: true, _count: { select: { emojis: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
 }

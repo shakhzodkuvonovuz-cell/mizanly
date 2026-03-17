@@ -404,6 +404,7 @@ model User {
   waqfFunds        WaqfFund[]            @relation("WaqfCreator")
   savedMessages    SavedMessage[]
   chatFolders      ChatFolder[]
+  emojiPacks       CustomEmojiPack[] @relation("EmojiPackCreator")
 
   @@index([username])
   @@index([clerkId])
@@ -3138,4 +3139,46 @@ model AdminLog {
   createdAt DateTime @default(now())
   @@index([groupId, createdAt(sort: Desc)])
   @@map("admin_logs")
+}
+
+model GroupTopic {
+  id             String   @id @default(uuid())
+  conversationId String
+  name           String   @db.VarChar(100)
+  iconColor      String?  // hex color for topic icon
+  isPinned       Boolean  @default(false)
+  isClosed       Boolean  @default(false)
+  messageCount   Int      @default(0)
+  lastMessageAt  DateTime?
+  createdById    String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  @@index([conversationId, isPinned])
+  @@map("group_topics")
+}
+
+model CustomEmoji {
+  id          String   @id @default(uuid())
+  packId      String
+  shortcode   String   // :emoji_name:
+  imageUrl    String
+  isAnimated  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  pack        CustomEmojiPack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  @@index([packId])
+  @@map("custom_emojis")
+}
+
+model CustomEmojiPack {
+  id          String   @id @default(uuid())
+  creatorId   String
+  name        String   @db.VarChar(100)
+  description String?  @db.VarChar(300)
+  thumbnailUrl String?
+  isPublic    Boolean  @default(true)
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  creator     User     @relation("EmojiPackCreator", fields: [creatorId], references: [id])
+  emojis      CustomEmoji[]
+  @@map("custom_emoji_packs")
 }
