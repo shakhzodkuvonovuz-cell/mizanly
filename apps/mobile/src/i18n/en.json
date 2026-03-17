@@ -1956,7 +1956,8 @@
     "likeComment": "Like comment",
     "cancelReply": "Cancel reply",
     "commentTextInput": "Comment text input",
-    "sendComment": "Send comment"
+    "sendComment": "Send comment",
+    "goBack": "Go back"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",
