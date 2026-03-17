@@ -18,9 +18,10 @@ export default function Root({ children }: PropsWithChildren) {
         />
 
         {/* PWA / Mobile browser */}
-        <meta name="theme-color" content="#0D1117" />
+        <meta name="theme-color" content="#0A7B4F" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <link rel="manifest" href="/manifest.json" />
 
         {/* SEO basics */}
         <meta name="description" content="Mizanly — the social platform for the global Muslim community" />
@@ -35,6 +36,7 @@ export default function Root({ children }: PropsWithChildren) {
         {/* Favicon */}
         <link rel="icon" href="/assets/images/icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/assets/images/icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
 
         {/* Prevent auto-zoom on input focus in iOS Safari */}
         <meta name="format-detection" content="telephone=no" />
@@ -46,6 +48,19 @@ export default function Root({ children }: PropsWithChildren) {
         <ScrollViewStyleReset />
 
         <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
+
+        {/* Service Worker registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body>{children}</body>
     </html>
