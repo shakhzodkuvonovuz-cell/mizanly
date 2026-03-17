@@ -12,13 +12,16 @@ import { useFonts } from 'expo-font';
 import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
 import { DMSans_400Regular, DMSans_500Medium, DMSans_700Bold } from "@expo-google-fonts/dm-sans";
 import { NotoNaskhArabic_400Regular, NotoNaskhArabic_700Bold } from "@expo-google-fonts/noto-naskh-arabic";
+import * as Linking from 'expo-linking';
 import { api } from '@/services/api';
+import { widgetData } from '@/services/widgetData';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
+import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
 
@@ -114,6 +117,15 @@ function AppStateHandler() {
     const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (nextState === 'active') {
         queryClient.invalidateQueries(); // Refetch stale queries
+
+        // Sync widget data on foreground
+        const storeState = useStore.getState();
+        widgetData.updateUnreadCounts({
+          unreadMessages: storeState.unreadMessages,
+          unreadNotifications: storeState.unreadNotifications,
+          userName: storeState.user?.displayName ?? '',
+          avatarUrl: storeState.user?.avatarUrl ?? '',
+        });
       }
     });
     return () => subscription.remove();
@@ -180,6 +192,35 @@ const lockStyles = StyleSheet.create({
   },
 });
 
+/** Routes incoming share intents (text, images, videos from other apps) to the share-receive screen. */
+function ShareIntentHandler() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const handleUrl = (event: { url: string }) => {
+      const parsed = Linking.parse(event.url);
+      const params = parsed.queryParams ?? {};
+      if (params.sharedText || params.sharedImage || params.sharedVideo || params.sharedUrl) {
+        router.push({
+          pathname: '/(screens)/share-receive',
+          params: params as Record<string, string>,
+        });
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleUrl);
+
+    // Check initial URL in case the app was cold-launched via a share intent
+    Linking.getInitialURL().then((url) => {
+      if (url) handleUrl({ url });
+    });
+
+    return () => subscription.remove();
+  }, [router]);
+
+  return null;
+}
+
 export default function RootLayout() {
 
   const [fontsLoaded] = useFonts({
@@ -210,6 +251,7 @@ export default function RootLayout() {
               <OfflineBanner />
               <AuthGuard />
               <AppStateHandler />
+              <ShareIntentHandler />
               <BiometricLockOverlay />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
@@ -217,6 +259,7 @@ export default function RootLayout() {
                 <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
                 <Stack.Screen name="(screens)" />
               </Stack>
+              <MiniPlayer />
             </QueryClientProvider>
           </ClerkLoaded>
         </ClerkProvider>
