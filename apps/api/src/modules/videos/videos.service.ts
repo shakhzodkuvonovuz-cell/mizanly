@@ -10,6 +10,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
+import { SetEndScreensDto } from './dto/end-screen.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -719,5 +720,114 @@ export class VideosService {
     });
     if (!video) throw new NotFoundException('Video not found');
     return { url: `https://mizanly.app/video/${videoId}` };
+  }
+
+  // ── Premiere ──────────────────────────────────────────
+
+  async createPremiere(videoId: string, userId: string, dto: { scheduledAt: string; chatEnabled?: boolean; countdownTheme?: string; trailerUrl?: string }) {
+    const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
+    if (!video) throw new NotFoundException('Video not found');
+    if (new Date(dto.scheduledAt) <= new Date()) throw new BadRequestException('Premiere must be in the future');
+
+    const premiere = await this.prisma.videoPremiere.create({
+      data: {
+        videoId,
+        scheduledAt: new Date(dto.scheduledAt),
+        chatEnabled: dto.chatEnabled ?? true,
+        countdownTheme: dto.countdownTheme || 'emerald',
+        trailerUrl: dto.trailerUrl,
+      },
+    });
+
+    await this.prisma.video.update({
+      where: { id: videoId },
+      data: { isPremiereEnabled: true, scheduledAt: new Date(dto.scheduledAt) },
+    });
+
+    return premiere;
+  }
+
+  async getPremiere(videoId: string) {
+    const premiere = await this.prisma.videoPremiere.findUnique({
+      where: { videoId },
+      include: {
+        video: { select: { title: true, thumbnailUrl: true, userId: true, channel: { select: { name: true, handle: true, avatarUrl: true } } } },
+      },
+    });
+    if (!premiere) throw new NotFoundException('Premiere not found');
+    return premiere;
+  }
+
+  async setPremiereReminder(videoId: string, userId: string) {
+    const premiere = await this.prisma.videoPremiere.findUnique({ where: { videoId } });
+    if (!premiere) throw new NotFoundException('Premiere not found');
+
+    await this.prisma.premiereReminder.create({
+      data: { premiereId: premiere.id, userId },
+    });
+    await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = "reminderCount" + 1 WHERE id = ${premiere.id}`;
+    return { success: true };
+  }
+
+  async removePremiereReminder(videoId: string, userId: string) {
+    const premiere = await this.prisma.videoPremiere.findUnique({ where: { videoId } });
+    if (!premiere) throw new NotFoundException('Premiere not found');
+
+    await this.prisma.premiereReminder.delete({
+      where: { premiereId_userId: { premiereId: premiere.id, userId } },
+    });
+    await this.prisma.$executeRaw`UPDATE video_premieres SET "reminderCount" = GREATEST("reminderCount" - 1, 0) WHERE id = ${premiere.id}`;
+    return { success: true };
+  }
+
+  async startPremiere(videoId: string, userId: string) {
+    const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
+    if (!video) throw new NotFoundException();
+
+    await this.prisma.videoPremiere.update({
+      where: { videoId },
+      data: { isLive: true },
+    });
+
+    return { success: true };
+  }
+
+  async getPremiereViewerCount(videoId: string) {
+    const premiere = await this.prisma.videoPremiere.findUnique({ where: { videoId } });
+    return { viewerCount: premiere?.viewerCount || 0 };
+  }
+
+  // ── End Screens ───────────────────────────────────────
+
+  async setEndScreens(videoId: string, userId: string, items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }>) {
+    const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
+    if (!video) throw new NotFoundException();
+    if (items.length > 4) throw new BadRequestException('Maximum 4 end screen items');
+
+    await this.prisma.endScreen.deleteMany({ where: { videoId } });
+
+    const endScreens = await Promise.all(
+      items.map(item =>
+        this.prisma.endScreen.create({
+          data: { videoId, ...item },
+        })
+      )
+    );
+
+    return endScreens;
+  }
+
+  async getEndScreens(videoId: string) {
+    return this.prisma.endScreen.findMany({
+      where: { videoId },
+      orderBy: { showAtSeconds: 'desc' },
+    });
+  }
+
+  async deleteEndScreens(videoId: string, userId: string) {
+    const video = await this.prisma.video.findFirst({ where: { id: videoId, userId } });
+    if (!video) throw new NotFoundException();
+    await this.prisma.endScreen.deleteMany({ where: { videoId } });
+    return { success: true };
   }
 }

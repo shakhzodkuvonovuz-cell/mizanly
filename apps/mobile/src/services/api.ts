@@ -440,6 +440,26 @@ export const videosApi = {
     api.patch(`/videos/${videoId}/progress`, { progress, completed: false }).then(r => r.data),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/videos/${id}/share-link`).then(r => r.data),
+  // Premiere
+  createPremiere: (id: string, dto: { scheduledAt: string; chatEnabled?: boolean; countdownTheme?: string }) =>
+    api.post(`/videos/${id}/premiere`, dto),
+  getPremiere: (id: string) =>
+    api.get(`/videos/${id}/premiere`),
+  setPremiereReminder: (id: string) =>
+    api.post(`/videos/${id}/premiere/reminder`),
+  removePremiereReminder: (id: string) =>
+    api.delete(`/videos/${id}/premiere/reminder`),
+  startPremiere: (id: string) =>
+    api.post(`/videos/${id}/premiere/start`),
+  getPremiereViewers: (id: string) =>
+    api.get(`/videos/${id}/premiere/viewers`),
+  // End Screens
+  setEndScreens: (id: string, items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }>) =>
+    api.put(`/videos/${id}/end-screens`, { items }),
+  getEndScreens: (id: string) =>
+    api.get(`/videos/${id}/end-screens`),
+  deleteEndScreens: (id: string) =>
+    api.delete(`/videos/${id}/end-screens`),
 };
 // ── Playlists (Minbar) ──
 export const playlistsApi = {
@@ -1109,4 +1129,18 @@ export const parentalApi = {
     api.get(`/parental-controls/${childId}/restrictions`),
   getDigest: (childId: string) =>
     api.get(`/parental-controls/${childId}/digest`),
+};
+
+// ── Clips ──
+export const clipsApi = {
+  create: (videoId: string, dto: { startTime: number; endTime: number; title?: string }) =>
+    api.post(`/clips/video/${videoId}`, dto),
+  getByVideo: (videoId: string, cursor?: string) =>
+    api.get(`/clips/video/${videoId}${qs({ cursor })}`),
+  getMine: (cursor?: string) =>
+    api.get(`/clips/me${qs({ cursor })}`),
+  delete: (id: string) =>
+    api.delete(`/clips/${id}`),
+  getShareLink: (id: string) =>
+    api.get<{ url: string }>(`/clips/${id}/share`),
 };

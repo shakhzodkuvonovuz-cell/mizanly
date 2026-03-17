@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Put,
   Patch,
   Delete,
   Body,
@@ -240,5 +241,80 @@ export class VideosController {
   @ApiOperation({ summary: 'Get shareable link for a video' })
   getShareLink(@Param('id') id: string) {
     return this.videosService.getShareLink(id);
+  }
+
+  // ── Premiere ──────────────────────────────────────────
+
+  @Post(':id/premiere')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Create video premiere' })
+  createPremiere(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: { scheduledAt: string; chatEnabled?: boolean; countdownTheme?: string; trailerUrl?: string },
+  ) {
+    return this.videosService.createPremiere(id, userId, dto);
+  }
+
+  @Get(':id/premiere')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get premiere info' })
+  getPremiere(@Param('id') id: string) {
+    return this.videosService.getPremiere(id);
+  }
+
+  @Post(':id/premiere/reminder')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Set premiere reminder' })
+  setPremiereReminder(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.videosService.setPremiereReminder(id, userId);
+  }
+
+  @Delete(':id/premiere/reminder')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Remove premiere reminder' })
+  removePremiereReminder(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.videosService.removePremiereReminder(id, userId);
+  }
+
+  @Post(':id/premiere/start')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Start premiere' })
+  startPremiere(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.videosService.startPremiere(id, userId);
+  }
+
+  @Get(':id/premiere/viewers')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get premiere viewer count' })
+  getPremiereViewerCount(@Param('id') id: string) {
+    return this.videosService.getPremiereViewerCount(id);
+  }
+
+  // ── End Screens ───────────────────────────────────────
+
+  @Put(':id/end-screens')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Set end screens' })
+  setEndScreens(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: { items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }> },
+  ) {
+    return this.videosService.setEndScreens(id, userId, dto.items);
+  }
+
+  @Get(':id/end-screens')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get end screens' })
+  getEndScreens(@Param('id') id: string) {
+    return this.videosService.getEndScreens(id);
+  }
+
+  @Delete(':id/end-screens')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Delete end screens' })
+  deleteEndScreens(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.videosService.deleteEndScreens(id, userId);
   }
 }

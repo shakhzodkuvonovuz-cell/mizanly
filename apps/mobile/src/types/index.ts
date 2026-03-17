@@ -893,3 +893,45 @@ export interface ParentalRestrictions {
   canPost: boolean;
   canComment: boolean;
 }
+
+export interface VideoPremiere {
+  id: string;
+  videoId: string;
+  scheduledAt: string;
+  isLive: boolean;
+  chatEnabled: boolean;
+  reminderCount: number;
+  viewerCount: number;
+  countdownTheme: string;
+  trailerUrl: string | null;
+  video?: { title: string; thumbnailUrl: string | null; channel?: { name: string; handle: string } };
+}
+
+export interface VideoClip {
+  id: string;
+  userId: string;
+  sourceVideoId: string;
+  title: string | null;
+  startTime: number;
+  endTime: number;
+  duration: number;
+  clipUrl: string | null;
+  thumbnailUrl: string | null;
+  viewsCount: number;
+  likesCount: number;
+  sharesCount: number;
+  createdAt: string;
+  user?: { id: string; username: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
+  sourceVideo?: { id: string; title: string; thumbnailUrl: string | null; duration: number };
+}
+
+export interface EndScreen {
+  id: string;
+  videoId: string;
+  type: 'subscribe' | 'watch_next' | 'playlist' | 'link';
+  targetId: string | null;
+  label: string;
+  url: string | null;
+  position: string;
+  showAtSeconds: number;
+}
