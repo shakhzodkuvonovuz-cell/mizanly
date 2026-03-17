@@ -69,6 +69,7 @@ import { DownloadsModule } from './modules/downloads/downloads.module';
 import { ClipsModule } from './modules/clips/clips.module';
 import { AiModule } from './modules/ai/ai.module';
 import { GamificationModule } from './modules/gamification/gamification.module';
+import { CommerceModule } from './modules/commerce/commerce.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -150,6 +151,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     ClipsModule,
     AiModule,
     GamificationModule,
+    CommerceModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

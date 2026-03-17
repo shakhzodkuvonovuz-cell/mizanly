@@ -1204,3 +1204,31 @@ export const gamificationApi = {
   getProfileCustomization: () => api.get('/profile-customization'),
   updateProfileCustomization: (dto: Record<string, unknown>) => api.patch('/profile-customization', dto),
 };
+
+// ── Commerce ──
+export const commerceApi = {
+  // Products
+  createProduct: (dto: Record<string, unknown>) => api.post('/products', dto),
+  getProducts: (params?: { cursor?: string; category?: string; search?: string }) => api.get(`/products${qs(params || {})}`),
+  getProduct: (id: string) => api.get(`/products/${id}`),
+  reviewProduct: (id: string, rating: number, comment?: string) => api.post(`/products/${id}/review`, { rating, comment }),
+  // Orders
+  createOrder: (dto: { productId: string; quantity?: number; installments?: number; shippingAddress?: string }) => api.post('/orders', dto),
+  getMyOrders: (cursor?: string) => api.get(`/orders/me${qs({ cursor })}`),
+  updateOrderStatus: (id: string, status: string) => api.patch(`/orders/${id}/status`, { status }),
+  // Businesses
+  createBusiness: (dto: Record<string, unknown>) => api.post('/businesses', dto),
+  getBusinesses: (params?: { cursor?: string; category?: string; lat?: number; lng?: number }) => api.get(`/businesses${qs(params || {})}`),
+  reviewBusiness: (id: string, rating: number, comment?: string) => api.post(`/businesses/${id}/review`, { rating, comment }),
+  // Zakat
+  createZakatFund: (dto: { title: string; description: string; goalAmount: number; category: string }) => api.post('/zakat/funds', dto),
+  getZakatFunds: (params?: { cursor?: string; category?: string }) => api.get(`/zakat/funds${qs(params || {})}`),
+  donateZakat: (fundId: string, amount: number, isAnonymous?: boolean) => api.post(`/zakat/funds/${fundId}/donate`, { amount, isAnonymous }),
+  // Treasury
+  createTreasury: (dto: { circleId: string; title: string; goalAmount: number }) => api.post('/treasury', dto),
+  contributeTreasury: (id: string, amount: number) => api.post(`/treasury/${id}/contribute`, { amount }),
+  // Premium
+  getPremiumStatus: () => api.get('/premium/status'),
+  subscribePremium: (plan: string) => api.post('/premium/subscribe', { plan }),
+  cancelPremium: () => api.delete('/premium/cancel'),
+};

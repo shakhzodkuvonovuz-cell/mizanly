@@ -380,6 +380,16 @@ model User {
   challengeParticipations ChallengeParticipant[]
   series           Series[]
   profileCustomization ProfileCustomization?
+  products         Product[]          @relation("ProductSeller")
+  productReviews   ProductReview[]
+  orders           Order[]            @relation("OrderBuyer")
+  halalBusinesses  HalalBusiness[]    @relation("BusinessOwner")
+  businessReviews  BusinessReview[]
+  zakatFunds       ZakatFund[]        @relation("ZakatRecipient")
+  zakatDonations   ZakatDonation[]    @relation("ZakatDonor")
+  treasuriesCreated CommunityTreasury[] @relation("TreasuryCreator")
+  treasuryContributions TreasuryContribution[] @relation("TreasuryContributor")
+  premiumSubscription PremiumSubscription?
 
   @@index([username])
   @@index([clerkId])
@@ -2697,4 +2707,197 @@ model ProfileCustomization {
   updatedAt       DateTime @updatedAt
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@map("profile_customizations")
+}
+
+// ── Commerce Models (Tier 11) ───────────────────────────
+
+model Product {
+  id           String   @id @default(uuid())
+  sellerId     String
+  title        String   @db.VarChar(200)
+  description  String   @db.VarChar(2000)
+  price        Float
+  currency     String   @default("USD")
+  images       String[] // array of image URLs
+  category     String   // food | clothing | books | art | electronics | services | other
+  isHalal      Boolean  @default(true)
+  halalCertUrl String?
+  isMuslimOwned Boolean @default(false)
+  stock        Int      @default(0)
+  status       String   @default("active") // active | sold_out | draft | removed
+  rating       Float    @default(0)
+  reviewCount  Int      @default(0)
+  salesCount   Int      @default(0)
+  tags         String[]
+  location     String?
+  shippingInfo String?  @db.VarChar(500)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  seller       User     @relation("ProductSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  reviews      ProductReview[]
+  orders       Order[]
+  productTags  PostProductTag[]
+  @@index([sellerId])
+  @@index([category, status])
+  @@map("products")
+}
+
+model ProductReview {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  rating    Int      // 1-5
+  comment   String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([productId, userId])
+  @@map("product_reviews")
+}
+
+model Order {
+  id              String   @id @default(uuid())
+  buyerId         String
+  productId       String
+  quantity        Int      @default(1)
+  totalAmount     Float
+  currency        String   @default("USD")
+  status          String   @default("pending") // pending | paid | shipped | delivered | cancelled | refunded
+  stripePaymentId String?
+  installments    Int      @default(1) // 1 = full payment, 2-4 = split
+  shippingAddress String?  @db.VarChar(500)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
+  @@index([buyerId])
+  @@index([status])
+  @@map("orders")
+}
+
+model PostProductTag {
+  postId    String
+  productId String
+  position  String?  // x,y coordinates on image
+  createdAt DateTime @default(now())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  @@id([postId, productId])
+  @@map("post_product_tags")
+}
+
+model HalalBusiness {
+  id           String   @id @default(uuid())
+  ownerId      String
+  name         String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  category     String   // restaurant | grocery | services | education | mosque | other
+  address      String?  @db.VarChar(500)
+  lat          Float?
+  lng          Float?
+  phone        String?
+  website      String?
+  avatarUrl    String?
+  coverUrl     String?
+  isVerified   Boolean  @default(false)
+  isMuslimOwned Boolean @default(true)
+  rating       Float    @default(0)
+  reviewCount  Int      @default(0)
+  halalCertUrl String?
+  openingHours String?  @db.VarChar(500) // JSON
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owner        User     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  reviews      BusinessReview[]
+  @@index([category])
+  @@index([lat, lng])
+  @@map("halal_businesses")
+}
+
+model BusinessReview {
+  id         String   @id @default(uuid())
+  businessId String
+  userId     String
+  rating     Int      // 1-5
+  comment    String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+  business   HalalBusiness @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([businessId, userId])
+  @@map("business_reviews")
+}
+
+model ZakatFund {
+  id           String   @id @default(uuid())
+  recipientId  String
+  title        String   @db.VarChar(200)
+  description  String   @db.VarChar(2000)
+  goalAmount   Float
+  raisedAmount Float    @default(0)
+  currency     String   @default("USD")
+  category     String   // individual | mosque | school | disaster | orphan | other
+  isVerified   Boolean  @default(false)
+  verifiedById String?
+  status       String   @default("active") // active | completed | closed
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  recipient    User     @relation("ZakatRecipient", fields: [recipientId], references: [id])
+  donations    ZakatDonation[]
+  @@map("zakat_funds")
+}
+
+model ZakatDonation {
+  id              String   @id @default(uuid())
+  fundId          String
+  donorId         String
+  amount          Float
+  currency        String   @default("USD")
+  isAnonymous     Boolean  @default(false)
+  stripePaymentId String?
+  createdAt       DateTime @default(now())
+  fund            ZakatFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  donor           User      @relation("ZakatDonor", fields: [donorId], references: [id])
+  @@map("zakat_donations")
+}
+
+model CommunityTreasury {
+  id           String   @id @default(uuid())
+  circleId     String
+  title        String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  goalAmount   Float
+  raisedAmount Float    @default(0)
+  currency     String   @default("USD")
+  status       String   @default("active") // active | completed | closed
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  creator      User     @relation("TreasuryCreator", fields: [createdById], references: [id])
+  contributions TreasuryContribution[]
+  @@map("community_treasuries")
+}
+
+model TreasuryContribution {
+  id         String   @id @default(uuid())
+  treasuryId String
+  userId     String
+  amount     Float
+  createdAt  DateTime @default(now())
+  treasury   CommunityTreasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
+  user       User               @relation("TreasuryContributor", fields: [userId], references: [id])
+  @@map("treasury_contributions")
+}
+
+model PremiumSubscription {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  plan            String   @default("monthly") // monthly | yearly
+  status          String   @default("active") // active | cancelled | expired
+  stripeSubId     String?
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  autoRenew       Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("premium_subscriptions")
 }
