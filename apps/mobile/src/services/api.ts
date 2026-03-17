@@ -46,6 +46,11 @@ type CreateStoryPayload = {
   textOverlay?: string;
   textColor?: string;
   bgColor?: string;
+  fontFamily?: string;
+  filter?: string;
+  bgGradient?: string;
+  stickerData?: object;
+  stickers?: string;
   closeFriendsOnly?: boolean;
 };
 
@@ -800,6 +805,8 @@ export const callsApi = {
     api.get<PaginatedResponse<CallSession>>(`/calls/history${cursor ? `?cursor=${cursor}` : ''}`),
   getActiveCall: () =>
     api.get<CallSession | null>('/calls/active'),
+  getIceServers: () =>
+    api.get<{ iceServers: { urls: string; username?: string; credential?: string }[] }>('/calls/ice-servers').then(r => r.data),
 };
 
 // ── Stickers ──

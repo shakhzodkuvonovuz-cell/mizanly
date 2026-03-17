@@ -133,6 +133,27 @@ export class CallsService {
     return participant?.session ?? null;
   }
 
+  getIceServers() {
+    const iceServers: { urls: string; username?: string; credential?: string }[] = [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+    ];
+
+    const turnUrl = process.env.TURN_SERVER_URL;
+    const turnUsername = process.env.TURN_USERNAME;
+    const turnCredential = process.env.TURN_CREDENTIAL;
+
+    if (turnUrl && turnUsername && turnCredential) {
+      iceServers.push({
+        urls: turnUrl,
+        username: turnUsername,
+        credential: turnCredential,
+      });
+    }
+
+    return { iceServers };
+  }
+
   private async getSession(sessionId: string) {
     const session = await this.prisma.callSession.findUnique({
       where: { id: sessionId },

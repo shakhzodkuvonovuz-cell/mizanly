@@ -39,6 +39,12 @@ export class CallsController {
     return this.calls.end(id, userId);
   }
 
+  @Get('ice-servers')
+  @ApiOperation({ summary: 'Get ICE server configuration for WebRTC' })
+  async iceServers() {
+    return this.calls.getIceServers();
+  }
+
   @Get('active')
   @ApiOperation({ summary: 'Get active call' })
   async active(@CurrentUser('id') userId: string) {

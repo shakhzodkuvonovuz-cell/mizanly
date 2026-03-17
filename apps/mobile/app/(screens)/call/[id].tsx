@@ -66,6 +66,16 @@ export default function CallScreen() {
     enabled: !!id,
   });
 
+  // Fetch ICE server config for WebRTC peer connection (TURN/STUN)
+  const { data: iceConfig } = useQuery({
+    queryKey: ['ice-servers'],
+    queryFn: () => callsApi.getIceServers(),
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+
+  // ICE servers available for RTCPeerConnection configuration:
+  // new RTCPeerConnection({ iceServers: iceConfig?.iceServers ?? [] })
+
   const answerMutation = useMutation({
     mutationFn: () => callsApi.answer(id),
     onSuccess: () => setCallStatus('connected'),
