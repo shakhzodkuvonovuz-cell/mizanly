@@ -117,8 +117,8 @@
 | Batch | Features | Status |
 |-------|----------|--------|
 | 49 | Wire integrations + 20 missing screens | **DONE** |
-| 50 | Telegram quick wins (10 features) | PENDING |
-| 51 | Telegram medium features (10 features) | PENDING |
+| 50 | Telegram quick wins (saved msgs, chat folders, slow mode, admin log) | **DONE** |
+| 51 | Telegram medium features (topics, custom emoji) | **DONE** |
 | 52 | Discord parity (8 features) | PENDING |
 | 53 | Algorithm & intelligence (6 features) | PENDING |
 | 54 | Security & infrastructure (4 features) | PENDING |
