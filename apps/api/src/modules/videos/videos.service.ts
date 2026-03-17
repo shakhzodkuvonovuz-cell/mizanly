@@ -15,6 +15,7 @@ import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
+import { GamificationService } from '../gamification/gamification.service';
 
 const VIDEO_SELECT = {
   id: true,
@@ -72,6 +73,7 @@ export class VideosService {
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
     private stream: StreamService,
+    private gamification: GamificationService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -147,6 +149,10 @@ export class VideosService {
           data: { status: 'PUBLISHED' },
         }).catch(() => {});
       });
+
+    // Gamification: award XP + update streak
+    this.gamification.awardXP(userId, 'video_created').catch(() => {});
+    this.gamification.updateStreak(userId, 'posting').catch(() => {});
 
     return {
       ...video[0],

@@ -3,9 +3,10 @@ import { ReelsController } from './reels.controller';
 import { ReelsService } from './reels.service';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { StreamModule } from '../stream/stream.module';
+import { GamificationModule } from '../gamification/gamification.module';
 
 @Module({
-  imports: [NotificationsModule, StreamModule],
+  imports: [NotificationsModule, StreamModule, GamificationModule],
   controllers: [ReelsController],
   providers: [ReelsService],
   exports: [ReelsService],

@@ -16,6 +16,8 @@ import { PushTriggerService } from '../notifications/push-trigger.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
+import { AiService } from '../ai/ai.service';
 
 const POST_SELECT = {
   id: true,
@@ -61,6 +63,8 @@ export class PostsService {
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
     @Inject('REDIS') private redis: Redis,
+    private gamification: GamificationService,
+    private ai: AiService,
   ) {}
 
   async getFeed(
@@ -330,6 +334,26 @@ export class PostsService {
         }
       }
     }
+    // Gamification: award XP + update streak (fire-and-forget)
+    this.gamification.awardXP(userId, 'post_created').catch(() => {});
+    this.gamification.updateStreak(userId, 'posting').catch(() => {});
+
+    // AI moderation: check content asynchronously (flag for review, don't block)
+    if (dto.content) {
+      this.ai.moderateContent(dto.content, 'post').then(result => {
+        if (!result.safe) {
+          this.logger.warn(`Post ${post.id} flagged by AI moderation: ${result.flags.join(', ')}`);
+          // Auto-flag for human review if confidence is high
+          if (result.confidence > 0.8) {
+            this.prisma.post.update({
+              where: { id: post.id },
+              data: { isSensitive: true },
+            }).catch(() => {});
+          }
+        }
+      }).catch(() => {});
+    }
+
     // Invalidate for-you feed cache for the author
     await this.redis.del(`feed:foryou:${userId}:first`);
     return post;
@@ -621,6 +645,10 @@ export class PostsService {
     } catch (err) {
       this.logger.error('Failed to create notification', err);
     }
+
+    // Gamification: award XP for commenting
+    this.gamification.awardXP(userId, 'comment_posted').catch(() => {});
+
     return comment;
   }
 

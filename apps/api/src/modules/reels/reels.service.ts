@@ -15,6 +15,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
+import { GamificationService } from '../gamification/gamification.service';
 
 const REEL_SELECT = {
   id: true,
@@ -62,6 +63,7 @@ export class ReelsService {
     @Inject('REDIS') private redis: Redis,
     private notifications: NotificationsService,
     private stream: StreamService,
+    private gamification: GamificationService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
@@ -152,6 +154,10 @@ export class ReelsService {
           data: { status: 'READY' },
         }).catch(() => {});
       });
+
+    // Gamification: award XP + update streak
+    this.gamification.awardXP(userId, 'reel_created').catch(() => {});
+    this.gamification.updateStreak(userId, 'posting').catch(() => {});
 
     return {
       ...reel,

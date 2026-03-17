@@ -12,6 +12,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
+import { AiService } from '../ai/ai.service';
 
 const THREAD_SELECT = {
   id: true,
@@ -92,6 +94,8 @@ export class ThreadsService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private gamification: GamificationService,
+    private ai: AiService,
   ) {}
 
   async getFeed(
@@ -283,6 +287,20 @@ export class ThreadsService {
         }
       }
     }
+
+    // Gamification: award XP + update streak
+    this.gamification.awardXP(userId, 'thread_created').catch(() => {});
+    this.gamification.updateStreak(userId, 'posting').catch(() => {});
+
+    // AI moderation: async content check
+    if (dto.content) {
+      this.ai.moderateContent(dto.content, 'thread').then(result => {
+        if (!result.safe && result.confidence > 0.8) {
+          this.logger.warn(`Thread ${thread.id} flagged by AI moderation: ${result.flags.join(', ')}`);
+        }
+      }).catch(() => {});
+    }
+
     return thread;
   }
 
