@@ -17,6 +17,7 @@ import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { useUser } from '@clerk/clerk-expo';
 import type { Post, Thread, Reel, Video } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 2) / 3;
@@ -269,197 +270,200 @@ export default function SavedScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Saved"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
-      />
-      <View style={styles.headerSpacer} />
-
-      <TabSelector
-        tabs={[
-          { key: 'posts', label: 'Posts' },
-          { key: 'threads', label: 'Threads' },
-          { key: 'reels', label: 'Reels' },
-          { key: 'videos', label: 'Videos' },
-        ]}
-        activeKey={activeTab}
-        onTabChange={(key) => setActiveTab(key as typeof activeTab)}
-        variant="underline"
-        accessibilityLabel="Saved categories tabs"
-        accessibilityRole="tablist"
-      />
-
-      {activeTab === 'posts' ? (
-        <FlatList
-          removeClippedSubviews={true}
-          data={posts}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={styles.gridRow}
-          onEndReached={() => {
-            if (savedPostsQuery.hasNextPage && !savedPostsQuery.isFetchingNextPage) {
-              savedPostsQuery.fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} tintColor={colors.emerald} />
-          }
-          renderItem={({ item }) => (
-            <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
-          )}
-          ListEmptyComponent={() =>
-            !savedPostsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="Your saved posts will appear here" subtitle="Tap the bookmark icon on any post you love to keep it close" />
-            ) : (
-              <View style={styles.gridLoadingContainer}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <View key={i} style={styles.gridShimmerItem}>
-                    <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
-                  </View>
-                ))}
-              </View>
-            )
-          }
-          ListFooterComponent={() =>
-            savedPostsQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
-          contentContainerStyle={styles.gridContainer}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Saved"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
         />
-      ) : activeTab === 'threads' ? (
-        <FlatList
-          removeClippedSubviews={true}
-          data={threads}
-          keyExtractor={(item) => item.id}
-          onEndReached={() => {
-            if (savedThreadsQuery.hasNextPage && !savedThreadsQuery.isFetchingNextPage) {
-              savedThreadsQuery.fetchNextPage();
+        <View style={styles.headerSpacer} />
+
+        <TabSelector
+          tabs={[
+            { key: 'posts', label: 'Posts' },
+            { key: 'threads', label: 'Threads' },
+            { key: 'reels', label: 'Reels' },
+            { key: 'videos', label: 'Videos' },
+          ]}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as typeof activeTab)}
+          variant="underline"
+          accessibilityLabel="Saved categories tabs"
+          accessibilityRole="tablist"
+        />
+
+        {activeTab === 'posts' ? (
+          <FlatList
+            removeClippedSubviews={true}
+            data={posts}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            columnWrapperStyle={styles.gridRow}
+            onEndReached={() => {
+              if (savedPostsQuery.hasNextPage && !savedPostsQuery.isFetchingNextPage) {
+                savedPostsQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={refreshingPosts} onRefresh={onRefreshPosts} tintColor={colors.emerald} />
             }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} tintColor={colors.emerald} />
-          }
-          renderItem={({ item }) => (
-            <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
-          )}
-          ListEmptyComponent={() =>
-            !savedThreadsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="Your saved threads will appear here" subtitle="Bookmark threads that inspire you to revisit anytime" />
-            ) : (
-              <View style={styles.listLoadingContainer}>
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <View key={i} style={styles.threadShimmerCard}>
-                    <View style={styles.threadShimmerHeader}>
-                      <Skeleton.Circle size={40} />
-                      <View style={styles.threadShimmerMeta}>
-                        <Skeleton.Rect width={120} height={14} borderRadius={radius.sm} />
-                        <Skeleton.Rect width={80} height={12} borderRadius={radius.sm} />
+            renderItem={({ item }) => (
+              <PostGrid post={item} onPress={() => router.push(`/(screens)/post/${item.id}`)} />
+            )}
+            ListEmptyComponent={() =>
+              !savedPostsQuery.isLoading ? (
+                <EmptyState icon="bookmark" title="Your saved posts will appear here" subtitle="Tap the bookmark icon on any post you love to keep it close" />
+              ) : (
+                <View style={styles.gridLoadingContainer}>
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <View key={i} style={styles.gridShimmerItem}>
+                      <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
+                    </View>
+                  ))}
+                </View>
+              )
+            }
+            ListFooterComponent={() =>
+              savedPostsQuery.isFetchingNextPage ? (
+                <Skeleton.Rect width="100%" height={60} />
+              ) : null
+            }
+            contentContainerStyle={styles.gridContainer}
+          />
+        ) : activeTab === 'threads' ? (
+          <FlatList
+            removeClippedSubviews={true}
+            data={threads}
+            keyExtractor={(item) => item.id}
+            onEndReached={() => {
+              if (savedThreadsQuery.hasNextPage && !savedThreadsQuery.isFetchingNextPage) {
+                savedThreadsQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={refreshingThreads} onRefresh={onRefreshThreads} tintColor={colors.emerald} />
+            }
+            renderItem={({ item }) => (
+              <ThreadCard thread={item} viewerId={user?.id} isOwn={user?.username === item.user.username} />
+            )}
+            ListEmptyComponent={() =>
+              !savedThreadsQuery.isLoading ? (
+                <EmptyState icon="bookmark" title="Your saved threads will appear here" subtitle="Bookmark threads that inspire you to revisit anytime" />
+              ) : (
+                <View style={styles.listLoadingContainer}>
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <View key={i} style={styles.threadShimmerCard}>
+                      <View style={styles.threadShimmerHeader}>
+                        <Skeleton.Circle size={40} />
+                        <View style={styles.threadShimmerMeta}>
+                          <Skeleton.Rect width={120} height={14} borderRadius={radius.sm} />
+                          <Skeleton.Rect width={80} height={12} borderRadius={radius.sm} />
+                        </View>
+                      </View>
+                      <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} />
+                      <View style={styles.threadShimmerActions}>
+                        <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
+                        <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
                       </View>
                     </View>
-                    <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} />
-                    <View style={styles.threadShimmerActions}>
-                      <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
-                      <Skeleton.Rect width={80} height={20} borderRadius={radius.sm} />
-                    </View>
-                  </View>
-                ))}
-              </View>
-            )
-          }
-          ListFooterComponent={() =>
-            savedThreadsQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
-      ) : activeTab === 'reels' ? (
-        <FlatList
-          removeClippedSubviews={true}
-          data={reels}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          columnWrapperStyle={styles.gridRow}
-          onEndReached={() => {
-            if (savedReelsQuery.hasNextPage && !savedReelsQuery.isFetchingNextPage) {
-              savedReelsQuery.fetchNextPage();
+                  ))}
+                </View>
+              )
             }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} tintColor={colors.emerald} />
-          }
-          renderItem={({ item }) => (
-            <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
-          )}
-          ListEmptyComponent={() =>
-            !savedReelsQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="Your saved reels will appear here" subtitle="Save reels you enjoy and watch them again later" />
-            ) : (
-              <View style={styles.gridLoadingContainer}>
-                {Array.from({ length: 9 }).map((_, i) => (
-                  <View key={i} style={styles.gridShimmerItem}>
-                    <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
-                  </View>
-                ))}
-              </View>
-            )
-          }
-          ListFooterComponent={() =>
-            savedReelsQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
-          contentContainerStyle={styles.gridContainer}
-        />
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={videos}
-          keyExtractor={(item) => item.id}
-          onEndReached={() => {
-            if (savedVideosQuery.hasNextPage && !savedVideosQuery.isFetchingNextPage) {
-              savedVideosQuery.fetchNextPage();
+            ListFooterComponent={() =>
+              savedThreadsQuery.isFetchingNextPage ? (
+                <Skeleton.Rect width="100%" height={60} />
+              ) : null
             }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} tintColor={colors.emerald} />
-          }
-          renderItem={({ item }) => (
-            <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
-          )}
-          ListEmptyComponent={() =>
-            !savedVideosQuery.isLoading ? (
-              <EmptyState icon="bookmark" title="Your saved videos will appear here" subtitle="Bookmark videos to build your personal collection" />
-            ) : (
-              <View style={styles.listLoadingContainer}>
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <View key={i} style={styles.videoShimmerRow}>
-                    <Skeleton.Rect width={120} height={68} borderRadius={radius.sm} />
-                    <View style={styles.videoShimmerInfo}>
-                      <Skeleton.Rect width="80%" height={16} borderRadius={radius.sm} />
-                      <Skeleton.Rect width="50%" height={14} borderRadius={radius.sm} />
-                      <Skeleton.Rect width={40} height={12} borderRadius={radius.sm} />
+            contentContainerStyle={{ paddingBottom: 100 }}
+          />
+        ) : activeTab === 'reels' ? (
+          <FlatList
+            removeClippedSubviews={true}
+            data={reels}
+            keyExtractor={(item) => item.id}
+            numColumns={3}
+            columnWrapperStyle={styles.gridRow}
+            onEndReached={() => {
+              if (savedReelsQuery.hasNextPage && !savedReelsQuery.isFetchingNextPage) {
+                savedReelsQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={refreshingReels} onRefresh={onRefreshReels} tintColor={colors.emerald} />
+            }
+            renderItem={({ item }) => (
+              <ReelGrid reel={item} onPress={() => router.push(`/(screens)/reel/${item.id}`)} />
+            )}
+            ListEmptyComponent={() =>
+              !savedReelsQuery.isLoading ? (
+                <EmptyState icon="bookmark" title="Your saved reels will appear here" subtitle="Save reels you enjoy and watch them again later" />
+              ) : (
+                <View style={styles.gridLoadingContainer}>
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <View key={i} style={styles.gridShimmerItem}>
+                      <Skeleton.Rect width={GRID_ITEM - 2} height={GRID_ITEM - 2} borderRadius={radius.sm} />
                     </View>
-                  </View>
-                ))}
-              </View>
-            )
-          }
-          ListFooterComponent={() =>
-            savedVideosQuery.isFetchingNextPage ? (
-              <Skeleton.Rect width="100%" height={60} />
-            ) : null
-          }
-          contentContainerStyle={{ paddingBottom: 100 }}
-        />
-      )}
-    </View>
+                  ))}
+                </View>
+              )
+            }
+            ListFooterComponent={() =>
+              savedReelsQuery.isFetchingNextPage ? (
+                <Skeleton.Rect width="100%" height={60} />
+              ) : null
+            }
+            contentContainerStyle={styles.gridContainer}
+          />
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={videos}
+            keyExtractor={(item) => item.id}
+            onEndReached={() => {
+              if (savedVideosQuery.hasNextPage && !savedVideosQuery.isFetchingNextPage) {
+                savedVideosQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={refreshingVideos} onRefresh={onRefreshVideos} tintColor={colors.emerald} />
+            }
+            renderItem={({ item }) => (
+              <VideoRow video={item} onPress={() => router.push(`/(screens)/video/${item.id}`)} />
+            )}
+            ListEmptyComponent={() =>
+              !savedVideosQuery.isLoading ? (
+                <EmptyState icon="bookmark" title="Your saved videos will appear here" subtitle="Bookmark videos to build your personal collection" />
+              ) : (
+                <View style={styles.listLoadingContainer}>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <View key={i} style={styles.videoShimmerRow}>
+                      <Skeleton.Rect width={120} height={68} borderRadius={radius.sm} />
+                      <View style={styles.videoShimmerInfo}>
+                        <Skeleton.Rect width="80%" height={16} borderRadius={radius.sm} />
+                        <Skeleton.Rect width="50%" height={14} borderRadius={radius.sm} />
+                        <Skeleton.Rect width={40} height={12} borderRadius={radius.sm} />
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              )
+            }
+            ListFooterComponent={() =>
+              savedVideosQuery.isFetchingNextPage ? (
+                <Skeleton.Rect width="100%" height={60} />
+              ) : null
+            }
+            contentContainerStyle={{ paddingBottom: 100 }}
+          />
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

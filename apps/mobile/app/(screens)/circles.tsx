@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const EMOJIS = ['⭕', '⭐', '🌙', '🤝', '💚', '🕌', '📿', '🏠', '💼', '🎓'];
 
@@ -164,94 +165,97 @@ export default function CirclesScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.circles.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: t('screens.circles.createCircleLabel') }]}
-      />
-
-      <Text style={[styles.subtitle, { marginTop: insets.top + 52 }]}>
-        {t('screens.circles.subtitle')}
-      </Text>
-
-      {circlesQuery.isLoading ? (
-        <View style={styles.skeletonList}>
-          {Array.from({ length: 4 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
-              <Skeleton.Circle size={48} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton.Rect width={130} height={14} />
-                <Skeleton.Rect width={80} height={11} />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={circles}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.circleCard}
-              >
-                <View style={styles.circleIcon}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                    style={styles.circleIconGradient}
-                  >
-                    <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
-                  </LinearGradient>
-                </View>
-                <View style={styles.circleInfo}>
-                  <Text style={styles.circleName}>{item.name}</Text>
-                  <View style={styles.memberBadge}>
-                    <Icon name="users" size="xs" color={colors.text.tertiary} />
-                    <Text style={styles.circleMemberCount}>
-                      {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
-                    </Text>
-                  </View>
-                </View>
-                <TouchableOpacity
-                  hitSlop={8}
-                  onPress={() => handleDelete(item)}
-                  style={styles.deleteBtn}
-                >
-                  <LinearGradient
-                    colors={['rgba(248,81,73,0.1)', 'transparent']}
-                    style={styles.deleteBtnGradient}
-                  >
-                    <Icon name="trash" size="sm" color={colors.error} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            </Animated.View>
-          )}
-          ListEmptyComponent={() => (
-            <EmptyState
-              icon="users"
-              title={t('screens.circles.emptyTitle')}
-              subtitle={t('screens.circles.emptySubtitle')}
-              actionLabel={t('screens.circles.createFirstCircleButton')}
-              onAction={() => setShowCreate(true)}
-            />
-          )}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.circles.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          rightActions={[{ icon: 'plus', onPress: () => setShowCreate(true), accessibilityLabel: t('screens.circles.createCircleLabel') }]}
         />
-      )}
 
-      <CreateSheet
-        visible={showCreate}
-        onClose={() => setShowCreate(false)}
-        onCreated={() => queryClient.invalidateQueries({ queryKey: ['my-circles'] })}
-      />
-    </View>
+        <Text style={[styles.subtitle, { marginTop: insets.top + 52 }]}>
+          {t('screens.circles.subtitle')}
+        </Text>
+
+        {circlesQuery.isLoading ? (
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton.Circle size={48} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton.Rect width={130} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={circles}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.circleCard}
+                >
+                  <View style={styles.circleIcon}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                      style={styles.circleIconGradient}
+                    >
+                      <Text style={styles.circleEmoji}>{item.emoji ?? '⭕'}</Text>
+                    </LinearGradient>
+                  </View>
+                  <View style={styles.circleInfo}>
+                    <Text style={styles.circleName}>{item.name}</Text>
+                    <View style={styles.memberBadge}>
+                      <Icon name="users" size="xs" color={colors.text.tertiary} />
+                      <Text style={styles.circleMemberCount}>
+                        {t('screens.circles.memberCount', { count: item._count?.members ?? 0 })}
+                      </Text>
+                    </View>
+                  </View>
+                  <TouchableOpacity
+                    hitSlop={8}
+                    onPress={() => handleDelete(item)}
+                    style={styles.deleteBtn}
+                  >
+                    <LinearGradient
+                      colors={['rgba(248,81,73,0.1)', 'transparent']}
+                      style={styles.deleteBtnGradient}
+                    >
+                      <Icon name="trash" size="sm" color={colors.error} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              </Animated.View>
+            )}
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="users"
+                title={t('screens.circles.emptyTitle')}
+                subtitle={t('screens.circles.emptySubtitle')}
+                actionLabel={t('screens.circles.createFirstCircleButton')}
+                onAction={() => setShowCreate(true)}
+              />
+            )}
+          />
+        )}
+
+        <CreateSheet
+          visible={showCreate}
+          onClose={() => setShowCreate(false)}
+          onCreated={() => queryClient.invalidateQueries({ queryKey: ['my-circles'] })}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

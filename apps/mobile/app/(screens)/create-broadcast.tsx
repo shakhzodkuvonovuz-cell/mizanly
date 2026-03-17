@@ -18,6 +18,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Slugify helper
 const slugify = (text: string): string => {
@@ -102,159 +103,162 @@ export default function CreateBroadcastScreen() {
   const descCount = description.length;
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('createBroadcast.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={{ paddingTop: insets.top + 52 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Avatar picker — Glassmorphism Card */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.avatarSection}
-          >
-            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
-              {avatarUri ? (
-                <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
-              ) : (
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('createBroadcast.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={{ paddingTop: insets.top + 52 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Avatar picker — Glassmorphism Card */}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.avatarSection}
+            >
+              <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
+                {avatarUri ? (
+                  <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
+                ) : (
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.avatarPlaceholder}
+                  >
+                    <Icon name="camera" size="xl" color={colors.emerald} />
+                    <Text style={styles.avatarPlaceholderText}>{t('createBroadcast.avatarPlaceholder')}</Text>
+                  </LinearGradient>
+                )}
+              </TouchableOpacity>
+              <Text style={styles.avatarHint}>{t('createBroadcast.avatarHint')}</Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Name — Glassmorphism Card */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.fieldCard}
+            >
+              <View style={styles.sectionHeader}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.avatarPlaceholder}
+                  style={styles.sectionIconBg}
                 >
-                  <Icon name="camera" size="xl" color={colors.emerald} />
-                  <Text style={styles.avatarPlaceholderText}>{t('createBroadcast.avatarPlaceholder')}</Text>
+                  <Icon name="edit" size="xs" color={colors.emerald} />
                 </LinearGradient>
-              )}
-            </TouchableOpacity>
-            <Text style={styles.avatarHint}>{t('createBroadcast.avatarHint')}</Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Name — Glassmorphism Card */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.fieldCard}
-          >
-            <View style={styles.sectionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
-              >
-                <Icon name="edit" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.name')}</Text>
-              <CharCountRing current={nameCount} max={50} size={24} />
-            </View>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder={t('createBroadcast.placeholder.name')}
-              placeholderTextColor={colors.text.tertiary}
-              maxLength={50}
-              autoCorrect={false}
-              accessibilityLabel={t('createBroadcast.accessibility.name')}
-            />
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Slug — Glassmorphism Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.fieldCard}
-          >
-            <View style={styles.sectionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
-              >
-                <Icon name="link" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.url')}</Text>
-              <CharCountRing current={slugCount} max={30} size={24} />
-            </View>
-            <View style={styles.slugContainer}>
-              <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
+                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.name')}</Text>
+                <CharCountRing current={nameCount} max={50} size={24} />
+              </View>
               <TextInput
-                style={[styles.input, styles.slugInput]}
-                value={slug}
-                onChangeText={(text) => setSlug(slugify(text))}
-                placeholder={t('createBroadcast.placeholder.url')}
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder={t('createBroadcast.placeholder.name')}
                 placeholderTextColor={colors.text.tertiary}
-                maxLength={30}
-                autoCapitalize="none"
+                maxLength={50}
                 autoCorrect={false}
-                accessibilityLabel={t('createBroadcast.accessibility.url')}
+                accessibilityLabel={t('createBroadcast.accessibility.name')}
               />
-            </View>
-            <Text style={styles.hint}>{t('createBroadcast.hint.url')}</Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Description — Glassmorphism Card */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.fieldCard}
-          >
-            <View style={styles.sectionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
-              >
-                <Icon name="edit" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.description')}</Text>
-              <CharCountRing current={descCount} max={200} size={24} />
-            </View>
-            <TextInput
-              style={[styles.input, styles.multiline]}
-              value={description}
-              onChangeText={setDescription}
-              placeholder={t('createBroadcast.placeholder.description')}
-              placeholderTextColor={colors.text.tertiary}
-              multiline
-              maxLength={200}
-              textAlignVertical="top"
-              accessibilityLabel={t('createBroadcast.accessibility.description')}
-            />
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Info note */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-          <LinearGradient
-            colors={['rgba(200,150,62,0.15)', 'rgba(10,123,79,0.1)']}
-            style={styles.note}
-          >
-            <LinearGradient
-              colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.noteIconBg}
-            >
-              <Icon name="info" size="xs" color={colors.gold} />
             </LinearGradient>
-            <Text style={styles.noteText}>
-              {t('createBroadcast.note')}
-            </Text>
-          </LinearGradient>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Create button */}
-        <GradientButton
-          label={createMutation.isPending || uploading ? t('createBroadcast.creating') : t('createBroadcast.create')}
-          onPress={() => isValid && createMutation.mutate()}
-          disabled={!isValid}
-          style={{ marginBottom: spacing.xl }}
-        />
-      </ScrollView>
-    </View>
+          {/* Slug — Glassmorphism Card */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.fieldCard}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="link" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.url')}</Text>
+                <CharCountRing current={slugCount} max={30} size={24} />
+              </View>
+              <View style={styles.slugContainer}>
+                <Text style={styles.slugPrefix}>mizanly.app/c/</Text>
+                <TextInput
+                  style={[styles.input, styles.slugInput]}
+                  value={slug}
+                  onChangeText={(text) => setSlug(slugify(text))}
+                  placeholder={t('createBroadcast.placeholder.url')}
+                  placeholderTextColor={colors.text.tertiary}
+                  maxLength={30}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  accessibilityLabel={t('createBroadcast.accessibility.url')}
+                />
+              </View>
+              <Text style={styles.hint}>{t('createBroadcast.hint.url')}</Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Description — Glassmorphism Card */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.fieldCard}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="edit" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.sectionLabel}>{t('createBroadcast.sectionLabel.description')}</Text>
+                <CharCountRing current={descCount} max={200} size={24} />
+              </View>
+              <TextInput
+                style={[styles.input, styles.multiline]}
+                value={description}
+                onChangeText={setDescription}
+                placeholder={t('createBroadcast.placeholder.description')}
+                placeholderTextColor={colors.text.tertiary}
+                multiline
+                maxLength={200}
+                textAlignVertical="top"
+                accessibilityLabel={t('createBroadcast.accessibility.description')}
+              />
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Info note */}
+          <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+            <LinearGradient
+              colors={['rgba(200,150,62,0.15)', 'rgba(10,123,79,0.1)']}
+              style={styles.note}
+            >
+              <LinearGradient
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.noteIconBg}
+              >
+                <Icon name="info" size="xs" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.noteText}>
+                {t('createBroadcast.note')}
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Create button */}
+          <GradientButton
+            label={createMutation.isPending || uploading ? t('createBroadcast.creating') : t('createBroadcast.create')}
+            onPress={() => isValid && createMutation.mutate()}
+            disabled={!isValid}
+            style={{ marginBottom: spacing.xl }}
+          />
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

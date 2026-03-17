@@ -26,6 +26,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -190,131 +191,134 @@ export default function DhikrCounterScreen() {
   }));
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title={t('screens.dhikrCounter.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={t('screens.dhikrCounter.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <ScrollView
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Phrase Selector */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.phraseSelector}
-          >
-            {PRESET_PHRASES.map((phrase, index) => (
-              <PhraseButton
-                key={phrase.id}
-                phrase={phrase}
-                isSelected={selectedPhrase.id === phrase.id}
-                onPress={() => selectPhrase(phrase)}
-              />
-            ))}
-          </ScrollView>
-        </Animated.View>
-
-        {/* Counter Circle */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.counterContainer}>
-          <TouchableOpacity onPress={handleTap} activeOpacity={0.9}>
-            <Animated.View style={counterAnimatedStyle}>
-              {/* Outer Ring Gradient */}
-              <LinearGradient
-                colors={[colors.emerald, colors.goldLight]}
-                style={styles.counterOuterRing}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Inner Circle */}
-                <View style={styles.counterInnerCircle}>
-                  {/* Count Number */}
-                  <Text style={styles.countNumber}>{count}</Text>
-
-                  {/* Arabic Phrase */}
-                  <Text style={styles.countArabic}>{selectedPhrase.arabic}</Text>
-
-                  {/* Hint Text */}
-                  {!hasStarted && (
-                    <Text style={styles.tapHint}>{t('screens.dhikrCounter.tapHint')}</Text>
-                  )}
-                </View>
-              </LinearGradient>
-
-              {/* Gold shimmer on completion */}
-              {isComplete && (
-                <Animated.View style={[styles.shimmerOverlay, shimmerAnimatedStyle]}>
-                  <LinearGradient
-                    colors={['rgba(200,150,62,0)', 'rgba(200,150,62,0.3)', 'rgba(200,150,62,0)']}
-                    style={styles.shimmerGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  />
-                </Animated.View>
-              )}
-            </Animated.View>
-          </TouchableOpacity>
-
-          {/* Reset Button */}
-          <TouchableOpacity onPress={handleReset} style={styles.resetButton} activeOpacity={0.8}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-              style={styles.resetButtonGradient}
+        <ScrollView
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Phrase Selector */}
+          <Animated.View entering={FadeInUp.duration(400)}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.phraseSelector}
             >
-              <Icon name="circle" size="xs" color={colors.text.tertiary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Progress Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.progressCard}
-          >
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>
-                {isComplete ? t('screens.dhikrCounter.setComplete') : t('screens.dhikrCounter.progressTitle', { count, goal: DAILY_GOAL })}
-              </Text>
-              {isComplete && <Icon name="check-circle" size="sm" color={colors.gold} />}
-            </View>
-
-            {/* Progress Bar */}
-            <View style={styles.progressBarContainer}>
-              <View style={styles.progressBarTrack}>
-                <Animated.View
-                  style={[
-                    styles.progressBarFill,
-                    isComplete && styles.progressBarFillComplete,
-                    progressAnimatedStyle,
-                  ]}
+              {PRESET_PHRASES.map((phrase, index) => (
+                <PhraseButton
+                  key={phrase.id}
+                  phrase={phrase}
+                  isSelected={selectedPhrase.id === phrase.id}
+                  onPress={() => selectPhrase(phrase)}
                 />
+              ))}
+            </ScrollView>
+          </Animated.View>
+
+          {/* Counter Circle */}
+          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.counterContainer}>
+            <TouchableOpacity onPress={handleTap} activeOpacity={0.9}>
+              <Animated.View style={counterAnimatedStyle}>
+                {/* Outer Ring Gradient */}
+                <LinearGradient
+                  colors={[colors.emerald, colors.goldLight]}
+                  style={styles.counterOuterRing}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {/* Inner Circle */}
+                  <View style={styles.counterInnerCircle}>
+                    {/* Count Number */}
+                    <Text style={styles.countNumber}>{count}</Text>
+
+                    {/* Arabic Phrase */}
+                    <Text style={styles.countArabic}>{selectedPhrase.arabic}</Text>
+
+                    {/* Hint Text */}
+                    {!hasStarted && (
+                      <Text style={styles.tapHint}>{t('screens.dhikrCounter.tapHint')}</Text>
+                    )}
+                  </View>
+                </LinearGradient>
+
+                {/* Gold shimmer on completion */}
+                {isComplete && (
+                  <Animated.View style={[styles.shimmerOverlay, shimmerAnimatedStyle]}>
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0)', 'rgba(200,150,62,0.3)', 'rgba(200,150,62,0)']}
+                      style={styles.shimmerGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                    />
+                  </Animated.View>
+                )}
+              </Animated.View>
+            </TouchableOpacity>
+
+            {/* Reset Button */}
+            <TouchableOpacity onPress={handleReset} style={styles.resetButton} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                style={styles.resetButtonGradient}
+              >
+                <Icon name="circle" size="xs" color={colors.text.tertiary} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Progress Card */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.progressCard}
+            >
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressTitle}>
+                  {isComplete ? t('screens.dhikrCounter.setComplete') : t('screens.dhikrCounter.progressTitle', { count, goal: DAILY_GOAL })}
+                </Text>
+                {isComplete && <Icon name="check-circle" size="sm" color={colors.gold} />}
               </View>
+
+              {/* Progress Bar */}
+              <View style={styles.progressBarContainer}>
+                <View style={styles.progressBarTrack}>
+                  <Animated.View
+                    style={[
+                      styles.progressBarFill,
+                      isComplete && styles.progressBarFillComplete,
+                      progressAnimatedStyle,
+                    ]}
+                  />
+                </View>
+              </View>
+
+              <Text style={styles.progressSubtitle}>
+                {t('screens.dhikrCounter.progressSubtitle')}
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Daily Summary */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <Text style={styles.summaryTitle}>{t('screens.dhikrCounter.summaryTitle')}</Text>
+            <View style={styles.statsRow}>
+              <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={stats.totalCount} delay={350} />
+              <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={stats.setsCompleted} delay={400} />
+              <StatCard icon="trending-up" label={t('screens.dhikrCounter.stats.dayStreak')} value={stats.streak} delay={450} />
             </View>
+          </Animated.View>
 
-            <Text style={styles.progressSubtitle}>
-              {t('screens.dhikrCounter.progressSubtitle')}
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Daily Summary */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <Text style={styles.summaryTitle}>{t('screens.dhikrCounter.summaryTitle')}</Text>
-          <View style={styles.statsRow}>
-            <StatCard icon="bar-chart-2" label={t('screens.dhikrCounter.stats.totalCounts')} value={stats.totalCount} delay={350} />
-            <StatCard icon="check-circle" label={t('screens.dhikrCounter.stats.setsDone')} value={stats.setsCompleted} delay={400} />
-            <StatCard icon="trending-up" label={t('screens.dhikrCounter.stats.dayStreak')} value={stats.streak} delay={450} />
-          </View>
-        </Animated.View>
-
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.xxl }} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.xxl }} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

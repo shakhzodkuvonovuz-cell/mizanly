@@ -19,6 +19,8 @@ import type { Post } from '@/types';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type HashtagPostsPage = {
   hashtag?: { postsCount: number };
@@ -56,6 +58,7 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
 }
 
 export default function HashtagScreen() {
+  const { t, isRTL } = useTranslation();
   const { tag } = useLocalSearchParams<{ tag: string }>();
   const router = useRouter();
 
@@ -104,14 +107,14 @@ export default function HashtagScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={`#${tag}`}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.hashtag.errorTitle')}
+          subtitle={t('screens.hashtag.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => postsQuery.refetch()}
         />
       </View>
@@ -119,94 +122,97 @@ export default function HashtagScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        titleComponent={
-          <View style={styles.headerInfo}>
-            <Text style={styles.tagName}>#{tag}</Text>
-            <Text style={styles.postCount}>{totalCount.toLocaleString()} posts</Text>
-          </View>
-        }
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
-        rightActions={[]}
-      />
-      <View style={styles.headerSpacer} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          titleComponent={
+            <View style={styles.headerInfo}>
+              <Text style={styles.tagName}>#{tag}</Text>
+              <Text style={styles.postCount}>{totalCount.toLocaleString()} {t('screens.hashtag.posts')}</Text>
+            </View>
+          }
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          rightActions={[]}
+        />
+        <View style={styles.headerSpacer} />
 
-      {/* Header Card - Glassmorphism */}
-      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.headerCard}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.headerCardGradient}
-        >
+        {/* Header Card - Glassmorphism */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.headerCard}>
           <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.hashtagIconBg}
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.headerCardGradient}
           >
-            <Icon name="hash" size="lg" color={colors.emerald} />
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.hashtagIconBg}
+            >
+              <Icon name="hash" size="lg" color={colors.emerald} />
+            </LinearGradient>
+            <Text style={styles.tagNameLarge}>#{tag}</Text>
+            <Text style={styles.postCountGold}>{totalCount.toLocaleString()} {t('screens.hashtag.posts')}</Text>
+            <View style={styles.followButtonWrap}>
+              <GradientButton
+                label={isFollowing ? t('common.following') : t('common.follow')}
+                onPress={toggleFollow}
+                variant={isFollowing ? 'secondary' : 'primary'}
+                size="sm"
+              />
+            </View>
           </LinearGradient>
-          <Text style={styles.tagNameLarge}>#{tag}</Text>
-          <Text style={styles.postCountGold}>{totalCount.toLocaleString()} posts</Text>
-          <View style={styles.followButtonWrap}>
-            <GradientButton
-              label={isFollowing ? 'Following' : 'Follow'}
-              onPress={toggleFollow}
-              variant={isFollowing ? 'secondary' : 'primary'}
-              size="sm"
-            />
-          </View>
-        </LinearGradient>
-      </Animated.View>
+        </Animated.View>
 
-      <FlatList
-        removeClippedSubviews={true}
-        data={posts}
-        keyExtractor={(item) => item.id}
-        numColumns={3}
-        columnWrapperStyle={styles.gridRow}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl
-            refreshing={postsQuery.isRefetching && !postsQuery.isFetchingNextPage}
-            onRefresh={() => postsQuery.refetch()}
-            tintColor={colors.emerald}
-          />
-        }
-        renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-            <GridItem
-              post={item}
-              onPress={() => router.push(`/(screens)/post/${item.id}`)}
+        <FlatList
+          removeClippedSubviews={true}
+          data={posts}
+          keyExtractor={(item) => item.id}
+          numColumns={3}
+          columnWrapperStyle={styles.gridRow}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl
+              refreshing={postsQuery.isRefetching && !postsQuery.isFetchingNextPage}
+              onRefresh={() => postsQuery.refetch()}
+              tintColor={colors.emerald}
             />
-          </Animated.View>
-        )}
-        ListEmptyComponent={() =>
-          postsQuery.isLoading ? (
-            <View style={styles.skeletonGrid}>
-              {Array.from({ length: 9 }).map((_, i) => (
-                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon="hash"
-              title={`No posts with #${tag} yet`}
-              subtitle="Be the first to share something with this hashtag -- your voice matters!"
-            />
-          )
-        }
-        ListFooterComponent={() =>
-          postsQuery.isFetchingNextPage ? (
-            <View style={styles.skeletonGrid}>
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
-              ))}
-            </View>
-          ) : null
-        }
-        contentContainerStyle={{ paddingBottom: 40 }}
-      />
-    </View>
+          }
+          renderItem={({ item, index }) => (
+            <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+              <GridItem
+                post={item}
+                onPress={() => router.push(`/(screens)/post/${item.id}`)}
+              />
+            </Animated.View>
+          )}
+          ListEmptyComponent={() =>
+            postsQuery.isLoading ? (
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 9 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                icon="hash"
+                title={t('screens.hashtag.emptyTitle')}
+                subtitle={t('screens.hashtag.emptySubtitle')}
+              />
+            )
+          }
+          ListFooterComponent={() =>
+            postsQuery.isFetchingNextPage ? (
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width={GRID_ITEM} height={GRID_ITEM} borderRadius={0} />
+                ))}
+              </View>
+            ) : null
+          }
+          contentContainerStyle={{ paddingBottom: 40 }}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

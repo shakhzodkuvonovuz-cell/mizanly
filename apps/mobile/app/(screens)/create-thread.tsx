@@ -24,6 +24,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { threadsApi, uploadApi, circlesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 type VisIconName = React.ComponentProps<typeof Icon>['name'];
@@ -438,263 +439,266 @@ export default function CreateThreadScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} hitSlop={8}>
-          <Icon name="x" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
-        <GradientButton
-          label={t('common.post')}
-          size="sm"
-          onPress={() => canPost && createMutation.mutate()}
-          loading={createMutation.isPending}
-          disabled={!canPost}
-        />
-      </View>
-
-      {/* Visibility bar */}
-      <View style={styles.visBar}>
-        <TouchableOpacity
-          style={styles.visPill}
-          onPress={() => setShowVisibility((v) => !v)}
-        >
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-            <Icon name={VISIBILITY_KEYS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
-            <Text style={styles.visPillText}>
-              {visibility === 'CIRCLE' && selectedCircle
-                ? selectedCircle.name
-                : t(VISIBILITY_KEYS.find((o) => o.value === visibility)!.labelKey)}
-            </Text>
-            <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {showVisibility && (
-        <View style={styles.visMenu}>
-          {VISIBILITY_KEYS.map((opt) => (
-            <TouchableOpacity
-              key={opt.value}
-              style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
-              onPress={() => {
-                setVisibility(opt.value);
-                setShowVisibility(false);
-                if (opt.value === 'CIRCLE') setShowCirclePicker(true);
-              }}
-            >
-              <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
-              <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{t(opt.labelKey)}</Text>
-              {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
-            </TouchableOpacity>
-          ))}
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={handleBack} hitSlop={8}>
+            <Icon name="x" size="md" color={colors.text.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
+          <GradientButton
+            label={t('common.post')}
+            size="sm"
+            onPress={() => canPost && createMutation.mutate()}
+            loading={createMutation.isPending}
+            disabled={!canPost}
+          />
         </View>
-      )}
 
-      {/* Circle picker */}
-      <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
-        <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
-        {circlesQuery.isLoading ? (
-          <View style={styles.skeletonList}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={styles.skeletonRow}>
-                <Skeleton.Circle size={36} />
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <Skeleton.Rect width={120} height={14} />
-                  <Skeleton.Rect width={80} height={11} />
-                </View>
-              </View>
+        {/* Visibility bar */}
+        <View style={styles.visBar}>
+          <TouchableOpacity
+            style={styles.visPill}
+            onPress={() => setShowVisibility((v) => !v)}
+          >
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+              <Icon name={VISIBILITY_KEYS.find((o) => o.value === visibility)!.iconName} size={12} color={colors.text.secondary} />
+              <Text style={styles.visPillText}>
+                {visibility === 'CIRCLE' && selectedCircle
+                  ? selectedCircle.name
+                  : t(VISIBILITY_KEYS.find((o) => o.value === visibility)!.labelKey)}
+              </Text>
+              <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {showVisibility && (
+          <View style={styles.visMenu}>
+            {VISIBILITY_KEYS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
+                onPress={() => {
+                  setVisibility(opt.value);
+                  setShowVisibility(false);
+                  if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+                }}
+              >
+                <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
+                <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{t(opt.labelKey)}</Text>
+                {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
+              </TouchableOpacity>
             ))}
           </View>
-        ) : circles.length === 0 ? (
-          <View style={styles.emptyCircles}>
-            <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
-              <Icon name="chevron-right" size="sm" color={colors.emerald} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          circles.map((c) => (
-            <BottomSheetItem
-              key={c.id}
-              label={c.name}
-              icon={
-                <View style={styles.circleIconWrap}>
-                  <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
-                </View>
-              }
-              onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
-            />
-          ))
         )}
-      </BottomSheet>
 
-      <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
-        {parts.map((part, index) => (
-          <View key={index}>
-            <ThreadPart
-              part={part}
-              index={index}
-              isLast={index === parts.length - 1}
-              showLine={index < parts.length - 1}
-              onChange={(content) => updateContent(index, content)}
-              onAddMedia={() => pickMedia(index)}
-              onRemoveMedia={(mi) => removeMedia(index, mi)}
-              onTogglePoll={index === 0 ? () => setPoll((p) => p ? null : { question: '', options: ['', ''], allowMultiple: false }) : undefined}
-              hasPoll={index === 0 && !!poll}
-              avatar={user?.imageUrl}
-              name={user?.fullName ?? user?.username ?? 'Me'}
-              autocomplete={autocomplete}
-              setAutocomplete={setAutocomplete}
-              setShowAutocomplete={setShowAutocomplete}
-              inputRef={(idx, ref) => { if (ref) inputRefs.current.set(idx, ref); }}
-            />
-            {/* Premium Poll form — only on first part */}
-            {index === 0 && poll && (
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.pollForm}
-              >
-                <View style={styles.pollFormHeader}>
-                  <LinearGradient
-                    colors={[colors.gold, '#A67C00']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.pollIconContainer}
-                  >
-                    <Icon name="bar-chart-2" size="sm" color="#0D1117" />
-                  </LinearGradient>
-                  <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
-                  <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                    <LinearGradient
-                      colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
-                      style={styles.pollRemoveBtn}
-                    >
-                      <Icon name="x" size={14} color="#fff" />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </View>
-                <TextInput
-                  style={styles.pollQuestion}
-                  placeholder={t('compose.askQuestion')}
-                  placeholderTextColor={colors.text.tertiary}
-                  value={poll.question}
-                  onChangeText={(t) => setPoll((p) => p ? { ...p, question: t } : p)}
-                  maxLength={120}
-                />
-                {poll.options.map((opt, oi) => (
-                  <View key={oi} style={styles.pollOptionRow}>
-                    <TextInput
-                      style={styles.pollOptionInput}
-                      placeholder={`Option ${oi + 1}`}
-                      placeholderTextColor={colors.text.tertiary}
-                      value={opt}
-                      onChangeText={(t) => setPoll((p) => {
-                        if (!p) return p;
-                        const options = [...p.options];
-                        options[oi] = t;
-                        return { ...p, options };
-                      })}
-                      maxLength={80}
-                    />
-                    {poll.options.length > 2 && (
-                      <TouchableOpacity
-                        onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
-                        hitSlop={8}
-                      >
-                        <Icon name="x" size={14} color={colors.text.tertiary} />
-                      </TouchableOpacity>
-                    )}
+        {/* Circle picker */}
+        <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
+          <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
+          {circlesQuery.isLoading ? (
+            <View style={styles.skeletonList}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={styles.skeletonRow}>
+                  <Skeleton.Circle size={36} />
+                  <View style={{ flex: 1, gap: spacing.xs }}>
+                    <Skeleton.Rect width={120} height={14} />
+                    <Skeleton.Rect width={80} height={11} />
                   </View>
-                ))}
-                {poll.options.length < 4 && (
-                  <TouchableOpacity
-                    style={styles.pollAddOption}
-                    onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
-                  >
-                    <Text style={styles.pollAddOptionText}>{t('compose.addOption')}</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={styles.pollAllowMultiple}
-                  onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
+                </View>
+              ))}
+            </View>
+          ) : circles.length === 0 ? (
+            <View style={styles.emptyCircles}>
+              <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+                <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
+                <Icon name="chevron-right" size="sm" color={colors.emerald} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            circles.map((c) => (
+              <BottomSheetItem
+                key={c.id}
+                label={c.name}
+                icon={
+                  <View style={styles.circleIconWrap}>
+                    <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
+                  </View>
+                }
+                onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+              />
+            ))
+          )}
+        </BottomSheet>
+
+        <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+          {parts.map((part, index) => (
+            <View key={index}>
+              <ThreadPart
+                part={part}
+                index={index}
+                isLast={index === parts.length - 1}
+                showLine={index < parts.length - 1}
+                onChange={(content) => updateContent(index, content)}
+                onAddMedia={() => pickMedia(index)}
+                onRemoveMedia={(mi) => removeMedia(index, mi)}
+                onTogglePoll={index === 0 ? () => setPoll((p) => p ? null : { question: '', options: ['', ''], allowMultiple: false }) : undefined}
+                hasPoll={index === 0 && !!poll}
+                avatar={user?.imageUrl}
+                name={user?.fullName ?? user?.username ?? 'Me'}
+                autocomplete={autocomplete}
+                setAutocomplete={setAutocomplete}
+                setShowAutocomplete={setShowAutocomplete}
+                inputRef={(idx, ref) => { if (ref) inputRefs.current.set(idx, ref); }}
+              />
+              {/* Premium Poll form — only on first part */}
+              {index === 0 && poll && (
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.pollForm}
                 >
-                  <View style={[styles.pollCheckbox, poll.allowMultiple && styles.pollCheckboxOn]}>
-                    {poll.allowMultiple && <Icon name="check" size={12} color="#fff" />}
+                  <View style={styles.pollFormHeader}>
+                    <LinearGradient
+                      colors={[colors.gold, '#A67C00']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.pollIconContainer}
+                    >
+                      <Icon name="bar-chart-2" size="sm" color="#0D1117" />
+                    </LinearGradient>
+                    <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
+                    <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                      <LinearGradient
+                        colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                        style={styles.pollRemoveBtn}
+                      >
+                        <Icon name="x" size={14} color="#fff" />
+                      </LinearGradient>
+                    </TouchableOpacity>
                   </View>
-                  <Text style={styles.pollAllowMultipleText}>{t('compose.allowMultipleAnswers')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        ))}
+                  <TextInput
+                    style={styles.pollQuestion}
+                    placeholder={t('compose.askQuestion')}
+                    placeholderTextColor={colors.text.tertiary}
+                    value={poll.question}
+                    onChangeText={(t) => setPoll((p) => p ? { ...p, question: t } : p)}
+                    maxLength={120}
+                  />
+                  {poll.options.map((opt, oi) => (
+                    <View key={oi} style={styles.pollOptionRow}>
+                      <TextInput
+                        style={styles.pollOptionInput}
+                        placeholder={`Option ${oi + 1}`}
+                        placeholderTextColor={colors.text.tertiary}
+                        value={opt}
+                        onChangeText={(t) => setPoll((p) => {
+                          if (!p) return p;
+                          const options = [...p.options];
+                          options[oi] = t;
+                          return { ...p, options };
+                        })}
+                        maxLength={80}
+                      />
+                      {poll.options.length > 2 && (
+                        <TouchableOpacity
+                          onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
+                          hitSlop={8}
+                        >
+                          <Icon name="x" size={14} color={colors.text.tertiary} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                  {poll.options.length < 4 && (
+                    <TouchableOpacity
+                      style={styles.pollAddOption}
+                      onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
+                    >
+                      <Text style={styles.pollAddOptionText}>{t('compose.addOption')}</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    style={styles.pollAllowMultiple}
+                    onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
+                  >
+                    <View style={[styles.pollCheckbox, poll.allowMultiple && styles.pollCheckboxOn]}>
+                      {poll.allowMultiple && <Icon name="check" size={12} color="#fff" />}
+                    </View>
+                    <Text style={styles.pollAllowMultipleText}>{t('compose.allowMultipleAnswers')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          ))}
 
-        {/* Premium Add thread part */}
-        {parts.length < 10 && (
-          <TouchableOpacity style={styles.addPartBtn} onPress={addPart}>
-            <LinearGradient
-              colors={[colors.active.emerald20, 'transparent']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
-              style={styles.addPartLineGradient}
-            />
-            <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-              style={styles.addPartAvatarContainer}
-            >
-              <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="sm" />
-            </LinearGradient>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.1)', 'transparent']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.addPartTextContainer}
-            >
-              <Text style={styles.addPartText}>{t('compose.addToThread')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-        <View style={{ height: 80 }} />
-      </ScrollView>
+          {/* Premium Add thread part */}
+          {parts.length < 10 && (
+            <TouchableOpacity style={styles.addPartBtn} onPress={addPart}>
+              <LinearGradient
+                colors={[colors.active.emerald20, 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+                style={styles.addPartLineGradient}
+              />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                style={styles.addPartAvatarContainer}
+              >
+                <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="sm" />
+              </LinearGradient>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.1)', 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.addPartTextContainer}
+              >
+                <Text style={styles.addPartText}>{t('compose.addToThread')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+          <View style={{ height: 80 }} />
+        </ScrollView>
 
-      {/* Autocomplete dropdown */}
-      <Autocomplete
-        visible={showAutocomplete}
-        type={autocomplete.type || 'hashtag'}
-        query={autocomplete.query}
-        onSelect={(value) => {
-          const idx = autocomplete.partIndex;
-          if (idx === null) return;
+        {/* Autocomplete dropdown */}
+        <Autocomplete
+          visible={showAutocomplete}
+          type={autocomplete.type || 'hashtag'}
+          query={autocomplete.query}
+          onSelect={(value) => {
+            const idx = autocomplete.partIndex;
+            if (idx === null) return;
 
-          const partContent = parts[idx].content;
-          const cursorPos = partContent.length;
-          const lastHashIndex = partContent.lastIndexOf('#', cursorPos - 1);
-          const lastAtIndex = partContent.lastIndexOf('@', cursorPos - 1);
+            const partContent = parts[idx].content;
+            const cursorPos = partContent.length;
+            const lastHashIndex = partContent.lastIndexOf('#', cursorPos - 1);
+            const lastAtIndex = partContent.lastIndexOf('@', cursorPos - 1);
 
-          let newContent = partContent;
-          if (autocomplete.type === 'hashtag' && lastHashIndex !== -1) {
-            const before = partContent.slice(0, lastHashIndex);
-            const after = partContent.slice(cursorPos);
-            newContent = before + value + ' ' + after;
-          } else if (autocomplete.type === 'mention' && lastAtIndex !== -1) {
-            const before = partContent.slice(0, lastAtIndex);
-            const after = partContent.slice(cursorPos);
-            newContent = before + value + ' ' + after;
-          }
+            let newContent = partContent;
+            if (autocomplete.type === 'hashtag' && lastHashIndex !== -1) {
+              const before = partContent.slice(0, lastHashIndex);
+              const after = partContent.slice(cursorPos);
+              newContent = before + value + ' ' + after;
+            } else if (autocomplete.type === 'mention' && lastAtIndex !== -1) {
+              const before = partContent.slice(0, lastAtIndex);
+              const after = partContent.slice(cursorPos);
+              newContent = before + value + ' ' + after;
+            }
 
-          updateContent(idx, newContent);
-        }}
-        onClose={() => {
-          setShowAutocomplete(false);
-          setAutocomplete({ partIndex: null, type: null, query: '' });
-        }}
-      />
-    </SafeAreaView>
+            updateContent(idx, newContent);
+          }}
+          onClose={() => {
+            setShowAutocomplete(false);
+            setAutocomplete({ partIndex: null, type: null, query: '' });
+          }}
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

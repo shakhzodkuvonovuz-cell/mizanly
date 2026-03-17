@@ -12,6 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const MAX_TIME = 300; // 5 minutes
 
@@ -149,93 +150,96 @@ export default function VoiceRecorderScreen() {
   const isPlaying = state === 'playing';
 
   return (
-    <SafeAreaView style={s.container} edges={['top', 'bottom']}>
-      <GlassHeader
-        title={t('screens.voiceRecorder.title')}
-        leftAction={{ icon: 'arrow-left', onPress: cancel, accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={s.container} edges={['top', 'bottom']}>
+        <GlassHeader
+          title={t('screens.voiceRecorder.title')}
+          leftAction={{ icon: 'arrow-left', onPress: cancel, accessibilityLabel: t('common.back') }}
+        />
 
-      <View style={[s.content, { paddingTop: insets.top + 52 }]}>
-        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={s.glassCard}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={s.cardGradient}
-          >
-            <View style={s.timerContainer}>
-              <LinearGradient
-                colors={isRecording ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={s.timerIconBg}
-              >
-                <Icon
-                  name={isRecording || isPlaying ? 'mic' : isRecorded ? 'check' : 'mic'}
-                  size="lg"
-                  color={isRecording ? colors.error : colors.emerald}
-                />
-              </LinearGradient>
-              <Text style={s.timerText}>{format(time)}</Text>
-              <Text style={s.timerSubtext}>
-                {isRecording ? t('screens.voiceRecorder.recording') : isPlaying ? t('screens.voiceRecorder.playing') : isRecorded ? t('screens.voiceRecorder.recorded') : t('screens.voiceRecorder.readyToRecord')}
-              </Text>
-            </View>
-
-            <View style={s.amplitudeContainer}>
-              {(isRecording ? levels : Array(20).fill(0)).map((l, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    s.amplitudeBar,
-                    {
-                      height: 8 + (isRecording ? l * 0.3 : 0),
-                      backgroundColor: isRecording ? colors.emerald : colors.text.tertiary,
-                    },
-                  ]}
-                />
-              ))}
-            </View>
-
-            <Pressable
-              style={s.recordButtonWrap}
-              onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
+        <View style={[s.content, { paddingTop: insets.top + 52 }]}>
+          <Animated.View entering={FadeInUp.delay(0).duration(400)} style={s.glassCard}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={s.cardGradient}
             >
-              <LinearGradient
-                colors={isRecording ? ['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.4)'] : ['rgba(10,123,79,0.8)', 'rgba(200,150,62,0.4)']}
-                style={[s.recordButton, (isRecorded || isPlaying) && s.playButton]}
+              <View style={s.timerContainer}>
+                <LinearGradient
+                  colors={isRecording ? ['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={s.timerIconBg}
+                >
+                  <Icon
+                    name={isRecording || isPlaying ? 'mic' : isRecorded ? 'check' : 'mic'}
+                    size="lg"
+                    color={isRecording ? colors.error : colors.emerald}
+                  />
+                </LinearGradient>
+                <Text style={s.timerText}>{format(time)}</Text>
+                <Text style={s.timerSubtext}>
+                  {isRecording ? t('screens.voiceRecorder.recording') : isPlaying ? t('screens.voiceRecorder.playing') : isRecorded ? t('screens.voiceRecorder.recorded') : t('screens.voiceRecorder.readyToRecord')}
+                </Text>
+              </View>
+
+              <View style={s.amplitudeContainer}>
+                {(isRecording ? levels : Array(20).fill(0)).map((l, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      s.amplitudeBar,
+                      {
+                        height: 8 + (isRecording ? l * 0.3 : 0),
+                        backgroundColor: isRecording ? colors.emerald : colors.text.tertiary,
+                      },
+                    ]}
+                  />
+                ))}
+              </View>
+
+              <Pressable
+                style={s.recordButtonWrap}
+                onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
               >
-                <Icon
-                  name={isRecording || isPlaying ? 'square' : isRecorded ? 'play' : 'mic'}
-                  size="3xl"
-                  color="#FFF"
-                />
-              </LinearGradient>
-            </Pressable>
+                <LinearGradient
+                  colors={isRecording ? ['rgba(248,81,73,0.8)', 'rgba(248,81,73,0.4)'] : ['rgba(10,123,79,0.8)', 'rgba(200,150,62,0.4)']}
+                  style={[s.recordButton, (isRecorded || isPlaying) && s.playButton]}
+                >
+                  <Icon
+                    name={isRecording || isPlaying ? 'square' : isRecorded ? 'play' : 'mic'}
+                    size="3xl"
+                    color="#FFF"
+                  />
+                </LinearGradient>
+              </Pressable>
 
-            <Text style={s.hintText}>
-              {isRecording
-                ? t('screens.voiceRecorder.tapToStop')
-                : isPlaying
-                  ? t('screens.voiceRecorder.tapToStopPlayback')
-                  : isRecorded
-                    ? t('screens.voiceRecorder.tapToListen')
-                    : t('screens.voiceRecorder.tapToStart')}
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-      </View>
+              <Text style={s.hintText}>
+                {isRecording
+                  ? t('screens.voiceRecorder.tapToStop')
+                  : isPlaying
+                    ? t('screens.voiceRecorder.tapToStopPlayback')
+                    : isRecorded
+                      ? t('screens.voiceRecorder.tapToListen')
+                      : t('screens.voiceRecorder.tapToStart')}
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+        </View>
 
-      <View style={s.footer}>
-        <GradientButton
-          label={state === 'idle' ? t('common.cancel') : t('screens.voiceRecorder.discard')}
-          onPress={cancel}
-          variant="secondary"
-          disabled={uploading}
-        />
-        <GradientButton
-          label={uploading ? '…' : t('screens.voiceRecorder.send')}
-          onPress={send}
-          disabled={!uri || uploading}
-        />
-      </View>
-    </SafeAreaView>
+        <View style={s.footer}>
+          <GradientButton
+            label={state === 'idle' ? t('common.cancel') : t('screens.voiceRecorder.discard')}
+            onPress={cancel}
+            variant="secondary"
+            disabled={uploading}
+          />
+          <GradientButton
+            label={uploading ? '…' : t('screens.voiceRecorder.send')}
+            onPress={send}
+            disabled={!uri || uploading}
+          />
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

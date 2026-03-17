@@ -15,6 +15,7 @@ import { hashtagsApi } from '@/services/api';
 import type { HashtagInfo } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function HashtagExploreScreen() {
   const router = useRouter();
@@ -106,69 +107,72 @@ export default function HashtagExploreScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.hashtag-explore.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
-      />
-      
-      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchInputWrap}
-        >
-          <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.searchIconBg}
-          >
-            <Icon name="search" size="xs" color={colors.emerald} />
-          </LinearGradient>
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('screens.hashtag-explore.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
-              <Icon name="x" size="xs" color={colors.text.secondary} />
-            </Pressable>
-          )}
-        </LinearGradient>
-      </Animated.View>
-
-      {isLoading ? (
-        <View style={{ padding: spacing.base, gap: spacing.md }}>
-          <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-          <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-          <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-        </View>
-      ) : (
-        <FlatList
-          data={hashtags}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          keyboardShouldPersistTaps="handled"
-          removeClippedSubviews={true}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyWrap}>
-              <EmptyState
-                icon="hash"
-                title={debouncedQuery.length > 0 ? t('screens.hashtag-explore.emptyState') : t('screens.hashtag-explore.noTrending')}
-                subtitle={debouncedQuery.length > 0 ? t('screens.hashtag-explore.trySearching') : t('screens.hashtag-explore.checkBackLater')}
-              />
-            </View>
-          }
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.hashtag-explore.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('saf.goBack') }}
         />
-      )}
-    </View>
+      
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchInputWrap}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.searchIconBg}
+            >
+              <Icon name="search" size="xs" color={colors.emerald} />
+            </LinearGradient>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('screens.hashtag-explore.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
+                <Icon name="x" size="xs" color={colors.text.secondary} />
+              </Pressable>
+            )}
+          </LinearGradient>
+        </Animated.View>
+
+        {isLoading ? (
+          <View style={{ padding: spacing.base, gap: spacing.md }}>
+            <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+            <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+            <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+          </View>
+        ) : (
+          <FlatList
+            data={hashtags}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            keyboardShouldPersistTaps="handled"
+            removeClippedSubviews={true}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyWrap}>
+                <EmptyState
+                  icon="hash"
+                  title={debouncedQuery.length > 0 ? t('screens.hashtag-explore.emptyState') : t('screens.hashtag-explore.noTrending')}
+                  subtitle={debouncedQuery.length > 0 ? t('screens.hashtag-explore.trySearching') : t('screens.hashtag-explore.checkBackLater')}
+                />
+              </View>
+            }
+          />
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

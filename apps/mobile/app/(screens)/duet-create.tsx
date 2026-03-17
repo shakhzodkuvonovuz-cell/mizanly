@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -69,352 +70,355 @@ export default function DuetCreateScreen() {
   const isTimeRunningOut = recordTime >= 50;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title={t('duet.createDuet')} showBackButton />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('duet.createDuet')} showBackButton />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* Original Video Info Card */}
-        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-          <View style={styles.originalInfoCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.originalInfoGradient}
-            >
-              <View style={styles.creatorRow}>
-                <View style={styles.avatarContainer}>
-                  <View style={styles.avatarPlaceholder}>
-                    <Icon name="user" size="md" color={colors.text.tertiary} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {/* Original Video Info Card */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <View style={styles.originalInfoCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.originalInfoGradient}
+              >
+                <View style={styles.creatorRow}>
+                  <View style={styles.avatarContainer}>
+                    <View style={styles.avatarPlaceholder}>
+                      <Icon name="user" size="md" color={colors.text.tertiary} />
+                    </View>
+                  </View>
+                  <View style={styles.creatorInfo}>
+                    <View style={styles.creatorNameRow}>
+                      <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
+                      {originalCreator.isVerified && <VerifiedBadge size={13} />}
+                    </View>
+                    <Text style={styles.creatorUsername}>@{originalCreator.username}</Text>
+                    <Text style={styles.duetSubtitle}>Duetting with @{originalCreator.username}</Text>
                   </View>
                 </View>
-                <View style={styles.creatorInfo}>
-                  <View style={styles.creatorNameRow}>
-                    <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
-                    {originalCreator.isVerified && <VerifiedBadge size={13} />}
-                  </View>
-                  <Text style={styles.creatorUsername}>@{originalCreator.username}</Text>
-                  <Text style={styles.duetSubtitle}>Duetting with @{originalCreator.username}</Text>
-                </View>
-              </View>
-              <View style={styles.videoTitleBadge}>
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.2)', 'rgba(10,123,79,0.1)']}
-                  style={styles.videoTitleGradient}
-                >
-                  <Icon name="play" size="xs" color={colors.gold} />
-                  <Text style={styles.videoTitleText} numberOfLines={1}>
-                    {originalCreator.videoTitle}
-                  </Text>
-                </LinearGradient>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Split Preview Area */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <View style={styles.previewContainer}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.previewGradient}
-            >
-              {layoutMode === 'side-by-side' && (
-                <View style={styles.sideBySideLayout}>
-                  {/* Original Panel */}
-                  <View style={styles.previewPanel}>
-                    <View style={styles.panelLabelContainer}>
-                      <LinearGradient
-                        colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                        style={styles.panelLabelGradient}
-                      >
-                        <Text style={styles.panelLabel}>Original</Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={styles.videoPanel}>
-                      <View style={styles.videoPanelInner}>
-                        <Icon name="play" size="xl" color={colors.text.tertiary} />
-                      </View>
-                    </View>
-                    <Text style={styles.panelUsername}>@{originalCreator.username}</Text>
-                  </View>
-
-                  {/* Divider */}
-                  <View style={styles.divider} />
-
-                  {/* Your Panel */}
-                  <View style={styles.previewPanel}>
-                    <View style={styles.panelLabelContainer}>
-                      <LinearGradient
-                        colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
-                        style={styles.panelLabelGradient}
-                      >
-                        <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={[styles.videoPanel, styles.yourVideoPanel]}>
-                      <View style={[styles.videoPanelInner, styles.yourVideoPanelInner]}>
-                        <Icon name="camera" size="xl" color={colors.emerald} />
-                        <Text style={styles.tapRecordHint}>Tap to record</Text>
-                      </View>
-                    </View>
-                    <Text style={styles.panelUsername}>@your_username</Text>
-                  </View>
-                </View>
-              )}
-
-              {layoutMode === 'top-bottom' && (
-                <View style={styles.topBottomLayout}>
-                  <View style={styles.topBottomPanel}>
-                    <View style={styles.panelLabelContainer}>
-                      <LinearGradient
-                        colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                        style={styles.panelLabelGradient}
-                      >
-                        <Text style={styles.panelLabel}>Original</Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={styles.videoPanelTopBottom}>
-                      <Icon name="play" size="lg" color={colors.text.tertiary} />
-                    </View>
-                  </View>
-                  <View style={styles.dividerHorizontal} />
-                  <View style={styles.topBottomPanel}>
-                    <View style={styles.panelLabelContainer}>
-                      <LinearGradient
-                        colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
-                        style={styles.panelLabelGradient}
-                      >
-                        <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={[styles.videoPanelTopBottom, styles.yourVideoPanel]}>
-                      <Icon name="camera" size="lg" color={colors.emerald} />
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              {layoutMode === 'react' && (
-                <View style={styles.reactLayout}>
-                  <View style={styles.reactOriginalPanel}>
-                    <View style={styles.panelLabelContainer}>
-                      <LinearGradient
-                        colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                        style={styles.panelLabelGradient}
-                      >
-                        <Text style={styles.panelLabel}>Original</Text>
-                      </LinearGradient>
-                    </View>
-                    <View style={styles.videoPanelReact}>
-                      <Icon name="play" size="lg" color={colors.text.tertiary} />
-                    </View>
-                  </View>
-                  <View style={styles.reactYourPanel}>
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                      style={styles.reactYourPanelGradient}
-                    >
-                      <Icon name="camera" size="md" color={colors.emerald} />
-                    </LinearGradient>
-                  </View>
-                </View>
-              )}
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Layout Selector */}
-        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <View style={styles.layoutSelectorContainer}>
-            <Text style={styles.layoutSelectorTitle}>Layout</Text>
-            <View style={styles.layoutButtons}>
-              {[
-                { id: 'side-by-side', icon: 'layout' as IconName, label: 'Side by Side' },
-                { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
-                { id: 'react', icon: 'user' as IconName, label: 'React' },
-              ].map((layout) => (
-                <TouchableOpacity
-                  key={layout.id}
-                  style={styles.layoutButton}
-                  onPress={() => setLayoutMode(layout.id as LayoutMode)}
-                >
+                <View style={styles.videoTitleBadge}>
                   <LinearGradient
-                    colors={layoutMode === layout.id
-                      ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                    }
-                    style={styles.layoutButtonGradient}
+                    colors={['rgba(200,150,62,0.2)', 'rgba(10,123,79,0.1)']}
+                    style={styles.videoTitleGradient}
                   >
-                    <Icon
-                      name={layout.icon}
-                      size="sm"
-                      color={layoutMode === layout.id ? colors.emerald : colors.text.secondary}
-                    />
-                    <Text style={[
-                      styles.layoutButtonText,
-                      layoutMode === layout.id && styles.layoutButtonTextActive
-                    ]}>
-                      {layout.label}
+                    <Icon name="play" size="xs" color={colors.gold} />
+                    <Text style={styles.videoTitleText} numberOfLines={1}>
+                      {originalCreator.videoTitle}
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Recording Timer */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <View style={styles.timerContainer}>
-            <LinearGradient
-              colors={isTimeRunningOut
-                ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
-                : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-              }
-              style={styles.timerGradient}
-            >
-              <Text style={[
-                styles.timerText,
-                isTimeRunningOut && styles.timerTextWarning
-              ]}>
-                {formatTime(recordTime)} / 00:60
-              </Text>
-              {isRecording && (
-                <View style={styles.recordingIndicator}>
-                  <View style={styles.recordingDot} />
-                  <Text style={styles.recordingText}>Recording...</Text>
                 </View>
-              )}
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Recording Controls */}
-        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-          <View style={styles.controlsContainer}>
-            {/* Flip Camera */}
-            <TouchableOpacity style={styles.controlButton}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                style={styles.controlButtonGradient}
-              >
-                <Icon name="repeat" size="md" color={colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </View>
+          </Animated.View>
 
-            {/* Record Button */}
-            <TouchableOpacity style={styles.recordButton} onPress={toggleRecording}>
+          {/* Split Preview Area */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <View style={styles.previewContainer}>
               <LinearGradient
-                colors={isRecording
-                  ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
-                  : ['rgba(255,255,255,0.95)', 'rgba(240,240,240,1)']
-                }
-                style={styles.recordButtonOuter}
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.previewGradient}
               >
-                {isRecording ? (
-                  <View style={styles.recordingInnerSquare} />
-                ) : (
-                  <LinearGradient
-                    colors={['rgba(248,81,73,1)', 'rgba(220,60,50,1)']}
-                    style={styles.recordButtonInner}
-                  />
+                {layoutMode === 'side-by-side' && (
+                  <View style={styles.sideBySideLayout}>
+                    {/* Original Panel */}
+                    <View style={styles.previewPanel}>
+                      <View style={styles.panelLabelContainer}>
+                        <LinearGradient
+                          colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
+                          style={styles.panelLabelGradient}
+                        >
+                          <Text style={styles.panelLabel}>Original</Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={styles.videoPanel}>
+                        <View style={styles.videoPanelInner}>
+                          <Icon name="play" size="xl" color={colors.text.tertiary} />
+                        </View>
+                      </View>
+                      <Text style={styles.panelUsername}>@{originalCreator.username}</Text>
+                    </View>
+
+                    {/* Divider */}
+                    <View style={styles.divider} />
+
+                    {/* Your Panel */}
+                    <View style={styles.previewPanel}>
+                      <View style={styles.panelLabelContainer}>
+                        <LinearGradient
+                          colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                          style={styles.panelLabelGradient}
+                        >
+                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={[styles.videoPanel, styles.yourVideoPanel]}>
+                        <View style={[styles.videoPanelInner, styles.yourVideoPanelInner]}>
+                          <Icon name="camera" size="xl" color={colors.emerald} />
+                          <Text style={styles.tapRecordHint}>Tap to record</Text>
+                        </View>
+                      </View>
+                      <Text style={styles.panelUsername}>@your_username</Text>
+                    </View>
+                  </View>
+                )}
+
+                {layoutMode === 'top-bottom' && (
+                  <View style={styles.topBottomLayout}>
+                    <View style={styles.topBottomPanel}>
+                      <View style={styles.panelLabelContainer}>
+                        <LinearGradient
+                          colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
+                          style={styles.panelLabelGradient}
+                        >
+                          <Text style={styles.panelLabel}>Original</Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={styles.videoPanelTopBottom}>
+                        <Icon name="play" size="lg" color={colors.text.tertiary} />
+                      </View>
+                    </View>
+                    <View style={styles.dividerHorizontal} />
+                    <View style={styles.topBottomPanel}>
+                      <View style={styles.panelLabelContainer}>
+                        <LinearGradient
+                          colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                          style={styles.panelLabelGradient}
+                        >
+                          <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={[styles.videoPanelTopBottom, styles.yourVideoPanel]}>
+                        <Icon name="camera" size="lg" color={colors.emerald} />
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                {layoutMode === 'react' && (
+                  <View style={styles.reactLayout}>
+                    <View style={styles.reactOriginalPanel}>
+                      <View style={styles.panelLabelContainer}>
+                        <LinearGradient
+                          colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
+                          style={styles.panelLabelGradient}
+                        >
+                          <Text style={styles.panelLabel}>Original</Text>
+                        </LinearGradient>
+                      </View>
+                      <View style={styles.videoPanelReact}>
+                        <Icon name="play" size="lg" color={colors.text.tertiary} />
+                      </View>
+                    </View>
+                    <View style={styles.reactYourPanel}>
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                        style={styles.reactYourPanelGradient}
+                      >
+                        <Icon name="camera" size="md" color={colors.emerald} />
+                      </LinearGradient>
+                    </View>
+                  </View>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </View>
+          </Animated.View>
 
-            {/* Flash Toggle */}
+          {/* Layout Selector */}
+          <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+            <View style={styles.layoutSelectorContainer}>
+              <Text style={styles.layoutSelectorTitle}>Layout</Text>
+              <View style={styles.layoutButtons}>
+                {[
+                  { id: 'side-by-side', icon: 'layout' as IconName, label: 'Side by Side' },
+                  { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
+                  { id: 'react', icon: 'user' as IconName, label: 'React' },
+                ].map((layout) => (
+                  <TouchableOpacity
+                    key={layout.id}
+                    style={styles.layoutButton}
+                    onPress={() => setLayoutMode(layout.id as LayoutMode)}
+                  >
+                    <LinearGradient
+                      colors={layoutMode === layout.id
+                        ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
+                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                      }
+                      style={styles.layoutButtonGradient}
+                    >
+                      <Icon
+                        name={layout.icon}
+                        size="sm"
+                        color={layoutMode === layout.id ? colors.emerald : colors.text.secondary}
+                      />
+                      <Text style={[
+                        styles.layoutButtonText,
+                        layoutMode === layout.id && styles.layoutButtonTextActive
+                      ]}>
+                        {layout.label}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Recording Timer */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <View style={styles.timerContainer}>
+              <LinearGradient
+                colors={isTimeRunningOut
+                  ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
+                  : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                }
+                style={styles.timerGradient}
+              >
+                <Text style={[
+                  styles.timerText,
+                  isTimeRunningOut && styles.timerTextWarning
+                ]}>
+                  {formatTime(recordTime)} / 00:60
+                </Text>
+                {isRecording && (
+                  <View style={styles.recordingIndicator}>
+                    <View style={styles.recordingDot} />
+                    <Text style={styles.recordingText}>Recording...</Text>
+                  </View>
+                )}
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Recording Controls */}
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <View style={styles.controlsContainer}>
+              {/* Flip Camera */}
+              <TouchableOpacity style={styles.controlButton}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                  style={styles.controlButtonGradient}
+                >
+                  <Icon name="repeat" size="md" color={colors.text.secondary} />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Record Button */}
+              <TouchableOpacity style={styles.recordButton} onPress={toggleRecording}>
+                <LinearGradient
+                  colors={isRecording
+                    ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
+                    : ['rgba(255,255,255,0.95)', 'rgba(240,240,240,1)']
+                  }
+                  style={styles.recordButtonOuter}
+                >
+                  {isRecording ? (
+                    <View style={styles.recordingInnerSquare} />
+                  ) : (
+                    <LinearGradient
+                      colors={['rgba(248,81,73,1)', 'rgba(220,60,50,1)']}
+                      style={styles.recordButtonInner}
+                    />
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+
+              {/* Flash Toggle */}
+              <TouchableOpacity
+                style={styles.controlButton}
+                onPress={() => setFlashOn(!flashOn)}
+              >
+                <LinearGradient
+                  colors={flashOn
+                    ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
+                    : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
+                  }
+                  style={styles.controlButtonGradient}
+                >
+                  <Icon
+                    name="sun"
+                    size="md"
+                    color={flashOn ? colors.gold : colors.text.secondary}
+                  />
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+
+          {/* Audio Settings */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <View style={styles.audioCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.audioGradient}
+              >
+                <View style={styles.audioHeader}>
+                  <View style={styles.audioIconContainer}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.audioIconGradient}
+                    >
+                      <Icon name="volume-2" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                  </View>
+                  <Text style={styles.audioTitle}>Audio Settings</Text>
+                  <TouchableOpacity
+                    style={[styles.muteButton, isMuted && styles.muteButtonActive]}
+                    onPress={() => setIsMuted(!isMuted)}
+                  >
+                    <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : colors.text.secondary} />
+                    <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
+                      {isMuted ? 'Muted' : 'Mute Original'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.volumeSliders}>
+                  <View style={styles.volumeRow}>
+                    <Text style={styles.volumeLabel}>Original Audio</Text>
+                    <Text style={styles.volumeValue}>{originalVolume}%</Text>
+                  </View>
+                  <View style={styles.sliderTrack}>
+                    <View style={[styles.sliderFill, { width: `${originalVolume}%`, backgroundColor: isMuted ? colors.dark.surface : colors.emerald }]} />
+                  </View>
+
+                  <View style={[styles.volumeRow, styles.volumeRowSecond]}>
+                    <Text style={styles.volumeLabel}>Your Audio</Text>
+                    <Text style={styles.volumeValue}>{yourVolume}%</Text>
+                  </View>
+                  <View style={styles.sliderTrack}>
+                    <View style={[styles.sliderFill, { width: `${yourVolume}%` }]} />
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Next Button */}
+          <Animated.View entering={FadeInUp.delay(350).duration(400)}>
             <TouchableOpacity
-              style={styles.controlButton}
-              onPress={() => setFlashOn(!flashOn)}
+              style={styles.nextButton}
+              onPress={() => router.push('/create-reel')}
             >
               <LinearGradient
-                colors={flashOn
-                  ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
-                  : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
-                }
-                style={styles.controlButtonGradient}
+                colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                style={styles.nextButtonGradient}
               >
-                <Icon
-                  name="sun"
-                  size="md"
-                  color={flashOn ? colors.gold : colors.text.secondary}
-                />
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Icon name="chevron-right" size="sm" color="#FFF" />
               </LinearGradient>
             </TouchableOpacity>
-          </View>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Audio Settings */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <View style={styles.audioCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.audioGradient}
-            >
-              <View style={styles.audioHeader}>
-                <View style={styles.audioIconContainer}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.audioIconGradient}
-                  >
-                    <Icon name="volume-2" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                </View>
-                <Text style={styles.audioTitle}>Audio Settings</Text>
-                <TouchableOpacity
-                  style={[styles.muteButton, isMuted && styles.muteButtonActive]}
-                  onPress={() => setIsMuted(!isMuted)}
-                >
-                  <Icon name={isMuted ? 'volume-x' : 'volume-2'} size="xs" color={isMuted ? colors.error : colors.text.secondary} />
-                  <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
-                    {isMuted ? 'Muted' : 'Mute Original'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.volumeSliders}>
-                <View style={styles.volumeRow}>
-                  <Text style={styles.volumeLabel}>Original Audio</Text>
-                  <Text style={styles.volumeValue}>{originalVolume}%</Text>
-                </View>
-                <View style={styles.sliderTrack}>
-                  <View style={[styles.sliderFill, { width: `${originalVolume}%`, backgroundColor: isMuted ? colors.dark.surface : colors.emerald }]} />
-                </View>
-
-                <View style={[styles.volumeRow, styles.volumeRowSecond]}>
-                  <Text style={styles.volumeLabel}>Your Audio</Text>
-                  <Text style={styles.volumeValue}>{yourVolume}%</Text>
-                </View>
-                <View style={styles.sliderTrack}>
-                  <View style={[styles.sliderFill, { width: `${yourVolume}%` }]} />
-                </View>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Next Button */}
-        <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-          <TouchableOpacity
-            style={styles.nextButton}
-            onPress={() => router.push('/create-reel')}
-          >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-              <Icon name="chevron-right" size="sm" color="#FFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

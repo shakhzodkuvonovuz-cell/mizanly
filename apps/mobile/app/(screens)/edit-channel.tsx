@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function EditChannelScreen() {
   const router = useRouter();
@@ -143,91 +144,94 @@ export default function EditChannelScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.editChannel.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.editChannel.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + 52 + spacing.xl, paddingBottom: insets.bottom + spacing['2xl'] }
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.avatarSection}>
-          <Pressable onPress={pickImage} style={styles.avatarWrap}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 52 + spacing.xl, paddingBottom: insets.bottom + spacing['2xl'] }
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.avatarSection}>
+            <Pressable onPress={pickImage} style={styles.avatarWrap}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.avatarBg}
+              >
+                <Avatar uri={avatarUrl || undefined} name={name || 'Channel'} size="3xl" />
+              </LinearGradient>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.6)', 'rgba(10,123,79,0.4)']}
+                style={styles.editIconBadge}
+              >
+                <Icon name="camera" size={16} color="#fff" />
+              </LinearGradient>
+            </Pressable>
+            <Text style={styles.avatarHint}>{t('screens.editChannel.tapToChangePhoto')}</Text>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.avatarBg}
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
             >
-              <Avatar uri={avatarUrl || undefined} name={name || 'Channel'} size="3xl" />
+              <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
+              <View style={styles.inputWrap}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('screens.editChannel.namePlaceholder')}
+                  placeholderTextColor={colors.text.secondary}
+                  value={name}
+                  onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
+                />
+                <View style={styles.ringWrap}>
+                   <CharCountRing current={name.length} max={MAX_NAME} size={24} />
+                </View>
+              </View>
             </LinearGradient>
+          </Animated.View>
+
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.6)', 'rgba(10,123,79,0.4)']}
-              style={styles.editIconBadge}
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
             >
-              <Icon name="camera" size={16} color="#fff" />
+              <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
+              <View style={[styles.inputWrap, styles.textAreaWrap]}>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder={t('screens.editChannel.descriptionPlaceholder')}
+                  placeholderTextColor={colors.text.secondary}
+                  value={description}
+                  onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                />
+                <View style={styles.ringWrapBottom}>
+                   <CharCountRing current={description.length} max={MAX_DESC} size={24} />
+                </View>
+              </View>
             </LinearGradient>
-          </Pressable>
-          <Text style={styles.avatarHint}>{t('screens.editChannel.tapToChangePhoto')}</Text>
-        </Animated.View>
+          </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Text style={styles.label}>{t('screens.editChannel.channelName')}</Text>
-            <View style={styles.inputWrap}>
-              <TextInput
-                style={styles.input}
-                placeholder={t('screens.editChannel.namePlaceholder')}
-                placeholderTextColor={colors.text.secondary}
-                value={name}
-                onChangeText={(text) => text.length <= MAX_NAME && setName(text)}
-              />
-              <View style={styles.ringWrap}>
-                 <CharCountRing current={name.length} max={MAX_NAME} size={24} />
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Text style={styles.label}>{t('screens.editChannel.descriptionOptional')}</Text>
-            <View style={[styles.inputWrap, styles.textAreaWrap]}>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                placeholder={t('screens.editChannel.descriptionPlaceholder')}
-                placeholderTextColor={colors.text.secondary}
-                value={description}
-                onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-              />
-              <View style={styles.ringWrapBottom}>
-                 <CharCountRing current={description.length} max={MAX_DESC} size={24} />
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttonWrap}>
-          <GradientButton
-            title={updateMutation.isPending ? t('screens.editChannel.saving') : t('screens.editChannel.saveChanges')}
-            onPress={handleSave}
-            disabled={updateMutation.isPending || name.trim().length === 0}
-          />
-        </Animated.View>
-      </ScrollView>
-    </View>
+          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttonWrap}>
+            <GradientButton
+              title={updateMutation.isPending ? t('screens.editChannel.saving') : t('screens.editChannel.saveChanges')}
+              onPress={handleSave}
+              disabled={updateMutation.isPending || name.trim().length === 0}
+            />
+          </Animated.View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

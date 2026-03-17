@@ -13,6 +13,7 @@ import { subtitlesApi } from '@/services/api';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { SubtitleTrack } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -265,31 +266,46 @@ export default function CaptionEditorScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title={t('captionEditor.title')} showBackButton />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('captionEditor.title')} showBackButton />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
-      >
-        {/* Video Preview */}
-        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-          <View style={styles.previewContainer}>
-            <LinearGradient
-              colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-              style={styles.previewGradient}
-            >
-              {/* Video Placeholder */}
-              <View style={styles.videoPlaceholder}>
-                <Icon name="video" size="xl" color={colors.text.tertiary} />
-              </View>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
+        >
+          {/* Video Preview */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <View style={styles.previewContainer}>
+              <LinearGradient
+                colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
+                style={styles.previewGradient}
+              >
+                {/* Video Placeholder */}
+                <View style={styles.videoPlaceholder}>
+                  <Icon name="video" size="xl" color={colors.text.tertiary} />
+                </View>
 
-              {/* Caption Overlay */}
-              <View style={[styles.captionOverlay, getPreviewPosition()]}>
-                {selectedBackground === 'Dark Bar' && (
-                  <View style={styles.captionBackground}>
+                {/* Caption Overlay */}
+                <View style={[styles.captionOverlay, getPreviewPosition()]}>
+                  {selectedBackground === 'Dark Bar' && (
+                    <View style={styles.captionBackground}>
+                      <Text style={[
+                        styles.captionOverlayText,
+                        {
+                          fontFamily: getFontFamily(),
+                          fontSize: getFontSize(),
+                          color: selectedColor,
+                        }
+                      ]}>
+                        {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
+                      </Text>
+                    </View>
+                  )}
+                  {selectedBackground === 'Outline' && (
                     <Text style={[
                       styles.captionOverlayText,
+                      styles.captionOutline,
                       {
                         fontFamily: getFontFamily(),
                         fontSize: getFontSize(),
@@ -298,326 +314,314 @@ export default function CaptionEditorScreen() {
                     ]}>
                       {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
                     </Text>
-                  </View>
-                )}
-                {selectedBackground === 'Outline' && (
-                  <Text style={[
-                    styles.captionOverlayText,
-                    styles.captionOutline,
-                    {
-                      fontFamily: getFontFamily(),
-                      fontSize: getFontSize(),
-                      color: selectedColor,
-                    }
-                  ]}>
-                    {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
-                  </Text>
-                )}
-                {selectedBackground === 'None' && (
-                  <Text style={[
-                    styles.captionOverlayText,
-                    {
-                      fontFamily: getFontFamily(),
-                      fontSize: getFontSize(),
-                      color: selectedColor,
-                      textShadowColor: 'rgba(0,0,0,0.8)',
-                      textShadowOffset: { width: 1, height: 1 },
-                      textShadowRadius: 2,
-                    }
-                  ]}>
-                    {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
-                  </Text>
-                )}
-              </View>
+                  )}
+                  {selectedBackground === 'None' && (
+                    <Text style={[
+                      styles.captionOverlayText,
+                      {
+                        fontFamily: getFontFamily(),
+                        fontSize: getFontSize(),
+                        color: selectedColor,
+                        textShadowColor: 'rgba(0,0,0,0.8)',
+                        textShadowOffset: { width: 1, height: 1 },
+                        textShadowRadius: 2,
+                      }
+                    ]}>
+                      {getCurrentCaption()?.text || t('captionEditor.previewPlaceholder')}
+                    </Text>
+                  )}
+                </View>
 
-              {/* Timestamp */}
-              <View style={styles.timestampBadge}>
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                  style={styles.timestampGradient}
-                >
-                  <Text style={styles.timestampText}>
-                    {formatTime(currentTime)} / 01:30
-                  </Text>
-                </LinearGradient>
-              </View>
-
-              {/* Playback Controls */}
-              <View style={styles.playbackControls}>
-                <TouchableOpacity
-                  style={styles.controlCircle}
-                  onPress={() => setCurrentTime(Math.max(0, currentTime - 5))}
-                >
+                {/* Timestamp */}
+                <View style={styles.timestampBadge}>
                   <LinearGradient
                     colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                    style={styles.controlGradient}
+                    style={styles.timestampGradient}
                   >
-                    <Icon name="rewind" size="sm" color={colors.text.primary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.controlCircle, styles.playCircle]}
-                  onPress={() => setIsPlaying(!isPlaying)}
-                >
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-                    style={styles.controlGradient}
-                  >
-                    <Icon name={isPlaying ? 'pause' : 'play'} size="md" color="#FFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.controlCircle}
-                  onPress={() => setCurrentTime(Math.min(90, currentTime + 5))}
-                >
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
-                    style={styles.controlGradient}
-                  >
-                    <Icon name="fast-forward" size="sm" color={colors.text.primary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Caption List */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <View style={styles.listHeader}>
-            <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
-            <TouchableOpacity style={styles.addCaptionButton} onPress={handleAddCaption}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                style={styles.addCaptionGradient}
-              >
-                <Icon name="circle-plus" size="xs" color={colors.emerald} />
-                <Text style={styles.addCaptionText}>{t('common.add')}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          </View>
-
-          {captions.length === 0 ? (
-            <EmptyState
-              icon="type"
-              title={t('captionEditor.noCaptions')}
-              subtitle={t('captionEditor.noCaptionsSubtitle')}
-              actionLabel={t('captionEditor.autoGenerate')}
-              onAction={handleAutoGenerate}
-            />
-          ) : (
-            <FlatList
-              data={captions}
-              renderItem={renderCaptionItem}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              contentContainerStyle={styles.captionList}
-            />
-          )}
-        </Animated.View>
-
-        {/* Style Panel */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <View style={styles.styleCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.styleGradient}
-            >
-              {/* Header */}
-              <View style={styles.styleHeader}>
-                <View style={styles.styleIconContainer}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.styleIconGradient}
-                  >
-                    <Icon name="type" size="sm" color={colors.emerald} />
+                    <Text style={styles.timestampText}>
+                      {formatTime(currentTime)} / 01:30
+                    </Text>
                   </LinearGradient>
                 </View>
-                <Text style={styles.styleTitle}>{t('captionEditor.style')}</Text>
-              </View>
 
-              {/* Font Selector */}
-              <Text style={styles.styleLabel}>{t('captionEditor.font')}</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
-                {FONT_OPTIONS.map((font) => (
+                {/* Playback Controls */}
+                <View style={styles.playbackControls}>
                   <TouchableOpacity
-                    key={font}
-                    style={styles.selectorButton}
-                    onPress={() => setSelectedFont(font)}
+                    style={styles.controlCircle}
+                    onPress={() => setCurrentTime(Math.max(0, currentTime - 5))}
                   >
                     <LinearGradient
-                      colors={selectedFont === font
-                        ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                      }
-                      style={styles.selectorButtonGradient}
+                      colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
+                      style={styles.controlGradient}
                     >
-                      <Text style={[
-                        styles.selectorButtonText,
-                        selectedFont === font && styles.selectorButtonTextActive
-                      ]}>
-                        {t(`captionEditor.fontOption.${font.toLowerCase()}`)}
-                      </Text>
+                      <Icon name="rewind" size="sm" color={colors.text.primary} />
                     </LinearGradient>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
 
-              {/* Size Selector */}
-              <Text style={styles.styleLabel}>{t('captionEditor.size')}</Text>
-              <View style={styles.selectorRow}>
-                {SIZE_OPTIONS.map((size) => (
                   <TouchableOpacity
-                    key={size}
-                    style={styles.selectorButton}
-                    onPress={() => setSelectedSize(size)}
+                    style={[styles.controlCircle, styles.playCircle]}
+                    onPress={() => setIsPlaying(!isPlaying)}
                   >
                     <LinearGradient
-                      colors={selectedSize === size
-                        ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                      }
-                      style={styles.selectorButtonGradient}
+                      colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                      style={styles.controlGradient}
                     >
-                      <Text style={[
-                        styles.selectorButtonText,
-                        selectedSize === size && styles.selectorButtonTextActive
-                      ]}>
-                        {t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
-                      </Text>
+                      <Icon name={isPlaying ? 'pause' : 'play'} size="md" color="#FFF" />
                     </LinearGradient>
                   </TouchableOpacity>
-                ))}
-              </View>
 
-              {/* Position Selector */}
-              <Text style={styles.styleLabel}>{t('captionEditor.position')}</Text>
-              <View style={styles.selectorRow}>
-                {POSITION_OPTIONS.map((position) => (
                   <TouchableOpacity
-                    key={position}
-                    style={styles.selectorButton}
-                    onPress={() => setSelectedPosition(position)}
+                    style={styles.controlCircle}
+                    onPress={() => setCurrentTime(Math.min(90, currentTime + 5))}
                   >
                     <LinearGradient
-                      colors={selectedPosition === position
-                        ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                      }
-                      style={styles.selectorButtonGradient}
+                      colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
+                      style={styles.controlGradient}
                     >
-                      <Text style={[
-                        styles.selectorButtonText,
-                        selectedPosition === position && styles.selectorButtonTextActive
-                      ]}>
-                        {t(`captionEditor.positionOption.${position.toLowerCase()}`)}
-                      </Text>
+                      <Icon name="fast-forward" size="sm" color={colors.text.primary} />
                     </LinearGradient>
                   </TouchableOpacity>
-                ))}
-              </View>
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
 
-              {/* Background Selector */}
-              <Text style={styles.styleLabel}>{t('captionEditor.background')}</Text>
-              <View style={styles.selectorRow}>
-                {BACKGROUND_OPTIONS.map((bg) => (
-                  <TouchableOpacity
-                    key={bg}
-                    style={styles.selectorButton}
-                    onPress={() => setSelectedBackground(bg)}
-                  >
+          {/* Caption List */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <View style={styles.listHeader}>
+              <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
+              <TouchableOpacity style={styles.addCaptionButton} onPress={handleAddCaption}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.addCaptionGradient}
+                >
+                  <Icon name="circle-plus" size="xs" color={colors.emerald} />
+                  <Text style={styles.addCaptionText}>{t('common.add')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+
+            {captions.length === 0 ? (
+              <EmptyState
+                icon="type"
+                title={t('captionEditor.noCaptions')}
+                subtitle={t('captionEditor.noCaptionsSubtitle')}
+                actionLabel={t('captionEditor.autoGenerate')}
+                onAction={handleAutoGenerate}
+              />
+            ) : (
+              <FlatList
+                data={captions}
+                renderItem={renderCaptionItem}
+                keyExtractor={(item) => item.id}
+                scrollEnabled={false}
+                contentContainerStyle={styles.captionList}
+              />
+            )}
+          </Animated.View>
+
+          {/* Style Panel */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <View style={styles.styleCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.styleGradient}
+              >
+                {/* Header */}
+                <View style={styles.styleHeader}>
+                  <View style={styles.styleIconContainer}>
                     <LinearGradient
-                      colors={selectedBackground === bg
-                        ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                      }
-                      style={styles.selectorButtonGradient}
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.styleIconGradient}
                     >
-                      <Text style={[
-                        styles.selectorButtonText,
-                        selectedBackground === bg && styles.selectorButtonTextActive
-                      ]}>
-                        {t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
-                      </Text>
+                      <Icon name="type" size="sm" color={colors.emerald} />
                     </LinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                  </View>
+                  <Text style={styles.styleTitle}>{t('captionEditor.style')}</Text>
+                </View>
 
-              {/* Color Picker */}
-              <Text style={styles.styleLabel}>{t('captionEditor.color')}</Text>
-              <View style={styles.colorRow}>
-                {TEXT_COLORS.map((color) => (
-                  <TouchableOpacity
-                    key={color}
-                    style={[
-                      styles.colorCircle,
-                      { backgroundColor: color },
-                      selectedColor === color && styles.colorCircleActive
-                    ]}
-                    onPress={() => setSelectedColor(color)}
-                  />
-                ))}
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+                {/* Font Selector */}
+                <Text style={styles.styleLabel}>{t('captionEditor.font')}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
+                  {FONT_OPTIONS.map((font) => (
+                    <TouchableOpacity
+                      key={font}
+                      style={styles.selectorButton}
+                      onPress={() => setSelectedFont(font)}
+                    >
+                      <LinearGradient
+                        colors={selectedFont === font
+                          ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        }
+                        style={styles.selectorButtonGradient}
+                      >
+                        <Text style={[
+                          styles.selectorButtonText,
+                          selectedFont === font && styles.selectorButtonTextActive
+                        ]}>
+                          {t(`captionEditor.fontOption.${font.toLowerCase()}`)}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+                {/* Size Selector */}
+                <Text style={styles.styleLabel}>{t('captionEditor.size')}</Text>
+                <View style={styles.selectorRow}>
+                  {SIZE_OPTIONS.map((size) => (
+                    <TouchableOpacity
+                      key={size}
+                      style={styles.selectorButton}
+                      onPress={() => setSelectedSize(size)}
+                    >
+                      <LinearGradient
+                        colors={selectedSize === size
+                          ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        }
+                        style={styles.selectorButtonGradient}
+                      >
+                        <Text style={[
+                          styles.selectorButtonText,
+                          selectedSize === size && styles.selectorButtonTextActive
+                        ]}>
+                          {t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  ))}
+                </View>
 
-      {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
-        <LinearGradient
-          colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
-          style={styles.bottomBarGradient}
-        >
-          <TouchableOpacity
-            style={styles.autoGenButton}
-            onPress={handleAutoGenerate}
-            disabled={generateMutation.isPending}
+                {/* Position Selector */}
+                <Text style={styles.styleLabel}>{t('captionEditor.position')}</Text>
+                <View style={styles.selectorRow}>
+                  {POSITION_OPTIONS.map((position) => (
+                    <TouchableOpacity
+                      key={position}
+                      style={styles.selectorButton}
+                      onPress={() => setSelectedPosition(position)}
+                    >
+                      <LinearGradient
+                        colors={selectedPosition === position
+                          ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        }
+                        style={styles.selectorButtonGradient}
+                      >
+                        <Text style={[
+                          styles.selectorButtonText,
+                          selectedPosition === position && styles.selectorButtonTextActive
+                        ]}>
+                          {t(`captionEditor.positionOption.${position.toLowerCase()}`)}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Background Selector */}
+                <Text style={styles.styleLabel}>{t('captionEditor.background')}</Text>
+                <View style={styles.selectorRow}>
+                  {BACKGROUND_OPTIONS.map((bg) => (
+                    <TouchableOpacity
+                      key={bg}
+                      style={styles.selectorButton}
+                      onPress={() => setSelectedBackground(bg)}
+                    >
+                      <LinearGradient
+                        colors={selectedBackground === bg
+                          ? ['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']
+                          : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                        }
+                        style={styles.selectorButtonGradient}
+                      >
+                        <Text style={[
+                          styles.selectorButtonText,
+                          selectedBackground === bg && styles.selectorButtonTextActive
+                        ]}>
+                          {t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
+                        </Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Color Picker */}
+                <Text style={styles.styleLabel}>{t('captionEditor.color')}</Text>
+                <View style={styles.colorRow}>
+                  {TEXT_COLORS.map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorCircle,
+                        { backgroundColor: color },
+                        selectedColor === color && styles.colorCircleActive
+                      ]}
+                      onPress={() => setSelectedColor(color)}
+                    />
+                  ))}
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        {/* Bottom Action Bar */}
+        <View style={styles.bottomBar}>
+          <LinearGradient
+            colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
+            style={styles.bottomBarGradient}
           >
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.autoGenGradient}
+            <TouchableOpacity
+              style={styles.autoGenButton}
+              onPress={handleAutoGenerate}
+              disabled={generateMutation.isPending}
             >
-              {generateMutation.isPending ? (
-                <>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.autoGenGradient}
+              >
+                {generateMutation.isPending ? (
+                  <>
+                    <Skeleton.Circle size={16} />
+                    <Text style={styles.autoGenText}>{t('captionEditor.processing')}</Text>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="mic" size="sm" color={colors.text.secondary} />
+                    <Text style={styles.autoGenText}>{t('captionEditor.autoGenerate')}</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.saveButton}
+              onPress={handleSave}
+              disabled={saveMutation.isPending}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                style={styles.saveGradient}
+              >
+                {saveMutation.isPending ? (
                   <Skeleton.Circle size={16} />
-                  <Text style={styles.autoGenText}>{t('captionEditor.processing')}</Text>
-                </>
-              ) : (
-                <>
-                  <Icon name="mic" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.autoGenText}>{t('captionEditor.autoGenerate')}</Text>
-                </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={handleSave}
-            disabled={saveMutation.isPending}
-          >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-              style={styles.saveGradient}
-            >
-              {saveMutation.isPending ? (
-                <Skeleton.Circle size={16} />
-              ) : (
-                <Icon name="check" size="sm" color="#FFF" />
-              )}
-              <Text style={styles.saveText}>{t('common.save')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    </SafeAreaView>
+                ) : (
+                  <Icon name="check" size="sm" color="#FFF" />
+                )}
+                <Text style={styles.saveText}>{t('common.save')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

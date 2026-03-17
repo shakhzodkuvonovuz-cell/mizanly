@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -323,6 +324,7 @@ export default function VideoEditorScreen() {
   };
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('videoEditor.editVideo')} showBackButton />
 
@@ -554,6 +556,7 @@ export default function VideoEditorScreen() {
         </LinearGradient>
       </View>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

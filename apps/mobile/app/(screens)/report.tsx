@@ -18,6 +18,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi, threadsApi, reelsApi, videosApi, usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const REASONS = [
   { labelKey: 'screens.report.reasonSpam', value: 'SPAM' },
@@ -75,113 +76,116 @@ export default function ReportScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.report.title')}
-        leftAction={{ 
-          icon: 'arrow-left', 
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
-        }}
-      />
-      <View style={styles.headerSpacer} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.report.title')}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
+        />
+        <View style={styles.headerSpacer} />
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
-            style={styles.promptCard}
-          >
-            <Icon name="flag" size="lg" color={colors.error} />
-            <Text style={styles.prompt}>
-              {t('screens.report.whyReporting', { type: params.type })}
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Reason list */}
-        <View style={styles.reasonList}>
-          {REASONS.map((reason, index) => (
-            <Animated.View
-              key={reason.value}
-              entering={FadeInUp.delay(100 + index * 50).duration(400)}
+        <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.promptCard}
             >
-              <Pressable
-                style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
-                onPress={() => setSelectedReason(reason.value)}
-                accessibilityLabel={t(reason.labelKey)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: selectedReason === reason.value }}
+              <Icon name="flag" size="lg" color={colors.error} />
+              <Text style={styles.prompt}>
+                {t('screens.report.whyReporting', { type: params.type })}
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Reason list */}
+          <View style={styles.reasonList}>
+            {REASONS.map((reason, index) => (
+              <Animated.View
+                key={reason.value}
+                entering={FadeInUp.delay(100 + index * 50).duration(400)}
               >
-                <LinearGradient
-                  colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.reasonGradient}
+                <Pressable
+                  style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
+                  onPress={() => setSelectedReason(reason.value)}
+                  accessibilityLabel={t(reason.labelKey)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: selectedReason === reason.value }}
                 >
                   <LinearGradient
-                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)'] : ['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-                    style={styles.radioOuter}
+                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.reasonGradient}
                   >
+                    <LinearGradient
+                      colors={selectedReason === reason.value ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)'] : ['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                      style={styles.radioOuter}
+                    >
+                      {selectedReason === reason.value && (
+                        <LinearGradient
+                          colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.4)']}
+                          style={styles.radioInner}
+                        />
+                      )}
+                    </LinearGradient>
+                    <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
+                      {t(reason.labelKey)}
+                    </Text>
                     {selectedReason === reason.value && (
                       <LinearGradient
-                        colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.4)']}
-                        style={styles.radioInner}
-                      />
+                        colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                        style={styles.checkIconBg}
+                      >
+                        <Icon name="check" size="xs" color={colors.emerald} />
+                      </LinearGradient>
                     )}
                   </LinearGradient>
-                  <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
-                    {t(reason.labelKey)}
-                  </Text>
-                  {selectedReason === reason.value && (
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                      style={styles.checkIconBg}
-                    >
-                      <Icon name="check" size="xs" color={colors.emerald} />
-                    </LinearGradient>
-                  )}
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          ))}
-        </View>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </View>
 
-        {/* Additional details */}
-        <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.detailsCard}
-          >
-            <Text style={styles.detailsLabel}>{t('screens.report.additionalDetails')}</Text>
-            <TextInput
-              style={styles.detailsInput}
-              placeholder={t('screens.report.detailsPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
-              value={details}
-              onChangeText={setDetails}
-              multiline
-              maxLength={500}
-              textAlignVertical="top"
-              accessibilityLabel={t('screens.report.additionalDetails')}
+          {/* Additional details */}
+          <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.detailsCard}
+            >
+              <Text style={styles.detailsLabel}>{t('screens.report.additionalDetails')}</Text>
+              <TextInput
+                style={styles.detailsInput}
+                placeholder={t('screens.report.detailsPlaceholder')}
+                placeholderTextColor={colors.text.tertiary}
+                value={details}
+                onChangeText={setDetails}
+                multiline
+                maxLength={500}
+                textAlignVertical="top"
+                accessibilityLabel={t('screens.report.additionalDetails')}
+              />
+              <Text style={styles.charCount}>
+                {details.length}/500
+              </Text>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Submit button */}
+          <Animated.View entering={FadeInUp.delay(600).duration(400)}>
+            <GradientButton
+              label={t('screens.report.submitReport')}
+              onPress={handleSubmit}
+              disabled={!selectedReason}
+              loading={reportMutation.isPending}
+              fullWidth
+              size="lg"
             />
-            <Text style={styles.charCount}>
-              {details.length}/500
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Submit button */}
-        <Animated.View entering={FadeInUp.delay(600).duration(400)}>
-          <GradientButton
-            label={t('screens.report.submitReport')}
-            onPress={handleSubmit}
-            disabled={!selectedReason}
-            loading={reportMutation.isPending}
-            fullWidth
-            size="lg"
-          />
-        </Animated.View>
-      </ScrollView>
-    </View>
+          </Animated.View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

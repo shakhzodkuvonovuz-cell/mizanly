@@ -16,6 +16,7 @@ import { bookmarksApi } from '@/services/api';
 import type { BookmarkCollection } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -121,34 +122,37 @@ export default function BookmarkCollectionsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title={t('screens.bookmarkCollections.title')} 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title={t('screens.bookmarkCollections.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
+        />
       
-      <FlatList
-        data={collections || []}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.name}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState 
-              icon="bookmark" 
-              title={t('screens.bookmarkCollections.emptyTitle')} 
-              subtitle={t('screens.bookmarkCollections.emptySubtitle')} 
-            />
-          </View>
-        }
-      />
-    </View>
+        <FlatList
+          data={collections || []}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.name}
+          numColumns={2}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <EmptyState 
+                icon="bookmark" 
+                title={t('screens.bookmarkCollections.emptyTitle')} 
+                subtitle={t('screens.bookmarkCollections.emptySubtitle')} 
+              />
+            </View>
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

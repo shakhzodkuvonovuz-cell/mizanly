@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -244,147 +245,150 @@ export default function RamadanModeScreen() {
   }, [currentDay]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title={t('screens.ramadanMode.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        rightActions={[{ icon: 'moon', onPress: () => {}, accessibilityLabel: t('screens.ramadanMode.title') }]}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={t('screens.ramadanMode.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          rightActions={[{ icon: 'moon', onPress: () => {}, accessibilityLabel: t('screens.ramadanMode.title') }]}
+        />
 
-      <ScrollView
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Hero Card */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-            style={styles.heroCard}
-          >
-            {/* Moon Icon */}
+        <ScrollView
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Hero Card */}
+          <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
-              colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.heroIconBg}
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+              style={styles.heroCard}
             >
-              <Icon name="moon" size="md" color={colors.gold} />
-            </LinearGradient>
+              {/* Moon Icon */}
+              <LinearGradient
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.heroIconBg}
+              >
+                <Icon name="moon" size="md" color={colors.gold} />
+              </LinearGradient>
 
-            {/* Title */}
-            <Text style={styles.heroTitle}>{t('screens.ramadanMode.heroTitle')}</Text>
+              {/* Title */}
+              <Text style={styles.heroTitle}>{t('screens.ramadanMode.heroTitle')}</Text>
 
-            {/* Day Counter */}
-            <View style={styles.dayCounter}>
-              <Text style={styles.dayText}>{t('screens.ramadanMode.dayOfTotal', { day: currentDay, total: 30 })}</Text>
-              <View style={styles.progressContainer}>
-                <View style={styles.progressTrack}>
-                  <View style={[styles.progressFill, { width: `${progress}%` }]} />
+              {/* Day Counter */}
+              <View style={styles.dayCounter}>
+                <Text style={styles.dayText}>{t('screens.ramadanMode.dayOfTotal', { day: currentDay, total: 30 })}</Text>
+                <View style={styles.progressContainer}>
+                  <View style={styles.progressTrack}>
+                    <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                  </View>
                 </View>
               </View>
-            </View>
 
-            {/* Hijri Date */}
-            <Text style={styles.hijriDate}>١٥ رمضان ١٤٤٦</Text>
-          </LinearGradient>
-        </Animated.View>
+              {/* Hijri Date */}
+              <Text style={styles.hijriDate}>١٥ رمضان ١٤٤٦</Text>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Dual Countdown Timers */}
-        <View style={styles.countdownRow}>
-          <CountdownDisplay
-            label={t('screens.ramadanMode.iftarIn')}
-            time={iftarCountdown}
-            icon="sun"
-            iconColor={colors.gold}
-            isUrgent={isIftarUrgent}
-          />
-          <CountdownDisplay
-            label={t('screens.ramadanMode.suhoorEndsIn')}
-            time={suhoorCountdown}
-            icon="moon"
-            iconColor={colors.emerald}
-          />
-        </View>
+          {/* Dual Countdown Timers */}
+          <View style={styles.countdownRow}>
+            <CountdownDisplay
+              label={t('screens.ramadanMode.iftarIn')}
+              time={iftarCountdown}
+              icon="sun"
+              iconColor={colors.gold}
+              isUrgent={isIftarUrgent}
+            />
+            <CountdownDisplay
+              label={t('screens.ramadanMode.suhoorEndsIn')}
+              time={suhoorCountdown}
+              icon="moon"
+              iconColor={colors.emerald}
+            />
+          </View>
 
-        {/* Today's Schedule */}
-        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.todaysSchedule')}</Text>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.scheduleCard}
-          >
-            {RAMADAN_SCHEDULE.map((prayer, index) => (
-              <ScheduleItem key={prayer.name} prayer={prayer} index={index} t={t} />
-            ))}
-          </LinearGradient>
-        </Animated.View>
+          {/* Today's Schedule */}
+          <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+            <Text style={styles.sectionTitle}>{t('screens.ramadanMode.todaysSchedule')}</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.scheduleCard}
+            >
+              {RAMADAN_SCHEDULE.map((prayer, index) => (
+                <ScheduleItem key={prayer.name} prayer={prayer} index={index} t={t} />
+              ))}
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Fasting Tracker */}
-        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.fastingTracker')}</Text>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.trackerCard}
-          >
-            {/* Day Grid */}
-            <View style={styles.dayGrid}>
-              {fastingGrid.map((day, index) => (
-                <View key={day.day} style={styles.dayCell}>
-                  <LinearGradient
-                    colors={
-                      day.completed
-                        ? [colors.emerald, colors.emeraldDark]
-                        : day.isToday
-                        ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
-                        : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']
-                    }
-                    style={[
-                      styles.dayCircle,
-                      day.isToday && styles.dayCircleToday,
-                    ]}
-                  >
-                    <Text
+          {/* Fasting Tracker */}
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <Text style={styles.sectionTitle}>{t('screens.ramadanMode.fastingTracker')}</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.trackerCard}
+            >
+              {/* Day Grid */}
+              <View style={styles.dayGrid}>
+                {fastingGrid.map((day, index) => (
+                  <View key={day.day} style={styles.dayCell}>
+                    <LinearGradient
+                      colors={
+                        day.completed
+                          ? [colors.emerald, colors.emeraldDark]
+                          : day.isToday
+                          ? ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']
+                          : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']
+                      }
                       style={[
-                        styles.dayNumber,
-                        day.completed && styles.dayNumberCompleted,
-                        day.isToday && styles.dayNumberToday,
+                        styles.dayCircle,
+                        day.isToday && styles.dayCircleToday,
                       ]}
                     >
-                      {day.day}
-                    </Text>
-                  </LinearGradient>
-                </View>
+                      <Text
+                        style={[
+                          styles.dayNumber,
+                          day.completed && styles.dayNumberCompleted,
+                          day.isToday && styles.dayNumberToday,
+                        ]}
+                      >
+                        {day.day}
+                      </Text>
+                    </LinearGradient>
+                  </View>
+                ))}
+              </View>
+
+              {/* Summary */}
+              <View style={styles.trackerSummary}>
+                <Text style={styles.trackerSummaryText}>{t('screens.ramadanMode.daysFasted', { count: 22 })}</Text>
+                <Text style={styles.trackerRemaining}>{t('screens.ramadanMode.daysRemaining', { count: 8 })}</Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Daily Goals */}
+          <Animated.View entering={FadeInUp.delay(350).duration(400)}>
+            <Text style={styles.sectionTitle}>{t('screens.ramadanMode.dailyGoals')}</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.goalsCard}
+            >
+              {goals.map((goal, index) => (
+                <GoalItem
+                  key={goal.id}
+                  goal={goal}
+                  onToggle={() => toggleGoal(goal.id)}
+                  index={index}
+                />
               ))}
-            </View>
+            </LinearGradient>
+          </Animated.View>
 
-            {/* Summary */}
-            <View style={styles.trackerSummary}>
-              <Text style={styles.trackerSummaryText}>{t('screens.ramadanMode.daysFasted', { count: 22 })}</Text>
-              <Text style={styles.trackerRemaining}>{t('screens.ramadanMode.daysRemaining', { count: 8 })}</Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Daily Goals */}
-        <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-          <Text style={styles.sectionTitle}>{t('screens.ramadanMode.dailyGoals')}</Text>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.goalsCard}
-          >
-            {goals.map((goal, index) => (
-              <GoalItem
-                key={goal.id}
-                goal={goal}
-                onToggle={() => toggleGoal(goal.id)}
-                index={index}
-              />
-            ))}
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.xxl }} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.xxl }} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

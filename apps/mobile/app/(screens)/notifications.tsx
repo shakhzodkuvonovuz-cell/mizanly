@@ -26,6 +26,7 @@ import { useStore } from '@/store';
 import type { Notification } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlMargin, rtlBorderStart, rtlAbsoluteStart } from '@/utils/rtl';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type NotifIconName = React.ComponentProps<typeof Icon>['name'];
 
@@ -373,72 +374,75 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('notifications.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
-        rightActions={[{
-          component: (
-            <GradientButton
-              label={t('notifications.markAllRead')}
-              size="sm"
-              variant="ghost"
-              onPress={() => markAllMutation.mutate()}
-            />
-          ),
-          onPress: () => markAllMutation.mutate(),
-          accessibilityLabel: t('notifications.markAllReadAccessibility'),
-        }]}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('notifications.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+          rightActions={[{
+            component: (
+              <GradientButton
+                label={t('notifications.markAllRead')}
+                size="sm"
+                variant="ghost"
+                onPress={() => markAllMutation.mutate()}
+              />
+            ),
+            onPress: () => markAllMutation.mutate(),
+            accessibilityLabel: t('notifications.markAllReadAccessibility'),
+          }]}
+        />
 
-      <View style={{ paddingTop: headerHeight }}>
-        <TabSelector
-          tabs={NOTIF_TABS}
-          activeKey={filter}
-          onTabChange={(key) => setFilter(key as NotifFilter)}
+        <View style={{ paddingTop: headerHeight }}>
+          <TabSelector
+            tabs={NOTIF_TABS}
+            activeKey={filter}
+            onTabChange={(key) => setFilter(key as NotifFilter)}
+          />
+        </View>
+
+        <SectionList
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
+          renderSectionHeader={({ section }) => (
+            <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{section.title}</Text>
+          )}
+          onEndReached={() => {
+            if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
+          }}
+          onEndReachedThreshold={0.4}
+          refreshControl={<RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.emerald} />}
+          ListEmptyComponent={() =>
+            query.isLoading ? (
+              <View style={styles.skeletonList}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+                    <Skeleton.Circle size={40} />
+                    <View style={{ flex: 1, gap: 6 }}>
+                      <Skeleton.Rect width="80%" height={14} />
+                      <Skeleton.Rect width="40%" height={11} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <EmptyState
+                icon="bell"
+                title={t('notifications.noNotifications')}
+                subtitle={t('notifications.noNotificationsSubtitle')}
+              />
+            )
+          }
+          ListFooterComponent={() =>
+            query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
+          }
+          contentContainerStyle={{ paddingBottom: 40 }}
+          stickySectionHeadersEnabled={true}
         />
       </View>
-
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => <NotificationRow notification={item} index={index} />}
-        renderSectionHeader={({ section }) => (
-          <Text style={[styles.sectionHeader, { textAlign: rtlTextAlign(isRTL) }]}>{section.title}</Text>
-        )}
-        onEndReached={() => {
-          if (query.hasNextPage && !query.isFetchingNextPage) query.fetchNextPage();
-        }}
-        onEndReachedThreshold={0.4}
-        refreshControl={<RefreshControl refreshing={query.isRefetching && !query.isFetchingNextPage} onRefresh={onRefresh} tintColor={colors.emerald} />}
-        ListEmptyComponent={() =>
-          query.isLoading ? (
-            <View style={styles.skeletonList}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <View key={i} style={[styles.skeletonRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-                  <Skeleton.Circle size={40} />
-                  <View style={{ flex: 1, gap: 6 }}>
-                    <Skeleton.Rect width="80%" height={14} />
-                    <Skeleton.Rect width="40%" height={11} />
-                  </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon="bell"
-              title={t('notifications.noNotifications')}
-              subtitle={t('notifications.noNotificationsSubtitle')}
-            />
-          )
-        }
-        ListFooterComponent={() =>
-          query.isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null
-        }
-        contentContainerStyle={{ paddingBottom: 40 }}
-        stickySectionHeadersEnabled={true}
-      />
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

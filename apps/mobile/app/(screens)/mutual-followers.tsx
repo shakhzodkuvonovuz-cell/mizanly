@@ -18,6 +18,8 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, followsApi } from '@/services/api';
 import type { User, PaginatedResponse } from '@/types';
 import { useStore } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
   user: User;
@@ -49,7 +51,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
           </View>
           {!isMe && (
             <GradientButton
-              label={isFollowing ? 'Following' : 'Follow'}
+              label={isFollowing ? t('common.following') : t('common.follow')}
               onPress={() => onToggleFollow(user.id, !isFollowing)}
               variant={isFollowing ? 'secondary' : 'primary'}
               size="sm"
@@ -62,6 +64,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
 }
 
 export default function MutualFollowersScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
   const queryClient = useQueryClient();
@@ -170,19 +173,19 @@ export default function MutualFollowersScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Followers you know"
+          title={t('screens.mutual-followers.title')}
           leftAction={{
             icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('accessibility.goBack'),
           }}
         />
         <View style={{ paddingTop: headerHeight, flex: 1, justifyContent: 'center' }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load content"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('screens.mutual-followers.errorTitle')}
+            subtitle={t('screens.mutual-followers.errorSubtitle')}
+            actionLabel={t('common.retry')}
             onAction={() => mutualFollowersQuery.refetch()}
           />
         </View>
@@ -194,11 +197,11 @@ export default function MutualFollowersScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Followers you know"
+          title={t('screens.mutual-followers.title')}
           leftAction={{
             icon: 'arrow-left',
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back',
+            accessibilityLabel: t('accessibility.goBack'),
           }}
         />
         <View style={{ paddingTop: headerHeight }}>
@@ -209,64 +212,67 @@ export default function MutualFollowersScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Followers you know"
-        leftAction={{
-          icon: 'arrow-left',
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back',
-        }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.mutual-followers.title')}
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('accessibility.goBack'),
+          }}
+        />
 
-      {/* List */}
-      <FlatList
-          removeClippedSubviews={true}
-        contentContainerStyle={{ paddingTop: headerHeight }}
-        data={mutualFollowers}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <UserRow
-            user={item}
-            isMe={currentUserId === item.id}
-            isFollowing={item.isFollowing ?? false}
-            onToggleFollow={handleToggleFollow}
-            onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-            index={index}
-          />
-        )}
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={() =>
-          mutualFollowersQuery.isLoading ? null : (
-            <View style={styles.emptyState}>
-              <EmptyState
-                icon="users"
-                title="No shared connections yet"
-                subtitle="When you and this person follow the same people, they will show up here"
-              />
-            </View>
-          )
-        }
-        ListFooterComponent={() =>
-          mutualFollowersQuery.isFetchingNextPage ? (
-            <View style={styles.skeletonList}>
-              <View style={styles.skeletonRow}>
-                <Skeleton.Circle size={40} />
-                <View style={{ flex: 1, gap: 6 }}>
-                  <Skeleton.Rect width={130} height={14} />
-                  <Skeleton.Rect width={90} height={11} />
-                </View>
-                <Skeleton.Rect width={70} height={30} borderRadius={radius.full} />
+        {/* List */}
+        <FlatList
+            removeClippedSubviews={true}
+          contentContainerStyle={{ paddingTop: headerHeight }}
+          data={mutualFollowers}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <UserRow
+              user={item}
+              isMe={currentUserId === item.id}
+              isFollowing={item.isFollowing ?? false}
+              onToggleFollow={handleToggleFollow}
+              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+              index={index}
+            />
+          )}
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={() =>
+            mutualFollowersQuery.isLoading ? null : (
+              <View style={styles.emptyState}>
+                <EmptyState
+                  icon="users"
+                  title={t('screens.mutual-followers.emptyTitle')}
+                  subtitle={t('screens.mutual-followers.emptySubtitle')}
+                />
               </View>
-            </View>
-          ) : null
-        }
-      />
-    </View>
+            )
+          }
+          ListFooterComponent={() =>
+            mutualFollowersQuery.isFetchingNextPage ? (
+              <View style={styles.skeletonList}>
+                <View style={styles.skeletonRow}>
+                  <Skeleton.Circle size={40} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton.Rect width={130} height={14} />
+                    <Skeleton.Rect width={90} height={11} />
+                  </View>
+                  <Skeleton.Rect width={70} height={30} borderRadius={radius.full} />
+                </View>
+              </View>
+            ) : null
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -21,6 +21,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, hashtagsApi, usersApi } from '@/services/api';
 import type { User, Post, Thread, Reel } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Hashtag = { id: string; name: string; postsCount: number };
 
@@ -305,297 +306,300 @@ export default function SearchResultsScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Search"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
-      <View style={styles.headerSpacer} />
-
-      {/* Search Box - Glassmorphism */}
-      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.searchBoxWrap}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchBoxOuter}
-        >
-          <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.searchIconBg}
-            >
-              <Icon name="search" size="xs" color={colors.emerald} />
-            </LinearGradient>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search…"
-              placeholderTextColor={colors.text.tertiary}
-              value={query}
-              onChangeText={handleQueryChange}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-            />
-            {query.length > 0 && (
-              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
-              </Pressable>
-            )}
-          </View>
-        </LinearGradient>
-      </Animated.View>
-
-      <TabSelector
-        tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
-        activeKey={activeTab}
-        onTabChange={(key) => setActiveTab(key as SearchTab)}
-        variant="underline"
-        style={styles.tabSelector}
-      />
-
-      {debouncedQuery.trim().length < 2 ? (
-        <EmptyState
-          icon="search"
-          title="Enter a search term"
-          subtitle="Type at least 2 characters to see results"
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Search"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
         />
-      ) : hasError ? (
-        <View style={{ flex: 1, justifyContent: 'center' }}>
+        <View style={styles.headerSpacer} />
+
+        {/* Search Box - Glassmorphism */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.searchBoxWrap}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchBoxOuter}
+          >
+            <View style={[styles.searchBox, isFocused && styles.searchBoxFocused]}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.searchIconBg}
+              >
+                <Icon name="search" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search…"
+                placeholderTextColor={colors.text.tertiary}
+                value={query}
+                onChangeText={handleQueryChange}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                autoCapitalize="none"
+                autoCorrect={false}
+                returnKeyType="search"
+              />
+              {query.length > 0 && (
+                <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8}>
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
+              )}
+            </View>
+          </LinearGradient>
+        </Animated.View>
+
+        <TabSelector
+          tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as SearchTab)}
+          variant="underline"
+          style={styles.tabSelector}
+        />
+
+        {debouncedQuery.trim().length < 2 ? (
           <EmptyState
-            icon="flag"
-            title="Couldn't load content"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
-            onAction={handleRefresh}
+            icon="search"
+            title="Enter a search term"
+            subtitle="Type at least 2 characters to see results"
           />
-        </View>
-      ) : (
-        <>
-          {/* People Tab */}
-          {activeTab === 'people' && (
-            <>
-              {isLoading.people ? (
-                <View style={styles.skeletonList}>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <View key={i} style={styles.skeletonRow}>
-                      <Skeleton.Circle size={40} />
-                      <View style={{ flex: 1, gap: 6 }}>
-                        <Skeleton.Rect width={120} height={14} />
-                        <Skeleton.Rect width={80} height={11} />
+        ) : hasError ? (
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <EmptyState
+              icon="flag"
+              title="Couldn't load content"
+              subtitle="Check your connection and try again"
+              actionLabel="Retry"
+              onAction={handleRefresh}
+            />
+          </View>
+        ) : (
+          <>
+            {/* People Tab */}
+            {activeTab === 'people' && (
+              <>
+                {isLoading.people ? (
+                  <View style={styles.skeletonList}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <View key={i} style={styles.skeletonRow}>
+                        <Skeleton.Circle size={40} />
+                        <View style={{ flex: 1, gap: 6 }}>
+                          <Skeleton.Rect width={120} height={14} />
+                          <Skeleton.Rect width={80} height={11} />
+                        </View>
                       </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={people}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item, index }) => (
-                    <UserRow
-                      user={item}
-                      onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-                      index={index}
-                    />
-                  )}
-                  ListEmptyComponent={() => (
-                    <EmptyState
-                      icon="users"
-                      title={`No people for "${debouncedQuery}"`}
-                      subtitle="Try a different search term"
-                    />
-                  )}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing.people}
-                      onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
-                    />
-                  }
-                />
-              )}
-            </>
-          )}
+                    ))}
+                  </View>
+                ) : (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={people}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item, index }) => (
+                      <UserRow
+                        user={item}
+                        onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+                        index={index}
+                      />
+                    )}
+                    ListEmptyComponent={() => (
+                      <EmptyState
+                        icon="users"
+                        title={`No people for "${debouncedQuery}"`}
+                        subtitle="Try a different search term"
+                      />
+                    )}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing.people}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.emerald}
+                      />
+                    }
+                  />
+                )}
+              </>
+            )}
 
-          {/* Posts Tab */}
-          {activeTab === 'posts' && (
-            <>
-              {isLoading.posts ? (
-                <View style={styles.skeletonList}>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton.PostCard key={i} />
-                  ))}
-                </View>
-              ) : (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={posts}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => <PostCard post={item} />}
-                  ListEmptyComponent={() => (
-                    <EmptyState
-                      icon="image"
-                      title={`No posts for "${debouncedQuery}"`}
-                      subtitle="Try a different search term"
-                    />
-                  )}
-                  onEndReached={handleFetchNextPage}
-                  onEndReachedThreshold={0.5}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing.posts}
-                      onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
-                    />
-                  }
-                />
-              )}
-            </>
-          )}
+            {/* Posts Tab */}
+            {activeTab === 'posts' && (
+              <>
+                {isLoading.posts ? (
+                  <View style={styles.skeletonList}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton.PostCard key={i} />
+                    ))}
+                  </View>
+                ) : (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={posts}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => <PostCard post={item} />}
+                    ListEmptyComponent={() => (
+                      <EmptyState
+                        icon="image"
+                        title={`No posts for "${debouncedQuery}"`}
+                        subtitle="Try a different search term"
+                      />
+                    )}
+                    onEndReached={handleFetchNextPage}
+                    onEndReachedThreshold={0.5}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing.posts}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.emerald}
+                      />
+                    }
+                  />
+                )}
+              </>
+            )}
 
-          {/* Threads Tab */}
-          {activeTab === 'threads' && (
-            <>
-              {isLoading.threads ? (
-                <View style={styles.skeletonList}>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton.ThreadCard key={i} />
-                  ))}
-                </View>
-              ) : (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={threads}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item }) => <ThreadCard thread={item} />}
-                  ListEmptyComponent={() => (
-                    <EmptyState
-                      icon="message-circle"
-                      title={`No threads for "${debouncedQuery}"`}
-                      subtitle="Try a different search term"
-                    />
-                  )}
-                  onEndReached={handleFetchNextPage}
-                  onEndReachedThreshold={0.5}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing.threads}
-                      onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
-                    />
-                  }
-                />
-              )}
-            </>
-          )}
+            {/* Threads Tab */}
+            {activeTab === 'threads' && (
+              <>
+                {isLoading.threads ? (
+                  <View style={styles.skeletonList}>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton.ThreadCard key={i} />
+                    ))}
+                  </View>
+                ) : (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={threads}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item }) => <ThreadCard thread={item} />}
+                    ListEmptyComponent={() => (
+                      <EmptyState
+                        icon="message-circle"
+                        title={`No threads for "${debouncedQuery}"`}
+                        subtitle="Try a different search term"
+                      />
+                    )}
+                    onEndReached={handleFetchNextPage}
+                    onEndReachedThreshold={0.5}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing.threads}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.emerald}
+                      />
+                    }
+                  />
+                )}
+              </>
+            )}
 
-          {/* Reels Tab */}
-          {activeTab === 'reels' && (
-            <>
-              {isLoading.reels ? (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={Array.from({ length: 9 })}
-                  keyExtractor={(_, i) => `skeleton-${i}`}
-                  renderItem={() => (
-                    <Skeleton.Rect width={120} height={160} />
-                  )}
-                  numColumns={3}
-                  columnWrapperStyle={styles.reelGridRow}
-                  scrollEnabled={false}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                />
-              ) : (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={reels}
-                  keyExtractor={(item) => item.id}
-                  renderItem={({ item, index }) => (
-                    <ReelGridItem
-                      reel={item}
-                      onPress={() => router.push(`/(screens)/reel/${item.id}`)}
-                      index={index}
-                    />
-                  )}
-                  numColumns={3}
-                  columnWrapperStyle={styles.reelGridRow}
-                  ListEmptyComponent={() => (
-                    <EmptyState
-                      icon="video"
-                      title={`No reels for "${debouncedQuery}"`}
-                      subtitle="Try a different search term"
-                    />
-                  )}
-                  onEndReached={handleFetchNextPage}
-                  onEndReachedThreshold={0.5}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing.reels}
-                      onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
-                    />
-                  }
-                />
-              )}
-            </>
-          )}
+            {/* Reels Tab */}
+            {activeTab === 'reels' && (
+              <>
+                {isLoading.reels ? (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={Array.from({ length: 9 })}
+                    keyExtractor={(_, i) => `skeleton-${i}`}
+                    renderItem={() => (
+                      <Skeleton.Rect width={120} height={160} />
+                    )}
+                    numColumns={3}
+                    columnWrapperStyle={styles.reelGridRow}
+                    scrollEnabled={false}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                  />
+                ) : (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={reels}
+                    keyExtractor={(item) => item.id}
+                    renderItem={({ item, index }) => (
+                      <ReelGridItem
+                        reel={item}
+                        onPress={() => router.push(`/(screens)/reel/${item.id}`)}
+                        index={index}
+                      />
+                    )}
+                    numColumns={3}
+                    columnWrapperStyle={styles.reelGridRow}
+                    ListEmptyComponent={() => (
+                      <EmptyState
+                        icon="video"
+                        title={`No reels for "${debouncedQuery}"`}
+                        subtitle="Try a different search term"
+                      />
+                    )}
+                    onEndReached={handleFetchNextPage}
+                    onEndReachedThreshold={0.5}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing.reels}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.emerald}
+                      />
+                    }
+                  />
+                )}
+              </>
+            )}
 
-          {/* Hashtags Tab */}
-          {activeTab === 'hashtags' && (
-            <>
-              {isLoading.hashtags ? (
-                <View style={styles.skeletonList}>
-                  {Array.from({ length: 6 }).map((_, i) => (
-                    <View key={i} style={styles.skeletonRow}>
-                      <Skeleton.Circle size={40} />
-                      <View style={{ flex: 1, gap: 6 }}>
-                        <Skeleton.Rect width={120} height={14} />
-                        <Skeleton.Rect width={80} height={11} />
+            {/* Hashtags Tab */}
+            {activeTab === 'hashtags' && (
+              <>
+                {isLoading.hashtags ? (
+                  <View style={styles.skeletonList}>
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <View key={i} style={styles.skeletonRow}>
+                        <Skeleton.Circle size={40} />
+                        <View style={{ flex: 1, gap: 6 }}>
+                          <Skeleton.Rect width={120} height={14} />
+                          <Skeleton.Rect width={80} height={11} />
+                        </View>
                       </View>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <FlatList
-          removeClippedSubviews={true}
-                  data={hashtags}
-                  keyExtractor={(item) => item.id || `ht-${item.name}`}
-                  renderItem={({ item, index }) => (
-                    <HashtagRow
-                      hashtag={item}
-                      onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
-                      index={index}
-                    />
-                  )}
-                  ListEmptyComponent={() => (
-                    <EmptyState
-                      icon="hash"
-                      title={`No hashtags for "${debouncedQuery}"`}
-                      subtitle="Try a different search term"
-                    />
-                  )}
-                  onEndReached={handleFetchNextPage}
-                  onEndReachedThreshold={0.5}
-                  contentContainerStyle={{ paddingBottom: 40 }}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={isRefreshing.hashtags}
-                      onRefresh={handleRefresh}
-                      tintColor={colors.emerald}
-                    />
-                  }
-                />
-              )}
-            </>
-          )}
-        </>
-      )}
-    </View>
+                    ))}
+                  </View>
+                ) : (
+                  <FlatList
+            removeClippedSubviews={true}
+                    data={hashtags}
+                    keyExtractor={(item) => item.id || `ht-${item.name}`}
+                    renderItem={({ item, index }) => (
+                      <HashtagRow
+                        hashtag={item}
+                        onPress={() => router.push(`/(screens)/hashtag/${item.name}`)}
+                        index={index}
+                      />
+                    )}
+                    ListEmptyComponent={() => (
+                      <EmptyState
+                        icon="hash"
+                        title={`No hashtags for "${debouncedQuery}"`}
+                        subtitle="Try a different search term"
+                      />
+                    )}
+                    onEndReached={handleFetchNextPage}
+                    onEndReachedThreshold={0.5}
+                    contentContainerStyle={{ paddingBottom: 40 }}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={isRefreshing.hashtags}
+                        onRefresh={handleRefresh}
+                        tintColor={colors.emerald}
+                      />
+                    }
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

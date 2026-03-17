@@ -19,6 +19,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { communitiesApi } from '@/services/communitiesApi';
 import type { Community } from '@/types/communities';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CATEGORIES = [
   'All', 'Islamic', 'Tech', 'Sports', 'Art', 'Food', 'Local', 'Education', 'Health'
@@ -243,125 +244,128 @@ export default function CommunitiesScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.communities.title')}
-        subtitle={activeTab === 'joined' ? t('screens.communities.joinedCount', { count: joinedCount }) : undefined}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.communities.title')}
+          subtitle={activeTab === 'joined' ? t('screens.communities.joinedCount', { count: joinedCount }) : undefined}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchBar}
-        >
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('screens.communities.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="x" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
-          )}
-        </LinearGradient>
-      </View>
-
-      {/* Tabs */}
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
-          onPress={() => setActiveTab('discover')}
-        >
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
           <LinearGradient
-            colors={activeTab === 'discover' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
-            style={styles.tabGradient}
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchBar}
           >
-            <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : colors.text.tertiary} />
-            <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
+            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('screens.communities.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="x" size="sm" color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
           </LinearGradient>
-        </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'joined' && styles.tabActive]}
-          onPress={() => setActiveTab('joined')}
-        >
-          <LinearGradient
-            colors={activeTab === 'joined' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
-            style={styles.tabGradient}
+        {/* Tabs */}
+        <View style={styles.tabsContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
+            onPress={() => setActiveTab('discover')}
           >
-            <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : colors.text.tertiary} />
-            <Text style={[styles.tabText, activeTab === 'joined' && styles.tabTextActive]}>
-              {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-
-      {/* Categories (only show on Discover) */}
-      {activeTab === 'discover' && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-        >
-          {CATEGORIES.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
-              onPress={() => setActiveCategory(category)}
+            <LinearGradient
+              colors={activeTab === 'discover' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
+              style={styles.tabGradient}
             >
-              <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
-                {t(`screens.communities.category.${category.toLowerCase()}`)}
+              <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : colors.text.tertiary} />
+              <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'joined' && styles.tabActive]}
+            onPress={() => setActiveTab('joined')}
+          >
+            <LinearGradient
+              colors={activeTab === 'joined' ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['transparent', 'transparent']}
+              style={styles.tabGradient}
+            >
+              <Icon name="users" size="xs" color={activeTab === 'joined' ? colors.emerald : colors.text.tertiary} />
+              <Text style={[styles.tabText, activeTab === 'joined' && styles.tabTextActive]}>
+                {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
               </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
 
-      {/* Community List */}
-      <FlatList
-        data={filteredCommunities}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item, index }) => (
-          <CommunityCard
-            community={item}
-            index={index}
-            onJoin={handleJoin}
-            onPress={handleCommunityPress}
-          />
-        )}
-        ListEmptyComponent={loading ? (
-          <View style={styles.skeletonContainer}>
-            {[...Array(3)].map((_, i) => (
-              <Skeleton.PostCard key={i} />
+        {/* Categories (only show on Discover) */}
+        {activeTab === 'discover' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoriesContainer}
+          >
+            {CATEGORIES.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
+                onPress={() => setActiveCategory(category)}
+              >
+                <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
+                  {t(`screens.communities.category.${category.toLowerCase()}`)}
+                </Text>
+              </TouchableOpacity>
             ))}
-          </View>
-        ) : (
-          <EmptyState
-            icon="users"
-            title={activeTab === 'joined' ? t('screens.communities.emptyJoinedTitle') : t('screens.communities.emptyDiscoverTitle')}
-            subtitle={activeTab === 'joined'
-              ? t('screens.communities.emptyJoinedSubtitle')
-              : t('screens.communities.emptyDiscoverSubtitle')
-            }
-            actionLabel={activeTab === 'joined' ? t('screens.communities.tabDiscover') : undefined}
-            onAction={activeTab === 'joined' ? () => setActiveTab('discover') : undefined}
-          />
+          </ScrollView>
         )}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        showsVerticalScrollIndicator={false}
-      />
 
-      {/* Create Community FAB */}
-      <FAB onPress={handleCreateCommunity} />
-    </View>
+        {/* Community List */}
+        <FlatList
+          data={filteredCommunities}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          renderItem={({ item, index }) => (
+            <CommunityCard
+              community={item}
+              index={index}
+              onJoin={handleJoin}
+              onPress={handleCommunityPress}
+            />
+          )}
+          ListEmptyComponent={loading ? (
+            <View style={styles.skeletonContainer}>
+              {[...Array(3)].map((_, i) => (
+                <Skeleton.PostCard key={i} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState
+              icon="users"
+              title={activeTab === 'joined' ? t('screens.communities.emptyJoinedTitle') : t('screens.communities.emptyDiscoverTitle')}
+              subtitle={activeTab === 'joined'
+                ? t('screens.communities.emptyJoinedSubtitle')
+                : t('screens.communities.emptyDiscoverSubtitle')
+              }
+              actionLabel={activeTab === 'joined' ? t('screens.communities.tabDiscover') : undefined}
+              onAction={activeTab === 'joined' ? () => setActiveTab('discover') : undefined}
+            />
+          )}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          showsVerticalScrollIndicator={false}
+        />
+
+        {/* Create Community FAB */}
+        <FAB onPress={handleCreateCommunity} />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

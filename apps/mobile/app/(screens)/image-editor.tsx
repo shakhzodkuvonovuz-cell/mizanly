@@ -14,6 +14,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -182,89 +183,92 @@ export default function ImageEditorScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" />
 
-      {/* Header */}
-      <GlassHeader
-        title={t('screens.imageEditor.title')}
-        leftAction={{ icon: 'x', onPress: handleCancel }}
-        rightAction={{ icon: 'check', onPress: handleDone }}
-      />
+        {/* Header */}
+        <GlassHeader
+          title={t('screens.imageEditor.title')}
+          leftAction={{ icon: 'x', onPress: handleCancel }}
+          rightAction={{ icon: 'check', onPress: handleDone }}
+        />
 
-      {/* Image Preview */}
-      <View style={styles.previewContainer}>
-        <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
-          <LinearGradient
-            colors={['#2D3548', '#1C2333']}
-            style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
-          >
-            <Icon name="image" size="xl" color={colors.text.tertiary} />
-            <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
-          </LinearGradient>
-
-          {/* Crop Frame Overlay */}
-          {activeTab === 'crop' && (
-            <View style={styles.cropOverlay}>
-              <View style={[styles.cropFrameOuter, aspectRatio !== 'free' && { aspectRatio: ASPECT_RATIOS.find(ar => ar.value === aspectRatio)?.ratio || 1 }]}>
-                <LinearGradient
-                  colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
-                  style={styles.cropFrameInner}
-                >
-                  <View style={styles.cropGrid}>
-                    <View style={styles.cropGridV1} />
-                    <View style={styles.cropGridV2} />
-                    <View style={styles.cropGridH1} />
-                    <View style={styles.cropGridH2} />
-                  </View>
-                </LinearGradient>
-              </View>
-            </View>
-          )}
-        </Animated.View>
-      </View>
-
-      {/* Edit Controls */}
-      <View style={styles.controlsContainer}>
-        {/* Tab Selector */}
-        <View style={styles.tabBar}>
-          {(['crop', 'filter', 'adjust'] as EditTab[]).map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
+        {/* Image Preview */}
+        <View style={styles.previewContainer}>
+          <Animated.View style={[styles.imageWrapper, animatedImageStyle]}>
+            <LinearGradient
+              colors={['#2D3548', '#1C2333']}
+              style={[styles.imagePlaceholder, getFilterStyle(selectedFilter)]}
             >
-              <LinearGradient
-                colors={activeTab === tab ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
-                style={styles.tabIconBg}
-              >
-                <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : colors.text.tertiary} />
-              </LinearGradient>
-              <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
-                {t(`screens.imageEditor.tab.${tab}`)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              <Icon name="image" size="xl" color={colors.text.tertiary} />
+              <Text style={styles.imagePlaceholderText}>{t('screens.imageEditor.yourImage')}</Text>
+            </LinearGradient>
+
+            {/* Crop Frame Overlay */}
+            {activeTab === 'crop' && (
+              <View style={styles.cropOverlay}>
+                <View style={[styles.cropFrameOuter, aspectRatio !== 'free' && { aspectRatio: ASPECT_RATIOS.find(ar => ar.value === aspectRatio)?.ratio || 1 }]}>
+                  <LinearGradient
+                    colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.05)']}
+                    style={styles.cropFrameInner}
+                  >
+                    <View style={styles.cropGrid}>
+                      <View style={styles.cropGridV1} />
+                      <View style={styles.cropGridV2} />
+                      <View style={styles.cropGridH1} />
+                      <View style={styles.cropGridH2} />
+                    </View>
+                  </LinearGradient>
+                </View>
+              </View>
+            )}
+          </Animated.View>
         </View>
 
-        {/* Tab Content */}
-        <LinearGradient
-          colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-          style={styles.tabContentContainer}
-        >
-          {activeTab === 'crop' && renderCropTab()}
-          {activeTab === 'filter' && renderFilterTab()}
-          {activeTab === 'adjust' && renderAdjustTab()}
-        </LinearGradient>
+        {/* Edit Controls */}
+        <View style={styles.controlsContainer}>
+          {/* Tab Selector */}
+          <View style={styles.tabBar}>
+            {(['crop', 'filter', 'adjust'] as EditTab[]).map((tab) => (
+              <TouchableOpacity
+                key={tab}
+                style={[styles.tab, activeTab === tab && styles.tabActive]}
+                onPress={() => setActiveTab(tab)}
+              >
+                <LinearGradient
+                  colors={activeTab === tab ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
+                  style={styles.tabIconBg}
+                >
+                  <Icon name={TAB_ICONS[tab] } size="sm" color={activeTab === tab ? colors.emerald : colors.text.tertiary} />
+                </LinearGradient>
+                <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+                  {t(`screens.imageEditor.tab.${tab}`)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-        {/* Done Button */}
-        <GradientButton
-          label={t('common.done')}
-          onPress={handleDone}
-          style={styles.doneButton}
-        />
+          {/* Tab Content */}
+          <LinearGradient
+            colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+            style={styles.tabContentContainer}
+          >
+            {activeTab === 'crop' && renderCropTab()}
+            {activeTab === 'filter' && renderFilterTab()}
+            {activeTab === 'adjust' && renderAdjustTab()}
+          </LinearGradient>
+
+          {/* Done Button */}
+          <GradientButton
+            label={t('common.done')}
+            onPress={handleDone}
+            style={styles.doneButton}
+          />
+        </View>
       </View>
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

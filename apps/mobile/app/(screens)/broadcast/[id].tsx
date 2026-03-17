@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType, BroadcastMessage } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -232,117 +233,120 @@ export default function BroadcastChannelScreen() {
   const headerTitle = channel ? channel.name : t('broadcast.channel');
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <GlassHeader
-        title={headerTitle}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        rightAction={{
-          icon: channel?.isMuted ? 'volume-x' : 'bell',
-          onPress: handleToggleMute,
-          accessibilityLabel: channel?.isMuted ? t('broadcast.unmute') : t('broadcast.mute'),
-        }}
-      />
-      <View style={styles.container}>
-        {channel && (
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}
-            >
-              <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
-              <Text style={styles.channelName}>{channel.name}</Text>
-              <LinearGradient
-                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.subscriberBadge}
-              >
-                <Icon name="users" size="xs" color={colors.gold} />
-                <Text style={styles.channelSubscribers}>
-                  {channel.subscribersCount.toLocaleString()} {t('broadcast.subscribers')}
-                </Text>
-              </LinearGradient>
-              <View style={styles.channelActions}>
-                <GradientButton
-                  label={channel.isSubscribed ? t('broadcast.subscribed') : t('broadcast.subscribe')}
-                  variant={channel.isSubscribed ? 'secondary' : 'primary'}
-                  onPress={handleSubscribe}
-                />
-                {channel.isMuted && (
-                  <Pressable style={styles.muteBadge}>
-                    <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
-                    <Text style={styles.muteText}>{t('broadcast.muted')}</Text>
-                  </Pressable>
-                )}
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        )}
-
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={renderMessageItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-          inverted
-          removeClippedSubviews={true}
-          ListEmptyComponent={loading ? null : renderEmptyState}
-          ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          showsVerticalScrollIndicator={false}
+    <ScreenErrorBoundary>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <GlassHeader
+          title={headerTitle}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          rightAction={{
+            icon: channel?.isMuted ? 'volume-x' : 'bell',
+            onPress: handleToggleMute,
+            accessibilityLabel: channel?.isMuted ? t('broadcast.unmute') : t('broadcast.mute'),
+          }}
         />
-
-        {isAdmin && (
-          <View style={styles.composeContainer}>
-            <TextInput
-              style={styles.composeInput}
-              placeholder={t('broadcast.sendMessagePlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
-              value={newMessage}
-              onChangeText={setNewMessage}
-              onSubmitEditing={handleSendMessage}
-              returnKeyType="send"
-              editable={!sending}
-            />
-            <Pressable
-              style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
-              onPress={handleSendMessage}
-              disabled={!newMessage.trim() || sending}
-            >
-              <Icon name="send" size="md" color={colors.text.primary} />
-            </Pressable>
-          </View>
-        )}
-
-        <BottomSheet
-          visible={messageSheetVisible}
-          onClose={() => setMessageSheetVisible(false)}
-          snapPoint={selectedMessage?.user?.id === channel?.userId ? 180 : 120}
-        >
-          {selectedMessage?.user?.id === channel?.userId && (
-            <BottomSheetItem
-              label={selectedMessage?.isPinned ? t('broadcast.unpinMessage') : t('broadcast.pinMessage')}
-              icon={<Icon name="map-pin" size="md" color={colors.text.primary} />}
-              onPress={handlePinMessage}
-            />
+        <View style={styles.container}>
+          {channel && (
+            <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={[styles.channelHeader, { paddingTop: insets.top + 52 + spacing.xl }]}
+              >
+                <Avatar uri={channel.avatarUrl} name={channel.name} size="xl" />
+                <Text style={styles.channelName}>{channel.name}</Text>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.subscriberBadge}
+                >
+                  <Icon name="users" size="xs" color={colors.gold} />
+                  <Text style={styles.channelSubscribers}>
+                    {channel.subscribersCount.toLocaleString()} {t('broadcast.subscribers')}
+                  </Text>
+                </LinearGradient>
+                <View style={styles.channelActions}>
+                  <GradientButton
+                    label={channel.isSubscribed ? t('broadcast.subscribed') : t('broadcast.subscribe')}
+                    variant={channel.isSubscribed ? 'secondary' : 'primary'}
+                    onPress={handleSubscribe}
+                  />
+                  {channel.isMuted && (
+                    <Pressable style={styles.muteBadge}>
+                      <Icon name="volume-x" size="xs" color={colors.text.tertiary} />
+                      <Text style={styles.muteText}>{t('broadcast.muted')}</Text>
+                    </Pressable>
+                  )}
+                </View>
+              </LinearGradient>
+            </Animated.View>
           )}
-          <BottomSheetItem
-            label={t('broadcast.deleteMessage')}
-            icon={<Icon name="trash" size="md" color={colors.error} />}
-            onPress={handleDeleteMessage}
-            destructive
+
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            renderItem={renderMessageItem}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContent}
+            inverted
+            removeClippedSubviews={true}
+            ListEmptyComponent={loading ? null : renderEmptyState}
+            ListFooterComponent={loading && messages.length > 0 ? renderSkeleton : null}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.emerald}
+              />
+            }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            showsVerticalScrollIndicator={false}
           />
-        </BottomSheet>
-      </View>
-    </>
+
+          {isAdmin && (
+            <View style={styles.composeContainer}>
+              <TextInput
+                style={styles.composeInput}
+                placeholder={t('broadcast.sendMessagePlaceholder')}
+                placeholderTextColor={colors.text.tertiary}
+                value={newMessage}
+                onChangeText={setNewMessage}
+                onSubmitEditing={handleSendMessage}
+                returnKeyType="send"
+                editable={!sending}
+              />
+              <Pressable
+                style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
+                onPress={handleSendMessage}
+                disabled={!newMessage.trim() || sending}
+              >
+                <Icon name="send" size="md" color={colors.text.primary} />
+              </Pressable>
+            </View>
+          )}
+
+          <BottomSheet
+            visible={messageSheetVisible}
+            onClose={() => setMessageSheetVisible(false)}
+            snapPoint={selectedMessage?.user?.id === channel?.userId ? 180 : 120}
+          >
+            {selectedMessage?.user?.id === channel?.userId && (
+              <BottomSheetItem
+                label={selectedMessage?.isPinned ? t('broadcast.unpinMessage') : t('broadcast.pinMessage')}
+                icon={<Icon name="map-pin" size="md" color={colors.text.primary} />}
+                onPress={handlePinMessage}
+              />
+            )}
+            <BottomSheetItem
+              label={t('broadcast.deleteMessage')}
+              icon={<Icon name="trash" size="md" color={colors.error} />}
+              onPress={handleDeleteMessage}
+              destructive
+            />
+          </BottomSheet>
+        </View>
+      </>
+  
+    </ScreenErrorBoundary>
   );
 }
 

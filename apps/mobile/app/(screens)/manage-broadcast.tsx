@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function ManageBroadcastScreen() {
   const router = useRouter();
@@ -160,54 +161,57 @@ export default function ManageBroadcastScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title={channel ? `Manage ${channel.name}` : "Manage Broadcast"} 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title={channel ? `Manage ${channel.name}` : "Manage Broadcast"} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        />
       
-      <View style={[styles.tabsWrap, { marginTop: insets.top + 52 }]}>
-        <TabSelector 
-          tabs={[
-            { key: 'subscribers', label: `Subscribers (${channel?.subscribersCount || 0})` },
-            { key: 'admins', label: 'Admins' },
-          ]}
-          activeTab={activeTab}
-          onTabChange={(key) => setActiveTab(key as 'subscribers' | 'admins')}
+        <View style={[styles.tabsWrap, { marginTop: insets.top + 52 }]}>
+          <TabSelector 
+            tabs={[
+              { key: 'subscribers', label: `Subscribers (${channel?.subscribersCount || 0})` },
+              { key: 'admins', label: 'Admins' },
+            ]}
+            activeTab={activeTab}
+            onTabChange={(key) => setActiveTab(key as 'subscribers' | 'admins')}
+          />
+        </View>
+
+        <FlatList
+          data={users}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => { setRefreshing(true); await refetch(); setRefreshing(false); }}
+              tintColor={colors.emerald}
+            />
+          }
+          ListEmptyComponent={
+            isUsersLoading ? (
+              <View style={{ padding: spacing.base, gap: spacing.md }}>
+                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+              </View>
+            ) : (
+              <View style={styles.emptyWrap}>
+                <EmptyState 
+                  icon="users" 
+                  title={activeTab === 'subscribers' ? "No subscribers yet" : "No admins"} 
+                  subtitle={activeTab === 'subscribers' ? "Share your channel link" : "Promote users to admin"} 
+                />
+              </View>
+            )
+          }
         />
       </View>
-
-      <FlatList
-        data={users}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => { setRefreshing(true); await refetch(); setRefreshing(false); }}
-            tintColor={colors.emerald}
-          />
-        }
-        ListEmptyComponent={
-          isUsersLoading ? (
-            <View style={{ padding: spacing.base, gap: spacing.md }}>
-              <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-              <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-            </View>
-          ) : (
-            <View style={styles.emptyWrap}>
-              <EmptyState 
-                icon="users" 
-                title={activeTab === 'subscribers' ? "No subscribers yet" : "No admins"} 
-                subtitle={activeTab === 'subscribers' ? "Share your channel link" : "Promote users to admin"} 
-              />
-            </View>
-          )
-        }
-      />
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

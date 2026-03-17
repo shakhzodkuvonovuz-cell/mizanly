@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type LiveType = 'VIDEO' | 'AUDIO';
 
@@ -98,183 +99,186 @@ export default function GoLiveScreen() {
   const selectedLiveType = LIVE_TYPE_OPTIONS.find(opt => opt.value === liveType)!;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('live.goLive')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('live.goLive')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
 
-      <ScrollView
-        style={styles.body}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
-      >
-        {/* Title input */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>{t('common.title')}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="What are you streaming?"
-              placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Live stream title"
-              value={title}
-              onChangeText={setTitle}
-              maxLength={100}
-              autoFocus
-            />
-            <View style={styles.charCountWrapper}>
-              <CharCountRing current={title.length} max={100} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Description input */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Tell viewers what your stream is about"
-              placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Live stream description"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              maxLength={500}
-              numberOfLines={4}
-            />
-            <View style={styles.charCountWrapper}>
-              <CharCountRing current={description.length} max={500} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Live type selection */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>Stream Type</Text>
-            <TouchableOpacity
-              style={styles.typeSelector}
-              onPress={() => setShowLiveTypePicker(true)}
+        <ScrollView
+          style={styles.body}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
+        >
+          {/* Title input */}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
             >
-              <LinearGradient
-                colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
-                style={styles.typeIconBg}
-              >
-                <Icon name={selectedLiveType.iconName} size="sm" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.typeSelectorText}>{selectedLiveType.label}</Text>
-              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Schedule toggle */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <View style={styles.scheduleRow}>
-              <View>
-                <Text style={styles.inputLabel}>{t('live.scheduleForLater')}</Text>
-                <Text style={styles.scheduleSubtitle}>
-                  Start your stream at a specific time
-                </Text>
-              </View>
-              <Switch
-                value={isScheduled}
-                onValueChange={handleScheduleToggle}
-                trackColor={{ false: colors.dark.border, true: colors.emerald }}
-                thumbColor={colors.text.primary}
-                ios_backgroundColor={colors.dark.border}
+              <Text style={styles.inputLabel}>{t('common.title')}</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="What are you streaming?"
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Live stream title"
+                value={title}
+                onChangeText={setTitle}
+                maxLength={100}
+                autoFocus
               />
-            </View>
+              <View style={styles.charCountWrapper}>
+                <CharCountRing current={title.length} max={100} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
 
-            {isScheduled && scheduleDate && (
+          {/* Description input */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Tell viewers what your stream is about"
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Live stream description"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                maxLength={500}
+                numberOfLines={4}
+              />
+              <View style={styles.charCountWrapper}>
+                <CharCountRing current={description.length} max={500} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Live type selection */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>Stream Type</Text>
               <TouchableOpacity
-                style={styles.scheduleDisplay}
-                onPress={() => setShowDatePicker(true)}
+                style={styles.typeSelector}
+                onPress={() => setShowLiveTypePicker(true)}
               >
                 <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
-                  style={styles.scheduleIconBg}
+                  colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+                  style={styles.typeIconBg}
                 >
-                  <Icon name="clock" size="sm" color={colors.emerald} />
+                  <Icon name={selectedLiveType.iconName} size="sm" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.scheduleText}>
-                  {scheduleDate.toLocaleString([], {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </Text>
-                <Icon name="edit" size="sm" color={colors.text.tertiary} />
+                <Text style={styles.typeSelectorText}>{selectedLiveType.label}</Text>
+                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
               </TouchableOpacity>
-            )}
-          </LinearGradient>
-        </Animated.View>
+            </LinearGradient>
+          </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-          <GradientButton
-            label={createMutation.isPending ? t('live.starting') : t('live.goLive')}
-            onPress={handleGoLive}
-            disabled={!canGoLive}
-          />
-        </Animated.View>
-      </ScrollView>
+          {/* Schedule toggle */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <View style={styles.scheduleRow}>
+                <View>
+                  <Text style={styles.inputLabel}>{t('live.scheduleForLater')}</Text>
+                  <Text style={styles.scheduleSubtitle}>
+                    Start your stream at a specific time
+                  </Text>
+                </View>
+                <Switch
+                  value={isScheduled}
+                  onValueChange={handleScheduleToggle}
+                  trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                  thumbColor={colors.text.primary}
+                  ios_backgroundColor={colors.dark.border}
+                />
+              </View>
 
-      {/* Live type picker bottom sheet */}
-      <BottomSheet visible={showLiveTypePicker} onClose={() => setShowLiveTypePicker(false)}>
-        <Text style={styles.sheetTitle}>{t('live.selectStreamType')}</Text>
-        {LIVE_TYPE_OPTIONS.map((opt) => (
-          <BottomSheetItem
-            key={opt.value}
-            label={opt.label}
-            icon={<Icon name={opt.iconName} size="sm" color={colors.text.primary} />}
-            onPress={() => {
-              setLiveType(opt.value);
-              setShowLiveTypePicker(false);
-            }}
-          />
-        ))}
-      </BottomSheet>
+              {isScheduled && scheduleDate && (
+                <TouchableOpacity
+                  style={styles.scheduleDisplay}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                    style={styles.scheduleIconBg}
+                  >
+                    <Icon name="clock" size="sm" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.scheduleText}>
+                    {scheduleDate.toLocaleString([], {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                  <Icon name="edit" size="sm" color={colors.text.tertiary} />
+                </TouchableOpacity>
+              )}
+            </LinearGradient>
+          </Animated.View>
 
-      {/* Date picker bottom sheet */}
-      <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
-        <Text style={styles.sheetTitle}>{t('live.scheduleTime')}</Text>
-        {/* In a real app, you would use DateTimePicker component */}
-        <View style={styles.datePickerPlaceholder}>
-          <Text style={styles.datePickerText}>
-            Date/time picker would appear here
-          </Text>
-          <Text style={styles.datePickerHint}>
-            For simplicity, we'll schedule for 30 minutes from now.
-          </Text>
-          <GradientButton label="Confirm" onPress={() => handleDateSelect(tempDate)} />
-        </View>
-      </BottomSheet>
+          <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+            <GradientButton
+              label={createMutation.isPending ? t('live.starting') : t('live.goLive')}
+              onPress={handleGoLive}
+              disabled={!canGoLive}
+            />
+          </Animated.View>
+        </ScrollView>
 
-      {/* Upload overlay */}
-      {uploading && (
-        <View style={styles.uploadOverlay}>
-          <Skeleton.Circle size={64} />
-          <Text style={styles.uploadText}>Preparing live stream…</Text>
-        </View>
-      )}
-    </SafeAreaView>
+        {/* Live type picker bottom sheet */}
+        <BottomSheet visible={showLiveTypePicker} onClose={() => setShowLiveTypePicker(false)}>
+          <Text style={styles.sheetTitle}>{t('live.selectStreamType')}</Text>
+          {LIVE_TYPE_OPTIONS.map((opt) => (
+            <BottomSheetItem
+              key={opt.value}
+              label={opt.label}
+              icon={<Icon name={opt.iconName} size="sm" color={colors.text.primary} />}
+              onPress={() => {
+                setLiveType(opt.value);
+                setShowLiveTypePicker(false);
+              }}
+            />
+          ))}
+        </BottomSheet>
+
+        {/* Date picker bottom sheet */}
+        <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
+          <Text style={styles.sheetTitle}>{t('live.scheduleTime')}</Text>
+          {/* In a real app, you would use DateTimePicker component */}
+          <View style={styles.datePickerPlaceholder}>
+            <Text style={styles.datePickerText}>
+              Date/time picker would appear here
+            </Text>
+            <Text style={styles.datePickerHint}>
+              For simplicity, we'll schedule for 30 minutes from now.
+            </Text>
+            <GradientButton label="Confirm" onPress={() => handleDateSelect(tempDate)} />
+          </View>
+        </BottomSheet>
+
+        {/* Upload overlay */}
+        {uploading && (
+          <View style={styles.uploadOverlay}>
+            <Skeleton.Circle size={64} />
+            <Text style={styles.uploadText}>Preparing live stream…</Text>
+          </View>
+        )}
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

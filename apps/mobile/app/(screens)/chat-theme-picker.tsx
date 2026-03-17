@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -240,6 +241,7 @@ export default function ChatThemePickerScreen() {
   const currentTheme = getCurrentTheme();
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('chatThemePicker.title')} onBack={() => router.back()} />
 
@@ -302,26 +304,27 @@ export default function ChatThemePickerScreen() {
           {TABS.map((tab, index) => {
             const isActive = activeTab === tab.id;
             return (
-              <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
-                <TouchableOpacity
-                  style={[styles.tab, isActive && styles.tabActive]}
-                  onPress={() => setActiveTab(tab.id)}
-                  activeOpacity={0.8}
-                >
-                  {isActive ? (
-                    <LinearGradient
-                      colors={[colors.emerald, colors.emeraldDark]}
-                      style={styles.tabGradient}
-                    >
-                      <Text style={[styles.tabText, styles.tabTextActive]}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
-                    </LinearGradient>
-                  ) : (
-                    <View style={styles.tabInner}>
-                      <Text style={styles.tabText}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </Animated.View>
+                <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
+                  <TouchableOpacity
+                    style={[styles.tab, isActive && styles.tabActive]}
+                    onPress={() => setActiveTab(tab.id)}
+                    activeOpacity={0.8}
+                  >
+                    {isActive ? (
+                      <LinearGradient
+                        colors={[colors.emerald, colors.emeraldDark]}
+                        style={styles.tabGradient}
+                      >
+                        <Text style={[styles.tabText, styles.tabTextActive]}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
+                      </LinearGradient>
+                    ) : (
+                      <View style={styles.tabInner}>
+                        <Text style={styles.tabText}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                </Animated.View>
+            
             );
           })}
         </ScrollView>
@@ -427,6 +430,7 @@ export default function ChatThemePickerScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

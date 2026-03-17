@@ -18,6 +18,7 @@ import { callsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { CallSession } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function CallHistoryScreen() {
   const router = useRouter();
@@ -166,37 +167,40 @@ export default function CallHistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title={t('calls.title')} 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
-      />
-      <FlatList
-        data={calls}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.base }]}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title={t('calls.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
+        />
+        <FlatList
+          data={calls}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.base }]}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState 
-              icon="phone" 
-              title={t('calls.noCallsYet')} 
-              subtitle={t('calls.callHistoryWillAppear')} 
-            />
-          </View>
-        }
-      />
-    </View>
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <EmptyState 
+                icon="phone" 
+                title={t('calls.noCallsYet')} 
+                subtitle={t('calls.callHistoryWillAppear')} 
+              />
+            </View>
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

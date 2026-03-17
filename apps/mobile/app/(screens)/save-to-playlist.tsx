@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, playlistsApi } from '@/services/api';
 import type { Playlist } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function SaveToPlaylistScreen() {
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
@@ -207,47 +208,50 @@ export default function SaveToPlaylistScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Save to playlist"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-        rightActions={[{
-          icon: <Text style={styles.createText}>New</Text>,
-          onPress: handleCreateNew,
-          accessibilityLabel: 'Create new playlist',
-        }]}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Save to playlist"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          rightActions={[{
+            icon: <Text style={styles.createText}>New</Text>,
+            onPress: handleCreateNew,
+            accessibilityLabel: 'Create new playlist',
+          }]}
+        />
 
-      <FlatList
-            removeClippedSubviews={true}
-        data={playlists}
-        keyExtractor={(item) => item.id}
-        renderItem={renderPlaylistItem}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={async () => {
-              setRefreshing(true);
-              await Promise.all([channelsQuery.refetch(), playlistsQuery.refetch()]);
-              setRefreshing(false);
-            }}
-            tintColor={colors.emerald}
-          />
-        }
-        ListEmptyComponent={
-          <EmptyState
-            icon="layers"
-            title="No playlists yet"
-            subtitle="Create a playlist to save videos for later"
-            actionLabel="Create playlist"
-            onAction={handleCreateNew}
-            style={styles.emptyState}
-          />
-        }
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 }]}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+        <FlatList
+              removeClippedSubviews={true}
+          data={playlists}
+          keyExtractor={(item) => item.id}
+          renderItem={renderPlaylistItem}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={async () => {
+                setRefreshing(true);
+                await Promise.all([channelsQuery.refetch(), playlistsQuery.refetch()]);
+                setRefreshing(false);
+              }}
+              tintColor={colors.emerald}
+            />
+          }
+          ListEmptyComponent={
+            <EmptyState
+              icon="layers"
+              title="No playlists yet"
+              subtitle="Create a playlist to save videos for later"
+              actionLabel="Create playlist"
+              onAction={handleCreateNew}
+              style={styles.emptyState}
+            />
+          }
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 }]}
+          showsVerticalScrollIndicator={false}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

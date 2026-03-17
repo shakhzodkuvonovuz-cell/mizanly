@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import type { FollowRequest } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function RequestRow({
   request,
@@ -134,51 +135,54 @@ export default function FollowRequestsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader title={t('screens.followRequests.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
-      {requestsQuery.isLoading ? (
-        <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
-              <Skeleton.Circle size={48} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton.Rect width={120} height={14} />
-                <Skeleton.Rect width={80} height={11} />
+        {requestsQuery.isLoading ? (
+          <View style={[styles.skeletonList, { paddingTop: insets.top + 52 }]}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton.Circle size={48} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton.Rect width={120} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
+                </View>
               </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={requests}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          renderItem={({ item, index }) => (
-            <RequestRow
-              request={item}
-              index={index}
-              loading={
-                (acceptMutation.isPending || declineMutation.isPending) && pendingId === item.id
-              }
-              onAccept={() => acceptMutation.mutate(item.id)}
-              onDecline={() => declineMutation.mutate(item.id)}
-            />
-          )}
-          ListEmptyComponent={() => (
-            <EmptyState
-              icon="user"
-              title={t('screens.followRequests.emptyTitle')}
-              subtitle={t('screens.followRequests.emptySubtitle')}
-            />
-          )}
-        />
-      )}
-    </View>
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={requests}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={[styles.list, { paddingTop: insets.top + 52 }]}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+            renderItem={({ item, index }) => (
+              <RequestRow
+                request={item}
+                index={index}
+                loading={
+                  (acceptMutation.isPending || declineMutation.isPending) && pendingId === item.id
+                }
+                onAccept={() => acceptMutation.mutate(item.id)}
+                onDecline={() => declineMutation.mutate(item.id)}
+              />
+            )}
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="user"
+                title={t('screens.followRequests.emptyTitle')}
+                subtitle={t('screens.followRequests.emptySubtitle')}
+              />
+            )}
+          />
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

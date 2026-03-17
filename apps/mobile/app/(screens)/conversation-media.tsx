@@ -22,6 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Message } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type TabKey = 'media' | 'links' | 'docs';
 
@@ -340,88 +341,91 @@ export default function ConversationMediaScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('conversationMedia.title')}
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('conversationMedia.title')}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      {/* Tabs */}
-      <TabSelector
-        tabs={tabs}
-        activeKey={activeTab}
-        onTabChange={setActiveTab}
-        variant="underline"
-        style={styles.tabSelector}
-      />
+        {/* Tabs */}
+        <TabSelector
+          tabs={tabs}
+          activeKey={activeTab}
+          onTabChange={setActiveTab}
+          variant="underline"
+          style={styles.tabSelector}
+        />
 
-      {/* Content */}
-      <View style={styles.content}>
-        {activeTab === 'media' && (
-          <FlatList
-          removeClippedSubviews={true}
-            data={mediaItems}
-            renderItem={renderMediaItem}
-            keyExtractor={item => item.id}
-            numColumns={3}
-            columnWrapperStyle={styles.mediaGrid}
-            contentContainerStyle={styles.mediaList}
-            refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={renderEmpty}
-            ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={100} /> : null}
-          />
-        )}
-        {activeTab === 'links' && (
-          <FlatList
-          removeClippedSubviews={true}
-            data={linkItems}
-            renderItem={renderLinkItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={renderEmpty}
-            ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null}
-          />
-        )}
-        {activeTab === 'docs' && (
-          <FlatList
-          removeClippedSubviews={true}
-            data={docItems}
-            renderItem={renderDocItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContainer}
-            refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
-            onEndReached={handleLoadMore}
-            onEndReachedThreshold={0.5}
-            ListEmptyComponent={renderEmpty}
-            ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null}
-          />
-        )}
-      </View>
-
-      {/* Image Lightbox */}
-      <ImageLightbox
-        visible={lightboxVisible}
-        images={lightboxImages}
-        initialIndex={lightboxIndex}
-        onClose={() => setLightboxVisible(false)}
-      />
-
-      {/* Video Player BottomSheet */}
-      <BottomSheet
-        visible={videoPlayerVisible}
-        onClose={() => setVideoPlayerVisible(false)}
-        snapPoint={0.85}
-      >
-        <View style={styles.videoSheet}>
-          <VideoPlayer uri={selectedVideoUri} autoPlay />
+        {/* Content */}
+        <View style={styles.content}>
+          {activeTab === 'media' && (
+            <FlatList
+            removeClippedSubviews={true}
+              data={mediaItems}
+              renderItem={renderMediaItem}
+              keyExtractor={item => item.id}
+              numColumns={3}
+              columnWrapperStyle={styles.mediaGrid}
+              contentContainerStyle={styles.mediaList}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListEmptyComponent={renderEmpty}
+              ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={100} /> : null}
+            />
+          )}
+          {activeTab === 'links' && (
+            <FlatList
+            removeClippedSubviews={true}
+              data={linkItems}
+              renderItem={renderLinkItem}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContainer}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListEmptyComponent={renderEmpty}
+              ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null}
+            />
+          )}
+          {activeTab === 'docs' && (
+            <FlatList
+            removeClippedSubviews={true}
+              data={docItems}
+              renderItem={renderDocItem}
+              keyExtractor={item => item.id}
+              contentContainerStyle={styles.listContainer}
+              refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.emerald} />}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
+              ListEmptyComponent={renderEmpty}
+              ListFooterComponent={isFetchingNextPage ? <Skeleton.Rect width="100%" height={60} /> : null}
+            />
+          )}
         </View>
-      </BottomSheet>
-    </SafeAreaView>
+
+        {/* Image Lightbox */}
+        <ImageLightbox
+          visible={lightboxVisible}
+          images={lightboxImages}
+          initialIndex={lightboxIndex}
+          onClose={() => setLightboxVisible(false)}
+        />
+
+        {/* Video Player BottomSheet */}
+        <BottomSheet
+          visible={videoPlayerVisible}
+          onClose={() => setVideoPlayerVisible(false)}
+          snapPoint={0.85}
+        >
+          <View style={styles.videoSheet}>
+            <VideoPlayer uri={selectedVideoUri} autoPlay />
+          </View>
+        </BottomSheet>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -195,105 +196,108 @@ export default function StickerBrowserScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
       
-      <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchInputWrap}
-        >
+        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
           <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.searchIconBg}
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchInputWrap}
           >
-            <Icon name="search" size="xs" color={colors.emerald} />
-          </LinearGradient>
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search sticker packs..."
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
-              <Icon name="x" size="xs" color={colors.text.secondary} />
-            </Pressable>
-          )}
-        </LinearGradient>
-      </Animated.View>
-
-      <FlatList
-        data={packs}
-        ListHeaderComponent={renderFeatured}
-        renderItem={({ item, index }) => (
-          <PackCard
-            pack={item}
-            onPress={() => setSelectedPack(item)}
-            onAdd={() => handleAdd(item.id)}
-            onRemove={() => handleRemove(item.id)}
-            index={index}
-          />
-        )}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage && debouncedQuery.length === 0) {
-            fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          !isSearchLoading && !isBrowseLoading ? (
-            <View style={styles.emptyWrap}>
-              <EmptyState 
-                icon="smile" 
-                title={debouncedQuery.length > 0 ? "No results found" : "No sticker packs"} 
-                subtitle={debouncedQuery.length > 0 ? "Try a different search term" : "Sticker packs will appear here"} 
-              />
-            </View>
-          ) : null
-        }
-      />
-
-      {/* Pack Details BottomSheet */}
-      <BottomSheet visible={!!selectedPack} onClose={() => setSelectedPack(null)}>
-        {selectedPack && (
-          <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>{selectedPack.name}</Text>
-            {selectedPack.description && (
-              <Text style={styles.sheetSubtitle}>{selectedPack.description}</Text>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.searchIconBg}
+            >
+              <Icon name="search" size="xs" color={colors.emerald} />
+            </LinearGradient>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search sticker packs..."
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
+                <Icon name="x" size="xs" color={colors.text.secondary} />
+              </Pressable>
             )}
-            
-            <View style={styles.grid}>
-              {selectedPack.stickers?.map((sticker) => (
-                <View key={sticker.id} style={styles.gridItem}>
-                  <Image source={{ uri: sticker.imageUrl }} style={styles.gridImage} contentFit="contain" />
-                </View>
-              ))}
-            </View>
+          </LinearGradient>
+        </Animated.View>
 
-            <View style={{ marginTop: spacing.xl }}>
-              <GradientButton 
-                title="Add to Collection"
-                onPress={() => {
-                  handleAdd(selectedPack.id);
-                  setSelectedPack(null);
-                  haptic.success();
-                }}
-              />
+        <FlatList
+          data={packs}
+          ListHeaderComponent={renderFeatured}
+          renderItem={({ item, index }) => (
+            <PackCard
+              pack={item}
+              onPress={() => setSelectedPack(item)}
+              onAdd={() => handleAdd(item.id)}
+              onRemove={() => handleRemove(item.id)}
+              index={index}
+            />
+          )}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage && debouncedQuery.length === 0) {
+              fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            !isSearchLoading && !isBrowseLoading ? (
+              <View style={styles.emptyWrap}>
+                <EmptyState 
+                  icon="smile" 
+                  title={debouncedQuery.length > 0 ? "No results found" : "No sticker packs"} 
+                  subtitle={debouncedQuery.length > 0 ? "Try a different search term" : "Sticker packs will appear here"} 
+                />
+              </View>
+            ) : null
+          }
+        />
+
+        {/* Pack Details BottomSheet */}
+        <BottomSheet visible={!!selectedPack} onClose={() => setSelectedPack(null)}>
+          {selectedPack && (
+            <View style={styles.sheetContent}>
+              <Text style={styles.sheetTitle}>{selectedPack.name}</Text>
+              {selectedPack.description && (
+                <Text style={styles.sheetSubtitle}>{selectedPack.description}</Text>
+              )}
+            
+              <View style={styles.grid}>
+                {selectedPack.stickers?.map((sticker) => (
+                  <View key={sticker.id} style={styles.gridItem}>
+                    <Image source={{ uri: sticker.imageUrl }} style={styles.gridImage} contentFit="contain" />
+                  </View>
+                ))}
+              </View>
+
+              <View style={{ marginTop: spacing.xl }}>
+                <GradientButton 
+                  title="Add to Collection"
+                  onPress={() => {
+                    handleAdd(selectedPack.id);
+                    setSelectedPack(null);
+                    haptic.success();
+                  }}
+                />
+              </View>
             </View>
-          </View>
-        )}
-      </BottomSheet>
-    </View>
+          )}
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

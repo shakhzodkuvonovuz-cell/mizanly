@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { Comment, Reel } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_H * 0.7;
@@ -397,94 +398,97 @@ export default function ReelDetailScreen() {
   ), [commentsQuery.isFetchingNextPage]);
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('bakra.reel')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
-      />
-
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={0}
-      >
-        <FlatList
-            removeClippedSubviews={true}
-          data={comments}
-          keyExtractor={(item) => item.id}
-          onEndReached={() => {
-            if (commentsQuery.hasNextPage && !commentsQuery.isFetchingNextPage) {
-              commentsQuery.fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl
-              refreshing={reelQuery.isRefetching || commentsQuery.isRefetching}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
-          }
-          ListHeaderComponent={listHeader}
-          renderItem={({ item }) => (
-            <CommentRow
-              comment={item}
-              reelId={id}
-              viewerId={user?.id}
-              onReply={handleReply}
-              onDeleted={() => {
-                queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
-                queryClient.invalidateQueries({ queryKey: ['reel', id] });
-              }}
-            />
-          )}
-          ListEmptyComponent={listEmpty}
-          ListFooterComponent={listFooter}
-          contentContainerStyle={{ paddingBottom: 100 }}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('bakra.reel')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
 
-        {/* Comment Input */}
-        {user && (
-          <View style={styles.inputWrap}>
-            {replyTo && (
-              <View style={styles.replyBanner}>
-                <Text style={styles.replyBannerText}>
-                  {t('comments.replyingTo')} @{replyTo.username}
-                </Text>
-                <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
-                  <Icon name="x" size="xs" color={colors.text.secondary} />
-                </Pressable>
-              </View>
-            )}
-            <View style={styles.inputRow}>
-              <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
-              <TextInput
-                ref={inputRef}
-                style={styles.input}
-                placeholder={replyTo ? t('comments.replyPlaceholder', { username: replyTo.username }) : t('comments.addCommentPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
-                value={commentText}
-                onChangeText={setCommentText}
-                multiline
-                maxLength={500}
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          keyboardVerticalOffset={0}
+        >
+          <FlatList
+              removeClippedSubviews={true}
+            data={comments}
+            keyExtractor={(item) => item.id}
+            onEndReached={() => {
+              if (commentsQuery.hasNextPage && !commentsQuery.isFetchingNextPage) {
+                commentsQuery.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl
+                refreshing={reelQuery.isRefetching || commentsQuery.isRefetching}
+                onRefresh={handleRefresh}
+                tintColor={colors.emerald}
               />
-              <TouchableOpacity
-                onPress={() => canSend && sendMutation.mutate()}
-                disabled={!canSend}
-              >
-                {sendMutation.isPending ? (
-                  <Icon name="loader" size="sm" color={colors.emerald} />
-                ) : (
-                  <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
-                    {t('common.send')}
+            }
+            ListHeaderComponent={listHeader}
+            renderItem={({ item }) => (
+              <CommentRow
+                comment={item}
+                reelId={id}
+                viewerId={user?.id}
+                onReply={handleReply}
+                onDeleted={() => {
+                  queryClient.invalidateQueries({ queryKey: ['reel-comments', id] });
+                  queryClient.invalidateQueries({ queryKey: ['reel', id] });
+                }}
+              />
+            )}
+            ListEmptyComponent={listEmpty}
+            ListFooterComponent={listFooter}
+            contentContainerStyle={{ paddingBottom: 100 }}
+          />
+
+          {/* Comment Input */}
+          {user && (
+            <View style={styles.inputWrap}>
+              {replyTo && (
+                <View style={styles.replyBanner}>
+                  <Text style={styles.replyBannerText}>
+                    {t('comments.replyingTo')} @{replyTo.username}
                   </Text>
-                )}
-              </TouchableOpacity>
+                  <Pressable onPress={() => setReplyTo(null)} hitSlop={8}>
+                    <Icon name="x" size="xs" color={colors.text.secondary} />
+                  </Pressable>
+                </View>
+              )}
+              <View style={styles.inputRow}>
+                <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
+                <TextInput
+                  ref={inputRef}
+                  style={styles.input}
+                  placeholder={replyTo ? t('comments.replyPlaceholder', { username: replyTo.username }) : t('comments.addCommentPlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  value={commentText}
+                  onChangeText={setCommentText}
+                  multiline
+                  maxLength={500}
+                />
+                <TouchableOpacity
+                  onPress={() => canSend && sendMutation.mutate()}
+                  disabled={!canSend}
+                >
+                  {sendMutation.isPending ? (
+                    <Icon name="loader" size="sm" color={colors.emerald} />
+                  ) : (
+                    <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
+                      {t('common.send')}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        )}
-      </KeyboardAvoidingView>
-    </View>
+          )}
+        </KeyboardAvoidingView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

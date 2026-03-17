@@ -16,6 +16,7 @@ import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface Account {
   id: string;
@@ -157,273 +158,276 @@ export default function AccountSwitcherScreen() {
   }, [signOut, queryClient, t]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title={t('screens.accountSwitcher.title')} showBackButton />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('screens.accountSwitcher.title')} showBackButton />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
-      >
-        {/* Loading State */}
-        {isLoading && (
-          <View style={{ padding: spacing.base, gap: spacing.md }}>
-            <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
-            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
-            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
-          </View>
-        )}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
+        >
+          {/* Loading State */}
+          {isLoading && (
+            <View style={{ padding: spacing.base, gap: spacing.md }}>
+              <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
+              <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+              <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+            </View>
+          )}
 
-        {/* Current Account Hero Card */}
-        {!isLoading && activeAccount && (
-          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-            <View style={styles.heroCard}>
-              <LinearGradient
-                colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
-                style={styles.heroGradient}
-              >
-                {/* Gold Border Accent */}
-                <View style={styles.heroBorder} />
+          {/* Current Account Hero Card */}
+          {!isLoading && activeAccount && (
+            <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+              <View style={styles.heroCard}>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+                  style={styles.heroGradient}
+                >
+                  {/* Gold Border Accent */}
+                  <View style={styles.heroBorder} />
 
-                <View style={styles.heroContent}>
-                  {/* Avatar with Online Ring */}
-                  <View style={styles.heroAvatarContainer}>
-                    <Avatar
-                      uri={activeAccount.avatarUrl}
-                      name={activeAccount.displayName}
-                      size="xl"
-                      showOnline
-                    />
-                  </View>
-
-                  {/* Account Info */}
-                  <View style={styles.heroInfo}>
-                    <View style={styles.heroNameRow}>
-                      <Text style={styles.heroName}>{activeAccount.displayName}</Text>
-                      {activeAccount.isVerified && <VerifiedBadge size={15} />}
+                  <View style={styles.heroContent}>
+                    {/* Avatar with Online Ring */}
+                    <View style={styles.heroAvatarContainer}>
+                      <Avatar
+                        uri={activeAccount.avatarUrl}
+                        name={activeAccount.displayName}
+                        size="xl"
+                        showOnline
+                      />
                     </View>
-                    <Text style={styles.heroUsername}>@{activeAccount.username}</Text>
 
-                    {/* Stats */}
-                    <Text style={styles.heroStats}>
-                      {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} · ${activeAccount.following} ${t('screens.accountSwitcher.following')} · ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
-                    </Text>
+                    {/* Account Info */}
+                    <View style={styles.heroInfo}>
+                      <View style={styles.heroNameRow}>
+                        <Text style={styles.heroName}>{activeAccount.displayName}</Text>
+                        {activeAccount.isVerified && <VerifiedBadge size={15} />}
+                      </View>
+                      <Text style={styles.heroUsername}>@{activeAccount.username}</Text>
+
+                      {/* Stats */}
+                      <Text style={styles.heroStats}>
+                        {`${activeAccount.followers} ${t('screens.accountSwitcher.followers')} · ${activeAccount.following} ${t('screens.accountSwitcher.following')} · ${activeAccount.posts} ${t('screens.accountSwitcher.posts')}`}
+                      </Text>
+                    </View>
+
+                    {/* Active Badge */}
+                    <View style={styles.activeBadge}>
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
+                        style={styles.activeBadgeGradient}
+                      >
+                        <Icon name="check-circle" size="xs" color="#FFF" />
+                        <Text style={styles.activeBadgeText}>{t('screens.accountSwitcher.activeBadge')}</Text>
+                      </LinearGradient>
+                    </View>
                   </View>
 
-                  {/* Active Badge */}
-                  <View style={styles.activeBadge}>
+                  {/* Account Type */}
+                  <View style={styles.accountTypeContainer}>
                     <LinearGradient
-                      colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
-                      style={styles.activeBadgeGradient}
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                      style={styles.accountTypeGradient}
                     >
-                      <Icon name="check-circle" size="xs" color="#FFF" />
-                      <Text style={styles.activeBadgeText}>{t('screens.accountSwitcher.activeBadge')}</Text>
+                      <Text style={styles.accountTypeText}>{activeAccount.accountType}</Text>
                     </LinearGradient>
                   </View>
+                </LinearGradient>
+              </View>
+            </Animated.View>
+          )}
+
+          {/* Other Accounts Section */}
+          {!isLoading && <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
+              <Text style={styles.sectionCount}>{otherAccounts.length}</Text>
+            </View>
+
+            <View style={styles.accountsList}>
+              {otherAccounts.map((account, index) => (
+                <Animated.View
+                  key={account.id}
+                  entering={FadeInUp.delay(index * 100).duration(400)}
+                  style={styles.accountCard}
+                >
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.accountGradient}
+                  >
+                    {/* Avatar and Info */}
+                    <View style={styles.accountRow}>
+                      <Avatar
+                        uri={account.avatarUrl}
+                        name={account.displayName}
+                        size="lg"
+                      />
+
+                      <View style={styles.accountInfo}>
+                        <View style={styles.accountNameRow}>
+                          <Text style={styles.accountName}>{account.displayName}</Text>
+                          {account.isVerified && <VerifiedBadge size={13} />}
+                        </View>
+                        <Text style={styles.accountUsername}>@{account.username}</Text>
+
+                        {/* Account Type Badge */}
+                        <View style={styles.accountTypeBadge}>
+                          <LinearGradient
+                            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                            style={styles.accountTypeBadgeGradient}
+                          >
+                            <Text style={styles.accountTypeBadgeText}>{account.accountType}</Text>
+                          </LinearGradient>
+                        </View>
+
+                        <Text style={styles.lastActive}>{account.lastActive}</Text>
+                      </View>
+
+                      {/* Unread Badge + Switch Button */}
+                      <View style={styles.accountActions}>
+                        {account.unreadCount > 0 && (
+                          <View style={styles.unreadBadge}>
+                            <Text style={styles.unreadBadgeText}>{account.unreadCount}</Text>
+                          </View>
+                        )}
+                        <TouchableOpacity
+                          style={styles.switchButton}
+                          onPress={() => handleSwitchAccount(account)}
+                          disabled={switching}
+                        >
+                          <LinearGradient
+                            colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                            style={styles.switchButtonGradient}
+                          >
+                            <Text style={styles.switchButtonText}>{t('screens.accountSwitcher.switchButton')}</Text>
+                          </LinearGradient>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </LinearGradient>
+                </Animated.View>
+              ))}
+            </View>
+          </Animated.View>}
+
+          {/* Empty State when no accounts loaded */}
+          {!isLoading && accounts.length === 0 && (
+            <EmptyState
+              icon="user"
+              title={t('screens.accountSwitcher.noAccounts') || 'No accounts found'}
+              subtitle={t('screens.accountSwitcher.noAccountsSubtitle') || 'Sign in to get started'}
+            />
+          )}
+
+          {/* Add Account Section */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <TouchableOpacity style={styles.addAccountCard} onPress={handleAddAccount}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
+                style={[styles.addAccountGradient, styles.addAccountDashed]}
+              >
+                <View style={styles.addAccountIcon}>
+                  <Icon name="circle-plus" size="xl" color={colors.emerald} />
+                </View>
+                <Text style={styles.addAccountText}>{t('screens.accountSwitcher.addAccount')}</Text>
+                <Text style={styles.addAccountSubtext}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Account Management Section */}
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <View style={styles.managementCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.managementGradient}
+              >
+                {/* Header */}
+                <View style={styles.managementHeader}>
+                  <View style={styles.managementIconContainer}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.managementIconGradient}
+                    >
+                      <Icon name="settings" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                  </View>
+                  <Text style={styles.managementTitle}>{t('screens.accountSwitcher.managementTitle')}</Text>
                 </View>
 
-                {/* Account Type */}
-                <View style={styles.accountTypeContainer}>
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                    style={styles.accountTypeGradient}
-                  >
-                    <Text style={styles.accountTypeText}>{activeAccount.accountType}</Text>
-                  </LinearGradient>
+                {/* Manage Accounts Row */}
+                <TouchableOpacity style={styles.managementRow}>
+                  <View style={styles.managementRowLeft}>
+                    <Icon name="users" size="sm" color={colors.text.secondary} />
+                    <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
+                  </View>
+                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                </TouchableOpacity>
+
+                {/* Default Account Row */}
+                <TouchableOpacity style={styles.managementRow}>
+                  <View style={styles.managementRowLeft}>
+                    <Icon name="user" size="sm" color={colors.text.secondary} />
+                    <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
+                  </View>
+                  <View style={styles.managementRowRight}>
+                    <Text style={[styles.managementRowValue, {color: colors.text.tertiary}]}>
+                      @{activeAccount?.username}
+                    </Text>
+                    <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Auto-switch Toggle */}
+                <View style={styles.toggleRow}>
+                  <View style={styles.toggleRowLeft}>
+                    <Icon name="bell" size="sm" color={colors.text.secondary} />
+                    <Text style={styles.toggleRowText}>{t('screens.accountSwitcher.autoSwitchToggle')}</Text>
+                  </View>
+                  <Switch
+                    value={autoSwitchOnNotification}
+                    onValueChange={setAutoSwitchOnNotification}
+                    trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                    thumbColor="#FFF"
+                  />
                 </View>
               </LinearGradient>
             </View>
           </Animated.View>
-        )}
 
-        {/* Other Accounts Section */}
-        {!isLoading && <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
-            <Text style={styles.sectionCount}>{otherAccounts.length}</Text>
-          </View>
-
-          <View style={styles.accountsList}>
-            {otherAccounts.map((account, index) => (
-              <Animated.View
-                key={account.id}
-                entering={FadeInUp.delay(index * 100).duration(400)}
-                style={styles.accountCard}
+          {/* Security Note */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <View style={styles.securityCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.securityGradient}
               >
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.accountGradient}
-                >
-                  {/* Avatar and Info */}
-                  <View style={styles.accountRow}>
-                    <Avatar
-                      uri={account.avatarUrl}
-                      name={account.displayName}
-                      size="lg"
-                    />
-
-                    <View style={styles.accountInfo}>
-                      <View style={styles.accountNameRow}>
-                        <Text style={styles.accountName}>{account.displayName}</Text>
-                        {account.isVerified && <VerifiedBadge size={13} />}
-                      </View>
-                      <Text style={styles.accountUsername}>@{account.username}</Text>
-
-                      {/* Account Type Badge */}
-                      <View style={styles.accountTypeBadge}>
-                        <LinearGradient
-                          colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                          style={styles.accountTypeBadgeGradient}
-                        >
-                          <Text style={styles.accountTypeBadgeText}>{account.accountType}</Text>
-                        </LinearGradient>
-                      </View>
-
-                      <Text style={styles.lastActive}>{account.lastActive}</Text>
-                    </View>
-
-                    {/* Unread Badge + Switch Button */}
-                    <View style={styles.accountActions}>
-                      {account.unreadCount > 0 && (
-                        <View style={styles.unreadBadge}>
-                          <Text style={styles.unreadBadgeText}>{account.unreadCount}</Text>
-                        </View>
-                      )}
-                      <TouchableOpacity
-                        style={styles.switchButton}
-                        onPress={() => handleSwitchAccount(account)}
-                        disabled={switching}
-                      >
-                        <LinearGradient
-                          colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
-                          style={styles.switchButtonGradient}
-                        >
-                          <Text style={styles.switchButtonText}>{t('screens.accountSwitcher.switchButton')}</Text>
-                        </LinearGradient>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </LinearGradient>
-              </Animated.View>
-            ))}
-          </View>
-        </Animated.View>}
-
-        {/* Empty State when no accounts loaded */}
-        {!isLoading && accounts.length === 0 && (
-          <EmptyState
-            icon="user"
-            title={t('screens.accountSwitcher.noAccounts') || 'No accounts found'}
-            subtitle={t('screens.accountSwitcher.noAccountsSubtitle') || 'Sign in to get started'}
-          />
-        )}
-
-        {/* Add Account Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <TouchableOpacity style={styles.addAccountCard} onPress={handleAddAccount}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
-              style={[styles.addAccountGradient, styles.addAccountDashed]}
-            >
-              <View style={styles.addAccountIcon}>
-                <Icon name="circle-plus" size="xl" color={colors.emerald} />
-              </View>
-              <Text style={styles.addAccountText}>{t('screens.accountSwitcher.addAccount')}</Text>
-              <Text style={styles.addAccountSubtext}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Account Management Section */}
-        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-          <View style={styles.managementCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.managementGradient}
-            >
-              {/* Header */}
-              <View style={styles.managementHeader}>
-                <View style={styles.managementIconContainer}>
+                <View style={styles.securityIconContainer}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.managementIconGradient}
+                    style={styles.securityIconGradient}
                   >
-                    <Icon name="settings" size="sm" color={colors.emerald} />
+                    <Icon name="lock" size="sm" color={colors.emerald} />
                   </LinearGradient>
                 </View>
-                <Text style={styles.managementTitle}>{t('screens.accountSwitcher.managementTitle')}</Text>
-              </View>
-
-              {/* Manage Accounts Row */}
-              <TouchableOpacity style={styles.managementRow}>
-                <View style={styles.managementRowLeft}>
-                  <Icon name="users" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
-                </View>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
-
-              {/* Default Account Row */}
-              <TouchableOpacity style={styles.managementRow}>
-                <View style={styles.managementRowLeft}>
-                  <Icon name="user" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
-                </View>
-                <View style={styles.managementRowRight}>
-                  <Text style={[styles.managementRowValue, {color: colors.text.tertiary}]}>
-                    @{activeAccount?.username}
+                <View style={styles.securityContent}>
+                  <Text style={styles.securityText}>
+                    {t('screens.accountSwitcher.securityText')}
                   </Text>
-                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                  <TouchableOpacity onPress={handleSignOutAll}>
+                    <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
+                  </TouchableOpacity>
                 </View>
-              </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          </Animated.View>
 
-              {/* Auto-switch Toggle */}
-              <View style={styles.toggleRow}>
-                <View style={styles.toggleRowLeft}>
-                  <Icon name="bell" size="sm" color={colors.text.secondary} />
-                  <Text style={styles.toggleRowText}>{t('screens.accountSwitcher.autoSwitchToggle')}</Text>
-                </View>
-                <Switch
-                  value={autoSwitchOnNotification}
-                  onValueChange={setAutoSwitchOnNotification}
-                  trackColor={{ false: colors.dark.surface, true: colors.emerald }}
-                  thumbColor="#FFF"
-                />
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Security Note */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <View style={styles.securityCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.securityGradient}
-            >
-              <View style={styles.securityIconContainer}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.securityIconGradient}
-                >
-                  <Icon name="lock" size="sm" color={colors.emerald} />
-                </LinearGradient>
-              </View>
-              <View style={styles.securityContent}>
-                <Text style={styles.securityText}>
-                  {t('screens.accountSwitcher.securityText')}
-                </Text>
-                <TouchableOpacity onPress={handleSignOutAll}>
-                  <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi, channelsApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function CreatePlaylistScreen() {
   const router = useRouter();
@@ -109,117 +110,120 @@ export default function CreatePlaylistScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title={t('createPlaylist.title')} 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title={t('createPlaylist.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} 
+        />
       
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: insets.top + 52 + spacing.md, paddingBottom: insets.bottom + spacing['2xl'] }
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Title Section */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.sectionIcon}
-            >
-              <Icon name="edit" size="sm" color={colors.gold} />
-            </LinearGradient>
-            <Text style={styles.label}>{t('createPlaylist.label.title')}</Text>
-          </View>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputWrap}
-          >
-            <TextInput
-              style={styles.input}
-              placeholder={t('createPlaylist.placeholder.title')}
-              placeholderTextColor={colors.text.tertiary}
-              value={title}
-              onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
-            />
-            <View style={styles.ringWrap}>
-               <CharCountRing current={title.length} max={MAX_TITLE} size={24} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Description Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.sectionIcon}
-            >
-              <Icon name="file-text" size="sm" color={colors.gold} />
-            </LinearGradient>
-            <Text style={styles.label}>{t('createPlaylist.label.description')}</Text>
-          </View>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={[styles.inputWrap, styles.textAreaWrap]}
-          >
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder={t('createPlaylist.placeholder.description')}
-              placeholderTextColor={colors.text.tertiary}
-              value={description}
-              onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-            <View style={styles.ringWrapBottom}>
-               <CharCountRing current={description.length} max={MAX_DESC} size={24} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Privacy Toggle */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.toggleRow}
-          >
-            <View style={styles.toggleIconBg}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: insets.top + 52 + spacing.md, paddingBottom: insets.bottom + spacing['2xl'] }
+          ]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Title Section */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <View style={styles.sectionHeader}>
               <LinearGradient
-                colors={isPublic ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(100,100,100,0.2)', 'transparent']}
-                style={styles.toggleIconGradient}
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIcon}
               >
-                <Icon name={isPublic ? "globe" : "lock"} size="sm" color={isPublic ? colors.emerald : colors.text.tertiary} />
+                <Icon name="edit" size="sm" color={colors.gold} />
               </LinearGradient>
+              <Text style={styles.label}>{t('createPlaylist.label.title')}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleTitle}>{t(isPublic ? 'createPlaylist.toggle.publicTitle' : 'createPlaylist.toggle.privateTitle')}</Text>
-              <Text style={styles.toggleDesc}>
-                {t(isPublic ? 'createPlaylist.toggle.publicDescription' : 'createPlaylist.toggle.privateDescription')}
-              </Text>
-            </View>
-            <Switch
-              value={isPublic}
-              onValueChange={setIsPublic}
-              trackColor={{ false: colors.dark.border, true: colors.emerald }}
-              thumbColor={colors.dark.text}
-            />
-          </LinearGradient>
-        </Animated.View>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputWrap}
+            >
+              <TextInput
+                style={styles.input}
+                placeholder={t('createPlaylist.placeholder.title')}
+                placeholderTextColor={colors.text.tertiary}
+                value={title}
+                onChangeText={(text) => text.length <= MAX_TITLE && setTitle(text)}
+              />
+              <View style={styles.ringWrap}>
+                 <CharCountRing current={title.length} max={MAX_TITLE} size={24} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Create Button */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrap}>
-          <GradientButton
-            title={createMutation.isPending ? t('createPlaylist.creating') : t('createPlaylist.create')}
-            onPress={handleCreate}
-            disabled={createMutation.isPending || title.trim().length === 0 || !channelId}
-          />
-        </Animated.View>
-      </ScrollView>
-    </View>
+          {/* Description Section */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIcon}
+              >
+                <Icon name="file-text" size="sm" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.label}>{t('createPlaylist.label.description')}</Text>
+            </View>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={[styles.inputWrap, styles.textAreaWrap]}
+            >
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder={t('createPlaylist.placeholder.description')}
+                placeholderTextColor={colors.text.tertiary}
+                value={description}
+                onChangeText={(text) => text.length <= MAX_DESC && setDescription(text)}
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+              />
+              <View style={styles.ringWrapBottom}>
+                 <CharCountRing current={description.length} max={MAX_DESC} size={24} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Privacy Toggle */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.toggleRow}
+            >
+              <View style={styles.toggleIconBg}>
+                <LinearGradient
+                  colors={isPublic ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(100,100,100,0.2)', 'transparent']}
+                  style={styles.toggleIconGradient}
+                >
+                  <Icon name={isPublic ? "globe" : "lock"} size="sm" color={isPublic ? colors.emerald : colors.text.tertiary} />
+                </LinearGradient>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleTitle}>{t(isPublic ? 'createPlaylist.toggle.publicTitle' : 'createPlaylist.toggle.privateTitle')}</Text>
+                <Text style={styles.toggleDesc}>
+                  {t(isPublic ? 'createPlaylist.toggle.publicDescription' : 'createPlaylist.toggle.privateDescription')}
+                </Text>
+              </View>
+              <Switch
+                value={isPublic}
+                onValueChange={setIsPublic}
+                trackColor={{ false: colors.dark.border, true: colors.emerald }}
+                thumbColor={colors.dark.text}
+              />
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Create Button */}
+          <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrap}>
+            <GradientButton
+              title={createMutation.isPending ? t('createPlaylist.creating') : t('createPlaylist.create')}
+              onPress={handleCreate}
+              disabled={createMutation.isPending || title.trim().length === 0 || !channelId}
+            />
+          </Animated.View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

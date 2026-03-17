@@ -20,6 +20,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { storiesApi, uploadApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const CANVAS_H = SCREEN_H * 0.7;
@@ -402,6 +403,7 @@ export default function CreateStoryScreen() {
   };
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark.bg }}>
       {/* ── Header ── */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border }}>
@@ -570,38 +572,39 @@ export default function CreateStoryScreen() {
                 };
 
                 return (
-                  <Pressable key={i} onPress={handleGradientPress}>
-                    <Animated.View style={[
-                      {
-                        width: 48,
-                        height: 48,
-                        borderRadius: radius.full,
-                        marginRight: spacing.sm,
-                        overflow: 'hidden',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      },
-                      animatedStyle,
-                    ]}>
-                      <LinearGradient
-                        colors={g}
-                        style={StyleSheet.absoluteFill}
-                      />
-                      {/* Emerald check overlay when active */}
-                      {isActive && (
-                        <View style={{
-                          width: 20,
-                          height: 20,
+                    <Pressable key={i} onPress={handleGradientPress}>
+                      <Animated.View style={[
+                        {
+                          width: 48,
+                          height: 48,
                           borderRadius: radius.full,
-                          backgroundColor: colors.emerald,
+                          marginRight: spacing.sm,
+                          overflow: 'hidden',
                           justifyContent: 'center',
                           alignItems: 'center',
-                        }}>
-                          <Icon name="check" size={12} color="#fff" />
-                        </View>
-                      )}
-                    </Animated.View>
-                  </Pressable>
+                        },
+                        animatedStyle,
+                      ]}>
+                        <LinearGradient
+                          colors={g}
+                          style={StyleSheet.absoluteFill}
+                        />
+                        {/* Emerald check overlay when active */}
+                        {isActive && (
+                          <View style={{
+                            width: 20,
+                            height: 20,
+                            borderRadius: radius.full,
+                            backgroundColor: colors.emerald,
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          }}>
+                            <Icon name="check" size={12} color="#fff" />
+                          </View>
+                        )}
+                      </Animated.View>
+                    </Pressable>
+                
                 );
               })}
             </ScrollView>
@@ -929,6 +932,7 @@ export default function CreateStoryScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

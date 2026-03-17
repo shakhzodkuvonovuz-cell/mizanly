@@ -9,6 +9,7 @@ import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -188,155 +189,158 @@ export default function IslamicCalendarScreen() {
   ).slice(0, 3);
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.islamicCalendar.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.islamicCalendar.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Current Date Card */}
-        <Animated.View entering={FadeInUp.duration(500)}>
-          <LinearGradient
-            colors={[colors.emerald, colors.gold]}
-            style={styles.currentDateCard}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.currentDateContent}>
-              <Text style={styles.currentHijriDate}>15 {HIJRI_MONTHS_ARABIC[8]} 1446</Text>
-              <Text style={styles.currentHijriSub}>{t('screens.islamicCalendar.currentHijriSub')}</Text>
-              <View style={styles.currentGregorian}>
-                <Icon name="calendar" size="xs" color="rgba(255,255,255,0.7)" />
-                <Text style={styles.currentGregorianText}>{t('screens.islamicCalendar.currentGregorianDate')}</Text>
-              </View>
-            </View>
-
-            {/* Decorative crescent */}
-            <View style={styles.crescentDecoration}>
-              <View style={styles.crescentOuter}>
-                <View style={styles.crescentInner} />
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Calendar Card */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.calendarContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.calendarCard}
-          >
-            {/* Month Header */}
-            <View style={styles.monthHeader}>
-              <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButton}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.monthNavGradient}
-                >
-                  <Icon name="chevron-left" size="sm" color={colors.emerald} />
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <View style={styles.monthTitleContainer}>
-                <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_ARABIC[currentMonth]}</Text>
-                <Text style={styles.monthTitle}>{HIJRI_MONTHS[currentMonth]} {currentYear}</Text>
-              </View>
-
-              <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButton}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.monthNavGradient}
-                >
-                  <Icon name="chevron-right" size="sm" color={colors.emerald} />
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-
-            {/* Weekday Headers */}
-            <View style={styles.weekdayHeader}>
-              {WEEKDAY_KEYS.map((dayKey) => (
-                <Text key={dayKey} style={styles.weekdayText}>{t(dayKey)}</Text>
-              ))}
-            </View>
-
-            {/* Calendar Grid */}
-            <View style={styles.calendarGrid}>
-              {days.map((dayData, index) => (
-                <CalendarDay
-                  key={index}
-                  day={dayData.day}
-                  isToday={dayData.isToday}
-                  hasEvent={dayData.hasEvent}
-                  eventType={dayData.eventType}
-                  index={index}
-                />
-              ))}
-            </View>
-
-            {/* Legend */}
-            <View style={styles.calendarLegend}>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.emerald }]} />
-                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendToday')}</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.gold }]} />
-                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendEid')}</Text>
-              </View>
-              <View style={styles.legendItem}>
-                <View style={[styles.legendDot, { backgroundColor: colors.emerald, opacity: 0.5 }]} />
-                <Text style={styles.legendText}>{t('screens.islamicCalendar.legendImportant')}</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Upcoming Events */}
-        <View style={styles.eventsSection}>
-          <View style={styles.sectionHeader}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Current Date Card */}
+          <Animated.View entering={FadeInUp.duration(500)}>
             <LinearGradient
-              colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-              style={styles.sectionIconBg}
+              colors={[colors.emerald, colors.gold]}
+              style={styles.currentDateCard}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
             >
-              <Icon name="flag" size="xs" color={colors.gold} />
+              <View style={styles.currentDateContent}>
+                <Text style={styles.currentHijriDate}>15 {HIJRI_MONTHS_ARABIC[8]} 1446</Text>
+                <Text style={styles.currentHijriSub}>{t('screens.islamicCalendar.currentHijriSub')}</Text>
+                <View style={styles.currentGregorian}>
+                  <Icon name="calendar" size="xs" color="rgba(255,255,255,0.7)" />
+                  <Text style={styles.currentGregorianText}>{t('screens.islamicCalendar.currentGregorianDate')}</Text>
+                </View>
+              </View>
+
+              {/* Decorative crescent */}
+              <View style={styles.crescentDecoration}>
+                <View style={styles.crescentOuter}>
+                  <View style={styles.crescentInner} />
+                </View>
+              </View>
             </LinearGradient>
-            <Text style={styles.sectionTitle}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
+          </Animated.View>
+
+          {/* Calendar Card */}
+          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.calendarContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.calendarCard}
+            >
+              {/* Month Header */}
+              <View style={styles.monthHeader}>
+                <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButton}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.monthNavGradient}
+                  >
+                    <Icon name="chevron-left" size="sm" color={colors.emerald} />
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                <View style={styles.monthTitleContainer}>
+                  <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_ARABIC[currentMonth]}</Text>
+                  <Text style={styles.monthTitle}>{HIJRI_MONTHS[currentMonth]} {currentYear}</Text>
+                </View>
+
+                <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButton}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.monthNavGradient}
+                  >
+                    <Icon name="chevron-right" size="sm" color={colors.emerald} />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+
+              {/* Weekday Headers */}
+              <View style={styles.weekdayHeader}>
+                {WEEKDAY_KEYS.map((dayKey) => (
+                  <Text key={dayKey} style={styles.weekdayText}>{t(dayKey)}</Text>
+                ))}
+              </View>
+
+              {/* Calendar Grid */}
+              <View style={styles.calendarGrid}>
+                {days.map((dayData, index) => (
+                  <CalendarDay
+                    key={index}
+                    day={dayData.day}
+                    isToday={dayData.isToday}
+                    hasEvent={dayData.hasEvent}
+                    eventType={dayData.eventType}
+                    index={index}
+                  />
+                ))}
+              </View>
+
+              {/* Legend */}
+              <View style={styles.calendarLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.emerald }]} />
+                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendToday')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.gold }]} />
+                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendEid')}</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.emerald, opacity: 0.5 }]} />
+                  <Text style={styles.legendText}>{t('screens.islamicCalendar.legendImportant')}</Text>
+                </View>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Upcoming Events */}
+          <View style={styles.eventsSection}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="flag" size="xs" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.sectionTitle}>{t('screens.islamicCalendar.upcomingEvents')}</Text>
+            </View>
+
+            {upcomingEvents.map((event, index) => (
+              <EventCard key={event.name} event={event} index={index} t={t} />
+            ))}
           </View>
 
-          {upcomingEvents.map((event, index) => (
-            <EventCard key={event.name} event={event} index={index} t={t} />
-          ))}
-        </View>
+          {/* Quick Links */}
+          <View style={styles.quickLinks}>
+            <TouchableOpacity style={styles.quickLink}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                style={styles.quickLinkGradient}
+              >
+                <Icon name="clock" size="sm" color={colors.emerald} />
+                <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.prayerTimes')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
 
-        {/* Quick Links */}
-        <View style={styles.quickLinks}>
-          <TouchableOpacity style={styles.quickLink}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-              style={styles.quickLinkGradient}
-            >
-              <Icon name="clock" size="sm" color={colors.emerald} />
-              <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.prayerTimes')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.quickLink}>
-            <LinearGradient
-              colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-              style={styles.quickLinkGradient}
-            >
-              <Icon name="book-open" size="sm" color={colors.gold} />
-              <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.quran')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+            <TouchableOpacity style={styles.quickLink}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                style={styles.quickLinkGradient}
+              >
+                <Icon name="book-open" size="sm" color={colors.gold} />
+                <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.quran')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

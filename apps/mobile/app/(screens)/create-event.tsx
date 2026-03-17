@@ -28,6 +28,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Alert } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -154,6 +155,7 @@ export default function CreateEventScreen() {
   };
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('events.createEvent')} onBack={() => router.back()} />
 
@@ -405,29 +407,30 @@ export default function CreateEventScreen() {
               {(['public', 'members', 'invite'] as PrivacyType[]).map((type) => {
                 const privacyLabel = type === 'public' ? t('events.public') : type === 'members' ? t('events.members') : t('events.inviteOnly');
                 return (
-                  <TouchableOpacity
-                    key={type}
-                    style={styles.pillButton}
-                    onPress={() => setPrivacy(type)}
-                    activeOpacity={0.8}
-                  >
-                    {privacy === type ? (
-                      <LinearGradient
-                        colors={[colors.emerald, colors.emeraldDark]}
-                        style={styles.pillGradient}
-                      >
-                        <Text style={[styles.pillText, styles.pillTextActive]}>
-                          {privacyLabel}
-                        </Text>
-                      </LinearGradient>
-                    ) : (
-                      <View style={styles.pillInner}>
-                        <Text style={styles.pillText}>
-                          {privacyLabel}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      key={type}
+                      style={styles.pillButton}
+                      onPress={() => setPrivacy(type)}
+                      activeOpacity={0.8}
+                    >
+                      {privacy === type ? (
+                        <LinearGradient
+                          colors={[colors.emerald, colors.emeraldDark]}
+                          style={styles.pillGradient}
+                        >
+                          <Text style={[styles.pillText, styles.pillTextActive]}>
+                            {privacyLabel}
+                          </Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={styles.pillInner}>
+                          <Text style={styles.pillText}>
+                            {privacyLabel}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                
                 );
               })}
             </View>
@@ -589,6 +592,7 @@ export default function CreateEventScreen() {
         </View>
       </BottomSheet>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

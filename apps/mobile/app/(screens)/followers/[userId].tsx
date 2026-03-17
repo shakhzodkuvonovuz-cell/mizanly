@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { User, PaginatedResponse } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
   user: User;
@@ -115,62 +116,65 @@ export default function FollowersScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('profile.followers')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('profile.followers')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <FlatList
-        removeClippedSubviews={true}
-        data={followers}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <UserRow
-            user={item}
-            isMe={clerkUser?.id === item.id}
-            onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-            onFollow={() => followMutation.mutate(item)}
-            index={index}
-          />
-        )}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={() =>
-          followersQuery.isLoading ? (
-            <View style={styles.skeletonList}>
-              {Array.from({ length: 8 }).map((_, i) => (
-                <View key={i} style={styles.skeletonRow}>
+        <FlatList
+          removeClippedSubviews={true}
+          data={followers}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <UserRow
+              user={item}
+              isMe={clerkUser?.id === item.id}
+              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+              onFollow={() => followMutation.mutate(item)}
+              index={index}
+            />
+          )}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={() =>
+            followersQuery.isLoading ? (
+              <View style={styles.skeletonList}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <View key={i} style={styles.skeletonRow}>
+                    <Skeleton.Circle size={40} />
+                    <View style={{ flex: 1, gap: 6 }}>
+                      <Skeleton.Rect width={130} height={14} />
+                      <Skeleton.Rect width={90} height={11} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : (
+              <EmptyState icon="users" title={t('screens.followers.emptyState')} subtitle={t('screens.followers.emptySubtitle')} />
+            )
+          }
+          ListFooterComponent={() =>
+            followersQuery.isFetchingNextPage ? (
+              <View style={styles.skeletonList}>
+                <View style={styles.skeletonRow}>
                   <Skeleton.Circle size={40} />
                   <View style={{ flex: 1, gap: 6 }}>
                     <Skeleton.Rect width={130} height={14} />
                     <Skeleton.Rect width={90} height={11} />
                   </View>
                 </View>
-              ))}
-            </View>
-          ) : (
-            <EmptyState icon="users" title={t('screens.followers.emptyState')} subtitle={t('screens.followers.emptySubtitle')} />
-          )
-        }
-        ListFooterComponent={() =>
-          followersQuery.isFetchingNextPage ? (
-            <View style={styles.skeletonList}>
-              <View style={styles.skeletonRow}>
-                <Skeleton.Circle size={40} />
-                <View style={{ flex: 1, gap: 6 }}>
-                  <Skeleton.Rect width={130} height={14} />
-                  <Skeleton.Rect width={90} height={11} />
-                </View>
               </View>
-            </View>
-          ) : null
-        }
-      />
-    </SafeAreaView>
+            ) : null
+          }
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

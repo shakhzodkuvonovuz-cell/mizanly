@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, iconSize } from '@/theme';
 import { useStore } from '@/store';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type ThemeOption = 'dark' | 'light' | 'system';
 
@@ -143,84 +144,87 @@ export default function ThemeSettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title="Appearance"
-        leftAction={{ 
-          icon: 'arrow-left', 
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
-        }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Appearance"
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
+        />
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        {/* Preview swatch with glassmorphism */}
-        <Animated.View entering={FadeInUp.duration(500)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-            style={styles.previewCard}
-          >
-            <View style={styles.previewHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                style={styles.previewIconBg}
-              >
-                <Icon name="eye" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.previewTitle}>Preview</Text>
-            </View>
-            <View style={styles.swatchRow}>
-              <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
-              <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={colors.text.primary} />
-              <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={colors.text.primary} />
-              <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
-            </View>
-            <Text style={styles.previewHint}>
-              {effectiveTheme === 'dark' ? 'Dark theme uses deep backgrounds with emerald highlights.' :
-               effectiveTheme === 'light' ? 'Light theme uses light backgrounds with emerald highlights.' :
-               'Theme follows your device settings.'}
-            </Text>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Theme selection with glassmorphism */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+          {/* Preview swatch with glassmorphism */}
+          <Animated.View entering={FadeInUp.duration(500)}>
             <LinearGradient
-              colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-              style={styles.sectionIconBg}
+              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              style={styles.previewCard}
             >
-              <Icon name="settings" size="xs" color={colors.gold} />
-            </LinearGradient>
-            <Text style={styles.sectionTitle}>Theme</Text>
-          </View>
-          <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.card}
-            >
-              {options.map((opt, index) => (
-                <React.Fragment key={opt.value}>
-                  {index > 0 && <View style={styles.divider} />}
-                  <ThemeRadio
-                    icon={opt.icon}
-                    label={opt.label}
-                    description={opt.description}
-                    isActive={theme === opt.value}
-                    onPress={() => setTheme(opt.value)}
-                  />
-                </React.Fragment>
-              ))}
+              <View style={styles.previewHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                  style={styles.previewIconBg}
+                >
+                  <Icon name="eye" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.previewTitle}>Preview</Text>
+              </View>
+              <View style={styles.swatchRow}>
+                <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
+                <ColorSwatch bg={themeColors.bgElevated} border={themeColors.border} text={colors.text.primary} />
+                <ColorSwatch bg={themeColors.bgCard} border={themeColors.border} text={colors.text.primary} />
+                <ColorSwatch bg={themeColors.surface} border={themeColors.border} text={colors.text.primary} />
+              </View>
+              <Text style={styles.previewHint}>
+                {effectiveTheme === 'dark' ? 'Dark theme uses deep backgrounds with emerald highlights.' :
+                 effectiveTheme === 'light' ? 'Light theme uses light backgrounds with emerald highlights.' :
+                 'Theme follows your device settings.'}
+              </Text>
             </LinearGradient>
           </Animated.View>
-        </View>
 
-        {/* Note */}
-        <Text style={styles.note}>
-          Changes apply immediately across the app. Some screens may require a restart to reflect fully.
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Theme selection with glassmorphism */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="settings" size="xs" color={colors.gold} />
+              </LinearGradient>
+              <Text style={styles.sectionTitle}>Theme</Text>
+            </View>
+            <Animated.View entering={FadeInUp.delay(100).duration(500)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.card}
+              >
+                {options.map((opt, index) => (
+                  <React.Fragment key={opt.value}>
+                    {index > 0 && <View style={styles.divider} />}
+                    <ThemeRadio
+                      icon={opt.icon}
+                      label={opt.label}
+                      description={opt.description}
+                      isActive={theme === opt.value}
+                      onPress={() => setTheme(opt.value)}
+                    />
+                  </React.Fragment>
+                ))}
+              </LinearGradient>
+            </Animated.View>
+          </View>
+
+          {/* Note */}
+          <Text style={styles.note}>
+            Changes apply immediately across the app. Some screens may require a restart to reflect fully.
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -17,6 +17,7 @@ import { storiesApi } from '@/services/api';
 import type { Story } from '@/types';
 import { useStore } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
@@ -166,52 +167,55 @@ export default function ArchiveScreen() {
   }
 
   return (
-    <View style={styles.container as ViewStyle}>
-      <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+    <ScreenErrorBoundary>
+      <View style={styles.container as ViewStyle}>
+        <GlassHeader title={t('screens.archive.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
-      <FlatList
-          removeClippedSubviews={true}
-        data={stories}
-        renderItem={renderGridItem}
-        keyExtractor={(item) => item.id}
-        numColumns={GRID_COLUMNS}
-        columnWrapperStyle={styles.gridRow as ViewStyle}
-        contentContainerStyle={[styles.gridContainer as ViewStyle, { paddingTop: insets.top + 52 }]}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <EmptyState
-              icon="clock"
-              title={t('screens.archive.emptyTitle')}
-              subtitle={t('screens.archive.emptySubtitle')}
+        <FlatList
+            removeClippedSubviews={true}
+          data={stories}
+          renderItem={renderGridItem}
+          keyExtractor={(item) => item.id}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={styles.gridRow as ViewStyle}
+          contentContainerStyle={[styles.gridContainer as ViewStyle, { paddingTop: insets.top + 52 }]}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <EmptyState
+                icon="clock"
+                title={t('screens.archive.emptyTitle')}
+                subtitle={t('screens.archive.emptySubtitle')}
+              />
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.emerald}
             />
-          </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-      />
+          }
+        />
 
-      <BottomSheet
-        visible={bottomSheetVisible}
-        onClose={() => setBottomSheetVisible(false)}
-      >
-        <BottomSheetItem
-          label={t('screens.archive.unarchiveLabel')}
-          icon={<Icon name="repeat" size="md" color={colors.text.primary} />}
-          onPress={handleUnarchive}
-        />
-        <BottomSheetItem
-          label={t('common.delete')}
-          icon={<Icon name="trash" size="md" color={colors.error} />}
-          onPress={handleDelete}
-          destructive
-        />
-      </BottomSheet>
-    </View>
+        <BottomSheet
+          visible={bottomSheetVisible}
+          onClose={() => setBottomSheetVisible(false)}
+        >
+          <BottomSheetItem
+            label={t('screens.archive.unarchiveLabel')}
+            icon={<Icon name="repeat" size="md" color={colors.text.primary} />}
+            onPress={handleUnarchive}
+          />
+          <BottomSheetItem
+            label={t('common.delete')}
+            icon={<Icon name="trash" size="md" color={colors.error} />}
+            onPress={handleDelete}
+            destructive
+          />
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

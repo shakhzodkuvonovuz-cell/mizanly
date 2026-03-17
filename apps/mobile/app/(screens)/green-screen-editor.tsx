@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -272,205 +273,208 @@ export default function GreenScreenEditorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title={t('screens.greenScreen.title')} showBackButton />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('screens.greenScreen.title')} showBackButton />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* Camera Preview */}
-        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-          <View style={styles.previewContainer}>
-            {selectedCategory === 'gradients' ? (
-              <LinearGradient
-                colors={getSelectedGradientColors()}
-                style={styles.previewGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              >
-                {/* Subject Silhouette */}
-                <View style={styles.subjectContainer}>
-                  <View style={styles.subjectSilhouette}>
-                    <Icon name="user" size="xl" color={colors.dark.surface} />
-                  </View>
-                  <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
-                </View>
-
-                {/* Record Button Overlay */}
-                <TouchableOpacity
-                  style={styles.recordOverlayButton}
-                  onPress={() => setIsRecording(!isRecording)}
-                >
-                  <LinearGradient
-                    colors={isRecording
-                      ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
-                      : ['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']
-                    }
-                    style={styles.recordOverlayGradient}
-                  >
-                    <Icon name="video" size="md" color="#FFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            ) : (
-              <LinearGradient
-                colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-                style={[styles.previewGradient, getBackgroundStyle()]}
-              >
-                {/* Subject Silhouette */}
-                <View style={styles.subjectContainer}>
-                  <View style={styles.subjectSilhouette}>
-                    <Icon name="user" size="xl" color={colors.dark.surface} />
-                  </View>
-                  <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
-                </View>
-
-                {/* Record Button Overlay */}
-                <TouchableOpacity
-                  style={styles.recordOverlayButton}
-                  onPress={() => setIsRecording(!isRecording)}
-                >
-                  <LinearGradient
-                    colors={isRecording
-                      ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
-                      : ['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']
-                    }
-                    style={styles.recordOverlayGradient}
-                  >
-                    <Icon name="video" size="md" color="#FFF" />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </LinearGradient>
-            )}
-          </View>
-        </Animated.View>
-
-        {/* Category Tabs */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.categoryScroll}
-            contentContainerStyle={styles.categoryContent}
-          >
-            {categories.map((category) => (
-              <TouchableOpacity
-                key={category.id}
-                style={styles.categoryButton}
-                onPress={() => setSelectedCategory(category.id)}
-              >
-                <LinearGradient
-                  colors={selectedCategory === category.id
-                    ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                    : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                  }
-                  style={styles.categoryButtonGradient}
-                >
-                  <Text style={[
-                    styles.categoryButtonText,
-                    selectedCategory === category.id && styles.categoryButtonTextActive
-                  ]}>
-                    {category.label}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </Animated.View>
-
-        {/* Background Grid */}
-        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <View style={styles.gridContainer}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.gridGradient}
-            >
-              <Text style={styles.gridTitle}>
-                {categories.find(c => c.id === selectedCategory)?.label}
-              </Text>
-              {renderBackgroundGrid()}
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Intensity Sliders */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <View style={styles.sliderCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.sliderGradient}
-            >
-              {/* Header */}
-              <View style={styles.sliderHeader}>
-                <View style={styles.sliderIconContainer}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.sliderIconGradient}
-                  >
-                    <Icon name="sliders" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                </View>
-                <Text style={styles.sliderTitle}>{t('screens.greenScreen.adjustments')}</Text>
-              </View>
-
-              {/* Background Blur */}
-              <View style={styles.sliderRow}>
-                <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
-                <Text style={styles.sliderValue}>{blurIntensity}%</Text>
-              </View>
-              <View style={styles.sliderTrack}>
-                <LinearGradient
-                  colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.sliderFill, { width: `${blurIntensity}%` }]}
-                />
-                <View style={[styles.sliderThumb, { left: `${blurIntensity}%` }]} />
-              </View>
-
-              {/* Edge Smoothing */}
-              <View style={[styles.sliderRow, styles.sliderRowSecond]}>
-                <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
-                <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
-              </View>
-              <View style={styles.sliderTrack}>
-                <LinearGradient
-                  colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={[styles.sliderFill, { width: `${edgeSmoothing}%` }]}
-                />
-                <View style={[styles.sliderThumb, { left: `${edgeSmoothing}%` }]} />
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
-
-      {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
-        <LinearGradient
-          colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
-          style={styles.bottomBarGradient}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
         >
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera')}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-              style={styles.applyButtonGradient}
+          {/* Camera Preview */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <View style={styles.previewContainer}>
+              {selectedCategory === 'gradients' ? (
+                <LinearGradient
+                  colors={getSelectedGradientColors()}
+                  style={styles.previewGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                >
+                  {/* Subject Silhouette */}
+                  <View style={styles.subjectContainer}>
+                    <View style={styles.subjectSilhouette}>
+                      <Icon name="user" size="xl" color={colors.dark.surface} />
+                    </View>
+                    <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
+                  </View>
+
+                  {/* Record Button Overlay */}
+                  <TouchableOpacity
+                    style={styles.recordOverlayButton}
+                    onPress={() => setIsRecording(!isRecording)}
+                  >
+                    <LinearGradient
+                      colors={isRecording
+                        ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
+                        : ['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']
+                      }
+                      style={styles.recordOverlayGradient}
+                    >
+                      <Icon name="video" size="md" color="#FFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              ) : (
+                <LinearGradient
+                  colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
+                  style={[styles.previewGradient, getBackgroundStyle()]}
+                >
+                  {/* Subject Silhouette */}
+                  <View style={styles.subjectContainer}>
+                    <View style={styles.subjectSilhouette}>
+                      <Icon name="user" size="xl" color={colors.dark.surface} />
+                    </View>
+                    <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
+                  </View>
+
+                  {/* Record Button Overlay */}
+                  <TouchableOpacity
+                    style={styles.recordOverlayButton}
+                    onPress={() => setIsRecording(!isRecording)}
+                  >
+                    <LinearGradient
+                      colors={isRecording
+                        ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
+                        : ['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']
+                      }
+                      style={styles.recordOverlayGradient}
+                    >
+                      <Icon name="video" size="md" color="#FFF" />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </LinearGradient>
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Category Tabs */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.categoryScroll}
+              contentContainerStyle={styles.categoryContent}
             >
-              <Text style={styles.applyButtonText}>{t('screens.greenScreen.applyAndRecord')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    </SafeAreaView>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={styles.categoryButton}
+                  onPress={() => setSelectedCategory(category.id)}
+                >
+                  <LinearGradient
+                    colors={selectedCategory === category.id
+                      ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
+                      : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                    }
+                    style={styles.categoryButtonGradient}
+                  >
+                    <Text style={[
+                      styles.categoryButtonText,
+                      selectedCategory === category.id && styles.categoryButtonTextActive
+                    ]}>
+                      {category.label}
+                    </Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </Animated.View>
+
+          {/* Background Grid */}
+          <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+            <View style={styles.gridContainer}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.gridGradient}
+              >
+                <Text style={styles.gridTitle}>
+                  {categories.find(c => c.id === selectedCategory)?.label}
+                </Text>
+                {renderBackgroundGrid()}
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Intensity Sliders */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <View style={styles.sliderCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.sliderGradient}
+              >
+                {/* Header */}
+                <View style={styles.sliderHeader}>
+                  <View style={styles.sliderIconContainer}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.sliderIconGradient}
+                    >
+                      <Icon name="sliders" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                  </View>
+                  <Text style={styles.sliderTitle}>{t('screens.greenScreen.adjustments')}</Text>
+                </View>
+
+                {/* Background Blur */}
+                <View style={styles.sliderRow}>
+                  <Text style={styles.sliderLabel}>{t('screens.greenScreen.backgroundBlur')}</Text>
+                  <Text style={styles.sliderValue}>{blurIntensity}%</Text>
+                </View>
+                <View style={styles.sliderTrack}>
+                  <LinearGradient
+                    colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.sliderFill, { width: `${blurIntensity}%` }]}
+                  />
+                  <View style={[styles.sliderThumb, { left: `${blurIntensity}%` }]} />
+                </View>
+
+                {/* Edge Smoothing */}
+                <View style={[styles.sliderRow, styles.sliderRowSecond]}>
+                  <Text style={styles.sliderLabel}>{t('screens.greenScreen.edgeSmoothing')}</Text>
+                  <Text style={styles.sliderValue}>{edgeSmoothing}%</Text>
+                </View>
+                <View style={styles.sliderTrack}>
+                  <LinearGradient
+                    colors={[colors.emerald, 'rgba(10,123,79,0.3)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={[styles.sliderFill, { width: `${edgeSmoothing}%` }]}
+                  />
+                  <View style={[styles.sliderThumb, { left: `${edgeSmoothing}%` }]} />
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        {/* Bottom Action Bar */}
+        <View style={styles.bottomBar}>
+          <LinearGradient
+            colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
+            style={styles.bottomBarGradient}
+          >
+            <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera')}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                style={styles.applyButtonGradient}
+              >
+                <Text style={styles.applyButtonText}>{t('screens.greenScreen.applyAndRecord')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

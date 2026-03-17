@@ -29,10 +29,13 @@ interface MutedUser {
 }
 
 import type { User, PaginatedResponse } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type MutedPage = PaginatedResponse<User>;
 
 export default function MutedScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -62,14 +65,14 @@ export default function MutedScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Muted Accounts"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.muted.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.muted.errorTitle')}
+          subtitle={t('screens.muted.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => query.refetch()}
         />
       </SafeAreaView>
@@ -77,10 +80,11 @@ export default function MutedScreen() {
   }
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
-        title="Muted Accounts"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+        title={t('screens.muted.title')}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
       />
 
       {query.isLoading ? (
@@ -111,29 +115,30 @@ export default function MutedScreen() {
           renderItem={({ item, index }) => {
             const u = item.muted;
             return (
-              <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.row}
-                >
-                  <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
-                  <View style={styles.info}>
-                    <Text style={styles.name}>{u.displayName}</Text>
-                    <View style={styles.mutedBadge}>
-                      <Icon name="volume-x" size={10} color={colors.text.tertiary} />
-                      <Text style={styles.username}>@{u.username}</Text>
+                <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.row}
+                  >
+                    <Avatar uri={u.avatarUrl} name={u.displayName} size="md" />
+                    <View style={styles.info}>
+                      <Text style={styles.name}>{u.displayName}</Text>
+                      <View style={styles.mutedBadge}>
+                        <Icon name="volume-x" size={10} color={colors.text.tertiary} />
+                        <Text style={styles.username}>@{u.username}</Text>
+                      </View>
                     </View>
-                  </View>
-                  <GradientButton
-                    label="Unmute"
-                    variant="secondary"
-                    size="sm"
-                    onPress={() => unmuteMutation.mutate(u.id)}
-                    loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                    disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
-                  />
-                </LinearGradient>
-              </Animated.View>
+                    <GradientButton
+                      label={t('screens.muted.unmute')}
+                      variant="secondary"
+                      size="sm"
+                      onPress={() => unmuteMutation.mutate(u.id)}
+                      loading={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+                      disabled={unmuteMutation.isPending && unmuteMutation.variables === u.id}
+                    />
+                  </LinearGradient>
+                </Animated.View>
+            
             );
           }}
           ListFooterComponent={() =>
@@ -150,13 +155,14 @@ export default function MutedScreen() {
           ListEmptyComponent={() => (
             <EmptyState
               icon="volume-x"
-              title="No muted accounts"
-              subtitle="Muted accounts won't know they've been muted and you can unmute anytime"
+              title={t('screens.muted.emptyTitle')}
+              subtitle={t('screens.muted.emptySubtitle')}
             />
           )}
         />
       )}
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

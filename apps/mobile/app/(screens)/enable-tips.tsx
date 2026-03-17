@@ -25,6 +25,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { monetizationApi } from '@/services/monetizationApi';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -156,283 +157,286 @@ export default function EnableTipsScreen() {
   }, [haptic, isConnected]);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title={t('screens.enableTips.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        rightActions={[{ icon: 'gift', onPress: () => {}, accessibilityLabel: t('screens.enableTips.tipsLabel') }]}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={t('screens.enableTips.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          rightActions={[{ icon: 'gift', onPress: () => {}, accessibilityLabel: t('screens.enableTips.tipsLabel') }]}
+        />
 
-      <ScrollView
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Hero Card */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-            style={[styles.heroCard, !isEnabled && styles.heroCardDisabled]}
-          >
+        <ScrollView
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Hero Card */}
+          <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
-              colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.heroIconBg}
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+              style={[styles.heroCard, !isEnabled && styles.heroCardDisabled]}
             >
-              <Icon name="gift" size="lg" color={colors.gold} />
-            </LinearGradient>
-
-            <Text style={styles.heroTitle}>{t('screens.enableTips.heroTitle')}</Text>
-            <Text style={styles.heroSubtitle}>
-              {t('screens.enableTips.heroSubtitle')}
-            </Text>
-
-            {/* Main Toggle */}
-            <View style={styles.mainToggleRow}>
-              <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  haptic.medium();
-                  setIsEnabled(!isEnabled);
-                }}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
-                  style={styles.mainToggleTrack}
-                >
-                  <View
-                    style={[
-                      styles.mainToggleThumb,
-                      isEnabled && styles.mainToggleThumbActive,
-                    ]}
-                  />
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Configuration Cards - Only shown when enabled */}
-        {isEnabled && (
-          <>
-            {/* Minimum Tip Amount Card */}
-            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
               <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.configCard}
+                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.heroIconBg}
               >
-                <View style={styles.configHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                    style={styles.configIconBg}
-                  >
-                    <Icon name="circle" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.minimumTipAmount')}</Text>
-                </View>
-
-                {/* Preset Amounts */}
-                <View style={styles.presetRow}>
-                  {PRESET_AMOUNTS.map(amount => (
-                    <TouchableOpacity
-                      key={amount}
-                      onPress={() => {
-                        haptic.light();
-                        setMinTipAmount(amount);
-                        setCustomAmount('');
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <LinearGradient
-                        colors={
-                          minTipAmount === amount && !customAmount
-                            ? [colors.emerald, colors.emeraldDark]
-                            : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']
-                        }
-                        style={styles.presetButton}
-                      >
-                        <Text
-                          style={[
-                            styles.presetButtonText,
-                            minTipAmount === amount && !customAmount && styles.presetButtonTextActive,
-                          ]}
-                        >
-                          ${amount}
-                        </Text>
-                      </LinearGradient>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Custom Amount Input */}
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                  style={styles.customInputContainer}
-                >
-                  <Text style={styles.currencyPrefix}>$</Text>
-                  <TextInput
-                    style={styles.customInput}
-                    value={customAmount}
-                    onChangeText={(text) => {
-                      setCustomAmount(text.replace(/[^0-9]/g, ''));
-                      if (text) setMinTipAmount(parseInt(text) || 0);
-                    }}
-                    placeholder={t('screens.enableTips.customAmountPlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
-                    keyboardType="number-pad"
-                  />
-                </LinearGradient>
+                <Icon name="gift" size="lg" color={colors.gold} />
               </LinearGradient>
-            </Animated.View>
 
-            {/* Display Settings Card */}
-            <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.configCard}
-              >
-                <View style={styles.configHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                    style={styles.configIconBg}
-                  >
-                    <Icon name="eye" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.displaySettings')}</Text>
-                </View>
+              <Text style={styles.heroTitle}>{t('screens.enableTips.heroTitle')}</Text>
+              <Text style={styles.heroSubtitle}>
+                {t('screens.enableTips.heroSubtitle')}
+              </Text>
 
-                <CustomToggle
-                  value={displaySettings.showOnProfile}
-                  onValueChange={() => toggleDisplaySetting('showOnProfile')}
-                  label={t('screens.enableTips.toggleLabel.showOnProfile')}
-                  description={t('screens.enableTips.toggleDescription.showOnProfile')}
-                />
-                <View style={styles.toggleDivider} />
-                <CustomToggle
-                  value={displaySettings.showOnPosts}
-                  onValueChange={() => toggleDisplaySetting('showOnPosts')}
-                  label={t('screens.enableTips.toggleLabel.showOnPosts')}
-                  description={t('screens.enableTips.toggleDescription.showOnPosts')}
-                />
-                <View style={styles.toggleDivider} />
-                <CustomToggle
-                  value={displaySettings.showTopSupporters}
-                  onValueChange={() => toggleDisplaySetting('showTopSupporters')}
-                  label={t('screens.enableTips.toggleLabel.showTopSupporters')}
-                  description={t('screens.enableTips.toggleDescription.showTopSupporters')}
-                />
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Thank You Message Card */}
-            <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.configCard}
-              >
-                <View style={styles.configHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                    style={styles.configIconBg}
-                  >
-                    <Icon name="mail" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.thankYouMessage')}</Text>
-                </View>
-
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                  style={styles.messageInputContainer}
-                >
-                  <TextInput
-                    style={styles.messageInput}
-                    value={thankYouMessage}
-                    onChangeText={setThankYouMessage}
-                    placeholder={t('screens.enableTips.thankYouPlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
-                    multiline
-                    numberOfLines={3}
-                    maxLength={MAX_MESSAGE_LENGTH}
-                    textAlignVertical="top"
-                  />
-                  <View style={styles.charCountContainer}>
-                    <CharCountRing current={thankYouMessage.length} max={MAX_MESSAGE_LENGTH} size={28} />
-                  </View>
-                </LinearGradient>
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Payment Method Card */}
-            <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.configCard}
-              >
-                <View style={styles.configHeader}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                    style={styles.configIconBg}
-                  >
-                    <Icon name="link" size="sm" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
-                </View>
-
+              {/* Main Toggle */}
+              <View style={styles.mainToggleRow}>
+                <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
                 <TouchableOpacity
-                  onPress={handleConnectPayment}
+                  onPress={() => {
+                    haptic.medium();
+                    setIsEnabled(!isEnabled);
+                  }}
                   activeOpacity={0.8}
-                  style={styles.connectButton}
                 >
                   <LinearGradient
-                    colors={isConnected ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)'] : [colors.emerald, colors.emeraldDark]}
-                    style={styles.connectButtonGradient}
+                    colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
+                    style={styles.mainToggleTrack}
                   >
-                    <Icon
-                      name={isConnected ? 'check-circle' : 'link'}
-                      size="sm"
-                      color={isConnected ? colors.emerald : colors.text.primary}
-                    />
-                    <Text
+                    <View
                       style={[
-                        styles.connectButtonText,
-                        isConnected && styles.connectButtonTextConnected,
+                        styles.mainToggleThumb,
+                        isEnabled && styles.mainToggleThumbActive,
                       ]}
-                    >
-                      {isConnected ? t('screens.enableTips.connected') : t('screens.enableTips.connectPaymentMethod')}
-                    </Text>
+                    />
                   </LinearGradient>
                 </TouchableOpacity>
-
-                <Text
-                  style={[
-                    styles.connectionStatus,
-                    isConnected ? styles.connectionStatusConnected : styles.connectionStatusDisconnected,
-                  ]}
-                >
-                  {isConnected ? t('screens.enableTips.readyToReceiveTips') : t('screens.enableTips.requiredToReceiveTips')}
-                </Text>
-              </LinearGradient>
-            </Animated.View>
-          </>
-        )}
-
-        {/* Save Button */}
-        {isEnabled && (
-          <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-            <TouchableOpacity onPress={handleSave} activeOpacity={0.8}>
-              <LinearGradient
-                colors={[colors.emerald, colors.emeraldDark]}
-                style={styles.saveButton}
-              >
-                <Text style={styles.saveButtonText}>{t('screens.enableTips.saveSettings')}</Text>
-              </LinearGradient>
-            </TouchableOpacity>
+              </View>
+            </LinearGradient>
           </Animated.View>
-        )}
 
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.xxl }} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Configuration Cards - Only shown when enabled */}
+          {isEnabled && (
+            <>
+              {/* Minimum Tip Amount Card */}
+              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.configCard}
+                >
+                  <View style={styles.configHeader}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                      style={styles.configIconBg}
+                    >
+                      <Icon name="circle" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.minimumTipAmount')}</Text>
+                  </View>
+
+                  {/* Preset Amounts */}
+                  <View style={styles.presetRow}>
+                    {PRESET_AMOUNTS.map(amount => (
+                      <TouchableOpacity
+                        key={amount}
+                        onPress={() => {
+                          haptic.light();
+                          setMinTipAmount(amount);
+                          setCustomAmount('');
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <LinearGradient
+                          colors={
+                            minTipAmount === amount && !customAmount
+                              ? [colors.emerald, colors.emeraldDark]
+                              : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']
+                          }
+                          style={styles.presetButton}
+                        >
+                          <Text
+                            style={[
+                              styles.presetButtonText,
+                              minTipAmount === amount && !customAmount && styles.presetButtonTextActive,
+                            ]}
+                          >
+                            ${amount}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Custom Amount Input */}
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                    style={styles.customInputContainer}
+                  >
+                    <Text style={styles.currencyPrefix}>$</Text>
+                    <TextInput
+                      style={styles.customInput}
+                      value={customAmount}
+                      onChangeText={(text) => {
+                        setCustomAmount(text.replace(/[^0-9]/g, ''));
+                        if (text) setMinTipAmount(parseInt(text) || 0);
+                      }}
+                      placeholder={t('screens.enableTips.customAmountPlaceholder')}
+                      placeholderTextColor={colors.text.tertiary}
+                      keyboardType="number-pad"
+                    />
+                  </LinearGradient>
+                </LinearGradient>
+              </Animated.View>
+
+              {/* Display Settings Card */}
+              <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.configCard}
+                >
+                  <View style={styles.configHeader}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                      style={styles.configIconBg}
+                    >
+                      <Icon name="eye" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.displaySettings')}</Text>
+                  </View>
+
+                  <CustomToggle
+                    value={displaySettings.showOnProfile}
+                    onValueChange={() => toggleDisplaySetting('showOnProfile')}
+                    label={t('screens.enableTips.toggleLabel.showOnProfile')}
+                    description={t('screens.enableTips.toggleDescription.showOnProfile')}
+                  />
+                  <View style={styles.toggleDivider} />
+                  <CustomToggle
+                    value={displaySettings.showOnPosts}
+                    onValueChange={() => toggleDisplaySetting('showOnPosts')}
+                    label={t('screens.enableTips.toggleLabel.showOnPosts')}
+                    description={t('screens.enableTips.toggleDescription.showOnPosts')}
+                  />
+                  <View style={styles.toggleDivider} />
+                  <CustomToggle
+                    value={displaySettings.showTopSupporters}
+                    onValueChange={() => toggleDisplaySetting('showTopSupporters')}
+                    label={t('screens.enableTips.toggleLabel.showTopSupporters')}
+                    description={t('screens.enableTips.toggleDescription.showTopSupporters')}
+                  />
+                </LinearGradient>
+              </Animated.View>
+
+              {/* Thank You Message Card */}
+              <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.configCard}
+                >
+                  <View style={styles.configHeader}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                      style={styles.configIconBg}
+                    >
+                      <Icon name="mail" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.thankYouMessage')}</Text>
+                  </View>
+
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                    style={styles.messageInputContainer}
+                  >
+                    <TextInput
+                      style={styles.messageInput}
+                      value={thankYouMessage}
+                      onChangeText={setThankYouMessage}
+                      placeholder={t('screens.enableTips.thankYouPlaceholder')}
+                      placeholderTextColor={colors.text.tertiary}
+                      multiline
+                      numberOfLines={3}
+                      maxLength={MAX_MESSAGE_LENGTH}
+                      textAlignVertical="top"
+                    />
+                    <View style={styles.charCountContainer}>
+                      <CharCountRing current={thankYouMessage.length} max={MAX_MESSAGE_LENGTH} size={28} />
+                    </View>
+                  </LinearGradient>
+                </LinearGradient>
+              </Animated.View>
+
+              {/* Payment Method Card */}
+              <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.configCard}
+                >
+                  <View style={styles.configHeader}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                      style={styles.configIconBg}
+                    >
+                      <Icon name="link" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    onPress={handleConnectPayment}
+                    activeOpacity={0.8}
+                    style={styles.connectButton}
+                  >
+                    <LinearGradient
+                      colors={isConnected ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)'] : [colors.emerald, colors.emeraldDark]}
+                      style={styles.connectButtonGradient}
+                    >
+                      <Icon
+                        name={isConnected ? 'check-circle' : 'link'}
+                        size="sm"
+                        color={isConnected ? colors.emerald : colors.text.primary}
+                      />
+                      <Text
+                        style={[
+                          styles.connectButtonText,
+                          isConnected && styles.connectButtonTextConnected,
+                        ]}
+                      >
+                        {isConnected ? t('screens.enableTips.connected') : t('screens.enableTips.connectPaymentMethod')}
+                      </Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <Text
+                    style={[
+                      styles.connectionStatus,
+                      isConnected ? styles.connectionStatusConnected : styles.connectionStatusDisconnected,
+                    ]}
+                  >
+                    {isConnected ? t('screens.enableTips.readyToReceiveTips') : t('screens.enableTips.requiredToReceiveTips')}
+                  </Text>
+                </LinearGradient>
+              </Animated.View>
+            </>
+          )}
+
+          {/* Save Button */}
+          {isEnabled && (
+            <Animated.View entering={FadeInUp.delay(500).duration(400)}>
+              <TouchableOpacity onPress={handleSave} activeOpacity={0.8}>
+                <LinearGradient
+                  colors={[colors.emerald, colors.emeraldDark]}
+                  style={styles.saveButton}
+                >
+                  <Text style={styles.saveButtonText}>{t('screens.enableTips.saveSettings')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.xxl }} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

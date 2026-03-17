@@ -22,6 +22,7 @@ import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
 import type { Conversation, User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const MAX_GROUP_NAME = 50;
 
@@ -216,385 +217,388 @@ export default function ConversationInfoScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <GlassHeader
-        title={t('conversation.chatInfo')}
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <GlassHeader
+          title={t('conversation.chatInfo')}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        />
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
-        {/* Avatar + name — Glassmorphism Card */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.heroCard}
-          >
-            <TouchableOpacity onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
-              <Avatar uri={avatarUri} name={name} size="2xl" />
-              {isGroup && isCreator && (
-                <LinearGradient
-                  colors={[colors.emerald, colors.emeraldDark]}
-                  style={styles.avatarOverlayGradient}
-                >
-                  <Icon name="edit" size={16} color={colors.text.primary} />
-                </LinearGradient>
-              )}
-            </TouchableOpacity>
-            <View style={styles.nameRow}>
-              <Text style={styles.heroName}>{name}</Text>
-              {isGroup && isCreator && (
-                <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
-                  <Icon name="edit" size={16} color={colors.text.secondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-            {isGroup && (
-              <Text style={styles.heroSub}>{t('conversation.members', { count: convo.members.length })}</Text>
-            )}
-            {!isGroup && otherMember && (
-              <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
-            )}
-            {isGroup && isCreator && (
-              <View style={styles.adminActions}>
-                <TouchableOpacity style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.adminActionIconBg}
-                  >
-                    <Icon name="plus" size="xs" color={colors.emerald} />
-                  </LinearGradient>
-                  <Text style={styles.adminActionText}>{t('groups.addMembers')}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Quick actions */}
-        {!isGroup && otherMember && (
-          <Animated.View entering={FadeInUp.delay(80).duration(400)} style={styles.quickActions}>
-            <TouchableOpacity
-              style={styles.quickAction}
-              onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
-            >
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.quickActionIconBg}
-              >
-                <Icon name="user" size="md" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.quickActionLabel}>{t('common.profile')}</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-
-        {/* Members list (group only) */}
-        {isGroup && (
-          <Animated.View entering={FadeInUp.delay(160).duration(400)}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+          {/* Avatar + name — Glassmorphism Card */}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={[styles.section, styles.optionsCardGlass]}
+              style={styles.heroCard}
             >
-              <View style={styles.sectionHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.sectionIconBg}
-                >
-                  <Icon name="users" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.sectionTitle}>{t('conversation.membersTitle')}</Text>
-              </View>
-              {convo.members.map((m, index) => (
-                <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
-                  <TouchableOpacity
-                    style={styles.memberRow}
-                    onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
-                    onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
-                    delayLongPress={500}
-                    activeOpacity={0.7}
-                    accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
-                    accessibilityHint="Press to view profile, long press to view member actions"
-                    accessibilityRole="button"
+              <TouchableOpacity onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
+                <Avatar uri={avatarUri} name={name} size="2xl" />
+                {isGroup && isCreator && (
+                  <LinearGradient
+                    colors={[colors.emerald, colors.emeraldDark]}
+                    style={styles.avatarOverlayGradient}
                   >
-                    <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
-                    <View style={styles.memberInfo}>
-                      <View style={styles.memberNameRow}>
-                        <Text style={styles.memberName}>{m.user.displayName}</Text>
-                        {m.user.isVerified && <VerifiedBadge size={13} />}
-                        {m.user.id === convo.createdById && (
-                          <LinearGradient
-                            colors={[colors.emerald, colors.gold]}
-                            style={styles.creatorBadgeGradient}
-                          >
-                            <Text style={styles.creatorBadgeText}>{t('conversation.creator')}</Text>
-                          </LinearGradient>
-                        )}
-                      </View>
-                      <Text style={styles.memberHandle}>@{m.user.username}</Text>
-                    </View>
-                    {m.user.id === user?.id && (
-                      <Text style={styles.youLabel}>{t('common.you')}</Text>
-                    )}
+                    <Icon name="edit" size={16} color={colors.text.primary} />
+                  </LinearGradient>
+                )}
+              </TouchableOpacity>
+              <View style={styles.nameRow}>
+                <Text style={styles.heroName}>{name}</Text>
+                {isGroup && isCreator && (
+                  <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
+                    <Icon name="edit" size={16} color={colors.text.secondary} />
                   </TouchableOpacity>
-                </Animated.View>
-              ))}
+                )}
+              </View>
+              {isGroup && (
+                <Text style={styles.heroSub}>{t('conversation.members', { count: convo.members.length })}</Text>
+              )}
+              {!isGroup && otherMember && (
+                <Text style={styles.heroSub}>@{otherMember.user.username}</Text>
+              )}
+              {isGroup && isCreator && (
+                <View style={styles.adminActions}>
+                  <TouchableOpacity style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.adminActionIconBg}
+                    >
+                      <Icon name="plus" size="xs" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.adminActionText}>{t('groups.addMembers')}</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </LinearGradient>
           </Animated.View>
-        )}
 
-        {/* Actions */}
-        <Animated.View entering={FadeInUp.delay(240).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.optionsCardGlass}
-          >
-            {isGroup && !isCreator && (
-              <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
-                {leaveGroupMutation.isPending
-                  ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                      <ActivityIndicator color={colors.error} />
-                    </View>
-                  : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                      <LinearGradient
-                        colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
-                        style={styles.actionIconBg}
-                      >
-                        <Icon name="log-out" size="xs" color={colors.error} />
-                      </LinearGradient>
-                      <Text style={styles.actionDestructive}>{t('conversation.leaveGroup')}</Text>
-                    </View>
-                }
-              </TouchableOpacity>
-            )}
-            {!isGroup && (
+          {/* Quick actions */}
+          {!isGroup && otherMember && (
+            <Animated.View entering={FadeInUp.delay(80).duration(400)} style={styles.quickActions}>
               <TouchableOpacity
-                style={styles.actionRow}
-                onPress={() => {
-                  const other = convo?.members.find((m) => m.user.id !== user?.id);
-                  if (!other) return;
-                  Alert.alert(t('conversation.blockUser'), t('conversation.blockConfirm'), [
-                    { text: t('common.cancel'), style: 'cancel' },
-                    {
-                      text: t('common.block'), style: 'destructive', onPress: () => {
-                        blocksApi.block(other.user.id)
-                          .then(() => router.replace('/(tabs)/risalah'))
-                          .catch(() => Alert.alert(t('common.error'), t('errors.blockUserFailed')));
-                      },
-                    },
-                  ]);
-                }}
+                style={styles.quickAction}
+                onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
               >
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                  <LinearGradient
-                    colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
-                    style={styles.actionIconBg}
-                  >
-                    <Icon name="slash" size="xs" color={colors.error} />
-                  </LinearGradient>
-                  <Text style={styles.actionDestructive}>{t('conversation.blockUser')}</Text>
-                </View>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.quickActionIconBg}
+                >
+                  <Icon name="user" size="md" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.quickActionLabel}>{t('common.profile')}</Text>
               </TouchableOpacity>
-            )}
-          </LinearGradient>
-        </Animated.View>
-      </ScrollView>
-
-      {/* Edit group name BottomSheet */}
-      <BottomSheet
-        visible={editNameSheetOpen}
-        onClose={() => {
-          setEditNameSheetOpen(false);
-          setNewGroupName('');
-        }}
-      >
-        <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>{t('conversation.editGroupName')}</Text>
-          <View style={styles.nameInputRow}>
-            <TextInput
-              style={styles.nameInput}
-              value={newGroupName}
-              onChangeText={setNewGroupName}
-              placeholder={t('groups.enterNewGroupName')}
-              placeholderTextColor={colors.text.tertiary}
-              autoFocus
-              maxLength={MAX_GROUP_NAME}
-            />
-            <CharCountRing
-              current={newGroupName.length}
-              max={MAX_GROUP_NAME}
-              size={28}
-            />
-          </View>
-          <TouchableOpacity
-            style={[styles.sheetButton, !newGroupName.trim() && styles.sheetButtonDisabled]}
-            onPress={handleUpdateGroupName}
-            disabled={!newGroupName.trim() || updateGroupMutation.isPending}
-          >
-            {updateGroupMutation.isPending ? (
-              <ActivityIndicator color={colors.text.primary} />
-            ) : (
-              <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
-
-      {/* Add members BottomSheet */}
-      <BottomSheet
-        visible={addMembersSheetOpen}
-        onClose={() => {
-          setAddMembersSheetOpen(false);
-          setSelectedNewMembers([]);
-          setSearchQuery('');
-          setDebouncedSearchQuery('');
-        }}
-        snapPoint={0.85}
-      >
-        <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>{t('groups.addMembers')}</Text>
-
-          {/* Selected members chips */}
-          {selectedNewMembers.length > 0 && (
-            <View style={styles.chipsContainer}>
-              <Text style={styles.chipsLabel}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
-              <View style={styles.chips}>
-                {selectedNewMembers.map(member => (
-                  <View key={member.id} style={styles.chip}>
-                    <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
-                    <Text style={styles.chipText} numberOfLines={1}>
-                      {member.displayName}
-                    </Text>
-                    <Pressable
-                      onPress={() => setSelectedNewMembers(prev => prev.filter(m => m.id !== member.id))}
-                      hitSlop={4}
-                      style={styles.chipRemove}
-                      accessibilityLabel={t('groups.removeMember')}
-                    >
-                      <Icon name="x" size={12} color={colors.text.secondary} />
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            </View>
+            </Animated.View>
           )}
 
-          {/* Search input */}
-          <View style={styles.searchWrap}>
-            <Icon name="search" size="sm" color={colors.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={t('common.searchPeople')}
-              placeholderTextColor={colors.text.tertiary}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')}>
-                <Icon name="x" size="xs" color={colors.text.secondary} />
-              </Pressable>
-            )}
-          </View>
+          {/* Members list (group only) */}
+          {isGroup && (
+            <Animated.View entering={FadeInUp.delay(160).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={[styles.section, styles.optionsCardGlass]}
+              >
+                <View style={styles.sectionHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.sectionIconBg}
+                  >
+                    <Icon name="users" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.sectionTitle}>{t('conversation.membersTitle')}</Text>
+                </View>
+                {convo.members.map((m, index) => (
+                  <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
+                    <TouchableOpacity
+                      style={styles.memberRow}
+                      onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
+                      onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
+                      delayLongPress={500}
+                      activeOpacity={0.7}
+                      accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
+                      accessibilityHint="Press to view profile, long press to view member actions"
+                      accessibilityRole="button"
+                    >
+                      <Avatar uri={m.user.avatarUrl} name={m.user.displayName} size="md" />
+                      <View style={styles.memberInfo}>
+                        <View style={styles.memberNameRow}>
+                          <Text style={styles.memberName}>{m.user.displayName}</Text>
+                          {m.user.isVerified && <VerifiedBadge size={13} />}
+                          {m.user.id === convo.createdById && (
+                            <LinearGradient
+                              colors={[colors.emerald, colors.gold]}
+                              style={styles.creatorBadgeGradient}
+                            >
+                              <Text style={styles.creatorBadgeText}>{t('conversation.creator')}</Text>
+                            </LinearGradient>
+                          )}
+                        </View>
+                        <Text style={styles.memberHandle}>@{m.user.username}</Text>
+                      </View>
+                      {m.user.id === user?.id && (
+                        <Text style={styles.youLabel}>{t('common.you')}</Text>
+                      )}
+                    </TouchableOpacity>
+                  </Animated.View>
+                ))}
+              </LinearGradient>
+            </Animated.View>
+          )}
 
-          {/* Search results */}
-          {memberSearchQuery.isLoading ? (
-            <View style={styles.loader}>
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-            </View>
-          ) : (
-            <FlatList
-              data={searchResults}
-              style={styles.resultsList}
-              keyExtractor={(item) => item.id}
-              removeClippedSubviews={true}
-              refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.userRow}
-                  onPress={() => setSelectedNewMembers(prev => [...prev, item])}
-                  disabled={addMembersMutation.isPending}
-                  activeOpacity={0.7}
-                >
-                  <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                  <View style={styles.userInfo}>
-                    <View style={styles.nameRow}>
-                      <Text style={styles.name}>{item.displayName}</Text>
-                      {item.isVerified && <VerifiedBadge size={13} />}
-                    </View>
-                    <Text style={styles.handle}>@{item.username}</Text>
-                  </View>
-                  <Icon name="plus" size="sm" color={colors.emerald} />
+          {/* Actions */}
+          <Animated.View entering={FadeInUp.delay(240).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.optionsCardGlass}
+            >
+              {isGroup && !isCreator && (
+                <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
+                  {leaveGroupMutation.isPending
+                    ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                        <ActivityIndicator color={colors.error} />
+                      </View>
+                    : <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                        <LinearGradient
+                          colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                          style={styles.actionIconBg}
+                        >
+                          <Icon name="log-out" size="xs" color={colors.error} />
+                        </LinearGradient>
+                        <Text style={styles.actionDestructive}>{t('conversation.leaveGroup')}</Text>
+                      </View>
+                  }
                 </TouchableOpacity>
               )}
-              ListEmptyComponent={() =>
-                debouncedSearchQuery.trim().length >= 2 ? (
-                  <View style={styles.empty}>
-                    <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
+              {!isGroup && (
+                <TouchableOpacity
+                  style={styles.actionRow}
+                  onPress={() => {
+                    const other = convo?.members.find((m) => m.user.id !== user?.id);
+                    if (!other) return;
+                    Alert.alert(t('conversation.blockUser'), t('conversation.blockConfirm'), [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      {
+                        text: t('common.block'), style: 'destructive', onPress: () => {
+                          blocksApi.block(other.user.id)
+                            .then(() => router.replace('/(tabs)/risalah'))
+                            .catch(() => Alert.alert(t('common.error'), t('errors.blockUserFailed')));
+                        },
+                      },
+                    ]);
+                  }}
+                >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                    <LinearGradient
+                      colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                      style={styles.actionIconBg}
+                    >
+                      <Icon name="slash" size="xs" color={colors.error} />
+                    </LinearGradient>
+                    <Text style={styles.actionDestructive}>{t('conversation.blockUser')}</Text>
                   </View>
-                ) : (
-                  <View style={styles.hint}>
-                    <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
-                  </View>
-                )
-              }
-            />
-          )}
+                </TouchableOpacity>
+              )}
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
 
-          {/* Add button */}
-          <TouchableOpacity
-            style={[styles.sheetButton, selectedNewMembers.length === 0 && styles.sheetButtonDisabled]}
-            onPress={handleAddSelectedMembers}
-            disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}
-          >
-            {addMembersMutation.isPending ? (
-              <ActivityIndicator color={colors.text.primary} />
-            ) : (
-              <Text style={styles.sheetButtonText}>
-                {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
-              </Text>
+        {/* Edit group name BottomSheet */}
+        <BottomSheet
+          visible={editNameSheetOpen}
+          onClose={() => {
+            setEditNameSheetOpen(false);
+            setNewGroupName('');
+          }}
+        >
+          <View style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>{t('conversation.editGroupName')}</Text>
+            <View style={styles.nameInputRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={newGroupName}
+                onChangeText={setNewGroupName}
+                placeholder={t('groups.enterNewGroupName')}
+                placeholderTextColor={colors.text.tertiary}
+                autoFocus
+                maxLength={MAX_GROUP_NAME}
+              />
+              <CharCountRing
+                current={newGroupName.length}
+                max={MAX_GROUP_NAME}
+                size={28}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.sheetButton, !newGroupName.trim() && styles.sheetButtonDisabled]}
+              onPress={handleUpdateGroupName}
+              disabled={!newGroupName.trim() || updateGroupMutation.isPending}
+            >
+              {updateGroupMutation.isPending ? (
+                <ActivityIndicator color={colors.text.primary} />
+              ) : (
+                <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
+
+        {/* Add members BottomSheet */}
+        <BottomSheet
+          visible={addMembersSheetOpen}
+          onClose={() => {
+            setAddMembersSheetOpen(false);
+            setSelectedNewMembers([]);
+            setSearchQuery('');
+            setDebouncedSearchQuery('');
+          }}
+          snapPoint={0.85}
+        >
+          <View style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>{t('groups.addMembers')}</Text>
+
+            {/* Selected members chips */}
+            {selectedNewMembers.length > 0 && (
+              <View style={styles.chipsContainer}>
+                <Text style={styles.chipsLabel}>{t('groups.selected', { count: selectedNewMembers.length })}</Text>
+                <View style={styles.chips}>
+                  {selectedNewMembers.map(member => (
+                    <View key={member.id} style={styles.chip}>
+                      <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
+                      <Text style={styles.chipText} numberOfLines={1}>
+                        {member.displayName}
+                      </Text>
+                      <Pressable
+                        onPress={() => setSelectedNewMembers(prev => prev.filter(m => m.id !== member.id))}
+                        hitSlop={4}
+                        style={styles.chipRemove}
+                        accessibilityLabel={t('groups.removeMember')}
+                      >
+                        <Icon name="x" size={12} color={colors.text.secondary} />
+                      </Pressable>
+                    </View>
+                  ))}
+                </View>
+              </View>
             )}
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
 
-      {/* Member action BottomSheet */}
-      <BottomSheet
-        visible={memberActionSheetOpen}
-        onClose={() => {
-          setMemberActionSheetOpen(false);
-          setSelectedMember(null);
-        }}
-      >
-        {selectedMember && (
-          <>
-            {isCreator && selectedMember.id !== user?.id && (
-              <BottomSheetItem
-                label={t('conversation.removeFromGroup')}
-                icon={<Icon name="x" size="sm" color={colors.error} />}
-                onPress={() => {
-                  setMemberActionSheetOpen(false);
-                  handleRemoveMember(selectedMember.id);
-                }}
-                destructive
-                disabled={removeMemberMutation.isPending}
+            {/* Search input */}
+            <View style={styles.searchWrap}>
+              <Icon name="search" size="sm" color={colors.text.secondary} />
+              <TextInput
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder={t('common.searchPeople')}
+                placeholderTextColor={colors.text.tertiary}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {searchQuery.length > 0 && (
+                <Pressable onPress={() => setSearchQuery('')} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')}>
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
+              )}
+            </View>
+
+            {/* Search results */}
+            {memberSearchQuery.isLoading ? (
+              <View style={styles.loader}>
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              </View>
+            ) : (
+              <FlatList
+                data={searchResults}
+                style={styles.resultsList}
+                keyExtractor={(item) => item.id}
+                removeClippedSubviews={true}
+                refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.userRow}
+                    onPress={() => setSelectedNewMembers(prev => [...prev, item])}
+                    disabled={addMembersMutation.isPending}
+                    activeOpacity={0.7}
+                  >
+                    <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+                    <View style={styles.userInfo}>
+                      <View style={styles.nameRow}>
+                        <Text style={styles.name}>{item.displayName}</Text>
+                        {item.isVerified && <VerifiedBadge size={13} />}
+                      </View>
+                      <Text style={styles.handle}>@{item.username}</Text>
+                    </View>
+                    <Icon name="plus" size="sm" color={colors.emerald} />
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={() =>
+                  debouncedSearchQuery.trim().length >= 2 ? (
+                    <View style={styles.empty}>
+                      <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedSearchQuery })}</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.hint}>
+                      <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
+                    </View>
+                  )
+                }
               />
             )}
-            <BottomSheetItem
-              label={t('conversation.viewProfile')}
-              icon={<Icon name="user" size="sm" color={colors.text.primary} />}
-              onPress={() => {
-                setMemberActionSheetOpen(false);
-                router.push(`/(screens)/profile/${selectedMember.username}`);
-              }}
-            />
-          </>
-        )}
-      </BottomSheet>
-    </SafeAreaView>
+
+            {/* Add button */}
+            <TouchableOpacity
+              style={[styles.sheetButton, selectedNewMembers.length === 0 && styles.sheetButtonDisabled]}
+              onPress={handleAddSelectedMembers}
+              disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}
+            >
+              {addMembersMutation.isPending ? (
+                <ActivityIndicator color={colors.text.primary} />
+              ) : (
+                <Text style={styles.sheetButtonText}>
+                  {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
+
+        {/* Member action BottomSheet */}
+        <BottomSheet
+          visible={memberActionSheetOpen}
+          onClose={() => {
+            setMemberActionSheetOpen(false);
+            setSelectedMember(null);
+          }}
+        >
+          {selectedMember && (
+            <>
+              {isCreator && selectedMember.id !== user?.id && (
+                <BottomSheetItem
+                  label={t('conversation.removeFromGroup')}
+                  icon={<Icon name="x" size="sm" color={colors.error} />}
+                  onPress={() => {
+                    setMemberActionSheetOpen(false);
+                    handleRemoveMember(selectedMember.id);
+                  }}
+                  destructive
+                  disabled={removeMemberMutation.isPending}
+                />
+              )}
+              <BottomSheetItem
+                label={t('conversation.viewProfile')}
+                icon={<Icon name="user" size="sm" color={colors.text.primary} />}
+                onPress={() => {
+                  setMemberActionSheetOpen(false);
+                  router.push(`/(screens)/profile/${selectedMember.username}`);
+                }}
+              />
+            </>
+          )}
+        </BottomSheet>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

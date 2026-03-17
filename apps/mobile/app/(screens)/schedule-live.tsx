@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface Thumbnail {
   uri: string;
@@ -166,206 +167,209 @@ export default function ScheduleLiveScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title="Schedule Live"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Schedule Live"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
 
-      <ScrollView
-        style={styles.body}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
-      >
-        {/* Title input */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>Title *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="What are you streaming?"
-              placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Live stream title"
-              value={title}
-              onChangeText={setTitle}
-              maxLength={100}
-              autoFocus
-            />
-            <View style={styles.charCountWrapper}>
-              <CharCountRing current={title.length} max={100} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Description input */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>Description (optional)</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Tell viewers what your stream is about"
-              placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Live stream description"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              maxLength={500}
-              numberOfLines={4}
-            />
-            <View style={styles.charCountWrapper}>
-              <CharCountRing current={description.length} max={500} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Thumbnail picker */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>Thumbnail (optional)</Text>
-            {thumbnail ? (
-              <View style={styles.thumbnailPreview}>
-                <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
-                <TouchableOpacity style={styles.removeThumbnail} onPress={removeThumbnail}>
-                  <Icon name="x" size={12} color="#fff" />
-                </TouchableOpacity>
+        <ScrollView
+          style={styles.body}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 + spacing.base }]}
+        >
+          {/* Title input */}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>Title *</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="What are you streaming?"
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Live stream title"
+                value={title}
+                onChangeText={setTitle}
+                maxLength={100}
+                autoFocus
+              />
+              <View style={styles.charCountWrapper}>
+                <CharCountRing current={title.length} max={100} />
               </View>
-            ) : (
-              <TouchableOpacity style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Description input */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>Description (optional)</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Tell viewers what your stream is about"
+                placeholderTextColor={colors.text.tertiary}
+                accessibilityLabel="Live stream description"
+                value={description}
+                onChangeText={setDescription}
+                multiline
+                maxLength={500}
+                numberOfLines={4}
+              />
+              <View style={styles.charCountWrapper}>
+                <CharCountRing current={description.length} max={500} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Thumbnail picker */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>Thumbnail (optional)</Text>
+              {thumbnail ? (
+                <View style={styles.thumbnailPreview}>
+                  <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
+                  <TouchableOpacity style={styles.removeThumbnail} onPress={removeThumbnail}>
+                    <Icon name="x" size={12} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.thumbnailIconBg}
+                  >
+                    <Icon name="image" size="lg" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.thumbnailPlaceholderText}>Add a thumbnail</Text>
+                  <Text style={styles.thumbnailHint}>Recommended: 16:9 ratio</Text>
+                </TouchableOpacity>
+              )}
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Date/time picker */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.inputCard}
+            >
+              <Text style={styles.inputLabel}>Schedule Time *</Text>
+              <TouchableOpacity
+                style={styles.dateSelector}
+                onPress={() => setShowDatePicker(true)}
+              >
                 <LinearGradient
                   colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.thumbnailIconBg}
+                  style={styles.dateIconBg}
                 >
-                  <Icon name="image" size="lg" color={colors.emerald} />
+                  <Icon name="clock" size="sm" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.thumbnailPlaceholderText}>Add a thumbnail</Text>
-                <Text style={styles.thumbnailHint}>Recommended: 16:9 ratio</Text>
+                <Text style={styles.dateSelectorText}>{formattedDate}</Text>
+                <Icon name="edit" size="sm" color={colors.text.tertiary} />
               </TouchableOpacity>
-            )}
-          </LinearGradient>
-        </Animated.View>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Date/time picker */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.inputCard}
-          >
-            <Text style={styles.inputLabel}>Schedule Time *</Text>
-            <TouchableOpacity
-              style={styles.dateSelector}
-              onPress={() => setShowDatePicker(true)}
-            >
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.dateIconBg}
-              >
-                <Icon name="clock" size="sm" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.dateSelectorText}>{formattedDate}</Text>
-              <Icon name="edit" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
+          <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+            <GradientButton
+              label={scheduleMutation.isPending ? 'Scheduling…' : 'Schedule Live'}
+              onPress={handleSchedule}
+              disabled={!canSchedule}
+            />
+          </Animated.View>
+        </ScrollView>
 
-        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-          <GradientButton
-            label={scheduleMutation.isPending ? 'Scheduling…' : 'Schedule Live'}
-            onPress={handleSchedule}
-            disabled={!canSchedule}
-          />
-        </Animated.View>
-      </ScrollView>
+        {/* Date picker bottom sheet */}
+        <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
+          <Text style={styles.sheetTitle}>Schedule Time</Text>
 
-      {/* Date picker bottom sheet */}
-      <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
-        <Text style={styles.sheetTitle}>Schedule Time</Text>
+          {/* Day selection */}
+          <View style={styles.pickerSection}>
+            <Text style={styles.pickerLabel}>Day</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+              {dayOptions.map((day, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
+                  onPress={() => setSelectedDayIndex(idx)}
+                >
+                  <Text style={[styles.pickerChipText, selectedDayIndex === idx && styles.pickerChipTextActive]}>
+                    {day.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-        {/* Day selection */}
-        <View style={styles.pickerSection}>
-          <Text style={styles.pickerLabel}>Day</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-            {dayOptions.map((day, idx) => (
-              <TouchableOpacity
-                key={idx}
-                style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
-                onPress={() => setSelectedDayIndex(idx)}
-              >
-                <Text style={[styles.pickerChipText, selectedDayIndex === idx && styles.pickerChipTextActive]}>
-                  {day.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          {/* Hour selection */}
+          <View style={styles.pickerSection}>
+            <Text style={styles.pickerLabel}>Hour</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+              {HOURS.map((hour) => (
+                <TouchableOpacity
+                  key={hour}
+                  style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
+                  onPress={() => setSelectedHour(hour)}
+                >
+                  <Text style={[styles.pickerChipText, selectedHour === hour && styles.pickerChipTextActive]}>
+                    {hour.toString().padStart(2, '0')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-        {/* Hour selection */}
-        <View style={styles.pickerSection}>
-          <Text style={styles.pickerLabel}>Hour</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-            {HOURS.map((hour) => (
-              <TouchableOpacity
-                key={hour}
-                style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
-                onPress={() => setSelectedHour(hour)}
-              >
-                <Text style={[styles.pickerChipText, selectedHour === hour && styles.pickerChipTextActive]}>
-                  {hour.toString().padStart(2, '0')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          {/* Minute selection */}
+          <View style={styles.pickerSection}>
+            <Text style={styles.pickerLabel}>Minute</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
+              {MINUTES.map((minute) => (
+                <TouchableOpacity
+                  key={minute}
+                  style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
+                  onPress={() => setSelectedMinute(minute)}
+                >
+                  <Text style={[styles.pickerChipText, selectedMinute === minute && styles.pickerChipTextActive]}>
+                    {minute.toString().padStart(2, '0')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
 
-        {/* Minute selection */}
-        <View style={styles.pickerSection}>
-          <Text style={styles.pickerLabel}>Minute</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
-            {MINUTES.map((minute) => (
-              <TouchableOpacity
-                key={minute}
-                style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
-                onPress={() => setSelectedMinute(minute)}
-              >
-                <Text style={[styles.pickerChipText, selectedMinute === minute && styles.pickerChipTextActive]}>
-                  {minute.toString().padStart(2, '0')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+          <View style={styles.pickerPreview}>
+            <Text style={styles.pickerPreviewText}>
+              {tempDate.toLocaleString([], {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+            </Text>
+          </View>
 
-        <View style={styles.pickerPreview}>
-          <Text style={styles.pickerPreviewText}>
-            {tempDate.toLocaleString([], {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </Text>
-        </View>
+          <GradientButton label="Confirm" onPress={handleDateSelect} />
+        </BottomSheet>
 
-        <GradientButton label="Confirm" onPress={handleDateSelect} />
-      </BottomSheet>
-
-      {/* Upload overlay */}
-      {uploading && (
-        <View style={styles.uploadOverlay}>
-          <Skeleton.Circle size={48} />
-          <Text style={styles.uploadText}>Uploading thumbnail...</Text>
-        </View>
-      )}
-    </SafeAreaView>
+        {/* Upload overlay */}
+        {uploading && (
+          <View style={styles.uploadOverlay}>
+            <Skeleton.Circle size={48} />
+            <Text style={styles.uploadText}>Uploading thumbnail...</Text>
+          </View>
+        )}
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

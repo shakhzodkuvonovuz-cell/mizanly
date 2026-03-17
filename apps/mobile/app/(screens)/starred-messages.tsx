@@ -15,6 +15,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function StarredMessagesScreen() {
   const router = useRouter();
@@ -178,63 +179,66 @@ export default function StarredMessagesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <GlassHeader
-        title="Starred Messages"
-        leftAction={{ 
-          icon: 'arrow-left', 
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
-        }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <GlassHeader
+          title="Starred Messages"
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
+        />
 
-      {conversation && (
-        <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.conversationHeader}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.conversationHeaderGradient}
-          >
-            <Text style={styles.conversationName}>
-              {conversation.isGroup
-                ? conversation.groupName
-                : conversation.otherUser?.displayName || conversation.otherUser?.username}
-            </Text>
-            <Text style={styles.starredCount}>★ {messages.length} starred</Text>
-          </LinearGradient>
-        </Animated.View>
-      )}
+        {conversation && (
+          <Animated.View entering={FadeInUp.delay(0).duration(400)} style={styles.conversationHeader}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.conversationHeaderGradient}
+            >
+              <Text style={styles.conversationName}>
+                {conversation.isGroup
+                  ? conversation.groupName
+                  : conversation.otherUser?.displayName || conversation.otherUser?.username}
+              </Text>
+              <Text style={styles.starredCount}>★ {messages.length} starred</Text>
+            </LinearGradient>
+          </Animated.View>
+        )}
 
-      <FlatList
-        removeClippedSubviews={true}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <EmptyState
-            icon="bookmark-filled"
-            title="No starred messages"
-            subtitle="Add a star reaction to messages to save them here"
-          />
-        }
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <View style={styles.footerLoader}>
-              <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-            </View>
-          ) : null
-        }
-      />
-    </SafeAreaView>
+        <FlatList
+          removeClippedSubviews={true}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <EmptyState
+              icon="bookmark-filled"
+              title="No starred messages"
+              subtitle="Add a star reaction to messages to save them here"
+            />
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.footerLoader}>
+                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+              </View>
+            ) : null
+          }
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

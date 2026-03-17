@@ -22,6 +22,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, accountApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 
 function InfoRow({
@@ -216,91 +217,94 @@ export default function ManageDataScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('settings.manageData')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('settings.manageData')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      {isLoading ? (
-        <View style={{ padding: spacing.base, paddingTop: 100, gap: spacing.lg }}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flex: 1, gap: spacing.xs }}>
-                <Skeleton.Rect width={140} height={14} />
-                <Skeleton.Rect width={200} height={11} />
+        {isLoading ? (
+          <View style={{ padding: spacing.base, paddingTop: 100, gap: spacing.lg }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, gap: spacing.xs }}>
+                  <Skeleton.Rect width={140} height={14} />
+                  <Skeleton.Rect width={200} height={11} />
+                </View>
+                <Skeleton.Rect width={80} height={32} borderRadius={radius.sm} />
               </View>
-              <Skeleton.Rect width={80} height={32} borderRadius={radius.sm} />
-            </View>
-          ))}
-        </View>
-      ) : (
-      <ScrollView
-        style={styles.body}
-        contentContainerStyle={styles.bodyContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-      >
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            {/* Download Your Data */}
-            <ActionRow
-              label={t('settings.downloadYourData')}
-              description={t('settings.downloadYourDataDescription')}
-              buttonLabel={t('settings.requestDownload')}
-              onPress={handleRequestDownload}
+            ))}
+          </View>
+        ) : (
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.bodyContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
             />
-            <View style={styles.divider} />
-            {/* Connected Apps */}
-            <InfoRow label={t('settings.connectedApps')} description={t('settings.noConnectedApps')} icon="layers" />
-            <View style={styles.divider} />
-            {/* Clear Search History */}
-            <ActionRow
-              label={t('settings.clearSearchHistory')}
-              description={t('settings.clearSearchHistoryDescription')}
-              buttonLabel={t('settings.clearButton')}
-              onPress={handleClearSearchHistory}
-            />
-            <View style={styles.divider} />
-            {/* Clear Watch History */}
-            <ActionRow
-              label={t('settings.clearWatchHistory')}
-              description={t('settings.clearWatchHistoryDescription')}
-              buttonLabel={t('settings.clearButton')}
-              onPress={handleClearWatchHistory}
-              loading={clearWatchHistoryMutation.isPending}
-            />
-            <View style={styles.divider} />
-            {/* Delete Account */}
-            <ActionRow
-              label={t('settings.deleteAccount')}
-              description={t('settings.deleteAccountDescription')}
-              buttonLabel={t('settings.deleteAccount')}
-              destructive
-              onPress={handleDeleteAccount}
-              loading={deleteAccountMutation.isPending}
-            />
-          </LinearGradient>
-        </Animated.View>
+          }
+        >
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              {/* Download Your Data */}
+              <ActionRow
+                label={t('settings.downloadYourData')}
+                description={t('settings.downloadYourDataDescription')}
+                buttonLabel={t('settings.requestDownload')}
+                onPress={handleRequestDownload}
+              />
+              <View style={styles.divider} />
+              {/* Connected Apps */}
+              <InfoRow label={t('settings.connectedApps')} description={t('settings.noConnectedApps')} icon="layers" />
+              <View style={styles.divider} />
+              {/* Clear Search History */}
+              <ActionRow
+                label={t('settings.clearSearchHistory')}
+                description={t('settings.clearSearchHistoryDescription')}
+                buttonLabel={t('settings.clearButton')}
+                onPress={handleClearSearchHistory}
+              />
+              <View style={styles.divider} />
+              {/* Clear Watch History */}
+              <ActionRow
+                label={t('settings.clearWatchHistory')}
+                description={t('settings.clearWatchHistoryDescription')}
+                buttonLabel={t('settings.clearButton')}
+                onPress={handleClearWatchHistory}
+                loading={clearWatchHistoryMutation.isPending}
+              />
+              <View style={styles.divider} />
+              {/* Delete Account */}
+              <ActionRow
+                label={t('settings.deleteAccount')}
+                description={t('settings.deleteAccountDescription')}
+                buttonLabel={t('settings.deleteAccount')}
+                destructive
+                onPress={handleDeleteAccount}
+                loading={deleteAccountMutation.isPending}
+              />
+            </LinearGradient>
+          </Animated.View>
 
-        <Text style={styles.footerNote}>
-          {t('settings.morePrivacySettingsPrefix')}{' '}
-          <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
-            {t('common.settings')}
-          </Text>{' '}
-          {t('settings.morePrivacySettingsSuffix')}
-        </Text>
-      </ScrollView>
-      )}
-    </SafeAreaView>
+          <Text style={styles.footerNote}>
+            {t('settings.morePrivacySettingsPrefix')}{' '}
+            <Text style={styles.link} onPress={() => router.push('/(screens)/settings' as never)} accessibilityLabel={t('settings.goToSettings')} accessibilityRole="link">
+              {t('common.settings')}
+            </Text>{' '}
+            {t('settings.morePrivacySettingsSuffix')}
+          </Text>
+        </ScrollView>
+        )}
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

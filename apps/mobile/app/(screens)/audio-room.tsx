@@ -22,6 +22,7 @@ import { audioRoomsApi } from '@/services/audioRoomsApi';
 import type { AudioRoom, AudioRoomParticipant } from '@/types/audioRooms';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -242,284 +243,287 @@ export default function AudioRoomScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('tabs.audioRooms')}
-        onBack={() => router.back()}
-        rightAction={
-          <TouchableOpacity style={styles.menuButton} activeOpacity={0.8}>
-            <Icon name="more-horizontal" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
-        }
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('tabs.audioRooms')}
+          onBack={() => router.back()}
+          rightAction={
+            <TouchableOpacity style={styles.menuButton} activeOpacity={0.8}>
+              <Icon name="more-horizontal" size="md" color={colors.text.primary} />
+            </TouchableOpacity>
+          }
+        />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-      >
-        {/* Room Info Hero */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.roomCard}
-          >
-            <Text style={styles.roomTitle}>
-              {room.title}
-            </Text>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Room Info Hero */}
+          <Animated.View entering={FadeInUp.duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.roomCard}
+            >
+              <Text style={styles.roomTitle}>
+                {room.title}
+              </Text>
 
-            {/* Host Badge */}
-            <View style={styles.hostRow}>
-              <Avatar uri={room.host.avatarUrl} name={room.host.name} size="md" />
-              <View style={styles.hostInfo}>
-                <Text style={styles.hostLabel}>{t('audioRoom.hostedBy', { username: room.host.username })}</Text>
-              </View>
-              <LinearGradient
-                colors={[colors.gold, colors.goldLight]}
-                style={styles.hostBadge}
-              >
-                <Icon name="star" size="xs" color={colors.text.primary} />
-              </LinearGradient>
-            </View>
-
-            {/* LIVE Badge */}
-            <View style={styles.liveRow}>
-              <View style={styles.liveBadge}>
-                <View style={styles.liveDot}>
-                  <Animated.View style={[styles.livePulse, pulseStyle]} />
-                  <View style={styles.liveDotInner} />
+              {/* Host Badge */}
+              <View style={styles.hostRow}>
+                <Avatar uri={room.host.avatarUrl} name={room.host.name} size="md" />
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostLabel}>{t('audioRoom.hostedBy', { username: room.host.username })}</Text>
                 </View>
                 <LinearGradient
-                  colors={['rgba(248,81,73,0.3)', 'rgba(248,81,73,0.15)']}
-                  style={styles.liveTextBg}
+                  colors={[colors.gold, colors.goldLight]}
+                  style={styles.hostBadge}
                 >
-                  <Text style={styles.liveText}>{t('audioRoom.live')}</Text>
+                  <Icon name="star" size="xs" color={colors.text.primary} />
                 </LinearGradient>
               </View>
 
-              <View style={styles.statsRow}>
-                <Icon name="users" size="xs" color={colors.gold} />
-                <Text style={styles.listenerCount}>{t('audioRoom.listening', { count: participants.length })}</Text>
-                <Text style={styles.dot}>·</Text>
-                <Icon name="clock" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.startedText}>{t('audioRoom.started', { timeAgo: formatTimeAgo(room.startedAt) })}</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Speakers Section */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.sectionContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.sectionCard}
-          >
-            <View style={styles.sectionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
-              >
-                <Icon name="mic" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.sectionTitle}>{t('audioRoom.speakers')}</Text>
-            </View>
-
-            <View style={styles.speakersGrid}>
-              {speakerData.map((speaker, index) => (
-                <Animated.View
-                  key={speaker.id}
-                  entering={FadeInUp.delay(index * 80).duration(400)}
-                  style={styles.speakerItem}
-                >
-                  <View style={styles.speakerAvatarContainer}>
-                    {speaker.isSpeaking && (
-                      <Animated.View
-                        entering={FadeInUp.duration(200)}
-                        style={styles.speakingRing}
-                      >
-                        <LinearGradient
-                          colors={[colors.emeraldLight, colors.emerald]}
-                          style={styles.speakingRingInner}
-                        />
-                      </Animated.View>
-                    )}
-                    <Avatar uri={speaker.avatar} name={speaker.name} size="xl" />
-                    {speaker.isMuted && (
-                      <View style={styles.mutedBadge}>
-                        <Icon name="volume-x" size="xs" color={colors.error} />
-                      </View>
-                    )}
-                    {speaker.isHost && (
-                      <LinearGradient
-                        colors={[colors.gold, colors.goldLight]}
-                        style={styles.speakerHostBadge}
-                      >
-                        <Icon name="star" size="xs" color={colors.text.primary} />
-                      </LinearGradient>
-                    )}
+              {/* LIVE Badge */}
+              <View style={styles.liveRow}>
+                <View style={styles.liveBadge}>
+                  <View style={styles.liveDot}>
+                    <Animated.View style={[styles.livePulse, pulseStyle]} />
+                    <View style={styles.liveDotInner} />
                   </View>
-                  <Text style={styles.speakerName}>{speaker.name}</Text>
-                </Animated.View>
-              ))}
-            </View>
-          </LinearGradient>
-        </Animated.View>
+                  <LinearGradient
+                    colors={['rgba(248,81,73,0.3)', 'rgba(248,81,73,0.15)']}
+                    style={styles.liveTextBg}
+                  >
+                    <Text style={styles.liveText}>{t('audioRoom.live')}</Text>
+                  </LinearGradient>
+                </View>
 
-        {/* Listeners Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.sectionContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.sectionCard}
-          >
-            <View style={styles.sectionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
-              >
-                <Icon name="users" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.sectionTitle}>{t('audioRoom.listeners')}</Text>
-              <View style={styles.countBadge}>
-                <Text style={styles.countText}>{listenerData.length}</Text>
+                <View style={styles.statsRow}>
+                  <Icon name="users" size="xs" color={colors.gold} />
+                  <Text style={styles.listenerCount}>{t('audioRoom.listening', { count: participants.length })}</Text>
+                  <Text style={styles.dot}>·</Text>
+                  <Icon name="clock" size="xs" color={colors.text.tertiary} />
+                  <Text style={styles.startedText}>{t('audioRoom.started', { timeAgo: formatTimeAgo(room.startedAt) })}</Text>
+                </View>
               </View>
-            </View>
+            </LinearGradient>
+          </Animated.View>
 
-            <View style={styles.listenersGrid}>
-              {displayedListeners.map((listener, index) => (
-                <Animated.View
-                  key={listener.id}
-                  entering={FadeInUp.delay(index * 50).duration(400)}
-                  style={styles.listenerItem}
+          {/* Speakers Section */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.sectionContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.sectionCard}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
                 >
-                  <Avatar uri={listener.avatar} name={listener.name} size="sm" />
-                  <Text style={styles.listenerName}>{listener.name}</Text>
+                  <Icon name="mic" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>{t('audioRoom.speakers')}</Text>
+              </View>
+
+              <View style={styles.speakersGrid}>
+                {speakerData.map((speaker, index) => (
+                  <Animated.View
+                    key={speaker.id}
+                    entering={FadeInUp.delay(index * 80).duration(400)}
+                    style={styles.speakerItem}
+                  >
+                    <View style={styles.speakerAvatarContainer}>
+                      {speaker.isSpeaking && (
+                        <Animated.View
+                          entering={FadeInUp.duration(200)}
+                          style={styles.speakingRing}
+                        >
+                          <LinearGradient
+                            colors={[colors.emeraldLight, colors.emerald]}
+                            style={styles.speakingRingInner}
+                          />
+                        </Animated.View>
+                      )}
+                      <Avatar uri={speaker.avatar} name={speaker.name} size="xl" />
+                      {speaker.isMuted && (
+                        <View style={styles.mutedBadge}>
+                          <Icon name="volume-x" size="xs" color={colors.error} />
+                        </View>
+                      )}
+                      {speaker.isHost && (
+                        <LinearGradient
+                          colors={[colors.gold, colors.goldLight]}
+                          style={styles.speakerHostBadge}
+                        >
+                          <Icon name="star" size="xs" color={colors.text.primary} />
+                        </LinearGradient>
+                      )}
+                    </View>
+                    <Text style={styles.speakerName}>{speaker.name}</Text>
+                  </Animated.View>
+                ))}
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Listeners Section */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.sectionContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.sectionCard}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="users" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>{t('audioRoom.listeners')}</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>{listenerData.length}</Text>
+                </View>
+              </View>
+
+              <View style={styles.listenersGrid}>
+                {displayedListeners.map((listener, index) => (
+                  <Animated.View
+                    key={listener.id}
+                    entering={FadeInUp.delay(index * 50).duration(400)}
+                    style={styles.listenerItem}
+                  >
+                    <Avatar uri={listener.avatar} name={listener.name} size="sm" />
+                    <Text style={styles.listenerName}>{listener.name}</Text>
+                  </Animated.View>
+                ))}
+              </View>
+
+              <View style={styles.moreBadge}>
+                <Text style={styles.moreText}>+{moreListenerCount} more</Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Raised Hands Section */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.sectionContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.sectionCard}
+            >
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.sectionIconBg}
+                >
+                  <Icon name="edit" size="xs" color={colors.gold} />
+                </LinearGradient>
+                <Text style={styles.sectionTitle}>{t('audioRoom.raisedHands')}</Text>
+                <View style={[styles.countBadge, { backgroundColor: colors.gold }]}>
+                  <Text style={[styles.countText, { color: colors.dark.bg }]}>{raisedHandData.length}</Text>
+                </View>
+              </View>
+
+              {raisedHandData.map((hand, index) => (
+                <Animated.View
+                  key={hand.id}
+                  entering={FadeInUp.delay(index * 80).duration(400)}
+                  style={[styles.raisedHandRow, index < raisedHandData.length - 1 && styles.raisedHandBorder]}
+                >
+                  <Avatar uri={hand.avatar} name={hand.name} size="sm" />
+                  <View style={styles.raisedHandInfo}>
+                    <Text style={styles.raisedHandName}>{hand.name}</Text>
+                    <Text style={styles.raisedHandTime}>Raised {hand.raisedAgo}</Text>
+                  </View>
+                  <View style={styles.raisedHandActions}>
+                    <TouchableOpacity activeOpacity={0.8} onPress={() => handleAcceptHand(hand.userId)}>
+                      <LinearGradient
+                        colors={[colors.emerald, colors.emeraldDark]}
+                        style={styles.acceptButton}
+                      >
+                        <Text style={styles.acceptText}>{t('common.accept')}</Text>
+                      </LinearGradient>
+                    </TouchableOpacity>
+                    <TouchableOpacity activeOpacity={0.8}>
+                      <Text style={styles.declineText}>{t('common.decline')}</Text>
+                    </TouchableOpacity>
+                  </View>
                 </Animated.View>
               ))}
-            </View>
+            </LinearGradient>
+          </Animated.View>
 
-            <View style={styles.moreBadge}>
-              <Text style={styles.moreText}>+{moreListenerCount} more</Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
+          {/* Bottom Spacer */}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
 
-        {/* Raised Hands Section */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.sectionContainer}>
+        {/* Room Controls */}
+        <View style={styles.controlsContainer}>
+          <Text style={styles.statusText}>
+            You are a {isSpeaker ? 'speaker' : 'listener'}
+          </Text>
+
           <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.sectionCard}
+            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+            style={styles.controlsBar}
           >
-            <View style={styles.sectionHeader}>
+            {/* Mic Toggle */}
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={handleToggleMic}
+              activeOpacity={0.8}
+            >
               <LinearGradient
-                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.sectionIconBg}
+                colors={isMicOn ? [colors.emerald, colors.emeraldDark] : [colors.error, colors.error]}
+                style={styles.controlButtonInner}
               >
-                <Icon name="edit" size="xs" color={colors.gold} />
+                <Icon name={isMicOn ? 'mic' : 'volume-x'} size="md" color={colors.text.primary} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>{t('audioRoom.raisedHands')}</Text>
-              <View style={[styles.countBadge, { backgroundColor: colors.gold }]}>
-                <Text style={[styles.countText, { color: colors.dark.bg }]}>{raisedHandData.length}</Text>
-              </View>
-            </View>
+            </TouchableOpacity>
 
-            {raisedHandData.map((hand, index) => (
-              <Animated.View
-                key={hand.id}
-                entering={FadeInUp.delay(index * 80).duration(400)}
-                style={[styles.raisedHandRow, index < raisedHandData.length - 1 && styles.raisedHandBorder]}
+            {/* Raise Hand */}
+            <TouchableOpacity
+              style={styles.controlButton}
+              onPress={handleToggleHand}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.controlButtonInner}
               >
-                <Avatar uri={hand.avatar} name={hand.name} size="sm" />
-                <View style={styles.raisedHandInfo}>
-                  <Text style={styles.raisedHandName}>{hand.name}</Text>
-                  <Text style={styles.raisedHandTime}>Raised {hand.raisedAgo}</Text>
-                </View>
-                <View style={styles.raisedHandActions}>
-                  <TouchableOpacity activeOpacity={0.8} onPress={() => handleAcceptHand(hand.userId)}>
-                    <LinearGradient
-                      colors={[colors.emerald, colors.emeraldDark]}
-                      style={styles.acceptButton}
-                    >
-                      <Text style={styles.acceptText}>{t('common.accept')}</Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                  <TouchableOpacity activeOpacity={0.8}>
-                    <Text style={styles.declineText}>{t('common.decline')}</Text>
-                  </TouchableOpacity>
-                </View>
-              </Animated.View>
-            ))}
+                <Icon name="edit" size="md" color={isHandRaised ? colors.dark.bg : colors.text.primary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Reactions */}
+            <TouchableOpacity style={styles.controlButton} activeOpacity={0.8}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.controlButtonInner}
+              >
+                <Icon name="smile" size="md" color={colors.text.primary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Leave */}
+            <TouchableOpacity style={styles.controlButton} onPress={handleLeave} activeOpacity={0.8}>
+              <LinearGradient
+                colors={[colors.error, colors.error]}
+                style={styles.controlButtonInner}
+              >
+                <Icon name="log-out" size="md" color={colors.text.primary} />
+              </LinearGradient>
+            </TouchableOpacity>
           </LinearGradient>
-        </Animated.View>
 
-        {/* Bottom Spacer */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
-
-      {/* Room Controls */}
-      <View style={styles.controlsContainer}>
-        <Text style={styles.statusText}>
-          You are a {isSpeaker ? 'speaker' : 'listener'}
-        </Text>
-
-        <LinearGradient
-          colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-          style={styles.controlsBar}
-        >
-          {/* Mic Toggle */}
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={handleToggleMic}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={isMicOn ? [colors.emerald, colors.emeraldDark] : [colors.error, colors.error]}
-              style={styles.controlButtonInner}
-            >
-              <Icon name={isMicOn ? 'mic' : 'volume-x'} size="md" color={colors.text.primary} />
-            </LinearGradient>
+          {/* End Room (Host Only - Mock) */}
+          <TouchableOpacity style={styles.endRoomButton} activeOpacity={0.8}>
+            <Text style={styles.endRoomText}>End Room</Text>
           </TouchableOpacity>
-
-          {/* Raise Hand */}
-          <TouchableOpacity
-            style={styles.controlButton}
-            onPress={handleToggleHand}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.controlButtonInner}
-            >
-              <Icon name="edit" size="md" color={isHandRaised ? colors.dark.bg : colors.text.primary} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* Reactions */}
-          <TouchableOpacity style={styles.controlButton} activeOpacity={0.8}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.controlButtonInner}
-            >
-              <Icon name="smile" size="md" color={colors.text.primary} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* Leave */}
-          <TouchableOpacity style={styles.controlButton} onPress={handleLeave} activeOpacity={0.8}>
-            <LinearGradient
-              colors={[colors.error, colors.error]}
-              style={styles.controlButtonInner}
-            >
-              <Icon name="log-out" size="md" color={colors.text.primary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
-
-        {/* End Room (Host Only - Mock) */}
-        <TouchableOpacity style={styles.endRoomButton} activeOpacity={0.8}>
-          <Text style={styles.endRoomText}>End Room</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

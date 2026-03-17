@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { searchApi, messagesApi } from '@/services/api';
 import type { User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function NewConversationScreen() {
   const router = useRouter();
@@ -53,130 +54,133 @@ export default function NewConversationScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <GlassHeader
-        title={t('messages.newMessage')}
-        leftAction={{ 
-          icon: 'arrow-left', 
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
-        }}
-      />
-
-      {/* Search box — Glassmorphism wrapper */}
-      <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchWrap}
-        >
-          <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.searchIconBg}
-          >
-            <Icon name="search" size="xs" color={colors.emerald} />
-          </LinearGradient>
-          <TextInput
-            style={styles.searchInput}
-            value={query}
-            onChangeText={handleQueryChange}
-            placeholder={t('common.searchPeople')}
-            placeholderTextColor={colors.text.tertiary}
-            autoFocus
-            autoCapitalize="none"
-            autoCorrect={false}
-            accessibilityLabel={t('accessibility.searchPeopleInput')}
-          />
-          {query.length > 0 && (
-            <Pressable
-              onPress={() => { setQuery(''); setDebouncedQuery(''); }}
-              hitSlop={8}
-              accessibilityLabel={t('accessibility.clearSearchQuery')}
-              accessibilityRole="button"
-            >
-              <Icon name="x" size="xs" color={colors.text.secondary} />
-            </Pressable>
-          )}
-        </LinearGradient>
-      </Animated.View>
-
-      {searchQuery.isLoading ? (
-        <View style={styles.skeletonList}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
-              <Skeleton.Circle size={40} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Skeleton.Rect width={120} height={14} />
-                <Skeleton.Rect width={80} height={11} />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : searchQuery.isError ? (
-        <EmptyState
-          icon="flag"
-          title={t('messages.searchFailed')}
-          subtitle={t('common.checkConnectionAndRetry')}
-          actionLabel={t('common.retry')}
-          onAction={() => searchQuery.refetch()}
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <GlassHeader
+          title={t('messages.newMessage')}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={people}
-          keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl
-              refreshing={false}
-              onRefresh={() => searchQuery.refetch()}
-              tintColor={colors.emerald}
+
+        {/* Search box — Glassmorphism wrapper */}
+        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchWrap}
+          >
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.searchIconBg}
+            >
+              <Icon name="search" size="xs" color={colors.emerald} />
+            </LinearGradient>
+            <TextInput
+              style={styles.searchInput}
+              value={query}
+              onChangeText={handleQueryChange}
+              placeholder={t('common.searchPeople')}
+              placeholderTextColor={colors.text.tertiary}
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+              accessibilityLabel={t('accessibility.searchPeopleInput')}
             />
-          }
-          renderItem={({ item, index }) => (
-            <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-              <TouchableOpacity
-                style={styles.userRow}
-                onPress={() => dmMutation.mutate(item.id)}
-                disabled={dmMutation.isPending}
-                activeOpacity={0.7}
-                accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
+            {query.length > 0 && (
+              <Pressable
+                onPress={() => { setQuery(''); setDebouncedQuery(''); }}
+                hitSlop={8}
+                accessibilityLabel={t('accessibility.clearSearchQuery')}
                 accessibilityRole="button"
               >
-                <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                <View style={styles.userInfo}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.name}>{item.displayName}</Text>
-                    {item.isVerified && <VerifiedBadge size={13} />}
-                  </View>
-                  <Text style={styles.handle}>@{item.username}</Text>
+                <Icon name="x" size="xs" color={colors.text.secondary} />
+              </Pressable>
+            )}
+          </LinearGradient>
+        </Animated.View>
+
+        {searchQuery.isLoading ? (
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
+                <Skeleton.Circle size={40} />
+                <View style={{ flex: 1, gap: 6 }}>
+                  <Skeleton.Rect width={120} height={14} />
+                  <Skeleton.Rect width={80} height={11} />
                 </View>
-                {dmMutation.isPending && dmMutation.variables === item.id ? (
-                  <ActivityIndicator color={colors.emerald} size="small" />
-                ) : (
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.mailIconBg}
-                  >
-                    <Icon name="mail" size="xs" color={colors.emerald} />
-                  </LinearGradient>
-                )}
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-          ListEmptyComponent={() =>
-            debouncedQuery.trim().length >= 2 ? (
-              <View style={styles.empty}>
-                <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
               </View>
-            ) : (
-              <View style={styles.hint}>
-                <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
-              </View>
-            )
-          }
-        />
-      )}
-    </SafeAreaView>
+            ))}
+          </View>
+        ) : searchQuery.isError ? (
+          <EmptyState
+            icon="flag"
+            title={t('messages.searchFailed')}
+            subtitle={t('common.checkConnectionAndRetry')}
+            actionLabel={t('common.retry')}
+            onAction={() => searchQuery.refetch()}
+          />
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={people}
+            keyExtractor={(item) => item.id}
+            refreshControl={
+              <RefreshControl
+                refreshing={false}
+                onRefresh={() => searchQuery.refetch()}
+                tintColor={colors.emerald}
+              />
+            }
+            renderItem={({ item, index }) => (
+              <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
+                <TouchableOpacity
+                  style={styles.userRow}
+                  onPress={() => dmMutation.mutate(item.id)}
+                  disabled={dmMutation.isPending}
+                  activeOpacity={0.7}
+                  accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
+                  accessibilityRole="button"
+                >
+                  <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+                  <View style={styles.userInfo}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.name}>{item.displayName}</Text>
+                      {item.isVerified && <VerifiedBadge size={13} />}
+                    </View>
+                    <Text style={styles.handle}>@{item.username}</Text>
+                  </View>
+                  {dmMutation.isPending && dmMutation.variables === item.id ? (
+                    <ActivityIndicator color={colors.emerald} size="small" />
+                  ) : (
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.mailIconBg}
+                    >
+                      <Icon name="mail" size="xs" color={colors.emerald} />
+                    </LinearGradient>
+                  )}
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+            ListEmptyComponent={() =>
+              debouncedQuery.trim().length >= 2 ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
+                </View>
+              ) : (
+                <View style={styles.hint}>
+                  <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
+                </View>
+              )
+            }
+          />
+        )}
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -30,6 +30,7 @@ import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Sticker = {
   id: string;
@@ -363,229 +364,232 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     : '';
 
   return (
-    <View style={styles.container}>
-      {/* Story media */}
-      {story?.mediaType?.startsWith('video') ? (
-        <Video
-          source={{ uri: story.mediaUrl }}
-          style={styles.media}
-          resizeMode={ResizeMode.COVER}
-          shouldPlay={!paused}
-          isLooping={false}
-          onPlaybackStatusUpdate={(status) => {
-            if (status.isLoaded && status.durationMillis) {
-              progressValue.value = status.positionMillis / status.durationMillis;
-              if (status.didJustFinish) advance();
-            }
-          }}
-        />
-      ) : story ? (
-        <Image
-          source={{ uri: story.mediaUrl }}
-          style={styles.media}
-          contentFit="cover"
-        />
-      ) : null}
-
-      {/* Gradient overlay (top) */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0.6)', 'transparent']}
-        style={styles.topOverlay}
-        pointerEvents="box-none"
-      >
-        <SafeAreaView edges={['top']}>
-          <ProgressBar
-            count={group.stories.length}
-            activeIndex={storyIndex}
-            progress={progressValue}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        {/* Story media */}
+        {story?.mediaType?.startsWith('video') ? (
+          <Video
+            source={{ uri: story.mediaUrl }}
+            style={styles.media}
+            resizeMode={ResizeMode.COVER}
+            shouldPlay={!paused}
+            isLooping={false}
+            onPlaybackStatusUpdate={(status) => {
+              if (status.isLoaded && status.durationMillis) {
+                progressValue.value = status.positionMillis / status.durationMillis;
+                if (status.didJustFinish) advance();
+              }
+            }}
           />
-          {/* User info */}
-          <View style={styles.userRow}>
-            <Avatar
-              uri={group.user.avatarUrl}
-              name={group.user.displayName}
-              size="sm"
-              showStoryRing={group.stories.length > storyIndex + 1}
-              ringColor={colors.emerald}
-            />
-            <Text style={styles.userName}>{group.user.displayName}</Text>
-            <Text style={styles.timeAgo}>{timeAgo}</Text>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              hitSlop={12}
-              style={styles.closeBtn}
-              accessibilityLabel={t('accessibility.closeStory')}
-              accessibilityRole="button"
-            >
-              <Icon name="x" size="sm" color={colors.text.primary} />
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </LinearGradient>
+        ) : story ? (
+          <Image
+            source={{ uri: story.mediaUrl }}
+            style={styles.media}
+            contentFit="cover"
+          />
+        ) : null}
 
-      {/* Tap zones */}
-      <View style={styles.tapZones} pointerEvents="box-none">
-        <TouchableOpacity
-          style={styles.tapLeft}
-          onPress={handleTapLeft}
-          onPressIn={() => setPaused(true)}
-          onPressOut={() => setPaused(false)}
-          activeOpacity={1}
-          accessibilityLabel={t('accessibility.previousStorySlide')}
-          accessibilityRole="button"
-        />
-        <TouchableOpacity
-          style={styles.tapRight}
-          onPress={handleTapRight}
-          onPressIn={() => setPaused(true)}
-          onPressOut={() => setPaused(false)}
-          activeOpacity={1}
-          accessibilityLabel={t('accessibility.nextStorySlide')}
-          accessibilityRole="button"
-        />
-      </View>
-
-      {/* Story stickers */}
-      {stickers.length > 0 && (
-        <View style={styles.stickersContainer} pointerEvents="box-none">
-          {stickers.map(renderSticker)}
-        </View>
-      )}
-
-      {/* Text overlay */}
-      {story?.textOverlay ? (
-        <View style={styles.textOverlay}>
-          <Text style={[styles.overlayText, { color: story.textColor ?? '#fff' }]}>
-            {story.textOverlay}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Quick reactions */}
-      {!ownStory && (
-        <View style={styles.reactionsRow}>
-          {QUICK_REACTIONS.map(emoji => (
-            <EmojiReactionButton
-              key={emoji}
-              emoji={emoji}
-              onPress={() => handleStoryReaction(emoji)}
-            />
-          ))}
-        </View>
-      )}
-
-      {/* Bottom area: reply bar for others, views tap for own */}
-      {ownStory ? (
-        <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-          <TouchableOpacity
-            style={styles.viewsBtn}
-            onPress={() => setShowViewers(true)}
-            activeOpacity={0.8}
-            accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
-            accessibilityRole="button"
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Icon name="eye" size="sm" color="#fff" />
-              <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
-            </View>
-          </TouchableOpacity>
-        </SafeAreaView>
-      ) : (
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={styles.bottomBar}
+        {/* Gradient overlay (top) */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.6)', 'transparent']}
+          style={styles.topOverlay}
+          pointerEvents="box-none"
         >
-          <SafeAreaView edges={['bottom']}>
-            {showReply ? (
-              <View style={styles.replyRow}>
-                <TextInput
-                  style={styles.replyInput}
-                  value={replyText}
-                  onChangeText={setReplyText}
-                  placeholder={t('saf.replyToStory')}
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  autoFocus
-                  maxLength={200}
-                  onBlur={() => setShowReply(false)}
-                  accessibilityLabel={t('accessibility.storyReplyInput')}
-                />
-                <TouchableOpacity
-                  onPress={() => replyMutation.mutate()}
-                  disabled={!replyText.trim() || replyMutation.isPending}
-                  hitSlop={8}
-                  style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
-                  accessibilityLabel={t('accessibility.sendReply')}
-                  accessibilityRole="button"
-                >
-                  <Icon
-                    name="send"
-                    size="sm"
-                    color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
-                  />
-                </TouchableOpacity>
-              </View>
-            ) : (
+          <SafeAreaView edges={['top']}>
+            <ProgressBar
+              count={group.stories.length}
+              activeIndex={storyIndex}
+              progress={progressValue}
+            />
+            {/* User info */}
+            <View style={styles.userRow}>
+              <Avatar
+                uri={group.user.avatarUrl}
+                name={group.user.displayName}
+                size="sm"
+                showStoryRing={group.stories.length > storyIndex + 1}
+                ringColor={colors.emerald}
+              />
+              <Text style={styles.userName}>{group.user.displayName}</Text>
+              <Text style={styles.timeAgo}>{timeAgo}</Text>
               <TouchableOpacity
-                style={styles.replyPlaceholder}
-                onPress={() => { setShowReply(true); setPaused(true); }}
-                accessibilityLabel={t('accessibility.tapToReply')}
+                onPress={() => router.back()}
+                hitSlop={12}
+                style={styles.closeBtn}
+                accessibilityLabel={t('accessibility.closeStory')}
                 accessibilityRole="button"
               >
-                <Text style={styles.replyPlaceholderText}>
-                  {t('saf.replyToStory')}
-                </Text>
+                <Icon name="x" size="sm" color={colors.text.primary} />
               </TouchableOpacity>
-            )}
+            </View>
           </SafeAreaView>
-        </KeyboardAvoidingView>
-      )}
+        </LinearGradient>
 
-      {/* Viewers bottom sheet (own stories) */}
-      <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
-        <Text style={styles.viewersTitle}>
-          {t('saf.view', { count: story?.viewsCount })}
-        </Text>
-        {viewersQuery.isLoading ? (
-          <View style={styles.viewersSkeleton}>
-            {Array.from({ length: 5 }).map((_, i) => (
-              <View key={i} style={styles.viewerSkeletonRow}>
-                <Skeleton.Circle size={32} />
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <Skeleton.Rect width={120} height={13} />
-                  <Skeleton.Rect width={80} height={11} />
-                </View>
-              </View>
+        {/* Tap zones */}
+        <View style={styles.tapZones} pointerEvents="box-none">
+          <TouchableOpacity
+            style={styles.tapLeft}
+            onPress={handleTapLeft}
+            onPressIn={() => setPaused(true)}
+            onPressOut={() => setPaused(false)}
+            activeOpacity={1}
+            accessibilityLabel={t('accessibility.previousStorySlide')}
+            accessibilityRole="button"
+          />
+          <TouchableOpacity
+            style={styles.tapRight}
+            onPress={handleTapRight}
+            onPressIn={() => setPaused(true)}
+            onPressOut={() => setPaused(false)}
+            activeOpacity={1}
+            accessibilityLabel={t('accessibility.nextStorySlide')}
+            accessibilityRole="button"
+          />
+        </View>
+
+        {/* Story stickers */}
+        {stickers.length > 0 && (
+          <View style={styles.stickersContainer} pointerEvents="box-none">
+            {stickers.map(renderSticker)}
+          </View>
+        )}
+
+        {/* Text overlay */}
+        {story?.textOverlay ? (
+          <View style={styles.textOverlay}>
+            <Text style={[styles.overlayText, { color: story.textColor ?? '#fff' }]}>
+              {story.textOverlay}
+            </Text>
+          </View>
+        ) : null}
+
+        {/* Quick reactions */}
+        {!ownStory && (
+          <View style={styles.reactionsRow}>
+            {QUICK_REACTIONS.map(emoji => (
+              <EmojiReactionButton
+                key={emoji}
+                emoji={emoji}
+                onPress={() => handleStoryReaction(emoji)}
+              />
             ))}
           </View>
-        ) : (
-          <FlatList
-            removeClippedSubviews={true}
-            data={viewersQuery.data?.data ?? []}
-            keyExtractor={(item) => item.id}
-            refreshControl={
-              <RefreshControl
-                refreshing={viewersQuery.isRefetching}
-                onRefresh={() => viewersQuery.refetch()}
-                tintColor={colors.emerald}
-              />
-            }
-            renderItem={({ item }) => (
-              <View style={styles.viewerRow}>
-                <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
-                <View style={styles.viewerInfo}>
-                  <Text style={styles.viewerName}>{item.displayName}</Text>
-                  <Text style={styles.viewerUsername}>@{item.username}</Text>
-                </View>
-              </View>
-            )}
-            ListEmptyComponent={
-              <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
-            }
-            contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
-          />
         )}
-      </BottomSheet>
-    </View>
+
+        {/* Bottom area: reply bar for others, views tap for own */}
+        {ownStory ? (
+          <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
+            <TouchableOpacity
+              style={styles.viewsBtn}
+              onPress={() => setShowViewers(true)}
+              activeOpacity={0.8}
+              accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
+              accessibilityRole="button"
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Icon name="eye" size="sm" color="#fff" />
+                <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
+              </View>
+            </TouchableOpacity>
+          </SafeAreaView>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.bottomBar}
+          >
+            <SafeAreaView edges={['bottom']}>
+              {showReply ? (
+                <View style={styles.replyRow}>
+                  <TextInput
+                    style={styles.replyInput}
+                    value={replyText}
+                    onChangeText={setReplyText}
+                    placeholder={t('saf.replyToStory')}
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    autoFocus
+                    maxLength={200}
+                    onBlur={() => setShowReply(false)}
+                    accessibilityLabel={t('accessibility.storyReplyInput')}
+                  />
+                  <TouchableOpacity
+                    onPress={() => replyMutation.mutate()}
+                    disabled={!replyText.trim() || replyMutation.isPending}
+                    hitSlop={8}
+                    style={replyMutation.isPending ? { opacity: 0.5 } : undefined}
+                    accessibilityLabel={t('accessibility.sendReply')}
+                    accessibilityRole="button"
+                  >
+                    <Icon
+                      name="send"
+                      size="sm"
+                      color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.replyPlaceholder}
+                  onPress={() => { setShowReply(true); setPaused(true); }}
+                  accessibilityLabel={t('accessibility.tapToReply')}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.replyPlaceholderText}>
+                    {t('saf.replyToStory')}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </SafeAreaView>
+          </KeyboardAvoidingView>
+        )}
+
+        {/* Viewers bottom sheet (own stories) */}
+        <BottomSheet visible={showViewers} onClose={() => setShowViewers(false)} snapPoint={0.6}>
+          <Text style={styles.viewersTitle}>
+            {t('saf.view', { count: story?.viewsCount })}
+          </Text>
+          {viewersQuery.isLoading ? (
+            <View style={styles.viewersSkeleton}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <View key={i} style={styles.viewerSkeletonRow}>
+                  <Skeleton.Circle size={32} />
+                  <View style={{ flex: 1, gap: spacing.xs }}>
+                    <Skeleton.Rect width={120} height={13} />
+                    <Skeleton.Rect width={80} height={11} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <FlatList
+              removeClippedSubviews={true}
+              data={viewersQuery.data?.data ?? []}
+              keyExtractor={(item) => item.id}
+              refreshControl={
+                <RefreshControl
+                  refreshing={viewersQuery.isRefetching}
+                  onRefresh={() => viewersQuery.refetch()}
+                  tintColor={colors.emerald}
+                />
+              }
+              renderItem={({ item }) => (
+                <View style={styles.viewerRow}>
+                  <Avatar uri={item.avatarUrl} name={item.displayName} size="sm" />
+                  <View style={styles.viewerInfo}>
+                    <Text style={styles.viewerName}>{item.displayName}</Text>
+                    <Text style={styles.viewerUsername}>@{item.username}</Text>
+                  </View>
+                </View>
+              )}
+              ListEmptyComponent={
+                <Text style={styles.viewersEmpty}>{t('saf.noViewsYet')}</Text>
+              }
+              contentContainerStyle={{ paddingBottom: spacing['2xl'] }}
+            />
+          )}
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

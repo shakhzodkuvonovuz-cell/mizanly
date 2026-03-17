@@ -24,6 +24,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { Mosque as ApiMosque, PrayerTimes } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -256,114 +257,117 @@ export default function MosqueFinderScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title="Nearby Mosques"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Nearby Mosques"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <FlatList
-        data={filteredMosques}
-        keyExtractor={item => item.id}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-        ListHeaderComponent={
-          <>
-            {/* Search Bar */}
-            <Animated.View entering={FadeInUp.duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                style={styles.searchContainer}
-              >
-                <Icon name="search" size="sm" color={colors.text.tertiary} />
-                <TextInput
-                  style={styles.searchInput}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  placeholder={t('islamic.searchMosquesPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Icon name="x" size="sm" color={colors.text.secondary} />
-                  </TouchableOpacity>
-                )}
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Map Placeholder */}
-            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.1)', 'rgba(28,35,51,0.2)']}
-                style={styles.mapPlaceholder}
-              >
+        <FlatList
+          data={filteredMosques}
+          keyExtractor={item => item.id}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+          ListHeaderComponent={
+            <>
+              {/* Search Bar */}
+              <Animated.View entering={FadeInUp.duration(400)}>
                 <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.mapIconBg}
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                  style={styles.searchContainer}
                 >
-                  <Icon name="map-pin" size="xl" color={colors.emerald} />
+                  <Icon name="search" size="sm" color={colors.text.tertiary} />
+                  <TextInput
+                    style={styles.searchInput}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    placeholder={t('islamic.searchMosquesPlaceholder')}
+                    placeholderTextColor={colors.text.tertiary}
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                      <Icon name="x" size="sm" color={colors.text.secondary} />
+                    </TouchableOpacity>
+                  )}
                 </LinearGradient>
-                <Text style={styles.mapPlaceholderText}>{t('islamic.mapViewComingSoon')}</Text>
-              </LinearGradient>
-            </Animated.View>
+              </Animated.View>
 
-            {/* Results Count */}
-            <View style={styles.resultsHeader}>
-              <Text style={styles.resultsText}>
-{t('islamic.mosquesNearby', { count: filteredMosques.length })}
-              </Text>
-            </View>
-          </>
-        }
-        renderItem={({ item, index }) => (
-          <MosqueCard mosque={item} index={index} />
-        )}
-        ListEmptyComponent={
-          <EmptyState
-            icon="map-pin"
-            title={t('islamic.noMosquesFound')}
-            subtitle={searchQuery ? t('islamic.tryDifferentSearchTerm') : t('islamic.noMosquesInArea')}
-          />
-        }
-        ListFooterComponent={
-          <>
-            {/* Qibla Direction Card */}
-            <Animated.View entering={FadeInUp.delay(filteredMosques.length * 80 + 200).duration(400)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.qiblaCard}
-              >
+              {/* Map Placeholder */}
+              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.qiblaIconBg}
+                  colors={['rgba(10,123,79,0.1)', 'rgba(28,35,51,0.2)']}
+                  style={styles.mapPlaceholder}
                 >
-                  <Icon name="globe" size="md" color={colors.emerald} />
-                </LinearGradient>
-
-                <View style={styles.qiblaContent}>
-                  <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
-                  <Text style={styles.qiblaDirection}>118° Southeast</Text>
-                  <Text style={styles.qiblaHint}>{t('islamic.qiblaHint')}</Text>
-                </View>
-
-                {/* Arrow Indicator */}
-                <View style={styles.arrowContainer}>
                   <LinearGradient
-                    colors={[colors.emerald, colors.goldLight]}
-                    style={styles.arrowCircle}
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.mapIconBg}
                   >
-                    <Icon name="arrow-left" size="md" color={colors.text.primary} style={styles.arrowIcon} />
+                    <Icon name="map-pin" size="xl" color={colors.emerald} />
                   </LinearGradient>
-                </View>
-              </LinearGradient>
-            </Animated.View>
+                  <Text style={styles.mapPlaceholderText}>{t('islamic.mapViewComingSoon')}</Text>
+                </LinearGradient>
+              </Animated.View>
 
-            {/* Bottom spacing */}
-            <View style={{ height: spacing.xxl }} />
-          </>
-        }
-      />
-    </SafeAreaView>
+              {/* Results Count */}
+              <View style={styles.resultsHeader}>
+                <Text style={styles.resultsText}>
+  {t('islamic.mosquesNearby', { count: filteredMosques.length })}
+                </Text>
+              </View>
+            </>
+          }
+          renderItem={({ item, index }) => (
+            <MosqueCard mosque={item} index={index} />
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              icon="map-pin"
+              title={t('islamic.noMosquesFound')}
+              subtitle={searchQuery ? t('islamic.tryDifferentSearchTerm') : t('islamic.noMosquesInArea')}
+            />
+          }
+          ListFooterComponent={
+            <>
+              {/* Qibla Direction Card */}
+              <Animated.View entering={FadeInUp.delay(filteredMosques.length * 80 + 200).duration(400)}>
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.qiblaCard}
+                >
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.qiblaIconBg}
+                  >
+                    <Icon name="globe" size="md" color={colors.emerald} />
+                  </LinearGradient>
+
+                  <View style={styles.qiblaContent}>
+                    <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
+                    <Text style={styles.qiblaDirection}>118° Southeast</Text>
+                    <Text style={styles.qiblaHint}>{t('islamic.qiblaHint')}</Text>
+                  </View>
+
+                  {/* Arrow Indicator */}
+                  <View style={styles.arrowContainer}>
+                    <LinearGradient
+                      colors={[colors.emerald, colors.goldLight]}
+                      style={styles.arrowCircle}
+                    >
+                      <Icon name="arrow-left" size="md" color={colors.text.primary} style={styles.arrowIcon} />
+                    </LinearGradient>
+                  </View>
+                </LinearGradient>
+              </Animated.View>
+
+              {/* Bottom spacing */}
+              <View style={{ height: spacing.xxl }} />
+            </>
+          }
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

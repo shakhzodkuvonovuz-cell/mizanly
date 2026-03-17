@@ -13,6 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -119,132 +120,135 @@ export default function CameraScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" hidden />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <StatusBar barStyle="light-content" hidden />
 
-      {/* Camera Preview Placeholder */}
-      <View style={styles.cameraPreview}>
-        <LinearGradient
-          colors={['#1a1a2e', '#16213e', '#0f3460']}
-          style={styles.cameraGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <View style={styles.cameraOverlay}>
-          <Text style={styles.cameraOverlayText}>{t('screens.camera.previewText')}</Text>
-          <Text style={styles.cameraOverlaySubtext}>{t('screens.camera.previewSubtext')}</Text>
+        {/* Camera Preview Placeholder */}
+        <View style={styles.cameraPreview}>
+          <LinearGradient
+            colors={['#1a1a2e', '#16213e', '#0f3460']}
+            style={styles.cameraGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+          <View style={styles.cameraOverlay}>
+            <Text style={styles.cameraOverlayText}>{t('screens.camera.previewText')}</Text>
+            <Text style={styles.cameraOverlaySubtext}>{t('screens.camera.previewSubtext')}</Text>
+          </View>
+
+          {/* Grid lines for composition */}
+          <View style={styles.gridOverlay}>
+            <View style={styles.gridLineVertical} />
+            <View style={styles.gridLineHorizontal} />
+          </View>
         </View>
 
-        {/* Grid lines for composition */}
-        <View style={styles.gridOverlay}>
-          <View style={styles.gridLineVertical} />
-          <View style={styles.gridLineHorizontal} />
-        </View>
-      </View>
-
-      {/* Top Controls */}
-      <SafeAreaView style={styles.topControls} edges={['top']}>
-        <View style={styles.topControlsRow}>
-          {/* Close Button */}
-          <TouchableOpacity
-            style={styles.controlPill}
-            onPress={() => router.back()}
-          >
-            <Icon name="x" size="sm" color="#fff" />
-          </TouchableOpacity>
-
-          {/* Flash Toggle */}
-          <TouchableOpacity
-            style={[styles.controlPill, flashOn && styles.controlPillActive]}
-            onPress={() => setFlashOn(!flashOn)}
-          >
-            <Icon name={flashOn ? 'eye' : 'eye-off'} size="sm" color="#fff" />
-          </TouchableOpacity>
-
-          {/* Camera Flip */}
-          <TouchableOpacity
-            style={styles.controlPill}
-            onPress={() => setIsFrontCamera(!isFrontCamera)}
-          >
-            <Icon name="repeat" size="sm" color="#fff" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Recording Timer */}
-        {isRecording && (
-          <Animated.View entering={FadeIn} style={styles.timerContainer}>
-            <View style={styles.recordingDot} />
-            <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
-          </Animated.View>
-        )}
-      </SafeAreaView>
-
-      {/* Bottom Controls */}
-      <SafeAreaView style={styles.bottomControls} edges={['bottom']}>
-        {/* Mode Selector */}
-        <View style={styles.modeSelector}>
-          {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
+        {/* Top Controls */}
+        <SafeAreaView style={styles.topControls} edges={['top']}>
+          <View style={styles.topControlsRow}>
+            {/* Close Button */}
             <TouchableOpacity
-              key={m}
-              style={[styles.modePill, mode === m && styles.modePillActive]}
-              onPress={() => setMode(m)}
+              style={styles.controlPill}
+              onPress={() => router.back()}
             >
-              <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
-                {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
-              </Text>
+              <Icon name="x" size="sm" color="#fff" />
             </TouchableOpacity>
-          ))}
-        </View>
 
-        {/* Capture Controls */}
-        <View style={styles.captureContainer}>
-          {/* Gallery Shortcut */}
-          <TouchableOpacity style={styles.galleryButton}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.galleryThumbnail}
-            >
-              <Icon name="image" size="sm" color={colors.text.tertiary} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          {/* Capture Button */}
-          <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
+            {/* Flash Toggle */}
             <TouchableOpacity
-              onPress={handleCapturePress}
-              activeOpacity={0.8}
-              style={styles.captureButtonTouch}
+              style={[styles.controlPill, flashOn && styles.controlPillActive]}
+              onPress={() => setFlashOn(!flashOn)}
             >
-              <Animated.View style={[styles.captureButtonInner, animatedCaptureStyle]}>
-                {mode === 'video' && isRecording ? (
-                  <View style={styles.stopButton} />
-                ) : (
-                  <LinearGradient
-                    colors={['#fff', '#f0f0f0']}
-                    style={styles.captureCircle}
-                  />
-                )}
-              </Animated.View>
+              <Icon name={flashOn ? 'eye' : 'eye-off'} size="sm" color="#fff" />
+            </TouchableOpacity>
 
-              {/* Recording Progress Ring */}
-              {mode === 'video' && isRecording && (
-                <Animated.View style={[styles.progressRing, animatedRecordRingStyle]}>
-                  <View style={styles.progressRingInner} />
+            {/* Camera Flip */}
+            <TouchableOpacity
+              style={styles.controlPill}
+              onPress={() => setIsFrontCamera(!isFrontCamera)}
+            >
+              <Icon name="repeat" size="sm" color="#fff" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Recording Timer */}
+          {isRecording && (
+            <Animated.View entering={FadeIn} style={styles.timerContainer}>
+              <View style={styles.recordingDot} />
+              <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
+            </Animated.View>
+          )}
+        </SafeAreaView>
+
+        {/* Bottom Controls */}
+        <SafeAreaView style={styles.bottomControls} edges={['bottom']}>
+          {/* Mode Selector */}
+          <View style={styles.modeSelector}>
+            {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.modePill, mode === m && styles.modePillActive]}
+                onPress={() => setMode(m)}
+              >
+                <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
+                  {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {/* Capture Controls */}
+          <View style={styles.captureContainer}>
+            {/* Gallery Shortcut */}
+            <TouchableOpacity style={styles.galleryButton}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.galleryThumbnail}
+              >
+                <Icon name="image" size="sm" color={colors.text.tertiary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Capture Button */}
+            <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
+              <TouchableOpacity
+                onPress={handleCapturePress}
+                activeOpacity={0.8}
+                style={styles.captureButtonTouch}
+              >
+                <Animated.View style={[styles.captureButtonInner, animatedCaptureStyle]}>
+                  {mode === 'video' && isRecording ? (
+                    <View style={styles.stopButton} />
+                  ) : (
+                    <LinearGradient
+                      colors={['#fff', '#f0f0f0']}
+                      style={styles.captureCircle}
+                    />
+                  )}
                 </Animated.View>
-              )}
-            </TouchableOpacity>
-          </Animated.View>
 
-          {/* Spacer for symmetry */}
-          <View style={styles.galleryButton} />
-        </View>
+                {/* Recording Progress Ring */}
+                {mode === 'video' && isRecording && (
+                  <Animated.View style={[styles.progressRing, animatedRecordRingStyle]}>
+                    <View style={styles.progressRingInner} />
+                  </Animated.View>
+                )}
+              </TouchableOpacity>
+            </Animated.View>
 
-        {/* Mode hint */}
-        <Text style={styles.modeHint}>
-          {t(`screens.camera.hint${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
-        </Text>
-      </SafeAreaView>
-    </View>
+            {/* Spacer for symmetry */}
+            <View style={styles.galleryButton} />
+          </View>
+
+          {/* Mode hint */}
+          <Text style={styles.modeHint}>
+            {t(`screens.camera.hint${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
+          </Text>
+        </SafeAreaView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

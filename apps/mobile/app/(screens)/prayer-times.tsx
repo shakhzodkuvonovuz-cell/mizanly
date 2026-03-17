@@ -17,6 +17,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -325,199 +326,202 @@ export default function PrayerTimesScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Prayer Times"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Prayer Times"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Location Header */}
-        <Animated.View entering={FadeInUp.duration(500)} style={styles.locationContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.locationCard}
-          >
-            <View style={styles.locationRow}>
-              <Icon name="map-pin" size="sm" color={colors.emerald} />
-              <Text style={styles.locationText}>Dubai, United Arab Emirates</Text>
-            </View>
-            <TouchableOpacity onPress={() => { /* Open location picker */ }}>
-              <Text style={styles.changeLocation}>{t('common.change')}</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Location Header */}
+          <Animated.View entering={FadeInUp.duration(500)} style={styles.locationContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.locationCard}
+            >
+              <View style={styles.locationRow}>
+                <Icon name="map-pin" size="sm" color={colors.emerald} />
+                <Text style={styles.locationText}>Dubai, United Arab Emirates</Text>
+              </View>
+              <TouchableOpacity onPress={() => { /* Open location picker */ }}>
+                <Text style={styles.changeLocation}>{t('common.change')}</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Current Prayer Card */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)}>
-          <LinearGradient
-            colors={[colors.emerald, colors.gold]}
-            style={styles.currentPrayerContainer}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            <View style={styles.currentPrayerContent}>
-              <Text style={styles.currentPrayerLabel}>{t('islamic.currentPrayer')}</Text>
-              <Text style={styles.currentPrayerName}>
-                {prayerList[currentPrayerIndex]?.name || ''}
-              </Text>
-              <Text style={styles.currentPrayerArabic}>
-                {prayerList[currentPrayerIndex]?.arabic || ''}
-              </Text>
-
-              <View style={styles.currentPrayerTimeRow}>
-                <Icon name="clock" size="sm" color="rgba(255,255,255,0.8)" />
-                <Text style={styles.currentPrayerTime}>
-                  {prayerList[currentPrayerIndex]?.time || ''}
+          {/* Current Prayer Card */}
+          <Animated.View entering={FadeInUp.delay(100).duration(500)}>
+            <LinearGradient
+              colors={[colors.emerald, colors.gold]}
+              style={styles.currentPrayerContainer}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.currentPrayerContent}>
+                <Text style={styles.currentPrayerLabel}>{t('islamic.currentPrayer')}</Text>
+                <Text style={styles.currentPrayerName}>
+                  {prayerList[currentPrayerIndex]?.name || ''}
                 </Text>
-              </View>
+                <Text style={styles.currentPrayerArabic}>
+                  {prayerList[currentPrayerIndex]?.arabic || ''}
+                </Text>
 
-              <View style={styles.countdownContainer}>
-                <Text style={styles.countdownLabel}>{t('islamic.timeRemainingUntil')} {prayerList[nextPrayerIndex]?.name || ''}</Text>
-                <CountdownTimer targetTime={prayerList[nextPrayerIndex]?.time || '00:00'} />
-              </View>
-            </View>
-
-            {/* Decorative pattern */}
-            <View style={styles.decorationPattern}>
-              {[...Array(6)].map((_, i) => (
-                <View key={i} style={[styles.patternDot, { opacity: 0.1 + i * 0.05 }]} />
-              ))}
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Qibla Compass */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-            style={styles.qiblaCard}
-          >
-            <View style={styles.qiblaHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-                style={styles.qiblaIconBg}
-              >
-                <Icon name="map-pin" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
-            </View>
-
-            <View style={styles.compassContainer}>
-              {/* Compass circle */}
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.3)']}
-                style={styles.compassCircle}
-              >
-                {/* Cardinal directions */}
-                <Text style={[styles.compassDirection, styles.compassN]}>N</Text>
-                <Text style={[styles.compassDirection, styles.compassE]}>E</Text>
-                <Text style={[styles.compassDirection, styles.compassS]}>S</Text>
-                <Text style={[styles.compassDirection, styles.compassW]}>W</Text>
-
-                {/* Qibla arrow */}
-                <View style={[styles.qiblaArrow, { transform: [{ rotate: `${qiblaDirection}deg` }] }]}>
-                  <LinearGradient
-                    colors={[colors.emerald, colors.gold]}
-                    style={styles.arrowHead}
-                  />
-                  <View style={styles.arrowTail} />
+                <View style={styles.currentPrayerTimeRow}>
+                  <Icon name="clock" size="sm" color="rgba(255,255,255,0.8)" />
+                  <Text style={styles.currentPrayerTime}>
+                    {prayerList[currentPrayerIndex]?.time || ''}
+                  </Text>
                 </View>
 
-                {/* Center dot */}
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.compassCenter}
-                >
-                  <Text style={styles.qiblaIcon}>🕋</Text>
-                </LinearGradient>
-              </LinearGradient>
+                <View style={styles.countdownContainer}>
+                  <Text style={styles.countdownLabel}>{t('islamic.timeRemainingUntil')} {prayerList[nextPrayerIndex]?.name || ''}</Text>
+                  <CountdownTimer targetTime={prayerList[nextPrayerIndex]?.time || '00:00'} />
+                </View>
+              </View>
 
-              <Text style={styles.qiblaDirectionText}>
-                {qiblaDirection}° from North
-              </Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* All Prayers List */}
-        <View style={styles.prayerListContainer}>
-          <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-              style={styles.sectionIconBg}
-            >
-              <Icon name="clock" size="xs" color={colors.emerald} />
+              {/* Decorative pattern */}
+              <View style={styles.decorationPattern}>
+                {[...Array(6)].map((_, i) => (
+                  <View key={i} style={[styles.patternDot, { opacity: 0.1 + i * 0.05 }]} />
+                ))}
+              </View>
             </LinearGradient>
-            <Text style={styles.sectionTitle}>{t('islamic.todaysPrayerTimes')}</Text>
+          </Animated.View>
+
+          {/* Qibla Compass */}
+          <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+              style={styles.qiblaCard}
+            >
+              <View style={styles.qiblaHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                  style={styles.qiblaIconBg}
+                >
+                  <Icon name="map-pin" size="xs" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.qiblaTitle}>{t('islamic.qiblaDirection')}</Text>
+              </View>
+
+              <View style={styles.compassContainer}>
+                {/* Compass circle */}
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(28,35,51,0.3)']}
+                  style={styles.compassCircle}
+                >
+                  {/* Cardinal directions */}
+                  <Text style={[styles.compassDirection, styles.compassN]}>N</Text>
+                  <Text style={[styles.compassDirection, styles.compassE]}>E</Text>
+                  <Text style={[styles.compassDirection, styles.compassS]}>S</Text>
+                  <Text style={[styles.compassDirection, styles.compassW]}>W</Text>
+
+                  {/* Qibla arrow */}
+                  <View style={[styles.qiblaArrow, { transform: [{ rotate: `${qiblaDirection}deg` }] }]}>
+                    <LinearGradient
+                      colors={[colors.emerald, colors.gold]}
+                      style={styles.arrowHead}
+                    />
+                    <View style={styles.arrowTail} />
+                  </View>
+
+                  {/* Center dot */}
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.compassCenter}
+                  >
+                    <Text style={styles.qiblaIcon}>🕋</Text>
+                  </LinearGradient>
+                </LinearGradient>
+
+                <Text style={styles.qiblaDirectionText}>
+                  {qiblaDirection}° from North
+                </Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* All Prayers List */}
+          <View style={styles.prayerListContainer}>
+            <View style={styles.sectionHeader}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                style={styles.sectionIconBg}
+              >
+                <Icon name="clock" size="xs" color={colors.emerald} />
+              </LinearGradient>
+              <Text style={styles.sectionTitle}>{t('islamic.todaysPrayerTimes')}</Text>
+            </View>
+
+            {prayerList.map((prayer, index) => (
+              <PrayerCard
+                key={prayer.name}
+                prayer={prayer}
+                isCurrent={index === currentPrayerIndex}
+                isNext={index === nextPrayerIndex}
+                index={index}
+              />
+            ))}
           </View>
 
-          {prayerList.map((prayer, index) => (
-            <PrayerCard
-              key={prayer.name}
-              prayer={prayer}
-              isCurrent={index === currentPrayerIndex}
-              isNext={index === nextPrayerIndex}
-              index={index}
+          {/* Calculation Method */}
+          <TouchableOpacity
+            style={styles.methodSelector}
+            onPress={() => setShowMethodPicker(true)}
+          >
+            <LinearGradient
+              colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+              style={styles.methodCard}
+            >
+              <View style={styles.methodIconBg}>
+                <Icon name="settings" size="sm" color={colors.gold} />
+              </View>
+              <View style={styles.methodText}>
+                <Text style={styles.methodLabel}>{t('islamic.prayerMethod')}</Text>
+                <Text style={styles.methodValue}>{calculationMethod}</Text>
+              </View>
+              <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Date Info */}
+          <View style={styles.dateInfo}>
+            <Text style={styles.dateText}>
+              15 Ramadan 1446 AH
+            </Text>
+            <Text style={styles.dateSubtext}>
+              Friday, March 14, 2025
+            </Text>
+          </View>
+        </ScrollView>
+
+        {/* Method Picker Bottom Sheet */}
+        <BottomSheet visible={showMethodPicker} onClose={() => setShowMethodPicker(false)}>
+          {prayerMethods.map((method) => (
+            <BottomSheetItem
+              key={method.id}
+              label={method.name}
+              onPress={() => {
+                setCalculationMethod(method.id);
+                setShowMethodPicker(false);
+              }}
+              icon={calculationMethod === method.id ? (
+                <Icon name="check" size="sm" color={colors.emerald} />
+              ) : undefined}
             />
           ))}
-        </View>
-
-        {/* Calculation Method */}
-        <TouchableOpacity
-          style={styles.methodSelector}
-          onPress={() => setShowMethodPicker(true)}
-        >
-          <LinearGradient
-            colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-            style={styles.methodCard}
-          >
-            <View style={styles.methodIconBg}>
-              <Icon name="settings" size="sm" color={colors.gold} />
-            </View>
-            <View style={styles.methodText}>
-              <Text style={styles.methodLabel}>{t('islamic.prayerMethod')}</Text>
-              <Text style={styles.methodValue}>{calculationMethod}</Text>
-            </View>
-            <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-          </LinearGradient>
-        </TouchableOpacity>
-
-        {/* Date Info */}
-        <View style={styles.dateInfo}>
-          <Text style={styles.dateText}>
-            15 Ramadan 1446 AH
-          </Text>
-          <Text style={styles.dateSubtext}>
-            Friday, March 14, 2025
-          </Text>
-        </View>
-      </ScrollView>
-
-      {/* Method Picker Bottom Sheet */}
-      <BottomSheet visible={showMethodPicker} onClose={() => setShowMethodPicker(false)}>
-        {prayerMethods.map((method) => (
-          <BottomSheetItem
-            key={method.id}
-            label={method.name}
-            onPress={() => {
-              setCalculationMethod(method.id);
-              setShowMethodPicker(false);
-            }}
-            icon={calculationMethod === method.id ? (
-              <Icon name="check" size="sm" color={colors.emerald} />
-            ) : undefined}
-          />
-        ))}
-      </BottomSheet>
-    </View>
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

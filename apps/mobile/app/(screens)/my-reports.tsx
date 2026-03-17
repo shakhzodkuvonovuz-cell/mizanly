@@ -16,8 +16,11 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
 import type { Report, ReportStatus } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function MyReportsScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -105,15 +108,15 @@ export default function MyReportsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="My Reports" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.my-reports.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="flag" 
-          title="Couldn't load reports" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
+          title={t('screens.my-reports.errorTitle')}
+          subtitle={t('screens.my-reports.errorSubtitle')}
+          actionLabel={t('common.retry')} 
           onAction={() => refetch()} 
         />
       </View>
@@ -124,8 +127,8 @@ export default function MyReportsScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="My Reports" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.my-reports.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -138,38 +141,41 @@ export default function MyReportsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title="My Reports" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title={t('screens.my-reports.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
+        />
       
-      <FlatList
-        data={reports}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) {
-            fetchNextPage();
+        <FlatList
+          data={reports}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
           }
-        }}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState 
-              icon="flag" 
-              title="No reports" 
-              subtitle="Thank you for keeping Mizanly safe" 
-            />
-          </View>
-        }
-      />
-    </View>
+          onEndReached={() => {
+            if (hasNextPage && !isFetchingNextPage) {
+              fetchNextPage();
+            }
+          }}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <EmptyState 
+                icon="flag" 
+                title={t('screens.my-reports.emptyTitle')}
+                subtitle={t('screens.my-reports.emptySubtitle')} 
+              />
+            </View>
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

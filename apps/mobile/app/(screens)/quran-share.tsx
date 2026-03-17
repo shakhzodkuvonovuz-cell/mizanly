@@ -16,6 +16,7 @@ import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { QuranSurah, QuranVerse } from '@/types/islamic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -166,237 +167,240 @@ export default function QuranShareScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.quranShare.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-        rightAction={{ icon: 'share', onPress: () => setShowShareOptions(true) }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.quranShare.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+          rightAction={{ icon: 'share', onPress: () => setShowShareOptions(true) }}
+        />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefreshing} onRefresh={handleRefresh} />}
-      >
-        {/* Surah Selector */}
-        <Animated.View entering={FadeInUp.duration(500)}>
-          <TouchableOpacity
-            style={styles.surahSelector}
-            onPress={() => setShowSurahPicker(true)}
-          >
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.surahSelectorGradient}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefreshing} onRefresh={handleRefresh} />}
+        >
+          {/* Surah Selector */}
+          <Animated.View entering={FadeInUp.duration(500)}>
+            <TouchableOpacity
+              style={styles.surahSelector}
+              onPress={() => setShowSurahPicker(true)}
             >
               <LinearGradient
-                colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                style={styles.surahIconBg}
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.surahSelectorGradient}
               >
-                <Icon name="book-open" size="sm" color={colors.gold} />
-              </LinearGradient>
-              <View style={styles.surahInfo}>
-                <Text style={styles.surahNameArabic}>{currentSurah.arabicName}</Text>
-                <Text style={styles.surahName}>{currentSurah.name}</Text>
-              </View>
-              <View style={styles.surahMeta}>
-                <Text style={styles.surahNumber}>{t('screens.quranShare.surahNumber', { number: currentSurah.number })}</Text>
-                <Text style={styles.verseCount}>{t('screens.quranShare.versesCount', { count: currentSurah.verses })}</Text>
-              </View>
-              <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Verse Navigation */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.verseNav}>
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={handlePrevVerse}
-            disabled={currentVerse === 1}
-          >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-              style={[styles.navButtonGradient, currentVerse === 1 && styles.navButtonDisabled]}
-            >
-              <Icon name="chevron-left" size="sm" color={currentVerse === 1 ? colors.text.tertiary : colors.emerald} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <LinearGradient
-            colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-            style={styles.verseIndicator}
-          >
-            <Text style={styles.verseNumberText}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
-          </LinearGradient>
-
-          <TouchableOpacity
-            style={styles.navButton}
-            onPress={handleNextVerse}
-            disabled={currentVerse === currentSurah.verses}
-          >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-              style={[styles.navButtonGradient, currentVerse === currentSurah.verses && styles.navButtonDisabled]}
-            >
-              <Icon name="chevron-right" size="sm" color={currentVerse === currentSurah.verses ? colors.text.tertiary : colors.emerald} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Verse Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-            style={styles.verseCard}
-          >
-            {/* Decorative Border */}
-            <GeometricPattern />
-
-            {/* Inner Card */}
-            <LinearGradient
-              colors={['rgba(22,27,34,0.95)', 'rgba(13,17,23,0.98)']}
-              style={styles.verseCardInner}
-            >
-              {verseLoading ? (
-                <View style={{ alignItems: 'center', gap: spacing.md, padding: spacing.lg }}>
-                  <Skeleton.Text width="80%" />
-                  <Skeleton.Rect width="60%" height={1} borderRadius={1} />
-                  <Skeleton.Text width="90%" />
-                  <Skeleton.Text width="70%" />
-                  <Skeleton.Rect width="60%" height={1} borderRadius={1} />
-                  <Skeleton.Text width="85%" />
-                  <Skeleton.Text width="75%" />
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                  style={styles.surahIconBg}
+                >
+                  <Icon name="book-open" size="sm" color={colors.gold} />
+                </LinearGradient>
+                <View style={styles.surahInfo}>
+                  <Text style={styles.surahNameArabic}>{currentSurah.arabicName}</Text>
+                  <Text style={styles.surahName}>{currentSurah.name}</Text>
                 </View>
-              ) : verseText ? (
-                <>
-                  {/* Bismillah */}
-                  <Text style={styles.bismillah}>{'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650'}</Text>
+                <View style={styles.surahMeta}>
+                  <Text style={styles.surahNumber}>{t('screens.quranShare.surahNumber', { number: currentSurah.number })}</Text>
+                  <Text style={styles.verseCount}>{t('screens.quranShare.versesCount', { count: currentSurah.verses })}</Text>
+                </View>
+                <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
 
-                  {/* Decorative line */}
-                  <LinearGradient
-                    colors={['transparent', colors.gold, 'transparent']}
-                    style={styles.decorativeLine}
-                  />
+          {/* Verse Navigation */}
+          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.verseNav}>
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={handlePrevVerse}
+              disabled={currentVerse === 1}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                style={[styles.navButtonGradient, currentVerse === 1 && styles.navButtonDisabled]}
+              >
+                <Icon name="chevron-left" size="sm" color={currentVerse === 1 ? colors.text.tertiary : colors.emerald} />
+              </LinearGradient>
+            </TouchableOpacity>
 
-                  {/* Arabic Text */}
-                  <Text style={styles.verseArabic}>{verseText}</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+              style={styles.verseIndicator}
+            >
+              <Text style={styles.verseNumberText}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
+            </LinearGradient>
 
-                  {/* Decorative separator */}
-                  <View style={styles.verseSeparator}>
-                    <View style={styles.separatorDot} />
+            <TouchableOpacity
+              style={styles.navButton}
+              onPress={handleNextVerse}
+              disabled={currentVerse === currentSurah.verses}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                style={[styles.navButtonGradient, currentVerse === currentSurah.verses && styles.navButtonDisabled]}
+              >
+                <Icon name="chevron-right" size="sm" color={currentVerse === currentSurah.verses ? colors.text.tertiary : colors.emerald} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Verse Card */}
+          <Animated.View entering={FadeInUp.delay(200).duration(500)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              style={styles.verseCard}
+            >
+              {/* Decorative Border */}
+              <GeometricPattern />
+
+              {/* Inner Card */}
+              <LinearGradient
+                colors={['rgba(22,27,34,0.95)', 'rgba(13,17,23,0.98)']}
+                style={styles.verseCardInner}
+              >
+                {verseLoading ? (
+                  <View style={{ alignItems: 'center', gap: spacing.md, padding: spacing.lg }}>
+                    <Skeleton.Text width="80%" />
+                    <Skeleton.Rect width="60%" height={1} borderRadius={1} />
+                    <Skeleton.Text width="90%" />
+                    <Skeleton.Text width="70%" />
+                    <Skeleton.Rect width="60%" height={1} borderRadius={1} />
+                    <Skeleton.Text width="85%" />
+                    <Skeleton.Text width="75%" />
+                  </View>
+                ) : verseText ? (
+                  <>
+                    {/* Bismillah */}
+                    <Text style={styles.bismillah}>{'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650'}</Text>
+
+                    {/* Decorative line */}
                     <LinearGradient
-                      colors={['transparent', colors.emerald, 'transparent']}
-                      style={styles.separatorLine}
+                      colors={['transparent', colors.gold, 'transparent']}
+                      style={styles.decorativeLine}
                     />
-                    <View style={styles.separatorDot} />
-                  </View>
 
-                  {/* Translation */}
-                  <Text style={styles.verseTranslation}>{translationText}</Text>
+                    {/* Arabic Text */}
+                    <Text style={styles.verseArabic}>{verseText}</Text>
 
-                  {/* Reference */}
-                  <View style={styles.verseReference}>
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                      style={styles.referenceBadge}
-                    >
-                      <Text style={styles.referenceText}>
-                        {currentSurah.name} {currentVerse}
-                      </Text>
-                    </LinearGradient>
-                  </View>
-                </>
+                    {/* Decorative separator */}
+                    <View style={styles.verseSeparator}>
+                      <View style={styles.separatorDot} />
+                      <LinearGradient
+                        colors={['transparent', colors.emerald, 'transparent']}
+                        style={styles.separatorLine}
+                      />
+                      <View style={styles.separatorDot} />
+                    </View>
+
+                    {/* Translation */}
+                    <Text style={styles.verseTranslation}>{translationText}</Text>
+
+                    {/* Reference */}
+                    <View style={styles.verseReference}>
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                        style={styles.referenceBadge}
+                      >
+                        <Text style={styles.referenceText}>
+                          {currentSurah.name} {currentVerse}
+                        </Text>
+                      </LinearGradient>
+                    </View>
+                  </>
+                ) : (
+                  <EmptyState
+                    icon="book-open"
+                    title={t('screens.quranShare.verseNotFound')}
+                    subtitle={t('screens.quranShare.tryAnotherVerse')}
+                  />
+                )}
+              </LinearGradient>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Share Options */}
+          <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.shareOptions}>
+            <TouchableOpacity
+              style={styles.shareButton}
+              onPress={() => setShowShareOptions(true)}
+            >
+              <LinearGradient
+                colors={[colors.emerald, colors.gold]}
+                style={styles.shareButtonGradient}
+              >
+                <Icon name="share" size="sm" color="#fff" />
+                <Text style={styles.shareButtonText}>{t('screens.quranShare.shareThisVerse')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.copyButton}
+              onPress={handleCopyText}
+            >
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.copyButtonGradient}
+              >
+                <Icon name="link" size="sm" color={colors.text.secondary} />
+                <Text style={styles.copyButtonText}>{t('screens.quranShare.copyText')}</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+
+        {/* Surah Picker Bottom Sheet */}
+        <BottomSheet visible={showSurahPicker} onClose={() => setShowSurahPicker(false)}>
+          <View style={styles.surahSearchBar}>
+            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <Text style={styles.surahSearchPlaceholder}>{t('screens.quranShare.searchSurahs')}</Text>
+          </View>
+          {(surahs ?? []).map((surah) => (
+            <BottomSheetItem
+              key={surah.number}
+              label={`${surah.number}. ${surah.name}`}
+              onPress={() => {
+                setSelectedSurahNumber(surah.number);
+                setCurrentVerse(1);
+                setShowSurahPicker(false);
+              }}
+              icon={selectedSurahNumber === surah.number ? (
+                <Icon name="check" size="sm" color={colors.emerald} />
               ) : (
-                <EmptyState
-                  icon="book-open"
-                  title={t('screens.quranShare.verseNotFound')}
-                  subtitle={t('screens.quranShare.tryAnotherVerse')}
-                />
+                <Text style={styles.surahArabicList}>{surah.arabicName}</Text>
               )}
-            </LinearGradient>
-          </LinearGradient>
-        </Animated.View>
+            />
+          ))}
+        </BottomSheet>
 
-        {/* Share Options */}
-        <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.shareOptions}>
-          <TouchableOpacity
-            style={styles.shareButton}
-            onPress={() => setShowShareOptions(true)}
-          >
-            <LinearGradient
-              colors={[colors.emerald, colors.gold]}
-              style={styles.shareButtonGradient}
-            >
-              <Icon name="share" size="sm" color="#fff" />
-              <Text style={styles.shareButtonText}>{t('screens.quranShare.shareThisVerse')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.copyButton}
-            onPress={handleCopyText}
-          >
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.copyButtonGradient}
-            >
-              <Icon name="link" size="sm" color={colors.text.secondary} />
-              <Text style={styles.copyButtonText}>{t('screens.quranShare.copyText')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
-      </ScrollView>
-
-      {/* Surah Picker Bottom Sheet */}
-      <BottomSheet visible={showSurahPicker} onClose={() => setShowSurahPicker(false)}>
-        <View style={styles.surahSearchBar}>
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
-          <Text style={styles.surahSearchPlaceholder}>{t('screens.quranShare.searchSurahs')}</Text>
-        </View>
-        {(surahs ?? []).map((surah) => (
+        {/* Share Options Bottom Sheet */}
+        <BottomSheet visible={showShareOptions} onClose={() => setShowShareOptions(false)}>
+          <Text style={styles.shareSheetTitle}>{t('screens.quranShare.shareQuranVerse')}</Text>
           <BottomSheetItem
-            key={surah.number}
-            label={`${surah.number}. ${surah.name}`}
-            onPress={() => {
-              setSelectedSurahNumber(surah.number);
-              setCurrentVerse(1);
-              setShowSurahPicker(false);
-            }}
-            icon={selectedSurahNumber === surah.number ? (
-              <Icon name="check" size="sm" color={colors.emerald} />
-            ) : (
-              <Text style={styles.surahArabicList}>{surah.arabicName}</Text>
-            )}
+            label={t('screens.quranShare.shareAsPost')}
+            icon={<Icon name="image" size="sm" color={colors.emerald} />}
+            onPress={handleShareAsPost}
           />
-        ))}
-      </BottomSheet>
-
-      {/* Share Options Bottom Sheet */}
-      <BottomSheet visible={showShareOptions} onClose={() => setShowShareOptions(false)}>
-        <Text style={styles.shareSheetTitle}>{t('screens.quranShare.shareQuranVerse')}</Text>
-        <BottomSheetItem
-          label={t('screens.quranShare.shareAsPost')}
-          icon={<Icon name="image" size="sm" color={colors.emerald} />}
-          onPress={handleShareAsPost}
-        />
-        <BottomSheetItem
-          label={t('screens.quranShare.shareAsStory')}
-          icon={<Icon name="play" size="sm" color={colors.gold} />}
-          onPress={handleShareAsStory}
-        />
-        <BottomSheetItem
-          label={t('screens.quranShare.copyText')}
-          icon={<Icon name="link" size="sm" color={colors.text.secondary} />}
-          onPress={handleCopyText}
-        />
-        <BottomSheetItem
-          label={t('screens.quranShare.shareImage')}
-          icon={<Icon name="share" size="sm" color={colors.emerald} />}
-          onPress={() => setShowShareOptions(false)}
-        />
-      </BottomSheet>
-    </View>
+          <BottomSheetItem
+            label={t('screens.quranShare.shareAsStory')}
+            icon={<Icon name="play" size="sm" color={colors.gold} />}
+            onPress={handleShareAsStory}
+          />
+          <BottomSheetItem
+            label={t('screens.quranShare.copyText')}
+            icon={<Icon name="link" size="sm" color={colors.text.secondary} />}
+            onPress={handleCopyText}
+          />
+          <BottomSheetItem
+            label={t('screens.quranShare.shareImage')}
+            icon={<Icon name="share" size="sm" color={colors.emerald} />}
+            onPress={() => setShowShareOptions(false)}
+          />
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

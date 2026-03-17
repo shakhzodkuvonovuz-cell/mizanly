@@ -26,6 +26,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { Circle } from '@/types';
 import { postsApi, uploadApi, circlesApi, draftsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Visibility = 'PUBLIC' | 'FOLLOWERS' | 'CIRCLE';
 
@@ -229,401 +230,404 @@ export default function CreatePostScreen() {
     : t(visibilityOption.labelKey);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
-          <Icon name="x" size="md" color={colors.text.primary} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
-        <GradientButton
-          label={t('common.share')}
-          size="sm"
-          onPress={() => canPost && createMutation.mutate()}
-          loading={createMutation.isPending}
-          disabled={!canPost}
-        />
-      </View>
-
-      {/* Draft restored banner */}
-      {showDraftBanner && (
-        <View style={styles.draftBanner}>
-          <Icon name="clock" size="sm" color={colors.gold} />
-          <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
-          <TouchableOpacity onPress={() => setShowDraftBanner(false)} hitSlop={8}>
-            <Icon name="x" size="xs" color={colors.text.secondary} />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+            <Icon name="x" size="md" color={colors.text.primary} />
           </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
+          <GradientButton
+            label={t('common.share')}
+            size="sm"
+            onPress={() => canPost && createMutation.mutate()}
+            loading={createMutation.isPending}
+            disabled={!canPost}
+          />
         </View>
-      )}
 
-      <ScrollView
-        style={styles.body}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.bodyContent}
-      >
-        {/* User row */}
-        <View style={styles.userRow}>
-          <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="md" />
-          <View>
-            <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
-            {/* Visibility picker */}
-            <TouchableOpacity
-              style={styles.visibilityPill}
-              onPress={() => setShowVisibility((v) => !v)}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <Icon name={visibilityOption.iconName} size={12} color={colors.text.secondary} />
-                <Text style={styles.visibilityPillText}>{pillText}</Text>
-                <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
-              </View>
+        {/* Draft restored banner */}
+        {showDraftBanner && (
+          <View style={styles.draftBanner}>
+            <Icon name="clock" size="sm" color={colors.gold} />
+            <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
+            <TouchableOpacity onPress={() => setShowDraftBanner(false)} hitSlop={8}>
+              <Icon name="x" size="xs" color={colors.text.secondary} />
             </TouchableOpacity>
           </View>
-        </View>
+        )}
 
-        {showVisibility && (
-          <View style={styles.visibilityMenu}>
-            {VISIBILITY_KEYS.map((opt) => (
+        <ScrollView
+          style={styles.body}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.bodyContent}
+        >
+          {/* User row */}
+          <View style={styles.userRow}>
+            <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="md" />
+            <View>
+              <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
+              {/* Visibility picker */}
               <TouchableOpacity
-                key={opt.value}
-                style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
-                onPress={() => {
-                  setVisibility(opt.value);
-                  setShowVisibility(false);
-                  if (opt.value === 'CIRCLE') setShowCirclePicker(true);
-                }}
+                style={styles.visibilityPill}
+                onPress={() => setShowVisibility((v) => !v)}
               >
-                <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
-                <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
-                  {t(opt.labelKey)}
-                </Text>
-                {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Circle picker — shown when CIRCLE visibility is active */}
-        {visibility === 'CIRCLE' && (
-          <TouchableOpacity
-            style={styles.circlePill}
-            onPress={() => setShowCirclePicker(true)}
-          >
-            <Text style={styles.circlePillText}>
-              {selectedCircle
-                ? selectedCircle.name
-                : t('compose.chooseCircle')}
-            </Text>
-            <Icon name="chevron-right" size="sm" color={colors.emerald} />
-          </TouchableOpacity>
-        )}
-
-        {/* Caption input */}
-        <TextInput
-          ref={inputRef}
-          style={styles.input}
-          placeholder={t('compose.whatsOnYourMind')}
-          placeholderTextColor={colors.text.tertiary}
-          accessibilityLabel={t('accessibility.postContent')}
-          value={content}
-          onChangeText={(text) => {
-            setContent(text);
-
-            // Detect if typing a hashtag or mention
-            const cursorPos = text.length;
-            const textBeforeCursor = text.slice(0, cursorPos);
-
-            // Check for hashtag pattern: #word
-            const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
-            if (hashMatch) {
-              setAutocompleteType('hashtag');
-              setShowAutocomplete(true);
-              setAutocompleteQuery(hashMatch[1]);
-              return;
-            }
-
-            // Check for mention pattern: @word
-            const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
-            if (mentionMatch) {
-              setAutocompleteType('mention');
-              setShowAutocomplete(true);
-              setAutocompleteQuery(mentionMatch[1]);
-              return;
-            }
-
-            // If no pattern matched, hide autocomplete
-            if (showAutocomplete) {
-              setShowAutocomplete(false);
-              setAutocompleteType(null);
-              setAutocompleteQuery('');
-            }
-          }}
-          multiline
-          maxLength={2200}
-          autoFocus
-        />
-
-        {/* Premium glassmorphism media previews */}
-        {media.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.mediaRow}
-            contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.base }}
-          >
-            {media.map((item, idx) => (
-              <Animated.View key={idx} entering={FadeInUp.delay(idx * 50)} style={styles.mediaCard}>
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.mediaCardGradient}
-                >
-                  <Image source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
-                  {item.type === 'video' && (
-                    <LinearGradient
-                      colors={['rgba(0,0,0,0.6)', 'transparent']}
-                      style={styles.videoBadgeGradient}
-                    >
-                      <Icon name="play" size={12} color="#fff" />
-                    </LinearGradient>
-                  )}
-                  <TouchableOpacity
-                    style={styles.removeMedia}
-                    onPress={() => removeMedia(idx)}
-                    hitSlop={4}
-                  >
-                    <LinearGradient
-                      colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
-                      style={styles.removeMediaGradient}
-                    >
-                      <Icon name="x" size={12} color="#fff" />
-                    </LinearGradient>
-                  </TouchableOpacity>
-                </LinearGradient>
-              </Animated.View>
-            ))}
-            {media.length < 10 && (
-              <TouchableOpacity style={styles.addMoreMedia} onPress={pickMedia}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
-                  style={styles.addMoreMediaGradient}
-                >
-                  <Icon name="plus" size="md" color={colors.emerald} />
-                </LinearGradient>
-              </TouchableOpacity>
-            )}
-          </ScrollView>
-        )}
-      </ScrollView>
-
-      {/* Circle picker */}
-      <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
-        <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
-        {circlesQuery.isLoading ? (
-          <View style={styles.skeletonList}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <View key={i} style={styles.skeletonRow}>
-                <Skeleton.Circle size={36} />
-                <View style={{ flex: 1, gap: spacing.xs }}>
-                  <Skeleton.Rect width={120} height={14} />
-                  <Skeleton.Rect width={80} height={11} />
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <Icon name={visibilityOption.iconName} size={12} color={colors.text.secondary} />
+                  <Text style={styles.visibilityPillText}>{pillText}</Text>
+                  <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
                 </View>
-              </View>
-            ))}
+              </TouchableOpacity>
+            </View>
           </View>
-        ) : circles.length === 0 ? (
-          <View style={styles.emptyCircles}>
-            <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
-              <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
+
+          {showVisibility && (
+            <View style={styles.visibilityMenu}>
+              {VISIBILITY_KEYS.map((opt) => (
+                <TouchableOpacity
+                  key={opt.value}
+                  style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
+                  onPress={() => {
+                    setVisibility(opt.value);
+                    setShowVisibility(false);
+                    if (opt.value === 'CIRCLE') setShowCirclePicker(true);
+                  }}
+                >
+                  <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
+                  <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>
+                    {t(opt.labelKey)}
+                  </Text>
+                  {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Circle picker — shown when CIRCLE visibility is active */}
+          {visibility === 'CIRCLE' && (
+            <TouchableOpacity
+              style={styles.circlePill}
+              onPress={() => setShowCirclePicker(true)}
+            >
+              <Text style={styles.circlePillText}>
+                {selectedCircle
+                  ? selectedCircle.name
+                  : t('compose.chooseCircle')}
+              </Text>
               <Icon name="chevron-right" size="sm" color={colors.emerald} />
             </TouchableOpacity>
-          </View>
-        ) : (
-          circles.map((c) => (
-            <BottomSheetItem
-              key={c.id}
-              label={c.name}
-              icon={
-                <View style={styles.circleIconWrap}>
-                  <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
-                </View>
+          )}
+
+          {/* Caption input */}
+          <TextInput
+            ref={inputRef}
+            style={styles.input}
+            placeholder={t('compose.whatsOnYourMind')}
+            placeholderTextColor={colors.text.tertiary}
+            accessibilityLabel={t('accessibility.postContent')}
+            value={content}
+            onChangeText={(text) => {
+              setContent(text);
+
+              // Detect if typing a hashtag or mention
+              const cursorPos = text.length;
+              const textBeforeCursor = text.slice(0, cursorPos);
+
+              // Check for hashtag pattern: #word
+              const hashMatch = textBeforeCursor.match(/#([a-zA-Z0-9_\u0600-\u06FF]*)$/);
+              if (hashMatch) {
+                setAutocompleteType('hashtag');
+                setShowAutocomplete(true);
+                setAutocompleteQuery(hashMatch[1]);
+                return;
               }
-              onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
-            />
-          ))
-        )}
-      </BottomSheet>
 
-      {/* Upload progress overlay */}
-      {uploading && (
-        <View style={styles.uploadOverlay}>
-          <Skeleton.Circle size={48} />
-          <Text style={styles.uploadText}>{t('compose.uploadingMedia')}</Text>
-        </View>
-      )}
+              // Check for mention pattern: @word
+              const mentionMatch = textBeforeCursor.match(/@([a-zA-Z0-9_\.]*)$/);
+              if (mentionMatch) {
+                setAutocompleteType('mention');
+                setShowAutocomplete(true);
+                setAutocompleteQuery(mentionMatch[1]);
+                return;
+              }
 
-      {/* Location display */}
-      {location && (
-        <View style={styles.locationPill}>
-          <Icon name="map-pin" size="xs" color={colors.emerald} />
-          <Text style={styles.locationPillText}>{location.name}</Text>
-          <TouchableOpacity onPress={() => setLocation(null)} hitSlop={8}>
-            <Icon name="x" size="xs" color={colors.text.tertiary} />
-          </TouchableOpacity>
-        </View>
-      )}
+              // If no pattern matched, hide autocomplete
+              if (showAutocomplete) {
+                setShowAutocomplete(false);
+                setAutocompleteType(null);
+                setAutocompleteQuery('');
+              }
+            }}
+            multiline
+            maxLength={2200}
+            autoFocus
+          />
 
-      {/* Autocomplete dropdown */}
-      <Autocomplete
-        visible={showAutocomplete}
-        type={autocompleteType || 'hashtag'}
-        query={autocompleteQuery}
-        onSelect={(value) => {
-          // Find cursor position and replace the partial tag
-          const cursorPos = inputRef.current?._lastNativeText?.length ?? content.length;
-          const lastHashIndex = content.lastIndexOf('#', cursorPos - 1);
-          const lastAtIndex = content.lastIndexOf('@', cursorPos - 1);
-
-          let newContent = content;
-          if (autocompleteType === 'hashtag' && lastHashIndex !== -1) {
-            // Replace from # to cursor with the selected hashtag
-            const before = content.slice(0, lastHashIndex);
-            const after = content.slice(cursorPos);
-            newContent = before + value + ' ' + after;
-          } else if (autocompleteType === 'mention' && lastAtIndex !== -1) {
-            // Replace from @ to cursor with the selected mention
-            const before = content.slice(0, lastAtIndex);
-            const after = content.slice(cursorPos);
-            newContent = before + value + ' ' + after;
-          }
-          setContent(newContent);
-        }}
-        onClose={() => {
-          setShowAutocomplete(false);
-          setAutocompleteType(null);
-          setAutocompleteQuery('');
-        }}
-      />
-
-      {/* Location Picker */}
-      <LocationPicker
-        visible={showLocationPicker}
-        onClose={() => setShowLocationPicker(false)}
-        onSelect={(loc) => setLocation(loc)}
-      />
-
-      {/* Premium gradient toolbar */}
-      <LinearGradient
-        colors={['transparent', 'rgba(13,17,23,0.95)', colors.dark.bg]}
-        locations={[0, 0.3, 1]}
-        style={styles.toolbarGradient}
-      >
-        <View style={styles.toolbar}>
-          <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
-              style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
+          {/* Premium glassmorphism media previews */}
+          {media.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.mediaRow}
+              contentContainerStyle={{ gap: spacing.sm, paddingRight: spacing.base }}
             >
-              <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : colors.text.secondary} />
-              {media.length > 0 && (
-                <View style={styles.mediaBadge}>
-                  <Text style={styles.mediaBadgeText}>{media.length}</Text>
-                </View>
+              {media.map((item, idx) => (
+                <Animated.View key={idx} entering={FadeInUp.delay(idx * 50)} style={styles.mediaCard}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.mediaCardGradient}
+                  >
+                    <Image source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
+                    {item.type === 'video' && (
+                      <LinearGradient
+                        colors={['rgba(0,0,0,0.6)', 'transparent']}
+                        style={styles.videoBadgeGradient}
+                      >
+                        <Icon name="play" size={12} color="#fff" />
+                      </LinearGradient>
+                    )}
+                    <TouchableOpacity
+                      style={styles.removeMedia}
+                      onPress={() => removeMedia(idx)}
+                      hitSlop={4}
+                    >
+                      <LinearGradient
+                        colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                        style={styles.removeMediaGradient}
+                      >
+                        <Icon name="x" size={12} color="#fff" />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </LinearGradient>
+                </Animated.View>
+              ))}
+              {media.length < 10 && (
+                <TouchableOpacity style={styles.addMoreMedia} onPress={pickMedia}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
+                    style={styles.addMoreMediaGradient}
+                  >
+                    <Icon name="plus" size="md" color={colors.emerald} />
+                  </LinearGradient>
+                </TouchableOpacity>
               )}
-            </LinearGradient>
-          </TouchableOpacity>
+            </ScrollView>
+          )}
+        </ScrollView>
 
-          <TouchableOpacity
-            hitSlop={8}
-            style={styles.toolbarBtn}
-            onPress={() => setShowLocationPicker(true)}
-          >
-            <LinearGradient
-              colors={location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
-              style={styles.toolbarBtnGradient}
-            >
-              <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
-            </LinearGradient>
-          </TouchableOpacity>
+        {/* Circle picker */}
+        <BottomSheet visible={showCirclePicker} onClose={() => setShowCirclePicker(false)}>
+          <Text style={styles.sheetTitle}>{t('compose.chooseCircle')}</Text>
+          {circlesQuery.isLoading ? (
+            <View style={styles.skeletonList}>
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} style={styles.skeletonRow}>
+                  <Skeleton.Circle size={36} />
+                  <View style={{ flex: 1, gap: spacing.xs }}>
+                    <Skeleton.Rect width={120} height={14} />
+                    <Skeleton.Rect width={80} height={11} />
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : circles.length === 0 ? (
+            <View style={styles.emptyCircles}>
+              <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
+              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+                <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
+                <Icon name="chevron-right" size="sm" color={colors.emerald} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            circles.map((c) => (
+              <BottomSheetItem
+                key={c.id}
+                label={c.name}
+                icon={
+                  <View style={styles.circleIconWrap}>
+                    <Text style={styles.circleEmoji}>{c.emoji ?? '●'}</Text>
+                  </View>
+                }
+                onPress={() => { setCircleId(c.id); setShowCirclePicker(false); }}
+              />
+            ))
+          )}
+        </BottomSheet>
 
-          <TouchableOpacity
-            hitSlop={8}
-            style={styles.toolbarBtn}
-            onPress={() => {
-              setAutocompleteType('hashtag');
-              setShowAutocomplete(true);
-              setAutocompleteQuery('');
-              inputRef.current?.focus();
-            }}
-          >
-            <LinearGradient
-              colors={showAutocomplete && autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
-              style={styles.toolbarBtnGradient}
-            >
-              <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            hitSlop={8}
-            style={styles.toolbarBtn}
-            onPress={() => {
-              setAutocompleteType('mention');
-              setShowAutocomplete(true);
-              setAutocompleteQuery('');
-              inputRef.current?.focus();
-            }}
-          >
-            <LinearGradient
-              colors={showAutocomplete && autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
-              style={styles.toolbarBtnGradient}
-            >
-              <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <Pressable
-            style={styles.toolbarBtn}
-            onPress={async () => {
-              try {
-                await draftsApi.save('SAF', {
-                  content,
-                  mediaUrls: media.map(m => m.uri),
-                  mediaTypes: media.map(m => m.type),
-                  visibility,
-                  circleId,
-                });
-                Alert.alert(t('compose.saved'), t('compose.draftSavedToAccount'));
-              } catch {
-                Alert.alert(t('common.error'), t('compose.failedToSaveDraft'));
-              }
-            }}
-            accessibilityLabel={t('accessibility.saveDraftToCloud')}
-            accessibilityRole="button"
-          >
-            <LinearGradient
-              colors={['rgba(200,150,62,0.1)', 'rgba(200,150,62,0.05)']}
-              style={styles.toolbarBtnGradient}
-            >
-              <Icon name="clock" size="sm" color={colors.gold} />
-            </LinearGradient>
-          </Pressable>
-
-          <View style={styles.toolbarSpacer} />
-
-          {/* Animated char count with glow effect */}
-          <View style={styles.charCountContainer}>
-            <LinearGradient
-              colors={content.length > 2000 ? ['rgba(248,81,73,0.2)', 'transparent'] : ['rgba(10,123,79,0.1)', 'transparent']}
-              style={styles.charCountGlow}
-            >
-              <CharCountRing current={content.length} max={2200} />
-            </LinearGradient>
+        {/* Upload progress overlay */}
+        {uploading && (
+          <View style={styles.uploadOverlay}>
+            <Skeleton.Circle size={48} />
+            <Text style={styles.uploadText}>{t('compose.uploadingMedia')}</Text>
           </View>
-        </View>
-      </LinearGradient>
-    </SafeAreaView>
+        )}
+
+        {/* Location display */}
+        {location && (
+          <View style={styles.locationPill}>
+            <Icon name="map-pin" size="xs" color={colors.emerald} />
+            <Text style={styles.locationPillText}>{location.name}</Text>
+            <TouchableOpacity onPress={() => setLocation(null)} hitSlop={8}>
+              <Icon name="x" size="xs" color={colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Autocomplete dropdown */}
+        <Autocomplete
+          visible={showAutocomplete}
+          type={autocompleteType || 'hashtag'}
+          query={autocompleteQuery}
+          onSelect={(value) => {
+            // Find cursor position and replace the partial tag
+            const cursorPos = inputRef.current?._lastNativeText?.length ?? content.length;
+            const lastHashIndex = content.lastIndexOf('#', cursorPos - 1);
+            const lastAtIndex = content.lastIndexOf('@', cursorPos - 1);
+
+            let newContent = content;
+            if (autocompleteType === 'hashtag' && lastHashIndex !== -1) {
+              // Replace from # to cursor with the selected hashtag
+              const before = content.slice(0, lastHashIndex);
+              const after = content.slice(cursorPos);
+              newContent = before + value + ' ' + after;
+            } else if (autocompleteType === 'mention' && lastAtIndex !== -1) {
+              // Replace from @ to cursor with the selected mention
+              const before = content.slice(0, lastAtIndex);
+              const after = content.slice(cursorPos);
+              newContent = before + value + ' ' + after;
+            }
+            setContent(newContent);
+          }}
+          onClose={() => {
+            setShowAutocomplete(false);
+            setAutocompleteType(null);
+            setAutocompleteQuery('');
+          }}
+        />
+
+        {/* Location Picker */}
+        <LocationPicker
+          visible={showLocationPicker}
+          onClose={() => setShowLocationPicker(false)}
+          onSelect={(loc) => setLocation(loc)}
+        />
+
+        {/* Premium gradient toolbar */}
+        <LinearGradient
+          colors={['transparent', 'rgba(13,17,23,0.95)', colors.dark.bg]}
+          locations={[0, 0.3, 1]}
+          style={styles.toolbarGradient}
+        >
+          <View style={styles.toolbar}>
+            <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
+                style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
+              >
+                <Icon name="image" size="md" color={media.length > 0 ? colors.emerald : colors.text.secondary} />
+                {media.length > 0 && (
+                  <View style={styles.mediaBadge}>
+                    <Text style={styles.mediaBadgeText}>{media.length}</Text>
+                  </View>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              hitSlop={8}
+              style={styles.toolbarBtn}
+              onPress={() => setShowLocationPicker(true)}
+            >
+              <LinearGradient
+                colors={location ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              hitSlop={8}
+              style={styles.toolbarBtn}
+              onPress={() => {
+                setAutocompleteType('hashtag');
+                setShowAutocomplete(true);
+                setAutocompleteQuery('');
+                inputRef.current?.focus();
+              }}
+            >
+              <LinearGradient
+                colors={showAutocomplete && autocompleteType === 'hashtag' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              hitSlop={8}
+              style={styles.toolbarBtn}
+              onPress={() => {
+                setAutocompleteType('mention');
+                setShowAutocomplete(true);
+                setAutocompleteQuery('');
+                inputRef.current?.focus();
+              }}
+            >
+              <LinearGradient
+                colors={showAutocomplete && autocompleteType === 'mention' ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <Pressable
+              style={styles.toolbarBtn}
+              onPress={async () => {
+                try {
+                  await draftsApi.save('SAF', {
+                    content,
+                    mediaUrls: media.map(m => m.uri),
+                    mediaTypes: media.map(m => m.type),
+                    visibility,
+                    circleId,
+                  });
+                  Alert.alert(t('compose.saved'), t('compose.draftSavedToAccount'));
+                } catch {
+                  Alert.alert(t('common.error'), t('compose.failedToSaveDraft'));
+                }
+              }}
+              accessibilityLabel={t('accessibility.saveDraftToCloud')}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={['rgba(200,150,62,0.1)', 'rgba(200,150,62,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="clock" size="sm" color={colors.gold} />
+              </LinearGradient>
+            </Pressable>
+
+            <View style={styles.toolbarSpacer} />
+
+            {/* Animated char count with glow effect */}
+            <View style={styles.charCountContainer}>
+              <LinearGradient
+                colors={content.length > 2000 ? ['rgba(248,81,73,0.2)', 'transparent'] : ['rgba(10,123,79,0.1)', 'transparent']}
+                style={styles.charCountGlow}
+              >
+                <CharCountRing current={content.length} max={2200} />
+              </LinearGradient>
+            </View>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

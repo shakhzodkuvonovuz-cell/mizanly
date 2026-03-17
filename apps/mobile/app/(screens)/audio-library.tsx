@@ -17,6 +17,7 @@ import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack as ApiAudioTrack } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -212,159 +213,162 @@ export default function AudioLibraryScreen() {
   }, []);
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('audioLibrary.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('audioLibrary.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchBar}
-        >
-          <Icon name="search" size="sm" color={colors.text.tertiary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('audioLibrary.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
-              <Icon name="x" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
-          )}
-        </LinearGradient>
-      </View>
-
-      {/* Categories */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
-      >
-        <TouchableOpacity
-          style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
-          onPress={() => setFavoritesOnly(!favoritesOnly)}
-        >
-          <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : colors.text.tertiary} />
-          <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
-        </TouchableOpacity>
-        {CATEGORIES.map((category) => (
-          <TouchableOpacity
-            key={category}
-            style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
-            onPress={() => setActiveCategory(category)}
-          >
-            <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
-              {t(`audioLibrary.category.${category.toLowerCase()}`)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Audio List */}
-      <FlatList
-        data={filteredAudio}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.audioList}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
-        renderItem={({ item, index }) => (
-          <AudioCard
-            track={item}
-            isPlaying={isPlaying}
-            isCurrentTrack={currentTrackId === item.id}
-            onPlay={() => handlePlay(item.id)}
-            onSelect={() => handleSelect(item)}
-            onToggleFavorite={() => toggleFavorite(item.id)}
-            index={index}
-          />
-        )}
-        ListEmptyComponent={
-          isLoading ? (
-            <View style={{ padding: spacing.base, gap: spacing.md }}>
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon="music"
-              title={t('audioLibrary.emptyState.title')}
-              subtitle={t('audioLibrary.emptyState.subtitle')}
-            />
-          )
-        }
-        refreshControl={
-          <RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />
-        }
-        showsVerticalScrollIndicator={false}
-      />
-
-      {/* Now Playing Bar */}
-      {currentTrackId && (
-        <Animated.View entering={FadeInUp} style={styles.nowPlayingBar}>
+        {/* Search Bar */}
+        <View style={styles.searchContainer}>
           <LinearGradient
-            colors={['rgba(10,123,79,0.95)', 'rgba(8,95,39,0.98)']}
-            style={styles.nowPlayingGradient}
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchBar}
           >
-            <View style={styles.nowPlayingContent}>
-              <Waveform isPlaying={isPlaying} color="#fff" />
-              <View style={styles.nowPlayingInfo}>
-                <Text style={styles.nowPlayingTitle} numberOfLines={1}>
-                  {allTracks.find(t => t.id === currentTrackId)?.title}
-                </Text>
-                <Text style={styles.nowPlayingArtist} numberOfLines={1}>
-                  {allTracks.find(t => t.id === currentTrackId)?.artist}
-                </Text>
-              </View>
-              <TouchableOpacity onPress={handleUseSound} style={styles.nowPlayingUseButton}>
-                <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
-                <Icon name="chevron-right" size="xs" color="#fff" />
+            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('audioLibrary.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="x" size="sm" color={colors.text.tertiary} />
               </TouchableOpacity>
-            </View>
+            )}
           </LinearGradient>
-        </Animated.View>
-      )}
+        </View>
 
-      {/* Selected Track Overlay */}
-      {selectedTrack && (
-        <View style={styles.overlay}>
-          <TouchableOpacity style={styles.overlayBg} onPress={() => setSelectedTrack(null)} />
-          <Animated.View entering={FadeInUp} style={styles.selectedTrackCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.95)', 'rgba(28,35,51,0.98)']}
-              style={styles.selectedTrackGradient}
+        {/* Categories */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+        >
+          <TouchableOpacity
+            style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
+            onPress={() => setFavoritesOnly(!favoritesOnly)}
+          >
+            <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : colors.text.tertiary} />
+            <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
+          </TouchableOpacity>
+          {CATEGORIES.map((category) => (
+            <TouchableOpacity
+              key={category}
+              style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
+              onPress={() => setActiveCategory(category)}
             >
-              <View style={styles.selectedTrackHeader}>
-                <Icon name="music" size="md" color={colors.emerald} />
-                <Text style={styles.selectedTrackTitle}>{selectedTrack.title}</Text>
+              <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
+                {t(`audioLibrary.category.${category.toLowerCase()}`)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        {/* Audio List */}
+        <FlatList
+          data={filteredAudio}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.audioList}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
+          renderItem={({ item, index }) => (
+            <AudioCard
+              track={item}
+              isPlaying={isPlaying}
+              isCurrentTrack={currentTrackId === item.id}
+              onPlay={() => handlePlay(item.id)}
+              onSelect={() => handleSelect(item)}
+              onToggleFavorite={() => toggleFavorite(item.id)}
+              index={index}
+            />
+          )}
+          ListEmptyComponent={
+            isLoading ? (
+              <View style={{ padding: spacing.base, gap: spacing.md }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} />
+                ))}
               </View>
-              <Text style={styles.selectedTrackArtist}>{selectedTrack.artist}</Text>
-              <View style={styles.selectedTrackMeta}>
-                <Text style={styles.selectedTrackMetaText}>{selectedTrack.duration}</Text>
-                <Text style={styles.selectedTrackMetaText}>{selectedTrack.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
-                <Text style={styles.selectedTrackMetaText}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
-              </View>
-              <GradientButton
-                label={t('audioLibrary.useThisSound')}
-                onPress={handleUseSound}
-                style={styles.selectedTrackButton}
+            ) : (
+              <EmptyState
+                icon="music"
+                title={t('audioLibrary.emptyState.title')}
+                subtitle={t('audioLibrary.emptyState.subtitle')}
               />
-              <TouchableOpacity
-                onPress={() => setSelectedTrack(null)}
-                style={styles.selectedTrackCancel}
-              >
-                <Text style={styles.selectedTrackCancelText}>{t('common.cancel')}</Text>
-              </TouchableOpacity>
+            )
+          }
+          refreshControl={
+            <RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />
+          }
+          showsVerticalScrollIndicator={false}
+        />
+
+        {/* Now Playing Bar */}
+        {currentTrackId && (
+          <Animated.View entering={FadeInUp} style={styles.nowPlayingBar}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.95)', 'rgba(8,95,39,0.98)']}
+              style={styles.nowPlayingGradient}
+            >
+              <View style={styles.nowPlayingContent}>
+                <Waveform isPlaying={isPlaying} color="#fff" />
+                <View style={styles.nowPlayingInfo}>
+                  <Text style={styles.nowPlayingTitle} numberOfLines={1}>
+                    {allTracks.find(t => t.id === currentTrackId)?.title}
+                  </Text>
+                  <Text style={styles.nowPlayingArtist} numberOfLines={1}>
+                    {allTracks.find(t => t.id === currentTrackId)?.artist}
+                  </Text>
+                </View>
+                <TouchableOpacity onPress={handleUseSound} style={styles.nowPlayingUseButton}>
+                  <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
+                  <Icon name="chevron-right" size="xs" color="#fff" />
+                </TouchableOpacity>
+              </View>
             </LinearGradient>
           </Animated.View>
-        </View>
-      )}
-    </View>
+        )}
+
+        {/* Selected Track Overlay */}
+        {selectedTrack && (
+          <View style={styles.overlay}>
+            <TouchableOpacity style={styles.overlayBg} onPress={() => setSelectedTrack(null)} />
+            <Animated.View entering={FadeInUp} style={styles.selectedTrackCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.95)', 'rgba(28,35,51,0.98)']}
+                style={styles.selectedTrackGradient}
+              >
+                <View style={styles.selectedTrackHeader}>
+                  <Icon name="music" size="md" color={colors.emerald} />
+                  <Text style={styles.selectedTrackTitle}>{selectedTrack.title}</Text>
+                </View>
+                <Text style={styles.selectedTrackArtist}>{selectedTrack.artist}</Text>
+                <View style={styles.selectedTrackMeta}>
+                  <Text style={styles.selectedTrackMetaText}>{selectedTrack.duration}</Text>
+                  <Text style={styles.selectedTrackMetaText}>{selectedTrack.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
+                  <Text style={styles.selectedTrackMetaText}>{t(`audioLibrary.category.${selectedTrack.category.toLowerCase()}`)}</Text>
+                </View>
+                <GradientButton
+                  label={t('audioLibrary.useThisSound')}
+                  onPress={handleUseSound}
+                  style={styles.selectedTrackButton}
+                />
+                <TouchableOpacity
+                  onPress={() => setSelectedTrack(null)}
+                  style={styles.selectedTrackCancel}
+                >
+                  <Text style={styles.selectedTrackCancelText}>{t('common.cancel')}</Text>
+                </TouchableOpacity>
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

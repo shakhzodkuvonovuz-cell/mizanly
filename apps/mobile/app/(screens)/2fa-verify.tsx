@@ -26,6 +26,7 @@ import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { ValidateTwoFactorDto, BackupCodeDto } from '@/types/twoFactor';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -187,112 +188,115 @@ export default function TwoFactorVerifyScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.2faVerify.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.2faVerify.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <View style={styles.content}>
-        {/* Hero Icon */}
-        <Animated.View
-          entering={FadeInUp.duration(600)}
-          style={styles.heroContainer}
-        >
-          <LinearGradient
-            colors={[colors.emerald, colors.gold]}
-            style={styles.heroCircle}
-          >
-            <Icon name="lock" size="xl" color="#fff" />
-          </LinearGradient>
-          <Text style={styles.heroTitle}>{t('screens.2faVerify.heroTitle')}</Text>
-          <Text style={styles.heroSubtitle}>
-            {t('screens.2faVerify.heroSubtitle')}
-          </Text>
-        </Animated.View>
-
-        {/* Input Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.inputSection}>
-          {mode === 'code' ? renderCodeInput() : renderBackupInput()}
-
-          {/* Mode Toggle */}
-          <TouchableOpacity
-            style={styles.modeToggle}
-            onPress={() => {
-              setMode(mode === 'code' ? 'backup' : 'code');
-              setError(false);
-              if (mode === 'code') {
-                setTimeout(() => backupInputRef.current?.focus(), 100);
-              }
-            }}
-            disabled={loading}
-          >
-            <Text style={styles.modeToggleText}>
-              {mode === 'code' ? t('screens.2faVerify.useBackupCodeInstead') : t('screens.2faVerify.useAuthenticatorCodeInstead')}
-            </Text>
-            <Icon name={mode === 'code' ? 'lock' : 'phone'} size="xs" color={colors.emerald} />
-          </TouchableOpacity>
-
-          {/* Verify Button */}
-          <TouchableOpacity
-            style={styles.verifyButton}
-            onPress={handleVerify}
-            disabled={loading || (mode === 'code' && verificationCode.some(d => d === '')) || (mode === 'backup' && backupCode.length !== 6)}
+        <View style={styles.content}>
+          {/* Hero Icon */}
+          <Animated.View
+            entering={FadeInUp.duration(600)}
+            style={styles.heroContainer}
           >
             <LinearGradient
-              colors={loading
-                ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
-                : [colors.emerald, colors.gold]
-              }
-              style={styles.verifyGradient}
+              colors={[colors.emerald, colors.gold]}
+              style={styles.heroCircle}
             >
-              {loading ? (
-                <Icon name="loader" size="md" color="#fff" />
-              ) : (
-                <>
-                  <Text style={styles.verifyText}>{t('auth.verify')}</Text>
-                  <Icon name="check" size="md" color="#fff" />
-                </>
-              )}
+              <Icon name="lock" size="xl" color="#fff" />
             </LinearGradient>
-          </TouchableOpacity>
+            <Text style={styles.heroTitle}>{t('screens.2faVerify.heroTitle')}</Text>
+            <Text style={styles.heroSubtitle}>
+              {t('screens.2faVerify.heroSubtitle')}
+            </Text>
+          </Animated.View>
 
-          {/* Lost Access Link */}
-          <TouchableOpacity
-            style={styles.lostAccessLink}
-            onPress={() =>
-              Alert.alert(
-                t('screens.2faVerify.lostAccessTitle'),
-                t('screens.2faVerify.lostAccessMessage'),
-                [
-                  { text: t('common.cancel'), style: 'cancel' },
-                  { text: t('screens.2faVerify.lostAccessButtonContact'), onPress: () => {} },
-                ]
-              )
-            }
-          >
-            <Icon name="circle" size="xs" color={colors.text.tertiary} />
-            <Text style={styles.lostAccessText}>{t('screens.2faVerify.lostAccessLinkText')}</Text>
-          </TouchableOpacity>
-        </Animated.View>
+          {/* Input Section */}
+          <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.inputSection}>
+            {mode === 'code' ? renderCodeInput() : renderBackupInput()}
 
-        {/* Help Info */}
-        <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.helpInfo}>
-          <LinearGradient
-            colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-            style={styles.helpCard}
-          >
-            <Icon name="circle" size="sm" color={colors.emerald} />
-            <View style={styles.helpTextContainer}>
-              <Text style={styles.helpTitle}>{t('screens.2faVerify.helpTitle')}</Text>
-              <Text style={styles.helpDescription}>
-                {t('screens.2faVerify.helpDescription')}
+            {/* Mode Toggle */}
+            <TouchableOpacity
+              style={styles.modeToggle}
+              onPress={() => {
+                setMode(mode === 'code' ? 'backup' : 'code');
+                setError(false);
+                if (mode === 'code') {
+                  setTimeout(() => backupInputRef.current?.focus(), 100);
+                }
+              }}
+              disabled={loading}
+            >
+              <Text style={styles.modeToggleText}>
+                {mode === 'code' ? t('screens.2faVerify.useBackupCodeInstead') : t('screens.2faVerify.useAuthenticatorCodeInstead')}
               </Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
+              <Icon name={mode === 'code' ? 'lock' : 'phone'} size="xs" color={colors.emerald} />
+            </TouchableOpacity>
+
+            {/* Verify Button */}
+            <TouchableOpacity
+              style={styles.verifyButton}
+              onPress={handleVerify}
+              disabled={loading || (mode === 'code' && verificationCode.some(d => d === '')) || (mode === 'backup' && backupCode.length !== 6)}
+            >
+              <LinearGradient
+                colors={loading
+                  ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
+                  : [colors.emerald, colors.gold]
+                }
+                style={styles.verifyGradient}
+              >
+                {loading ? (
+                  <Icon name="loader" size="md" color="#fff" />
+                ) : (
+                  <>
+                    <Text style={styles.verifyText}>{t('auth.verify')}</Text>
+                    <Icon name="check" size="md" color="#fff" />
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Lost Access Link */}
+            <TouchableOpacity
+              style={styles.lostAccessLink}
+              onPress={() =>
+                Alert.alert(
+                  t('screens.2faVerify.lostAccessTitle'),
+                  t('screens.2faVerify.lostAccessMessage'),
+                  [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('screens.2faVerify.lostAccessButtonContact'), onPress: () => {} },
+                  ]
+                )
+              }
+            >
+              <Icon name="circle" size="xs" color={colors.text.tertiary} />
+              <Text style={styles.lostAccessText}>{t('screens.2faVerify.lostAccessLinkText')}</Text>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Help Info */}
+          <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.helpInfo}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.helpCard}
+            >
+              <Icon name="circle" size="sm" color={colors.emerald} />
+              <View style={styles.helpTextContainer}>
+                <Text style={styles.helpTitle}>{t('screens.2faVerify.helpTitle')}</Text>
+                <Text style={styles.helpDescription}>
+                  {t('screens.2faVerify.helpDescription')}
+                </Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </View>
       </View>
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

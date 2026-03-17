@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const VIDEO_PREVIEW_WIDTH = SCREEN_W - spacing.base * 2;
@@ -229,245 +230,248 @@ export default function CreateReelScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('createReel.title')}
-        leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
-        rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: t('common.share') }]}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('createReel.title')}
+          leftAction={{ icon: 'arrow-left', onPress: handleBack, accessibilityLabel: t('common.back') }}
+          rightActions={[{ icon: 'send', onPress: handleUpload, accessibilityLabel: t('common.share') }]}
+        />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
-        {/* Countdown Overlay */}
-        {countdown !== null && (
-          <View style={styles.countdownOverlay}>
-            <Animated.View style={[styles.countdownContainer, countdownStyle]}>
+        <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 }]}>
+          {/* Countdown Overlay */}
+          {countdown !== null && (
+            <View style={styles.countdownOverlay}>
+              <Animated.View style={[styles.countdownContainer, countdownStyle]}>
+                <LinearGradient
+                  colors={[colors.emerald, '#05593A']}
+                  style={styles.countdownCircle}
+                >
+                  <Text style={styles.countdownText}>{countdown}</Text>
+                </LinearGradient>
+              </Animated.View>
+            </View>
+          )}
+
+          {/* Video preview with focus ring */}
+          {video ? (
+            <Animated.View entering={FadeInUp} style={styles.videoContainer}>
+              {/* Focus ring */}
               <LinearGradient
-                colors={[colors.emerald, '#05593A']}
-                style={styles.countdownCircle}
+                colors={[colors.emerald, colors.gold, colors.emerald]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.focusRing}
               >
-                <Text style={styles.countdownText}>{countdown}</Text>
+                <View style={styles.videoInner}>
+                  <Video
+                    ref={videoRef}
+                    source={{ uri: video.uri }}
+                    style={styles.videoPreview}
+                    resizeMode={ResizeMode.COVER}
+                    useNativeControls
+                    isLooping
+                  />
+                </View>
               </LinearGradient>
+
+              {/* Video info badge */}
+              <View style={styles.videoInfoBadge}>
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)']}
+                  style={styles.videoInfoGradient}
+                >
+                  <Icon name="play" size={12} color="#fff" />
+                  <Text style={styles.videoInfoText}>
+                    {Math.floor(video.duration)}s
+                  </Text>
+                </LinearGradient>
+              </View>
+
+              <TouchableOpacity
+                style={styles.removeVideoButton}
+                onPress={removeVideo}
+                hitSlop={8}
+              >
+                <LinearGradient
+                  colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
+                  style={styles.removeVideoGradient}
+                >
+                  <Icon name="x" size="sm" color="#fff" />
+                </LinearGradient>
+              </TouchableOpacity>
             </Animated.View>
-          </View>
-        )}
-
-        {/* Video preview with focus ring */}
-        {video ? (
-          <Animated.View entering={FadeInUp} style={styles.videoContainer}>
-            {/* Focus ring */}
-            <LinearGradient
-              colors={[colors.emerald, colors.gold, colors.emerald]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.focusRing}
-            >
-              <View style={styles.videoInner}>
-                <Video
-                  ref={videoRef}
-                  source={{ uri: video.uri }}
-                  style={styles.videoPreview}
-                  resizeMode={ResizeMode.COVER}
-                  useNativeControls
-                  isLooping
-                />
-              </View>
-            </LinearGradient>
-
-            {/* Video info badge */}
-            <View style={styles.videoInfoBadge}>
+          ) : (
+            <TouchableOpacity style={styles.uploadPlaceholder} onPress={pickVideo}>
               <LinearGradient
-                colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.5)']}
-                style={styles.videoInfoGradient}
+                colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                style={styles.uploadPlaceholderGradient}
               >
-                <Icon name="play" size={12} color="#fff" />
-                <Text style={styles.videoInfoText}>
-                  {Math.floor(video.duration)}s
-                </Text>
-              </LinearGradient>
-            </View>
-
-            <TouchableOpacity
-              style={styles.removeVideoButton}
-              onPress={removeVideo}
-              hitSlop={8}
-            >
-              <LinearGradient
-                colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
-                style={styles.removeVideoGradient}
-              >
-                <Icon name="x" size="sm" color="#fff" />
+                <View style={styles.uploadIconContainer}>
+                  <Icon name="video" size="xl" color={colors.emerald} />
+                </View>
+                <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
+                <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
               </LinearGradient>
             </TouchableOpacity>
-          </Animated.View>
-        ) : (
-          <TouchableOpacity style={styles.uploadPlaceholder} onPress={pickVideo}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-              style={styles.uploadPlaceholderGradient}
-            >
-              <View style={styles.uploadIconContainer}>
-                <Icon name="video" size="xl" color={colors.emerald} />
-              </View>
-              <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
-              <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
+          )}
 
-        {/* Caption with glassmorphism card */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <LinearGradient
-              colors={[colors.gold, colors.emerald]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.sectionAccent}
-            />
-            <Text style={styles.sectionLabel}>{t('createReel.caption')}</Text>
-          </View>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.captionCard}
-          >
-            <TextInput
-              ref={captionInputRef}
-              style={styles.captionInput}
-              placeholder={t('createReel.captionPlaceholder')}
-              placeholderTextColor={colors.text.tertiary}
-              value={caption}
-              onChangeText={handleCaptionChange}
-              multiline
-              maxLength={500}
-              textAlignVertical="top"
-            />
-            <View style={styles.captionFooter}>
-              <CharCountRing current={caption.length} max={500} size={28} />
-            </View>
-          </LinearGradient>
-        </View>
-
-        {/* Premium Gradient Toolbar */}
-        <View style={styles.toolbarContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={styles.toolbarCard}
-          >
-            <TouchableOpacity
-              style={styles.toolbarButton}
-              onPress={() => handleToolbarPress('hashtag')}
-            >
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                style={styles.toolbarBtnGradient}
-              >
-                <Icon name="hash" size="md" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.toolbarLabel}>{t('createReel.hashtag')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.toolbarButton}
-              onPress={() => handleToolbarPress('mention')}
-            >
-              <LinearGradient
-                colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
-                style={styles.toolbarBtnGradient}
-              >
-                <Icon name="at-sign" size="md" color={colors.gold} />
-              </LinearGradient>
-              <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.toolbarButton} disabled>
-              <LinearGradient
-                colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
-                style={styles.toolbarBtnGradient}
-              >
-                <Icon name="music" size="md" color={colors.text.tertiary} />
-              </LinearGradient>
-              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.sound')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.toolbarButton} disabled>
-              <LinearGradient
-                colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
-                style={styles.toolbarBtnGradient}
-              >
-                <Icon name="repeat" size="md" color={colors.text.tertiary} />
-              </LinearGradient>
-              <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.duet')}</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </View>
-
-        {/* Extracted tags with premium badges */}
-        {(hashtags.length > 0 || mentions.length > 0) && (
-          <View style={styles.tagsSection}>
+          {/* Caption with glassmorphism card */}
+          <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <LinearGradient
-                colors={[colors.emerald, colors.gold]}
+                colors={[colors.gold, colors.emerald]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.sectionAccent}
               />
-              <Text style={styles.sectionLabel}>{t('createReel.tags')}</Text>
+              <Text style={styles.sectionLabel}>{t('createReel.caption')}</Text>
             </View>
-            <View style={styles.tagsRow}>
-              {hashtags.map(tag => (
-                <LinearGradient
-                  key={tag}
-                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.tagGradient}
-                >
-                  <Icon name="hash" size={12} color={colors.emerald} />
-                  <Text style={styles.tagText}>{tag}</Text>
-                </LinearGradient>
-              ))}
-              {mentions.map(mention => (
-                <LinearGradient
-                  key={mention}
-                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.tagGradient}
-                >
-                  <Icon name="at-sign" size={12} color={colors.gold} />
-                  <Text style={styles.tagTextGold}>{mention}</Text>
-                </LinearGradient>
-              ))}
-            </View>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.captionCard}
+            >
+              <TextInput
+                ref={captionInputRef}
+                style={styles.captionInput}
+                placeholder={t('createReel.captionPlaceholder')}
+                placeholderTextColor={colors.text.tertiary}
+                value={caption}
+                onChangeText={handleCaptionChange}
+                multiline
+                maxLength={500}
+                textAlignVertical="top"
+              />
+              <View style={styles.captionFooter}>
+                <CharCountRing current={caption.length} max={500} size={28} />
+              </View>
+            </LinearGradient>
           </View>
-        )}
-      </ScrollView>
 
-      {/* Autocomplete sheets */}
-      <BottomSheet
-        visible={showAutocomplete !== null}
-        onClose={() => setShowAutocomplete(null)}
-        snapPoint={0.5}
-      >
-        {showAutocomplete === 'hashtag' && (
-          <Autocomplete
-            type="hashtag"
-            query=""
-            onSelect={(item) => insertAtCursor(`#${item}`)}
-          />
-        )}
-        {showAutocomplete === 'mention' && (
-          <Autocomplete
-            type="mention"
-            query=""
-            onSelect={(item) => insertAtCursor(`@${item}`)}
-          />
-        )}
-      </BottomSheet>
-    </View>
+          {/* Premium Gradient Toolbar */}
+          <View style={styles.toolbarContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.toolbarCard}
+            >
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => handleToolbarPress('hashtag')}
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="hash" size="md" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.toolbarLabel}>{t('createReel.hashtag')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.toolbarButton}
+                onPress={() => handleToolbarPress('mention')}
+              >
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="at-sign" size="md" color={colors.gold} />
+                </LinearGradient>
+                <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.toolbarButton} disabled>
+                <LinearGradient
+                  colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="music" size="md" color={colors.text.tertiary} />
+                </LinearGradient>
+                <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.sound')}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.toolbarButton} disabled>
+                <LinearGradient
+                  colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="repeat" size="md" color={colors.text.tertiary} />
+                </LinearGradient>
+                <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.duet')}</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </View>
+
+          {/* Extracted tags with premium badges */}
+          {(hashtags.length > 0 || mentions.length > 0) && (
+            <View style={styles.tagsSection}>
+              <View style={styles.sectionHeader}>
+                <LinearGradient
+                  colors={[colors.emerald, colors.gold]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.sectionAccent}
+                />
+                <Text style={styles.sectionLabel}>{t('createReel.tags')}</Text>
+              </View>
+              <View style={styles.tagsRow}>
+                {hashtags.map(tag => (
+                  <LinearGradient
+                    key={tag}
+                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tagGradient}
+                  >
+                    <Icon name="hash" size={12} color={colors.emerald} />
+                    <Text style={styles.tagText}>{tag}</Text>
+                  </LinearGradient>
+                ))}
+                {mentions.map(mention => (
+                  <LinearGradient
+                    key={mention}
+                    colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.tagGradient}
+                  >
+                    <Icon name="at-sign" size={12} color={colors.gold} />
+                    <Text style={styles.tagTextGold}>{mention}</Text>
+                  </LinearGradient>
+                ))}
+              </View>
+            </View>
+          )}
+        </ScrollView>
+
+        {/* Autocomplete sheets */}
+        <BottomSheet
+          visible={showAutocomplete !== null}
+          onClose={() => setShowAutocomplete(null)}
+          snapPoint={0.5}
+        >
+          {showAutocomplete === 'hashtag' && (
+            <Autocomplete
+              type="hashtag"
+              query=""
+              onSelect={(item) => insertAtCursor(`#${item}`)}
+            />
+          )}
+          {showAutocomplete === 'mention' && (
+            <Autocomplete
+              type="mention"
+              query=""
+              onSelect={(item) => insertAtCursor(`@${item}`)}
+            />
+          )}
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

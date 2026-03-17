@@ -24,6 +24,7 @@ import { formatDistanceToNow } from 'date-fns';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const POST_MAX_LENGTH = 5000;
 
@@ -289,165 +290,168 @@ export default function CommunityPostsScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <View style={styles.container}>
-        <GlassHeader
-          title={t('communityPosts.title')}
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        />
-        <View style={styles.headerSpacer} />
+    <ScreenErrorBoundary>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('communityPosts.title')}
+            leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          />
+          <View style={styles.headerSpacer} />
 
-        {isOwnChannel && (
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.composeContainerOuter}
-            >
-              {selectedMediaList.length > 0 && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.mediaPreviewScroll}
-                  contentContainerStyle={styles.mediaPreviewContent}
-                >
-                  {selectedMediaList.map((media, idx) => (
-                    <View key={idx} style={styles.mediaPreviewItem}>
-                      <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
-                      <Pressable
-                        style={styles.mediaPreviewClose}
-                        onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== idx))}
-                        accessibilityLabel={t('communityPosts.removeSelectedMedia')}
-                        accessibilityRole="button"
+          {isOwnChannel && (
+            <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.composeContainerOuter}
+              >
+                {selectedMediaList.length > 0 && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.mediaPreviewScroll}
+                    contentContainerStyle={styles.mediaPreviewContent}
+                  >
+                    {selectedMediaList.map((media, idx) => (
+                      <View key={idx} style={styles.mediaPreviewItem}>
+                        <RNImage source={{ uri: media.uri }} style={styles.mediaPreview} resizeMode="cover" />
+                        <Pressable
+                          style={styles.mediaPreviewClose}
+                          onPress={() => setSelectedMediaList(prev => prev.filter((_, i) => i !== idx))}
+                          accessibilityLabel={t('communityPosts.removeSelectedMedia')}
+                          accessibilityRole="button"
+                        >
+                          <Icon name="x" size="xs" color={colors.text.primary} />
+                        </Pressable>
+                        {media.type === 'video' && (
+                          <View style={styles.videoBadge}>
+                            <Icon name="play" size={10} color="#fff" />
+                          </View>
+                        )}
+                      </View>
+                    ))}
+                  </ScrollView>
+                )}
+                <View style={styles.composeContainer}>
+                  <TextInput
+                    ref={composeInputRef}
+                    style={styles.composeInput}
+                    placeholder={t('communityPosts.placeholder')}
+                    placeholderTextColor={colors.text.tertiary}
+                    value={composeText}
+                    onChangeText={setComposeText}
+                    multiline
+                    maxLength={POST_MAX_LENGTH}
+                  />
+                  <TouchableOpacity
+                    style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
+                    onPress={handleCreatePost}
+                    disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
+                  >
+                    {createMutation.isPending ? (
+                      <Icon name="loader" size="sm" color={colors.text.secondary} />
+                    ) : (
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                        style={styles.composeButtonGradient}
                       >
-                        <Icon name="x" size="xs" color={colors.text.primary} />
-                      </Pressable>
-                      {media.type === 'video' && (
-                        <View style={styles.videoBadge}>
-                          <Icon name="play" size={10} color="#fff" />
-                        </View>
-                      )}
-                    </View>
-                  ))}
-                </ScrollView>
-              )}
-              <View style={styles.composeContainer}>
-                <TextInput
-                  ref={composeInputRef}
-                  style={styles.composeInput}
-                  placeholder={t('communityPosts.placeholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                  value={composeText}
-                  onChangeText={setComposeText}
-                  multiline
-                  maxLength={POST_MAX_LENGTH}
-                />
-                <TouchableOpacity
-                  style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
-                  onPress={handleCreatePost}
-                  disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
-                >
-                  {createMutation.isPending ? (
-                    <Icon name="loader" size="sm" color={colors.text.secondary} />
-                  ) : (
-                    <LinearGradient
-                      colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                      style={styles.composeButtonGradient}
-                    >
-                      <Icon name="send" size="sm" color={colors.emerald} />
-                    </LinearGradient>
-                  )}
-                </TouchableOpacity>
-              </View>
-            </LinearGradient>
-          </Animated.View>
-        )}
+                        <Icon name="send" size="sm" color={colors.emerald} />
+                      </LinearGradient>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </LinearGradient>
+            </Animated.View>
+          )}
 
-      <FlatList
-          removeClippedSubviews={true}
-          data={posts}
-          renderItem={renderPostItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
-            />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <EmptyState
-                icon="message-circle"
-                title={t('communityPosts.emptyState.quiet')}
-                subtitle={isOwnChannel ? t('communityPosts.emptyState.ownerHint') : t('communityPosts.emptyState.memberHint')}
+        <FlatList
+            removeClippedSubviews={true}
+            data={posts}
+            renderItem={renderPostItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.emerald}
               />
-            </View>
-          }
-          onEndReached={() => postsQuery.hasNextPage && postsQuery.fetchNextPage()}
-          onEndReachedThreshold={0.5}
-        />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <EmptyState
+                  icon="message-circle"
+                  title={t('communityPosts.emptyState.quiet')}
+                  subtitle={isOwnChannel ? t('communityPosts.emptyState.ownerHint') : t('communityPosts.emptyState.memberHint')}
+                />
+              </View>
+            }
+            onEndReached={() => postsQuery.hasNextPage && postsQuery.fetchNextPage()}
+            onEndReachedThreshold={0.5}
+          />
 
-        <BottomSheet
-          visible={showCreateSheet}
-          onClose={() => setShowCreateSheet(false)}
-          snapPoint={0.6}
-        >
-          <BottomSheetItem
-            label={t('communityPosts.addImage')}
-            icon={<Icon name="image" size="md" color={colors.text.primary} />}
-            onPress={async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
-              if (!result.canceled && result.assets) {
-                const newMedia = result.assets.map(asset => ({ uri: asset.uri, type: 'image' as const }));
-                setSelectedMediaList(prev => [...prev, ...newMedia]);
-                setShowCreateSheet(false);
-              }
-            }}
-          />
-          <BottomSheetItem
-            label={t('communityPosts.addVideo')}
-            icon={<Icon name="video" size="md" color={colors.text.primary} />}
-            onPress={async () => {
-              const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
-              if (!result.canceled && result.assets[0]) {
-                setSelectedMediaList(prev => [...prev, { uri: result.assets[0].uri, type: 'video' }]);
-                setShowCreateSheet(false);
-              }
-            }}
-          />
-          <BottomSheetItem
-            label={t('communityPosts.addPoll')}
-            icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
-            onPress={() => Alert.alert(t('communityPosts.polls'), t('communityPosts.pollsComing'))}
-          />
-        </BottomSheet>
+          <BottomSheet
+            visible={showCreateSheet}
+            onClose={() => setShowCreateSheet(false)}
+            snapPoint={0.6}
+          >
+            <BottomSheetItem
+              label={t('communityPosts.addImage')}
+              icon={<Icon name="image" size="md" color={colors.text.primary} />}
+              onPress={async () => {
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsMultipleSelection: true });
+                if (!result.canceled && result.assets) {
+                  const newMedia = result.assets.map(asset => ({ uri: asset.uri, type: 'image' as const }));
+                  setSelectedMediaList(prev => [...prev, ...newMedia]);
+                  setShowCreateSheet(false);
+                }
+              }}
+            />
+            <BottomSheetItem
+              label={t('communityPosts.addVideo')}
+              icon={<Icon name="video" size="md" color={colors.text.primary} />}
+              onPress={async () => {
+                const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Videos, quality: 0.8 });
+                if (!result.canceled && result.assets[0]) {
+                  setSelectedMediaList(prev => [...prev, { uri: result.assets[0].uri, type: 'video' }]);
+                  setShowCreateSheet(false);
+                }
+              }}
+            />
+            <BottomSheetItem
+              label={t('communityPosts.addPoll')}
+              icon={<Icon name="bar-chart-2" size="md" color={colors.text.primary} />}
+              onPress={() => Alert.alert(t('communityPosts.polls'), t('communityPosts.pollsComing'))}
+            />
+          </BottomSheet>
 
-        <BottomSheet
-          visible={!!selectedPost}
-          onClose={() => setSelectedPost(null)}
-          snapPoint={selectedPost?.content && isOwnChannel ? 0.3 : 0.2}
-        >
-          {isOwnChannel && selectedPost && (
-            <BottomSheetItem
-              label={t('communityPosts.deletePost')}
-              icon={<Icon name="trash" size="sm" color={colors.error} />}
-              onPress={() => handleDeletePost(selectedPost.id)}
-            />
-          )}
-          {selectedPost?.content && (
-            <BottomSheetItem
-              label={t('communityPosts.copyText')}
-              icon={<Icon name="link" size="sm" color={colors.text.primary} />}
-              onPress={() => handleCopyText(selectedPost.content!)}
-            />
-          )}
-        </BottomSheet>
-      </View>
-    </KeyboardAvoidingView>
+          <BottomSheet
+            visible={!!selectedPost}
+            onClose={() => setSelectedPost(null)}
+            snapPoint={selectedPost?.content && isOwnChannel ? 0.3 : 0.2}
+          >
+            {isOwnChannel && selectedPost && (
+              <BottomSheetItem
+                label={t('communityPosts.deletePost')}
+                icon={<Icon name="trash" size="sm" color={colors.error} />}
+                onPress={() => handleDeletePost(selectedPost.id)}
+              />
+            )}
+            {selectedPost?.content && (
+              <BottomSheetItem
+                label={t('communityPosts.copyText')}
+                icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+                onPress={() => handleCopyText(selectedPost.content!)}
+              />
+            )}
+          </BottomSheet>
+        </View>
+      </KeyboardAvoidingView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

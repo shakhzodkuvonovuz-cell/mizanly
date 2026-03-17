@@ -9,6 +9,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -90,6 +91,7 @@ export default function SchedulePostScreen() {
   };
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title="Schedule Post" showBackButton />
 
@@ -199,27 +201,28 @@ export default function SchedulePostScreen() {
                   const isPast = day < today && currentMonth === 2;
 
                   return (
-                    <TouchableOpacity
-                      key={day}
-                      style={styles.calendarDay}
-                      onPress={() => !isPast && setSelectedDate(day)}
-                      disabled={isPast}
-                    >
-                      {isSelected ? (
-                        <LinearGradient
-                          colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
-                          style={styles.selectedDay}
-                        >
-                          <Text style={styles.selectedDayText}>{day}</Text>
-                        </LinearGradient>
-                      ) : isToday ? (
-                        <View style={styles.todayDay}>
-                          <Text style={styles.todayDayText}>{day}</Text>
-                        </View>
-                      ) : (
-                        <Text style={[styles.dayText, isPast && styles.pastDayText]}>{day}</Text>
-                      )}
-                    </TouchableOpacity>
+                      <TouchableOpacity
+                        key={day}
+                        style={styles.calendarDay}
+                        onPress={() => !isPast && setSelectedDate(day)}
+                        disabled={isPast}
+                      >
+                        {isSelected ? (
+                          <LinearGradient
+                            colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.6)']}
+                            style={styles.selectedDay}
+                          >
+                            <Text style={styles.selectedDayText}>{day}</Text>
+                          </LinearGradient>
+                        ) : isToday ? (
+                          <View style={styles.todayDay}>
+                            <Text style={styles.todayDayText}>{day}</Text>
+                          </View>
+                        ) : (
+                          <Text style={[styles.dayText, isPast && styles.pastDayText]}>{day}</Text>
+                        )}
+                      </TouchableOpacity>
+                  
                   );
                 })}
               </View>
@@ -442,6 +445,7 @@ export default function SchedulePostScreen() {
         </LinearGradient>
       </View>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

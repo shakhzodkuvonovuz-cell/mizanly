@@ -24,6 +24,7 @@ import { eventsApi } from '@/services/eventsApi';
 import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/events';
 import type { User } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -196,6 +197,7 @@ export default function EventDetailScreen() {
     event.eventType === 'hybrid' ? t('events.hybrid') : t('events.inPerson');
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title={t('events.event')}
@@ -323,36 +325,37 @@ export default function EventDetailScreen() {
                 const label = status === 'going' ? t('events.going') : status === 'maybe' ? t('events.maybe') : t('events.cantGo');
 
                 return (
-                  <TouchableOpacity
-                    key={status}
-                    style={styles_result.button}
-                    onPress={() => handleRsvp(status)}
-                    activeOpacity={0.8}
-                    disabled={rsvpMutation.isPending}
-                  >
-                    {isSelected && status === 'going' ? (
-                      <LinearGradient
-                        colors={[colors.emerald, colors.emeraldDark]}
-                        style={styles.rsvpGradient}
-                      >
-                        <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
-                        <Text style={styles.rsvpButtonTextActive}>{label}</Text>
-                      </LinearGradient>
-                    ) : isSelected && status === 'maybe' ? (
-                      <LinearGradient
-                        colors={[colors.gold, colors.goldLight]}
-                        style={styles.rsvpGradient}
-                      >
-                        <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
-                        <Text style={styles.rsvpButtonTextActive}>{label}</Text>
-                      </LinearGradient>
-                    ) : (
-                      <View style={styles.rsvpInner}>
-                        {isSelected && <Icon name="check" size="xs" color={colors.text.secondary} style={styles.rsvpCheck} />}
-                        <Text style={styles_result.text}>{label}</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                      key={status}
+                      style={styles_result.button}
+                      onPress={() => handleRsvp(status)}
+                      activeOpacity={0.8}
+                      disabled={rsvpMutation.isPending}
+                    >
+                      {isSelected && status === 'going' ? (
+                        <LinearGradient
+                          colors={[colors.emerald, colors.emeraldDark]}
+                          style={styles.rsvpGradient}
+                        >
+                          <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
+                          <Text style={styles.rsvpButtonTextActive}>{label}</Text>
+                        </LinearGradient>
+                      ) : isSelected && status === 'maybe' ? (
+                        <LinearGradient
+                          colors={[colors.gold, colors.goldLight]}
+                          style={styles.rsvpGradient}
+                        >
+                          <Icon name="check" size="xs" color={colors.text.primary} style={styles.rsvpCheck} />
+                          <Text style={styles.rsvpButtonTextActive}>{label}</Text>
+                        </LinearGradient>
+                      ) : (
+                        <View style={styles.rsvpInner}>
+                          {isSelected && <Icon name="check" size="xs" color={colors.text.secondary} style={styles.rsvpCheck} />}
+                          <Text style={styles_result.text}>{label}</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                
                 );
               })}
             </View>
@@ -441,6 +444,7 @@ export default function EventDetailScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

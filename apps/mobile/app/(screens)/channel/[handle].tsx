@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const BANNER_HEIGHT = Dimensions.get('window').width / 2.5; // 2.5:1 ratio for cinematic look
 const FEATURED_HEIGHT = Dimensions.get('window').width * 0.56; // 16:9 ratio
@@ -434,136 +435,139 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>@{handle}</Text>
-        <View style={styles.headerRight}>
-          <Pressable hitSlop={8} onPress={handleShare} style={styles.headerAction}>
-            <Icon name="share" size="sm" color={colors.text.primary} />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8} style={styles.backBtn}>
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
-          <Pressable hitSlop={8} onPress={() => setShowMenu(true)} style={styles.headerAction}>
-            <Icon name="more-horizontal" size="sm" color={colors.text.primary} />
-          </Pressable>
+          <Text style={styles.headerTitle}>@{handle}</Text>
+          <View style={styles.headerRight}>
+            <Pressable hitSlop={8} onPress={handleShare} style={styles.headerAction}>
+              <Icon name="share" size="sm" color={colors.text.primary} />
+            </Pressable>
+            <Pressable hitSlop={8} onPress={() => setShowMenu(true)} style={styles.headerAction}>
+              <Icon name="more-horizontal" size="sm" color={colors.text.primary} />
+            </Pressable>
+          </View>
         </View>
-      </View>
 
-      <FlatList
-        data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
-        keyExtractor={(item) => item.id}
-        renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
-        ListHeaderComponent={ListHeader}
-        removeClippedSubviews={true}
-        ListEmptyComponent={
-          activeTab === 'videos' ? (
-            videosQuery.isLoading ? (
-              <View style={styles.skeletonVideos}>
-                <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
-                <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
-              </View>
+        <FlatList
+          data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
+          keyExtractor={(item) => item.id}
+          renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
+          ListHeaderComponent={ListHeader}
+          removeClippedSubviews={true}
+          ListEmptyComponent={
+            activeTab === 'videos' ? (
+              videosQuery.isLoading ? (
+                <View style={styles.skeletonVideos}>
+                  <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
+                  <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+                </View>
+              ) : (
+                <EmptyState
+                  icon="video"
+                  title={t('channel.noVideosYet')}
+                  subtitle={t('channel.noVideosSubtitle')}
+                  style={styles.emptyState}
+                />
+              )
+            ) : activeTab === 'playlists' ? (
+              playlistsQuery.isLoading ? (
+                <View style={styles.skeletonVideos}>
+                  <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
+                  <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+                </View>
+              ) : (
+                <EmptyState
+                  icon="layers"
+                  title={t('channel.noPlaylistsYet')}
+                  subtitle={t('channel.noPlaylistsSubtitle')}
+                  style={styles.emptyState}
+                />
+              )
             ) : (
-              <EmptyState
-                icon="video"
-                title={t('channel.noVideosYet')}
-                subtitle={t('channel.noVideosSubtitle')}
-                style={styles.emptyState}
-              />
+              <View style={styles.aboutTab}>
+                <Text style={styles.aboutDescription}>{channel.description || 'No description provided.'}</Text>
+                <View style={styles.aboutMeta}>
+                  <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
+                  <Text style={styles.aboutMetaValue}>
+                    {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true })}
+                  </Text>
+                </View>
+                <View style={styles.aboutMeta}>
+                  <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
+                  <Text style={styles.aboutMetaValue}>{channel.totalViews.toLocaleString()}</Text>
+                </View>
+              </View>
             )
-          ) : activeTab === 'playlists' ? (
-            playlistsQuery.isLoading ? (
-              <View style={styles.skeletonVideos}>
-                <Skeleton.Rect width="100%" height={200} borderRadius={radius.sm} />
-                <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
-              </View>
-            ) : (
-              <EmptyState
-                icon="layers"
-                title={t('channel.noPlaylistsYet')}
-                subtitle={t('channel.noPlaylistsSubtitle')}
-                style={styles.emptyState}
-              />
-            )
-          ) : (
-            <View style={styles.aboutTab}>
-              <Text style={styles.aboutDescription}>{channel.description || 'No description provided.'}</Text>
-              <View style={styles.aboutMeta}>
-                <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
-                <Text style={styles.aboutMetaValue}>
-                  {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true })}
-                </Text>
-              </View>
-              <View style={styles.aboutMeta}>
-                <Text style={styles.aboutMetaLabel}>{t('channel.totalViews')}</Text>
-                <Text style={styles.aboutMetaValue}>{channel.totalViews.toLocaleString()}</Text>
-              </View>
-            </View>
-          )
-        }
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        onEndReached={activeTab === 'videos' || activeTab === 'playlists' ? onEndReached : undefined}
-        onEndReachedThreshold={0.4}
-        showsVerticalScrollIndicator={false}
-      />
+          }
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          onEndReached={activeTab === 'videos' || activeTab === 'playlists' ? onEndReached : undefined}
+          onEndReachedThreshold={0.4}
+          showsVerticalScrollIndicator={false}
+        />
 
-      {/* More menu bottom sheet */}
-      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Channel options</Text>
-        </View>
-        <BottomSheetItem
-          label={t('channel.reportChannel')}
-          icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowMenu(false);
-            handleReport();
-          }}
-        />
-        <BottomSheetItem
-          label={t('channel.shareChannel')}
-          icon={<Icon name="share" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowMenu(false);
-            handleShare();
-          }}
-        />
-        <BottomSheetItem
-          label="Copy link"
-          icon={<Icon name="link" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowMenu(false);
-            handleCopyLink();
-          }}
-        />
-      </BottomSheet>
+        {/* More menu bottom sheet */}
+        <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Channel options</Text>
+          </View>
+          <BottomSheetItem
+            label={t('channel.reportChannel')}
+            icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowMenu(false);
+              handleReport();
+            }}
+          />
+          <BottomSheetItem
+            label={t('channel.shareChannel')}
+            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowMenu(false);
+              handleShare();
+            }}
+          />
+          <BottomSheetItem
+            label="Copy link"
+            icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowMenu(false);
+              handleCopyLink();
+            }}
+          />
+        </BottomSheet>
 
-      {/* Share bottom sheet */}
-      <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>{t('channel.shareChannel')}</Text>
-        </View>
-        <BottomSheetItem
-          label={t('common.shareVia')}
-          icon={<Icon name="share" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowShareSheet(false);
-            handleNativeShare();
-          }}
-        />
-        <BottomSheetItem
-          label="Copy link"
-          icon={<Icon name="link" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowShareSheet(false);
-            handleCopyLink();
-          }}
-        />
-      </BottomSheet>
-    </SafeAreaView>
+        {/* Share bottom sheet */}
+        <BottomSheet visible={showShareSheet} onClose={() => setShowShareSheet(false)}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{t('channel.shareChannel')}</Text>
+          </View>
+          <BottomSheetItem
+            label={t('common.shareVia')}
+            icon={<Icon name="share" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              handleNativeShare();
+            }}
+          />
+          <BottomSheetItem
+            label="Copy link"
+            icon={<Icon name="link" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowShareSheet(false);
+              handleCopyLink();
+            }}
+          />
+        </BottomSheet>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

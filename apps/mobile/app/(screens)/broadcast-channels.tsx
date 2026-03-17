@@ -30,6 +30,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { broadcastApi } from '@/services/api';
 import type { BroadcastChannel as BroadcastChannelType } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type BroadcastChannelWithSubscription = BroadcastChannelType & { isSubscribed?: boolean; isMuted?: boolean };
 
@@ -262,93 +263,96 @@ export default function BroadcastChannelsScreen() {
   const loading = activeTab === 'discover' ? discoverLoading : myChannelsLoading;
 
   return (
-    <>
-      <Stack.Screen options={{ headerShown: false }} />
-      <GlassHeader
-        title={t('broadcastChannels.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-        rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: t('broadcastChannels.createChannel') }]}
-      />
-      <View style={styles.container}>
-        <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
-          <Icon name="search" size="sm" color={colors.text.secondary} style={styles.searchIcon} />
-          <TextInput
-            ref={searchInputRef}
-            style={styles.searchInput}
-            placeholder={t('broadcastChannels.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearchSubmit}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <Icon name="x" size="sm" color={colors.text.secondary} />
-            </Pressable>
-          )}
-        </View>
-
-        <TabSelector
-          tabs={[
-            { key: 'discover', label: t('broadcastChannels.tab.discover') },
-            { key: 'my', label: t('broadcastChannels.tab.myChannels') },
-          ]}
-          activeKey={activeTab}
-          onTabChange={setActiveTab}
-          variant="underline"
-          style={styles.tabSelector}
+    <ScreenErrorBoundary>
+      <>
+        <Stack.Screen options={{ headerShown: false }} />
+        <GlassHeader
+          title={t('broadcastChannels.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          rightActions={[{ icon: 'plus', onPress: () => setShowCreateSheet(true), accessibilityLabel: t('broadcastChannels.createChannel') }]}
         />
-
-        <FlatList
-          removeClippedSubviews={true}
-          data={filteredData}
-          renderItem={renderChannelItem}
-          keyExtractor={item => item.id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={loading ? null : renderEmptyState}
-          ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.emerald}
+        <View style={styles.container}>
+          <View style={[styles.searchContainer, { marginTop: insets.top + 52 + spacing.base }]}>
+            <Icon name="search" size="sm" color={colors.text.secondary} style={styles.searchIcon} />
+            <TextInput
+              ref={searchInputRef}
+              style={styles.searchInput}
+              placeholder={t('broadcastChannels.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmitEditing={handleSearchSubmit}
+              returnKeyType="search"
             />
-          }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.5}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
-      <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
-        <View style={{ padding: spacing.base, gap: spacing.md }}>
-          <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
-          <TextInput
-            style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
-            placeholder={t('broadcastChannels.channelNamePlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={newChannelName}
-            onChangeText={setNewChannelName}
-            maxLength={50}
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                <Icon name="x" size="sm" color={colors.text.secondary} />
+              </Pressable>
+            )}
+          </View>
+
+          <TabSelector
+            tabs={[
+              { key: 'discover', label: t('broadcastChannels.tab.discover') },
+              { key: 'my', label: t('broadcastChannels.tab.myChannels') },
+            ]}
+            activeKey={activeTab}
+            onTabChange={setActiveTab}
+            variant="underline"
+            style={styles.tabSelector}
           />
-          <TextInput
-            style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
-            placeholder={t('broadcastChannels.descriptionPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={newChannelDesc}
-            onChangeText={setNewChannelDesc}
-            maxLength={200}
-            multiline
-          />
-          <GradientButton
-            label={t('broadcastChannels.createButton')}
-            onPress={() => createMutation.mutate()}
-            loading={createMutation.isPending}
-            disabled={!newChannelName.trim()}
+
+          <FlatList
+            removeClippedSubviews={true}
+            data={filteredData}
+            renderItem={renderChannelItem}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={loading ? null : renderEmptyState}
+            ListFooterComponent={loading && filteredData.length > 0 ? renderSkeleton : null}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.emerald}
+              />
+            }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
+            showsVerticalScrollIndicator={false}
           />
         </View>
-      </BottomSheet>
-    </>
+        <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)} snapPoint={0.5}>
+          <View style={{ padding: spacing.base, gap: spacing.md }}>
+            <Text style={{ fontSize: fontSize.lg, fontWeight: '600', color: colors.text.primary }}>{t('broadcastChannels.createChannel')}</Text>
+            <TextInput
+              style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base }}
+              placeholder={t('broadcastChannels.channelNamePlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={newChannelName}
+              onChangeText={setNewChannelName}
+              maxLength={50}
+            />
+            <TextInput
+              style={{ backgroundColor: colors.dark.surface, borderRadius: radius.md, padding: spacing.md, color: colors.text.primary, fontSize: fontSize.base, minHeight: 80 }}
+              placeholder={t('broadcastChannels.descriptionPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={newChannelDesc}
+              onChangeText={setNewChannelDesc}
+              maxLength={200}
+              multiline
+            />
+            <GradientButton
+              label={t('broadcastChannels.createButton')}
+              onPress={() => createMutation.mutate()}
+              loading={createMutation.isPending}
+              disabled={!newChannelName.trim()}
+            />
+          </View>
+        </BottomSheet>
+      </>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -18,6 +18,7 @@ import { useStore } from "@/store";
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlChevron, rtlMargin } from '@/utils/rtl';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Premium Toggle Switch Component
 function PremiumToggle({ value, onValueChange }: { value: boolean; onValueChange: (v: boolean) => void }) {
@@ -274,345 +275,348 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('settings.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('settings.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
-        {/* Content Section */}
-        <SectionHeader title={t('settings.sections.content')} icon="layers" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.contentPreferences')}
-            icon={<Icon name="settings" size="sm" color={colors.emerald} />}
-            onPress={() => router.push('/(screens)/content-settings')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.drafts')}
-            icon={<Icon name="clock" size="sm" color={colors.gold} />}
-            onPress={() => router.push('/(screens)/drafts')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.archive')}
-            icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
-            onPress={() => router.push('/(screens)/archive')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.watchHistory')}
-            icon={<Icon name="play" size="sm" color={colors.gold} />}
-            onPress={() => router.push('/(screens)/watch-history')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Appearance Section */}
-        <SectionHeader title={t('settings.appearance')} icon="eye" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.appearance')}
-            icon={<Icon name="eye" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.themeDarkMode')}
-            onPress={() => router.push('/(screens)/theme-settings')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.saved')}
-            icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
-            hint={t('settings.hints.savedPosts')}
-            onPress={() => router.push('/(screens)/saved')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Profile Section */}
-        <SectionHeader title={t('settings.sections.profile')} icon="user" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('profile.shareProfile')}
-            icon={<Icon name="share" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.shareProfile')}
-            onPress={() => router.push('/(screens)/share-profile')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Privacy Section */}
-        <SectionHeader title={t('settings.privacy')} icon="lock" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.privateAccount')}
-            icon={<Icon name="lock" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.privateAccount')}
-            value={isPrivate}
-            onToggle={(v) => { setIsPrivate(v); privacyMutation.mutate({ isPrivate: v }); }}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.followRequests')}
-            icon={<Icon name="users" size="sm" color={colors.gold} />}
-            hint={t('settings.hints.followRequests')}
-            onPress={() => router.push('/(screens)/follow-requests')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.blockedKeywords')}
-            icon={<Icon name="slash" size="sm" color={colors.error} />}
-            hint={t('settings.hints.blockedKeywords')}
-            onPress={() => router.push('/(screens)/blocked-keywords')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Notifications Section */}
-        <SectionHeader title={t('settings.notifications')} icon="bell" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.likes')}
-            icon={<Icon name="heart" size="sm" color={colors.error} />}
-            value={notifyLikes}
-            onToggle={(v) => { setNotifyLikes(v); notifMutation.mutate({ notifyLikes: v }); }}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.comments')}
-            icon={<Icon name="message-circle" size="sm" color={colors.emerald} />}
-            value={notifyComments}
-            onToggle={(v) => { setNotifyComments(v); notifMutation.mutate({ notifyComments: v }); }}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.newFollowers')}
-            icon={<Icon name="user-plus" size="sm" color={colors.gold} />}
-            value={notifyFollows}
-            onToggle={(v) => { setNotifyFollows(v); notifMutation.mutate({ notifyFollows: v }); }}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.mentions')}
-            icon={<Icon name="at-sign" size="sm" color={colors.emerald} />}
-            value={notifyMentions}
-            onToggle={(v) => { setNotifyMentions(v); notifMutation.mutate({ notifyMentions: v }); }}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.messages')}
-            icon={<Icon name="mail" size="sm" color={colors.gold} />}
-            value={notifyMessages}
-            onToggle={(v) => { setNotifyMessages(v); notifMutation.mutate({ notifyMessages: v }); }}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Wellbeing Section */}
-        <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.filterSensitiveContent')}
-            icon={<Icon name="eye-off" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.filterSensitiveContent')}
-            value={sensitiveContent}
-            onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Accessibility Section */}
-        <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.reduceMotion')}
-            icon={<Icon name="clock" size="sm" color={colors.gold} />}
-            hint={t('settings.hints.reduceMotion')}
-            value={reducedMotion}
-            onToggle={(v) => { setReducedMotion(v); accessibilityMutation.mutate({ reducedMotion: v }); }}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Blocked & Muted Section */}
-        <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.blockedAccounts')}
-            icon={<Icon name="x" size="sm" color={colors.error} />}
-            onPress={() => router.push('/(screens)/blocked')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.mutedAccounts')}
-            icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
-            onPress={() => router.push('/(screens)/muted')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Circles Section */}
-        <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.circles')}
-            icon={<Icon name="users" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.circles')}
-            onPress={() => router.push('/(screens)/circles')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Creator Section */}
-        <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.analytics')}
-            icon={<Icon name="bar-chart-2" size="sm" color={colors.gold} />}
-            onPress={() => router.push('/(screens)/analytics')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.broadcastChannels')}
-            icon={<Icon name="radio" size="sm" color={colors.emerald} />}
-            onPress={() => router.push('/(screens)/broadcast-channels')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.myReports')}
-            icon={<Icon name="flag" size="sm" color={colors.error} />}
-            onPress={() => router.push('/(screens)/my-reports')}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Account Section */}
-        <SectionHeader title={t('settings.account')} icon="user" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row
-            label={t('settings.account')}
-            icon={<Icon name="user" size="sm" color={colors.emerald} />}
-            hint={t('settings.hints.account')}
-            onPress={() => router.push('/(screens)/account-settings')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.deactivateAccount')}
-            icon={<Icon name="x" size="sm" color={colors.error} />}
-            destructive
-            onPress={handleDeactivate}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.deleteAccount')}
-            icon={<Icon name="trash" size="sm" color={colors.error} />}
-            destructive
-            onPress={handleDeleteAccount}
-            isLast
-          />
-        </LinearGradient>
-
-        {/* Premium Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+        <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
+          {/* Content Section */}
+          <SectionHeader title={t('settings.sections.content')} icon="layers" />
           <LinearGradient
-            colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
-            style={styles.signOutGradient}
+            style={styles.card}
           >
-            <Icon name="log-out" size="sm" color={colors.error} />
-            <Text style={styles.signOutLabel}>{t('settings.signOut')}</Text>
+            <Row
+              label={t('settings.contentPreferences')}
+              icon={<Icon name="settings" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/content-settings')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.drafts')}
+              icon={<Icon name="clock" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/drafts')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.archive')}
+              icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/archive')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.watchHistory')}
+              icon={<Icon name="play" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/watch-history')}
+              isLast
+            />
           </LinearGradient>
-        </TouchableOpacity>
 
-        {/* About Section */}
-        <SectionHeader title={t('settings.about')} icon="info" />
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.card}
-        >
-          <Row label={t('settings.version')} rightText="1.0.0" />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.termsOfService')}
-            icon={<Icon name="file-text" size="sm" color={colors.text.secondary} />}
-            onPress={() => Linking.openURL('https://mizanly.app/terms')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.privacyPolicy')}
-            icon={<Icon name="shield" size="sm" color={colors.text.secondary} />}
-            onPress={() => Linking.openURL('https://mizanly.app/privacy')}
-          />
-          <View style={styles.divider} />
-          <Row
-            label={t('settings.licenses')}
-            icon={<Icon name="layers" size="sm" color={colors.text.secondary} />}
-            onPress={() => Linking.openURL('https://mizanly.app/licenses')}
-            isLast
-          />
-        </LinearGradient>
+          {/* Appearance Section */}
+          <SectionHeader title={t('settings.appearance')} icon="eye" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.appearance')}
+              icon={<Icon name="eye" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.themeDarkMode')}
+              onPress={() => router.push('/(screens)/theme-settings')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.saved')}
+              icon={<Icon name="bookmark-filled" size="sm" color={colors.gold} />}
+              hint={t('settings.hints.savedPosts')}
+              onPress={() => router.push('/(screens)/saved')}
+              isLast
+            />
+          </LinearGradient>
 
-        <Text style={styles.version}>{t('settings.versionLabel')}</Text>
-      </ScrollView>
-    </View>
+          {/* Profile Section */}
+          <SectionHeader title={t('settings.sections.profile')} icon="user" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('profile.shareProfile')}
+              icon={<Icon name="share" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.shareProfile')}
+              onPress={() => router.push('/(screens)/share-profile')}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Privacy Section */}
+          <SectionHeader title={t('settings.privacy')} icon="lock" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.privateAccount')}
+              icon={<Icon name="lock" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.privateAccount')}
+              value={isPrivate}
+              onToggle={(v) => { setIsPrivate(v); privacyMutation.mutate({ isPrivate: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.followRequests')}
+              icon={<Icon name="users" size="sm" color={colors.gold} />}
+              hint={t('settings.hints.followRequests')}
+              onPress={() => router.push('/(screens)/follow-requests')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.blockedKeywords')}
+              icon={<Icon name="slash" size="sm" color={colors.error} />}
+              hint={t('settings.hints.blockedKeywords')}
+              onPress={() => router.push('/(screens)/blocked-keywords')}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Notifications Section */}
+          <SectionHeader title={t('settings.notifications')} icon="bell" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.likes')}
+              icon={<Icon name="heart" size="sm" color={colors.error} />}
+              value={notifyLikes}
+              onToggle={(v) => { setNotifyLikes(v); notifMutation.mutate({ notifyLikes: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.comments')}
+              icon={<Icon name="message-circle" size="sm" color={colors.emerald} />}
+              value={notifyComments}
+              onToggle={(v) => { setNotifyComments(v); notifMutation.mutate({ notifyComments: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.newFollowers')}
+              icon={<Icon name="user-plus" size="sm" color={colors.gold} />}
+              value={notifyFollows}
+              onToggle={(v) => { setNotifyFollows(v); notifMutation.mutate({ notifyFollows: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.mentions')}
+              icon={<Icon name="at-sign" size="sm" color={colors.emerald} />}
+              value={notifyMentions}
+              onToggle={(v) => { setNotifyMentions(v); notifMutation.mutate({ notifyMentions: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.messages')}
+              icon={<Icon name="mail" size="sm" color={colors.gold} />}
+              value={notifyMessages}
+              onToggle={(v) => { setNotifyMessages(v); notifMutation.mutate({ notifyMessages: v }); }}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Wellbeing Section */}
+          <SectionHeader title={t('settings.sections.wellbeing')} icon="smile" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.filterSensitiveContent')}
+              icon={<Icon name="eye-off" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.filterSensitiveContent')}
+              value={sensitiveContent}
+              onToggle={(v) => { setSensitiveContent(v); wellbeingMutation.mutate({ sensitiveContentFilter: v }); }}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Accessibility Section */}
+          <SectionHeader title={t('settings.accessibility')} icon="volume-x" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.reduceMotion')}
+              icon={<Icon name="clock" size="sm" color={colors.gold} />}
+              hint={t('settings.hints.reduceMotion')}
+              value={reducedMotion}
+              onToggle={(v) => { setReducedMotion(v); accessibilityMutation.mutate({ reducedMotion: v }); }}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Blocked & Muted Section */}
+          <SectionHeader title={t('settings.sections.blockedMuted')} icon="slash" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.blockedAccounts')}
+              icon={<Icon name="x" size="sm" color={colors.error} />}
+              onPress={() => router.push('/(screens)/blocked')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.mutedAccounts')}
+              icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
+              onPress={() => router.push('/(screens)/muted')}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Circles Section */}
+          <SectionHeader title={t('settings.sections.closeFriends')} icon="users" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.circles')}
+              icon={<Icon name="users" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.circles')}
+              onPress={() => router.push('/(screens)/circles')}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Creator Section */}
+          <SectionHeader title={t('settings.sections.creator')} icon="bar-chart-2" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.analytics')}
+              icon={<Icon name="bar-chart-2" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/analytics')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.broadcastChannels')}
+              icon={<Icon name="radio" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/broadcast-channels')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.myReports')}
+              icon={<Icon name="flag" size="sm" color={colors.error} />}
+              onPress={() => router.push('/(screens)/my-reports')}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Account Section */}
+          <SectionHeader title={t('settings.account')} icon="user" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('settings.account')}
+              icon={<Icon name="user" size="sm" color={colors.emerald} />}
+              hint={t('settings.hints.account')}
+              onPress={() => router.push('/(screens)/account-settings')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.deactivateAccount')}
+              icon={<Icon name="x" size="sm" color={colors.error} />}
+              destructive
+              onPress={handleDeactivate}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.deleteAccount')}
+              icon={<Icon name="trash" size="sm" color={colors.error} />}
+              destructive
+              onPress={handleDeleteAccount}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Premium Sign Out Button */}
+          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+            <LinearGradient
+              colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.signOutGradient}
+            >
+              <Icon name="log-out" size="sm" color={colors.error} />
+              <Text style={styles.signOutLabel}>{t('settings.signOut')}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* About Section */}
+          <SectionHeader title={t('settings.about')} icon="info" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row label={t('settings.version')} rightText="1.0.0" />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.termsOfService')}
+              icon={<Icon name="file-text" size="sm" color={colors.text.secondary} />}
+              onPress={() => Linking.openURL('https://mizanly.app/terms')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.privacyPolicy')}
+              icon={<Icon name="shield" size="sm" color={colors.text.secondary} />}
+              onPress={() => Linking.openURL('https://mizanly.app/privacy')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.licenses')}
+              icon={<Icon name="layers" size="sm" color={colors.text.secondary} />}
+              onPress={() => Linking.openURL('https://mizanly.app/licenses')}
+              isLast
+            />
+          </LinearGradient>
+
+          <Text style={styles.version}>{t('settings.versionLabel')}</Text>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

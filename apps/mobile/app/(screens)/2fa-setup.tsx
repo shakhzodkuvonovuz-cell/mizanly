@@ -23,6 +23,7 @@ import { twoFactorApi } from '@/services/twoFactorApi';
 import { useUser } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { TwoFactorSetupResponse, TwoFactorStatus } from '@/types/twoFactor';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -174,337 +175,340 @@ export default function TwoFactorSetupScreen() {
   );
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('auth.twoFactorAuthentication')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('auth.twoFactorAuthentication')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <Animated.View entering={FadeInUp.duration(500)}>
-          {/* Step Indicator */}
-          {renderStepIndicator()}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Animated.View entering={FadeInUp.duration(500)}>
+            {/* Step Indicator */}
+            {renderStepIndicator()}
 
-          {/* Info Card */}
-          <LinearGradient
-            colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
-            style={styles.infoCard}
-          >
-            <View style={styles.infoIconContainer}>
-              <LinearGradient
-                colors={[colors.emerald, colors.gold]}
-                style={styles.infoIconBg}
-              >
-                <Icon name="lock" size="lg" color="#fff" />
-              </LinearGradient>
-            </View>
-            <Text style={styles.infoTitle}>{t('auth.secureYourAccount')}</Text>
-            <Text style={styles.infoDescription}>
-              {t('auth.twoFactorDescription')}
-            </Text>
-          </LinearGradient>
-
-          {/* Step 1: Authenticator App */}
-          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.stepCard}>
-            <View style={styles.stepHeader}>
-              <LinearGradient
-                colors={activeStep === 'info' ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-                style={styles.stepIconBg}
-              >
-                <Icon name="chevron-down" size="sm" color={activeStep === 'info' ? '#fff' : colors.text.tertiary} />
-              </LinearGradient>
-              <Text style={[styles.stepTitle, activeStep === 'info' && styles.stepTitleActive]}>
-                {t('auth.step1InstallAuthenticatorApp')}
-              </Text>
-            </View>
-            <Text style={styles.stepDescription}>
-              {t('auth.step1Description')}
-            </Text>
-
-            <TouchableOpacity
-              style={styles.appPickerButton}
-              onPress={() => setShowAppPicker(true)}
+            {/* Info Card */}
+            <LinearGradient
+              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+              style={styles.infoCard}
             >
-              <LinearGradient
-                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                style={styles.appPickerCard}
+              <View style={styles.infoIconContainer}>
+                <LinearGradient
+                  colors={[colors.emerald, colors.gold]}
+                  style={styles.infoIconBg}
+                >
+                  <Icon name="lock" size="lg" color="#fff" />
+                </LinearGradient>
+              </View>
+              <Text style={styles.infoTitle}>{t('auth.secureYourAccount')}</Text>
+              <Text style={styles.infoDescription}>
+                {t('auth.twoFactorDescription')}
+              </Text>
+            </LinearGradient>
+
+            {/* Step 1: Authenticator App */}
+            <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.stepCard}>
+              <View style={styles.stepHeader}>
+                <LinearGradient
+                  colors={activeStep === 'info' ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+                  style={styles.stepIconBg}
+                >
+                  <Icon name="chevron-down" size="sm" color={activeStep === 'info' ? '#fff' : colors.text.tertiary} />
+                </LinearGradient>
+                <Text style={[styles.stepTitle, activeStep === 'info' && styles.stepTitleActive]}>
+                  {t('auth.step1InstallAuthenticatorApp')}
+                </Text>
+              </View>
+              <Text style={styles.stepDescription}>
+                {t('auth.step1Description')}
+              </Text>
+
+              <TouchableOpacity
+                style={styles.appPickerButton}
+                onPress={() => setShowAppPicker(true)}
               >
-                <View style={styles.appPickerLeft}>
-                  <Icon name="phone" size="sm" color={colors.emerald} />
-                  <Text style={styles.appPickerText}>
-                    {selectedApp || t('auth.selectAuthenticatorApp')}
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                  style={styles.appPickerCard}
+                >
+                  <View style={styles.appPickerLeft}>
+                    <Icon name="phone" size="sm" color={colors.emerald} />
+                    <Text style={styles.appPickerText}>
+                      {selectedApp || t('auth.selectAuthenticatorApp')}
+                    </Text>
+                  </View>
+                  <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.nextButton}
+                onPress={() => setActiveStep('qr')}
+              >
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                  style={styles.nextButtonGradient}
+                >
+                  <Text style={styles.nextButtonText}>{t('common.continue')}</Text>
+                  <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
+
+            {/* Step 2: QR Code */}
+            {activeStep === 'qr' && (
+              <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
+                <View style={styles.stepHeader}>
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.stepIconBg}
+                  >
+                    <Icon name="layout" size="sm" color="#fff" />
+                  </LinearGradient>
+                  <Text style={[styles.stepTitle, styles.stepTitleActive]}>
+                    {t('auth.step2ScanQRCode')}
                   </Text>
                 </View>
-                <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
-              </LinearGradient>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.nextButton}
-              onPress={() => setActiveStep('qr')}
-            >
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                style={styles.nextButtonGradient}
-              >
-                <Text style={styles.nextButtonText}>{t('common.continue')}</Text>
-                <Icon name="chevron-right" size="sm" color={colors.text.primary} />
-              </LinearGradient>
-            </TouchableOpacity>
-          </Animated.View>
-
-          {/* Step 2: QR Code */}
-          {activeStep === 'qr' && (
-            <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
-              <View style={styles.stepHeader}>
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.stepIconBg}
-                >
-                  <Icon name="layout" size="sm" color="#fff" />
-                </LinearGradient>
-                <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  {t('auth.step2ScanQRCode')}
+                <Text style={styles.stepDescription}>
+                  {t('auth.step2Description')}
                 </Text>
-              </View>
-              <Text style={styles.stepDescription}>
-                {t('auth.step2Description')}
-              </Text>
 
-              {/* QR Code Display */}
-              <LinearGradient
-                colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
-                style={styles.qrContainer}
-              >
-                <View style={styles.qrPlaceholder}>
-                  {qrDataUri ? (
-                    <Image source={{ uri: qrDataUri }} style={styles.qrImage} />
-                  ) : (
-                    <View style={styles.qrMock}>
-                      {loading ? (
-                        <>
-                          <Icon name="loader" size="lg" color={colors.text.tertiary} />
-                          <Text style={styles.qrMockSubtext}>{t('auth.generatingQRCode')}</Text>
-                        </>
-                      ) : (
-                        <>
-                          <Text style={styles.qrMockText}>{t('auth.qrCode')}</Text>
-                          <Text style={styles.qrMockSubtext}>{t('auth.scanWithAuthenticatorApp')}</Text>
-                        </>
-                      )}
-                    </View>
-                  )}
-                </View>
-              </LinearGradient>
-
-              {/* Manual Secret */}
-              <View style={styles.secretContainer}>
-                <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
-                <TouchableOpacity onPress={() => {}}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.secretBox}
-                  >
-                    <Text style={styles.secretText} selectable>{secret}</Text>
-                    <Icon name="layers" size="xs" color={colors.emerald} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-
-              <TouchableOpacity
-                style={styles.nextButton}
-                onPress={() => setActiveStep('verify')}
-              >
+                {/* QR Code Display */}
                 <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.nextButtonGradient}
+                  colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']}
+                  style={styles.qrContainer}
                 >
-                  <Text style={styles.nextButtonText}>{t('auth.scannedCodeButton')}</Text>
-                  <Icon name="chevron-right" size="sm" color="#fff" />
+                  <View style={styles.qrPlaceholder}>
+                    {qrDataUri ? (
+                      <Image source={{ uri: qrDataUri }} style={styles.qrImage} />
+                    ) : (
+                      <View style={styles.qrMock}>
+                        {loading ? (
+                          <>
+                            <Icon name="loader" size="lg" color={colors.text.tertiary} />
+                            <Text style={styles.qrMockSubtext}>{t('auth.generatingQRCode')}</Text>
+                          </>
+                        ) : (
+                          <>
+                            <Text style={styles.qrMockText}>{t('auth.qrCode')}</Text>
+                            <Text style={styles.qrMockSubtext}>{t('auth.scanWithAuthenticatorApp')}</Text>
+                          </>
+                        )}
+                      </View>
+                    )}
+                  </View>
                 </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
 
-          {/* Step 3: Verification */}
-          {activeStep === 'verify' && (
-            <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
-              <View style={styles.stepHeader}>
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.stepIconBg}
-                >
-                  <Icon name="check-circle" size="sm" color="#fff" />
-                </LinearGradient>
-                <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  {t('auth.step3EnterVerificationCode')}
-                </Text>
-              </View>
-              <Text style={styles.stepDescription}>
-                {t('auth.step3Description')}
-              </Text>
-
-              {/* OTP Input */}
-              <View style={styles.otpContainer}>
-                {verificationCode.map((digit, idx) => (
-                  <Animated.View
-                    key={idx}
-                    entering={FadeInUp.delay(idx * 80).duration(300)}
-                  >
+                {/* Manual Secret */}
+                <View style={styles.secretContainer}>
+                  <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
+                  <TouchableOpacity onPress={() => {}}>
                     <LinearGradient
-                      colors={digit ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                      style={styles.otpDigitBox}
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.secretBox}
                     >
-                      <TextInput
-                        ref={el => inputRefs[idx] = el}
-                        style={styles.otpDigit}
-                        value={digit}
-                        onChangeText={text => handleCodeChange(text, idx)}
-                        keyboardType="number-pad"
-                        maxLength={1}
-                        selectTextOnFocus
-                        autoFocus={idx === 0}
-                      />
-                    </LinearGradient>
-                  </Animated.View>
-                ))}
-              </View>
-
-              <TouchableOpacity
-                style={styles.nextButton}
-                onPress={handleEnable2FA}
-                disabled={isEnabling || verificationCode.some(d => d === '')}
-              >
-                <LinearGradient
-                  colors={isEnabling
-                    ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
-                    : [colors.emerald, colors.gold]
-                  }
-                  style={styles.nextButtonGradient}
-                >
-                  {isEnabling ? (
-                    <Icon name="loader" size="sm" color="#fff" />
-                  ) : (
-                    <>
-                      <Text style={styles.nextButtonText}>{t('auth.enable2FA')}</Text>
-                      <Icon name="lock" size="sm" color="#fff" />
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-
-          {/* Step 4: Backup Codes */}
-          {activeStep === 'backup' && (
-            <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
-              <View style={styles.stepHeader}>
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.stepIconBg}
-                >
-                  <Icon name="lock" size="sm" color="#fff" />
-                </LinearGradient>
-                <Text style={[styles.stepTitle, styles.stepTitleActive]}>
-                  {t('auth.step4SaveBackupCodes')}
-                </Text>
-              </View>
-              <Text style={styles.stepDescription}>
-                {t('auth.step4Description')}
-              </Text>
-
-              {/* Backup Codes Grid */}
-              <View style={styles.backupGrid}>
-                {backupCodes.map((code, idx) => (
-                  <TouchableOpacity
-                    key={idx}
-                    onPress={() => copyBackupCode(code)}
-                  >
-                    <LinearGradient
-                      colors={copiedCodes.includes(code)
-                        ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.3)']
-                        : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']
-                      }
-                      style={styles.backupCodeCard}
-                    >
-                      <Text style={[
-                        styles.backupCodeText,
-                        copiedCodes.includes(code) && styles.backupCodeTextCopied
-                      ]}>
-                        {code}
-                      </Text>
-                      {copiedCodes.includes(code) && (
-                        <Icon name="check" size="xs" color={colors.emerald} />
-                      )}
+                      <Text style={styles.secretText} selectable>{secret}</Text>
+                      <Icon name="layers" size="xs" color={colors.emerald} />
                     </LinearGradient>
                   </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.backupActions}>
-                <TouchableOpacity
-                  style={styles.backupActionButton}
-                  onPress={copyAllBackupCodes}
-                >
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                    style={styles.backupActionGradient}
-                  >
-                    <Icon name="layers" size="sm" color={colors.text.primary} />
-                    <Text style={styles.backupActionText}>{t('common.copyAll')}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
+                </View>
 
                 <TouchableOpacity
-                  style={styles.backupActionButton}
-                  onPress={downloadBackupCodes}
+                  style={styles.nextButton}
+                  onPress={() => setActiveStep('verify')}
                 >
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                    style={styles.backupActionGradient}
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.nextButtonGradient}
                   >
-                    <Icon name="chevron-down" size="sm" color={colors.text.primary} />
-                    <Text style={styles.backupActionText}>{t('common.download')}</Text>
+                    <Text style={styles.nextButtonText}>{t('auth.scannedCodeButton')}</Text>
+                    <Icon name="chevron-right" size="sm" color="#fff" />
                   </LinearGradient>
                 </TouchableOpacity>
-              </View>
+              </Animated.View>
+            )}
 
-              <TouchableOpacity
-                style={styles.nextButton}
-                onPress={() => router.back()}
-              >
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.nextButtonGradient}
+            {/* Step 3: Verification */}
+            {activeStep === 'verify' && (
+              <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
+                <View style={styles.stepHeader}>
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.stepIconBg}
+                  >
+                    <Icon name="check-circle" size="sm" color="#fff" />
+                  </LinearGradient>
+                  <Text style={[styles.stepTitle, styles.stepTitleActive]}>
+                    {t('auth.step3EnterVerificationCode')}
+                  </Text>
+                </View>
+                <Text style={styles.stepDescription}>
+                  {t('auth.step3Description')}
+                </Text>
+
+                {/* OTP Input */}
+                <View style={styles.otpContainer}>
+                  {verificationCode.map((digit, idx) => (
+                    <Animated.View
+                      key={idx}
+                      entering={FadeInUp.delay(idx * 80).duration(300)}
+                    >
+                      <LinearGradient
+                        colors={digit ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                        style={styles.otpDigitBox}
+                      >
+                        <TextInput
+                          ref={el => inputRefs[idx] = el}
+                          style={styles.otpDigit}
+                          value={digit}
+                          onChangeText={text => handleCodeChange(text, idx)}
+                          keyboardType="number-pad"
+                          maxLength={1}
+                          selectTextOnFocus
+                          autoFocus={idx === 0}
+                        />
+                      </LinearGradient>
+                    </Animated.View>
+                  ))}
+                </View>
+
+                <TouchableOpacity
+                  style={styles.nextButton}
+                  onPress={handleEnable2FA}
+                  disabled={isEnabling || verificationCode.some(d => d === '')}
                 >
-                  <Text style={styles.nextButtonText}>{t('common.done')}</Text>
-                  <Icon name="check" size="sm" color="#fff" />
-                </LinearGradient>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-        </Animated.View>
-      </ScrollView>
+                  <LinearGradient
+                    colors={isEnabling
+                      ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
+                      : [colors.emerald, colors.gold]
+                    }
+                    style={styles.nextButtonGradient}
+                  >
+                    {isEnabling ? (
+                      <Icon name="loader" size="sm" color="#fff" />
+                    ) : (
+                      <>
+                        <Text style={styles.nextButtonText}>{t('auth.enable2FA')}</Text>
+                        <Icon name="lock" size="sm" color="#fff" />
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
 
-      {/* Authenticator App Picker Bottom Sheet */}
-      <BottomSheet visible={showAppPicker} onClose={() => setShowAppPicker(false)}>
-        {AUTHENTICATOR_APPS.map(app => (
-          <BottomSheetItem
-            key={app.name}
-            label={app.name}
-            icon={<Icon name={app.icon as IconName} size="sm" color={colors.text.primary} />}
-            onPress={() => {
-              setSelectedApp(app.name);
-              setShowAppPicker(false);
-            }}
-          />
-        ))}
-      </BottomSheet>
-    </View>
+            {/* Step 4: Backup Codes */}
+            {activeStep === 'backup' && (
+              <Animated.View entering={SlideInDown.duration(500)} style={styles.stepCard}>
+                <View style={styles.stepHeader}>
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.stepIconBg}
+                  >
+                    <Icon name="lock" size="sm" color="#fff" />
+                  </LinearGradient>
+                  <Text style={[styles.stepTitle, styles.stepTitleActive]}>
+                    {t('auth.step4SaveBackupCodes')}
+                  </Text>
+                </View>
+                <Text style={styles.stepDescription}>
+                  {t('auth.step4Description')}
+                </Text>
+
+                {/* Backup Codes Grid */}
+                <View style={styles.backupGrid}>
+                  {backupCodes.map((code, idx) => (
+                    <TouchableOpacity
+                      key={idx}
+                      onPress={() => copyBackupCode(code)}
+                    >
+                      <LinearGradient
+                        colors={copiedCodes.includes(code)
+                          ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.3)']
+                          : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']
+                        }
+                        style={styles.backupCodeCard}
+                      >
+                        <Text style={[
+                          styles.backupCodeText,
+                          copiedCodes.includes(code) && styles.backupCodeTextCopied
+                        ]}>
+                          {code}
+                        </Text>
+                        {copiedCodes.includes(code) && (
+                          <Icon name="check" size="xs" color={colors.emerald} />
+                        )}
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View style={styles.backupActions}>
+                  <TouchableOpacity
+                    style={styles.backupActionButton}
+                    onPress={copyAllBackupCodes}
+                  >
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                      style={styles.backupActionGradient}
+                    >
+                      <Icon name="layers" size="sm" color={colors.text.primary} />
+                      <Text style={styles.backupActionText}>{t('common.copyAll')}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.backupActionButton}
+                    onPress={downloadBackupCodes}
+                  >
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                      style={styles.backupActionGradient}
+                    >
+                      <Icon name="chevron-down" size="sm" color={colors.text.primary} />
+                      <Text style={styles.backupActionText}>{t('common.download')}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.nextButton}
+                  onPress={() => router.back()}
+                >
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.nextButtonGradient}
+                  >
+                    <Text style={styles.nextButtonText}>{t('common.done')}</Text>
+                    <Icon name="check" size="sm" color="#fff" />
+                  </LinearGradient>
+                </TouchableOpacity>
+              </Animated.View>
+            )}
+          </Animated.View>
+        </ScrollView>
+
+        {/* Authenticator App Picker Bottom Sheet */}
+        <BottomSheet visible={showAppPicker} onClose={() => setShowAppPicker(false)}>
+          {AUTHENTICATOR_APPS.map(app => (
+            <BottomSheetItem
+              key={app.name}
+              label={app.name}
+              icon={<Icon name={app.icon as IconName} size="sm" color={colors.text.primary} />}
+              onPress={() => {
+                setSelectedApp(app.name);
+                setShowAppPicker(false);
+              }}
+            />
+          ))}
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

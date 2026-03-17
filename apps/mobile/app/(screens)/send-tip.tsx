@@ -26,6 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { monetizationApi } from '@/services/monetizationApi';
 import { usersApi } from '@/services/api';
 import type { User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -257,172 +258,175 @@ export default function SendTipScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title={t('monetization.sendTip')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={t('monetization.sendTip')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <ScrollView
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Creator Info Card */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.creatorCard}
-          >
-            {/* Avatar */}
+        <ScrollView
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* Creator Info Card */}
+          <Animated.View entering={FadeInUp.duration(400)}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-              style={styles.avatarContainer}
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.creatorCard}
             >
-              <Icon name="user" size="lg" color={colors.text.secondary} />
-            </LinearGradient>
-
-            {/* Creator Details */}
-            <View style={styles.creatorInfo}>
-              <View style={styles.creatorNameRow}>
-                <Text style={styles.creatorName}>{creator?.displayName}</Text>
-                {creator?.isVerified && <VerifiedBadge size={13} />}
-              </View>
-              <Text style={styles.creatorUsername}>{creator?.username}</Text>
-              <Text style={styles.followerCount}>{t('profile.followersCount', { count: formattedFollowers })}</Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Amount Selector */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <Text style={styles.sectionLabel}>{t('monetization.chooseAmount')}</Text>
-
-          {/* Preset Grid */}
-          <View style={styles.amountGrid}>
-            {PRESET_AMOUNTS.map((amount, index) => (
-              <AmountButton
-                key={amount}
-                amount={amount}
-                isSelected={selectedAmount === amount && !customAmount}
-                isPopular={amount === 5}
-                onPress={() => handleAmountSelect(amount)}
-              />
-            ))}
-          </View>
-
-          {/* Custom Amount Input */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-            style={styles.customAmountContainer}
-          >
-            <Icon name="circle" size="sm" color={colors.text.tertiary} />
-            <Text style={styles.currencyPrefixLarge}>$</Text>
-            <TextInput
-              style={styles.customAmountInput}
-              value={customAmount}
-              onChangeText={(text) => {
-                const cleaned = text.replace(/[^0-9.]/g, '');
-                if (cleaned.split('.').length <= 2) {
-                  setCustomAmount(cleaned);
-                }
-              }}
-              placeholder={t('monetization.enterCustomAmount')}
-              placeholderTextColor={colors.text.tertiary}
-              keyboardType="decimal-pad"
-            />
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Message Section */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <Text style={styles.sectionLabel}>{t('monetization.addMessageOptional')}</Text>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.messageCard}
-          >
-            <View style={styles.messageHeader}>
+              {/* Avatar */}
               <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
-                style={styles.messageIconBg}
+                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                style={styles.avatarContainer}
               >
-                <Icon name="mail" size="sm" color={colors.emerald} />
+                <Icon name="user" size="lg" color={colors.text.secondary} />
               </LinearGradient>
-            </View>
 
-            <View style={styles.messageInputContainer}>
-              <TextInput
-                style={styles.messageInput}
-                value={message}
-                onChangeText={setMessage}
-                placeholder={t('monetization.addMessageOptional')}
-                placeholderTextColor={colors.text.tertiary}
-                multiline
-                numberOfLines={2}
-                maxLength={MAX_MESSAGE_LENGTH}
-                textAlignVertical="top"
-              />
-              <View style={styles.charCountWrapper}>
-                <CharCountRing current={message.length} max={MAX_MESSAGE_LENGTH} size={28} />
+              {/* Creator Details */}
+              <View style={styles.creatorInfo}>
+                <View style={styles.creatorNameRow}>
+                  <Text style={styles.creatorName}>{creator?.displayName}</Text>
+                  {creator?.isVerified && <VerifiedBadge size={13} />}
+                </View>
+                <Text style={styles.creatorUsername}>{creator?.username}</Text>
+                <Text style={styles.followerCount}>{t('profile.followersCount', { count: formattedFollowers })}</Text>
               </View>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Payment Summary Card */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-            style={[styles.summaryCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
-          >
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('monetization.tipAmount')}</Text>
-              <Text style={styles.summaryValue}>${tipAmount.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>{t('monetization.platformFee')}</Text>
-              <Text style={[styles.summaryValue, styles.feeValue]}>${platformFee.toFixed(2)}</Text>
-            </View>
-            <View style={styles.summaryDivider} />
-            <View style={styles.summaryRow}>
-              <Text style={[styles.summaryLabel, styles.totalLabel]}>{t('monetization.total')}</Text>
-              <Text style={[styles.summaryValue, styles.totalValue]}>${total.toFixed(2)}</Text>
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Send Tip Button */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-          <TouchableOpacity
-            onPress={handleSendTip}
-            disabled={tipAmount <= 0 || isSending}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={[colors.emerald, colors.goldLight]}
-              style={[
-                styles.sendButton,
-                (tipAmount <= 0 || isSending) && styles.sendButtonDisabled,
-              ]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-            >
-              {isSending ? (
-                <ActivityIndicator color={colors.text.primary} size="small" />
-              ) : (
-                <>
-                  <Text style={styles.sendButtonText}>{t('monetization.sendAmount', { amount: total.toFixed(2) })}</Text>
-                  <Icon name="send" size="sm" color={colors.text.primary} />
-                </>
-              )}
             </LinearGradient>
-          </TouchableOpacity>
-        </Animated.View>
+          </Animated.View>
 
-        {/* Bottom spacing */}
-        <View style={{ height: spacing.xxl }} />
-      </ScrollView>
-    </SafeAreaView>
+          {/* Amount Selector */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <Text style={styles.sectionLabel}>{t('monetization.chooseAmount')}</Text>
+
+            {/* Preset Grid */}
+            <View style={styles.amountGrid}>
+              {PRESET_AMOUNTS.map((amount, index) => (
+                <AmountButton
+                  key={amount}
+                  amount={amount}
+                  isSelected={selectedAmount === amount && !customAmount}
+                  isPopular={amount === 5}
+                  onPress={() => handleAmountSelect(amount)}
+                />
+              ))}
+            </View>
+
+            {/* Custom Amount Input */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+              style={styles.customAmountContainer}
+            >
+              <Icon name="circle" size="sm" color={colors.text.tertiary} />
+              <Text style={styles.currencyPrefixLarge}>$</Text>
+              <TextInput
+                style={styles.customAmountInput}
+                value={customAmount}
+                onChangeText={(text) => {
+                  const cleaned = text.replace(/[^0-9.]/g, '');
+                  if (cleaned.split('.').length <= 2) {
+                    setCustomAmount(cleaned);
+                  }
+                }}
+                placeholder={t('monetization.enterCustomAmount')}
+                placeholderTextColor={colors.text.tertiary}
+                keyboardType="decimal-pad"
+              />
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Message Section */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <Text style={styles.sectionLabel}>{t('monetization.addMessageOptional')}</Text>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.messageCard}
+            >
+              <View style={styles.messageHeader}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                  style={styles.messageIconBg}
+                >
+                  <Icon name="mail" size="sm" color={colors.emerald} />
+                </LinearGradient>
+              </View>
+
+              <View style={styles.messageInputContainer}>
+                <TextInput
+                  style={styles.messageInput}
+                  value={message}
+                  onChangeText={setMessage}
+                  placeholder={t('monetization.addMessageOptional')}
+                  placeholderTextColor={colors.text.tertiary}
+                  multiline
+                  numberOfLines={2}
+                  maxLength={MAX_MESSAGE_LENGTH}
+                  textAlignVertical="top"
+                />
+                <View style={styles.charCountWrapper}>
+                  <CharCountRing current={message.length} max={MAX_MESSAGE_LENGTH} size={28} />
+                </View>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Payment Summary Card */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+              style={[styles.summaryCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
+            >
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t('monetization.tipAmount')}</Text>
+                <Text style={styles.summaryValue}>${tipAmount.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>{t('monetization.platformFee')}</Text>
+                <Text style={[styles.summaryValue, styles.feeValue]}>${platformFee.toFixed(2)}</Text>
+              </View>
+              <View style={styles.summaryDivider} />
+              <View style={styles.summaryRow}>
+                <Text style={[styles.summaryLabel, styles.totalLabel]}>{t('monetization.total')}</Text>
+                <Text style={[styles.summaryValue, styles.totalValue]}>${total.toFixed(2)}</Text>
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Send Tip Button */}
+          <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+            <TouchableOpacity
+              onPress={handleSendTip}
+              disabled={tipAmount <= 0 || isSending}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={[colors.emerald, colors.goldLight]}
+                style={[
+                  styles.sendButton,
+                  (tipAmount <= 0 || isSending) && styles.sendButtonDisabled,
+                ]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {isSending ? (
+                  <ActivityIndicator color={colors.text.primary} size="small" />
+                ) : (
+                  <>
+                    <Text style={styles.sendButtonText}>{t('monetization.sendAmount', { amount: total.toFixed(2) })}</Text>
+                    <Icon name="send" size="sm" color={colors.text.primary} />
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Bottom spacing */}
+          <View style={{ height: spacing.xxl }} />
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -18,6 +18,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function Row({
   label,
@@ -212,91 +213,94 @@ export default function AccountSettingsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('accountSettings.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('accountSettings.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
-        {/* Account Info */}
-        <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
-        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Row
-              label={t('auth.email')}
-              value={primaryEmail || t('accountSettings.notSet')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('auth.phone')}
-              value={primaryPhone || t('accountSettings.notSet')}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('accountSettings.joined')}
-              value={joinedDate}
-            />
-          </LinearGradient>
-        </Animated.View>
+        <ScrollView style={styles.body} contentContainerStyle={[styles.bodyContent, { paddingTop: insets.top + 52 }]}>
+          {/* Account Info */}
+          <SectionHeader title={t('accountSettings.sections.accountInfo')} index={0} />
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              <Row
+                label={t('auth.email')}
+                value={primaryEmail || t('accountSettings.notSet')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('auth.phone')}
+                value={primaryPhone || t('accountSettings.notSet')}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('accountSettings.joined')}
+                value={joinedDate}
+              />
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Data & Privacy */}
-        <SectionHeader title={t('accountSettings.sections.dataPrivacy')} index={1} />
-        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Row
-              label={t('accountSettings.downloadMyData')}
-              hint={t('accountSettings.exportDataHint')}
-              onPress={handleExportData}
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('accountSettings.manageData')}
-              hint={t('accountSettings.manageDataHint')}
-              onPress={() => router.push('/(screens)/manage-data')}
-            />
-          </LinearGradient>
-        </Animated.View>
+          {/* Data & Privacy */}
+          <SectionHeader title={t('accountSettings.sections.dataPrivacy')} index={1} />
+          <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              <Row
+                label={t('accountSettings.downloadMyData')}
+                hint={t('accountSettings.exportDataHint')}
+                onPress={handleExportData}
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('accountSettings.manageData')}
+                hint={t('accountSettings.manageDataHint')}
+                onPress={() => router.push('/(screens)/manage-data')}
+              />
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Account Actions */}
-        <SectionHeader title={t('accountSettings.sections.accountActions')} index={2} />
-        <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Row
-              label={t('accountSettings.deactivateAccount')}
-              hint={t('accountSettings.deactivateHint')}
-              onPress={handleDeactivate}
-              destructive
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('accountSettings.deleteAccount')}
-              hint={t('accountSettings.deleteHint')}
-              onPress={handleDeleteAccount}
-              destructive
-            />
-          </LinearGradient>
-        </Animated.View>
+          {/* Account Actions */}
+          <SectionHeader title={t('accountSettings.sections.accountActions')} index={2} />
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              <Row
+                label={t('accountSettings.deactivateAccount')}
+                hint={t('accountSettings.deactivateHint')}
+                onPress={handleDeactivate}
+                destructive
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('accountSettings.deleteAccount')}
+                hint={t('accountSettings.deleteHint')}
+                onPress={handleDeleteAccount}
+                destructive
+              />
+            </LinearGradient>
+          </Animated.View>
 
-        <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-          <LinearGradient
-            colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-            style={styles.versionCard}
-          >
-            <Text style={styles.version}>Mizanly v0.1.0</Text>
-          </LinearGradient>
-        </Animated.View>
-      </ScrollView>
-    </View>
+          <Animated.View entering={FadeInUp.delay(350).duration(400)}>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.versionCard}
+            >
+              <Text style={styles.version}>Mizanly v0.1.0</Text>
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

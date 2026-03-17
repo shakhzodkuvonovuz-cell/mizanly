@@ -36,6 +36,7 @@ import { VideoControls, type VideoQuality, type PlaybackSpeed } from '@/componen
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useStore } from '@/store';
 import type { Video as VideoType, VideoComment, VideoChapter } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -495,374 +496,377 @@ export default function VideoDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('video.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
-        rightActions={[
-          { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
-          { icon: 'flag', onPress: handleReport, accessibilityLabel: t('common.report') },
-          { icon: 'more-horizontal', onPress: () => setShowMenu(true), accessibilityLabel: t('common.moreOptions') },
-        ]}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('video.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+          rightActions={[
+            { icon: 'share', onPress: handleShare, accessibilityLabel: t('common.share') },
+            { icon: 'flag', onPress: handleReport, accessibilityLabel: t('common.report') },
+            { icon: 'more-horizontal', onPress: () => setShowMenu(true), accessibilityLabel: t('common.moreOptions') },
+          ]}
+        />
 
-      <ScrollView
-        style={{ marginTop: 88 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        showsVerticalScrollIndicator={false}
-        onScroll={(e) => {
-          scrollY.value = e.nativeEvent.contentOffset.y;
-        }}
-        scrollEventThrottle={16}
-      >
-        {/* Cinematic Video Player with gradient overlay */}
-        <View style={styles.videoContainer}>
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={(e) => handleVideoDoubleTap(e)}
-            style={styles.videoWrapper}
-          >
-            <Video
-              ref={videoRef}
-              source={{ uri: video.videoUrl }}
-              style={styles.videoPlayer}
-              resizeMode={ResizeMode.CONTAIN}
-              useNativeControls={false}
-              shouldPlay={isPlaying}
-              rate={speed}
-              volume={volume}
-              isMuted={volume === 0}
-              isLooping={false}
-              onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
-            />
-            <VideoControls
-              isPlaying={isPlaying}
-              currentTime={currentTime}
-              duration={duration}
-              quality={quality}
-              speed={speed}
-              volume={volume}
-              onPlayPause={handlePlayPause}
-              onSeek={handleSeek}
-              onQualityChange={handleQualityChange}
-              onSpeedChange={handleSpeedChange}
-              onVolumeChange={handleVolumeChange}
-              onMinimize={handleMinimize}
-            />
-
-            {/* Cinematic gradient overlays */}
-            <LinearGradient
-              colors={['rgba(13,17,23,0.8)', 'transparent', 'transparent', 'rgba(13,17,23,0.6)']}
-              locations={[0, 0.2, 0.8, 1]}
-              style={styles.videoGradientOverlay}
-            />
-
-            {/* Like burst animations */}
-            {likeBursts.map(burst => (
-              <LikeBurst key={burst.id} x={burst.x} y={burst.y} />
-            ))}
-
-            {/* Cinematic title overlay (fades on scroll) */}
-            <Animated.View style={styles.videoTitleOverlay}>
-              <LinearGradient
-                colors={['transparent', 'rgba(13,17,23,0.9)']}
-                style={styles.videoTitleGradient}
-              >
-                <Text style={styles.videoTitleCinematic} numberOfLines={2}>
-                  {video.title}
-                </Text>
-              </LinearGradient>
-            </Animated.View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Title & stats with cinematic styling */}
-        <View style={styles.content}>
-          {/* Gold accent divider */}
-          <View style={styles.titleAccentContainer}>
-            <LinearGradient
-              colors={[colors.gold, colors.emerald, 'transparent']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={styles.titleAccentLine}
-            />
-            <View style={styles.titleAccentDot} />
-          </View>
-
-          <Text style={styles.videoTitle}>{video.title}</Text>
-
-          {/* Enhanced stats row with icons */}
-          <View style={styles.videoStatsRow}>
-            <View style={styles.statItem}>
-              <Icon name="eye" size="xs" color={colors.text.secondary} />
-              <Text style={styles.videoStatText}>{video.viewsCount.toLocaleString()}</Text>
-            </View>
-            <Text style={styles.statDivider}>•</Text>
-            <View style={styles.statItem}>
-              <Icon name="clock" size="xs" color={colors.text.secondary} />
-              <Text style={styles.videoStatText}>
-                {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
-              </Text>
-            </View>
-            <Text style={styles.statDivider}>•</Text>
-            <View style={styles.statItem}>
-              <Icon name="bar-chart-2" size="xs" color={colors.gold} />
-              <Text style={styles.videoStatTextGold}>{durationText}</Text>
-            </View>
-          </View>
-
-          {/* Action row */}
-          <View style={styles.actionRow}>
-            <ActionButton
-              icon={<Icon name="heart" size="md" color={colors.text.primary} />}
-              activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
-              isActive={video.isLiked}
-              count={video.likesCount}
-              onPress={handleLike}
-              activeColor={colors.error}
-              accessibilityLabel="Like"
-            />
-            <ActionButton
-              icon={<Icon name="thumbs-down" size="md" color={colors.text.primary} />}
-              activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
-              isActive={video.isDisliked}
-              count={video.dislikesCount}
-              onPress={handleDislike}
-              activeColor={colors.error}
-              accessibilityLabel="Dislike"
-            />
-            <ActionButton
-              icon={<Icon name="message-circle" size="md" color={colors.text.primary} />}
-              count={video.commentsCount}
-              onPress={() => setCommentSheetOpen(true)}
-              accessibilityLabel="Comments"
-            />
-            <ActionButton
-              icon={<Icon name="bookmark" size="md" color={colors.text.primary} />}
-              activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
-              isActive={video.isBookmarked}
-              onPress={handleBookmark}
-              activeColor={colors.gold}
-              accessibilityLabel="Bookmark"
-            />
-            <ActionButton
-              icon={<Icon name="share" size="md" color={colors.text.primary} />}
-              onPress={handleShare}
-              accessibilityLabel="Share"
-            />
-          </View>
-
-          {/* Channel row */}
-          <TouchableOpacity 
-            style={styles.channelRow} 
-            onPress={handleChannelPress}
-            accessibilityLabel={`Go to ${video.channel.name}'s channel`}
-            accessibilityRole="button"
-          >
-            <Avatar
-              uri={video.channel.avatarUrl}
-              name={video.channel.name}
-              size="lg"
-              showRing={false}
-            />
-            <View style={styles.channelInfo}>
-              <Text style={styles.channelName}>{video.channel.name}</Text>
-              <Text style={styles.channelSubscribers}>
-                {video.channel.subscribersCount.toLocaleString()} {t('channel.subscribers')}
-              </Text>
-            </View>
+        <ScrollView
+          style={{ marginTop: 88 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => {
+            scrollY.value = e.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
+        >
+          {/* Cinematic Video Player with gradient overlay */}
+          <View style={styles.videoContainer}>
             <TouchableOpacity
-              style={[
-                styles.subscribeButton,
-                video.isSubscribed && styles.subscribedButton,
-              ]}
-              onPress={handleSubscribe}
-              accessibilityLabel={video.isSubscribed ? "Unsubscribe" : "Subscribe"}
+              activeOpacity={1}
+              onPress={(e) => handleVideoDoubleTap(e)}
+              style={styles.videoWrapper}
+            >
+              <Video
+                ref={videoRef}
+                source={{ uri: video.videoUrl }}
+                style={styles.videoPlayer}
+                resizeMode={ResizeMode.CONTAIN}
+                useNativeControls={false}
+                shouldPlay={isPlaying}
+                rate={speed}
+                volume={volume}
+                isMuted={volume === 0}
+                isLooping={false}
+                onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
+              />
+              <VideoControls
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                duration={duration}
+                quality={quality}
+                speed={speed}
+                volume={volume}
+                onPlayPause={handlePlayPause}
+                onSeek={handleSeek}
+                onQualityChange={handleQualityChange}
+                onSpeedChange={handleSpeedChange}
+                onVolumeChange={handleVolumeChange}
+                onMinimize={handleMinimize}
+              />
+
+              {/* Cinematic gradient overlays */}
+              <LinearGradient
+                colors={['rgba(13,17,23,0.8)', 'transparent', 'transparent', 'rgba(13,17,23,0.6)']}
+                locations={[0, 0.2, 0.8, 1]}
+                style={styles.videoGradientOverlay}
+              />
+
+              {/* Like burst animations */}
+              {likeBursts.map(burst => (
+                <LikeBurst key={burst.id} x={burst.x} y={burst.y} />
+              ))}
+
+              {/* Cinematic title overlay (fades on scroll) */}
+              <Animated.View style={styles.videoTitleOverlay}>
+                <LinearGradient
+                  colors={['transparent', 'rgba(13,17,23,0.9)']}
+                  style={styles.videoTitleGradient}
+                >
+                  <Text style={styles.videoTitleCinematic} numberOfLines={2}>
+                    {video.title}
+                  </Text>
+                </LinearGradient>
+              </Animated.View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Title & stats with cinematic styling */}
+          <View style={styles.content}>
+            {/* Gold accent divider */}
+            <View style={styles.titleAccentContainer}>
+              <LinearGradient
+                colors={[colors.gold, colors.emerald, 'transparent']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.titleAccentLine}
+              />
+              <View style={styles.titleAccentDot} />
+            </View>
+
+            <Text style={styles.videoTitle}>{video.title}</Text>
+
+            {/* Enhanced stats row with icons */}
+            <View style={styles.videoStatsRow}>
+              <View style={styles.statItem}>
+                <Icon name="eye" size="xs" color={colors.text.secondary} />
+                <Text style={styles.videoStatText}>{video.viewsCount.toLocaleString()}</Text>
+              </View>
+              <Text style={styles.statDivider}>•</Text>
+              <View style={styles.statItem}>
+                <Icon name="clock" size="xs" color={colors.text.secondary} />
+                <Text style={styles.videoStatText}>
+                  {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+                </Text>
+              </View>
+              <Text style={styles.statDivider}>•</Text>
+              <View style={styles.statItem}>
+                <Icon name="bar-chart-2" size="xs" color={colors.gold} />
+                <Text style={styles.videoStatTextGold}>{durationText}</Text>
+              </View>
+            </View>
+
+            {/* Action row */}
+            <View style={styles.actionRow}>
+              <ActionButton
+                icon={<Icon name="heart" size="md" color={colors.text.primary} />}
+                activeIcon={<Icon name="heart-filled" size="md" color={colors.error} />}
+                isActive={video.isLiked}
+                count={video.likesCount}
+                onPress={handleLike}
+                activeColor={colors.error}
+                accessibilityLabel="Like"
+              />
+              <ActionButton
+                icon={<Icon name="thumbs-down" size="md" color={colors.text.primary} />}
+                activeIcon={<Icon name="thumbs-down" size="md" color={colors.error} />}
+                isActive={video.isDisliked}
+                count={video.dislikesCount}
+                onPress={handleDislike}
+                activeColor={colors.error}
+                accessibilityLabel="Dislike"
+              />
+              <ActionButton
+                icon={<Icon name="message-circle" size="md" color={colors.text.primary} />}
+                count={video.commentsCount}
+                onPress={() => setCommentSheetOpen(true)}
+                accessibilityLabel="Comments"
+              />
+              <ActionButton
+                icon={<Icon name="bookmark" size="md" color={colors.text.primary} />}
+                activeIcon={<Icon name="bookmark-filled" size="md" color={colors.gold} />}
+                isActive={video.isBookmarked}
+                onPress={handleBookmark}
+                activeColor={colors.gold}
+                accessibilityLabel="Bookmark"
+              />
+              <ActionButton
+                icon={<Icon name="share" size="md" color={colors.text.primary} />}
+                onPress={handleShare}
+                accessibilityLabel="Share"
+              />
+            </View>
+
+            {/* Channel row */}
+            <TouchableOpacity 
+              style={styles.channelRow} 
+              onPress={handleChannelPress}
+              accessibilityLabel={`Go to ${video.channel.name}'s channel`}
               accessibilityRole="button"
             >
-              <Text style={[
-                styles.subscribeText,
-                video.isSubscribed && styles.subscribedText,
-              ]}>
-                {video.isSubscribed ? t('minbar.subscribed') : t('minbar.subscribe')}
-              </Text>
-            </TouchableOpacity>
-          </TouchableOpacity>
-
-          {/* Description */}
-          {video.description && (
-            <View style={styles.descriptionContainer}>
-              <Text style={styles.descriptionText} numberOfLines={3}>
-                {video.description}
-              </Text>
-              {video.tags.length > 0 && (
-                <View style={styles.tagsContainer}>
-                  {video.tags.map(tag => (
-                    <Text key={tag} style={styles.tag}>#{tag}</Text>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Cinematic Chapters Timeline */}
-          {chapters.length > 0 && (
-            <View style={styles.chaptersSection}>
-              <LinearGradient
-                colors={['rgba(200,150,62,0.1)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.chaptersGradient}
+              <Avatar
+                uri={video.channel.avatarUrl}
+                name={video.channel.name}
+                size="lg"
+                showRing={false}
+              />
+              <View style={styles.channelInfo}>
+                <Text style={styles.channelName}>{video.channel.name}</Text>
+                <Text style={styles.channelSubscribers}>
+                  {video.channel.subscribersCount.toLocaleString()} {t('channel.subscribers')}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[
+                  styles.subscribeButton,
+                  video.isSubscribed && styles.subscribedButton,
+                ]}
+                onPress={handleSubscribe}
+                accessibilityLabel={video.isSubscribed ? "Unsubscribe" : "Subscribe"}
+                accessibilityRole="button"
               >
-                <TouchableOpacity
-                  style={styles.chapterHeader}
-                  onPress={() => setShowChapters(!showChapters)}
-                  accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
-                  accessibilityRole="button"
-                >
-                  <View style={styles.chapterIconContainer}>
-                    <Icon name="layers" size="sm" color={colors.gold} />
-                  </View>
-                  <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
-                  <View style={styles.chapterTimelinePreview}>
-                    {chapters.slice(0, 4).map((_, i) => (
-                      <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : colors.dark.border }]} />
-                    ))}
-                  </View>
-                  <Icon
-                    name={showChapters ? 'chevron-down' : 'chevron-right'}
-                    size="sm"
-                    color={colors.text.tertiary}
-                  />
-                </TouchableOpacity>
+                <Text style={[
+                  styles.subscribeText,
+                  video.isSubscribed && styles.subscribedText,
+                ]}>
+                  {video.isSubscribed ? t('minbar.subscribed') : t('minbar.subscribe')}
+                </Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
 
-                {showChapters && (
-                  <View style={styles.chaptersTimeline}>
-                    <View style={styles.timelineLine} />
-                    {chapters.map((ch, i) => (
-                      <ChapterMarker
-                        key={i}
-                        chapter={ch}
-                        index={i}
-                        total={chapters.length}
-                        currentProgress={progressRef.current}
-                      />
+            {/* Description */}
+            {video.description && (
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.descriptionText} numberOfLines={3}>
+                  {video.description}
+                </Text>
+                {video.tags.length > 0 && (
+                  <View style={styles.tagsContainer}>
+                    {video.tags.map(tag => (
+                      <Text key={tag} style={styles.tag}>#{tag}</Text>
                     ))}
                   </View>
                 )}
-              </LinearGradient>
-            </View>
-          )}
-
-          {/* Comments preview */}
-          <View style={styles.commentsSection}>
-            <View style={styles.commentsHeader}>
-              <Text style={styles.commentsTitle}>{t('saf.comments')} ({video.commentsCount})</Text>
-              <TouchableOpacity 
-                onPress={() => setCommentSheetOpen(true)}
-                accessibilityLabel={t('comments.viewAll')}
-                accessibilityRole="button"
-              >
-                <Text style={styles.viewAll}>{t('common.viewAll')}</Text>
-              </TouchableOpacity>
-            </View>
-            {comments.slice(0, 2).map(comment => (
-              <View key={comment.id} style={styles.commentPreview}>
-                <Avatar
-                  uri={comment.user.avatarUrl}
-                  name={comment.user.username}
-                  size="sm"
-                  showRing={false}
-                />
-                <View style={styles.commentPreviewContent}>
-                  <Text style={styles.commentPreviewUsername}>{comment.user.username}</Text>
-                  <Text style={styles.commentPreviewText} numberOfLines={2}>
-                    {comment.content}
-                  </Text>
-                </View>
               </View>
-            ))}
-            {comments.length === 0 && (
-              <Text style={styles.noComments}>{t('comments.emptyCombined')}</Text>
             )}
+
+            {/* Cinematic Chapters Timeline */}
+            {chapters.length > 0 && (
+              <View style={styles.chaptersSection}>
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.1)', 'transparent']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.chaptersGradient}
+                >
+                  <TouchableOpacity
+                    style={styles.chapterHeader}
+                    onPress={() => setShowChapters(!showChapters)}
+                    accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
+                    accessibilityRole="button"
+                  >
+                    <View style={styles.chapterIconContainer}>
+                      <Icon name="layers" size="sm" color={colors.gold} />
+                    </View>
+                    <Text style={styles.chapterHeaderText}>Chapters ({chapters.length})</Text>
+                    <View style={styles.chapterTimelinePreview}>
+                      {chapters.slice(0, 4).map((_, i) => (
+                        <View key={i} style={[styles.timelineDot, { backgroundColor: i === 0 ? colors.gold : colors.dark.border }]} />
+                      ))}
+                    </View>
+                    <Icon
+                      name={showChapters ? 'chevron-down' : 'chevron-right'}
+                      size="sm"
+                      color={colors.text.tertiary}
+                    />
+                  </TouchableOpacity>
+
+                  {showChapters && (
+                    <View style={styles.chaptersTimeline}>
+                      <View style={styles.timelineLine} />
+                      {chapters.map((ch, i) => (
+                        <ChapterMarker
+                          key={i}
+                          chapter={ch}
+                          index={i}
+                          total={chapters.length}
+                          currentProgress={progressRef.current}
+                        />
+                      ))}
+                    </View>
+                  )}
+                </LinearGradient>
+              </View>
+            )}
+
+            {/* Comments preview */}
+            <View style={styles.commentsSection}>
+              <View style={styles.commentsHeader}>
+                <Text style={styles.commentsTitle}>{t('saf.comments')} ({video.commentsCount})</Text>
+                <TouchableOpacity 
+                  onPress={() => setCommentSheetOpen(true)}
+                  accessibilityLabel={t('comments.viewAll')}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.viewAll}>{t('common.viewAll')}</Text>
+                </TouchableOpacity>
+              </View>
+              {comments.slice(0, 2).map(comment => (
+                <View key={comment.id} style={styles.commentPreview}>
+                  <Avatar
+                    uri={comment.user.avatarUrl}
+                    name={comment.user.username}
+                    size="sm"
+                    showRing={false}
+                  />
+                  <View style={styles.commentPreviewContent}>
+                    <Text style={styles.commentPreviewUsername}>{comment.user.username}</Text>
+                    <Text style={styles.commentPreviewText} numberOfLines={2}>
+                      {comment.content}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+              {comments.length === 0 && (
+                <Text style={styles.noComments}>{t('comments.emptyCombined')}</Text>
+              )}
+            </View>
           </View>
-        </View>
-      </ScrollView>
-
-      {/* Mini Player */}
-      {miniPlayerVideo && (
-        <MiniPlayer
-          videoTitle={miniPlayerVideo.title}
-          channelName={miniPlayerVideo.channelName}
-          thumbnailUri={miniPlayerVideo.thumbnailUri}
-          isPlaying={miniPlayerPlaying}
-          progress={miniPlayerProgress}
-          onPlayPause={() => {
-            if (miniPlayerPlaying) {
-              setMiniPlayerPlaying(false);
-              videoRef.current?.pauseAsync();
-            } else {
-              setMiniPlayerPlaying(true);
-              videoRef.current?.playAsync();
-            }
-          }}
-          onClose={handleCloseMiniPlayer}
-          onExpand={() => {
-            // Navigate back to video screen if not already there
-            // For now, just close mini player and keep video screen open
-            closeMiniPlayer();
-          }}
-        />
-      )}
-
-      {/* Comments bottom sheet */}
-      <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Comments ({video.commentsCount})</Text>
-        </View>
-        <ScrollView style={styles.sheetComments}>
-          {comments.map(comment => renderCommentItem({ item: comment }))}
         </ScrollView>
-        <View style={styles.sheetInputRow}>
-          <TextInput
-            style={styles.commentInput}
-            placeholder={t('comments.addCommentPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={commentText}
-            onChangeText={setCommentText}
-            multiline
-            accessibilityLabel="Comment input field"
-          />
-          <TouchableOpacity 
-            onPress={handleCommentSubmit} 
-            disabled={!commentText.trim()}
-            accessibilityLabel="Send comment"
-            accessibilityRole="button"
-          >
-            <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
 
-      {/* More menu bottom sheet */}
-      <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>{t('video.options')}</Text>
-        </View>
-        <BottomSheetItem
-          label={t('video.saveToPlaylist')}
-          icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
-          onPress={() => {
-            setShowMenu(false);
-            router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
-          }}
-          accessibilityLabel={t('video.saveToPlaylist')}
-          accessibilityRole="button"
-        />
-      </BottomSheet>
-    </View>
+        {/* Mini Player */}
+        {miniPlayerVideo && (
+          <MiniPlayer
+            videoTitle={miniPlayerVideo.title}
+            channelName={miniPlayerVideo.channelName}
+            thumbnailUri={miniPlayerVideo.thumbnailUri}
+            isPlaying={miniPlayerPlaying}
+            progress={miniPlayerProgress}
+            onPlayPause={() => {
+              if (miniPlayerPlaying) {
+                setMiniPlayerPlaying(false);
+                videoRef.current?.pauseAsync();
+              } else {
+                setMiniPlayerPlaying(true);
+                videoRef.current?.playAsync();
+              }
+            }}
+            onClose={handleCloseMiniPlayer}
+            onExpand={() => {
+              // Navigate back to video screen if not already there
+              // For now, just close mini player and keep video screen open
+              closeMiniPlayer();
+            }}
+          />
+        )}
+
+        {/* Comments bottom sheet */}
+        <BottomSheet visible={commentSheetOpen} onClose={() => setCommentSheetOpen(false)} snapPoint={0.7}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Comments ({video.commentsCount})</Text>
+          </View>
+          <ScrollView style={styles.sheetComments}>
+            {comments.map(comment => renderCommentItem({ item: comment }))}
+          </ScrollView>
+          <View style={styles.sheetInputRow}>
+            <TextInput
+              style={styles.commentInput}
+              placeholder={t('comments.addCommentPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={commentText}
+              onChangeText={setCommentText}
+              multiline
+              accessibilityLabel="Comment input field"
+            />
+            <TouchableOpacity 
+              onPress={handleCommentSubmit} 
+              disabled={!commentText.trim()}
+              accessibilityLabel="Send comment"
+              accessibilityRole="button"
+            >
+              <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
+
+        {/* More menu bottom sheet */}
+        <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>{t('video.options')}</Text>
+          </View>
+          <BottomSheetItem
+            label={t('video.saveToPlaylist')}
+            icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowMenu(false);
+              router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
+            }}
+            accessibilityLabel={t('video.saveToPlaylist')}
+            accessibilityRole="button"
+          />
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

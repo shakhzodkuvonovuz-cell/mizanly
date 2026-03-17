@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QRScannerScreen() {
   const router = useRouter();
@@ -96,54 +97,57 @@ export default function QRScannerScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title="Scan QR Code"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title="Scan QR Code"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
 
-      <Camera
-        ref={cameraRef}
-        style={styles.camera}
-        type="back"
-        barCodeScannerSettings={{
-          barCodeTypes: ['qr'],
-        }}
-        onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
-      >
-        <View style={styles.overlay}>
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
-              style={styles.focusFrameOuter}
-            >
-              <View style={styles.focusFrameInner} />
-            </LinearGradient>
-          </Animated.View>
-          <LinearGradient
-            colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-            style={styles.instructionBg}
-          >
-            <Text style={styles.instruction}>Align QR code within the frame</Text>
-          </LinearGradient>
-          {scanned && (
-            <View style={styles.scannedOverlay}>
+        <Camera
+          ref={cameraRef}
+          style={styles.camera}
+          type="back"
+          barCodeScannerSettings={{
+            barCodeTypes: ['qr'],
+          }}
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
+        >
+          <View style={styles.overlay}>
+            <Animated.View entering={FadeInUp.delay(0).duration(400)}>
               <LinearGradient
-                colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                style={styles.scannedIconBg}
+                colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
+                style={styles.focusFrameOuter}
               >
-                <Icon name="check-circle" size="xl" color={colors.emerald} />
+                <View style={styles.focusFrameInner} />
               </LinearGradient>
-              <Text style={styles.scannedText}>Scanned successfully</Text>
-            </View>
-          )}
-        </View>
-      </Camera>
+            </Animated.View>
+            <LinearGradient
+              colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+              style={styles.instructionBg}
+            >
+              <Text style={styles.instruction}>Align QR code within the frame</Text>
+            </LinearGradient>
+            {scanned && (
+              <View style={styles.scannedOverlay}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                  style={styles.scannedIconBg}
+                >
+                  <Icon name="check-circle" size="xl" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.scannedText}>Scanned successfully</Text>
+              </View>
+            )}
+          </View>
+        </Camera>
 
-      <View style={styles.footer}>
-        <GradientButton label="Close" onPress={() => router.back()} variant="secondary" />
-      </View>
-    </SafeAreaView>
+        <View style={styles.footer}>
+          <GradientButton label="Close" onPress={() => router.back()} variant="secondary" />
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

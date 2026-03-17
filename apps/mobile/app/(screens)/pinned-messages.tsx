@@ -15,8 +15,11 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function PinnedMessagesScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -94,7 +97,7 @@ export default function PinnedMessagesScreen() {
             {item.mediaUrl && (
               <View style={styles.mediaPlaceholder}>
                 <Icon name="image" size={20} color={colors.text.secondary} />
-                <Text style={styles.mediaText}>Media</Text>
+                <Text style={styles.mediaText}>{t('screens.pinned-messages.media')}</Text>
               </View>
             )}
           </View>
@@ -107,7 +110,7 @@ export default function PinnedMessagesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
-          title="Pinned Messages"
+          title={t('screens.pinned-messages.title')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
         />
         <View style={styles.skeletonContainer}>
@@ -123,14 +126,14 @@ export default function PinnedMessagesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
-          title="Pinned Messages"
+          title={t('screens.pinned-messages.title')}
           leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
         />
         <EmptyState
           icon="slash"
-          title="Unable to load pinned messages"
-          subtitle="Please try again later"
-          actionLabel="Retry"
+          title={t('screens.pinned-messages.errorTitle')}
+          subtitle={t('screens.pinned-messages.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </SafeAreaView>
@@ -138,43 +141,46 @@ export default function PinnedMessagesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
-      <GlassHeader
-        title="Pinned Messages"
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+        <GlassHeader
+          title={t('screens.pinned-messages.title')}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        />
 
-      <FlatList
-            removeClippedSubviews={true}
-        data={messages}
-        renderItem={renderMessage}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        ListEmptyComponent={
-          <EmptyState
-            icon="map-pin"
-            title="No pinned messages"
-            subtitle="Pin important messages to find them here later"
-          />
-        }
-        ListFooterComponent={
-          isFetchingNextPage ? (
-            <View style={styles.footerLoader}>
-              <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
-            </View>
-          ) : null
-        }
-      />
-    </SafeAreaView>
+        <FlatList
+              removeClippedSubviews={true}
+          data={messages}
+          renderItem={renderMessage}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.listContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
+            />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          ListEmptyComponent={
+            <EmptyState
+              icon="map-pin"
+              title="No pinned messages"
+              subtitle="Pin important messages to find them here later"
+            />
+          }
+          ListFooterComponent={
+            isFetchingNextPage ? (
+              <View style={styles.footerLoader}>
+                <Skeleton.Rect width="100%" height={60} borderRadius={radius.md} />
+              </View>
+            ) : null
+          }
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

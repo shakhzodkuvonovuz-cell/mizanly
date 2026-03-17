@@ -30,6 +30,7 @@ interface BlockedUser {
 }
 
 import type { User, PaginatedResponse } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type BlockedPage = PaginatedResponse<User>;
 
@@ -90,6 +91,7 @@ export default function BlockedScreen() {
   }
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
         title={t('screens.blocked.title')}
@@ -124,31 +126,32 @@ export default function BlockedScreen() {
           renderItem={({ item, index }) => {
             const u = item.blocked;
             return (
-              <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-                <LinearGradient
-                  colors={['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']}
-                  style={styles.row}
-                >
-                  <Avatar uri={u.avatarUrl} name={u.displayName} size="md" showRing ringColor={colors.error} />
-                  <View style={styles.info}>
-                    <Text style={styles.name}>{u.displayName}</Text>
-                    <View style={styles.blockedBadge}>
-                      <Icon name="slash" size={10} color={colors.error} />
-                      <Text style={styles.username}>@{u.username}</Text>
+                <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
+                  <LinearGradient
+                    colors={['rgba(248,81,73,0.08)', 'rgba(248,81,73,0.02)']}
+                    style={styles.row}
+                  >
+                    <Avatar uri={u.avatarUrl} name={u.displayName} size="md" showRing ringColor={colors.error} />
+                    <View style={styles.info}>
+                      <Text style={styles.name}>{u.displayName}</Text>
+                      <View style={styles.blockedBadge}>
+                        <Icon name="slash" size={10} color={colors.error} />
+                        <Text style={styles.username}>@{u.username}</Text>
+                      </View>
                     </View>
-                  </View>
-                  <GradientButton
-                    label={t('screens.blocked.unblockButton')}
-                    variant="primary"
-                    size="sm"
-                    onPress={() => confirmUnblock(item)}
-                    loading={unblockMutation.isPending && unblockMutation.variables === u.id}
-                    disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
-                    accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
-                    accessibilityRole="button"
-                  />
-                </LinearGradient>
-              </Animated.View>
+                    <GradientButton
+                      label={t('screens.blocked.unblockButton')}
+                      variant="primary"
+                      size="sm"
+                      onPress={() => confirmUnblock(item)}
+                      loading={unblockMutation.isPending && unblockMutation.variables === u.id}
+                      disabled={unblockMutation.isPending && unblockMutation.variables === u.id}
+                      accessibilityLabel={t('screens.blocked.unblockUser', { name: u.displayName })}
+                      accessibilityRole="button"
+                    />
+                  </LinearGradient>
+                </Animated.View>
+            
             );
           }}
           ListFooterComponent={() =>
@@ -172,6 +175,7 @@ export default function BlockedScreen() {
         />
       )}
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

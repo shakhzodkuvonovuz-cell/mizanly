@@ -13,6 +13,7 @@ import { colors, spacing, fontSize, radius, fonts } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { CreatorStat } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface AnalyticsResponse {
   stats: CreatorStat[];
@@ -192,81 +193,84 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('analytics.creatorAnalytics')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('analytics.creatorAnalytics')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {isLoading ? (
-          <>
-            <View style={styles.cards}>
-              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-              <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
-            </View>
-            <View style={styles.section}>
-              <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={150} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
-            </View>
-            <View style={styles.section}>
-              <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={120} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
-            </View>
-          </>
-        ) : stats.length === 0 ? (
-          <EmptyState
-            icon="bar-chart-2"
-            title={t('analytics.noDataYet')}
-            subtitle={t('analytics.noDataSubtitle')}
-            actionLabel={t('analytics.startCreating')}
-            onAction={() => router.push('/(tabs)/create')}
-          />
-        ) : (
-          <>
-            <View style={styles.cards}>
-              <SummaryCard
-                title={t('analytics.views')}
-                value={formatNumber(totalViews)}
-                change={totalViews > 0 ? '+' + formatNumber(totalViews) : undefined}
-                icon="eye"
-                index={0}
-              />
-              <SummaryCard
-                title={t('analytics.likes')}
-                value={formatNumber(totalLikes)}
-                change={totalLikes > 0 ? '+' + formatNumber(totalLikes) : undefined}
-                icon="heart"
-                index={1}
-              />
-              <SummaryCard
-                title={t('analytics.followers')}
-                value={formatNumber(totalFollowers)}
-                change={totalFollowers > 0 ? '+' + formatNumber(totalFollowers) : undefined}
-                icon="users"
-                index={2}
-              />
-            </View>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {isLoading ? (
+            <>
+              <View style={styles.cards}>
+                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+                <Skeleton.Rect width={(screenWidth - spacing.base * 3) / 3} height={100} borderRadius={radius.md} />
+              </View>
+              <View style={styles.section}>
+                <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={150} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
+              </View>
+              <View style={styles.section}>
+                <Skeleton.Rect width="60%" height={20} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={120} borderRadius={radius.md} style={{ marginTop: spacing.md }} />
+              </View>
+            </>
+          ) : stats.length === 0 ? (
+            <EmptyState
+              icon="bar-chart-2"
+              title={t('analytics.noDataYet')}
+              subtitle={t('analytics.noDataSubtitle')}
+              actionLabel={t('analytics.startCreating')}
+              onAction={() => router.push('/(tabs)/create')}
+            />
+          ) : (
+            <>
+              <View style={styles.cards}>
+                <SummaryCard
+                  title={t('analytics.views')}
+                  value={formatNumber(totalViews)}
+                  change={totalViews > 0 ? '+' + formatNumber(totalViews) : undefined}
+                  icon="eye"
+                  index={0}
+                />
+                <SummaryCard
+                  title={t('analytics.likes')}
+                  value={formatNumber(totalLikes)}
+                  change={totalLikes > 0 ? '+' + formatNumber(totalLikes) : undefined}
+                  icon="heart"
+                  index={1}
+                />
+                <SummaryCard
+                  title={t('analytics.followers')}
+                  value={formatNumber(totalFollowers)}
+                  change={totalFollowers > 0 ? '+' + formatNumber(totalFollowers) : undefined}
+                  icon="users"
+                  index={2}
+                />
+              </View>
 
-            <BarChart stats={stats} />
+              <BarChart stats={stats} />
 
-            <TopContentSection />
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+              <TopContentSection />
+            </>
+          )}
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

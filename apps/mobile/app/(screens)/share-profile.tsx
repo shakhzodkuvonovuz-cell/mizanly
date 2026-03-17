@@ -15,6 +15,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function ShareProfileScreen() {
   const router = useRouter();
@@ -130,117 +131,120 @@ export default function ShareProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
-          <Icon name="arrow-left" size="md" color={colors.text.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Share Profile</Text>
-        <View style={{ width: 24 }} />
-      </View>
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+            <Icon name="arrow-left" size="md" color={colors.text.primary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>Share Profile</Text>
+          <View style={{ width: 24 }} />
+        </View>
 
-      <View style={styles.content}>
-        {/* Glassmorphism QR Card */}
-        <Animated.View entering={FadeInUp.duration(400).springify()}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-            style={styles.qrCard}
-          >
+        <View style={styles.content}>
+          {/* Glassmorphism QR Card */}
+          <Animated.View entering={FadeInUp.duration(400).springify()}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.08)', 'rgba(200,150,62,0.05)']}
-              style={styles.qrInner}
+              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              style={styles.qrCard}
             >
-              <QRCode
-                value={profileUrl}
-                size={180}
-                color={colors.text.primary}
-                backgroundColor="transparent"
-                logoBackgroundColor="transparent"
-              />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.08)', 'rgba(200,150,62,0.05)']}
+                style={styles.qrInner}
+              >
+                <QRCode
+                  value={profileUrl}
+                  size={180}
+                  color={colors.text.primary}
+                  backgroundColor="transparent"
+                  logoBackgroundColor="transparent"
+                />
+              </LinearGradient>
+              <View style={styles.avatarOverlay}>
+                <LinearGradient
+                  colors={[colors.emerald, colors.gold]}
+                  style={styles.avatarRing}
+                >
+                  <View style={styles.avatarInner}>
+                    <Avatar uri={user.avatarUrl} name={user.displayName || user.username} size="lg" />
+                  </View>
+                </LinearGradient>
+              </View>
             </LinearGradient>
-            <View style={styles.avatarOverlay}>
+          </Animated.View>
+
+          {/* Profile Info */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400).springify()}>
+            <View style={styles.profileInfo}>
+              <Text style={styles.profileName}>{user.displayName || user.username}</Text>
+              <View style={styles.usernameBadge}>
+                <Icon name="at-sign" size={12} color={colors.text.tertiary} />
+                <Text style={styles.profileUsername}>{user.username}</Text>
+              </View>
+            </View>
+          </Animated.View>
+
+          {/* Share Hint */}
+          <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
+            <Text style={styles.shareHint}>Scan this QR code to visit your profile</Text>
+          </Animated.View>
+
+          {/* Glassmorphism Action Buttons */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400).springify()} style={styles.buttonRow}>
+            {/* Copy Link Button */}
+            <Pressable
+              style={styles.buttonWrapper}
+              onPress={handleCopyLink}
+              accessibilityLabel={copied ? "Link copied" : "Copy profile link"}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={copied ? [colors.emerald, 'rgba(10,123,79,0.8)'] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={[styles.button, copied && styles.copyButtonActive]}
+              >
+                <Icon name={copied ? 'check' : 'link'} size="md" color={copied ? '#fff' : colors.text.primary} />
+                <Text style={[styles.buttonLabel, copied && styles.buttonLabelActive]}>
+                  {copied ? 'Copied!' : 'Copy Link'}
+                </Text>
+              </LinearGradient>
+            </Pressable>
+
+            {/* Share Button */}
+            <Pressable
+              style={styles.buttonWrapper}
+              onPress={handleShare}
+              accessibilityLabel="Share profile"
+              accessibilityRole="button"
+            >
               <LinearGradient
                 colors={[colors.emerald, colors.gold]}
-                style={styles.avatarRing}
+                style={[styles.button, styles.shareButton]}
               >
-                <View style={styles.avatarInner}>
-                  <Avatar uri={user.avatarUrl} name={user.displayName || user.username} size="lg" />
-                </View>
+                <Icon name="share" size="md" color="#fff" />
+                <Text style={[styles.buttonLabel, styles.shareButtonLabel]}>Share</Text>
               </LinearGradient>
-            </View>
-          </LinearGradient>
-        </Animated.View>
+            </Pressable>
 
-        {/* Profile Info */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400).springify()}>
-          <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user.displayName || user.username}</Text>
-            <View style={styles.usernameBadge}>
-              <Icon name="at-sign" size={12} color={colors.text.tertiary} />
-              <Text style={styles.profileUsername}>{user.username}</Text>
-            </View>
-          </View>
-        </Animated.View>
-
-        {/* Share Hint */}
-        <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
-          <Text style={styles.shareHint}>Scan this QR code to visit your profile</Text>
-        </Animated.View>
-
-        {/* Glassmorphism Action Buttons */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400).springify()} style={styles.buttonRow}>
-          {/* Copy Link Button */}
-          <Pressable
-            style={styles.buttonWrapper}
-            onPress={handleCopyLink}
-            accessibilityLabel={copied ? "Link copied" : "Copy profile link"}
-            accessibilityRole="button"
-          >
-            <LinearGradient
-              colors={copied ? [colors.emerald, 'rgba(10,123,79,0.8)'] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={[styles.button, copied && styles.copyButtonActive]}
+            {/* Scan QR Button */}
+            <Pressable
+              style={styles.buttonWrapper}
+              onPress={handleScanQR}
+              accessibilityLabel="Scan QR code"
+              accessibilityRole="button"
             >
-              <Icon name={copied ? 'check' : 'link'} size="md" color={copied ? '#fff' : colors.text.primary} />
-              <Text style={[styles.buttonLabel, copied && styles.buttonLabelActive]}>
-                {copied ? 'Copied!' : 'Copy Link'}
-              </Text>
-            </LinearGradient>
-          </Pressable>
-
-          {/* Share Button */}
-          <Pressable
-            style={styles.buttonWrapper}
-            onPress={handleShare}
-            accessibilityLabel="Share profile"
-            accessibilityRole="button"
-          >
-            <LinearGradient
-              colors={[colors.emerald, colors.gold]}
-              style={[styles.button, styles.shareButton]}
-            >
-              <Icon name="share" size="md" color="#fff" />
-              <Text style={[styles.buttonLabel, styles.shareButtonLabel]}>Share</Text>
-            </LinearGradient>
-          </Pressable>
-
-          {/* Scan QR Button */}
-          <Pressable
-            style={styles.buttonWrapper}
-            onPress={handleScanQR}
-            accessibilityLabel="Scan QR code"
-            accessibilityRole="button"
-          >
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.button}
-            >
-              <Icon name="camera" size="md" color={colors.text.primary} />
-              <Text style={styles.buttonLabel}>Scan QR</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.button}
+              >
+                <Icon name="camera" size="md" color={colors.text.primary} />
+                <Text style={styles.buttonLabel}>Scan QR</Text>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
+        </View>
       </View>
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -18,6 +18,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack, Reel } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
@@ -158,110 +159,113 @@ export default function SoundScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Sound"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
-      <FlatList
-            removeClippedSubviews={true}
-        data={reels}
-        renderItem={renderGridItem}
-        keyExtractor={(item) => item.id}
-        numColumns={GRID_COLUMNS}
-        columnWrapperStyle={styles.gridRow}
-        contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
-        ListHeaderComponent={
-          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.headerSection}
-            >
-              {/* Cover art */}
-              <View style={styles.coverContainer}>
-                {track.coverUrl ? (
-                  <ExpoImage
-                    source={{ uri: track.coverUrl }}
-                    style={styles.cover}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                ) : (
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Sound"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
+        <FlatList
+              removeClippedSubviews={true}
+          data={reels}
+          renderItem={renderGridItem}
+          keyExtractor={(item) => item.id}
+          numColumns={GRID_COLUMNS}
+          columnWrapperStyle={styles.gridRow}
+          contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
+          ListHeaderComponent={
+            <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.headerSection}
+              >
+                {/* Cover art */}
+                <View style={styles.coverContainer}>
+                  {track.coverUrl ? (
+                    <ExpoImage
+                      source={{ uri: track.coverUrl }}
+                      style={styles.cover}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : (
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                      style={[styles.cover, styles.coverPlaceholder]}
+                    >
+                      <Icon name="music" size="xl" color={colors.gold} />
+                    </LinearGradient>
+                  )}
+                  {track.isTrending && (
+                    <LinearGradient
+                      colors={[colors.emerald, colors.gold]}
+                      style={styles.trendingBadge}
+                    >
+                      <Text style={styles.trendingBadgeText}>Trending</Text>
+                    </LinearGradient>
+                  )}
+                </View>
+
+                {/* Title + artist */}
+                <Text style={styles.trackTitle}>{track.title}</Text>
+                <Text style={styles.trackArtist}>{track.artist}</Text>
+
+                {/* Stats row with icon backgrounds */}
+                <View style={styles.statsRow}>
                   <LinearGradient
-                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                    style={[styles.cover, styles.coverPlaceholder]}
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.statBadge}
                   >
-                    <Icon name="music" size="xl" color={colors.gold} />
+                    <Icon name="repeat" size="xs" color={colors.emerald} />
+                    <Text style={styles.statBadgeText}>{formatNumber(track.usageCount)} reels</Text>
                   </LinearGradient>
-                )}
-                {track.isTrending && (
                   <LinearGradient
-                    colors={[colors.emerald, colors.gold]}
-                    style={styles.trendingBadge}
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.statBadge}
                   >
-                    <Text style={styles.trendingBadgeText}>Trending</Text>
+                    <Icon name="play" size="xs" color={colors.emerald} />
+                    <Text style={styles.statBadgeText}>{formatNumber(track.playsCount || 0)} plays</Text>
                   </LinearGradient>
-                )}
+                </View>
+
+                {/* Use this sound button */}
+                <GradientButton
+                  label="Use this sound"
+                  onPress={handleUseSound}
+                  style={styles.useButton}
+                />
+              </LinearGradient>
+            </Animated.View>
+          }
+          ListEmptyComponent={
+            reelsQuery.isLoading ? (
+              <View style={styles.skeletonGrid}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Skeleton.Rect key={i} width="100%" height={100} borderRadius={radius.sm} />
+                ))}
               </View>
-
-              {/* Title + artist */}
-              <Text style={styles.trackTitle}>{track.title}</Text>
-              <Text style={styles.trackArtist}>{track.artist}</Text>
-
-              {/* Stats row with icon backgrounds */}
-              <View style={styles.statsRow}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.statBadge}
-                >
-                  <Icon name="repeat" size="xs" color={colors.emerald} />
-                  <Text style={styles.statBadgeText}>{formatNumber(track.usageCount)} reels</Text>
-                </LinearGradient>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.statBadge}
-                >
-                  <Icon name="play" size="xs" color={colors.emerald} />
-                  <Text style={styles.statBadgeText}>{formatNumber(track.playsCount || 0)} plays</Text>
-                </LinearGradient>
-              </View>
-
-              {/* Use this sound button */}
-              <GradientButton
-                label="Use this sound"
-                onPress={handleUseSound}
-                style={styles.useButton}
+            ) : (
+              <EmptyState
+                icon="video"
+                title="No reels yet"
+                subtitle="Be the first to create a reel with this sound"
+                style={styles.emptyState}
               />
-            </LinearGradient>
-          </Animated.View>
-        }
-        ListEmptyComponent={
-          reelsQuery.isLoading ? (
-            <View style={styles.skeletonGrid}>
-              {Array.from({ length: 6 }).map((_, i) => (
-                <Skeleton.Rect key={i} width="100%" height={100} borderRadius={radius.sm} />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              icon="video"
-              title="No reels yet"
-              subtitle="Be the first to create a reel with this sound"
-              style={styles.emptyState}
+            )
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.emerald}
             />
-          )
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-        onEndReached={handleEndReached}
-        onEndReachedThreshold={0.4}
-      />
-    </View>
+          }
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.4}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, fonts, radius } from '@/theme';
 import { followsApi, circlesApi } from '@/services/api';
 import type { User, PaginatedResponse, Circle, CircleMember } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CLOSE_FRIENDS_CIRCLE_NAME = 'Close Friends';
 
@@ -261,111 +262,114 @@ export default function CloseFriendsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        leftAction={{
-          icon: 'arrow-left',
-          onPress: () => router.back(),
-          accessibilityLabel: t('common.back'),
-        }}
-        titleComponent={
-          <View style={styles.headerTitleRow}>
-            <Text style={styles.headerTitle}>{t('screens.closeFriends.title')}</Text>
-            <Badge count={memberIds.length} color={colors.emerald} size="sm" />
-          </View>
-        }
-      />
-
-      {/* Search Bar with Glassmorphism */}
-      <View style={[styles.searchContainer, { marginTop: headerHeight + spacing.md }]}>
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-          style={styles.searchGradient}
-        >
-          <Icon name="search" size="sm" color={colors.text.secondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder={t('screens.closeFriends.searchPlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          {searchQuery.length > 0 && (
-            <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
-              <Icon name="x" size="sm" color={colors.text.secondary} />
-            </Pressable>
-          )}
-        </LinearGradient>
-      </View>
-
-      {/* Stats bar with Glassmorphism */}
-      <LinearGradient
-        colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
-        style={styles.statsBar}
-      >
-        <View style={styles.statItem}>
-          <Icon name="users" size="xs" color={colors.emerald} />
-          <Text style={styles.statsText}>
-            {t('screens.closeFriends.statsShown', { shown: closeFriendsInList.length, total: filteredFollowers.length })}
-          </Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Icon name="heart" size="xs" color={colors.gold} />
-          <Text style={[styles.statsText, styles.statsTextAccent]}>
-            {t('screens.closeFriends.statsCloseFriends', { count: memberIds.length })}
-          </Text>
-        </View>
-      </LinearGradient>
-
-      {/* List */}
-      <FlatList
-          removeClippedSubviews={true}
-        data={filteredFollowers}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <UserRow
-            user={item}
-            isMe={clerkUser?.id === item.id}
-            isCloseFriend={memberIds.includes(item.id)}
-            onToggle={toggleCloseFriend}
-            onPress={() => router.push(`/(screens)/profile/${item.username}`)}
-            disabled={!isReady || toggleMemberMutation.isPending}
-            index={index}
-          />
-        )}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={() =>
-          followersQuery.isLoading ? null : (
-            <EmptyState
-              icon="users"
-              title={searchQuery ? t('screens.closeFriends.emptySearchTitle') : t('screens.closeFriends.emptyDefaultTitle')}
-              subtitle={searchQuery ? t('screens.closeFriends.emptySearchSubtitle') : t('screens.closeFriends.emptyDefaultSubtitle')}
-            />
-          )
-        }
-        ListFooterComponent={() =>
-          followersQuery.isFetchingNextPage ? (
-            <View style={styles.skeletonList}>
-              <View style={styles.skeletonRow}>
-                <Skeleton.Circle size={40} />
-                <View style={{ flex: 1, gap: 6 }}>
-                  <Skeleton.Rect width={130} height={14} />
-                  <Skeleton.Rect width={90} height={11} />
-                </View>
-                <Skeleton.Rect width={50} height={30} borderRadius={radius.full} />
-              </View>
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          leftAction={{
+            icon: 'arrow-left',
+            onPress: () => router.back(),
+            accessibilityLabel: t('common.back'),
+          }}
+          titleComponent={
+            <View style={styles.headerTitleRow}>
+              <Text style={styles.headerTitle}>{t('screens.closeFriends.title')}</Text>
+              <Badge count={memberIds.length} color={colors.emerald} size="sm" />
             </View>
-          ) : null
-        }
-      />
-    </View>
+          }
+        />
+
+        {/* Search Bar with Glassmorphism */}
+        <View style={[styles.searchContainer, { marginTop: headerHeight + spacing.md }]}>
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            style={styles.searchGradient}
+          >
+            <Icon name="search" size="sm" color={colors.text.secondary} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('screens.closeFriends.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} hitSlop={8}>
+                <Icon name="x" size="sm" color={colors.text.secondary} />
+              </Pressable>
+            )}
+          </LinearGradient>
+        </View>
+
+        {/* Stats bar with Glassmorphism */}
+        <LinearGradient
+          colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+          style={styles.statsBar}
+        >
+          <View style={styles.statItem}>
+            <Icon name="users" size="xs" color={colors.emerald} />
+            <Text style={styles.statsText}>
+              {t('screens.closeFriends.statsShown', { shown: closeFriendsInList.length, total: filteredFollowers.length })}
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Icon name="heart" size="xs" color={colors.gold} />
+            <Text style={[styles.statsText, styles.statsTextAccent]}>
+              {t('screens.closeFriends.statsCloseFriends', { count: memberIds.length })}
+            </Text>
+          </View>
+        </LinearGradient>
+
+        {/* List */}
+        <FlatList
+            removeClippedSubviews={true}
+          data={filteredFollowers}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item, index }) => (
+            <UserRow
+              user={item}
+              isMe={clerkUser?.id === item.id}
+              isCloseFriend={memberIds.includes(item.id)}
+              onToggle={toggleCloseFriend}
+              onPress={() => router.push(`/(screens)/profile/${item.username}`)}
+              disabled={!isReady || toggleMemberMutation.isPending}
+              index={index}
+            />
+          )}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={() =>
+            followersQuery.isLoading ? null : (
+              <EmptyState
+                icon="users"
+                title={searchQuery ? t('screens.closeFriends.emptySearchTitle') : t('screens.closeFriends.emptyDefaultTitle')}
+                subtitle={searchQuery ? t('screens.closeFriends.emptySearchSubtitle') : t('screens.closeFriends.emptyDefaultSubtitle')}
+              />
+            )
+          }
+          ListFooterComponent={() =>
+            followersQuery.isFetchingNextPage ? (
+              <View style={styles.skeletonList}>
+                <View style={styles.skeletonRow}>
+                  <Skeleton.Circle size={40} />
+                  <View style={{ flex: 1, gap: 6 }}>
+                    <Skeleton.Rect width={130} height={14} />
+                    <Skeleton.Rect width={90} height={11} />
+                  </View>
+                  <Skeleton.Rect width={50} height={30} borderRadius={radius.full} />
+                </View>
+              </View>
+            ) : null
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

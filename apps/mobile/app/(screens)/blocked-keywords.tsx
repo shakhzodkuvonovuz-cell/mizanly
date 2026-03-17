@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { settingsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { BlockedKeyword } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function BlockedKeywordsScreen() {
   const router = useRouter();
@@ -88,118 +89,121 @@ export default function BlockedKeywordsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('screens.blockedKeywords.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('screens.blockedKeywords.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <Text style={styles.hint}>
-          {t('screens.blockedKeywords.hint')}
-        </Text>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
+          <Text style={styles.hint}>
+            {t('screens.blockedKeywords.hint')}
+          </Text>
 
-        {/* Add new keyword row */}
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.addRow}
-          >
+          {/* Add new keyword row */}
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-              style={styles.inputWrap}
-            >
-              <Icon name="plus" size="sm" color={colors.emerald} style={styles.inputIcon} />
-              <TextInput
-                style={styles.input}
-                placeholder={t('screens.blockedKeywords.placeholder')}
-                placeholderTextColor={colors.text.tertiary}
-                value={newWord}
-                onChangeText={setNewWord}
-                onSubmitEditing={handleAdd}
-                returnKeyType="done"
-                autoCapitalize="none"
-                accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
-                maxLength={50}
-              />
-            </LinearGradient>
-            <TouchableOpacity
-              onPress={handleAdd}
-              disabled={!newWord.trim() || addMutation.isPending}
-              accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
-              accessibilityRole="button"
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.addRow}
             >
               <LinearGradient
-                colors={(!newWord.trim() || addMutation.isPending) ? ['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)'] : ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)']}
-                style={[styles.addBtn, (!newWord.trim() || addMutation.isPending) && styles.addBtnDisabled]}
+                colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                style={styles.inputWrap}
               >
-                <Text style={styles.addBtnText}>{t('screens.blockedKeywords.addButton')}</Text>
+                <Icon name="plus" size="sm" color={colors.emerald} style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder={t('screens.blockedKeywords.placeholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  value={newWord}
+                  onChangeText={setNewWord}
+                  onSubmitEditing={handleAdd}
+                  returnKeyType="done"
+                  autoCapitalize="none"
+                  accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
+                  maxLength={50}
+                />
               </LinearGradient>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Keywords list */}
-        {isLoading ? (
-          <View style={{ padding: spacing.base, gap: spacing.sm }}>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton.Rect key={i} width="100%" height={44} />
-            ))}
-          </View>
-        ) : (
-          <FlatList
-            data={keywords}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={{ paddingBottom: 40 }}
-            removeClippedSubviews={true}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-            }
-            renderItem={({ item, index }) => (
-              <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
+              <TouchableOpacity
+                onPress={handleAdd}
+                disabled={!newWord.trim() || addMutation.isPending}
+                accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
+                accessibilityRole="button"
+              >
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.keywordRow}
+                  colors={(!newWord.trim() || addMutation.isPending) ? ['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)'] : ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)']}
+                  style={[styles.addBtn, (!newWord.trim() || addMutation.isPending) && styles.addBtnDisabled]}
                 >
+                  <Text style={styles.addBtnText}>{t('screens.blockedKeywords.addButton')}</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Keywords list */}
+          {isLoading ? (
+            <View style={{ padding: spacing.base, gap: spacing.sm }}>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Skeleton.Rect key={i} width="100%" height={44} />
+              ))}
+            </View>
+          ) : (
+            <FlatList
+              data={keywords}
+              keyExtractor={(item) => item.id}
+              contentContainerStyle={{ paddingBottom: 40 }}
+              removeClippedSubviews={true}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+              }
+              renderItem={({ item, index }) => (
+                <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
                   <LinearGradient
-                    colors={['rgba(248,81,73,0.1)', 'rgba(248,81,73,0.05)']}
-                    style={styles.keywordIconBg}
-                  >
-                    <Icon name="slash" size="xs" color={colors.error} />
-                  </LinearGradient>
-                  <Text style={styles.keywordText}>{item.word}</Text>
-                  <TouchableOpacity
-                    onPress={() => handleDelete(item.id, item.word)}
-                    hitSlop={8}
-                    disabled={deleteMutation.isPending}
-                    accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
-                    accessibilityRole="button"
+                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.keywordRow}
                   >
                     <LinearGradient
-                      colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
-                      style={styles.deleteBtnBg}
+                      colors={['rgba(248,81,73,0.1)', 'rgba(248,81,73,0.05)']}
+                      style={styles.keywordIconBg}
                     >
-                      <Icon name="x" size="sm" color={colors.error} />
+                      <Icon name="slash" size="xs" color={colors.error} />
                     </LinearGradient>
-                  </TouchableOpacity>
-                </LinearGradient>
-              </Animated.View>
-            )}
-            ItemSeparatorComponent={() => <View style={styles.divider} />}
-            ListEmptyComponent={
-              <EmptyState
-                icon="slash"
-                title={t('screens.blockedKeywords.emptyTitle')}
-                subtitle={t('screens.blockedKeywords.emptySubtitle')}
-              />
-            }
-          />
-        )}
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+                    <Text style={styles.keywordText}>{item.word}</Text>
+                    <TouchableOpacity
+                      onPress={() => handleDelete(item.id, item.word)}
+                      hitSlop={8}
+                      disabled={deleteMutation.isPending}
+                      accessibilityLabel={t('screens.blockedKeywords.removeKeywordLabel')}
+                      accessibilityRole="button"
+                    >
+                      <LinearGradient
+                        colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
+                        style={styles.deleteBtnBg}
+                      >
+                        <Icon name="x" size="sm" color={colors.error} />
+                      </LinearGradient>
+                    </TouchableOpacity>
+                  </LinearGradient>
+                </Animated.View>
+              )}
+              ItemSeparatorComponent={() => <View style={styles.divider} />}
+              ListEmptyComponent={
+                <EmptyState
+                  icon="slash"
+                  title={t('screens.blockedKeywords.emptyTitle')}
+                  subtitle={t('screens.blockedKeywords.emptySubtitle')}
+                />
+              }
+            />
+          )}
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

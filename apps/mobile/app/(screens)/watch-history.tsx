@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Local type for watch history items (matches Step 4's WatchHistoryItem)
 interface WatchHistoryItem {
@@ -168,59 +169,62 @@ export default function WatchHistoryScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Watch History"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
-        rightActions={[{
-          icon: <Text style={styles.clearText}>Clear</Text>,
-          onPress: handleClear,
-          accessibilityLabel: 'Clear watch history',
-        }]}
-      />
-      <View style={styles.headerSpacer} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Watch History"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          rightActions={[{
+            icon: <Text style={styles.clearText}>Clear</Text>,
+            onPress: handleClear,
+            accessibilityLabel: 'Clear watch history',
+          }]}
+        />
+        <View style={styles.headerSpacer} />
 
-      <FlatList
-          removeClippedSubviews={true}
-        data={items}
-        keyExtractor={(item) => item.id}
-        onEndReached={onEndReached}
-        onEndReachedThreshold={0.4}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        renderItem={({ item, index }) => (
-          <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
-        )}
-        ListEmptyComponent={() =>
-          !watchHistoryQuery.isLoading ? (
-            <EmptyState
-              icon="clock"
-              title="Your watch history is empty"
-              subtitle="Videos you watch will show up here so you can easily find them again"
-            />
-          ) : (
-            <View style={styles.skeletonContainer}>
-              {Array.from({ length: 3 }).map((_, i) => (
-                <View key={i} style={styles.skeletonItem}>
-                  <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
-                  <Skeleton.Rect width="60%" height={14} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
-                  <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
-                </View>
-              ))}
-            </View>
-          )
-        }
-        ListFooterComponent={() =>
-          watchHistoryQuery.isFetchingNextPage ? (
-            <View style={styles.footer}>
-              <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
-            </View>
-          ) : null
-        }
-        contentContainerStyle={styles.listContainer}
-      />
-    </View>
+        <FlatList
+            removeClippedSubviews={true}
+          data={items}
+          keyExtractor={(item) => item.id}
+          onEndReached={onEndReached}
+          onEndReachedThreshold={0.4}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          renderItem={({ item, index }) => (
+            <VideoCard item={item} onPress={() => handleVideoPress(item)} index={index} />
+          )}
+          ListEmptyComponent={() =>
+            !watchHistoryQuery.isLoading ? (
+              <EmptyState
+                icon="clock"
+                title="Your watch history is empty"
+                subtitle="Videos you watch will show up here so you can easily find them again"
+              />
+            ) : (
+              <View style={styles.skeletonContainer}>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <View key={i} style={styles.skeletonItem}>
+                    <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
+                    <Skeleton.Rect width="60%" height={14} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
+                    <Skeleton.Rect width="40%" height={12} borderRadius={radius.sm} style={{ marginTop: spacing.xs }} />
+                  </View>
+                ))}
+              </View>
+            )
+          }
+          ListFooterComponent={() =>
+            watchHistoryQuery.isFetchingNextPage ? (
+              <View style={styles.footer}>
+                <Skeleton.Rect width="100%" height={180} borderRadius={radius.md} />
+              </View>
+            ) : null
+          }
+          contentContainerStyle={styles.listContainer}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -37,6 +37,7 @@ import { messagesApi, uploadApi } from '@/services/api';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 interface TenorGifResult {
   id: string;
@@ -1035,6 +1036,7 @@ export default function ConversationScreen() {
   }
 
   return (
+    <ScreenErrorBoundary>
     <View style={styles.container}>
       {/* Header */}
       {searchMode ? (
@@ -1167,29 +1169,30 @@ export default function ConversationScreen() {
                 new Date(member.lastReadAt) >= new Date(item.message.createdAt)
               ).slice(0, 3) ?? [];
               return (
-                <Swipeable
-                  renderRightActions={() => (
-                    <View style={styles.swipeAction}>
-                      <Icon name="message-circle" size="sm" color={colors.emerald} />
-                    </View>
-                  )}
-                  onSwipeableWillOpen={() => handleSwipeReply(item.message)}
-                  rightThreshold={40}
-                >
-                  <MessageBubble
-                    message={item.message}
-                    isOwn={item.message.sender.id === user?.id}
-                    isGroupStart={item.isGroupStart}
-                    isGroupEnd={item.isGroupEnd}
-                    onLongPress={handleContextMenu}
-                    isNew={newMessageIdsRef.current.has(item.message.id)}
-                    searchQuery={searchQuery}
-                    readByMembers={readByMembers}
-                    onSearchResultPress={() => handleSearchResultPress(index)}
-                    conversationId={id}
-                    deliveredMessages={deliveredMessages}
-                  />
-                </Swipeable>
+                  <Swipeable
+                    renderRightActions={() => (
+                      <View style={styles.swipeAction}>
+                        <Icon name="message-circle" size="sm" color={colors.emerald} />
+                      </View>
+                    )}
+                    onSwipeableWillOpen={() => handleSwipeReply(item.message)}
+                    rightThreshold={40}
+                  >
+                    <MessageBubble
+                      message={item.message}
+                      isOwn={item.message.sender.id === user?.id}
+                      isGroupStart={item.isGroupStart}
+                      isGroupEnd={item.isGroupEnd}
+                      onLongPress={handleContextMenu}
+                      isNew={newMessageIdsRef.current.has(item.message.id)}
+                      searchQuery={searchQuery}
+                      readByMembers={readByMembers}
+                      onSearchResultPress={() => handleSearchResultPress(index)}
+                      conversationId={id}
+                      deliveredMessages={deliveredMessages}
+                    />
+                  </Swipeable>
+              
               );
             }}
             onEndReached={() => {
@@ -1584,6 +1587,7 @@ export default function ConversationScreen() {
         }}
       />
     </View>
+    </ScreenErrorBoundary>
   );
 }
 

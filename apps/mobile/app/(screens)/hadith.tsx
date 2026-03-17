@@ -24,6 +24,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { Hadith as ApiHadith } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -264,105 +265,108 @@ export default function HadithScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title="Daily Hadith"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title="Daily Hadith"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <FlatList
-        data={hadiths.slice(1)}
-        keyExtractor={item => item.id}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.scrollContent}
-        ListHeaderComponent={
-          <>
-            {/* Hero Card - Today's Hadith */}
-            <Animated.View entering={FadeInUp.duration(500)}>
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                style={[styles.heroCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
-              >
-                {/* Book Icon */}
+        <FlatList
+          data={hadiths.slice(1)}
+          keyExtractor={item => item.id}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+          contentContainerStyle={styles.scrollContent}
+          ListHeaderComponent={
+            <>
+              {/* Hero Card - Today's Hadith */}
+              <Animated.View entering={FadeInUp.duration(500)}>
                 <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.iconBackground}
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                  style={[styles.heroCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
                 >
-                  <Icon name="book-open" size="sm" color={colors.emerald} />
+                  {/* Book Icon */}
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.iconBackground}
+                  >
+                    <Icon name="book-open" size="sm" color={colors.emerald} />
+                  </LinearGradient>
+
+                  {/* Arabic Text */}
+                  <Text style={styles.arabicText}>{currentHadith.arabic}</Text>
+
+                  {/* English Translation */}
+                  <Text style={styles.englishText}>{currentHadith.english}</Text>
+
+                  {/* Source & Narrator */}
+                  <View style={styles.attributionContainer}>
+                    <Text style={styles.sourceText}>{currentHadith.source}</Text>
+                    <Text style={styles.narratorText}>{currentHadith.narrator}</Text>
+                  </View>
+
+                  {/* Action Row */}
+                  <View style={styles.actionRow}>
+                    <Animated.View style={animatedBookmarkStyle}>
+                      <ActionButton
+                        icon={currentHadith.isBookmarked ? 'bookmark-filled' : 'bookmark'}
+                        label={t('common.save')}
+                        onPress={handleBookmark}
+                        isActive={currentHadith.isBookmarked}
+                        activeColor={colors.gold}
+                      />
+                    </Animated.View>
+                    <ActionButton icon="share" label={t('common.share')} onPress={handleShare} />
+                    <ActionButton icon="check-check" label={t('common.copy')} onPress={handleCopy} />
+                  </View>
                 </LinearGradient>
+              </Animated.View>
 
-                {/* Arabic Text */}
-                <Text style={styles.arabicText}>{currentHadith.arabic}</Text>
+              {/* Section Title */}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('islamic.previousHadith')}</Text>
+              </View>
+            </>
+          }
+          renderItem={({ item, index }) => (
+            <PreviousHadithCard
+              hadith={item}
+              index={index}
+              onPress={() => selectHadith(item)}
+            />
+          )}
+          ListEmptyComponent={
+            <EmptyState
+              icon="book-open"
+              title={t('islamic.noPreviousHadith')}
+              subtitle={t('islamic.checkBackTomorrow')}
+            />
+          }
+          ListFooterComponent={
+            <>
+              {/* Bottom Info Card */}
+              <Animated.View entering={FadeInUp.delay(400).duration(500)}>
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.2)']}
+                  style={styles.infoCard}
+                >
+                  <View style={styles.infoRow}>
+                    <Icon name="check-circle" size="sm" color={colors.emerald} />
+                    <Text style={styles.infoText}>
+                      {t('islamic.hadithSourceInfo')}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </Animated.View>
 
-                {/* English Translation */}
-                <Text style={styles.englishText}>{currentHadith.english}</Text>
-
-                {/* Source & Narrator */}
-                <View style={styles.attributionContainer}>
-                  <Text style={styles.sourceText}>{currentHadith.source}</Text>
-                  <Text style={styles.narratorText}>{currentHadith.narrator}</Text>
-                </View>
-
-                {/* Action Row */}
-                <View style={styles.actionRow}>
-                  <Animated.View style={animatedBookmarkStyle}>
-                    <ActionButton
-                      icon={currentHadith.isBookmarked ? 'bookmark-filled' : 'bookmark'}
-                      label={t('common.save')}
-                      onPress={handleBookmark}
-                      isActive={currentHadith.isBookmarked}
-                      activeColor={colors.gold}
-                    />
-                  </Animated.View>
-                  <ActionButton icon="share" label={t('common.share')} onPress={handleShare} />
-                  <ActionButton icon="check-check" label={t('common.copy')} onPress={handleCopy} />
-                </View>
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Section Title */}
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('islamic.previousHadith')}</Text>
-            </View>
-          </>
-        }
-        renderItem={({ item, index }) => (
-          <PreviousHadithCard
-            hadith={item}
-            index={index}
-            onPress={() => selectHadith(item)}
-          />
-        )}
-        ListEmptyComponent={
-          <EmptyState
-            icon="book-open"
-            title={t('islamic.noPreviousHadith')}
-            subtitle={t('islamic.checkBackTomorrow')}
-          />
-        }
-        ListFooterComponent={
-          <>
-            {/* Bottom Info Card */}
-            <Animated.View entering={FadeInUp.delay(400).duration(500)}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.2)']}
-                style={styles.infoCard}
-              >
-                <View style={styles.infoRow}>
-                  <Icon name="check-circle" size="sm" color={colors.emerald} />
-                  <Text style={styles.infoText}>
-                    {t('islamic.hadithSourceInfo')}
-                  </Text>
-                </View>
-              </LinearGradient>
-            </Animated.View>
-
-            {/* Bottom padding */}
-            <View style={{ height: spacing.xxl }} />
-          </>
-        }
-      />
-    </SafeAreaView>
+              {/* Bottom padding */}
+              <View style={{ height: spacing.xxl }} />
+            </>
+          }
+        />
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

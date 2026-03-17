@@ -17,6 +17,7 @@ import { usersApi, settingsApi } from '@/services/api';
 import type { Settings } from '@/types';
 import { useStore, useSafFeedType, useMajlisFeedType } from '@/store';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type WellbeingSettings = Parameters<typeof settingsApi.updateWellbeing>[0];
 
@@ -215,211 +216,214 @@ export default function ContentSettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('settings.contentPreferences')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('settings.contentPreferences')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        {/* Feed Preferences */}
-        <Animated.View entering={FadeInUp.duration(400)}>
-          <SectionHeader title="feedPreferences" />
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <TouchableOpacity
-              style={styles.rowPressable}
-              onPress={() => setSafPickerVisible(true)}
-              accessibilityLabel={t('settings.safDefaultFeed')}
-              accessibilityRole="button"
+        <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+          {/* Feed Preferences */}
+          <Animated.View entering={FadeInUp.duration(400)}>
+            <SectionHeader title="feedPreferences" />
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
             >
-              <View style={styles.rowContent}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.rowIconBg}
-                >
-                  <Icon name="trending-up" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>{t('settings.safDefault')}</Text>
-                  <Text style={styles.rowHint}>{t('settings.hints.safDefault')}</Text>
+              <TouchableOpacity
+                style={styles.rowPressable}
+                onPress={() => setSafPickerVisible(true)}
+                accessibilityLabel={t('settings.safDefaultFeed')}
+                accessibilityRole="button"
+              >
+                <View style={styles.rowContent}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.rowIconBg}
+                  >
+                    <Icon name="trending-up" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowLabel}>{t('settings.safDefault')}</Text>
+                    <Text style={styles.rowHint}>{t('settings.hints.safDefault')}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
-                  style={styles.valueBadge}
-                >
-                  <Text style={styles.valueText}>
-                    {safFeedType === 'following' ? t('feed.following') : t('feed.forYou')}
-                  </Text>
-                </LinearGradient>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </View>
-            </TouchableOpacity>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.rowPressable}
-              onPress={() => setMajlisPickerVisible(true)}
-              accessibilityLabel={t('settings.majlisDefaultFeed')}
-              accessibilityRole="button"
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                    style={styles.valueBadge}
+                  >
+                    <Text style={styles.valueText}>
+                      {safFeedType === 'following' ? t('feed.following') : t('feed.forYou')}
+                    </Text>
+                  </LinearGradient>
+                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                </View>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={styles.rowPressable}
+                onPress={() => setMajlisPickerVisible(true)}
+                accessibilityLabel={t('settings.majlisDefaultFeed')}
+                accessibilityRole="button"
+              >
+                <View style={styles.rowContent}>
+                  <LinearGradient
+                    colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.rowIconBg}
+                  >
+                    <Icon name="hash" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowLabel}>{t('settings.majlisDefault')}</Text>
+                    <Text style={styles.rowHint}>{t('settings.hints.majlisDefault')}</Text>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <LinearGradient
+                    colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+                    style={styles.valueBadge}
+                  >
+                    <Text style={styles.valueText}>
+                      {majlisFeedType === 'foryou' ? t('feed.forYou') : majlisFeedType === 'following' ? t('feed.following') : t('feed.trending')}
+                    </Text>
+                  </LinearGradient>
+                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                </View>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Content Filters */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <SectionHeader title="contentFilters" />
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
             >
-              <View style={styles.rowContent}>
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.rowIconBg}
-                >
-                  <Icon name="hash" size="xs" color={colors.gold} />
-                </LinearGradient>
-                <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>{t('settings.majlisDefault')}</Text>
-                  <Text style={styles.rowHint}>{t('settings.hints.majlisDefault')}</Text>
-                </View>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
-                  style={styles.valueBadge}
-                >
-                  <Text style={styles.valueText}>
-                    {majlisFeedType === 'foryou' ? t('feed.forYou') : majlisFeedType === 'following' ? t('feed.following') : t('feed.trending')}
-                  </Text>
-                </LinearGradient>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </View>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
+              <Row
+                label={t('settings.filterSensitiveContent')}
+                hint={t('settings.hints.filterSensitiveContent')}
+                value={sensitiveContent}
+                onToggle={handleUpdateSensitiveContent}
+                icon="eye"
+              />
+              <View style={styles.divider} />
+              <Row
+                label={t('settings.hideRepostedContent')}
+                hint={t('settings.hints.hideRepostedContent')}
+                value={hideRepostedContent}
+                onToggle={setHideRepostedContent}
+                icon="repeat"
+              />
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Content Filters */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <SectionHeader title="contentFilters" />
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Row
-              label={t('settings.filterSensitiveContent')}
-              hint={t('settings.hints.filterSensitiveContent')}
-              value={sensitiveContent}
-              onToggle={handleUpdateSensitiveContent}
-              icon="eye"
-            />
-            <View style={styles.divider} />
-            <Row
-              label={t('settings.hideRepostedContent')}
-              hint={t('settings.hints.hideRepostedContent')}
-              value={hideRepostedContent}
-              onToggle={setHideRepostedContent}
-              icon="repeat"
-            />
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Blocked Keywords */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <SectionHeader title="blockedKeywords" />
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <Row
-              label={t('settings.manageBlockedKeywords')}
-              hint={t('settings.hints.manageBlockedKeywords')}
-              onPress={() => router.push('/(screens)/blocked-keywords')}
-              icon="slash"
-            />
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Digital Wellbeing */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)}>
-          <SectionHeader title="digitalWellbeing" />
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.card}
-          >
-            <TouchableOpacity
-              style={styles.rowPressable}
-              onPress={() => setDailyReminderPickerVisible(true)}
-              accessibilityLabel={t('settings.dailyReminder.label')}
-              accessibilityRole="button"
+          {/* Blocked Keywords */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <SectionHeader title="blockedKeywords" />
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
             >
-              <View style={styles.rowContent}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.rowIconBg}
-                >
-                  <Icon name="clock" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <View style={styles.rowText}>
-                  <Text style={styles.rowLabel}>{t('settings.dailyReminder.label')}</Text>
-                  <Text style={styles.rowHint}>{t('settings.hints.dailyReminder')}</Text>
+              <Row
+                label={t('settings.manageBlockedKeywords')}
+                hint={t('settings.hints.manageBlockedKeywords')}
+                onPress={() => router.push('/(screens)/blocked-keywords')}
+                icon="slash"
+              />
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Digital Wellbeing */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)}>
+            <SectionHeader title="digitalWellbeing" />
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.card}
+            >
+              <TouchableOpacity
+                style={styles.rowPressable}
+                onPress={() => setDailyReminderPickerVisible(true)}
+                accessibilityLabel={t('settings.dailyReminder.label')}
+                accessibilityRole="button"
+              >
+                <View style={styles.rowContent}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                    style={styles.rowIconBg}
+                  >
+                    <Icon name="clock" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowLabel}>{t('settings.dailyReminder.label')}</Text>
+                    <Text style={styles.rowHint}>{t('settings.hints.dailyReminder')}</Text>
+                  </View>
                 </View>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
-                  style={styles.valueBadge}
-                >
-                  <Text style={styles.valueText}>
-                    {dailyReminder === 'off' ? t('settings.dailyReminder.off') : dailyReminder === '30min' ? t('settings.dailyReminder.30min') : dailyReminder === '1h' ? t('settings.dailyReminder.1h') : t('settings.dailyReminder.2h')}
-                  </Text>
-                </LinearGradient>
-                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </View>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-      </ScrollView>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                    style={styles.valueBadge}
+                  >
+                    <Text style={styles.valueText}>
+                      {dailyReminder === 'off' ? t('settings.dailyReminder.off') : dailyReminder === '30min' ? t('settings.dailyReminder.30min') : dailyReminder === '1h' ? t('settings.dailyReminder.1h') : t('settings.dailyReminder.2h')}
+                    </Text>
+                  </LinearGradient>
+                  <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+                </View>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
 
-      {/* BottomSheet for Saf feed picker */}
-      <BottomSheet visible={safPickerVisible} onClose={() => setSafPickerVisible(false)}>
-        {safOptions.map((opt) => (
-          <BottomSheetItem
-            key={opt.value}
-            label={t(opt.label)}
-            onPress={() => {
-              setSafFeedType(opt.value);
-              setSafPickerVisible(false);
-            }}
-            icon={safFeedType === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
-          />
-        ))}
-      </BottomSheet>
+        {/* BottomSheet for Saf feed picker */}
+        <BottomSheet visible={safPickerVisible} onClose={() => setSafPickerVisible(false)}>
+          {safOptions.map((opt) => (
+            <BottomSheetItem
+              key={opt.value}
+              label={t(opt.label)}
+              onPress={() => {
+                setSafFeedType(opt.value);
+                setSafPickerVisible(false);
+              }}
+              icon={safFeedType === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
+            />
+          ))}
+        </BottomSheet>
 
-      {/* BottomSheet for Majlis feed picker */}
-      <BottomSheet visible={majlisPickerVisible} onClose={() => setMajlisPickerVisible(false)}>
-        {majlisOptions.map((opt) => (
-          <BottomSheetItem
-            key={opt.value}
-            label={t(opt.label)}
-            onPress={() => {
-              setMajlisFeedType(opt.value);
-              setMajlisPickerVisible(false);
-            }}
-            icon={majlisFeedType === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
-          />
-        ))}
-      </BottomSheet>
+        {/* BottomSheet for Majlis feed picker */}
+        <BottomSheet visible={majlisPickerVisible} onClose={() => setMajlisPickerVisible(false)}>
+          {majlisOptions.map((opt) => (
+            <BottomSheetItem
+              key={opt.value}
+              label={t(opt.label)}
+              onPress={() => {
+                setMajlisFeedType(opt.value);
+                setMajlisPickerVisible(false);
+              }}
+              icon={majlisFeedType === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
+            />
+          ))}
+        </BottomSheet>
 
-      {/* BottomSheet for daily reminder picker */}
-      <BottomSheet visible={dailyReminderPickerVisible} onClose={() => setDailyReminderPickerVisible(false)}>
-        {dailyReminderOptions.map((opt) => (
-          <BottomSheetItem
-            key={opt.value}
-            label={t(opt.label)}
-            onPress={() => {
-              handleUpdateDailyReminder(opt.value);
-              setDailyReminderPickerVisible(false);
-            }}
-            icon={dailyReminder === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
-          />
-        ))}
-      </BottomSheet>
-    </SafeAreaView>
+        {/* BottomSheet for daily reminder picker */}
+        <BottomSheet visible={dailyReminderPickerVisible} onClose={() => setDailyReminderPickerVisible(false)}>
+          {dailyReminderOptions.map((opt) => (
+            <BottomSheetItem
+              key={opt.value}
+              label={t(opt.label)}
+              onPress={() => {
+                handleUpdateDailyReminder(opt.value);
+                setDailyReminderPickerVisible(false);
+              }}
+              icon={dailyReminder === opt.value ? <Icon name="check" size="sm" color={colors.emerald} /> : undefined}
+            />
+          ))}
+        </BottomSheet>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

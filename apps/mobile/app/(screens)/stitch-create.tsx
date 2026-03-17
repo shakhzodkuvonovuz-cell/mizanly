@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -78,326 +79,329 @@ export default function StitchCreateScreen() {
   const totalDuration = selectedDuration + recordTime;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title={t('stitch.createStitch')} showBackButton />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('stitch.createStitch')} showBackButton />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        {/* Original Video Card */}
-        <Animated.View entering={FadeInUp.delay(50).duration(400)}>
-          <View style={styles.originalCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.originalGradient}
-            >
-              {/* Creator Info */}
-              <View style={styles.creatorRow}>
-                <View style={styles.avatarPlaceholder}>
-                  <Icon name="user" size="md" color={colors.text.tertiary} />
-                </View>
-                <View style={styles.creatorInfo}>
-                  <View style={styles.creatorNameRow}>
-                    <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
-                    {originalCreator.isVerified && <VerifiedBadge size={13} />}
-                  </View>
-                  <Text style={styles.stitchSubtitle}>Stitching from @{originalCreator.username}</Text>
-                </View>
-              </View>
-
-              {/* Video Preview */}
-              <View style={styles.videoPreviewContainer}>
-                <LinearGradient
-                  colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-                  style={styles.videoPreview}
-                >
-                  <Icon name="play" size="xl" color={colors.text.tertiary} />
-                </LinearGradient>
-              </View>
-
-              {/* Duration Selector */}
-              <Text style={styles.durationLabel}>Use first:</Text>
-              <View style={styles.durationButtons}>
-                {DURATION_OPTIONS.map((duration) => (
-                  <TouchableOpacity
-                    key={duration}
-                    style={styles.durationButton}
-                    onPress={() => setSelectedDuration(duration)}
-                  >
-                    <LinearGradient
-                      colors={selectedDuration === duration
-                        ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
-                        : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-                      }
-                      style={styles.durationButtonGradient}
-                    >
-                      <Text style={[
-                        styles.durationButtonText,
-                        selectedDuration === duration && styles.durationButtonTextActive
-                      ]}>
-                        {duration}s
-                      </Text>
-                    </LinearGradient>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.progressBarContainer}>
-                <View style={styles.progressBarTrack}>
-                  <View style={[styles.progressBarFill, { width: `${(selectedDuration / 60) * 100}%` }]} />
-                </View>
-                <View style={styles.progressLabels}>
-                  <Text style={styles.progressLabel}>Original: {selectedDuration}s</Text>
-                  <Text style={styles.progressLabel}>Yours: {yourClipDuration}s max</Text>
-                </View>
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Transition Selector */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-          <View style={styles.transitionCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.transitionGradient}
-            >
-              <Text style={styles.transitionTitle}>Transition</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.transitionScroll}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        >
+          {/* Original Video Card */}
+          <Animated.View entering={FadeInUp.delay(50).duration(400)}>
+            <View style={styles.originalCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.originalGradient}
               >
-                {TRANSITIONS.map((transition, index) => (
-                  <Animated.View
-                    key={transition.id}
-                    entering={FadeInUp.delay(index * 50).duration(300)}
+                {/* Creator Info */}
+                <View style={styles.creatorRow}>
+                  <View style={styles.avatarPlaceholder}>
+                    <Icon name="user" size="md" color={colors.text.tertiary} />
+                  </View>
+                  <View style={styles.creatorInfo}>
+                    <View style={styles.creatorNameRow}>
+                      <Text style={styles.creatorName}>{originalCreator.displayName}</Text>
+                      {originalCreator.isVerified && <VerifiedBadge size={13} />}
+                    </View>
+                    <Text style={styles.stitchSubtitle}>Stitching from @{originalCreator.username}</Text>
+                  </View>
+                </View>
+
+                {/* Video Preview */}
+                <View style={styles.videoPreviewContainer}>
+                  <LinearGradient
+                    colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
+                    style={styles.videoPreview}
                   >
+                    <Icon name="play" size="xl" color={colors.text.tertiary} />
+                  </LinearGradient>
+                </View>
+
+                {/* Duration Selector */}
+                <Text style={styles.durationLabel}>Use first:</Text>
+                <View style={styles.durationButtons}>
+                  {DURATION_OPTIONS.map((duration) => (
                     <TouchableOpacity
-                      style={styles.transitionButton}
-                      onPress={() => setSelectedTransition(transition.id)}
+                      key={duration}
+                      style={styles.durationButton}
+                      onPress={() => setSelectedDuration(duration)}
                     >
                       <LinearGradient
-                        colors={selectedTransition === transition.id
+                        colors={selectedDuration === duration
                           ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
                           : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
                         }
-                        style={styles.transitionButtonGradient}
+                        style={styles.durationButtonGradient}
                       >
-                        <Icon
-                          name={transition.icon}
-                          size="sm"
-                          color={selectedTransition === transition.id ? colors.emerald : colors.text.secondary}
-                        />
                         <Text style={[
-                          styles.transitionButtonText,
-                          selectedTransition === transition.id && styles.transitionButtonTextActive
+                          styles.durationButtonText,
+                          selectedDuration === duration && styles.durationButtonTextActive
                         ]}>
-                          {transition.name}
+                          {duration}s
                         </Text>
                       </LinearGradient>
                     </TouchableOpacity>
-                  </Animated.View>
-                ))}
-              </ScrollView>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Your Clip Section */}
-        <Animated.View entering={FadeInUp.delay(150).duration(400)}>
-          <View style={styles.yourClipCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.yourClipGradient}
-            >
-              {/* Header */}
-              <View style={styles.yourClipHeader}>
-                <View style={styles.yourClipIconContainer}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                    style={styles.yourClipIconGradient}
-                  >
-                    <Icon name="camera" size="sm" color={colors.emerald} />
-                  </LinearGradient>
+                  ))}
                 </View>
-                <View>
-                  <Text style={styles.yourClipTitle}>Your Response</Text>
-                  <Text style={styles.yourClipSubtitle}>Record your reaction or continuation</Text>
-                </View>
-              </View>
 
-              {/* Camera Preview */}
-              <View style={styles.cameraPreviewContainer}>
-                <View style={styles.cameraPreview}>
-                  <Icon name="camera" size="xl" color={colors.emerald} />
-                  <Text style={styles.cameraHint}>Record your response</Text>
-                </View>
-              </View>
-
-              {/* Recording Controls */}
-              <View style={styles.recordingControls}>
-                {/* Flip Camera */}
-                <TouchableOpacity style={styles.controlButtonSmall}>
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                    style={styles.controlButtonGradientSmall}
-                  >
-                    <Icon name="repeat" size="sm" color={colors.text.secondary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Record Button */}
-                <TouchableOpacity style={styles.recordButtonSmall} onPress={toggleRecording}>
-                  <LinearGradient
-                    colors={isRecording
-                      ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
-                      : ['rgba(255,255,255,0.95)', 'rgba(240,240,240,1)']
-                    }
-                    style={styles.recordButtonOuterSmall}
-                  >
-                    {isRecording ? (
-                      <View style={styles.recordingInnerSquareSmall} />
-                    ) : (
-                      <LinearGradient
-                        colors={['rgba(248,81,73,1)', 'rgba(220,60,50,1)']}
-                        style={styles.recordButtonInnerSmall}
-                      />
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                {/* Flash Toggle */}
-                <TouchableOpacity
-                  style={styles.controlButtonSmall}
-                  onPress={() => setFlashOn(!flashOn)}
-                >
-                  <LinearGradient
-                    colors={flashOn
-                      ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
-                      : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
-                    }
-                    style={styles.controlButtonGradientSmall}
-                  >
-                    <Icon name="sun" size="sm" color={flashOn ? colors.gold : colors.text.secondary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-
-              {/* Timer Display */}
-              <View style={styles.timerDisplay}>
-                <Text style={styles.timerText}>
-                  {formatTime(recordTime)} / {formatTime(yourClipDuration)}
-                </Text>
-                {isRecording && (
-                  <View style={styles.recordingBadge}>
-                    <View style={styles.recordingDot} />
-                    <Text style={styles.recordingBadgeText}>Recording</Text>
+                {/* Progress Bar */}
+                <View style={styles.progressBarContainer}>
+                  <View style={styles.progressBarTrack}>
+                    <View style={[styles.progressBarFill, { width: `${(selectedDuration / 60) * 100}%` }]} />
                   </View>
-                )}
-              </View>
-            </LinearGradient>
-          </View>
-        </Animated.View>
-
-        {/* Combined Preview Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <View style={styles.previewCard}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-              style={styles.previewCardGradient}
-            >
-              <Text style={styles.previewCardTitle}>Preview</Text>
-
-              {/* Sequence Thumbnails */}
-              <View style={styles.sequenceContainer}>
-                <View style={styles.sequenceItem}>
-                  <LinearGradient
-                    colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
-                    style={styles.sequenceThumbnail}
-                  >
-                    <Icon name="play" size="md" color={colors.text.tertiary} />
-                    <View style={styles.sequenceDurationBadge}>
-                      <Text style={styles.sequenceDurationText}>{selectedDuration}s</Text>
-                    </View>
-                  </LinearGradient>
-                  <Text style={styles.sequenceLabel}>@{originalCreator.username}</Text>
+                  <View style={styles.progressLabels}>
+                    <Text style={styles.progressLabel}>Original: {selectedDuration}s</Text>
+                    <Text style={styles.progressLabel}>Yours: {yourClipDuration}s max</Text>
+                  </View>
                 </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
 
-                <View style={styles.sequenceArrow}>
-                  <LinearGradient
-                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                    style={styles.arrowGradient}
-                  >
-                    <Icon name="chevron-right" size="sm" color={colors.gold} />
-                  </LinearGradient>
-                  <Text style={styles.transitionName}>{TRANSITIONS.find(t => t.id === selectedTransition)?.name}</Text>
-                </View>
-
-                <View style={styles.sequenceItem}>
-                  <LinearGradient
-                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                    style={styles.sequenceThumbnail}
-                  >
-                    <Icon name="camera" size="md" color={colors.emerald} />
-                    <View style={styles.sequenceDurationBadge}>
-                      <Text style={styles.sequenceDurationText}>{recordTime}s</Text>
-                    </View>
-                  </LinearGradient>
-                  <Text style={styles.sequenceLabel}>You</Text>
-                </View>
-              </View>
-
-              {/* Total Duration */}
-              <View style={styles.totalDurationContainer}>
-                <Text style={styles.totalDurationLabel}>Total Duration</Text>
-                <Text style={styles.totalDurationValue}>{formatTime(totalDuration)}</Text>
-              </View>
-
-              {/* Play Preview Button */}
-              <TouchableOpacity
-                style={styles.playPreviewButton}
-                onPress={() => setShowPreview(true)}
+          {/* Transition Selector */}
+          <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+            <View style={styles.transitionCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.transitionGradient}
               >
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-                  style={styles.playPreviewGradient}
+                <Text style={styles.transitionTitle}>Transition</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.transitionScroll}
                 >
-                  <Icon name="play" size="sm" color="#FFF" />
-                  <Text style={styles.playPreviewText}>Play Preview</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
-          </View>
-        </Animated.View>
+                  {TRANSITIONS.map((transition, index) => (
+                    <Animated.View
+                      key={transition.id}
+                      entering={FadeInUp.delay(index * 50).duration(300)}
+                    >
+                      <TouchableOpacity
+                        style={styles.transitionButton}
+                        onPress={() => setSelectedTransition(transition.id)}
+                      >
+                        <LinearGradient
+                          colors={selectedTransition === transition.id
+                            ? ['rgba(10,123,79,0.5)', 'rgba(10,123,79,0.3)']
+                            : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
+                          }
+                          style={styles.transitionButtonGradient}
+                        >
+                          <Icon
+                            name={transition.icon}
+                            size="sm"
+                            color={selectedTransition === transition.id ? colors.emerald : colors.text.secondary}
+                          />
+                          <Text style={[
+                            styles.transitionButtonText,
+                            selectedTransition === transition.id && styles.transitionButtonTextActive
+                          ]}>
+                            {transition.name}
+                          </Text>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </Animated.View>
+                  ))}
+                </ScrollView>
+              </LinearGradient>
+            </View>
+          </Animated.View>
 
-        {/* Bottom Spacing */}
-        <View style={styles.bottomSpacing} />
-      </ScrollView>
+          {/* Your Clip Section */}
+          <Animated.View entering={FadeInUp.delay(150).duration(400)}>
+            <View style={styles.yourClipCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.yourClipGradient}
+              >
+                {/* Header */}
+                <View style={styles.yourClipHeader}>
+                  <View style={styles.yourClipIconContainer}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.yourClipIconGradient}
+                    >
+                      <Icon name="camera" size="sm" color={colors.emerald} />
+                    </LinearGradient>
+                  </View>
+                  <View>
+                    <Text style={styles.yourClipTitle}>Your Response</Text>
+                    <Text style={styles.yourClipSubtitle}>Record your reaction or continuation</Text>
+                  </View>
+                </View>
 
-      {/* Bottom Action Bar */}
-      <View style={styles.bottomBar}>
-        <LinearGradient
-          colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
-          style={styles.bottomBarGradient}
-        >
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.nextButton} onPress={() => router.push('/create-reel')}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
-              style={styles.nextButtonGradient}
-            >
-              <Text style={styles.nextButtonText}>Next</Text>
-              <Icon name="chevron-right" size="sm" color="#FFF" />
-            </LinearGradient>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    </SafeAreaView>
+                {/* Camera Preview */}
+                <View style={styles.cameraPreviewContainer}>
+                  <View style={styles.cameraPreview}>
+                    <Icon name="camera" size="xl" color={colors.emerald} />
+                    <Text style={styles.cameraHint}>Record your response</Text>
+                  </View>
+                </View>
+
+                {/* Recording Controls */}
+                <View style={styles.recordingControls}>
+                  {/* Flip Camera */}
+                  <TouchableOpacity style={styles.controlButtonSmall}>
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                      style={styles.controlButtonGradientSmall}
+                    >
+                      <Icon name="repeat" size="sm" color={colors.text.secondary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Record Button */}
+                  <TouchableOpacity style={styles.recordButtonSmall} onPress={toggleRecording}>
+                    <LinearGradient
+                      colors={isRecording
+                        ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
+                        : ['rgba(255,255,255,0.95)', 'rgba(240,240,240,1)']
+                      }
+                      style={styles.recordButtonOuterSmall}
+                    >
+                      {isRecording ? (
+                        <View style={styles.recordingInnerSquareSmall} />
+                      ) : (
+                        <LinearGradient
+                          colors={['rgba(248,81,73,1)', 'rgba(220,60,50,1)']}
+                          style={styles.recordButtonInnerSmall}
+                        />
+                      )}
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  {/* Flash Toggle */}
+                  <TouchableOpacity
+                    style={styles.controlButtonSmall}
+                    onPress={() => setFlashOn(!flashOn)}
+                  >
+                    <LinearGradient
+                      colors={flashOn
+                        ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
+                        : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']
+                      }
+                      style={styles.controlButtonGradientSmall}
+                    >
+                      <Icon name="sun" size="sm" color={flashOn ? colors.gold : colors.text.secondary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Timer Display */}
+                <View style={styles.timerDisplay}>
+                  <Text style={styles.timerText}>
+                    {formatTime(recordTime)} / {formatTime(yourClipDuration)}
+                  </Text>
+                  {isRecording && (
+                    <View style={styles.recordingBadge}>
+                      <View style={styles.recordingDot} />
+                      <Text style={styles.recordingBadgeText}>Recording</Text>
+                    </View>
+                  )}
+                </View>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Combined Preview Card */}
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <View style={styles.previewCard}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.previewCardGradient}
+              >
+                <Text style={styles.previewCardTitle}>Preview</Text>
+
+                {/* Sequence Thumbnails */}
+                <View style={styles.sequenceContainer}>
+                  <View style={styles.sequenceItem}>
+                    <LinearGradient
+                      colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
+                      style={styles.sequenceThumbnail}
+                    >
+                      <Icon name="play" size="md" color={colors.text.tertiary} />
+                      <View style={styles.sequenceDurationBadge}>
+                        <Text style={styles.sequenceDurationText}>{selectedDuration}s</Text>
+                      </View>
+                    </LinearGradient>
+                    <Text style={styles.sequenceLabel}>@{originalCreator.username}</Text>
+                  </View>
+
+                  <View style={styles.sequenceArrow}>
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                      style={styles.arrowGradient}
+                    >
+                      <Icon name="chevron-right" size="sm" color={colors.gold} />
+                    </LinearGradient>
+                    <Text style={styles.transitionName}>{TRANSITIONS.find(t => t.id === selectedTransition)?.name}</Text>
+                  </View>
+
+                  <View style={styles.sequenceItem}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                      style={styles.sequenceThumbnail}
+                    >
+                      <Icon name="camera" size="md" color={colors.emerald} />
+                      <View style={styles.sequenceDurationBadge}>
+                        <Text style={styles.sequenceDurationText}>{recordTime}s</Text>
+                      </View>
+                    </LinearGradient>
+                    <Text style={styles.sequenceLabel}>You</Text>
+                  </View>
+                </View>
+
+                {/* Total Duration */}
+                <View style={styles.totalDurationContainer}>
+                  <Text style={styles.totalDurationLabel}>Total Duration</Text>
+                  <Text style={styles.totalDurationValue}>{formatTime(totalDuration)}</Text>
+                </View>
+
+                {/* Play Preview Button */}
+                <TouchableOpacity
+                  style={styles.playPreviewButton}
+                  onPress={() => setShowPreview(true)}
+                >
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                    style={styles.playPreviewGradient}
+                  >
+                    <Icon name="play" size="sm" color="#FFF" />
+                    <Text style={styles.playPreviewText}>Play Preview</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </LinearGradient>
+            </View>
+          </Animated.View>
+
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
+        </ScrollView>
+
+        {/* Bottom Action Bar */}
+        <View style={styles.bottomBar}>
+          <LinearGradient
+            colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
+            style={styles.bottomBarGradient}
+          >
+            <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.nextButton} onPress={() => router.push('/create-reel')}>
+              <LinearGradient
+                colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
+                style={styles.nextButtonGradient}
+              >
+                <Text style={styles.nextButtonText}>Next</Text>
+                <Icon name="chevron-right" size="sm" color="#FFF" />
+              </LinearGradient>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

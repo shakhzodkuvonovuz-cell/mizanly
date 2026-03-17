@@ -15,6 +15,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function TrendingAudioScreen() {
   const router = useRouter();
@@ -138,32 +139,35 @@ export default function TrendingAudioScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title="Trending Audio" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title="Trending Audio" 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        />
       
-      <FlatList
-        data={tracks || []}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState 
-              icon="music" 
-              title="No trending audio" 
-              subtitle="Check back later for popular tracks" 
-            />
-          </View>
-        }
-      />
-    </View>
+        <FlatList
+          data={tracks || []}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <EmptyState 
+                icon="music" 
+                title="No trending audio" 
+                subtitle="Check back later for popular tracks" 
+              />
+            </View>
+          }
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

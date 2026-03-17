@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -227,277 +228,280 @@ export default function ZakatCalculatorScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <GlassHeader
-        title={t('screens.zakatCalculator.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <GlassHeader
+          title={t('screens.zakatCalculator.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardView}
-      >
-        <ScrollView
-          refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={styles.scrollContent}
-          keyboardShouldPersistTaps="handled"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
         >
-          {/* Info Banner */}
-          <Animated.View entering={FadeInUp.duration(400)}>
-            <LinearGradient
-              colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.2)']}
-              style={styles.infoBanner}
-            >
+          <ScrollView
+            refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Info Banner */}
+            <Animated.View entering={FadeInUp.duration(400)}>
               <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.infoIconBg}
+                colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.2)']}
+                style={styles.infoBanner}
               >
-                <Icon name="calculator" size="sm" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.infoText}>
-                {t('screens.zakatCalculator.infoBannerText')}
-              </Text>
-            </LinearGradient>
-          </Animated.View>
-
-          {/* Step Indicator */}
-          <StepIndicator currentStep={currentStep} />
-
-          {/* Step 1: Assets */}
-          {currentStep === 1 && (
-            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterYourAssets')}</Text>
-
-              <InputCard
-                icon="circle"
-                label={t('screens.zakatCalculator.cashAndBank')}
-                value={assets.cash}
-                onChangeText={(v) => updateAsset('cash', v)}
-                delay={100}
-              />
-              <InputCard
-                icon="layers"
-                label={t('screens.zakatCalculator.goldAndSilver')}
-                value={assets.gold}
-                onChangeText={(v) => updateAsset('gold', v)}
-                delay={150}
-              />
-              <InputCard
-                icon="bar-chart-2"
-                label={t('screens.zakatCalculator.investmentsAndStocks')}
-                value={assets.investments}
-                onChangeText={(v) => updateAsset('investments', v)}
-                delay={200}
-              />
-              <InputCard
-                icon="briefcase"
-                label={t('screens.zakatCalculator.businessInventory')}
-                value={assets.inventory}
-                onChangeText={(v) => updateAsset('inventory', v)}
-                delay={250}
-              />
-              <InputCard
-                icon="home"
-                label={t('screens.zakatCalculator.propertyForRentSale')}
-                value={assets.property}
-                onChangeText={(v) => updateAsset('property', v)}
-                delay={300}
-              />
-
-              {/* Total Preview */}
-              <Animated.View entering={FadeInUp.delay(350).duration(400)}>
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
-                  style={styles.previewCard}
+                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                  style={styles.infoIconBg}
                 >
-                  <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
-                  <Text style={styles.previewValue}>{formatCurrency(totalAssets)}</Text>
+                  <Icon name="calculator" size="sm" color={colors.emerald} />
                 </LinearGradient>
-              </Animated.View>
-
-              {/* Next Button */}
-              <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-                <TouchableOpacity onPress={goNext} activeOpacity={0.8}>
-                  <LinearGradient
-                    colors={[colors.emerald, colors.emeraldDark]}
-                    style={styles.nextButton}
-                  >
-                    <Text style={styles.nextButtonText}>{t('screens.zakatCalculator.nextDeductions')}</Text>
-                    <Icon name="chevron-right" size="sm" color={colors.text.primary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </Animated.View>
+                <Text style={styles.infoText}>
+                  {t('screens.zakatCalculator.infoBannerText')}
+                </Text>
+              </LinearGradient>
             </Animated.View>
-          )}
 
-          {/* Step 2: Deductions */}
-          {currentStep === 2 && (
-            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterDeductions')}</Text>
+            {/* Step Indicator */}
+            <StepIndicator currentStep={currentStep} />
 
-              <InputCard
-                icon="credit-card"
-                label={t('screens.zakatCalculator.outstandingDebts')}
-                value={deductions.debts}
-                onChangeText={(v) => updateDeduction('debts', v)}
-                delay={100}
-              />
-              <InputCard
-                icon="clock"
-                label={t('screens.zakatCalculator.immediateExpenses')}
-                value={deductions.expenses}
-                onChangeText={(v) => updateDeduction('expenses', v)}
-                delay={150}
-              />
+            {/* Step 1: Assets */}
+            {currentStep === 1 && (
+              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+                <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterYourAssets')}</Text>
 
-              {/* Net Wealth Preview */}
-              <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
-                  style={styles.previewCard}
-                >
-                  <View style={styles.previewRow}>
+                <InputCard
+                  icon="circle"
+                  label={t('screens.zakatCalculator.cashAndBank')}
+                  value={assets.cash}
+                  onChangeText={(v) => updateAsset('cash', v)}
+                  delay={100}
+                />
+                <InputCard
+                  icon="layers"
+                  label={t('screens.zakatCalculator.goldAndSilver')}
+                  value={assets.gold}
+                  onChangeText={(v) => updateAsset('gold', v)}
+                  delay={150}
+                />
+                <InputCard
+                  icon="bar-chart-2"
+                  label={t('screens.zakatCalculator.investmentsAndStocks')}
+                  value={assets.investments}
+                  onChangeText={(v) => updateAsset('investments', v)}
+                  delay={200}
+                />
+                <InputCard
+                  icon="briefcase"
+                  label={t('screens.zakatCalculator.businessInventory')}
+                  value={assets.inventory}
+                  onChangeText={(v) => updateAsset('inventory', v)}
+                  delay={250}
+                />
+                <InputCard
+                  icon="home"
+                  label={t('screens.zakatCalculator.propertyForRentSale')}
+                  value={assets.property}
+                  onChangeText={(v) => updateAsset('property', v)}
+                  delay={300}
+                />
+
+                {/* Total Preview */}
+                <Animated.View entering={FadeInUp.delay(350).duration(400)}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
+                    style={styles.previewCard}
+                  >
                     <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
-                    <Text style={styles.previewValueSmall}>{formatCurrency(totalAssets)}</Text>
-                  </View>
-                  <View style={styles.previewRow}>
-                    <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
-                    <Text style={[styles.previewValueSmall, styles.negativeValue]}>
-                      -{formatCurrency(totalDeductions)}
-                    </Text>
-                  </View>
-                  <View style={styles.previewDivider} />
-                  <View style={styles.previewRow}>
-                    <Text style={[styles.previewLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netZakatableWealth')}</Text>
-                    <Text style={[styles.previewValue, styles.emeraldValue]}>
-                      {formatCurrency(netWealth)}
-                    </Text>
-                  </View>
-                </LinearGradient>
+                    <Text style={styles.previewValue}>{formatCurrency(totalAssets)}</Text>
+                  </LinearGradient>
+                </Animated.View>
+
+                {/* Next Button */}
+                <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+                  <TouchableOpacity onPress={goNext} activeOpacity={0.8}>
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.nextButton}
+                    >
+                      <Text style={styles.nextButtonText}>{t('screens.zakatCalculator.nextDeductions')}</Text>
+                      <Icon name="chevron-right" size="sm" color={colors.text.primary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </Animated.View>
               </Animated.View>
+            )}
 
-              {/* Buttons */}
-              <View style={styles.buttonRow}>
-                <TouchableOpacity onPress={goBack} activeOpacity={0.8} style={styles.backButton}>
+            {/* Step 2: Deductions */}
+            {currentStep === 2 && (
+              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+                <Text style={styles.stepTitle}>{t('screens.zakatCalculator.enterDeductions')}</Text>
+
+                <InputCard
+                  icon="credit-card"
+                  label={t('screens.zakatCalculator.outstandingDebts')}
+                  value={deductions.debts}
+                  onChangeText={(v) => updateDeduction('debts', v)}
+                  delay={100}
+                />
+                <InputCard
+                  icon="clock"
+                  label={t('screens.zakatCalculator.immediateExpenses')}
+                  value={deductions.expenses}
+                  onChangeText={(v) => updateDeduction('expenses', v)}
+                  delay={150}
+                />
+
+                {/* Net Wealth Preview */}
+                <Animated.View entering={FadeInUp.delay(200).duration(400)}>
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={styles.backButtonGradient}
+                    colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
+                    style={styles.previewCard}
                   >
-                    <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.backButtonText}>{t('common.back')}</Text>
+                    <View style={styles.previewRow}>
+                      <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
+                      <Text style={styles.previewValueSmall}>{formatCurrency(totalAssets)}</Text>
+                    </View>
+                    <View style={styles.previewRow}>
+                      <Text style={styles.previewLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
+                      <Text style={[styles.previewValueSmall, styles.negativeValue]}>
+                        -{formatCurrency(totalDeductions)}
+                      </Text>
+                    </View>
+                    <View style={styles.previewDivider} />
+                    <View style={styles.previewRow}>
+                      <Text style={[styles.previewLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netZakatableWealth')}</Text>
+                      <Text style={[styles.previewValue, styles.emeraldValue]}>
+                        {formatCurrency(netWealth)}
+                      </Text>
+                    </View>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Animated.View>
 
-                <TouchableOpacity onPress={goNext} activeOpacity={0.8} style={styles.calculateButton}>
-                  <LinearGradient
-                    colors={[colors.emerald, colors.emeraldDark]}
-                    style={styles.calculateButtonGradient}
-                  >
-                    <Text style={styles.calculateButtonText}>{t('screens.zakatCalculator.calculateZakat')}</Text>
-                    <Icon name="check-circle" size="sm" color={colors.text.primary} />
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          )}
+                {/* Buttons */}
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity onPress={goBack} activeOpacity={0.8} style={styles.backButton}>
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                      style={styles.backButtonGradient}
+                    >
+                      <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
+                      <Text style={styles.backButtonText}>{t('common.back')}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
 
-          {/* Step 3: Result */}
-          {currentStep === 3 && (
-            <Animated.View entering={FadeInUp.delay(100).duration(400)}>
-              <Text style={styles.stepTitle}>{t('screens.zakatCalculator.yourZakatCalculation')}</Text>
-
-              {/* Result Card */}
-              <LinearGradient
-                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                style={[styles.resultCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
-              >
-                {/* Calculation Summary */}
-                <View style={styles.calculationRow}>
-                  <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
-                  <Text style={styles.calculationValue}>{formatCurrency(totalAssets)}</Text>
+                  <TouchableOpacity onPress={goNext} activeOpacity={0.8} style={styles.calculateButton}>
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.calculateButtonGradient}
+                    >
+                      <Text style={styles.calculateButtonText}>{t('screens.zakatCalculator.calculateZakat')}</Text>
+                      <Icon name="check-circle" size="sm" color={colors.text.primary} />
+                    </LinearGradient>
+                  </TouchableOpacity>
                 </View>
-                <View style={styles.calculationRow}>
-                  <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
-                  <Text style={styles.calculationValue}>{formatCurrency(totalDeductions)}</Text>
-                </View>
-                <View style={styles.calculationDivider} />
-                <View style={styles.calculationRow}>
-                  <Text style={[styles.calculationLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netWealth')}</Text>
-                  <Text style={[styles.calculationValue, styles.boldValue]}>{formatCurrency(netWealth)}</Text>
-                </View>
+              </Animated.View>
+            )}
 
-                {/* Nisab Display */}
-                <View style={styles.nisabContainer}>
-                  <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
-                  <View style={styles.nisabRow}>
-                    <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldNisab')}</Text>
-                    <Text style={styles.nisabValue}>{formatCurrency(NISAB_GOLD)}</Text>
-                  </View>
-                  <View style={styles.nisabRow}>
-                    <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.silverNisab')}</Text>
-                    <Text style={styles.nisabValue}>{formatCurrency(NISAB_SILVER)}</Text>
-                  </View>
-                </View>
+            {/* Step 3: Result */}
+            {currentStep === 3 && (
+              <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+                <Text style={styles.stepTitle}>{t('screens.zakatCalculator.yourZakatCalculation')}</Text>
 
-                {/* Final Result */}
-                {isAboveNisab ? (
-                  <View style={styles.zakatDueContainer}>
-                    <Text style={styles.zakatDueLabel}>{t('screens.zakatCalculator.zakatDue')}</Text>
-                    <Text style={styles.zakatDueValue}>{formatCurrency(zakatDue)}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.belowNisabContainer}>
-                    <Icon name="check-circle" size="md" color={colors.gold} />
-                    <Text style={styles.belowNisabText}>
-                      {t('screens.zakatCalculator.belowNisabMessage')}
-                    </Text>
-                  </View>
-                )}
-              </LinearGradient>
-
-              {/* Educational Note */}
-              <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+                {/* Result Card */}
                 <LinearGradient
-                  colors={['rgba(10,123,79,0.1)', 'rgba(28,35,51,0.1)']}
-                  style={styles.educationCard}
+                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                  style={[styles.resultCard, { borderLeftWidth: 3, borderLeftColor: colors.gold }]}
                 >
-                  <Icon name="book-open" size="sm" color={colors.emerald} />
-                  <Text style={styles.educationText}>
-                    {t('screens.zakatCalculator.educationNote')}
-                  </Text>
+                  {/* Calculation Summary */}
+                  <View style={styles.calculationRow}>
+                    <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalAssets')}</Text>
+                    <Text style={styles.calculationValue}>{formatCurrency(totalAssets)}</Text>
+                  </View>
+                  <View style={styles.calculationRow}>
+                    <Text style={styles.calculationLabel}>{t('screens.zakatCalculator.totalDeductions')}</Text>
+                    <Text style={styles.calculationValue}>{formatCurrency(totalDeductions)}</Text>
+                  </View>
+                  <View style={styles.calculationDivider} />
+                  <View style={styles.calculationRow}>
+                    <Text style={[styles.calculationLabel, styles.boldLabel]}>{t('screens.zakatCalculator.netWealth')}</Text>
+                    <Text style={[styles.calculationValue, styles.boldValue]}>{formatCurrency(netWealth)}</Text>
+                  </View>
+
+                  {/* Nisab Display */}
+                  <View style={styles.nisabContainer}>
+                    <Text style={styles.nisabTitle}>{t('screens.zakatCalculator.currentNisabThreshold')}</Text>
+                    <View style={styles.nisabRow}>
+                      <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.goldNisab')}</Text>
+                      <Text style={styles.nisabValue}>{formatCurrency(NISAB_GOLD)}</Text>
+                    </View>
+                    <View style={styles.nisabRow}>
+                      <Text style={styles.nisabLabel}>{t('screens.zakatCalculator.silverNisab')}</Text>
+                      <Text style={styles.nisabValue}>{formatCurrency(NISAB_SILVER)}</Text>
+                    </View>
+                  </View>
+
+                  {/* Final Result */}
+                  {isAboveNisab ? (
+                    <View style={styles.zakatDueContainer}>
+                      <Text style={styles.zakatDueLabel}>{t('screens.zakatCalculator.zakatDue')}</Text>
+                      <Text style={styles.zakatDueValue}>{formatCurrency(zakatDue)}</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.belowNisabContainer}>
+                      <Icon name="check-circle" size="md" color={colors.gold} />
+                      <Text style={styles.belowNisabText}>
+                        {t('screens.zakatCalculator.belowNisabMessage')}
+                      </Text>
+                    </View>
+                  )}
                 </LinearGradient>
+
+                {/* Educational Note */}
+                <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.1)', 'rgba(28,35,51,0.1)']}
+                    style={styles.educationCard}
+                  >
+                    <Icon name="book-open" size="sm" color={colors.emerald} />
+                    <Text style={styles.educationText}>
+                      {t('screens.zakatCalculator.educationNote')}
+                    </Text>
+                  </LinearGradient>
+                </Animated.View>
+
+                {/* Action Buttons */}
+                <View style={styles.buttonRow}>
+                  <TouchableOpacity onPress={reset} activeOpacity={0.8} style={styles.actionButtonHalf}>
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
+                      style={styles.actionButtonHalfGradient}
+                    >
+                      <Icon name="repeat" size="sm" color={colors.text.secondary} />
+                      <Text style={styles.actionButtonHalfText}>{t('screens.zakatCalculator.recalculate')}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8} style={styles.actionButtonHalf}>
+                    <LinearGradient
+                      colors={[colors.emerald, colors.emeraldDark]}
+                      style={styles.actionButtonHalfGradient}
+                    >
+                      <Icon name="share" size="sm" color={colors.text.primary} />
+                      <Text style={styles.shareButtonText}>{t('common.share')}</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                </View>
               </Animated.View>
+            )}
 
-              {/* Action Buttons */}
-              <View style={styles.buttonRow}>
-                <TouchableOpacity onPress={reset} activeOpacity={0.8} style={styles.actionButtonHalf}>
-                  <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
-                    style={styles.actionButtonHalfGradient}
-                  >
-                    <Icon name="repeat" size="sm" color={colors.text.secondary} />
-                    <Text style={styles.actionButtonHalfText}>{t('screens.zakatCalculator.recalculate')}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => {}} activeOpacity={0.8} style={styles.actionButtonHalf}>
-                  <LinearGradient
-                    colors={[colors.emerald, colors.emeraldDark]}
-                    style={styles.actionButtonHalfGradient}
-                  >
-                    <Icon name="share" size="sm" color={colors.text.primary} />
-                    <Text style={styles.shareButtonText}>{t('common.share')}</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          )}
-
-          {/* Bottom spacing */}
-          <View style={{ height: spacing.xxl }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            {/* Bottom spacing */}
+            <View style={{ height: spacing.xxl }} />
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

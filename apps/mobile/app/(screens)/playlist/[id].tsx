@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { PlaylistItem } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const formatDuration = (sec: number) => {
   const m = Math.floor(sec / 60);
@@ -189,57 +190,60 @@ export default function PlaylistDetailScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={playlist?.title ?? 'Playlist'}
-        leftAction={{ 
-          icon: 'arrow-left', 
-          onPress: () => router.back(),
-          accessibilityLabel: 'Go back'
-        }}
-      />
-
-      {playlistQuery.isLoading ? (
-        <View style={[styles.skeletonWrap, { paddingTop: insets.top + 56 }]}>
-          <Skeleton.Rect width="100%" height={200} borderRadius={radius.md} />
-          <Skeleton.Text width="60%" />
-          <Skeleton.Text width="40%" />
-        </View>
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={items}
-          keyExtractor={(item, i) => item.id ?? String(i)}
-          renderItem={renderItem}
-          ListHeaderComponent={ListHeader}
-          ListEmptyComponent={
-            itemsQuery.isLoading ? (
-              <View style={styles.skeletonWrap}>
-                {[1, 2, 3].map((i) => (
-                  <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.sm} />
-                ))}
-              </View>
-            ) : itemsQuery.isError ? (
-              <EmptyState
-                icon="slash"
-                title="Could not load videos"
-                subtitle="Please pull to refresh"
-                actionLabel="Retry"
-                onAction={() => itemsQuery.refetch()}
-              />
-            ) : (
-              <EmptyState icon="video" title="No videos yet" subtitle="Videos added to this playlist will appear here" />
-            )
-          }
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.5}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          contentContainerStyle={[styles.list, { paddingTop: insets.top + 56 }]}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={playlist?.title ?? 'Playlist'}
+          leftAction={{ 
+            icon: 'arrow-left', 
+            onPress: () => router.back(),
+            accessibilityLabel: 'Go back'
+          }}
         />
-      )}
-    </View>
+
+        {playlistQuery.isLoading ? (
+          <View style={[styles.skeletonWrap, { paddingTop: insets.top + 56 }]}>
+            <Skeleton.Rect width="100%" height={200} borderRadius={radius.md} />
+            <Skeleton.Text width="60%" />
+            <Skeleton.Text width="40%" />
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={items}
+            keyExtractor={(item, i) => item.id ?? String(i)}
+            renderItem={renderItem}
+            ListHeaderComponent={ListHeader}
+            ListEmptyComponent={
+              itemsQuery.isLoading ? (
+                <View style={styles.skeletonWrap}>
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.sm} />
+                  ))}
+                </View>
+              ) : itemsQuery.isError ? (
+                <EmptyState
+                  icon="slash"
+                  title="Could not load videos"
+                  subtitle="Please pull to refresh"
+                  actionLabel="Retry"
+                  onAction={() => itemsQuery.refetch()}
+                />
+              ) : (
+                <EmptyState icon="video" title="No videos yet" subtitle="Videos added to this playlist will appear here" />
+              )
+            }
+            onEndReached={onEndReached}
+            onEndReachedThreshold={0.5}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+            contentContainerStyle={[styles.list, { paddingTop: insets.top + 56 }]}
+          />
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

@@ -10,6 +10,7 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QrCodeScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -44,82 +45,85 @@ export default function QrCodeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <GlassHeader title="QR Code" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader title="QR Code" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
 
-      {isLoading ? (
-        <View style={[styles.content, { gap: spacing.lg, paddingTop: insets.top + 52 }]}>
-          <Skeleton.Text width={120} />
-          <Skeleton.Text width={200} />
-          <Skeleton.Rect width={220 + spacing.xl * 2} height={220 + spacing.xl * 2} borderRadius={radius.lg} />
-          <Skeleton.Text width={240} />
-          <View style={{ flexDirection: 'row', gap: spacing.base, width: '100%' }}>
-            <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
-            <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
+        {isLoading ? (
+          <View style={[styles.content, { gap: spacing.lg, paddingTop: insets.top + 52 }]}>
+            <Skeleton.Text width={120} />
+            <Skeleton.Text width={200} />
+            <Skeleton.Rect width={220 + spacing.xl * 2} height={220 + spacing.xl * 2} borderRadius={radius.lg} />
+            <Skeleton.Text width={240} />
+            <View style={{ flexDirection: 'row', gap: spacing.base, width: '100%' }}>
+              <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
+              <Skeleton.Rect width="48%" height={48} borderRadius={radius.md} />
+            </View>
           </View>
+        ) : (
+        <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
+          <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.title}>@{username}</Animated.Text>
+          <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.subtitle}>
+            Scan this code to visit this profile directly in Mizanly
+          </Animated.Text>
+
+          <Animated.View entering={FadeInUp.delay(200).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+              style={styles.qrContainer}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                style={styles.qrInner}
+              >
+                <QRCode
+                  value={qrValue}
+                  size={220}
+                  backgroundColor="transparent"
+                  color={colors.text.primary}
+                />
+              </LinearGradient>
+            </LinearGradient>
+          </Animated.View>
+
+          <Animated.Text entering={FadeInUp.delay(250).duration(400)} style={styles.hint}>
+            Open the camera app on another device to scan
+          </Animated.Text>
+
+          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttons}>
+            <Pressable
+              style={styles.button}
+              onPress={handleShare}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.shareGradient}
+              >
+                <Icon name="share" size="md" color={colors.text.primary} />
+                <Text style={styles.buttonText}>Share</Text>
+              </LinearGradient>
+            </Pressable>
+
+            <Pressable
+              style={styles.button}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              <LinearGradient
+                colors={[colors.emerald, colors.gold]}
+                style={styles.saveGradient}
+              >
+                <Icon name="download" size="md" color="#fff" />
+                <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+              </LinearGradient>
+            </Pressable>
+          </Animated.View>
         </View>
-      ) : (
-      <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
-        <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.title}>@{username}</Animated.Text>
-        <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.subtitle}>
-          Scan this code to visit this profile directly in Mizanly
-        </Animated.Text>
-
-        <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-            style={styles.qrContainer}
-          >
-            <LinearGradient
-              colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-              style={styles.qrInner}
-            >
-              <QRCode
-                value={qrValue}
-                size={220}
-                backgroundColor="transparent"
-                color={colors.text.primary}
-              />
-            </LinearGradient>
-          </LinearGradient>
-        </Animated.View>
-
-        <Animated.Text entering={FadeInUp.delay(250).duration(400)} style={styles.hint}>
-          Open the camera app on another device to scan
-        </Animated.Text>
-
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttons}>
-          <Pressable
-            style={styles.button}
-            onPress={handleShare}
-            disabled={loading}
-          >
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.shareGradient}
-            >
-              <Icon name="share" size="md" color={colors.text.primary} />
-              <Text style={styles.buttonText}>Share</Text>
-            </LinearGradient>
-          </Pressable>
-
-          <Pressable
-            style={styles.button}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            <LinearGradient
-              colors={[colors.emerald, colors.gold]}
-              style={styles.saveGradient}
-            >
-              <Icon name="download" size="md" color="#fff" />
-              <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
-            </LinearGradient>
-          </Pressable>
-        </Animated.View>
+        )}
       </View>
-      )}
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

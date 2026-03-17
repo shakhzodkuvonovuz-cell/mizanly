@@ -21,6 +21,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi, uploadApi, profileLinksApi } from '@/services/api';
 import type { ProfileLink, User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type UpdateProfilePayload = {
   displayName?: string;
@@ -208,422 +209,425 @@ export default function EditProfileScreen() {
   const HEADER_HEIGHT = insets.top + 44;
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('profile.editProfile')}
-        leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.cancel') }}
-      />
-      {/* Save button overlay on GlassHeader right area */}
-      <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">
-        <GradientButton
-          label={t('common.save')}
-          size="sm"
-          onPress={() => saveMutation.mutate()}
-          loading={saveMutation.isPending || uploading}
-          disabled={saveMutation.isPending || uploading}
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('profile.editProfile')}
+          leftAction={{ icon: 'x', onPress: () => router.back(), accessibilityLabel: t('common.cancel') }}
         />
-      </View>
+        {/* Save button overlay on GlassHeader right area */}
+        <View style={[styles.saveButtonWrap, { top: insets.top + 4 }]} pointerEvents="box-none">
+          <GradientButton
+            label={t('common.save')}
+            size="sm"
+            onPress={() => saveMutation.mutate()}
+            loading={saveMutation.isPending || uploading}
+            disabled={saveMutation.isPending || uploading}
+          />
+        </View>
 
-      <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
-        {/* Cover photo with premium gradient overlay */}
-        <TouchableOpacity onPress={pickCover} activeOpacity={0.9}>
-          {currentCover ? (
-            <Animated.View entering={FadeIn.duration(400)}>
-              <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
-                style={styles.coverGradient}
-              />
-              <View style={styles.coverOverlay}>
+        <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
+          {/* Cover photo with premium gradient overlay */}
+          <TouchableOpacity onPress={pickCover} activeOpacity={0.9}>
+            {currentCover ? (
+              <Animated.View entering={FadeIn.duration(400)}>
+                <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
                 <LinearGradient
-                  colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                  style={styles.coverEditBadge}
+                  colors={['transparent', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0.7)']}
+                  style={styles.coverGradient}
+                />
+                <View style={styles.coverOverlay}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    style={styles.coverEditBadge}
+                  >
+                    <Icon name="camera" size="sm" color="#fff" />
+                    <Text style={styles.coverEditText}>Change Cover</Text>
+                  </LinearGradient>
+                </View>
+              </Animated.View>
+            ) : (
+              <LinearGradient
+                colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
+                style={styles.coverPlaceholder}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              >
+                <View style={styles.coverPlaceholderInner}>
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
+                    style={styles.coverPlaceholderIconBg}
+                  >
+                    <Icon name="camera" size="lg" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
+                  <Text style={styles.coverPlaceholderSubtext}>Tap to upload</Text>
+                </View>
+              </LinearGradient>
+            )}
+          </TouchableOpacity>
+
+          {/* Avatar with glassmorphism overlay */}
+          <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.avatarWrap}>
+            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.9}>
+              <View style={styles.avatarContainer}>
+                <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
+                  style={styles.avatarEdit}
                 >
                   <Icon name="camera" size="sm" color="#fff" />
-                  <Text style={styles.coverEditText}>Change Cover</Text>
                 </LinearGradient>
               </View>
-            </Animated.View>
-          ) : (
+            </TouchableOpacity>
+          </Animated.View>
+
+          {/* Form fields with glassmorphism cards */}
+          <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.form}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.15)', 'rgba(200,150,62,0.1)']}
-              style={styles.coverPlaceholder}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCard}
             >
-              <View style={styles.coverPlaceholderInner}>
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.5)', 'rgba(28,35,51,0.3)']}
-                  style={styles.coverPlaceholderIconBg}
-                >
-                  <Icon name="camera" size="lg" color={colors.gold} />
-                </LinearGradient>
-                <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
-                <Text style={styles.coverPlaceholderSubtext}>Tap to upload</Text>
-              </View>
-            </LinearGradient>
-          )}
-        </TouchableOpacity>
-
-        {/* Avatar with glassmorphism overlay */}
-        <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.avatarWrap}>
-          <TouchableOpacity onPress={pickAvatar} activeOpacity={0.9}>
-            <View style={styles.avatarContainer}>
-              <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
-              <LinearGradient
-                colors={['rgba(10,123,79,0.9)', 'rgba(8,95,39,0.95)']}
-                style={styles.avatarEdit}
-              >
-                <Icon name="camera" size="sm" color="#fff" />
-              </LinearGradient>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Form fields with glassmorphism cards */}
-        <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.form}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCard}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="user" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.label}>Display Name</Text>
-              </View>
-              <TextInput
-                style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder={t('editProfile.namePlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
-                maxLength={50}
-                onFocus={() => setFocusedField('displayName')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-          </LinearGradient>
-
-          {/* Username - Read only glassmorphism card */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.25)', 'rgba(28,35,51,0.15)']}
-            style={styles.formCardReadOnly}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(110,119,129,0.3)', 'rgba(110,119,129,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="at-sign" size="xs" color={colors.text.tertiary} />
-                </LinearGradient>
-                <Text style={styles.label}>Username</Text>
-              </View>
-              <Text style={styles.usernameText}>@{me?.username}</Text>
-            </View>
-          </LinearGradient>
-
-          {/* Bio with glassmorphism */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCardMultiline}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="edit" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.label}>Bio</Text>
-              </View>
-              <TextInput
-                style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
-                value={bio}
-                onChangeText={setBio}
-                placeholder={t('editProfile.bioPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
-                multiline
-                maxLength={150}
-                textAlignVertical="top"
-                onFocus={() => setFocusedField('bio')}
-                onBlur={() => setFocusedField(null)}
-              />
-              <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
-            </View>
-          </LinearGradient>
-
-          {/* Website */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCard}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="globe" size="xs" color={colors.gold} />
-                </LinearGradient>
-                <Text style={styles.label}>Website</Text>
-              </View>
-              <TextInput
-                style={[styles.input, focusedField === 'website' && styles.inputFocused]}
-                value={website}
-                onChangeText={setWebsite}
-                placeholder="https://yoursite.com"
-                placeholderTextColor={colors.text.tertiary}
-                autoCapitalize="none"
-                keyboardType="url"
-                maxLength={100}
-                onFocus={() => setFocusedField('website')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-          </LinearGradient>
-
-          {/* Location */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCard}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="map-pin" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.label}>Location</Text>
-              </View>
-              <View style={styles.iconInputRow}>
-                <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
-                <TextInput
-                  style={[styles.input, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
-                  value={location}
-                  onChangeText={setLocation}
-                  placeholder={t('editProfile.locationPlaceholder')}
-                  placeholderTextColor={colors.text.tertiary}
-                  maxLength={100}
-                  onFocus={() => setFocusedField('location')}
-                  onBlur={() => setFocusedField(null)}
-                />
-              </View>
-            </View>
-          </LinearGradient>
-
-          {/* Pronouns */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCard}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="user" size="xs" color={colors.gold} />
-                </LinearGradient>
-                <Text style={styles.label}>Pronouns</Text>
-              </View>
-              <TextInput
-                style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
-                value={pronouns}
-                onChangeText={setPronouns}
-                placeholder={t('editProfile.pronounsPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
-                maxLength={30}
-                onFocus={() => setFocusedField('pronouns')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-          </LinearGradient>
-
-          {/* Birthday */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCard}
-          >
-            <View style={styles.field}>
-              <View style={styles.fieldHeader}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
-                  style={styles.fieldIconBg}
-                >
-                  <Icon name="clock" size="xs" color={colors.emerald} />
-                </LinearGradient>
-                <Text style={styles.label}>Birthday</Text>
-              </View>
-              <TextInput
-                style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
-                value={birthday}
-                onChangeText={setBirthday}
-                placeholder={t('editProfile.birthdayPlaceholder')}
-                placeholderTextColor={colors.text.tertiary}
-                maxLength={10}
-                onFocus={() => setFocusedField('birthday')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-          </LinearGradient>
-
-          {/* Private Account with Premium Toggle */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCardToggle}
-          >
-            <View style={[styles.field, styles.rowField]}>
-              <View style={styles.toggleTextContainer}>
-                <View style={styles.toggleHeader}>
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.fieldIconBg}
                   >
-                    <Icon name="lock" size="xs" color={colors.emerald} />
+                    <Icon name="user" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>Private Account</Text>
+                  <Text style={styles.label}>Display Name</Text>
                 </View>
-                <Text style={styles.fieldHint}>Only approved followers see your posts</Text>
+                <TextInput
+                  style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder={t('editProfile.namePlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  maxLength={50}
+                  onFocus={() => setFocusedField('displayName')}
+                  onBlur={() => setFocusedField(null)}
+                />
               </View>
-              <TouchableOpacity
-                style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
-                onPress={() => setIsPrivate(!isPrivate)}
-                activeOpacity={0.9}
-              >
-                <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
-                  <LinearGradient
-                    colors={isPrivate ? [colors.emerald, colors.emerald] : ['#fff', '#f0f0f0']}
-                    style={styles.toggleThumbGradient}
-                  />
-                </View>
-              </TouchableOpacity>
-            </View>
-          </LinearGradient>
+            </LinearGradient>
 
-          {/* Profile Links - Glassmorphism Section */}
-          <LinearGradient
-            colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
-            style={styles.formCardLinks}
-          >
-            <View style={styles.field}>
-              <View style={styles.linksSectionHeader}>
-                <View style={styles.toggleHeader}>
+            {/* Username - Read only glassmorphism card */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.25)', 'rgba(28,35,51,0.15)']}
+              style={styles.formCardReadOnly}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
+                  <LinearGradient
+                    colors={['rgba(110,119,129,0.3)', 'rgba(110,119,129,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="at-sign" size="xs" color={colors.text.tertiary} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Username</Text>
+                </View>
+                <Text style={styles.usernameText}>@{me?.username}</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Bio with glassmorphism */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCardMultiline}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="edit" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Bio</Text>
+                </View>
+                <TextInput
+                  style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
+                  value={bio}
+                  onChangeText={setBio}
+                  placeholder={t('editProfile.bioPlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  multiline
+                  maxLength={150}
+                  textAlignVertical="top"
+                  onFocus={() => setFocusedField('bio')}
+                  onBlur={() => setFocusedField(null)}
+                />
+                <View style={styles.charCountWrap}><CharCountRing current={bio.length} max={150} size={24} /></View>
+              </View>
+            </LinearGradient>
+
+            {/* Website */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCard}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
                   <LinearGradient
                     colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                     style={styles.fieldIconBg}
                   >
-                    <Icon name="link" size="xs" color={colors.gold} />
+                    <Icon name="globe" size="xs" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.label}>Profile Links</Text>
+                  <Text style={styles.label}>Website</Text>
                 </View>
-                <View style={styles.linksCountBadge}>
-                  <Text style={styles.linksCount}>{links.length}/5</Text>
+                <TextInput
+                  style={[styles.input, focusedField === 'website' && styles.inputFocused]}
+                  value={website}
+                  onChangeText={setWebsite}
+                  placeholder="https://yoursite.com"
+                  placeholderTextColor={colors.text.tertiary}
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  maxLength={100}
+                  onFocus={() => setFocusedField('website')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+            </LinearGradient>
+
+            {/* Location */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCard}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="map-pin" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Location</Text>
+                </View>
+                <View style={styles.iconInputRow}>
+                  <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
+                  <TextInput
+                    style={[styles.input, styles.iconInput, focusedField === 'location' && styles.inputFocused]}
+                    value={location}
+                    onChangeText={setLocation}
+                    placeholder={t('editProfile.locationPlaceholder')}
+                    placeholderTextColor={colors.text.tertiary}
+                    maxLength={100}
+                    onFocus={() => setFocusedField('location')}
+                    onBlur={() => setFocusedField(null)}
+                  />
                 </View>
               </View>
+            </LinearGradient>
 
-              {linksQuery.isLoading ? (
-                <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
-                  <Skeleton.Rect width="100%" height={44} />
-                  <Skeleton.Rect width="70%" height={44} />
-                </View>
-              ) : (
-                links.map((link, index) => (
-                  <Animated.View key={link.id} entering={FadeInUp.delay(index * 50).duration(300)}>
-                    <LinearGradient
-                      colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
-                      style={styles.linkRowGlass}
-                    >
-                      <LinearGradient
-                        colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
-                        style={styles.linkIconGlass}
-                      >
-                        <Icon name="link" size="sm" color={colors.emerald} />
-                      </LinearGradient>
-                      <View style={styles.linkInfo}>
-                        <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
-                        <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
-                      </View>
-                      <TouchableOpacity
-                        hitSlop={8}
-                        onPress={() => deleteLinkMutation.mutate(link.id)}
-                        disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
-                        style={styles.linkDeleteBtn}
-                      >
-                        <Icon name="x" size="sm" color={colors.text.tertiary} />
-                      </TouchableOpacity>
-                    </LinearGradient>
-                  </Animated.View>
-                ))
-              )}
-
-              {showAddLink ? (
-                <LinearGradient
-                  colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.25)']}
-                  style={styles.addLinkFormGlass}
-                >
-                  <TextInput
-                    style={styles.addLinkInput}
-                    placeholder={t('editProfile.linkTitlePlaceholder')}
-                    placeholderTextColor={colors.text.tertiary}
-                    value={newLinkTitle}
-                    onChangeText={setNewLinkTitle}
-                    maxLength={40}
-                  />
-                  <TextInput
-                    style={[styles.addLinkInput, styles.addLinkInputBottom]}
-                    placeholder="URL (https://...)"
-                    placeholderTextColor={colors.text.tertiary}
-                    value={newLinkUrl}
-                    onChangeText={setNewLinkUrl}
-                    autoCapitalize="none"
-                    keyboardType="url"
-                    maxLength={200}
-                  />
-                  <View style={styles.addLinkActions}>
-                    <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
-                      <Text style={styles.addLinkCancel}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[
-                        styles.addLinkSave,
-                        (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
-                      ]}
-                      onPress={() => addLinkMutation.mutate()}
-                      disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
-                    >
-                      {addLinkMutation.isPending ? (
-                        <ActivityIndicator color={colors.text.primary} size="small" />
-                      ) : (
-                        <Text style={styles.addLinkSaveText}>Add</Text>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </LinearGradient>
-              ) : links.length < 5 ? (
-                <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+            {/* Pronouns */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCard}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
                   <LinearGradient
-                    colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
-                    style={styles.addLinkBtnGradient}
+                    colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                    style={styles.fieldIconBg}
                   >
-                    <Icon name="plus" size="sm" color={colors.emerald} />
-                    <Text style={styles.addLinkBtnText}>Add a link</Text>
+                    <Icon name="user" size="xs" color={colors.gold} />
                   </LinearGradient>
+                  <Text style={styles.label}>Pronouns</Text>
+                </View>
+                <TextInput
+                  style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
+                  value={pronouns}
+                  onChangeText={setPronouns}
+                  placeholder={t('editProfile.pronounsPlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  maxLength={30}
+                  onFocus={() => setFocusedField('pronouns')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+            </LinearGradient>
+
+            {/* Birthday */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCard}
+            >
+              <View style={styles.field}>
+                <View style={styles.fieldHeader}>
+                  <LinearGradient
+                    colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                    style={styles.fieldIconBg}
+                  >
+                    <Icon name="clock" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.label}>Birthday</Text>
+                </View>
+                <TextInput
+                  style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
+                  value={birthday}
+                  onChangeText={setBirthday}
+                  placeholder={t('editProfile.birthdayPlaceholder')}
+                  placeholderTextColor={colors.text.tertiary}
+                  maxLength={10}
+                  onFocus={() => setFocusedField('birthday')}
+                  onBlur={() => setFocusedField(null)}
+                />
+              </View>
+            </LinearGradient>
+
+            {/* Private Account with Premium Toggle */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCardToggle}
+            >
+              <View style={[styles.field, styles.rowField]}>
+                <View style={styles.toggleTextContainer}>
+                  <View style={styles.toggleHeader}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                      style={styles.fieldIconBg}
+                    >
+                      <Icon name="lock" size="xs" color={colors.emerald} />
+                    </LinearGradient>
+                    <Text style={styles.label}>Private Account</Text>
+                  </View>
+                  <Text style={styles.fieldHint}>Only approved followers see your posts</Text>
+                </View>
+                <TouchableOpacity
+                  style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
+                  onPress={() => setIsPrivate(!isPrivate)}
+                  activeOpacity={0.9}
+                >
+                  <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
+                    <LinearGradient
+                      colors={isPrivate ? [colors.emerald, colors.emerald] : ['#fff', '#f0f0f0']}
+                      style={styles.toggleThumbGradient}
+                    />
+                  </View>
                 </TouchableOpacity>
-              ) : null}
-            </View>
-          </LinearGradient>
-        </Animated.View>
-      </ScrollView>
-    </View>
+              </View>
+            </LinearGradient>
+
+            {/* Profile Links - Glassmorphism Section */}
+            <LinearGradient
+              colors={['rgba(45,53,72,0.35)', 'rgba(28,35,51,0.2)']}
+              style={styles.formCardLinks}
+            >
+              <View style={styles.field}>
+                <View style={styles.linksSectionHeader}>
+                  <View style={styles.toggleHeader}>
+                    <LinearGradient
+                      colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
+                      style={styles.fieldIconBg}
+                    >
+                      <Icon name="link" size="xs" color={colors.gold} />
+                    </LinearGradient>
+                    <Text style={styles.label}>Profile Links</Text>
+                  </View>
+                  <View style={styles.linksCountBadge}>
+                    <Text style={styles.linksCount}>{links.length}/5</Text>
+                  </View>
+                </View>
+
+                {linksQuery.isLoading ? (
+                  <View style={{ gap: spacing.sm, marginTop: spacing.sm }}>
+                    <Skeleton.Rect width="100%" height={44} />
+                    <Skeleton.Rect width="70%" height={44} />
+                  </View>
+                ) : (
+                  links.map((link, index) => (
+                    <Animated.View key={link.id} entering={FadeInUp.delay(index * 50).duration(300)}>
+                      <LinearGradient
+                        colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
+                        style={styles.linkRowGlass}
+                      >
+                        <LinearGradient
+                          colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
+                          style={styles.linkIconGlass}
+                        >
+                          <Icon name="link" size="sm" color={colors.emerald} />
+                        </LinearGradient>
+                        <View style={styles.linkInfo}>
+                          <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
+                          <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
+                        </View>
+                        <TouchableOpacity
+                          hitSlop={8}
+                          onPress={() => deleteLinkMutation.mutate(link.id)}
+                          disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
+                          style={styles.linkDeleteBtn}
+                        >
+                          <Icon name="x" size="sm" color={colors.text.tertiary} />
+                        </TouchableOpacity>
+                      </LinearGradient>
+                    </Animated.View>
+                  ))
+                )}
+
+                {showAddLink ? (
+                  <LinearGradient
+                    colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.25)']}
+                    style={styles.addLinkFormGlass}
+                  >
+                    <TextInput
+                      style={styles.addLinkInput}
+                      placeholder={t('editProfile.linkTitlePlaceholder')}
+                      placeholderTextColor={colors.text.tertiary}
+                      value={newLinkTitle}
+                      onChangeText={setNewLinkTitle}
+                      maxLength={40}
+                    />
+                    <TextInput
+                      style={[styles.addLinkInput, styles.addLinkInputBottom]}
+                      placeholder="URL (https://...)"
+                      placeholderTextColor={colors.text.tertiary}
+                      value={newLinkUrl}
+                      onChangeText={setNewLinkUrl}
+                      autoCapitalize="none"
+                      keyboardType="url"
+                      maxLength={200}
+                    />
+                    <View style={styles.addLinkActions}>
+                      <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
+                        <Text style={styles.addLinkCancel}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[
+                          styles.addLinkSave,
+                          (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
+                        ]}
+                        onPress={() => addLinkMutation.mutate()}
+                        disabled={!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending}
+                      >
+                        {addLinkMutation.isPending ? (
+                          <ActivityIndicator color={colors.text.primary} size="small" />
+                        ) : (
+                          <Text style={styles.addLinkSaveText}>Add</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </LinearGradient>
+                ) : links.length < 5 ? (
+                  <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                      style={styles.addLinkBtnGradient}
+                    >
+                      <Icon name="plus" size="sm" color={colors.emerald} />
+                      <Text style={styles.addLinkBtnText}>Add a link</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </LinearGradient>
+          </Animated.View>
+        </ScrollView>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

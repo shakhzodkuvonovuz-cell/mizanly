@@ -19,6 +19,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { collabsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { PostCollab, Post, User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type CollabItem = PostCollab & { post: Post };
 interface AcceptedResponse {
@@ -254,73 +255,76 @@ export default function CollabRequestsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader
-        title={t('collabRequests.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('collabRequests.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
 
-      <TabSelector
-        tabs={tabs}
-        activeKey={activeTab}
-        onTabChange={(key) => setActiveTab(key as TabKey)}
-        variant="underline"
-        style={[styles.tabSelector, { marginTop: insets.top + 52 }]}
-      />
+        <TabSelector
+          tabs={tabs}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as TabKey)}
+          variant="underline"
+          style={[styles.tabSelector, { marginTop: insets.top + 52 }]}
+        />
 
-      {isLoading ? (
-        <View style={styles.skeletonList}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <View key={i} style={styles.skeletonRow}>
-              <Skeleton.Circle size={46} />
-              <View style={{ flex: 1, gap: spacing.sm }}>
-                <Skeleton.Rect width={120} height={14} />
-                <Skeleton.Rect width={80} height={11} />
-              </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={data}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.list}
-          onEndReached={() => {
-            if (activeTab === 'accepted' && acceptedQuery.hasNextPage && !isFetchingNextPage) {
-              acceptedQuery.fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.4}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-          renderItem={renderItem}
-          ListFooterComponent={() =>
-            isFetchingNextPage ? (
-              <View style={styles.skeletonRow}>
+        {isLoading ? (
+          <View style={styles.skeletonList}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <View key={i} style={styles.skeletonRow}>
                 <Skeleton.Circle size={46} />
                 <View style={{ flex: 1, gap: spacing.sm }}>
                   <Skeleton.Rect width={120} height={14} />
                   <Skeleton.Rect width={80} height={11} />
                 </View>
               </View>
-            ) : null
-          }
-          ListEmptyComponent={() => (
-            <EmptyState
-              icon="users"
-              title={activeTab === 'pending' ? t('collabRequests.emptyState.noPendingInvites') : t('collabRequests.emptyState.noAcceptedCollaborations')}
-              subtitle={
-                activeTab === 'pending'
-                  ? t('collabRequests.emptyState.pendingSubtitle')
-                  : t('collabRequests.emptyState.acceptedSubtitle')
+            ))}
+          </View>
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={data}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.list}
+            onEndReached={() => {
+              if (activeTab === 'accepted' && acceptedQuery.hasNextPage && !isFetchingNextPage) {
+                acceptedQuery.fetchNextPage();
               }
-            />
-          )}
-        />
-      )}
-    </SafeAreaView>
+            }}
+            onEndReachedThreshold={0.4}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+            renderItem={renderItem}
+            ListFooterComponent={() =>
+              isFetchingNextPage ? (
+                <View style={styles.skeletonRow}>
+                  <Skeleton.Circle size={46} />
+                  <View style={{ flex: 1, gap: spacing.sm }}>
+                    <Skeleton.Rect width={120} height={14} />
+                    <Skeleton.Rect width={80} height={11} />
+                  </View>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={() => (
+              <EmptyState
+                icon="users"
+                title={activeTab === 'pending' ? t('collabRequests.emptyState.noPendingInvites') : t('collabRequests.emptyState.noAcceptedCollaborations')}
+                subtitle={
+                  activeTab === 'pending'
+                    ? t('collabRequests.emptyState.pendingSubtitle')
+                    : t('collabRequests.emptyState.acceptedSubtitle')
+                }
+              />
+            )}
+          />
+        )}
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

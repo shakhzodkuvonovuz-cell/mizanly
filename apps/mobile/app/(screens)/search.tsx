@@ -22,6 +22,7 @@ import { ThreadCard } from '@/components/majlis/ThreadCard';
 import type { User, TrendingHashtag, Reel, Video, Channel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { rtlFlexRow, rtlTextAlign, rtlArrow } from '@/utils/rtl';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SEARCH_TAB_KEYS = ['people', 'hashtags', 'posts', 'threads', 'reels', 'videos', 'channels'] as const;
 
@@ -251,6 +252,7 @@ export default function SearchScreen() {
   const showHistory = query.length === 0 && isFocused;
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -577,23 +579,24 @@ export default function SearchScreen() {
                   );
                 }
                 return (
-                  <Pressable
-                    style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]}
-                    onPress={() => {
-                      haptic.light();
-                      router.push(`/(screens)/hashtag/${item.data.name}`);
-                    }}
-                    accessibilityRole="button"
-                    accessibilityLabel={`View hashtag ${item.data.name}`}
-                  >
-                    <View style={styles.hashtagIconWrap}>
-                      <Icon name="hash" size="sm" color={colors.emerald} />
-                    </View>
-                    <View>
-                      <Text style={[styles.hashtagName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.data.name}</Text>
-                      <Text style={[styles.hashtagCount, { textAlign: rtlTextAlign(isRTL) }]}>{item.data.postsCount} {t('search.posts')}</Text>
-                    </View>
-                  </Pressable>
+                    <Pressable
+                      style={[styles.hashtagRow, { flexDirection: rtlFlexRow(isRTL) }]}
+                      onPress={() => {
+                        haptic.light();
+                        router.push(`/(screens)/hashtag/${item.data.name}`);
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View hashtag ${item.data.name}`}
+                    >
+                      <View style={styles.hashtagIconWrap}>
+                        <Icon name="hash" size="sm" color={colors.emerald} />
+                      </View>
+                      <View>
+                        <Text style={[styles.hashtagName, { textAlign: rtlTextAlign(isRTL) }]}>#{item.data.name}</Text>
+                        <Text style={[styles.hashtagCount, { textAlign: rtlTextAlign(isRTL) }]}>{item.data.postsCount} {t('search.posts')}</Text>
+                      </View>
+                    </Pressable>
+                
                 );
               }}
               ListEmptyComponent={() => (
@@ -735,6 +738,7 @@ export default function SearchScreen() {
         )
       )}
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

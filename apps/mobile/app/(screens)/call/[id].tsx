@@ -26,6 +26,7 @@ import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { api, callsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { CallSession } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type CallType = 'voice' | 'video';
 type CallStatus = 'ringing' | 'connected' | 'ended' | 'missed' | 'declined';
@@ -218,185 +219,188 @@ export default function CallScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Premium gradient background */}
-      <LinearGradient
-        colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', colors.dark.bg]}
-        style={styles.gradientBg}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        {/* Premium gradient background */}
+        <LinearGradient
+          colors={['rgba(10,123,79,0.15)', 'rgba(28,35,51,0.8)', colors.dark.bg]}
+          style={styles.gradientBg}
+        />
 
-      <GlassHeader
-        title={isVideo ? t('calls.videoCall') : t('calls.voiceCall')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
-        borderless
-      />
+        <GlassHeader
+          title={isVideo ? t('calls.videoCall') : t('calls.voiceCall')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          borderless
+        />
 
-      <View style={[styles.center, { paddingTop: insets.top + 44 }]}>
-        {/* Avatar with pulsing ring */}
-        <View style={styles.avatarContainer}>
-          {callStatus === 'ringing' && (
-            <Animated.View style={[styles.pulseRing, pulseStyle]} />
+        <View style={[styles.center, { paddingTop: insets.top + 44 }]}>
+          {/* Avatar with pulsing ring */}
+          <View style={styles.avatarContainer}>
+            {callStatus === 'ringing' && (
+              <Animated.View style={[styles.pulseRing, pulseStyle]} />
+            )}
+            <Avatar
+              uri={avatarUrl}
+              name={displayName}
+              size="3xl"
+              showRing
+              ringColor={callStatus === 'connected' ? colors.emerald : colors.gold}
+            />
+          </View>
+
+          {/* Name with animated entrance */}
+          <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.name}>
+            {displayName}
+          </Animated.Text>
+          <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.username}>
+            @{otherUser?.username}
+          </Animated.Text>
+
+          {/* Status with animated transition */}
+          <Animated.Text
+            entering={FadeIn.delay(200).duration(300)}
+            key={statusText}
+            style={[
+              styles.status,
+              callStatus === 'connected' && styles.statusConnected,
+              callStatus === 'ended' && styles.statusEnded,
+            ]}
+          >
+            {statusText}
+          </Animated.Text>
+
+          {/* Video preview placeholder */}
+          {isVideo && callStatus === 'connected' && (
+            <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.videoPreview}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                style={styles.videoPreviewGradient}
+              >
+                <Icon name="video" size="lg" color={colors.text.tertiary} />
+                <Text style={styles.videoPreviewText}>{t('calls.videoPreview')}</Text>
+              </LinearGradient>
+            </Animated.View>
           )}
-          <Avatar
-            uri={avatarUrl}
-            name={displayName}
-            size="3xl"
-            showRing
-            ringColor={callStatus === 'connected' ? colors.emerald : colors.gold}
-          />
-        </View>
 
-        {/* Name with animated entrance */}
-        <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.name}>
-          {displayName}
-        </Animated.Text>
-        <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.username}>
-          @{otherUser?.username}
-        </Animated.Text>
-
-        {/* Status with animated transition */}
-        <Animated.Text
-          entering={FadeIn.delay(200).duration(300)}
-          key={statusText}
-          style={[
-            styles.status,
-            callStatus === 'connected' && styles.statusConnected,
-            callStatus === 'ended' && styles.statusEnded,
-          ]}
-        >
-          {statusText}
-        </Animated.Text>
-
-        {/* Video preview placeholder */}
-        {isVideo && callStatus === 'connected' && (
-          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.videoPreview}>
-            <LinearGradient
-              colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-              style={styles.videoPreviewGradient}
-            >
-              <Icon name="video" size="lg" color={colors.text.tertiary} />
-              <Text style={styles.videoPreviewText}>{t('calls.videoPreview')}</Text>
-            </LinearGradient>
-          </Animated.View>
-        )}
-
-        {/* Premium Controls */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.controls}>
-          {callStatus === 'ringing' && isIncoming ? (
-            <>
-              {/* Decline Button */}
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={handleDecline}
-                disabled={declineMutation.isPending}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={[colors.error, 'rgba(248,81,73,0.8)']}
-                  style={styles.declineGradient}
-                >
-                  {declineMutation.isPending ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <Icon name="x" size="xl" color={colors.text.primary} />
-                  )}
-                </LinearGradient>
-                <Text style={styles.controlLabel}>{t('calls.decline')}</Text>
-              </TouchableOpacity>
-
-              {/* Answer Button */}
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={handleAnswer}
-                disabled={answerMutation.isPending}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={[colors.emerald, colors.gold]}
-                  style={styles.answerGradient}
-                >
-                  {answerMutation.isPending ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <Icon name="phone" size="xl" color={colors.text.primary} />
-                  )}
-                </LinearGradient>
-                <Text style={styles.controlLabel}>{t('calls.answer')}</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              {/* Mute Button */}
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={toggleMute}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                  style={styles.controlGradient}
-                >
-                  <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
-                </LinearGradient>
-                <Text style={styles.controlLabel}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
-              </TouchableOpacity>
-
-              {/* Speaker Button */}
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={toggleSpeaker}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={isSpeaker ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
-                  style={styles.controlGradient}
-                >
-                  <Icon name="volume-x" size="lg" color={colors.text.primary} />
-                </LinearGradient>
-                <Text style={styles.controlLabel}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
-              </TouchableOpacity>
-
-              {/* Flip Camera Button */}
-              {isVideo && (
+          {/* Premium Controls */}
+          <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.controls}>
+            {callStatus === 'ringing' && isIncoming ? (
+              <>
+                {/* Decline Button */}
                 <TouchableOpacity
                   style={styles.controlButton}
-                  onPress={toggleCamera}
+                  onPress={handleDecline}
+                  disabled={declineMutation.isPending}
                   activeOpacity={0.8}
                 >
                   <LinearGradient
-                    colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    colors={[colors.error, 'rgba(248,81,73,0.8)']}
+                    style={styles.declineGradient}
+                  >
+                    {declineMutation.isPending ? (
+                      <ActivityIndicator color={colors.text.primary} size="small" />
+                    ) : (
+                      <Icon name="x" size="xl" color={colors.text.primary} />
+                    )}
+                  </LinearGradient>
+                  <Text style={styles.controlLabel}>{t('calls.decline')}</Text>
+                </TouchableOpacity>
+
+                {/* Answer Button */}
+                <TouchableOpacity
+                  style={styles.controlButton}
+                  onPress={handleAnswer}
+                  disabled={answerMutation.isPending}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={[colors.emerald, colors.gold]}
+                    style={styles.answerGradient}
+                  >
+                    {answerMutation.isPending ? (
+                      <ActivityIndicator color={colors.text.primary} size="small" />
+                    ) : (
+                      <Icon name="phone" size="xl" color={colors.text.primary} />
+                    )}
+                  </LinearGradient>
+                  <Text style={styles.controlLabel}>{t('calls.answer')}</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                {/* Mute Button */}
+                <TouchableOpacity
+                  style={styles.controlButton}
+                  onPress={toggleMute}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.controlGradient}
                   >
-                    <Icon name="repeat" size="lg" color={colors.text.primary} />
+                    <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
                   </LinearGradient>
-                  <Text style={styles.controlLabel}>{t('calls.flip')}</Text>
+                  <Text style={styles.controlLabel}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
                 </TouchableOpacity>
-              )}
 
-              {/* End Call Button */}
-              <TouchableOpacity
-                style={styles.controlButton}
-                onPress={handleEndCall}
-                disabled={endCallMutation.isPending}
-                activeOpacity={0.8}
-              >
-                <LinearGradient
-                  colors={[colors.error, 'rgba(248,81,73,0.8)']}
-                  style={styles.endCallGradient}
+                {/* Speaker Button */}
+                <TouchableOpacity
+                  style={styles.controlButton}
+                  onPress={toggleSpeaker}
+                  activeOpacity={0.8}
                 >
-                  {endCallMutation.isPending ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <Icon name="phone" size="xl" color={colors.text.primary} />
-                  )}
-                </LinearGradient>
-                <Text style={styles.controlLabel}>{t('calls.end')}</Text>
-              </TouchableOpacity>
-            </>
-          )}
-        </Animated.View>
+                  <LinearGradient
+                    colors={isSpeaker ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                    style={styles.controlGradient}
+                  >
+                    <Icon name="volume-x" size="lg" color={colors.text.primary} />
+                  </LinearGradient>
+                  <Text style={styles.controlLabel}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
+                </TouchableOpacity>
+
+                {/* Flip Camera Button */}
+                {isVideo && (
+                  <TouchableOpacity
+                    style={styles.controlButton}
+                    onPress={toggleCamera}
+                    activeOpacity={0.8}
+                  >
+                    <LinearGradient
+                      colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
+                      style={styles.controlGradient}
+                    >
+                      <Icon name="repeat" size="lg" color={colors.text.primary} />
+                    </LinearGradient>
+                    <Text style={styles.controlLabel}>{t('calls.flip')}</Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* End Call Button */}
+                <TouchableOpacity
+                  style={styles.controlButton}
+                  onPress={handleEndCall}
+                  disabled={endCallMutation.isPending}
+                  activeOpacity={0.8}
+                >
+                  <LinearGradient
+                    colors={[colors.error, 'rgba(248,81,73,0.8)']}
+                    style={styles.endCallGradient}
+                  >
+                    {endCallMutation.isPending ? (
+                      <ActivityIndicator color={colors.text.primary} size="small" />
+                    ) : (
+                      <Icon name="phone" size="xl" color={colors.text.primary} />
+                    )}
+                  </LinearGradient>
+                  <Text style={styles.controlLabel}>{t('calls.end')}</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </Animated.View>
+        </View>
       </View>
-    </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

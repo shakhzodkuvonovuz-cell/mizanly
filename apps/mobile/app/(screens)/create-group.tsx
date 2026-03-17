@@ -19,6 +19,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const MAX_GROUP_NAME = 50;
 const MIN_MEMBERS = 2;
@@ -117,185 +118,188 @@ export default function CreateGroupScreen() {
 
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <GlassHeader
-        title={t('groups.createGroup')}
-        leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
-      />
+    <ScreenErrorBoundary>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        {/* Header */}
+        <GlassHeader
+          title={t('groups.createGroup')}
+          leftAction={{ icon: <Icon name="arrow-left" size="md" color={colors.text.primary} />, onPress: () => router.back() }}
+        />
 
-      <ScrollView contentContainerStyle={styles.content}>
-        {/* Group name */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t('groups.groupName')}</Text>
-          <View style={styles.nameRow}>
-            <TextInput
-              style={styles.nameInput}
-              value={groupName}
-              onChangeText={setGroupName}
-              placeholder={t('groups.enterGroupName')}
-              placeholderTextColor={colors.text.tertiary}
-              autoFocus
-              maxLength={MAX_GROUP_NAME}
-            />
-            <CharCountRing
-              current={groupName.length}
-              max={MAX_GROUP_NAME}
-              size={28}
-            />
-          </View>
-        </View>
-
-        {/* Avatar picker */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t('groups.groupAvatarOptional')}</Text>
-          <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
-            {avatarUri ? (
-              <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
-            ) : (
-              <View style={styles.avatarPlaceholder}>
-                <Icon name="camera" size={32} color={colors.text.secondary} />
-              </View>
-            )}
-            <View style={styles.avatarOverlay}>
-              <Icon name="edit" size={16} color={colors.text.primary} />
-            </View>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setAvatarUri(undefined)}
-            disabled={createMutation.isPending}
-            style={styles.skipBtn}
-            accessibilityLabel={t('groups.skipGroupAvatar')}
-            accessibilityRole="button"
-          >
-            <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
-              {t('common.skipForNow')}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Selected members chips */}
-        {selectedMembers.length > 0 && (
+        <ScrollView contentContainerStyle={styles.content}>
+          {/* Group name */}
           <View style={styles.section}>
-            <Text style={styles.label}>
-              {t('groups.members', { count: selectedMembers.length })}
-            </Text>
-            <View style={styles.chips}>
-              {selectedMembers.map(member => (
-                <View key={member.id} style={styles.chip}>
-                  <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
-                  <Text style={styles.chipText} numberOfLines={1}>
-                    {member.displayName}
-                  </Text>
-                  <Pressable
-                    onPress={() => handleRemoveMember(member.id)}
-                    hitSlop={4}
-                    style={styles.chipRemove}
-                    accessibilityLabel={t('groups.removeMember', { name: member.displayName })}
+            <Text style={styles.label}>{t('groups.groupName')}</Text>
+            <View style={styles.nameRow}>
+              <TextInput
+                style={styles.nameInput}
+                value={groupName}
+                onChangeText={setGroupName}
+                placeholder={t('groups.enterGroupName')}
+                placeholderTextColor={colors.text.tertiary}
+                autoFocus
+                maxLength={MAX_GROUP_NAME}
+              />
+              <CharCountRing
+                current={groupName.length}
+                max={MAX_GROUP_NAME}
+                size={28}
+              />
+            </View>
+          </View>
+
+          {/* Avatar picker */}
+          <View style={styles.section}>
+            <Text style={styles.label}>{t('groups.groupAvatarOptional')}</Text>
+            <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
+              {avatarUri ? (
+                <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
+              ) : (
+                <View style={styles.avatarPlaceholder}>
+                  <Icon name="camera" size={32} color={colors.text.secondary} />
+                </View>
+              )}
+              <View style={styles.avatarOverlay}>
+                <Icon name="edit" size={16} color={colors.text.primary} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setAvatarUri(undefined)}
+              disabled={createMutation.isPending}
+              style={styles.skipBtn}
+              accessibilityLabel={t('groups.skipGroupAvatar')}
+              accessibilityRole="button"
+            >
+              <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
+                {t('common.skipForNow')}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Selected members chips */}
+          {selectedMembers.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.label}>
+                {t('groups.members', { count: selectedMembers.length })}
+              </Text>
+              <View style={styles.chips}>
+                {selectedMembers.map(member => (
+                  <View key={member.id} style={styles.chip}>
+                    <Avatar uri={member.avatarUrl} name={member.displayName} size="sm" />
+                    <Text style={styles.chipText} numberOfLines={1}>
+                      {member.displayName}
+                    </Text>
+                    <Pressable
+                      onPress={() => handleRemoveMember(member.id)}
+                      hitSlop={4}
+                      style={styles.chipRemove}
+                      accessibilityLabel={t('groups.removeMember', { name: member.displayName })}
+                      accessibilityRole="button"
+                    >
+                      <Icon name="x" size={12} color={colors.text.secondary} />
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Member search */}
+          <View style={styles.section}>
+            <Text style={styles.label}>{t('groups.addMembers')}</Text>
+            <View style={styles.searchWrap}>
+              <Icon name="search" size="sm" color={colors.text.secondary} />
+              <TextInput
+                style={styles.searchInput}
+                value={query}
+                onChangeText={handleQueryChange}
+                placeholder={t('common.searchPeople')}
+                placeholderTextColor={colors.text.tertiary}
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {query.length > 0 && (
+                <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')} accessibilityRole="button">
+                  <Icon name="x" size="xs" color={colors.text.secondary} />
+                </Pressable>
+              )}
+            </View>
+
+            {searchQuery.isLoading ? (
+              <View style={styles.loader}>
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
+              </View>
+            ) : (
+              <FlatList
+                data={people}
+                scrollEnabled={true}
+                keyExtractor={(item) => item.id}
+                removeClippedSubviews={true}
+                refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.userRow}
+                    onPress={() => handleAddMember(item)}
+                    disabled={createMutation.isPending}
+                    activeOpacity={0.7}
+                    accessibilityLabel={t('groups.addMember', { name: item.displayName })}
                     accessibilityRole="button"
                   >
-                    <Icon name="x" size={12} color={colors.text.secondary} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Member search */}
-        <View style={styles.section}>
-          <Text style={styles.label}>{t('groups.addMembers')}</Text>
-          <View style={styles.searchWrap}>
-            <Icon name="search" size="sm" color={colors.text.secondary} />
-            <TextInput
-              style={styles.searchInput}
-              value={query}
-              onChangeText={handleQueryChange}
-              placeholder={t('common.searchPeople')}
-              placeholderTextColor={colors.text.tertiary}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            {query.length > 0 && (
-              <Pressable onPress={() => { setQuery(''); setDebouncedQuery(''); }} hitSlop={8} accessibilityLabel={t('accessibility.clearSearch')} accessibilityRole="button">
-                <Icon name="x" size="xs" color={colors.text.secondary} />
-              </Pressable>
+                    <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
+                    <View style={styles.userInfo}>
+                      <View style={styles.userNameRow}>
+                        <Text style={styles.name}>{item.displayName}</Text>
+                        {item.isVerified && <VerifiedBadge size={13} />}
+                      </View>
+                      <Text style={styles.handle}>@{item.username}</Text>
+                    </View>
+                    <Icon name="plus" size="sm" color={colors.emerald} />
+                  </TouchableOpacity>
+                )}
+                ListEmptyComponent={() =>
+                  debouncedQuery.trim().length >= 2 ? (
+                    <View style={styles.empty}>
+                      <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.hint}>
+                      <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
+                    </View>
+                  )
+                }
+              />
             )}
           </View>
 
-          {searchQuery.isLoading ? (
-            <View style={styles.loader}>
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-              <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} />
-            </View>
-          ) : (
-            <FlatList
-              data={people}
-              scrollEnabled={true}
-              keyExtractor={(item) => item.id}
-              removeClippedSubviews={true}
-              refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.userRow}
-                  onPress={() => handleAddMember(item)}
-                  disabled={createMutation.isPending}
-                  activeOpacity={0.7}
-                  accessibilityLabel={t('groups.addMember', { name: item.displayName })}
-                  accessibilityRole="button"
-                >
-                  <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
-                  <View style={styles.userInfo}>
-                    <View style={styles.userNameRow}>
-                      <Text style={styles.name}>{item.displayName}</Text>
-                      {item.isVerified && <VerifiedBadge size={13} />}
-                    </View>
-                    <Text style={styles.handle}>@{item.username}</Text>
-                  </View>
-                  <Icon name="plus" size="sm" color={colors.emerald} />
-                </TouchableOpacity>
-              )}
-              ListEmptyComponent={() =>
-                debouncedQuery.trim().length >= 2 ? (
-                  <View style={styles.empty}>
-                    <Text style={styles.emptyText}>{t('messages.noUsersFound', { query: debouncedQuery })}</Text>
-                  </View>
-                ) : (
-                  <View style={styles.hint}>
-                    <Text style={styles.hintText}>{t('messages.searchByNameOrUsername')}</Text>
-                  </View>
-                )
-              }
+          {/* Minimum requirement note */}
+          <Text style={styles.note}>
+            {t('groups.minMembersRequired', { count: MIN_MEMBERS })}
+          </Text>
+
+          {/* Create button */}
+          <View style={{ marginTop: spacing.lg, marginHorizontal: spacing.base }}>
+            <GradientButton
+              label={t('common.create')}
+              onPress={() => {
+                if (selectedMembers.length < MIN_MEMBERS) {
+                  setValidationError(t('groups.pleaseAddMembers', { count: MIN_MEMBERS }));
+                  return;
+                }
+                createMutation.mutate();
+              }}
+              loading={createMutation.isPending}
+              disabled={groupName.trim().length === 0}
             />
-          )}
-        </View>
+          </View>
 
-        {/* Minimum requirement note */}
-        <Text style={styles.note}>
-          {t('groups.minMembersRequired', { count: MIN_MEMBERS })}
-        </Text>
-
-        {/* Create button */}
-        <View style={{ marginTop: spacing.lg, marginHorizontal: spacing.base }}>
-          <GradientButton
-            label={t('common.create')}
-            onPress={() => {
-              if (selectedMembers.length < MIN_MEMBERS) {
-                setValidationError(t('groups.pleaseAddMembers', { count: MIN_MEMBERS }));
-                return;
-              }
-              createMutation.mutate();
-            }}
-            loading={createMutation.isPending}
-            disabled={groupName.trim().length === 0}
-          />
-        </View>
-
-        {/* Validation error */}
-        {validationError ? <Text style={styles.error}>{validationError}</Text> : null}
-      </ScrollView>
-    </SafeAreaView>
+          {/* Validation error */}
+          {validationError ? <Text style={styles.error}>{validationError}</Text> : null}
+        </ScrollView>
+      </SafeAreaView>
+  
+    </ScreenErrorBoundary>
   );
 }
 

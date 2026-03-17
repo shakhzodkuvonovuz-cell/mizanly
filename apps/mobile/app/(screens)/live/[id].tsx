@@ -31,6 +31,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -403,296 +404,299 @@ export default function LiveViewerScreen() {
   const raisedHands = participants.filter(p => p.raisedHand);
 
   return (
-    <View style={styles.container}>
-      {/* Floating reactions overlay */}
-      <View style={styles.floatingReactionsOverlay} pointerEvents="none">
-        {floatingReactions.map(reaction => (
-          <FloatingReactionBubble key={reaction.id} reaction={reaction} />
-        ))}
-      </View>
-
-      <GlassHeader
-        title="Live"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
-        rightActions={[
-          {
-            icon: 'users',
-            onPress: () => setShowParticipants(true),
-            accessibilityLabel: 'Participants',
-            badge: participants.length > 0 ? participants.length : undefined,
-          },
-          {
-            icon: 'message-circle',
-            onPress: () => setShowChat(true),
-            accessibilityLabel: 'Chat',
-          },
-        ]}
-      />
-
-      {/* LIVE badge with pulsing dot */}
-      <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60 }]} entering={FadeIn}>
-        <View style={styles.liveBadge}>
-          <Animated.View style={[styles.liveDot, pulseStyle]} />
-          <Text style={styles.liveBadgeText}>LIVE</Text>
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        {/* Floating reactions overlay */}
+        <View style={styles.floatingReactionsOverlay} pointerEvents="none">
+          {floatingReactions.map(reaction => (
+            <FloatingReactionBubble key={reaction.id} reaction={reaction} />
+          ))}
         </View>
-        <Animated.View style={[styles.viewerCountBadge, viewerCountStyle]}>
-          <Icon name="eye" size={12} color="#fff" />
-          <Text style={styles.viewerCountText}>{(live?.viewerCount || 0).toLocaleString()}</Text>
+
+        <GlassHeader
+          title="Live"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          rightActions={[
+            {
+              icon: 'users',
+              onPress: () => setShowParticipants(true),
+              accessibilityLabel: 'Participants',
+              badge: participants.length > 0 ? participants.length : undefined,
+            },
+            {
+              icon: 'message-circle',
+              onPress: () => setShowChat(true),
+              accessibilityLabel: 'Chat',
+            },
+          ]}
+        />
+
+        {/* LIVE badge with pulsing dot */}
+        <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60 }]} entering={FadeIn}>
+          <View style={styles.liveBadge}>
+            <Animated.View style={[styles.liveDot, pulseStyle]} />
+            <Text style={styles.liveBadgeText}>LIVE</Text>
+          </View>
+          <Animated.View style={[styles.viewerCountBadge, viewerCountStyle]}>
+            <Icon name="eye" size={12} color="#fff" />
+            <Text style={styles.viewerCountText}>{(live?.viewerCount || 0).toLocaleString()}</Text>
+          </Animated.View>
         </Animated.View>
-      </Animated.View>
 
-      <ScrollView
-        style={{ paddingTop: insets.top + 44 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Video player (if video stream) */}
-        {live.liveType === 'VIDEO' && live.videoUrl && (
-          <Video
-            ref={videoRef}
-            source={{ uri: live.videoUrl }}
-            style={styles.videoPlayer}
-            resizeMode={ResizeMode.CONTAIN}
-            useNativeControls
-            shouldPlay
-            isLooping={false}
-          />
-        )}
+        <ScrollView
+          style={{ paddingTop: insets.top + 44 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Video player (if video stream) */}
+          {live.liveType === 'VIDEO' && live.videoUrl && (
+            <Video
+              ref={videoRef}
+              source={{ uri: live.videoUrl }}
+              style={styles.videoPlayer}
+              resizeMode={ResizeMode.CONTAIN}
+              useNativeControls
+              shouldPlay
+              isLooping={false}
+            />
+          )}
 
-        {/* Audio space UI (if audio) */}
-        {live.liveType === 'AUDIO' && (
-          <View style={styles.audioContainer}>
-            <LinearGradient
-              colors={[colors.dark.bgElevated, colors.dark.surface]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.audioGradient}
-            >
-              <View style={styles.audioVisualizer}>
-                {audioBars.map((bar, i) => (
-                  <AudioBar key={i} value={bar} />
-                ))}
-              </View>
-              <Text style={styles.audioLabel}>Audio Space</Text>
-              <Text style={styles.audioHint}>Live conversation in progress</Text>
-              {/* Waveform decoration */}
-              <View style={styles.waveformDecoration}>
-                {[...Array(20)].map((_, i) => (
-                  <View
-                    key={i}
-                    style={[
-                      styles.waveformDot,
-                      { opacity: 0.1 + (i / 20) * 0.3 },
-                    ]}
-                  />
-                ))}
-              </View>
-            </LinearGradient>
-          </View>
-        )}
+          {/* Audio space UI (if audio) */}
+          {live.liveType === 'AUDIO' && (
+            <View style={styles.audioContainer}>
+              <LinearGradient
+                colors={[colors.dark.bgElevated, colors.dark.surface]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.audioGradient}
+              >
+                <View style={styles.audioVisualizer}>
+                  {audioBars.map((bar, i) => (
+                    <AudioBar key={i} value={bar} />
+                  ))}
+                </View>
+                <Text style={styles.audioLabel}>Audio Space</Text>
+                <Text style={styles.audioHint}>Live conversation in progress</Text>
+                {/* Waveform decoration */}
+                <View style={styles.waveformDecoration}>
+                  {[...Array(20)].map((_, i) => (
+                    <View
+                      key={i}
+                      style={[
+                        styles.waveformDot,
+                        { opacity: 0.1 + (i / 20) * 0.3 },
+                      ]}
+                    />
+                  ))}
+                </View>
+              </LinearGradient>
+            </View>
+          )}
 
-        {/* Stream info */}
-        <View style={styles.content}>
-          <Text style={styles.liveTitle}>{live.title}</Text>
-          <View style={styles.liveStats}>
-            <Icon name="eye" size="xs" color={colors.gold} />
-            <Text style={styles.liveStatsTextGold}>
-              {live.viewerCount.toLocaleString()} watching
-            </Text>
-            <Text style={styles.liveStatsDot}>•</Text>
-            <Text style={styles.liveStatsText}>
-              {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true })}
-            </Text>
-          </View>
+          {/* Stream info */}
+          <View style={styles.content}>
+            <Text style={styles.liveTitle}>{live.title}</Text>
+            <View style={styles.liveStats}>
+              <Icon name="eye" size="xs" color={colors.gold} />
+              <Text style={styles.liveStatsTextGold}>
+                {live.viewerCount.toLocaleString()} watching
+              </Text>
+              <Text style={styles.liveStatsDot}>•</Text>
+              <Text style={styles.liveStatsText}>
+                {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true })}
+              </Text>
+            </View>
 
-          {/* Host row with crown */}
-          {hostParticipant && (
-            <View style={styles.hostRow}>
-              <View style={styles.hostAvatarContainer}>
-                <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="lg" />
-                <LinearGradient
-                  colors={[colors.gold, '#A67C00']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.hostCrownBadgeLarge}
-                >
-                  <Icon name="check" size={12} color="#fff" />
-                </LinearGradient>
-              </View>
-              <View style={styles.hostInfo}>
-                <Text style={styles.hostName}>Hosted by {hostParticipant.user.username}</Text>
-                <View style={styles.liveStatusRow}>
-                  <Animated.View style={[styles.liveStatusDot, pulseStyle]} />
-                  <Text style={styles.hostStatus}>Live now</Text>
+            {/* Host row with crown */}
+            {hostParticipant && (
+              <View style={styles.hostRow}>
+                <View style={styles.hostAvatarContainer}>
+                  <Avatar uri={hostParticipant.user.avatarUrl} name={hostParticipant.user.username} size="lg" />
+                  <LinearGradient
+                    colors={[colors.gold, '#A67C00']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.hostCrownBadgeLarge}
+                  >
+                    <Icon name="check" size={12} color="#fff" />
+                  </LinearGradient>
+                </View>
+                <View style={styles.hostInfo}>
+                  <Text style={styles.hostName}>Hosted by {hostParticipant.user.username}</Text>
+                  <View style={styles.liveStatusRow}>
+                    <Animated.View style={[styles.liveStatusDot, pulseStyle]} />
+                    <Text style={styles.hostStatus}>Live now</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-          )}
+            )}
 
-          {/* Description */}
-          {live.description && (
-            <View style={styles.descriptionContainer}>
-              <Text style={styles.descriptionText}>{live.description}</Text>
-            </View>
-          )}
+            {/* Description */}
+            {live.description && (
+              <View style={styles.descriptionContainer}>
+                <Text style={styles.descriptionText}>{live.description}</Text>
+              </View>
+            )}
 
-          {/* Quick actions */}
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleRaiseHand}>
-              <Icon
-                name={participants.find(p => p.userId === user?.id)?.raisedHand ? 'hand' : 'hand'}
-                size="md"
-                color={participants.find(p => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
-              />
-              <Text style={styles.actionLabel}>
-                {participants.find(p => p.userId === user?.id)?.raisedHand ? 'Lower hand' : 'Raise hand'}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setShowChat(true)}>
-              <Icon name="message-circle" size="md" color={colors.text.primary} />
-              <Text style={styles.actionLabel}>Chat</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-              <Icon name="share" size="md" color={colors.text.primary} />
-              <Text style={styles.actionLabel}>Share</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Speakers avatars */}
-          {speakers.length > 0 && (
-            <View style={styles.speakersSection}>
-              <Text style={styles.sectionTitle}>Speakers ({speakers.length})</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                {speakers.map((p) => (
-                  <View key={p.id} style={styles.avatarWrap}>
-                    <Avatar uri={p.user.avatarUrl} name={p.user.username} size="xl" />
-                    <Text style={styles.avatarName}>{p.user.username}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-
-          {/* Raised hands */}
-          {raisedHands.length > 0 && (
-            <View style={styles.raisedHandsSection}>
-              <Text style={styles.sectionTitle}>Raised hands ({raisedHands.length})</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                {raisedHands.map((p) => (
-                  <View key={p.id} style={styles.avatarWrap}>
-                    <Avatar uri={p.user.avatarUrl} name={p.user.username} size="lg" />
-                    <Text style={styles.avatarName}>{p.user.username}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-      </ScrollView>
-
-      {/* Participants bottom sheet */}
-      <BottomSheet visible={showParticipants} onClose={() => setShowParticipants(false)} snapPoint={0.7}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Participants ({participants.length})</Text>
-        </View>
-        <FlatList
-            removeClippedSubviews={true}
-          data={participants}
-          renderItem={renderParticipantItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.participantList}
-        />
-      </BottomSheet>
-
-      {/* Chat bottom sheet */}
-      <BottomSheet visible={showChat} onClose={() => setShowChat(false)} snapPoint={0.7}>
-        <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>Live Chat</Text>
-          <View style={styles.chatHeaderGlow} />
-        </View>
-
-        {/* Sample chat messages with translucent bubbles */}
-        <View style={styles.chatMessagesContainer}>
-          <ScrollView style={styles.chatScroll} showsVerticalScrollIndicator={false}>
-            {/* Welcome message */}
-            <LinearGradient
-              colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.welcomeBubble}
-            >
-              <Text style={styles.welcomeText}>Welcome to the live stream! 👋</Text>
-            </LinearGradient>
-
-            {/* Sample message */}
-            <View style={styles.chatMessageRow}>
-              <Avatar uri={null} name="Sarah" size="xs" />
-              <LinearGradient
-                colors={['rgba(45,53,72,0.9)', 'rgba(45,53,72,0.7)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.chatBubble}
-              >
-                <Text style={styles.chatUsername}>Sarah</Text>
-                <Text style={styles.chatMessageText}>This is amazing! 🔥</Text>
-              </LinearGradient>
-            </View>
-
-            {/* Sample message with gold accent */}
-            <View style={styles.chatMessageRow}>
-              <Avatar uri={null} name="Ahmed" size="xs" />
-              <LinearGradient
-                colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={[styles.chatBubble, styles.chatBubbleGold]}
-              >
-                <Text style={styles.chatUsername}>Ahmed</Text>
-                <Text style={styles.chatMessageText}>Great stream today! 👏</Text>
-              </LinearGradient>
-            </View>
-          </ScrollView>
-
-          {/* Floating emoji reaction bar */}
-          <View style={styles.reactionBar}>
-            {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
-              <TouchableOpacity
-                key={emoji}
-                style={styles.reactionButton}
-                onPress={() => addFloatingReaction(emoji)}
-              >
-                <Text style={styles.reactionEmoji}>{emoji}</Text>
+            {/* Quick actions */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.actionButton} onPress={handleRaiseHand}>
+                <Icon
+                  name={participants.find(p => p.userId === user?.id)?.raisedHand ? 'hand' : 'hand'}
+                  size="md"
+                  color={participants.find(p => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
+                />
+                <Text style={styles.actionLabel}>
+                  {participants.find(p => p.userId === user?.id)?.raisedHand ? 'Lower hand' : 'Raise hand'}
+                </Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </View>
+              <TouchableOpacity style={styles.actionButton} onPress={() => setShowChat(true)}>
+                <Icon name="message-circle" size="md" color={colors.text.primary} />
+                <Text style={styles.actionLabel}>Chat</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+                <Icon name="share" size="md" color={colors.text.primary} />
+                <Text style={styles.actionLabel}>Share</Text>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.chatInputRow}>
-          <TextInput
-            style={styles.chatInput}
-            placeholder="Send a message..."
-            placeholderTextColor={colors.text.tertiary}
-            value={chatMessage}
-            onChangeText={setChatMessage}
-            multiline
+            {/* Speakers avatars */}
+            {speakers.length > 0 && (
+              <View style={styles.speakersSection}>
+                <Text style={styles.sectionTitle}>Speakers ({speakers.length})</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
+                  {speakers.map((p) => (
+                    <View key={p.id} style={styles.avatarWrap}>
+                      <Avatar uri={p.user.avatarUrl} name={p.user.username} size="xl" />
+                      <Text style={styles.avatarName}>{p.user.username}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Raised hands */}
+            {raisedHands.length > 0 && (
+              <View style={styles.raisedHandsSection}>
+                <Text style={styles.sectionTitle}>Raised hands ({raisedHands.length})</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
+                  {raisedHands.map((p) => (
+                    <View key={p.id} style={styles.avatarWrap}>
+                      <Avatar uri={p.user.avatarUrl} name={p.user.username} size="lg" />
+                      <Text style={styles.avatarName}>{p.user.username}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Participants bottom sheet */}
+        <BottomSheet visible={showParticipants} onClose={() => setShowParticipants(false)} snapPoint={0.7}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Participants ({participants.length})</Text>
+          </View>
+          <FlatList
+              removeClippedSubviews={true}
+            data={participants}
+            renderItem={renderParticipantItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.participantList}
           />
-          <TouchableOpacity
-            style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
-            onPress={handleSendChat}
-            disabled={!chatMessage.trim()}
-          >
-            <LinearGradient
-              colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [colors.dark.surface, colors.dark.surface]}
-              style={styles.sendButtonGradient}
+        </BottomSheet>
+
+        {/* Chat bottom sheet */}
+        <BottomSheet visible={showChat} onClose={() => setShowChat(false)} snapPoint={0.7}>
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>Live Chat</Text>
+            <View style={styles.chatHeaderGlow} />
+          </View>
+
+          {/* Sample chat messages with translucent bubbles */}
+          <View style={styles.chatMessagesContainer}>
+            <ScrollView style={styles.chatScroll} showsVerticalScrollIndicator={false}>
+              {/* Welcome message */}
+              <LinearGradient
+                colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.welcomeBubble}
+              >
+                <Text style={styles.welcomeText}>Welcome to the live stream! 👋</Text>
+              </LinearGradient>
+
+              {/* Sample message */}
+              <View style={styles.chatMessageRow}>
+                <Avatar uri={null} name="Sarah" size="xs" />
+                <LinearGradient
+                  colors={['rgba(45,53,72,0.9)', 'rgba(45,53,72,0.7)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.chatBubble}
+                >
+                  <Text style={styles.chatUsername}>Sarah</Text>
+                  <Text style={styles.chatMessageText}>This is amazing! 🔥</Text>
+                </LinearGradient>
+              </View>
+
+              {/* Sample message with gold accent */}
+              <View style={styles.chatMessageRow}>
+                <Avatar uri={null} name="Ahmed" size="xs" />
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.15)', 'rgba(200,150,62,0.05)']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={[styles.chatBubble, styles.chatBubbleGold]}
+                >
+                  <Text style={styles.chatUsername}>Ahmed</Text>
+                  <Text style={styles.chatMessageText}>Great stream today! 👏</Text>
+                </LinearGradient>
+              </View>
+            </ScrollView>
+
+            {/* Floating emoji reaction bar */}
+            <View style={styles.reactionBar}>
+              {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
+                <TouchableOpacity
+                  key={emoji}
+                  style={styles.reactionButton}
+                  onPress={() => addFloatingReaction(emoji)}
+                >
+                  <Text style={styles.reactionEmoji}>{emoji}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.chatInputRow}>
+            <TextInput
+              style={styles.chatInput}
+              placeholder="Send a message..."
+              placeholderTextColor={colors.text.tertiary}
+              value={chatMessage}
+              onChangeText={setChatMessage}
+              multiline
+            />
+            <TouchableOpacity
+              style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
+              onPress={handleSendChat}
+              disabled={!chatMessage.trim()}
             >
-              <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-      </BottomSheet>
-    </View>
+              <LinearGradient
+                colors={chatMessage.trim() ? [colors.emerald, '#05593A'] : [colors.dark.surface, colors.dark.surface]}
+                style={styles.sendButtonGradient}
+              >
+                <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

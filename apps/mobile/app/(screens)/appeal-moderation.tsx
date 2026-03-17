@@ -22,6 +22,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { appealsApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -117,6 +118,7 @@ export default function AppealModerationScreen() {
   };
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader title={t('appealModeration.title')} onBack={() => router.back()} />
 
@@ -345,27 +347,28 @@ export default function AppealModerationScreen() {
                   const styles_result = getTimelineStyle(step);
                   const isLast = index === 2;
                   return (
-                    <View key={step} style={styles.timelineItem}>
-                      <View style={styles.timelineDotContainer}>
-                        <View style={[styles.timelineDotBase, styles_result.dot]}>
-                          {step === 'review' && appealHistory.status === 'review' && (
-                            <LinearGradient
-                              colors={[colors.gold, colors.goldLight]}
-                              style={styles.timelineDotPulse}
-                            />
-                          )}
+                      <View key={step} style={styles.timelineItem}>
+                        <View style={styles.timelineDotContainer}>
+                          <View style={[styles.timelineDotBase, styles_result.dot]}>
+                            {step === 'review' && appealHistory.status === 'review' && (
+                              <LinearGradient
+                                colors={[colors.gold, colors.goldLight]}
+                                style={styles.timelineDotPulse}
+                              />
+                            )}
+                          </View>
                         </View>
+                        {!isLast && <View style={[styles.timelineLine, styles_result.line]} />}
+                        <Text
+                          style={[
+                            styles.timelineLabel,
+                            step === appealHistory.status && styles.timelineLabelActive,
+                          ]}
+                        >
+                          {step === 'submitted' ? t('appealModeration.status.submitted') : step === 'review' ? t('appealModeration.status.underReview') : t('appealModeration.status.decision')}
+                        </Text>
                       </View>
-                      {!isLast && <View style={[styles.timelineLine, styles_result.line]} />}
-                      <Text
-                        style={[
-                          styles.timelineLabel,
-                          step === appealHistory.status && styles.timelineLabelActive,
-                        ]}
-                      >
-                        {step === 'submitted' ? t('appealModeration.status.submitted') : step === 'review' ? t('appealModeration.status.underReview') : t('appealModeration.status.decision')}
-                      </Text>
-                    </View>
+                  
                   );
                 })}
               </View>
@@ -431,6 +434,7 @@ export default function AppealModerationScreen() {
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

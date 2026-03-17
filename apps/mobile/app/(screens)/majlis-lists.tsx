@@ -16,6 +16,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { majlisListsApi } from '@/services/api';
 import type { MajlisList } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function MajlisListsScreen() {
   const router = useRouter();
@@ -174,82 +175,85 @@ export default function MajlisListsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader 
-        title="Majlis Lists" 
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
-        rightAction={{ icon: 'plus', onPress: () => setIsSheetVisible(true), accessibilityLabel: 'Create list' }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader 
+          title="Majlis Lists" 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          rightAction={{ icon: 'plus', onPress: () => setIsSheetVisible(true), accessibilityLabel: 'Create list' }}
+        />
       
-      <FlatList
-        data={lists || []}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
-        removeClippedSubviews={true}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyWrap}>
-            <EmptyState 
-              icon="users" 
-              title="No lists" 
-              subtitle="Create a list to curate threads" 
-              actionLabel="Create List"
-              onAction={() => setIsSheetVisible(true)}
-            />
-          </View>
-        }
-      />
-
-      <BottomSheet visible={isSheetVisible} onClose={() => setIsSheetVisible(false)}>
-        <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>Create New List</Text>
-          
-          <Text style={styles.inputLabel}>Name</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="e.g. Friends, Tech news"
-            placeholderTextColor={colors.text.secondary}
-            value={newName}
-            onChangeText={setNewName}
-          />
-          
-          <Text style={styles.inputLabel}>Description (Optional)</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="What's this list about?"
-            placeholderTextColor={colors.text.secondary}
-            value={newDesc}
-            onChangeText={setNewDesc}
-            multiline
-            numberOfLines={3}
-          />
-          
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.toggleTitle}>Public List</Text>
-              <Text style={styles.toggleDesc}>Anyone can see and subscribe to this list</Text>
+        <FlatList
+          data={lists || []}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={[styles.listContent, { paddingTop: insets.top + 52 + spacing.md }]}
+          removeClippedSubviews={true}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyWrap}>
+              <EmptyState 
+                icon="users" 
+                title="No lists" 
+                subtitle="Create a list to curate threads" 
+                actionLabel="Create List"
+                onAction={() => setIsSheetVisible(true)}
+              />
             </View>
-            <Switch 
-              value={isPublic}
-              onValueChange={setIsPublic}
-              trackColor={{ false: colors.dark.surface, true: colors.emerald }}
-              thumbColor={colors.dark.text}
-            />
-          </View>
+          }
+        />
 
-          <View style={{ marginTop: spacing.xl }}>
-            <GradientButton 
-              title={createMutation.isPending ? "Creating..." : "Create List"}
-              onPress={handleCreate}
-              disabled={createMutation.isPending || newName.trim().length === 0}
+        <BottomSheet visible={isSheetVisible} onClose={() => setIsSheetVisible(false)}>
+          <View style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>Create New List</Text>
+          
+            <Text style={styles.inputLabel}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Friends, Tech news"
+              placeholderTextColor={colors.text.secondary}
+              value={newName}
+              onChangeText={setNewName}
             />
+          
+            <Text style={styles.inputLabel}>Description (Optional)</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="What's this list about?"
+              placeholderTextColor={colors.text.secondary}
+              value={newDesc}
+              onChangeText={setNewDesc}
+              multiline
+              numberOfLines={3}
+            />
+          
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleTitle}>Public List</Text>
+                <Text style={styles.toggleDesc}>Anyone can see and subscribe to this list</Text>
+              </View>
+              <Switch 
+                value={isPublic}
+                onValueChange={setIsPublic}
+                trackColor={{ false: colors.dark.surface, true: colors.emerald }}
+                thumbColor={colors.dark.text}
+              />
+            </View>
+
+            <View style={{ marginTop: spacing.xl }}>
+              <GradientButton 
+                title={createMutation.isPending ? "Creating..." : "Create List"}
+                onPress={handleCreate}
+                disabled={createMutation.isPending || newName.trim().length === 0}
+              />
+            </View>
           </View>
-        </View>
-      </BottomSheet>
-    </View>
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

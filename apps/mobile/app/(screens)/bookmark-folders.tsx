@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SCREEN_W = Dimensions.get('window').width;
 const FOLDER_CARD_WIDTH = (SCREEN_W - spacing.base * 2 - spacing.sm) / 2;
@@ -146,70 +147,73 @@ export default function BookmarkFoldersScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader title={t('screens.bookmarkFolders.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }} />
 
-      <FlatList
-          removeClippedSubviews={true}
-        data={foldersArray}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        columnWrapperStyle={styles.gridRow}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-        }
-        renderItem={({ item }) => (
-          <FolderCard
-            folder={item}
-            onPress={() => handleFolderPress(item.id)}
-            onLongPress={() => handleDeleteFolder(item.id)}
-          />
-        )}
-        ListEmptyComponent={() => (
-          <EmptyState
-            icon="bookmark"
-            title={t('screens.bookmarkFolders.emptyTitle')}
-            subtitle={t('screens.bookmarkFolders.emptySubtitle')}
-            actionLabel={t('screens.bookmarkFolders.createFolderButton')}
-            onAction={() => setCreateSheetVisible(true)}
-          />
-        )}
-        contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
-      />
+        <FlatList
+            removeClippedSubviews={true}
+          data={foldersArray}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          columnWrapperStyle={styles.gridRow}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+          }
+          renderItem={({ item }) => (
+            <FolderCard
+              folder={item}
+              onPress={() => handleFolderPress(item.id)}
+              onLongPress={() => handleDeleteFolder(item.id)}
+            />
+          )}
+          ListEmptyComponent={() => (
+            <EmptyState
+              icon="bookmark"
+              title={t('screens.bookmarkFolders.emptyTitle')}
+              subtitle={t('screens.bookmarkFolders.emptySubtitle')}
+              actionLabel={t('screens.bookmarkFolders.createFolderButton')}
+              onAction={() => setCreateSheetVisible(true)}
+            />
+          )}
+          contentContainerStyle={[styles.gridContainer, { paddingTop: insets.top + 52 }]}
+        />
 
-      {/* FAB */}
-      <Pressable
-        style={styles.fab}
-        onPress={() => setCreateSheetVisible(true)}
-        hitSlop={8}
-        accessibilityLabel={t('screens.bookmarkFolders.createFolderLabel')}
-      >
-        <Icon name="plus" size="lg" color="#fff" />
-      </Pressable>
+        {/* FAB */}
+        <Pressable
+          style={styles.fab}
+          onPress={() => setCreateSheetVisible(true)}
+          hitSlop={8}
+          accessibilityLabel={t('screens.bookmarkFolders.createFolderLabel')}
+        >
+          <Icon name="plus" size="lg" color="#fff" />
+        </Pressable>
 
-      {/* Create Folder BottomSheet */}
-      <BottomSheet visible={createSheetVisible} onClose={() => setCreateSheetVisible(false)}>
-        <View style={styles.sheetContent}>
-          <Text style={styles.sheetTitle}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
-          <TextInput
-            style={styles.input}
-            placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
-            placeholderTextColor={colors.text.tertiary}
-            value={newFolderName}
-            onChangeText={setNewFolderName}
-            autoFocus
-          />
-          <View style={styles.sheetButtons}>
-            <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
-              <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
-              <Text style={styles.createText}>{t('screens.bookmarkFolders.createButton')}</Text>
-            </Pressable>
+        {/* Create Folder BottomSheet */}
+        <BottomSheet visible={createSheetVisible} onClose={() => setCreateSheetVisible(false)}>
+          <View style={styles.sheetContent}>
+            <Text style={styles.sheetTitle}>{t('screens.bookmarkFolders.createSheetTitle')}</Text>
+            <TextInput
+              style={styles.input}
+              placeholder={t('screens.bookmarkFolders.folderNamePlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={newFolderName}
+              onChangeText={setNewFolderName}
+              autoFocus
+            />
+            <View style={styles.sheetButtons}>
+              <Pressable style={styles.cancelBtn} onPress={() => setCreateSheetVisible(false)}>
+                <Text style={styles.cancelText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable style={styles.createBtn} onPress={handleCreateFolder}>
+                <Text style={styles.createText}>{t('screens.bookmarkFolders.createButton')}</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </BottomSheet>
-    </View>
+        </BottomSheet>
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

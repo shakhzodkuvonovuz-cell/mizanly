@@ -23,6 +23,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { feedApi, searchApi } from '@/services/api';
 import type { TrendingHashtag, Post, Reel, Thread, Video } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const CATEGORY_KEYS = ['all', 'trending', 'food', 'fashion', 'sports', 'tech', 'islamic', 'art'] as const;
 
@@ -394,66 +395,69 @@ export default function DiscoverScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('discover.title')}
-        rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('discover.title')}
+          rightActions={[{ icon: 'search', onPress: () => router.push('/(screens)/search' as never), accessibilityLabel: t('common.search') }]}
+        />
 
-      <View style={styles.headerSpacer} />
+        <View style={styles.headerSpacer} />
 
-      <FlatList
-            removeClippedSubviews={true}
-        data={exploreItems}
-        keyExtractor={(item, index) => `${item.id ?? index}`}
-        numColumns={3}
-        columnWrapperStyle={styles.gridRow}
-        renderItem={({ item }) => <ExploreGridItem item={item} />}
-        ListHeaderComponent={
-          <>
-            <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />
-            {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
-            {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
-            <Text style={styles.sectionTitle}>{t('discover.explore')}</Text>
-          </>
-        }
-        ListEmptyComponent={
-          isEmpty ? (
-            <EmptyState
-              icon="globe"
-              title={t('discover.nothingYet')}
-              subtitle={t('discover.followMoreCreators')}
-              actionLabel={t('discover.findPeople')}
-              onAction={() => router.push('/(screens)/search' as never)}
+        <FlatList
+              removeClippedSubviews={true}
+          data={exploreItems}
+          keyExtractor={(item, index) => `${item.id ?? index}`}
+          numColumns={3}
+          columnWrapperStyle={styles.gridRow}
+          renderItem={({ item }) => <ExploreGridItem item={item} />}
+          ListHeaderComponent={
+            <>
+              <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />
+              {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
+              {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
+              <Text style={styles.sectionTitle}>{t('discover.explore')}</Text>
+            </>
+          }
+          ListEmptyComponent={
+            isEmpty ? (
+              <EmptyState
+                icon="globe"
+                title={t('discover.nothingYet')}
+                subtitle={t('discover.followMoreCreators')}
+                actionLabel={t('discover.findPeople')}
+                onAction={() => router.push('/(screens)/search' as never)}
+              />
+            ) : null
+          }
+          ListFooterComponent={
+            isLoading ? (
+              <ExploreGridSkeleton />
+            ) : hasNextPage ? (
+              <View style={styles.footerLoader}>
+                <Skeleton.Rect width={ITEM_WIDTH} height={20} borderRadius={radius.sm} />
+              </View>
+            ) : exploreItems.length > 0 ? (
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>{t('discover.reachedEnd')}</Text>
+              </View>
+            ) : null
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={colors.emerald}
             />
-          ) : null
-        }
-        ListFooterComponent={
-          isLoading ? (
-            <ExploreGridSkeleton />
-          ) : hasNextPage ? (
-            <View style={styles.footerLoader}>
-              <Skeleton.Rect width={ITEM_WIDTH} height={20} borderRadius={radius.sm} />
-            </View>
-          ) : exploreItems.length > 0 ? (
-            <View style={styles.footer}>
-              <Text style={styles.footerText}>{t('discover.reachedEnd')}</Text>
-            </View>
-          ) : null
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
-        onEndReached={loadMore}
-        onEndReachedThreshold={0.5}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-      />
-    </View>
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.5}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContent}
+        />
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

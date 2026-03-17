@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const REASONS = [
   { label: 'Hate speech', value: 'HATE_SPEECH' },
@@ -112,107 +113,110 @@ export default function ReportScreen() {
   const isValid = selectedReason && contentType && contentId && isValidType;
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title="Report"
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
-      />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title="Report"
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+        />
 
-      {isLoading ? (
-        <View style={{ padding: spacing.base, gap: spacing.lg, paddingTop: insets.top + 52 + spacing.base }}>
-          <Skeleton.Text width="70%" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-              <Skeleton.Circle size={20} />
-              <Skeleton.Rect width={120} height={14} />
-            </View>
-          ))}
-          <Skeleton.Rect width="100%" height={100} borderRadius={radius.md} />
-          <Skeleton.Rect width="100%" height={44} borderRadius={radius.md} />
-        </View>
-      ) : (
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 + spacing.base }]}
-      >
-        <Animated.View entering={FadeInUp.delay(0).duration(400)}>
-          <LinearGradient
-            colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
-            style={styles.promptCard}
-          >
-            <Icon name="flag" size="lg" color={colors.error} />
-            <Text style={styles.prompt}>
-              Why are you reporting this {contentType}?
-            </Text>
-          </LinearGradient>
-        </Animated.View>
+        {isLoading ? (
+          <View style={{ padding: spacing.base, gap: spacing.lg, paddingTop: insets.top + 52 + spacing.base }}>
+            <Skeleton.Text width="70%" />
+            {Array.from({ length: 6 }).map((_, i) => (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
+                <Skeleton.Circle size={20} />
+                <Skeleton.Rect width={120} height={14} />
+              </View>
+            ))}
+            <Skeleton.Rect width="100%" height={100} borderRadius={radius.md} />
+            <Skeleton.Rect width="100%" height={44} borderRadius={radius.md} />
+          </View>
+        ) : (
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 52 + spacing.base }]}
+        >
+          <Animated.View entering={FadeInUp.delay(0).duration(400)}>
+            <LinearGradient
+              colors={['rgba(248,81,73,0.1)', 'rgba(200,150,62,0.05)']}
+              style={styles.promptCard}
+            >
+              <Icon name="flag" size="lg" color={colors.error} />
+              <Text style={styles.prompt}>
+                Why are you reporting this {contentType}?
+              </Text>
+            </LinearGradient>
+          </Animated.View>
 
-        {/* Reason list */}
-        <View style={styles.reasonList}>
-          {REASONS.map((reason, index) => (
-            <Animated.View key={reason.value} entering={FadeInUp.delay(100 + index * 40).duration(400)}>
-              <Pressable
-                style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
-                onPress={() => setSelectedReason(reason.value)}
-              >
-                <LinearGradient
-                  colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-                  style={styles.reasonGradient}
+          {/* Reason list */}
+          <View style={styles.reasonList}>
+            {REASONS.map((reason, index) => (
+              <Animated.View key={reason.value} entering={FadeInUp.delay(100 + index * 40).duration(400)}>
+                <Pressable
+                  style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
+                  onPress={() => setSelectedReason(reason.value)}
                 >
                   <LinearGradient
-                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)'] : ['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
-                    style={styles.radioOuter}
+                    colors={selectedReason === reason.value ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                    style={styles.reasonGradient}
                   >
-                    {selectedReason === reason.value && (
-                      <LinearGradient
-                        colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.4)']}
-                        style={styles.radioInner}
-                      />
-                    )}
+                    <LinearGradient
+                      colors={selectedReason === reason.value ? ['rgba(10,123,79,0.4)', 'rgba(200,150,62,0.2)'] : ['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
+                      style={styles.radioOuter}
+                    >
+                      {selectedReason === reason.value && (
+                        <LinearGradient
+                          colors={['rgba(10,123,79,0.8)', 'rgba(10,123,79,0.4)']}
+                          style={styles.radioInner}
+                        />
+                      )}
+                    </LinearGradient>
+                    <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
+                      {reason.label}
+                    </Text>
                   </LinearGradient>
-                  <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
-                    {reason.label}
-                  </Text>
-                </LinearGradient>
-              </Pressable>
-            </Animated.View>
-          ))}
-        </View>
+                </Pressable>
+              </Animated.View>
+            ))}
+          </View>
 
-        {/* Additional details */}
-        <Animated.View entering={FadeInUp.delay(600).duration(400)}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.detailsCard}
-          >
-            <Text style={styles.detailsLabel}>Additional details (optional)</Text>
-            <TextInput
-              style={styles.detailsInput}
-              placeholder="Provide more information..."
-              placeholderTextColor={colors.text.tertiary}
-              value={details}
-              onChangeText={setDetails}
-              multiline
-              maxLength={1000}
-              textAlignVertical="top"
+          {/* Additional details */}
+          <Animated.View entering={FadeInUp.delay(600).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.detailsCard}
+            >
+              <Text style={styles.detailsLabel}>Additional details (optional)</Text>
+              <TextInput
+                style={styles.detailsInput}
+                placeholder="Provide more information..."
+                placeholderTextColor={colors.text.tertiary}
+                value={details}
+                onChangeText={setDetails}
+                multiline
+                maxLength={1000}
+                textAlignVertical="top"
+              />
+              <View style={styles.charCount}>
+                <CharCountRing current={details.length} max={1000} size={24} />
+              </View>
+            </LinearGradient>
+          </Animated.View>
+
+          {/* Submit button */}
+          <Animated.View entering={FadeInUp.delay(700).duration(400)}>
+            <GradientButton
+              label={reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              onPress={handleSubmit}
+              disabled={!isValid || reportMutation.isPending}
             />
-            <View style={styles.charCount}>
-              <CharCountRing current={details.length} max={1000} size={24} />
-            </View>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Submit button */}
-        <Animated.View entering={FadeInUp.delay(700).duration(400)}>
-          <GradientButton
-            label={reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
-            onPress={handleSubmit}
-            disabled={!isValid || reportMutation.isPending}
-          />
-        </Animated.View>
-      </ScrollView>
-      )}
-    </View>
+          </Animated.View>
+        </ScrollView>
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 

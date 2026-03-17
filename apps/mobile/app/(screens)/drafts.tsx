@@ -12,6 +12,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { draftsApi } from '@/services/api';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type DraftItem = {
   id: string;
@@ -136,38 +137,41 @@ export default function DraftsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <GlassHeader
-        title={t('screens.drafts.title')}
-        leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
-      />
-      <View style={styles.headerSpacer} />
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.drafts.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+        <View style={styles.headerSpacer} />
 
-      {isLoading ? (
-        <View style={styles.skeletonWrap}>
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} style={{ marginBottom: spacing.sm }} />
-          ))}
-        </View>
-      ) : !drafts?.length ? (
-        <EmptyState
-          icon="layers"
-          title={t('screens.drafts.emptyTitle')}
-          subtitle={t('screens.drafts.emptySubtitle')}
-        />
-      ) : (
-        <FlatList
-          removeClippedSubviews={true}
-          data={drafts}
-          keyExtractor={(item) => item.id}
-          renderItem={renderDraft}
-          contentContainerStyle={styles.list}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
-          }
-        />
-      )}
-    </View>
+        {isLoading ? (
+          <View style={styles.skeletonWrap}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} style={{ marginBottom: spacing.sm }} />
+            ))}
+          </View>
+        ) : !drafts?.length ? (
+          <EmptyState
+            icon="layers"
+            title={t('screens.drafts.emptyTitle')}
+            subtitle={t('screens.drafts.emptySubtitle')}
+          />
+        ) : (
+          <FlatList
+            removeClippedSubviews={true}
+            data={drafts}
+            keyExtractor={(item) => item.id}
+            renderItem={renderDraft}
+            contentContainerStyle={styles.list}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />
+            }
+          />
+        )}
+      </View>
+  
+    </ScreenErrorBoundary>
   );
 }
 
