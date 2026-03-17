@@ -178,6 +178,12 @@ export interface ThreadReply {
 export interface Reel {
   id: string;
   videoUrl: string;
+  streamId?: string;
+  hlsUrl?: string;
+  dashUrl?: string;
+  qualities?: string[];
+  isLooping?: boolean;
+  normalizeAudio?: boolean;
   thumbnailUrl?: string;
   duration: number;
   caption?: string;
@@ -238,6 +244,12 @@ export interface Video {
   title: string;
   description?: string;
   videoUrl: string;
+  streamId?: string;
+  hlsUrl?: string;
+  dashUrl?: string;
+  qualities?: string[];
+  isLooping?: boolean;
+  normalizeAudio?: boolean;
   thumbnailUrl?: string;
   duration: number;
   category: VideoCategory;
