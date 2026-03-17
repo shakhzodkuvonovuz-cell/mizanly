@@ -405,6 +405,10 @@ model User {
   savedMessages    SavedMessage[]
   chatFolders      ChatFolder[]
   emojiPacks       CustomEmojiPack[] @relation("EmojiPackCreator")
+  forumThreads     ForumThread[]     @relation("ForumThreadAuthor")
+  forumReplies     ForumReply[]      @relation("ForumReplyAuthor")
+  webhooks         Webhook[]         @relation("WebhookCreator")
+  stageSessions    StageSession[]    @relation("StageHost")
 
   @@index([username])
   @@index([clerkId])
@@ -3181,4 +3185,71 @@ model CustomEmojiPack {
   creator     User     @relation("EmojiPackCreator", fields: [creatorId], references: [id])
   emojis      CustomEmoji[]
   @@map("custom_emoji_packs")
+}
+
+// ── Discord Parity Models (Batch 52) ────────────────────
+
+model ForumThread {
+  id             String   @id @default(uuid())
+  circleId       String   // community/server
+  title          String   @db.VarChar(200)
+  content        String   @db.Text
+  authorId       String
+  isPinned       Boolean  @default(false)
+  isLocked       Boolean  @default(false)
+  replyCount     Int      @default(0)
+  lastReplyAt    DateTime?
+  tags           String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  author         User     @relation("ForumThreadAuthor", fields: [authorId], references: [id])
+  replies        ForumReply[]
+  @@index([circleId, isPinned, lastReplyAt(sort: Desc)])
+  @@map("forum_threads")
+}
+
+model ForumReply {
+  id        String   @id @default(uuid())
+  threadId  String
+  authorId  String
+  content   String   @db.Text
+  likesCount Int     @default(0)
+  createdAt DateTime @default(now())
+  thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author    User        @relation("ForumReplyAuthor", fields: [authorId], references: [id])
+  @@index([threadId, createdAt])
+  @@map("forum_replies")
+}
+
+model Webhook {
+  id             String   @id @default(uuid())
+  circleId       String
+  name           String   @db.VarChar(100)
+  avatarUrl      String?
+  token          String   @unique @default(uuid())
+  targetChannelId String? // broadcast channel or conversation
+  createdById    String
+  isActive       Boolean  @default(true)
+  lastUsedAt     DateTime?
+  createdAt      DateTime @default(now())
+  creator        User     @relation("WebhookCreator", fields: [createdById], references: [id])
+  @@index([circleId])
+  @@map("webhooks")
+}
+
+model StageSession {
+  id             String   @id @default(uuid())
+  circleId       String
+  title          String   @db.VarChar(200)
+  hostId         String
+  status         String   @default("scheduled") // scheduled | live | ended
+  speakerIds     String[]
+  audienceCount  Int      @default(0)
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime @default(now())
+  host           User     @relation("StageHost", fields: [hostId], references: [id])
+  @@index([circleId, status])
+  @@map("stage_sessions")
 }

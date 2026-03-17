@@ -72,6 +72,7 @@ import { GamificationModule } from './modules/gamification/gamification.module';
 import { CommerceModule } from './modules/commerce/commerce.module';
 import { CommunityModule as CommunityV2Module } from './modules/community/community.module';
 import { TelegramFeaturesModule } from './modules/telegram-features/telegram-features.module';
+import { DiscordFeaturesModule } from './modules/discord-features/discord-features.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -156,6 +157,7 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     CommerceModule,
     CommunityV2Module,
     TelegramFeaturesModule,
+    DiscordFeaturesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
