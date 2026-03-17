@@ -12,6 +12,7 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
+  FadeIn,
 } from 'react-native-reanimated';
 import * as ImagePicker from 'expo-image-picker';
 import { Audio } from 'expo-av';
@@ -34,6 +35,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
+import { encryptionService } from '@/services/encryption';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
@@ -632,6 +634,10 @@ export default function ConversationScreen() {
   const [searchMode, setSearchMode] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // E2E encryption
+  const [isEncrypted, setIsEncrypted] = useState(false);
+  const [encryptionReady, setEncryptionReady] = useState(false);
+  const [decryptedContents, setDecryptedContents] = useState<Map<string, string>>(new Map());
 
   // Clean up timer on unmount
   useEffect(() => {
@@ -641,6 +647,66 @@ export default function ConversationScreen() {
       }
     };
   }, []);
+
+  // E2E encryption initialization
+  useEffect(() => {
+    const checkEncryption = async () => {
+      try {
+        await encryptionService.initialize();
+        const hasKey = encryptionService.hasConversationKey(id);
+        setIsEncrypted(hasKey);
+        setEncryptionReady(hasKey);
+      } catch {
+        // Encryption not available — continue without it
+      }
+    };
+    checkEncryption();
+  }, [id]);
+
+  // Decrypt incoming encrypted messages
+  const getDecryptedContent = useCallback(async (message: { id: string; content: string | null; isEncrypted?: boolean; encNonce?: string | null }) => {
+    if (!message.isEncrypted || !message.content || !message.encNonce) {
+      return message.content;
+    }
+    try {
+      const decrypted = await encryptionService.decryptMessage(id, message.content, message.encNonce);
+      return decrypted ?? message.content;
+    } catch {
+      return '[Encrypted message]';
+    }
+  }, [id]);
+
+  // Pre-decrypt encrypted messages and store in map
+  useEffect(() => {
+    const decryptAll = async () => {
+      const newMap = new Map<string, string>();
+      for (const msg of messages) {
+        if (msg.isEncrypted && msg.content && msg.encNonce) {
+          const existing = decryptedContents.get(msg.id);
+          if (existing) {
+            newMap.set(msg.id, existing);
+          } else {
+            const decrypted = await getDecryptedContent(msg as { id: string; content: string | null; isEncrypted?: boolean; encNonce?: string | null });
+            if (decrypted) {
+              newMap.set(msg.id, decrypted);
+            }
+          }
+        }
+      }
+      if (newMap.size > 0) {
+        setDecryptedContents(prev => {
+          const merged = new Map(prev);
+          for (const [k, v] of newMap) {
+            merged.set(k, v);
+          }
+          return merged;
+        });
+      }
+    };
+    if (isEncrypted) {
+      decryptAll();
+    }
+  }, [messages, isEncrypted, getDecryptedContent]);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -779,7 +845,7 @@ export default function ConversationScreen() {
 
   const [isSending, setIsSending] = useState(false);
 
-  const handleSend = useCallback(() => {
+  const handleSend = useCallback(async () => {
     if (!text.trim() || isSending) return;
     // Edit mode
     if (editingMsg) {
@@ -794,6 +860,21 @@ export default function ConversationScreen() {
     }
     haptic.medium();
     setIsSending(true);
+
+    // E2E encryption: encrypt content if encryption is active
+    let messageContent = text.trim();
+    let encNonce: string | undefined;
+    let messageIsEncrypted = false;
+
+    if (isEncrypted && encryptionReady) {
+      const encrypted = await encryptionService.encryptMessage(id, messageContent);
+      if (encrypted) {
+        messageContent = encrypted.ciphertext;
+        encNonce = encrypted.nonce;
+        messageIsEncrypted = true;
+      }
+    }
+
     const pendingId = `pending_${Date.now()}_${Math.random().toString(36).slice(2)}`;
     const pendingMessage: PendingMessage = {
       id: pendingId,
@@ -811,16 +892,17 @@ export default function ConversationScreen() {
     if (!isOffline && socketRef.current?.connected) {
       socketRef.current.emit('send_message', {
         conversationId: id,
-        content: text.trim(),
+        content: messageContent,
         replyToId: replyTo?.id,
         messageType: 'TEXT',
-        clientId: pendingId, // custom field for matching
+        clientId: pendingId,
+        ...(messageIsEncrypted ? { isEncrypted: true, encNonce } : {}),
       });
     } else {
       // Offline or socket not connected: message stays pending
       // Will be retried when network returns (see useEffect below)
     }
-  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient]);
+  }, [text, replyTo, id, isSending, haptic, isOffline, editingMsg, queryClient, isEncrypted, encryptionReady]);
 
   // Retry pending messages when network comes back online
   useEffect(() => {
@@ -1113,6 +1195,14 @@ export default function ConversationScreen() {
       {/* Spacer for GlassHeader (absolute positioned) */}
       {!searchMode && <View style={{ height: glassHeaderHeight }} />}
 
+      {/* E2E encryption banner */}
+      {isEncrypted && (
+        <Animated.View entering={FadeIn} style={styles.encryptionBanner}>
+          <Icon name="lock" size="xs" color={colors.emerald} />
+          <Text style={styles.encryptionBannerText}>{t('chat.e2eEncrypted')}</Text>
+        </Animated.View>
+      )}
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -1168,6 +1258,10 @@ export default function ConversationScreen() {
                 member.lastReadAt &&
                 new Date(member.lastReadAt) >= new Date(item.message.createdAt)
               ).slice(0, 3) ?? [];
+              // Use decrypted content for encrypted messages
+              const displayMessage = (item.message.isEncrypted && decryptedContents.has(item.message.id))
+                ? { ...item.message, content: decryptedContents.get(item.message.id) ?? item.message.content }
+                : item.message;
               return (
                   <Swipeable
                     renderRightActions={() => (
@@ -1179,7 +1273,7 @@ export default function ConversationScreen() {
                     rightThreshold={40}
                   >
                     <MessageBubble
-                      message={item.message}
+                      message={displayMessage}
                       isOwn={item.message.sender.id === user?.id}
                       isGroupStart={item.isGroupStart}
                       isGroupEnd={item.isGroupEnd}
@@ -1457,6 +1551,24 @@ export default function ConversationScreen() {
             setShowReactionPicker(true);
           }}
         />
+        {!isEncrypted && convo && (
+          <BottomSheetItem
+            label={t('chat.enableEncryption')}
+            icon={<Icon name="lock" size="sm" color={colors.text.primary} />}
+            onPress={async () => {
+              const memberIds = convo.members.map((m: ConversationMember) => m.userId);
+              const success = await encryptionService.setupConversationEncryption(id, memberIds);
+              if (success) {
+                setIsEncrypted(true);
+                setEncryptionReady(true);
+                haptic.success();
+              } else {
+                Alert.alert(t('common.error'), t('errors.encryptionSetupFailed'));
+              }
+              setContextMenuMsg(null);
+            }}
+          />
+        )}
         {contextMenuMsg && contextMenuMsg.sender.id === user?.id && (
           <>
             {isMessageEditable(contextMenuMsg) && (
@@ -1943,5 +2055,18 @@ const styles = StyleSheet.create({
   },
   quickReactionEmoji: {
     fontSize: fontSize.xl,
+  },
+  encryptionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    backgroundColor: 'rgba(10, 123, 79, 0.1)',
+    gap: spacing.xs,
+  },
+  encryptionBannerText: {
+    color: colors.emerald,
+    fontSize: fontSize.xs,
   },
 });

@@ -178,6 +178,8 @@ enum MessageType {
   SYSTEM
   GIF
   STORY_REPLY
+  LOCATION
+  CONTACT
 }
 
 enum CircleRole {
@@ -924,6 +926,10 @@ model ConversationMember {
   unreadCount Int      @default(0)
   isMuted     Boolean  @default(false)
   isArchived  Boolean  @default(false)
+  role        String   @default("member") @db.VarChar(10)
+  isBanned    Boolean  @default(false)
+  customTone  String?
+  wallpaperUrl String?
   joinedAt    DateTime @default(now())
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -956,6 +962,13 @@ model Message {
   isScheduled  Boolean   @default(false)
   scheduledAt  DateTime?
   starredBy    String[]  @default([])
+  isPinned     Boolean  @default(false)
+  pinnedAt     DateTime?
+  pinnedById   String?
+  isViewOnce   Boolean  @default(false)
+  viewedAt     DateTime?
+  isEncrypted  Boolean  @default(false)
+  encNonce     String?
   createdAt DateTime @default(now())
   conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -1904,4 +1917,34 @@ model VideoReply {
   @@index([commentId])
   @@index([userId])
   @@map("video_replies")
+}
+
+// ============================================================
+// E2E ENCRYPTION
+// Public keys and conversation key envelopes for end-to-end encryption
+// ============================================================
+
+model EncryptionKey {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  publicKey        String
+  keyFingerprint   String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  @@index([userId])
+  @@map("encryption_keys")
+}
+
+model ConversationKeyEnvelope {
+  id               String   @id @default(cuid())
+  conversationId   String
+  userId           String
+  encryptedKey     String
+  nonce            String
+  version          Int      @default(1)
+  createdAt        DateTime @default(now())
+  @@unique([conversationId, userId, version])
+  @@index([conversationId])
+  @@index([userId])
+  @@map("conversation_key_envelopes")
 }

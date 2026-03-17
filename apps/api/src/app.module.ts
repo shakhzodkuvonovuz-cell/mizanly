@@ -58,6 +58,8 @@ import { StreamModule } from './modules/stream/stream.module';
 import { ReelTemplatesModule } from './modules/reel-templates/reel-templates.module';
 import { StoryChainsModule } from './modules/story-chains/story-chains.module';
 import { VideoRepliesModule } from './modules/video-replies/video-replies.module';
+import { EncryptionModule } from './modules/encryption/encryption.module';
+import { ChatExportModule } from './modules/chat-export/chat-export.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -128,6 +130,8 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     ReelTemplatesModule,
     StoryChainsModule,
     VideoRepliesModule,
+    EncryptionModule,
+    ChatExportModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

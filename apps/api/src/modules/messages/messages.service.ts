@@ -518,4 +518,156 @@ export class MessagesService {
       meta: { cursor: hasMore ? data[data.length - 1].id : null, hasMore },
     };
   }
+
+  // ── Pin Messages ──
+  async pinMessage(conversationId: string, messageId: string, userId: string) {
+    await this.requireMembership(conversationId, userId);
+
+    // Max 3 pinned per conversation
+    const pinnedCount = await this.prisma.message.count({
+      where: { conversationId, isPinned: true, isDeleted: false },
+    });
+    if (pinnedCount >= 3) {
+      throw new BadRequestException('Maximum 3 pinned messages per conversation');
+    }
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { isPinned: true, pinnedAt: new Date(), pinnedById: userId },
+    });
+  }
+
+  async unpinMessage(conversationId: string, messageId: string, userId: string) {
+    await this.requireMembership(conversationId, userId);
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { isPinned: false, pinnedAt: null, pinnedById: null },
+    });
+  }
+
+  async getPinnedMessages(conversationId: string, userId: string) {
+    await this.requireMembership(conversationId, userId);
+    return this.prisma.message.findMany({
+      where: { conversationId, isPinned: true, isDeleted: false },
+      select: MESSAGE_SELECT,
+      orderBy: { pinnedAt: 'desc' },
+    });
+  }
+
+  // ── View Once ──
+  async sendViewOnceMessage(
+    conversationId: string,
+    senderId: string,
+    data: { content?: string; mediaUrl: string; mediaType?: string; messageType?: string },
+  ) {
+    await this.requireMembership(conversationId, senderId);
+    return this.prisma.message.create({
+      data: {
+        conversationId,
+        senderId,
+        content: data.content,
+        mediaUrl: data.mediaUrl,
+        mediaType: data.mediaType,
+        messageType: (data.messageType as MessageType) ?? 'IMAGE',
+        isViewOnce: true,
+      },
+      select: MESSAGE_SELECT,
+    });
+  }
+
+  async markViewOnceViewed(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: { conversationId: true, senderId: true, isViewOnce: true, viewedAt: true },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    if (!message.isViewOnce) throw new BadRequestException('Not a view-once message');
+    if (message.senderId === userId) throw new BadRequestException('Cannot view own view-once message');
+    if (message.viewedAt) throw new BadRequestException('Already viewed');
+
+    await this.requireMembership(message.conversationId, userId);
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { viewedAt: new Date() },
+    });
+  }
+
+  // ── Group Admin Roles ──
+  async promoteToAdmin(conversationId: string, userId: string, targetUserId: string) {
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!member || (member.role !== 'owner' && member.role !== 'admin')) {
+      throw new ForbiddenException('Only owner or admin can promote members');
+    }
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+      data: { role: 'admin' },
+    });
+  }
+
+  async demoteFromAdmin(conversationId: string, userId: string, targetUserId: string) {
+    const member = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!member || member.role !== 'owner') {
+      throw new ForbiddenException('Only owner can demote admins');
+    }
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+      data: { role: 'member' },
+    });
+  }
+
+  async banMember(conversationId: string, userId: string, targetUserId: string) {
+    const actor = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId } },
+    });
+    if (!actor || (actor.role !== 'owner' && actor.role !== 'admin')) {
+      throw new ForbiddenException('Only owner or admin can ban members');
+    }
+    const target = await this.prisma.conversationMember.findUnique({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+    });
+    if (!target) throw new NotFoundException('Member not found');
+    if (target.role === 'owner') throw new ForbiddenException('Cannot ban the owner');
+
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId: targetUserId } },
+      data: { isBanned: true },
+    });
+  }
+
+  async setConversationWallpaper(conversationId: string, userId: string, wallpaperUrl: string | null) {
+    await this.requireMembership(conversationId, userId);
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { wallpaperUrl },
+    });
+  }
+
+  async setCustomTone(conversationId: string, userId: string, tone: string | null) {
+    await this.requireMembership(conversationId, userId);
+    return this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { customTone: tone },
+    });
+  }
+
+  // ── Message Expiry Job ──
+  async processExpiredMessages() {
+    const now = new Date();
+    // Delete expired disappearing messages
+    await this.prisma.message.updateMany({
+      where: { expiresAt: { lt: now }, isDeleted: false },
+      data: { isDeleted: true, content: null, mediaUrl: null },
+    });
+    // Delete viewed view-once messages older than 30 seconds
+    const thirtySecondsAgo = new Date(now.getTime() - 30000);
+    await this.prisma.message.updateMany({
+      where: { isViewOnce: true, viewedAt: { lt: thirtySecondsAgo }, isDeleted: false },
+      data: { isDeleted: true, content: null, mediaUrl: null },
+    });
+  }
 }

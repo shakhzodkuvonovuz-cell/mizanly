@@ -375,4 +375,106 @@ export class MessagesController {
   ) {
     return this.messagesService.getStarredMessages(userId, cursor);
   }
+
+  // ── Pin Messages ──
+  @Post(':conversationId/:messageId/pin')
+  @ApiOperation({ summary: 'Pin a message (max 3 per conversation)' })
+  async pinMessage(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.pinMessage(conversationId, messageId, userId);
+  }
+
+  @Delete(':conversationId/:messageId/pin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unpin a message' })
+  async unpinMessage(
+    @Param('conversationId') conversationId: string,
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.unpinMessage(conversationId, messageId, userId);
+  }
+
+  @Get(':conversationId/pinned')
+  @ApiOperation({ summary: 'Get pinned messages for a conversation' })
+  async getPinnedMessages(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.getPinnedMessages(conversationId, userId);
+  }
+
+  // ── View Once ──
+  @Post(':conversationId/view-once')
+  @ApiOperation({ summary: 'Send a view-once message' })
+  async sendViewOnceMessage(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { mediaUrl: string; mediaType?: string; messageType?: string; content?: string },
+  ) {
+    return this.messagesService.sendViewOnceMessage(conversationId, userId, body);
+  }
+
+  @Post('view-once/:messageId/viewed')
+  @ApiOperation({ summary: 'Mark a view-once message as viewed' })
+  async markViewOnceViewed(
+    @Param('messageId') messageId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.markViewOnceViewed(messageId, userId);
+  }
+
+  // ── Group Admin ──
+  @Post(':conversationId/members/:targetUserId/promote')
+  @ApiOperation({ summary: 'Promote member to admin' })
+  async promoteToAdmin(
+    @Param('conversationId') conversationId: string,
+    @Param('targetUserId') targetUserId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.promoteToAdmin(conversationId, userId, targetUserId);
+  }
+
+  @Post(':conversationId/members/:targetUserId/demote')
+  @ApiOperation({ summary: 'Demote admin to member' })
+  async demoteFromAdmin(
+    @Param('conversationId') conversationId: string,
+    @Param('targetUserId') targetUserId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.demoteFromAdmin(conversationId, userId, targetUserId);
+  }
+
+  @Post(':conversationId/members/:targetUserId/ban')
+  @ApiOperation({ summary: 'Ban a member from group' })
+  async banMember(
+    @Param('conversationId') conversationId: string,
+    @Param('targetUserId') targetUserId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.messagesService.banMember(conversationId, userId, targetUserId);
+  }
+
+  @Patch(':conversationId/wallpaper')
+  @ApiOperation({ summary: 'Set conversation wallpaper' })
+  async setWallpaper(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { wallpaperUrl: string | null },
+  ) {
+    return this.messagesService.setConversationWallpaper(conversationId, userId, body.wallpaperUrl);
+  }
+
+  @Patch(':conversationId/tone')
+  @ApiOperation({ summary: 'Set custom notification tone' })
+  async setTone(
+    @Param('conversationId') conversationId: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { tone: string | null },
+  ) {
+    return this.messagesService.setCustomTone(conversationId, userId, body.tone);
+  }
 }
