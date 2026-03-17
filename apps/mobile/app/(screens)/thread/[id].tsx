@@ -20,6 +20,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function ReplyRow({
   reply,
@@ -245,6 +246,7 @@ export default function ThreadDetailScreen() {
   ), [repliesQuery.isFetchingNextPage]);
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <GlassHeader
@@ -345,6 +347,7 @@ export default function ThreadDetailScreen() {
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

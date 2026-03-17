@@ -26,6 +26,7 @@ import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -316,6 +317,7 @@ export default function RisalahScreen() {
   }), []);
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
@@ -402,6 +404,7 @@ export default function RisalahScreen() {
         <Icon name="hash" size="lg" color={colors.text.primary} />
       </Pressable>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

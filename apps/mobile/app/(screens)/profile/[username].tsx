@@ -32,6 +32,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi, followsApi, postsApi, threadsApi, storiesApi, blocksApi, mutesApi, reelsApi } from '@/services/api';
 import type { Post, Thread, StoryHighlightAlbum, Reel, User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SCREEN_W = Dimensions.get('window').width;
 const GRID_ITEM = (SCREEN_W - 4) / 3;
@@ -744,6 +745,7 @@ export default function ProfileScreen() {
     : likedPostsQuery;
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {renderHeaderActions()}
       <Animated.FlatList
@@ -837,6 +839,7 @@ export default function ProfileScreen() {
         />
       </BottomSheet>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

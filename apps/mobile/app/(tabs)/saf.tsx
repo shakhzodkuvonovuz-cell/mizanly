@@ -23,6 +23,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import type { Post, StoryGroup } from '@/types';
 
@@ -189,6 +190,7 @@ export default function SafScreen() {
   }, [feedQuery.isFetchingNextPage, feedQuery.hasNextPage, posts.length]);
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -278,6 +280,7 @@ export default function SafScreen() {
         ListFooterComponent={listFooter}
       />
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

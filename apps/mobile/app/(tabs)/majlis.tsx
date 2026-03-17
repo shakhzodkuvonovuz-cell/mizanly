@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
 import type { Thread } from '@/types';
 
@@ -189,6 +190,7 @@ export default function MajlisScreen() {
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -288,6 +290,7 @@ export default function MajlisScreen() {
         </LinearGradient>
       </AnimatedPressable>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

@@ -13,7 +13,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { WebLayout } from '@/components/web/WebLayout';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useResponsive } from '@/hooks/useResponsive';
+import { useWebKeyboardShortcuts } from '@/hooks/useWebKeyboardShortcuts';
 import { colors, tabBar, spacing, fontSize, animation, radius, glass, shadow } from '@/theme';
 import { useStore } from '@/store';
 import { useState } from 'react';
@@ -136,77 +139,85 @@ export default function TabLayout() {
   const { t } = useTranslation();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
+  const { isDesktop, isTablet } = useResponsive();
+  const isWebWide = Platform.OS === 'web' && (isDesktop || isTablet);
+
+  // Register web keyboard shortcuts (no-op on native)
+  useWebKeyboardShortcuts();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
-        tabBarActiveTintColor: colors.emerald,
-        tabBarInactiveTintColor: colors.text.secondary,
-        tabBarLabelStyle: styles.tabLabel,
-        tabBarBackground: () => (
-          Platform.OS === 'ios' ? (
-            <BlurView
-              intensity={glass.ultra.blurIntensity}
-              tint="dark"
-              style={[StyleSheet.absoluteFill, styles.tabBarBg]}
-            />
-          ) : (
-            <View style={[StyleSheet.absoluteFill, styles.tabBarBgAndroid]} />
-          )
-        ),
-      }}
-    >
-      <Tabs.Screen
-        name="saf"
-        options={{
-          title: t('tabs.saf'),
-          tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
-          tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} />,
+    <WebLayout>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarShowLabel: false,
+          tabBarStyle: isWebWide ? styles.tabBarHidden : styles.tabBar,
+          tabBarActiveTintColor: colors.emerald,
+          tabBarInactiveTintColor: colors.text.secondary,
+          tabBarLabelStyle: styles.tabLabel,
+          tabBarBackground: () =>
+            isWebWide ? null : (
+              Platform.OS === 'ios' ? (
+                <BlurView
+                  intensity={glass.ultra.blurIntensity}
+                  tint="dark"
+                  style={[StyleSheet.absoluteFill, styles.tabBarBg]}
+                />
+              ) : (
+                <View style={[StyleSheet.absoluteFill, styles.tabBarBgAndroid]} />
+              )
+            ),
         }}
-      />
-      <Tabs.Screen
-        name="bakra"
-        options={{
-          title: t('tabs.bakra'),
-          tabBarAccessibilityLabel: t('tabs.accessibility.shortVideos'),
-          tabBarIcon: ({ focused }) => <TabIcon name="bakra" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="minbar"
-        options={{
-          title: t('tabs.minbar'),
-          tabBarAccessibilityLabel: t('tabs.accessibility.videos'),
-          tabBarIcon: ({ focused }) => <TabIcon name="minbar" focused={focused} />,
-        }}
-      />
-      <Tabs.Screen
-        name="create"
-        options={{
-          title: '',
-          tabBarButton: () => <CreateButton />,
-        }}
-      />
-      <Tabs.Screen
-        name="majlis"
-        options={{
-          title: t('tabs.majlis'),
-          tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
-          tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} badge={unreadNotifications || undefined} />,
-        }}
-      />
-      <Tabs.Screen
-        name="risalah"
-        options={{
-          title: t('tabs.risalah'),
-          tabBarAccessibilityLabel: t('tabs.accessibility.messages'),
-          tabBarIcon: ({ focused }) => <TabIcon name="risalah" focused={focused} badge={unreadMessages || undefined} />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="saf"
+          options={{
+            title: t('tabs.saf'),
+            tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
+            tabBarIcon: ({ focused }) => <TabIcon name="saf" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="bakra"
+          options={{
+            title: t('tabs.bakra'),
+            tabBarAccessibilityLabel: t('tabs.accessibility.shortVideos'),
+            tabBarIcon: ({ focused }) => <TabIcon name="bakra" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="minbar"
+          options={{
+            title: t('tabs.minbar'),
+            tabBarAccessibilityLabel: t('tabs.accessibility.videos'),
+            tabBarIcon: ({ focused }) => <TabIcon name="minbar" focused={focused} />,
+          }}
+        />
+        <Tabs.Screen
+          name="create"
+          options={{
+            title: '',
+            tabBarButton: () => <CreateButton />,
+          }}
+        />
+        <Tabs.Screen
+          name="majlis"
+          options={{
+            title: t('tabs.majlis'),
+            tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
+            tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} badge={unreadNotifications || undefined} />,
+          }}
+        />
+        <Tabs.Screen
+          name="risalah"
+          options={{
+            title: t('tabs.risalah'),
+            tabBarAccessibilityLabel: t('tabs.accessibility.messages'),
+            tabBarIcon: ({ focused }) => <TabIcon name="risalah" focused={focused} badge={unreadMessages || undefined} />,
+          }}
+        />
+      </Tabs>
+    </WebLayout>
   );
 }
 
@@ -219,6 +230,10 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     backgroundColor: 'transparent',
     elevation: 0,
+  },
+  tabBarHidden: {
+    display: 'none',
+    height: 0,
   },
   tabBarBg: {
     borderTopWidth: 0, // Handled by tabBar

@@ -23,6 +23,7 @@ import Animated from 'react-native-reanimated';
 import { Pressable } from 'react-native';
 import type { Video, VideoCategory } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -372,6 +373,7 @@ export default function MinbarScreen() {
   ), [feedQuery.isFetchingNextPage]);
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
@@ -477,6 +479,7 @@ export default function MinbarScreen() {
         />
       </BottomSheet>
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

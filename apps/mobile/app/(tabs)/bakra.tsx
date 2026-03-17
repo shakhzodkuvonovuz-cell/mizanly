@@ -35,6 +35,7 @@ import { Platform } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -635,6 +636,7 @@ export default function BakraScreen() {
   ) : null;
 
   return (
+    <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -690,6 +692,7 @@ export default function BakraScreen() {
         />
       )}
     </SafeAreaView>
+    </ScreenErrorBoundary>
   );
 }
 

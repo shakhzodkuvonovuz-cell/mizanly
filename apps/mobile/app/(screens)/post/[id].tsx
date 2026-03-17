@@ -21,6 +21,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -269,6 +270,7 @@ export default function PostDetailScreen() {
   ), [commentsQuery.isFetchingNextPage]);
 
   return (
+    <ScreenErrorBoundary>
     <View style={styles.container}>
       <GlassHeader
         title={t('saf.post')}
@@ -364,6 +366,7 @@ export default function PostDetailScreen() {
         )}
       </KeyboardAvoidingView>
     </View>
+    </ScreenErrorBoundary>
   );
 }
 

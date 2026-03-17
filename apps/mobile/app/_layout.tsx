@@ -29,7 +29,11 @@ const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 // Query cache persistence deferred — requires @tanstack/react-query-persist-client package install
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60, retry: 2 },
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 3,
+      retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    },
     mutations: {
       onError: (error: Error) => {
         // Show a toast/alert for failed mutations
