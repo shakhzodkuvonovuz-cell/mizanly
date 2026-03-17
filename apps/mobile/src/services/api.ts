@@ -1232,3 +1232,12 @@ export const commerceApi = {
   subscribePremium: (plan: string) => api.post('/premium/subscribe', { plan }),
   cancelPremium: () => api.delete('/premium/cancel'),
 };
+
+// ── Volunteer ──
+export const volunteerApi = {
+  getOpportunities: (params?: { cursor?: string; category?: string }) =>
+    api.get(`/volunteer${qs(params || {})}`),
+  createOpportunity: (dto: { title: string; description: string; category: string; location?: string; date?: string; spotsTotal?: number }) =>
+    api.post('/volunteer', dto),
+  signUp: (id: string) => api.post(`/volunteer/${id}/signup`),
+};
