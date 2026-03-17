@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,82 +8,121 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Avatar } from '@/components/ui/Avatar';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { eventsApi } from '@/services/eventsApi';
 import type { EventWithCounts, RsvpStatus as ApiRsvpStatus } from '@/types/events';
-import { Skeleton } from '@/components/ui/Skeleton';
-import { Alert } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import type { User } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
 type RsvpStatus = 'going' | 'maybe' | 'not-going' | null;
 
-interface Attendee {
-  id: string;
-  name: string;
-  avatar: string | null;
+function toApiRsvpStatus(status: RsvpStatus): ApiRsvpStatus | null {
+  if (status === 'going') return 'going';
+  if (status === 'maybe') return 'maybe';
+  if (status === 'not-going') return 'not_going';
+  return null;
 }
 
-interface Comment {
-  id: string;
-  author: string;
-  avatar: string | null;
-  text: string;
-  time: string;
+function formatEventDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
 }
 
-const MOCK_ATTENDEES: Attendee[] = []; // TODO: fetch attendees from API
-
-const MOCK_COMMENTS: Comment[] = []; // TODO: fetch comments from API
+function formatEventTime(startStr: string, endStr?: string): string {
+  const start = new Date(startStr);
+  const startTime = start.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (!endStr) return startTime;
+  const end = new Date(endStr);
+  const endTime = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${startTime} — ${endTime}`;
+}
 
 export default function EventDetailScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>('going');
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [event, setEvent] = useState<EventWithCounts | null>(null);
-  const [attendees, setAttendees] = useState<Attendee[]>([]);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const queryClient = useQueryClient();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const fetchEvent = useCallback(async () => {
-    if (!id) return;
-    try {
-      setError(null);
-      const response = await eventsApi.getById(id as string);
-      setEvent(response.data);
-      // TODO: fetch attendees and comments
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('events.loadFailed'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [id]);
+  const [rsvpStatus, setRsvpStatus] = useState<RsvpStatus>(null);
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchEvent();
-  }, [fetchEvent]);
+  // Fetch event details
+  const {
+    data: event,
+    isLoading: eventLoading,
+    isRefetching,
+    refetch: refetchEvent,
+    error: eventError,
+  } = useQuery({
+    queryKey: ['event', id],
+    queryFn: async () => {
+      if (!id) throw new Error('No event ID');
+      const res = await eventsApi.getById(id);
+      return (res as { data: EventWithCounts }).data;
+    },
+    enabled: !!id,
+  });
 
-  useEffect(() => {
-    if (id) {
-      fetchEvent();
-    }
-  }, [id, fetchEvent]);
+  // Fetch attendees
+  const {
+    data: attendeesData,
+    refetch: refetchAttendees,
+  } = useQuery({
+    queryKey: ['event-attendees', id],
+    queryFn: async () => {
+      if (!id) return { data: [], meta: { hasMore: false } };
+      const res = await eventsApi.listAttendees(id, undefined, 'going');
+      return (res as { data: { data: User[]; meta: { hasMore: boolean } } }).data;
+    },
+    enabled: !!id,
+  });
+
+  const attendees = attendeesData?.data ?? [];
+
+  // RSVP mutation
+  const rsvpMutation = useMutation({
+    mutationFn: async (status: RsvpStatus) => {
+      if (!id) throw new Error('No event ID');
+      const apiStatus = toApiRsvpStatus(status);
+      if (!apiStatus) {
+        await eventsApi.removeRsvp(id);
+        return null;
+      }
+      const res = await eventsApi.rsvp(id, { status: apiStatus });
+      return res;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+      queryClient.invalidateQueries({ queryKey: ['event-attendees', id] });
+    },
+  });
+
+  const handleRsvp = useCallback((status: RsvpStatus) => {
+    setRsvpStatus(status);
+    rsvpMutation.mutate(status);
+  }, [rsvpMutation]);
+
+  const handleRefresh = useCallback(() => {
+    refetchEvent();
+    refetchAttendees();
+  }, [refetchEvent, refetchAttendees]);
 
   const getRsvpButtonStyle = (status: RsvpStatus) => {
     const isSelected = rsvpStatus === status;
@@ -105,6 +144,57 @@ export default function EventDetailScreen() {
     }
   };
 
+  // Loading skeleton
+  if (eventLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('events.event')}
+          onBack={() => router.back()}
+        />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
+          <Skeleton.Rect width="100%" height={220} borderRadius={radius.lg} />
+          <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
+            <Skeleton.Text width="70%" />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Skeleton.Circle size={40} />
+              <Skeleton.Text width="40%" />
+            </View>
+            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={120} borderRadius={radius.lg} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // Error state
+  if (eventError || !event) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader
+          title={t('events.event')}
+          onBack={() => router.back()}
+        />
+        <EmptyState
+          icon="calendar"
+          title={t('events.loadFailed')}
+          subtitle={eventError instanceof Error ? eventError.message : t('events.tryAgain')}
+          actionLabel={t('common.retry')}
+          onAction={() => refetchEvent()}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  const goingCount = event._count?.goingCount ?? 0;
+  const maybeCount = event._count?.maybeCount ?? 0;
+  const totalRsvps = event._count?.rsvps ?? 0;
+  const remainingAttendees = Math.max(0, goingCount - attendees.length);
+  const eventTypeBadge = event.eventType === 'virtual' ? t('events.virtual') :
+    event.eventType === 'hybrid' ? t('events.hybrid') : t('events.inPerson');
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <GlassHeader
@@ -119,7 +209,7 @@ export default function EventDetailScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={handleRefresh} />}
       >
         {/* Cover Image Hero */}
         <Animated.View entering={FadeInUp.duration(400)}>
@@ -136,7 +226,7 @@ export default function EventDetailScreen() {
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.badgeGradient}
               >
-                <Text style={styles.badgeText}>{t('events.inPerson')}</Text>
+                <Text style={styles.badgeText}>{eventTypeBadge}</Text>
               </LinearGradient>
             </View>
           </View>
@@ -144,17 +234,17 @@ export default function EventDetailScreen() {
 
         {/* Event Info */}
         <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.infoContainer}>
-          <Text style={styles.eventTitle}>Community Iftar Gathering</Text>
+          <Text style={styles.eventTitle}>{event.title}</Text>
 
           {/* Host Row */}
           <View style={styles.hostRow}>
-            <Avatar uri={null} name="ICC" size="md" />
+            <Avatar uri={event.user?.avatarUrl ?? null} name={event.user?.displayName ?? 'Host'} size="md" />
             <View style={styles.hostInfo}>
               <Text style={styles.hostText}>
-                {t('events.hostedBy')} <Text style={styles.hostName}>@icc_riyadh</Text>
+                {t('events.hostedBy')} <Text style={styles.hostName}>@{event.user?.username ?? 'unknown'}</Text>
               </Text>
             </View>
-            <VerifiedBadge size={13} />
+            {event.user?.isVerified && <VerifiedBadge size={13} />}
           </View>
         </Animated.View>
 
@@ -171,8 +261,8 @@ export default function EventDetailScreen() {
               <Icon name="calendar" size="sm" color={colors.gold} />
             </LinearGradient>
             <View style={styles.infoTextContainer}>
-              <Text style={styles.infoMain}>Saturday, March 20, 2026</Text>
-              <Text style={styles.infoSub}>7:00 PM — 9:00 PM (AST)</Text>
+              <Text style={styles.infoMain}>{formatEventDate(event.startDate)}</Text>
+              <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
             <TouchableOpacity style={styles.addToCalendar} activeOpacity={0.8}>
               <Icon name="calendar" size="xs" color={colors.emerald} />
@@ -182,41 +272,42 @@ export default function EventDetailScreen() {
         </Animated.View>
 
         {/* Location Card */}
-        <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.cardContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.infoCard}
-          >
+        {event.location && (
+          <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.cardContainer}>
             <LinearGradient
-              colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
-              style={styles.iconBg}
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.infoCard}
             >
-              <Icon name="map-pin" size="sm" color={colors.emerald} />
+              <LinearGradient
+                colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
+                style={styles.iconBg}
+              >
+                <Icon name="map-pin" size="sm" color={colors.emerald} />
+              </LinearGradient>
+              <View style={styles.infoTextContainer}>
+                <Text style={styles.infoMain}>{event.location}</Text>
+              </View>
+              <TouchableOpacity style={styles.directionsButton} activeOpacity={0.8}>
+                <Icon name="map-pin" size="xs" color={colors.text.primary} />
+              </TouchableOpacity>
             </LinearGradient>
-            <View style={styles.infoTextContainer}>
-              <Text style={styles.infoMain}>Islamic Community Center</Text>
-              <Text style={styles.infoSub}>123 Main Street, Riyadh</Text>
-            </View>
-            <TouchableOpacity style={styles.directionsButton} activeOpacity={0.8}>
-              <Icon name="map-pin" size="xs" color={colors.text.primary} />
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
+          </Animated.View>
+        )}
 
         {/* Description Card */}
-        <Animated.View entering={FadeInUp.delay(250).duration(400)} style={styles.cardContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.descriptionCard}
-          >
-            <Text style={styles.descriptionText}>
-              Join us for a blessed evening of community iftar during Ramadan. We'll break our fast together, share a meal, and enjoy each other's company. All are welcome — bring your family and friends!
-            </Text>
-            <TouchableOpacity activeOpacity={0.8}>
-              <Text style={styles.readMore}>{t('common.readMore')}</Text>
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
+        {event.description && (
+          <Animated.View entering={FadeInUp.delay(250).duration(400)} style={styles.cardContainer}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.descriptionCard}
+            >
+              <Text style={styles.descriptionText}>{event.description}</Text>
+              <TouchableOpacity activeOpacity={0.8}>
+                <Text style={styles.readMore}>{t('common.readMore')}</Text>
+              </TouchableOpacity>
+            </LinearGradient>
+          </Animated.View>
+        )}
 
         {/* RSVP Section */}
         <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.cardContainer}>
@@ -235,8 +326,9 @@ export default function EventDetailScreen() {
                   <TouchableOpacity
                     key={status}
                     style={styles_result.button}
-                    onPress={() => setRsvpStatus(status)}
+                    onPress={() => handleRsvp(status)}
                     activeOpacity={0.8}
+                    disabled={rsvpMutation.isPending}
                   >
                     {isSelected && status === 'going' ? (
                       <LinearGradient
@@ -282,67 +374,42 @@ export default function EventDetailScreen() {
               </LinearGradient>
               <Text style={styles.attendeesTitle}>{t('events.attendees')}</Text>
               <View style={styles.attendeesCount}>
-                <Text style={styles.countBadge}>47 {t('events.going')} · 12 {t('events.maybe')} · 8 {t('events.invited')}</Text>
+                <Text style={styles.countBadge}>
+                  {goingCount} {t('events.going')} · {maybeCount} {t('events.maybe')}
+                </Text>
               </View>
             </View>
 
-            <View style={styles.avatarRow}>
-              {MOCK_ATTENDEES.map((attendee, index) => (
-                <View
-                  key={attendee.id}
-                  style={[styles.avatarStack, { marginLeft: index > 0 ? -12 : 0 }]}
-                >
-                  <Avatar uri={attendee.avatar} name={attendee.name} size="md" />
+            {attendees.length === 0 ? (
+              <EmptyState
+                icon="users"
+                title={t('events.noAttendees')}
+                subtitle={t('events.beFirst')}
+              />
+            ) : (
+              <>
+                <View style={styles.avatarRow}>
+                  {attendees.slice(0, 5).map((attendee, index) => (
+                    <View
+                      key={attendee.id}
+                      style={[styles.avatarStack, { marginLeft: index > 0 ? -12 : 0 }]}
+                    >
+                      <Avatar uri={attendee.avatarUrl ?? null} name={attendee.displayName ?? attendee.username ?? ''} size="md" />
+                    </View>
+                  ))}
+                  {remainingAttendees > 0 && (
+                    <View style={styles.moreAvatar}>
+                      <Text style={styles.moreText}>+{remainingAttendees}</Text>
+                    </View>
+                  )}
                 </View>
-              ))}
-              <View style={styles.moreAvatar}>
-                <Text style={styles.moreText}>+42</Text>
-              </View>
-            </View>
 
-            <TouchableOpacity style={styles.seeAllButton} activeOpacity={0.8}>
-              <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
-              <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
-            </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-
-        {/* Discussion Section */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.cardContainer}>
-          <LinearGradient
-            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
-            style={styles.discussionCard}
-          >
-            <View style={styles.discussionHeader}>
-              <LinearGradient
-                colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                style={styles.smallIconBg}
-              >
-                <Icon name="message-circle" size="xs" color={colors.emerald} />
-              </LinearGradient>
-              <Text style={styles.discussionTitle}>{t('events.discussion')}</Text>
-              <Text style={styles.commentCount}>{t('events.commentsCount', { count: 3 })}</Text>
-            </View>
-
-            {MOCK_COMMENTS.map((comment) => (
-              <View key={comment.id} style={styles.commentRow}>
-                <Avatar uri={comment.avatar} name={comment.author} size="sm" />
-                <View style={styles.commentContent}>
-                  <View style={styles.commentHeader}>
-                    <Text style={styles.commentAuthor}>{comment.author}</Text>
-                    <Text style={styles.commentTime}>{comment.time}</Text>
-                  </View>
-                  <Text style={styles.commentText}>{comment.text}</Text>
-                </View>
-              </View>
-            ))}
-
-            <View style={styles.commentInputRow}>
-              <Avatar uri={null} name="You" size="sm" />
-              <View style={styles.commentInput}>
-                <Text style={styles.commentInputPlaceholder}>{t('events.addComment')}</Text>
-              </View>
-            </View>
+                <TouchableOpacity style={styles.seeAllButton} activeOpacity={0.8}>
+                  <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
+                  <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
+                </TouchableOpacity>
+              </>
+            )}
           </LinearGradient>
         </Animated.View>
 
@@ -362,13 +429,13 @@ export default function EventDetailScreen() {
           </LinearGradient>
         </TouchableOpacity>
 
-        <TouchableOpacity activeOpacity={0.8}>
+        <TouchableOpacity activeOpacity={0.8} disabled={rsvpMutation.isPending}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.rsvpConfirmButton}
           >
             <Text style={styles.rsvpConfirmText}>
-              {t('events.rsvp')}: {rsvpStatus === 'going' ? t('events.going') : rsvpStatus === 'maybe' ? t('events.maybe') : t('events.cantGo')}
+              {t('events.rsvp')}: {rsvpStatus === 'going' ? t('events.going') : rsvpStatus === 'maybe' ? t('events.maybe') : rsvpStatus === 'not-going' ? t('events.cantGo') : t('events.respond')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
@@ -656,78 +723,6 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     fontFamily: fonts.medium,
     color: colors.text.secondary,
-  },
-  discussionCard: {
-    padding: spacing.base,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
-  },
-  discussionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  discussionTitle: {
-    fontSize: fontSize.md,
-    fontFamily: fonts.semibold,
-    color: colors.text.primary,
-  },
-  commentCount: {
-    marginLeft: 'auto',
-    fontSize: fontSize.xs,
-    fontFamily: fonts.medium,
-    color: colors.text.secondary,
-  },
-  commentRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  commentContent: {
-    flex: 1,
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  commentHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.xs,
-  },
-  commentAuthor: {
-    fontSize: fontSize.sm,
-    fontFamily: fonts.semibold,
-    color: colors.text.primary,
-  },
-  commentTime: {
-    fontSize: fontSize.xs,
-    fontFamily: fonts.regular,
-    color: colors.text.tertiary,
-  },
-  commentText: {
-    fontSize: fontSize.sm,
-    fontFamily: fonts.regular,
-    color: colors.text.secondary,
-  },
-  commentInputRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-    marginTop: spacing.sm,
-  },
-  commentInput: {
-    flex: 1,
-    backgroundColor: colors.dark.surface,
-    borderRadius: radius.md,
-    padding: spacing.sm,
-  },
-  commentInputPlaceholder: {
-    fontSize: fontSize.sm,
-    fontFamily: fonts.regular,
-    color: colors.text.tertiary,
   },
   bottomSpacer: {
     height: 100,

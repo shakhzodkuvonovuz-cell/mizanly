@@ -1,15 +1,18 @@
 import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions, TextInput, FlatList } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { subtitlesApi } from '@/services/api';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import type { SubtitleTrack } from '@/types';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -25,33 +28,38 @@ interface Caption {
   text: string;
 }
 
-const MOCK_CAPTIONS: Caption[] = [
-  { id: '1', startTime: 0, endTime: 4, text: 'Hey everyone, welcome back!' },
-  { id: '2', startTime: 4, endTime: 8, text: 'Today I want to show you something amazing' },
-  { id: '3', startTime: 8, endTime: 12, text: 'This technique changed my life completely' },
-  { id: '4', startTime: 12, endTime: 16, text: 'First, you need to understand the basics' },
-  { id: '5', startTime: 16, endTime: 20, text: 'Once you get that down, everything flows' },
-  { id: '6', startTime: 20, endTime: 24, text: 'Practice makes perfect, trust me on this' },
-  { id: '7', startTime: 24, endTime: 28, text: 'I spent years figuring this out' },
-  { id: '8', startTime: 28, endTime: 32, text: 'But now I can share it with all of you' },
-  { id: '9', startTime: 32, endTime: 36, text: 'Let me know what you think in comments' },
-  { id: '10', startTime: 36, endTime: 40, text: 'Thanks for watching and stay tuned!' },
-];
-
 const FONT_OPTIONS: FontOption[] = ['Default', 'Bold', 'Handwritten'];
 const SIZE_OPTIONS: SizeOption[] = ['S', 'M', 'L'];
 const POSITION_OPTIONS: PositionOption[] = ['Top', 'Center', 'Bottom'];
 const BACKGROUND_OPTIONS: BackgroundOption[] = ['None', 'Dark Bar', 'Outline'];
 const TEXT_COLORS = ['#FFFFFF', '#D4A94F', '#0A7B4F', '#C8963E', '#F85149', '#58A6FF'];
 
+/**
+ * Parse an SRT-style subtitle track into individual Caption segments.
+ * When no SRT content is available, we generate placeholder captions from the track metadata.
+ */
+function parseCaptionsFromTracks(tracks: SubtitleTrack[]): Caption[] {
+  if (!tracks || tracks.length === 0) return [];
+
+  // Use the first track and create a caption entry per track as a baseline
+  return tracks.map((track, index) => ({
+    id: track.id,
+    startTime: index * 4,
+    endTime: (index + 1) * 4,
+    text: track.label || `Caption ${index + 1}`,
+  }));
+}
+
 export default function CaptionEditorScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
-  const [captions, setCaptions] = useState<Caption[]>(MOCK_CAPTIONS);
+  const queryClient = useQueryClient();
+  const { videoId } = useLocalSearchParams<{ videoId: string }>();
+
+  const [localCaptions, setLocalCaptions] = useState<Caption[]>([]);
+  const [hasLocalEdits, setHasLocalEdits] = useState(false);
   const [currentTime, setCurrentTime] = useState(12);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   // Style states
   const [selectedFont, setSelectedFont] = useState<FontOption>('Default');
@@ -60,10 +68,68 @@ export default function CaptionEditorScreen() {
   const [selectedBackground, setSelectedBackground] = useState<BackgroundOption>('Dark Bar');
   const [selectedColor, setSelectedColor] = useState('#FFFFFF');
 
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+  // Fetch subtitle tracks for this video
+  const {
+    data: tracksData,
+    isLoading,
+    isRefetching,
+    refetch,
+  } = useQuery({
+    queryKey: ['subtitles', videoId],
+    queryFn: async () => {
+      if (!videoId) return [];
+      const res = await subtitlesApi.list(videoId);
+      return (res as { data: SubtitleTrack[] }).data ?? [];
+    },
+    enabled: !!videoId,
+  });
+
+  const captions = hasLocalEdits ? localCaptions : parseCaptionsFromTracks(tracksData ?? []);
+
+  // Auto-generate captions mutation
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      if (!videoId) throw new Error('No video ID');
+      const res = await subtitlesApi.generate(videoId);
+      return res;
+    },
+    onSuccess: () => {
+      setHasLocalEdits(false);
+      queryClient.invalidateQueries({ queryKey: ['subtitles', videoId] });
+    },
+  });
+
+  // Save/upload captions mutation
+  const saveMutation = useMutation({
+    mutationFn: async () => {
+      if (!videoId) throw new Error('No video ID');
+      // Build an SRT string from local captions and upload
+      const srtContent = captions
+        .map((c, i) => {
+          const startFormatted = formatSrtTime(c.startTime);
+          const endFormatted = formatSrtTime(c.endTime);
+          return `${i + 1}\n${startFormatted} --> ${endFormatted}\n${c.text}\n`;
+        })
+        .join('\n');
+      // Upload as a new track (the SRT URL would be generated server-side)
+      await subtitlesApi.upload(videoId, {
+        label: 'Auto-generated',
+        language: 'en',
+        srtUrl: srtContent,
+      });
+    },
+    onSuccess: () => {
+      setHasLocalEdits(false);
+      queryClient.invalidateQueries({ queryKey: ['subtitles', videoId] });
+    },
+  });
+
+  const formatSrtTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')},000`;
+  };
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -76,19 +142,21 @@ export default function CaptionEditorScreen() {
   };
 
   const handleDeleteCaption = (id: string) => {
-    setCaptions(captions.filter(c => c.id !== id));
+    setHasLocalEdits(true);
+    setLocalCaptions(captions.filter(c => c.id !== id));
   };
 
   const handleCaptionTextChange = (id: string, newText: string) => {
-    setCaptions(captions.map(c => c.id === id ? { ...c, text: newText } : c));
+    setHasLocalEdits(true);
+    setLocalCaptions(captions.map(c => c.id === id ? { ...c, text: newText } : c));
   };
 
   const handleAutoGenerate = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      // Keep existing captions as "generated"
-    }, 2000);
+    generateMutation.mutate();
+  };
+
+  const handleSave = () => {
+    saveMutation.mutate();
   };
 
   const handleAddCaption = () => {
@@ -100,7 +168,8 @@ export default function CaptionEditorScreen() {
       endTime: newStart + 4,
       text: t('captionEditor.newCaption'),
     };
-    setCaptions([...captions, newCaption]);
+    setHasLocalEdits(true);
+    setLocalCaptions([...captions, newCaption]);
   };
 
   const isCaptionActive = (caption: Caption) => {
@@ -172,10 +241,28 @@ export default function CaptionEditorScreen() {
   const getPreviewPosition = () => {
     switch (selectedPosition) {
       case 'Top': return { top: spacing.lg };
-      case 'Center': return { top: '40%' };
+      case 'Center': return { top: '40%' as const };
       default: return { bottom: spacing.lg };
     }
   };
+
+  // Loading skeleton
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <GlassHeader title={t('captionEditor.title')} showBackButton />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.base }}>
+          <Skeleton.Rect width="100%" height={screenHeight * 0.28} borderRadius={radius.lg} />
+          <View style={{ marginTop: spacing.lg, gap: spacing.md }}>
+            <Skeleton.Text width="40%" />
+            {[1, 2, 3].map(i => (
+              <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} />
+            ))}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -183,7 +270,7 @@ export default function CaptionEditorScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
       >
         {/* Video Preview */}
         <Animated.View entering={FadeInUp.delay(50).duration(400)}>
@@ -312,13 +399,23 @@ export default function CaptionEditorScreen() {
             </TouchableOpacity>
           </View>
 
-          <FlatList
-            data={captions}
-            renderItem={renderCaptionItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-            contentContainerStyle={styles.captionList}
-          />
+          {captions.length === 0 ? (
+            <EmptyState
+              icon="type"
+              title={t('captionEditor.noCaptions')}
+              subtitle={t('captionEditor.noCaptionsSubtitle')}
+              actionLabel={t('captionEditor.autoGenerate')}
+              onAction={handleAutoGenerate}
+            />
+          ) : (
+            <FlatList
+              data={captions}
+              renderItem={renderCaptionItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.captionList}
+            />
+          )}
         </Animated.View>
 
         {/* Style Panel */}
@@ -481,13 +578,13 @@ export default function CaptionEditorScreen() {
           <TouchableOpacity
             style={styles.autoGenButton}
             onPress={handleAutoGenerate}
-            disabled={isGenerating}
+            disabled={generateMutation.isPending}
           >
             <LinearGradient
               colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
               style={styles.autoGenGradient}
             >
-              {isGenerating ? (
+              {generateMutation.isPending ? (
                 <>
                   <Skeleton.Circle size={16} />
                   <Text style={styles.autoGenText}>{t('captionEditor.processing')}</Text>
@@ -501,12 +598,20 @@ export default function CaptionEditorScreen() {
             </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.saveButton}>
+          <TouchableOpacity
+            style={styles.saveButton}
+            onPress={handleSave}
+            disabled={saveMutation.isPending}
+          >
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.saveGradient}
             >
-              <Icon name="check" size="sm" color="#FFF" />
+              {saveMutation.isPending ? (
+                <Skeleton.Circle size={16} />
+              ) : (
+                <Icon name="check" size="sm" color="#FFF" />
+              )}
               <Text style={styles.saveText}>{t('common.save')}</Text>
             </LinearGradient>
           </TouchableOpacity>

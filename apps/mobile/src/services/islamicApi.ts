@@ -7,6 +7,8 @@ import type {
   ZakatCalculationInput,
   ZakatCalculationResult,
   RamadanInfo,
+  QuranSurah,
+  QuranVerse,
 } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 
@@ -39,4 +41,12 @@ export const islamicApi = {
 
   getRamadanInfo: (year?: number, lat?: number, lng?: number) =>
     api.get<RamadanInfo>(`/islamic/ramadan${qs({ year, lat, lng })}`),
+
+  listSurahs: () => api.get<QuranSurah[]>('/islamic/quran/surahs'),
+
+  getVerse: (surahNumber: number, verseNumber: number, translation?: string) =>
+    api.get<QuranVerse>(`/islamic/quran/surahs/${surahNumber}/verses/${verseNumber}${qs({ translation })}`),
+
+  getSurahVerses: (surahNumber: number, translation?: string) =>
+    api.get<QuranVerse[]>(`/islamic/quran/surahs/${surahNumber}/verses${qs({ translation })}`),
 };

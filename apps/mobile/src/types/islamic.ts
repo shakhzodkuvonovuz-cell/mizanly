@@ -83,3 +83,19 @@ export interface IslamicCalendarDay {
   islamicDay: number;
   events?: string[];
 }
+
+export interface QuranSurah {
+  number: number;
+  name: string;
+  arabicName: string;
+  verses: number;
+  revelationType: 'meccan' | 'medinan';
+}
+
+export interface QuranVerse {
+  surahNumber: number;
+  verseNumber: number;
+  arabic: string;
+  translation: string;
+  transliteration?: string;
+}

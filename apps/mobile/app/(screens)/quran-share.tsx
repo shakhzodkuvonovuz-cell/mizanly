@@ -1,48 +1,23 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { islamicApi } from '@/services/islamicApi';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import type { QuranSurah, QuranVerse } from '@/types/islamic';
 
 const { width: screenWidth } = Dimensions.get('window');
-
-// First 10 surahs for demo
-const SURAHS = [
-  { number: 1, name: 'Al-Fatihah', arabicName: 'الفاتحة', verses: 7 },
-  { number: 2, name: 'Al-Baqarah', arabicName: 'البقرة', verses: 286 },
-  { number: 3, name: 'Aali Imran', arabicName: 'آل عمران', verses: 200 },
-  { number: 4, name: 'An-Nisa', arabicName: 'النساء', verses: 176 },
-  { number: 5, name: 'Al-Ma\'idah', arabicName: 'المائدة', verses: 120 },
-  { number: 36, name: 'Ya-Sin', arabicName: 'يس', verses: 83 },
-  { number: 55, name: 'Ar-Rahman', arabicName: 'الرحمن', verses: 78 },
-  { number: 67, name: 'Al-Mulk', arabicName: 'الملك', verses: 30 },
-  { number: 112, name: 'Al-Ikhlas', arabicName: 'الإخلاص', verses: 4 },
-  { number: 113, name: 'Al-Falaq', arabicName: 'الفلق', verses: 5 },
-  { number: 114, name: 'An-Nas', arabicName: 'الناس', verses: 6 },
-];
-
-// Mock verses
-const MOCK_VERSES: Record<number, string> = {
-  1: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nالْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ\nالرَّحْمَٰنِ الرَّحِيمِ\nمَالِكِ يَوْمِ الدِّينِ\nإِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ\nاهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ\nصِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ',
-  112: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ هُوَ اللَّهُ أَحَدٌ\nاللَّهُ الصَّمَدُ\nلَمْ يَلِدْ وَلَمْ يُولَدْ\nوَلَمْ يَكُن لَّهُ كُفُوًا أَحَدٌ',
-  113: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ\nمِن شَرِّ مَا خَلَقَ\nوَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ\nوَمِن شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ\nوَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ',
-  114: 'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ\nمَلِكِ النَّاسِ\nإِلَٰهِ النَّاسِ\nمِن شَرِّ الْوَسْوَاسِ الْخَنَّاسِ\nالَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ\nمِنَ الْجِنَّةِ وَالنَّاسِ',
-};
-
-const TRANSLATIONS: Record<number, string> = {
-  1: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.\nAll praise is due to Allah, Lord of the worlds.\nThe Entirely Merciful, the Especially Merciful.\nSovereign of the Day of Recompense.\nIt is You we worship and You we ask for help.\nGuide us to the straight path.\nThe path of those upon whom You have bestowed favor, not of those who have evoked anger or of those who are astray.',
-  112: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.\nSay, "He is Allah, [who is] One.\nAllah, the Eternal Refuge.\nHe neither begets nor is born.\nNor is there to Him any equivalent."',
-  113: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.\nSay, "I seek refuge in the Lord of daybreak.\nFrom the evil of that which He created.\nAnd from the evil of darkness when it settles.\nAnd from the evil of the blowers in knots.\nAnd from the evil of an envier when he envies."',
-  114: 'In the name of Allah, the Entirely Merciful, the Especially Merciful.\nSay, "I seek refuge in the Lord of mankind.\nThe Sovereign of mankind.\nThe God of mankind.\nFrom the evil of the retreating whisperer.\nWho whispers [evil] into the breasts of mankind.\nFrom among the jinn and mankind."',
-};
 
 // Decorative pattern for border
 function GeometricPattern() {
@@ -67,13 +42,55 @@ function GeometricPattern() {
 export default function QuranShareScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [currentSurah, setCurrentSurah] = useState(SURAHS[0]);
+  const [selectedSurahNumber, setSelectedSurahNumber] = useState(1);
   const [currentVerse, setCurrentVerse] = useState(1);
   const [showSurahPicker, setShowSurahPicker] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
 
-  const verseText = MOCK_VERSES[currentSurah.number] || MOCK_VERSES[1];
-  const translationText = TRANSLATIONS[currentSurah.number] || TRANSLATIONS[1];
+  // Fetch list of surahs
+  const {
+    data: surahs,
+    isLoading: surahsLoading,
+    isRefetching: surahsRefetching,
+    refetch: refetchSurahs,
+  } = useQuery({
+    queryKey: ['quran-surahs'],
+    queryFn: async () => {
+      const res = await islamicApi.listSurahs();
+      return (res as { data: QuranSurah[] }).data;
+    },
+  });
+
+  const currentSurah = surahs?.find(s => s.number === selectedSurahNumber) ?? {
+    number: selectedSurahNumber,
+    name: 'Loading...',
+    arabicName: '...',
+    verses: 1,
+    revelationType: 'meccan' as const,
+  };
+
+  // Fetch current verse
+  const {
+    data: verseData,
+    isLoading: verseLoading,
+    isRefetching: verseRefetching,
+    refetch: refetchVerse,
+  } = useQuery({
+    queryKey: ['quran-verse', selectedSurahNumber, currentVerse],
+    queryFn: async () => {
+      const res = await islamicApi.getVerse(selectedSurahNumber, currentVerse);
+      return (res as { data: QuranVerse }).data;
+    },
+    enabled: !!selectedSurahNumber,
+  });
+
+  const verseText = verseData?.arabic ?? '';
+  const translationText = verseData?.translation ?? '';
+
+  const handleRefresh = useCallback(() => {
+    refetchSurahs();
+    refetchVerse();
+  }, [refetchSurahs, refetchVerse]);
 
   const handlePrevVerse = useCallback(() => {
     setCurrentVerse(v => Math.max(1, v - 1));
@@ -98,6 +115,56 @@ export default function QuranShareScreen() {
     setShowShareOptions(false);
   }, []);
 
+  const isRefreshing = surahsRefetching || verseRefetching;
+
+  // Loading state
+  if (surahsLoading) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.quranShare.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[styles.scrollContent, { alignItems: 'center' }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Skeleton.Rect width="100%" height={72} borderRadius={radius.lg} />
+          <View style={{ marginTop: spacing.md, width: '100%' }}>
+            <Skeleton.Rect width="100%" height={40} borderRadius={radius.full} />
+          </View>
+          <View style={{ marginTop: spacing.md, width: '100%' }}>
+            <Skeleton.Rect width="100%" height={400} borderRadius={radius.lg} />
+          </View>
+          <View style={{ marginTop: spacing.lg, width: '100%', gap: spacing.md }}>
+            <Skeleton.Rect width="100%" height={48} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={48} borderRadius={radius.lg} />
+          </View>
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // Empty state if no surahs loaded
+  if (!surahs || surahs.length === 0) {
+    return (
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('screens.quranShare.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
+        />
+        <EmptyState
+          icon="book-open"
+          title={t('screens.quranShare.loadFailed')}
+          subtitle={t('screens.quranShare.tryAgain')}
+          actionLabel={t('common.retry')}
+          onAction={() => refetchSurahs()}
+        />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       <GlassHeader
@@ -110,6 +177,7 @@ export default function QuranShareScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefreshing} onRefresh={handleRefresh} />}
       >
         {/* Surah Selector */}
         <Animated.View entering={FadeInUp.duration(500)}>
@@ -159,7 +227,7 @@ export default function QuranShareScreen() {
             colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
             style={styles.verseIndicator}
           >
-            <Text style={styles.verseNumber}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
+            <Text style={styles.verseNumberText}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
           </LinearGradient>
 
           <TouchableOpacity
@@ -190,42 +258,62 @@ export default function QuranShareScreen() {
               colors={['rgba(22,27,34,0.95)', 'rgba(13,17,23,0.98)']}
               style={styles.verseCardInner}
             >
-              {/* Bismillah */}
-              <Text style={styles.bismillah}>بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</Text>
+              {verseLoading ? (
+                <View style={{ alignItems: 'center', gap: spacing.md, padding: spacing.lg }}>
+                  <Skeleton.Text width="80%" />
+                  <Skeleton.Rect width="60%" height={1} borderRadius={1} />
+                  <Skeleton.Text width="90%" />
+                  <Skeleton.Text width="70%" />
+                  <Skeleton.Rect width="60%" height={1} borderRadius={1} />
+                  <Skeleton.Text width="85%" />
+                  <Skeleton.Text width="75%" />
+                </View>
+              ) : verseText ? (
+                <>
+                  {/* Bismillah */}
+                  <Text style={styles.bismillah}>{'\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650'}</Text>
 
-              {/* Decorative line */}
-              <LinearGradient
-                colors={['transparent', colors.gold, 'transparent']}
-                style={styles.decorativeLine}
-              />
+                  {/* Decorative line */}
+                  <LinearGradient
+                    colors={['transparent', colors.gold, 'transparent']}
+                    style={styles.decorativeLine}
+                  />
 
-              {/* Arabic Text */}
-              <Text style={styles.verseArabic}>{verseText}</Text>
+                  {/* Arabic Text */}
+                  <Text style={styles.verseArabic}>{verseText}</Text>
 
-              {/* Decorative separator */}
-              <View style={styles.verseSeparator}>
-                <View style={styles.separatorDot} />
-                <LinearGradient
-                  colors={['transparent', colors.emerald, 'transparent']}
-                  style={styles.separatorLine}
+                  {/* Decorative separator */}
+                  <View style={styles.verseSeparator}>
+                    <View style={styles.separatorDot} />
+                    <LinearGradient
+                      colors={['transparent', colors.emerald, 'transparent']}
+                      style={styles.separatorLine}
+                    />
+                    <View style={styles.separatorDot} />
+                  </View>
+
+                  {/* Translation */}
+                  <Text style={styles.verseTranslation}>{translationText}</Text>
+
+                  {/* Reference */}
+                  <View style={styles.verseReference}>
+                    <LinearGradient
+                      colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
+                      style={styles.referenceBadge}
+                    >
+                      <Text style={styles.referenceText}>
+                        {currentSurah.name} {currentVerse}
+                      </Text>
+                    </LinearGradient>
+                  </View>
+                </>
+              ) : (
+                <EmptyState
+                  icon="book-open"
+                  title={t('screens.quranShare.verseNotFound')}
+                  subtitle={t('screens.quranShare.tryAnotherVerse')}
                 />
-                <View style={styles.separatorDot} />
-              </View>
-
-              {/* Translation */}
-              <Text style={styles.verseTranslation}>{translationText}</Text>
-
-              {/* Reference */}
-              <View style={styles.verseReference}>
-                <LinearGradient
-                  colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
-                  style={styles.referenceBadge}
-                >
-                  <Text style={styles.referenceText}>
-                    {currentSurah.name} {currentVerse}
-                  </Text>
-                </LinearGradient>
-              </View>
+              )}
             </LinearGradient>
           </LinearGradient>
         </Animated.View>
@@ -266,16 +354,16 @@ export default function QuranShareScreen() {
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <Text style={styles.surahSearchPlaceholder}>{t('screens.quranShare.searchSurahs')}</Text>
         </View>
-        {SURAHS.map((surah) => (
+        {(surahs ?? []).map((surah) => (
           <BottomSheetItem
             key={surah.number}
             label={`${surah.number}. ${surah.name}`}
             onPress={() => {
-              setCurrentSurah(surah);
+              setSelectedSurahNumber(surah.number);
               setCurrentVerse(1);
               setShowSurahPicker(false);
             }}
-            icon={currentSurah.number === surah.number ? (
+            icon={selectedSurahNumber === surah.number ? (
               <Icon name="check" size="sm" color={colors.emerald} />
             ) : (
               <Text style={styles.surahArabicList}>{surah.arabicName}</Text>
@@ -405,7 +493,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
   },
-  verseNumber: {
+  verseNumberText: {
     color: colors.text.primary,
     fontSize: fontSize.base,
     fontWeight: '600',
