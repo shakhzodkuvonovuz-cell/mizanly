@@ -10,7 +10,6 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { CreateVideoDto } from './dto/create-video.dto';
 import { UpdateVideoDto } from './dto/update-video.dto';
-import { SetEndScreensDto } from './dto/end-screen.dto';
 import { Prisma, VideoStatus, VideoCategory, ReportReason } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';

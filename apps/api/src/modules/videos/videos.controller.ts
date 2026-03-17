@@ -21,6 +21,7 @@ import { UpdateVideoDto } from './dto/update-video.dto';
 import { CreateVideoCommentDto } from './dto/create-video-comment.dto';
 import { ReportDto } from './dto/report.dto';
 import { VideoProgressDto } from './dto/video-progress.dto';
+import { SetEndScreensDto } from './dto/end-screen.dto';
 
 @ApiTags('Videos (Minbar)')
 @Controller('videos')
@@ -295,25 +296,27 @@ export class VideosController {
 
   @Put(':id/end-screens')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Set end screens' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set end screens for a video (max 4)' })
   setEndScreens(
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() dto: { items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }> },
+    @Body() dto: SetEndScreensDto,
   ) {
     return this.videosService.setEndScreens(id, userId, dto.items);
   }
 
   @Get(':id/end-screens')
   @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get end screens' })
+  @ApiOperation({ summary: 'Get end screens for a video' })
   getEndScreens(@Param('id') id: string) {
     return this.videosService.getEndScreens(id);
   }
 
   @Delete(':id/end-screens')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Delete end screens' })
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete all end screens for a video' })
   deleteEndScreens(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.videosService.deleteEndScreens(id, userId);
   }

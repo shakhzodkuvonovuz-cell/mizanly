@@ -10,7 +10,7 @@ import type {
   CallSession, StickerPack, StickerItem, PostCollab,
   ChannelPost, AudioTrack, FeedDismissal,
   HashtagInfo, BookmarkCollection, SearchSuggestion, ModerationLogEntry,
-  DMNote, OfflineDownload,
+  DMNote, OfflineDownload, EndScreen,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -455,11 +455,11 @@ export const videosApi = {
     api.get(`/videos/${id}/premiere/viewers`),
   // End Screens
   setEndScreens: (id: string, items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }>) =>
-    api.put(`/videos/${id}/end-screens`, { items }),
+    api.put<EndScreen[]>(`/videos/${id}/end-screens`, { items }).then(r => r.data),
   getEndScreens: (id: string) =>
-    api.get(`/videos/${id}/end-screens`),
+    api.get<EndScreen[]>(`/videos/${id}/end-screens`).then(r => r.data),
   deleteEndScreens: (id: string) =>
-    api.delete(`/videos/${id}/end-screens`),
+    api.delete(`/videos/${id}/end-screens`).then(r => r.data),
 };
 // ── Playlists (Minbar) ──
 export const playlistsApi = {
@@ -1143,4 +1143,32 @@ export const clipsApi = {
     api.delete(`/clips/${id}`),
   getShareLink: (id: string) =>
     api.get<{ url: string }>(`/clips/${id}/share`),
+};
+
+// ── AI ──
+export const aiApi = {
+  suggestCaptions: (content?: string, mediaDescription?: string) =>
+    api.post('/ai/suggest-captions', { content, mediaDescription }),
+  suggestHashtags: (content: string) =>
+    api.post('/ai/suggest-hashtags', { content }),
+  suggestPostingTime: () =>
+    api.get<{ bestTime: string; reason: string }>('/ai/suggest-posting-time'),
+  translate: (text: string, targetLanguage: string, contentId?: string, contentType?: string) =>
+    api.post('/ai/translate', { text, targetLanguage, contentId, contentType }),
+  moderate: (text: string, contentType: string) =>
+    api.post('/ai/moderate', { text, contentType }),
+  smartReplies: (conversationContext: string, lastMessages: string[]) =>
+    api.post('/ai/smart-replies', { conversationContext, lastMessages }),
+  summarize: (text: string, maxLength?: number) =>
+    api.post('/ai/summarize', { text, maxLength }),
+  routeSpace: (content: string, mediaTypes: string[]) =>
+    api.post('/ai/route-space', { content, mediaTypes }),
+  generateCaptions: (videoId: string, audioUrl: string, language?: string) =>
+    api.post(`/ai/videos/${videoId}/captions`, { audioUrl, language }),
+  getCaptions: (videoId: string, language?: string) =>
+    api.get(`/ai/videos/${videoId}/captions${qs({ language })}`),
+  generateAvatar: (sourceUrl: string, style?: string) =>
+    api.post('/ai/avatar', { sourceUrl, style }),
+  getAvatars: () =>
+    api.get('/ai/avatars'),
 };
