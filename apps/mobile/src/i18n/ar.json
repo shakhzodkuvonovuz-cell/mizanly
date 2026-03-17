@@ -3003,7 +3003,30 @@
       "fontDefault": "افتراضي",
       "fontSerif": "سيريف",
       "fontMono": "أحادي المسافة",
-      "fontArabic": "عربي"
+      "fontArabic": "عربي",
+      "save": "حفظ التغييرات",
+      "uploadBackground": "رفع الخلفية",
+      "musicUrl": "رابط الموسيقى"
+    },
+    "settingsSection": "التلعيب",
+    "settingsStreaks": "السلاسل",
+    "settingsAchievements": "الإنجازات",
+    "settingsLeaderboard": "لوحة المتصدرين",
+    "settingsChallenges": "التحديات",
+    "settingsProfile": "تخصيص الملف",
+    "settingsXPHistory": "سجل النقاط",
+    "all": "الكل",
+    "content": "المحتوى",
+    "social": "اجتماعي",
+    "islamic": "إسلامي",
+    "milestone": "إنجاز",
+    "categories": {
+      "quran": "القرآن",
+      "dhikr": "الذكر",
+      "photography": "التصوير",
+      "fitness": "اللياقة",
+      "cooking": "الطبخ",
+      "learning": "التعلم"
     }
   }
 }

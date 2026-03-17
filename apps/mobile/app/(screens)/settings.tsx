@@ -598,6 +598,52 @@ export default function SettingsScreen() {
             />
           </LinearGradient>
 
+          {/* Gamification Section */}
+          <SectionHeader title={t('gamification.settingsSection')} icon="trending-up" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('gamification.settingsStreaks')}
+              icon={<Icon name="trending-up" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/streaks')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('gamification.settingsAchievements')}
+              icon={<Icon name="check-circle" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/achievements')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('gamification.settingsLeaderboard')}
+              icon={<Icon name="bar-chart-2" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/leaderboard')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('gamification.settingsChallenges')}
+              icon={<Icon name="flag" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/challenges')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('gamification.settingsXPHistory')}
+              icon={<Icon name="star" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/xp-history')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('gamification.settingsProfile')}
+              icon={<Icon name="user" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/profile-customization')}
+              isLast
+            />
+          </LinearGradient>
+
           {/* Account Section */}
           <SectionHeader title={t('settings.account')} icon="user" />
           <LinearGradient

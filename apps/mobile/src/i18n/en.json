@@ -3111,7 +3111,30 @@
       "fontDefault": "Default",
       "fontSerif": "Serif",
       "fontMono": "Monospace",
-      "fontArabic": "Arabic"
+      "fontArabic": "Arabic",
+      "save": "Save Changes",
+      "uploadBackground": "Upload Background",
+      "musicUrl": "Music URL"
+    },
+    "settingsSection": "Gamification",
+    "settingsStreaks": "Streaks",
+    "settingsAchievements": "Achievements",
+    "settingsLeaderboard": "Leaderboard",
+    "settingsChallenges": "Challenges",
+    "settingsProfile": "Customize Profile",
+    "settingsXPHistory": "XP History",
+    "all": "All",
+    "content": "Content",
+    "social": "Social",
+    "islamic": "Islamic",
+    "milestone": "Milestone",
+    "categories": {
+      "quran": "Quran",
+      "dhikr": "Dhikr",
+      "photography": "Photography",
+      "fitness": "Fitness",
+      "cooking": "Cooking",
+      "learning": "Learning"
     }
   }
 }
