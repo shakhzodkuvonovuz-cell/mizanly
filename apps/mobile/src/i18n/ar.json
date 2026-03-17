@@ -1755,6 +1755,9 @@
     "light": "فاتح",
     "dark": "مظلم"
   },
+  "accessibility": {
+    "goBack": "رجوع"
+  },
   "screens": {
     "followers": {
       "title": "المتابِعون",
