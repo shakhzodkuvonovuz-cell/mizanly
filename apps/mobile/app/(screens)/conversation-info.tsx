@@ -20,7 +20,8 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi, blocksApi, searchApi, uploadApi } from '@/services/api';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
-import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { Conversation, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -43,7 +44,8 @@ export default function ConversationInfoScreen() {
   const router = useRouter();
   const { user } = useUser();
   const queryClient = useQueryClient();
-  const haptic = useHaptic();\n  const { t } = useTranslation();
+  const haptic = useHaptic();
+  const { t } = useTranslation();
 
   // Admin state
   const [editNameSheetOpen, setEditNameSheetOpen] = useState(false);
