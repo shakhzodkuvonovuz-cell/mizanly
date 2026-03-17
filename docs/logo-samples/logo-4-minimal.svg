@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="emeraldGold4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#0EAD69"/>
+    </linearGradient>
+    <linearGradient id="goldGrad4" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C8963E"/>
+      <stop offset="50%" stop-color="#E8C06A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" rx="80" fill="#0D1117"/>
+
+  <!-- Stylized 'M' as two arches (like mosque arches / mihrab) -->
+  <path d="M100,260 L100,160 Q100,90 150,90 Q200,90 200,160
+           L200,160 Q200,90 250,90 Q300,90 300,160 L300,260"
+        fill="none" stroke="url(#emeraldGold4)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Gold accent dot -->
+  <circle cx="200" cy="155" r="8" fill="#C8963E"/>
+
+  <!-- Underline -->
+  <line x1="100" y1="275" x2="300" y2="275" stroke="url(#goldGrad4)" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Brand text -->
+  <text x="200" y="330" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="32" font-weight="300" fill="white" letter-spacing="10">MIZANLY</text>
+  <text x="200" y="365" text-anchor="middle" font-family="'Arabic Typesetting', serif"
+        font-size="24" fill="#C8963E" opacity="0.9">ميزانلي</text>
+</svg>

@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="emeraldGold3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A7B4F"/>
+      <stop offset="70%" stop-color="#0EAD69"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <linearGradient id="goldVert3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8C06A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <clipPath id="hexClip">
+      <polygon points="200,40 340,110 340,250 200,320 60,250 60,110"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="400" height="400" fill="#0D1117"/>
+
+  <!-- Hexagonal frame (Islamic geometric motif) -->
+  <polygon points="200,40 340,110 340,250 200,320 60,250 60,110"
+           fill="none" stroke="url(#emeraldGold3)" stroke-width="3"/>
+  <polygon points="200,55 328,118 328,242 200,305 72,242 72,118"
+           fill="none" stroke="#1C2333" stroke-width="1"/>
+
+  <!-- Inner geometric pattern — interlocking triangles (Star of David / Seal of Solomon) -->
+  <polygon points="200,80 300,250 100,250" fill="none" stroke="#0A7B4F" stroke-width="2.5" opacity="0.7"/>
+  <polygon points="200,280 100,110 300,110" fill="none" stroke="#0A7B4F" stroke-width="2.5" opacity="0.7"/>
+
+  <!-- Center circle with M -->
+  <circle cx="200" cy="180" r="50" fill="#0D1117" stroke="#C8963E" stroke-width="2"/>
+  <text x="200" y="198" text-anchor="middle" font-family="'Georgia', serif"
+        font-size="52" font-weight="700" fill="url(#goldVert3)">M</text>
+
+  <!-- Five Space indicators on hex vertices -->
+  <circle cx="200" cy="45" r="6" fill="#0A7B4F"/>   <!-- Saf -->
+  <circle cx="335" cy="112" r="6" fill="#0A7B4F"/>  <!-- Majlis -->
+  <circle cx="335" cy="248" r="6" fill="#C8963E"/>  <!-- Risalah -->
+  <circle cx="60" cy="248" r="6" fill="#C8963E"/>   <!-- Bakra -->
+  <circle cx="60" cy="112" r="6" fill="#0A7B4F"/>   <!-- Minbar -->
+
+  <!-- Brand text -->
+  <text x="200" y="355" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="36" font-weight="700" fill="white" letter-spacing="6">MIZANLY</text>
+  <text x="200" y="385" text-anchor="middle" font-family="'Arabic Typesetting', serif"
+        font-size="22" fill="#C8963E">ميزانلي</text>
+</svg>

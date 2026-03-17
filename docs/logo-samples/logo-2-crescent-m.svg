@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="emeraldGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0EAD69"/>
+      <stop offset="100%" stop-color="#0A7B4F"/>
+    </linearGradient>
+    <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E8C06A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <filter id="glow2">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="400" height="400" rx="48" fill="#0D1117"/>
+
+  <!-- Outer ring -->
+  <circle cx="200" cy="185" r="120" fill="none" stroke="#1C2333" stroke-width="2"/>
+
+  <!-- Crescent shape forming the 'M' negative space -->
+  <circle cx="200" cy="170" r="95" fill="url(#emeraldGrad2)"/>
+  <circle cx="230" cy="150" r="75" fill="#0D1117"/>
+
+  <!-- Star -->
+  <circle cx="265" cy="120" r="8" fill="#C8963E" filter="url(#glow2)"/>
+  <circle cx="265" cy="120" r="4" fill="#E8C06A"/>
+
+  <!-- Five small dots representing Five Spaces -->
+  <circle cx="140" cy="240" r="5" fill="#C8963E" opacity="0.9"/>
+  <circle cx="170" cy="250" r="5" fill="#C8963E" opacity="0.75"/>
+  <circle cx="200" cy="255" r="5" fill="#C8963E" opacity="0.6"/>
+  <circle cx="230" cy="250" r="5" fill="#C8963E" opacity="0.75"/>
+  <circle cx="260" cy="240" r="5" fill="#C8963E" opacity="0.9"/>
+
+  <!-- Brand name -->
+  <text x="200" y="320" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="40" font-weight="700" fill="white" letter-spacing="5">MIZANLY</text>
+  <!-- Arabic -->
+  <text x="200" y="355" text-anchor="middle" font-family="'Arabic Typesetting', 'Simplified Arabic', serif"
+        font-size="26" fill="url(#goldGrad2)">ميزانلي</text>
+</svg>

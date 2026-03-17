@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="bgGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#065C3B"/>
+    </linearGradient>
+    <linearGradient id="goldGrad5" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#E8C06A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <filter id="shadow5">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- App icon rounded square -->
+  <rect width="400" height="400" rx="88" fill="url(#bgGrad5)"/>
+
+  <!-- Subtle pattern overlay -->
+  <circle cx="200" cy="200" r="160" fill="none" stroke="white" stroke-width="0.5" opacity="0.08"/>
+  <circle cx="200" cy="200" r="130" fill="none" stroke="white" stroke-width="0.5" opacity="0.06"/>
+  <circle cx="200" cy="200" r="100" fill="none" stroke="white" stroke-width="0.5" opacity="0.04"/>
+
+  <!-- Mizan (balance) — simplified modern -->
+  <!-- Vertical beam -->
+  <rect x="195" y="105" width="10" height="100" rx="5" fill="url(#goldGrad5)" filter="url(#shadow5)"/>
+  <!-- Horizontal beam -->
+  <rect x="110" y="120" width="180" height="8" rx="4" fill="url(#goldGrad5)" filter="url(#shadow5)"/>
+  <!-- Fulcrum -->
+  <polygon points="200,100 190,118 210,118" fill="#E8C06A"/>
+
+  <!-- Left pan - arc -->
+  <path d="M115,128 L95,168 Q120,188 145,168 L125,128" fill="none" stroke="#E8C06A" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Right pan - arc -->
+  <path d="M275,128 L255,168 Q280,188 305,168 L285,128" fill="none" stroke="#E8C06A" stroke-width="3" stroke-linejoin="round"/>
+
+  <!-- Base -->
+  <path d="M165,205 Q200,220 235,205" fill="none" stroke="#E8C06A" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Brand text below icon -->
+  <text x="200" y="275" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="48" font-weight="700" fill="white" letter-spacing="3"
+        filter="url(#shadow5)">mizanly</text>
+  <!-- Arabic -->
+  <text x="200" y="315" text-anchor="middle" font-family="'Arabic Typesetting', serif"
+        font-size="28" fill="rgba(255,255,255,0.85)">ميزانلي</text>
+</svg>

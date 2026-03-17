@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400">
+  <defs>
+    <linearGradient id="emeraldGold1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+    <linearGradient id="goldShine1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#C8963E"/>
+      <stop offset="50%" stop-color="#E8C06A"/>
+      <stop offset="100%" stop-color="#C8963E"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="200" cy="200" r="190" fill="#0D1117"/>
+  <circle cx="200" cy="200" r="186" fill="none" stroke="url(#emeraldGold1)" stroke-width="3"/>
+
+  <!-- Balance / Mizan scales icon -->
+  <!-- Center pillar -->
+  <rect x="196" y="100" width="8" height="120" rx="4" fill="url(#emeraldGold1)"/>
+  <!-- Base -->
+  <ellipse cx="200" cy="225" rx="40" ry="8" fill="#0A7B4F" opacity="0.8"/>
+  <!-- Beam -->
+  <line x1="120" y1="135" x2="280" y2="135" stroke="url(#goldShine1)" stroke-width="5" stroke-linecap="round"/>
+  <!-- Fulcrum triangle -->
+  <polygon points="200,100 190,120 210,120" fill="#C8963E"/>
+
+  <!-- Left pan -->
+  <line x1="120" y1="135" x2="100" y2="175" stroke="#C8963E" stroke-width="2"/>
+  <line x1="120" y1="135" x2="140" y2="175" stroke="#C8963E" stroke-width="2"/>
+  <path d="M95,175 Q120,195 145,175" fill="none" stroke="#0A7B4F" stroke-width="3"/>
+  <!-- Crescent in left pan -->
+  <circle cx="120" cy="168" r="10" fill="#C8963E" opacity="0.6"/>
+  <circle cx="125" cy="166" r="8" fill="#0D1117"/>
+
+  <!-- Right pan -->
+  <line x1="280" y1="135" x2="260" y2="175" stroke="#C8963E" stroke-width="2"/>
+  <line x1="280" y1="135" x2="300" y2="175" stroke="#C8963E" stroke-width="2"/>
+  <path d="M255,175 Q280,195 305,175" fill="none" stroke="#0A7B4F" stroke-width="3"/>
+  <!-- Star in right pan -->
+  <polygon points="280,160 283,168 291,168 285,173 287,181 280,176 273,181 275,173 269,168 277,168"
+           fill="#C8963E" opacity="0.6" transform="scale(0.7) translate(120,72)"/>
+
+  <!-- Brand name -->
+  <text x="200" y="270" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="42" font-weight="700" fill="white" letter-spacing="3">MIZANLY</text>
+  <!-- Arabic name -->
+  <text x="200" y="305" text-anchor="middle" font-family="'Arabic Typesetting', 'Simplified Arabic', serif"
+        font-size="30" fill="#C8963E" letter-spacing="2">ميزانلي</text>
+  <!-- Tagline -->
+  <text x="200" y="340" text-anchor="middle" font-family="'Segoe UI', Arial, sans-serif"
+        font-size="13" fill="#8B949E" letter-spacing="4">YOUR DIGITAL COMMUNITY</text>
+</svg>
