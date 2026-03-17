@@ -196,7 +196,6 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     width: 300,
     maxWidth: '100%',
-    backdropFilter: 'blur(20px)',
     alignItems: 'center',
   },
   header: {

@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
+import { CharCountRing } from '@/components/ui/CharCountRing';
 
 export interface SubmittedQuestion {
   id: string;
@@ -131,9 +132,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
             accessibilityHint="Type your question for the story creator"
           />
           <View style={styles.inputFooter}>
-            <Text style={styles.charCount}>
-              {inputText.length}/200
-            </Text>
+            <CharCountRing current={inputText.length} max={200} size={22} />
             <Pressable
               style={[
                 styles.submitButton,
@@ -198,7 +197,6 @@ const styles = StyleSheet.create({
     width: 280,
     maxWidth: '100%',
     maxHeight: 400,
-    backdropFilter: 'blur(20px)',
   },
   title: {
     color: colors.text.primary,
@@ -224,10 +222,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  charCount: {
-    color: colors.text.tertiary,
-    fontSize: fontSize.xs,
   },
   submitButton: {
     width: 44,

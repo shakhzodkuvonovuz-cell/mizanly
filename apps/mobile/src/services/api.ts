@@ -49,7 +49,7 @@ type CreateStoryPayload = {
   fontFamily?: string;
   filter?: string;
   bgGradient?: string;
-  stickerData?: object;
+  stickerData?: object[];
   closeFriendsOnly?: boolean;
 };
 
@@ -703,6 +703,10 @@ export const subtitlesApi = {
     api.post(`/videos/${videoId}/subtitles`, data),
   delete: (videoId: string, trackId: string) =>
     api.delete(`/videos/${videoId}/subtitles/${trackId}`),
+  generate: (videoId: string, language?: string) =>
+    api.post<SubtitleTrack>(`/videos/${videoId}/subtitles/generate`, { language }),
+  update: (videoId: string, trackId: string, data: { label?: string; srtUrl?: string }) =>
+    api.patch<SubtitleTrack>(`/videos/${videoId}/subtitles/${trackId}`, data),
 };
 
 // Stories reactions (if endpoint exists)

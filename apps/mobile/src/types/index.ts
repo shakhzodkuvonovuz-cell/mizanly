@@ -82,7 +82,7 @@ export interface Story {
   repliesCount: number;
   isHighlight: boolean;
   highlightAlbumId?: string;
-  stickerData?: object;
+  stickerData?: Record<string, unknown>[] | string;
   closeFriendsOnly: boolean;
   isArchived: boolean;
   expiresAt: string;

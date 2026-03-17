@@ -61,16 +61,19 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
     averagePos.value = withSpring((avg - min) / (max - min) * SLIDER_WIDTH, animation.spring.snappy);
   }, [data.averageValue, min, max, initialAverage, averagePos]);
 
+  const startX = useRef(0);
+
   const panResponder = useRef(
     PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: () => true,
+      onStartShouldSetPanResponder: () => !hasSubmitted && !isCreator,
+      onMoveShouldSetPanResponder: () => !hasSubmitted && !isCreator,
       onPanResponderGrant: () => {
+        startX.current = sliderPos.value;
         thumbScale.value = withSpring(1.2, animation.spring.bouncy);
         setIsSliding(true);
       },
       onPanResponderMove: (_, gestureState) => {
-        let newX = gestureState.dx;
+        let newX = startX.current + gestureState.dx;
         if (newX < 0) newX = 0;
         if (newX > SLIDER_WIDTH) newX = SLIDER_WIDTH;
         sliderPos.value = newX;
@@ -78,7 +81,7 @@ export function SliderSticker({ data, onResponse, isCreator = false, style }: Sl
         runOnJS(setValue)(Math.round(newValue));
       },
       onPanResponderRelease: (_, gestureState) => {
-        let newX = gestureState.dx;
+        let newX = startX.current + gestureState.dx;
         if (newX < 0) newX = 0;
         if (newX > SLIDER_WIDTH) newX = SLIDER_WIDTH;
         sliderPos.value = withSpring(newX, animation.spring.snappy);
@@ -202,7 +205,6 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     width: 300,
     maxWidth: '100%',
-    backdropFilter: 'blur(20px)',
     alignItems: 'center',
   },
   header: {

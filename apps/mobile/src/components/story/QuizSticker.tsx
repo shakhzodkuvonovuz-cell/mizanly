@@ -175,7 +175,6 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     width: 280,
     maxWidth: '100%',
-    backdropFilter: 'blur(20px)',
   },
   questionContainer: {
     marginBottom: spacing.lg,

@@ -34,7 +34,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 type Sticker = {
   id: string;
   type: 'poll' | 'quiz' | 'question' | 'countdown' | 'slider' | 'location' | 'mention' | 'hashtag';
-  data: Record<string, any>;
+  data: Record<string, unknown>;
   x: number;
   y: number;
   scale: number;
@@ -108,7 +108,7 @@ export default function StoryViewerScreen() {
   const [replyText, setReplyText] = useState('');
   const [showReply, setShowReply] = useState(false);
   const [showViewers, setShowViewers] = useState(false);
-  const [stickerResponses, setStickerResponses] = useState<Record<string, any>>({});
+  const [stickerResponses, setStickerResponses] = useState<Record<string, Record<string, unknown>>>({});
   const { t } = useTranslation();
 
   const story = group?.stories[storyIndex];
@@ -151,14 +151,15 @@ export default function StoryViewerScreen() {
 
   const renderSticker = (sticker: Sticker) => {
     const { id, type, data, x, y, scale } = sticker;
-    const style = { position: 'absolute' as const, left: x, top: y, transform: [{ scale }] };
+    const stickerStyle = { position: 'absolute' as const, left: x, top: y, transform: [{ scale }] };
     switch (type) {
-      case 'poll':
+      case 'poll': {
+        const options = Array.isArray(data.options) ? data.options as string[] : [];
         const pollData = {
-          question: data.question || '',
-          options: (data.options || []).map((opt: string, idx: number) => ({
+          question: String(data.question ?? ''),
+          options: options.map((opt, idx) => ({
             id: `opt-${idx}`,
-            text: opt,
+            text: String(opt),
             votes: 0,
           })),
           totalVotes: 0,
@@ -169,17 +170,20 @@ export default function StoryViewerScreen() {
             data={pollData}
             onResponse={(optionId) => handleStickerResponse(id, { optionId })}
             isCreator={ownStory}
-            style={style}
+            style={stickerStyle}
           />
         );
-      case 'quiz':
-        const quizOptions = (data.options || []).map((opt: string, idx: number) => ({
+      }
+      case 'quiz': {
+        const quizOpts = Array.isArray(data.options) ? data.options as string[] : [];
+        const correctIdx = typeof data.correctIndex === 'number' ? data.correctIndex : 0;
+        const quizOptions = quizOpts.map((opt, idx) => ({
           id: `opt-${idx}`,
-          text: opt,
-          isCorrect: idx === data.correctIndex,
+          text: String(opt),
+          isCorrect: idx === correctIdx,
         }));
         const quizData = {
-          question: data.question || '',
+          question: String(data.question ?? ''),
           options: quizOptions,
           explanation: '',
         };
@@ -189,12 +193,13 @@ export default function StoryViewerScreen() {
             data={quizData}
             onResponse={(optionId, isCorrect) => handleStickerResponse(id, { optionId, isCorrect })}
             isCreator={ownStory}
-            style={style}
+            style={stickerStyle}
           />
         );
-      case 'question':
+      }
+      case 'question': {
         const questionData = {
-          prompt: data.prompt || '',
+          prompt: String(data.prompt ?? ''),
           submittedQuestions: [],
         };
         return (
@@ -203,13 +208,15 @@ export default function StoryViewerScreen() {
             data={questionData}
             onResponse={(questionText) => handleStickerResponse(id, { questionText })}
             isCreator={ownStory}
-            style={style}
+            style={stickerStyle}
           />
         );
-      case 'countdown':
+      }
+      case 'countdown': {
+        const endsAt = data.endsAt ? new Date(String(data.endsAt)) : new Date(Date.now() + 86400000);
         const countdownData = {
-          eventName: data.title || '',
-          targetDate: data.endsAt ? new Date(data.endsAt) : new Date(Date.now() + 86400000),
+          eventName: String(data.title ?? ''),
+          targetDate: endsAt,
           description: '',
         };
         return (
@@ -218,17 +225,18 @@ export default function StoryViewerScreen() {
             data={countdownData}
             onRemindMeToggle={(enabled) => handleStickerResponse(id, { remindMe: enabled })}
             isCreator={ownStory}
-            style={style}
+            style={stickerStyle}
           />
         );
-      case 'slider':
+      }
+      case 'slider': {
         const sliderData = {
-          emoji: '📊',
-          question: data.question || '',
-          minValue: data.minValue || 0,
-          maxValue: data.maxValue || 100,
-          averageValue: data.averageValue || 50,
-          totalResponses: data.totalResponses || 0,
+          emoji: String(data.emoji ?? '📊'),
+          question: String(data.question ?? ''),
+          minValue: typeof data.minValue === 'number' ? data.minValue : 0,
+          maxValue: typeof data.maxValue === 'number' ? data.maxValue : 100,
+          averageValue: typeof data.averageValue === 'number' ? data.averageValue : 50,
+          totalResponses: typeof data.totalResponses === 'number' ? data.totalResponses : 0,
         };
         return (
           <SliderSticker
@@ -236,15 +244,16 @@ export default function StoryViewerScreen() {
             data={sliderData}
             onResponse={(value) => handleStickerResponse(id, { value })}
             isCreator={ownStory}
-            style={style}
+            style={stickerStyle}
           />
         );
+      }
       default:
         // location, mention, hashtag - render simple text sticker
         return (
-          <View key={id} style={[style, { backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: radius.md }]}>
+          <View key={id} style={[stickerStyle, { backgroundColor: 'rgba(0,0,0,0.5)', padding: 8, borderRadius: radius.md }]}>
             <Text style={{ color: '#fff', fontSize: fontSize.sm }}>
-              {type === 'location' ? '📍' : type === 'mention' ? `@${data.username}` : `#${data.tag}`}
+              {type === 'location' ? `📍 ${String(data.name ?? '')}` : type === 'mention' ? `@${String(data.username ?? '')}` : `#${String(data.tag ?? '')}`}
             </Text>
           </View>
         );

@@ -1,21 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Pressable,
-  TouchableOpacity,
   StyleProp,
   ViewStyle,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
-  withSpring,
   withTiming,
-  runOnJS,
 } from 'react-native-reanimated';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
 
 export interface PollOption {
@@ -38,7 +35,53 @@ interface PollStickerProps {
   style?: StyleProp<ViewStyle>;
 }
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+function PollOptionRow({
+  option,
+  isSelected,
+  showResults,
+  percentage,
+  onPress,
+}: {
+  option: PollOption;
+  isSelected: boolean;
+  showResults: boolean;
+  percentage: number;
+  onPress: () => void;
+}) {
+  const fillWidth = useSharedValue(0);
+
+  useEffect(() => {
+    if (showResults) {
+      fillWidth.value = withTiming(percentage, { duration: 400 });
+    }
+  }, [showResults, percentage, fillWidth]);
+
+  const barStyle = useAnimatedStyle(() => ({
+    width: `${fillWidth.value}%`,
+  }));
+
+  return (
+    <Pressable
+      style={[styles.optionWrapper, isSelected && styles.optionSelected]}
+      onPress={onPress}
+      disabled={showResults}
+      accessibilityLabel={`Option: ${option.text}`}
+      accessibilityRole="button"
+    >
+      <View style={styles.optionBackground}>
+        <Animated.View style={[styles.optionFill, barStyle]} />
+        <Text style={styles.optionText} numberOfLines={2}>
+          {option.text}
+        </Text>
+        {showResults && (
+          <Text style={styles.percentageText}>
+            {Math.round(percentage)}%
+          </Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
 
 export function PollSticker({ data, onResponse, isCreator = false, style }: PollStickerProps) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -52,78 +95,47 @@ export function PollSticker({ data, onResponse, isCreator = false, style }: Poll
     }
   }, [isCreator]);
 
-  const optionHeights = localOptions.map(() => useSharedValue(0));
-
-  const handleOptionPress = (optionId: string) => {
+  const handleOptionPress = useCallback((optionId: string) => {
     if (hasVoted || isCreator) return;
 
     setSelectedOptionId(optionId);
     setHasVoted(true);
 
     // Update local votes for immediate feedback
-    const updated = localOptions.map(opt =>
-      opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+    setLocalOptions(prev =>
+      prev.map(opt =>
+        opt.id === optionId ? { ...opt, votes: (opt.votes || 0) + 1 } : opt
+      )
     );
-    setLocalOptions(updated);
-
-    // Trigger animation
-    updated.forEach((opt, index) => {
-      const percentage = data.totalVotes > 0
-        ? ((opt.votes || 0) / (data.totalVotes + 1)) * 100
-        : opt.id === optionId ? 100 : 0;
-      optionHeights[index].value = withSpring(percentage, animation.spring.snappy);
-    });
 
     // Notify parent
     if (onResponse) {
       onResponse(optionId);
     }
-  };
+  }, [hasVoted, isCreator, onResponse]);
 
-  const getOptionPercentage = (option: PollOption) => {
+  const getOptionPercentage = useCallback((option: PollOption) => {
     const total = data.totalVotes + (hasVoted && !isCreator ? 1 : 0);
     if (total === 0) return 0;
     return ((option.votes || 0) / total) * 100;
-  };
+  }, [data.totalVotes, hasVoted, isCreator]);
 
-  const renderOption = (option: PollOption, index: number) => {
-    const percentage = getOptionPercentage(option);
-    const isSelected = selectedOptionId === option.id;
-    const showResults = hasVoted || isCreator;
-
-    const barStyle = useAnimatedStyle(() => ({
-      width: `${showResults ? percentage : 0}%`,
-    }));
-
-    return (
-      <Pressable
-        key={option.id}
-        style={[styles.optionWrapper, isSelected && styles.optionSelected]}
-        onPress={() => handleOptionPress(option.id)}
-        disabled={showResults}
-        accessibilityLabel={`Option: ${option.text}`}
-        accessibilityRole="button"
-      >
-        <View style={styles.optionBackground}>
-          <Animated.View style={[styles.optionFill, barStyle]} />
-          <Text style={styles.optionText} numberOfLines={2}>
-            {option.text}
-          </Text>
-          {showResults && (
-            <Text style={styles.percentageText}>
-              {Math.round(percentage)}%
-            </Text>
-          )}
-        </View>
-      </Pressable>
-    );
-  };
+  const showResults = hasVoted || isCreator;
 
   return (
     <View style={[styles.container, style]}>
       <Text style={styles.question}>{data.question}</Text>
       <View style={styles.optionsContainer}>
-        {localOptions.map((opt, idx) => renderOption(opt, idx))}
+        {localOptions.map((opt) => (
+          <PollOptionRow
+            key={opt.id}
+            option={opt}
+            isSelected={selectedOptionId === opt.id}
+            showResults={showResults}
+            percentage={getOptionPercentage(opt)}
+            onPress={() => handleOptionPress(opt.id)}
+          />
+        ))}
       </View>
       <View style={styles.footer}>
         <Text style={styles.voteCount}>
@@ -151,7 +163,6 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.border,
     width: 280,
     maxWidth: '100%',
-    backdropFilter: 'blur(20px)',
   },
   question: {
     color: colors.text.primary,
