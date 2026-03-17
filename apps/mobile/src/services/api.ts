@@ -1172,3 +1172,35 @@ export const aiApi = {
   getAvatars: () =>
     api.get('/ai/avatars'),
 };
+
+// ── Gamification ──
+export const gamificationApi = {
+  // Streaks
+  getStreaks: () => api.get('/streaks'),
+  updateStreak: (type: string) => api.post(`/streaks/${type}`),
+  // XP & Levels
+  getXP: () => api.get('/xp'),
+  getXPHistory: (cursor?: string) => api.get(`/xp/history${qs({ cursor })}`),
+  // Achievements
+  getAchievements: () => api.get('/achievements'),
+  // Leaderboards
+  getLeaderboard: (type: string, limit?: number) => api.get(`/leaderboard/${type}${qs({ limit })}`),
+  // Challenges
+  getChallenges: (params?: { cursor?: string; category?: string }) => api.get(`/challenges${qs(params || {})}`),
+  createChallenge: (dto: { title: string; description: string; challengeType: string; category: string; targetCount: number; startDate: string; endDate: string }) =>
+    api.post('/challenges', dto),
+  joinChallenge: (id: string) => api.post(`/challenges/${id}/join`),
+  updateProgress: (id: string, progress: number) => api.patch(`/challenges/${id}/progress`, { progress }),
+  getMyChallenges: () => api.get('/challenges/me'),
+  // Series
+  createSeries: (dto: { title: string; description?: string; category: string }) => api.post('/series', dto),
+  discoverSeries: (params?: { cursor?: string; category?: string }) => api.get(`/series/discover${qs(params || {})}`),
+  getSeries: (id: string) => api.get(`/series/${id}`),
+  addEpisode: (seriesId: string, dto: { title: string; postId?: string; reelId?: string; videoId?: string }) =>
+    api.post(`/series/${seriesId}/episodes`, dto),
+  followSeries: (id: string) => api.post(`/series/${id}/follow`),
+  unfollowSeries: (id: string) => api.delete(`/series/${id}/follow`),
+  // Profile Customization
+  getProfileCustomization: () => api.get('/profile-customization'),
+  updateProfileCustomization: (dto: Record<string, unknown>) => api.patch('/profile-customization', dto),
+};

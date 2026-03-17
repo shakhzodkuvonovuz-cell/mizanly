@@ -2919,5 +2919,91 @@
       "language": "لغة الترجمة",
       "toggle": "عرض الترجمات"
     }
+  },
+  "gamification": {
+    "streaks": {
+      "title": "السلاسل",
+      "posting": "سلسلة النشر",
+      "engagement": "سلسلة التفاعل",
+      "quran": "سلسلة القرآن",
+      "dhikr": "سلسلة الذكر",
+      "learning": "سلسلة التعلم",
+      "days": "{{count}} يوم",
+      "longest": "الأطول: {{count}} يوم",
+      "keepGoing": "استمر!",
+      "broken": "انقطعت السلسلة — ابدأ من جديد اليوم"
+    },
+    "xp": {
+      "title": "المستوى والنقاط",
+      "level": "المستوى {{level}}",
+      "totalXP": "{{xp}} نقطة",
+      "nextLevel": "{{xp}} نقطة للمستوى التالي",
+      "history": "سجل النقاط",
+      "earned": "+{{amount}} نقطة"
+    },
+    "achievements": {
+      "title": "الإنجازات",
+      "unlocked": "مفتوح",
+      "locked": "مقفل",
+      "unlockedAt": "فُتح {{date}}",
+      "common": "عادي",
+      "rare": "نادر",
+      "epic": "ملحمي",
+      "legendary": "أسطوري"
+    },
+    "leaderboard": {
+      "title": "لوحة المتصدرين",
+      "xp": "أعلى النقاط",
+      "streaks": "أطول السلاسل",
+      "helpers": "أفضل المساعدين",
+      "rank": "#{{rank}}"
+    },
+    "challenges": {
+      "title": "التحديات",
+      "discover": "اكتشف التحديات",
+      "create": "إنشاء تحدي",
+      "join": "انضم للتحدي",
+      "joined": "انضممت!",
+      "progress": "{{current}}/{{target}}",
+      "completed": "مكتمل!",
+      "participants": "{{count}} مشارك",
+      "daysLeft": "{{count}} يوم متبقي",
+      "ended": "انتهى التحدي",
+      "myChallenges": "تحدياتي",
+      "empty": "لا توجد تحديات بعد",
+      "emptySubtitle": "كن أول من يُنشئ تحدياً للمجتمع"
+    },
+    "series": {
+      "title": "المسلسلات",
+      "discover": "اكتشف المسلسلات",
+      "create": "إنشاء مسلسل",
+      "episodes": "{{count}} حلقة",
+      "follow": "تابع المسلسل",
+      "following": "متابَع",
+      "newEpisode": "حلقة جديدة!",
+      "addEpisode": "إضافة حلقة",
+      "followers": "{{count}} متابع",
+      "empty": "لا توجد مسلسلات بعد",
+      "emptySubtitle": "أنشئ محتوى حلقات لجمهورك"
+    },
+    "profileCustomization": {
+      "title": "تخصيص الملف الشخصي",
+      "accentColor": "لون التمييز",
+      "layout": "نمط التخطيط",
+      "background": "الخلفية",
+      "music": "موسيقى الملف",
+      "showBadges": "عرض الشارات",
+      "showLevel": "عرض المستوى",
+      "showStreak": "عرض السلسلة",
+      "bioFont": "خط النبذة",
+      "layoutDefault": "افتراضي",
+      "layoutGrid": "شبكة",
+      "layoutMagazine": "مجلة",
+      "layoutMinimal": "بسيط",
+      "fontDefault": "افتراضي",
+      "fontSerif": "سيريف",
+      "fontMono": "أحادي المسافة",
+      "fontArabic": "عربي"
+    }
   }
 }

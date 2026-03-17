@@ -3027,5 +3027,91 @@
       "language": "Caption Language",
       "toggle": "Show Captions"
     }
+  },
+  "gamification": {
+    "streaks": {
+      "title": "Streaks",
+      "posting": "Posting Streak",
+      "engagement": "Engagement Streak",
+      "quran": "Quran Streak",
+      "dhikr": "Dhikr Streak",
+      "learning": "Learning Streak",
+      "days": "{{count}} days",
+      "longest": "Longest: {{count}} days",
+      "keepGoing": "Keep it going!",
+      "broken": "Streak broken — start again today"
+    },
+    "xp": {
+      "title": "Level & XP",
+      "level": "Level {{level}}",
+      "totalXP": "{{xp}} XP",
+      "nextLevel": "{{xp}} XP to next level",
+      "history": "XP History",
+      "earned": "+{{amount}} XP"
+    },
+    "achievements": {
+      "title": "Achievements",
+      "unlocked": "Unlocked",
+      "locked": "Locked",
+      "unlockedAt": "Unlocked {{date}}",
+      "common": "Common",
+      "rare": "Rare",
+      "epic": "Epic",
+      "legendary": "Legendary"
+    },
+    "leaderboard": {
+      "title": "Leaderboard",
+      "xp": "Top XP",
+      "streaks": "Top Streaks",
+      "helpers": "Top Helpers",
+      "rank": "#{{rank}}"
+    },
+    "challenges": {
+      "title": "Challenges",
+      "discover": "Discover Challenges",
+      "create": "Create Challenge",
+      "join": "Join Challenge",
+      "joined": "Joined!",
+      "progress": "{{current}}/{{target}}",
+      "completed": "Completed!",
+      "participants": "{{count}} participants",
+      "daysLeft": "{{count}} days left",
+      "ended": "Challenge ended",
+      "myChallenges": "My Challenges",
+      "empty": "No challenges yet",
+      "emptySubtitle": "Be the first to create a challenge for the community"
+    },
+    "series": {
+      "title": "Series",
+      "discover": "Discover Series",
+      "create": "Create Series",
+      "episodes": "{{count}} episodes",
+      "follow": "Follow Series",
+      "following": "Following",
+      "newEpisode": "New Episode!",
+      "addEpisode": "Add Episode",
+      "followers": "{{count}} followers",
+      "empty": "No series yet",
+      "emptySubtitle": "Create episodic content for your audience"
+    },
+    "profileCustomization": {
+      "title": "Customize Profile",
+      "accentColor": "Accent Color",
+      "layout": "Layout Style",
+      "background": "Background",
+      "music": "Profile Music",
+      "showBadges": "Show Badges",
+      "showLevel": "Show Level",
+      "showStreak": "Show Streak",
+      "bioFont": "Bio Font",
+      "layoutDefault": "Default",
+      "layoutGrid": "Grid",
+      "layoutMagazine": "Magazine",
+      "layoutMinimal": "Minimal",
+      "fontDefault": "Default",
+      "fontSerif": "Serif",
+      "fontMono": "Monospace",
+      "fontArabic": "Arabic"
+    }
   }
 }

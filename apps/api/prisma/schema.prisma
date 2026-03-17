@@ -373,6 +373,13 @@ model User {
   parentControls   ParentalControl[]      @relation("ParentControls")
   childControl     ParentalControl?       @relation("ChildControls")
   aiAvatars        AiAvatar[]
+  streaks          UserStreak[]
+  achievements     UserAchievement[]
+  xp               UserXP?
+  challengesCreated Challenge[] @relation("ChallengeCreator")
+  challengeParticipations ChallengeParticipant[]
+  series           Series[]
+  profileCustomization ProfileCustomization?
 
   @@index([username])
   @@index([clerkId])
@@ -2531,4 +2538,163 @@ model AiAvatar {
 
   @@index([userId])
   @@map("ai_avatars")
+}
+
+// ── Gamification Models (Tier 10) ───────────────────────
+
+model UserStreak {
+  id          String   @id @default(uuid())
+  userId      String
+  streakType  String   // posting | engagement | quran | dhikr | learning
+  currentDays Int      @default(0)
+  longestDays Int      @default(0)
+  lastActiveDate DateTime @db.Date
+  startedAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, streakType])
+  @@map("user_streaks")
+}
+
+model Achievement {
+  id          String   @id @default(uuid())
+  key         String   @unique // first_post, 100_days, quran_khatmah, ramadan_warrior, etc.
+  name        String   @db.VarChar(100)
+  description String   @db.VarChar(300)
+  iconUrl     String?
+  category    String   // content | social | islamic | milestone | special
+  xpReward    Int      @default(0)
+  rarity      String   @default("common") // common | rare | epic | legendary
+  criteria    String   @db.Text // JSON criteria for unlocking
+  createdAt   DateTime @default(now())
+  unlocks     UserAchievement[]
+  @@map("achievements")
+}
+
+model UserAchievement {
+  userId        String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  @@id([userId, achievementId])
+  @@map("user_achievements")
+}
+
+model UserXP {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  totalXP   Int      @default(0)
+  level     Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history   XPHistory[]
+  @@map("user_xp")
+}
+
+model XPHistory {
+  id        String   @id @default(uuid())
+  userXPId  String
+  amount    Int
+  reason    String   // post_created | comment_helpful | quran_read | challenge_completed | etc.
+  createdAt DateTime @default(now())
+  userXP    UserXP   @relation(fields: [userXPId], references: [id], onDelete: Cascade)
+  @@index([userXPId, createdAt(sort: Desc)])
+  @@map("xp_history")
+}
+
+model Challenge {
+  id           String   @id @default(uuid())
+  title        String   @db.VarChar(200)
+  description  String   @db.VarChar(1000)
+  coverUrl     String?
+  challengeType String  // daily | weekly | monthly | custom
+  category     String   // quran | dhikr | photography | fitness | cooking | learning
+  targetCount  Int      @default(1)
+  xpReward     Int      @default(100)
+  startDate    DateTime
+  endDate      DateTime
+  isActive     Boolean  @default(true)
+  createdById  String
+  participantCount Int  @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  creator      User     @relation("ChallengeCreator", fields: [createdById], references: [id])
+  participants ChallengeParticipant[]
+  @@index([isActive, endDate])
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  challengeId String
+  userId      String
+  progress    Int      @default(0)
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  joinedAt    DateTime @default(now())
+  challenge   Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([challengeId, userId])
+  @@map("challenge_participants")
+}
+
+model Series {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String   @db.VarChar(200)
+  description  String?  @db.VarChar(1000)
+  coverUrl     String?
+  category     String   // drama | documentary | tutorial | comedy | islamic
+  episodeCount Int      @default(0)
+  followersCount Int    @default(0)
+  isComplete   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  creator      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episodes     SeriesEpisode[]
+  followers    SeriesFollower[]
+  @@index([userId])
+  @@map("series")
+}
+
+model SeriesEpisode {
+  id          String   @id @default(uuid())
+  seriesId    String
+  number      Int
+  title       String   @db.VarChar(200)
+  postId      String?  // linked post/reel/video
+  reelId      String?
+  videoId     String?
+  releasedAt  DateTime?
+  createdAt   DateTime @default(now())
+  series      Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  @@unique([seriesId, number])
+  @@map("series_episodes")
+}
+
+model SeriesFollower {
+  seriesId  String
+  userId    String
+  followedAt DateTime @default(now())
+  series    Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  @@id([seriesId, userId])
+  @@map("series_followers")
+}
+
+model ProfileCustomization {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  accentColor     String?  @db.VarChar(7) // hex color
+  layoutStyle     String   @default("default") // default | grid | magazine | minimal
+  backgroundUrl   String?
+  backgroundMusic String?  // audio track URL
+  showBadges      Boolean  @default(true)
+  showLevel       Boolean  @default(true)
+  showStreak      Boolean  @default(true)
+  bioFont         String   @default("default") // default | serif | mono | arabic
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("profile_customizations")
 }
