@@ -6,43 +6,28 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
+  ScrollView,
+  Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { GlassHeader } from '@/components/ui/GlassHeader';
-import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
-import { colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { gamificationApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useHaptic } from '@/hooks/useHaptic';
-import { rtlFlexRow, rtlTextAlign } from '@/utils/rtl';
+import { colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { gamificationApi } from '@/services/api';
 
-interface Series {
-  id: string;
-  title: string;
-  description?: string;
-  category: string;
-  coverImageUrl?: string;
-  episodeCount: number;
-  followerCount: number;
-  isFollowing: boolean;
-  isComplete: boolean;
-  creator: {
-    id: string;
-    displayName: string;
-    username: string;
-    avatarUrl: string | null;
-    isVerified: boolean;
-  };
-}
+const { width: screenWidth } = Dimensions.get('window');
 
 const CATEGORIES = [
   { key: 'all', label: 'All' },
@@ -51,245 +36,278 @@ const CATEGORIES = [
   { key: 'tutorial', label: 'Tutorial' },
   { key: 'comedy', label: 'Comedy' },
   { key: 'islamic', label: 'Islamic' },
-];
+] as const;
 
-function SeriesCard({
-  series,
-  index,
-  isRTL,
-}: {
-  series: Series;
-  index: number;
-  isRTL: boolean;
-}) {
+type CategoryKey = typeof CATEGORIES[number]['key'];
+
+interface SeriesItem {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  coverUrl?: string;
+  episodeCount: number;
+  followerCount: number;
+  isFollowing: boolean;
+  creator: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
+  createdAt: string;
+}
+
+interface SeriesResponse {
+  data: SeriesItem[];
+  meta: { cursor: string | null; hasMore: boolean };
+}
+
+function SeriesDiscoverContent() {
   const { t } = useTranslation();
   const router = useRouter();
+  const haptic = useHaptic();
+  const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
-  return (
-    <Animated.View entering={FadeInUp.delay(Math.min(index * 80, 600)).duration(400)}>
-      <Pressable
-        onPress={() => router.push(`/(screens)/series/${series.id}` as `/${string}`)}
-        accessibilityLabel={`${series.title} by ${series.creator.displayName}`}
-        accessibilityRole="button"
-      >
-        <LinearGradient
-          colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.15)']}
-          style={styles.seriesCard}
+  const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
+
+  const seriesQuery = useInfiniteQuery<SeriesResponse>({
+    queryKey: ['series-discover', selectedCategory],
+    queryFn: ({ pageParam }) =>
+      gamificationApi.discoverSeries({
+        cursor: pageParam as string | undefined,
+        category: selectedCategory === 'all' ? undefined : selectedCategory,
+      }) as Promise<SeriesResponse>,
+    getNextPageParam: (lastPage) =>
+      lastPage.meta.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
+    initialPageParam: undefined as string | undefined,
+  });
+
+  const followMutation = useMutation({
+    mutationFn: (id: string) => gamificationApi.followSeries(id),
+    onSuccess: () => {
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['series-discover'] });
+    },
+  });
+
+  const unfollowMutation = useMutation({
+    mutationFn: (id: string) => gamificationApi.unfollowSeries(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['series-discover'] });
+    },
+  });
+
+  const allSeries = seriesQuery.data?.pages.flatMap((p) => p.data) ?? [];
+
+  const handleRefresh = useCallback(() => {
+    seriesQuery.refetch();
+  }, [seriesQuery]);
+
+  const handleLoadMore = () => {
+    if (seriesQuery.hasNextPage && !seriesQuery.isFetchingNextPage) {
+      seriesQuery.fetchNextPage();
+    }
+  };
+
+  const handleCategoryPress = (key: CategoryKey) => {
+    haptic.light();
+    setSelectedCategory(key);
+  };
+
+  const handleSeriesPress = (series: SeriesItem) => {
+    haptic.light();
+    router.push(`/(screens)/series-detail?id=${series.id}` as never);
+  };
+
+  const handleFollowToggle = (series: SeriesItem) => {
+    haptic.medium();
+    if (series.isFollowing) {
+      unfollowMutation.mutate(series.id);
+    } else {
+      followMutation.mutate(series.id);
+    }
+  };
+
+  const renderCategoryChips = () => (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.chipRow}
+    >
+      {CATEGORIES.map((cat) => (
+        <Pressable
+          key={cat.key}
+          style={[
+            styles.chip,
+            selectedCategory === cat.key && styles.chipActive,
+          ]}
+          onPress={() => handleCategoryPress(cat.key)}
+          accessibilityRole="button"
+          accessibilityLabel={cat.label}
         >
-          {/* Cover */}
-          <View style={styles.coverWrap}>
-            {series.coverImageUrl ? (
-              <Image
-                source={{ uri: series.coverImageUrl }}
-                style={styles.coverImage}
-                contentFit="cover"
-              />
-            ) : (
-              <LinearGradient
-                colors={[colors.emerald + '40', colors.gold + '20']}
-                style={styles.coverPlaceholder}
-              >
-                <Icon name="video" size="xl" color={colors.text.tertiary} />
-              </LinearGradient>
-            )}
-            {series.isComplete && (
-              <View style={styles.completeBadge}>
-                <Icon name="check-circle" size="xs" color={colors.gold} />
-                <Text style={styles.completeBadgeText}>Complete</Text>
-              </View>
-            )}
-          </View>
+          <Text
+            style={[
+              styles.chipText,
+              selectedCategory === cat.key && styles.chipTextActive,
+            ]}
+          >
+            {cat.label}
+          </Text>
+        </Pressable>
+      ))}
+    </ScrollView>
+  );
 
-          {/* Info */}
-          <View style={styles.cardInfo}>
-            <Text
-              style={[styles.seriesTitle, { textAlign: rtlTextAlign(isRTL) }]}
-              numberOfLines={2}
-            >
-              {series.title}
-            </Text>
-
-            {/* Creator row */}
-            <View style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <Avatar uri={series.creator.avatarUrl} name={series.creator.displayName} size="xs" />
-              <Text style={styles.creatorName} numberOfLines={1}>
-                {series.creator.displayName}
+  const renderSeriesCard = ({ item, index }: { item: SeriesItem; index: number }) => (
+    <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
+      <Pressable
+        style={styles.seriesCard}
+        onPress={() => handleSeriesPress(item)}
+        accessibilityRole="button"
+        accessibilityLabel={item.title}
+      >
+        {/* Cover Image */}
+        <View style={styles.coverWrap}>
+          {item.coverUrl ? (
+            <Image
+              source={{ uri: item.coverUrl }}
+              style={styles.coverImage}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[styles.coverImage, styles.coverPlaceholder]}>
+              <Icon name="layers" size="xl" color={colors.text.tertiary} />
+            </View>
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.8)']}
+            style={styles.coverGradient}
+          />
+          {/* Badges on cover */}
+          <View style={styles.coverBadgeRow}>
+            <View style={styles.episodeBadge}>
+              <Icon name="layers" size="xs" color={colors.text.primary} />
+              <Text style={styles.episodeBadgeText}>
+                {item.episodeCount} {t('series.episodes', 'episodes')}
               </Text>
             </View>
-
-            {/* Meta */}
-            <View style={[styles.metaRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-                <Icon name="video" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.metaText}>
-                  {t('gamification.series.episodes', { count: series.episodeCount })}
-                </Text>
-              </View>
-              <View style={[styles.metaItem, { flexDirection: rtlFlexRow(isRTL) }]}>
-                <Icon name="users" size="xs" color={colors.text.tertiary} />
-                <Text style={styles.metaText}>
-                  {t('gamification.series.followers', { count: series.followerCount })}
-                </Text>
-              </View>
-            </View>
-
-            {/* Follow button */}
-            <View style={styles.followBtnWrap}>
-              {series.isFollowing ? (
-                <View style={styles.followingBadge}>
-                  <Icon name="check" size="xs" color={colors.emerald} />
-                  <Text style={styles.followingText}>{t('gamification.series.following')}</Text>
-                </View>
-              ) : (
-                <GradientButton
-                  label={t('common.follow')}
-                  onPress={() => {}}
-                  size="sm"
-                  variant="secondary"
-                />
-              )}
-            </View>
           </View>
-        </LinearGradient>
+          {/* Title on cover */}
+          <View style={styles.coverBottom}>
+            <Text style={styles.seriesTitle} numberOfLines={2}>
+              {item.title}
+            </Text>
+          </View>
+        </View>
+
+        {/* Bottom info */}
+        <View style={styles.seriesInfo}>
+          <View style={styles.creatorRow}>
+            <Avatar
+              uri={item.creator.avatarUrl}
+              name={item.creator.displayName}
+              size="sm"
+            />
+            <View style={styles.creatorInfo}>
+              <Text style={styles.creatorName} numberOfLines={1}>
+                {item.creator.displayName}
+              </Text>
+              <Text style={styles.followerCount}>
+                {item.followerCount.toLocaleString()} {t('series.followers', 'followers')}
+              </Text>
+            </View>
+            <Pressable
+              style={[
+                styles.followBtn,
+                item.isFollowing && styles.followBtnActive,
+              ]}
+              onPress={() => handleFollowToggle(item)}
+              accessibilityRole="button"
+              accessibilityLabel={item.isFollowing ? 'Unfollow' : 'Follow'}
+            >
+              <Text
+                style={[
+                  styles.followBtnText,
+                  item.isFollowing && styles.followBtnTextActive,
+                ]}
+              >
+                {item.isFollowing
+                  ? t('series.following', 'Following')
+                  : t('series.follow', 'Follow')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       </Pressable>
     </Animated.View>
   );
-}
 
-function LoadingSkeleton() {
-  return (
+  const renderSkeleton = () => (
     <View style={styles.skeletonWrap}>
-      <View style={styles.chipRow}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} />
-        ))}
-      </View>
-      {Array.from({ length: 4 }).map((_, i) => (
-        <View key={i} style={styles.skeletonCard}>
-          <Skeleton.Rect width={120} height={120} borderRadius={radius.lg} />
-          <View style={{ flex: 1, gap: spacing.sm, padding: spacing.sm }}>
-            <Skeleton.Text width="80%" />
-            <View style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
-              <Skeleton.Circle size={24} />
-              <Skeleton.Text width="40%" />
+      {Array.from({ length: 3 }).map((_, i) => (
+        <View key={`skel-${i}`} style={styles.seriesCard}>
+          <Skeleton.Rect width="100%" height={180} borderRadius={radius.lg} />
+          <View style={{ padding: spacing.md, gap: spacing.sm }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+              <Skeleton.Circle size={32} />
+              <View style={{ flex: 1 }}>
+                <Skeleton.Text width="50%" />
+                <Skeleton.Text width="30%" />
+              </View>
             </View>
-            <Skeleton.Text width="60%" />
           </View>
         </View>
       ))}
     </View>
   );
-}
-
-function SeriesDiscoverScreen() {
-  const { t, isRTL } = useTranslation();
-  const router = useRouter();
-  const haptic = useHaptic();
-  const [selectedCategory, setSelectedCategory] = useState('all');
-
-  const { data, isLoading, isRefetching, refetch, hasNextPage, fetchNextPage } = useInfiniteQuery({
-    queryKey: ['series-discover', selectedCategory],
-    queryFn: async ({ pageParam }) => {
-      const params: { cursor?: string; category?: string } = {};
-      if (pageParam) params.cursor = pageParam as string;
-      if (selectedCategory !== 'all') params.category = selectedCategory;
-      const res = await gamificationApi.discoverSeries(params);
-      return res.data as { data: Series[]; meta: { cursor?: string; hasMore: boolean } };
-    },
-    getNextPageParam: (lastPage) => lastPage.meta.cursor,
-    initialPageParam: undefined as string | undefined,
-  });
-
-  const seriesList = data?.pages.flatMap((p) => p.data) ?? [];
-
-  const renderItem = useCallback(
-    ({ item, index }: { item: Series; index: number }) => (
-      <SeriesCard series={item} index={index} isRTL={isRTL} />
-    ),
-    [isRTL],
-  );
-
-  const keyExtractor = useCallback((item: Series) => item.id, []);
-
-  const ListHeader = (
-    <FlatList
-      data={CATEGORIES}
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      keyExtractor={(c) => c.key}
-      inverted={isRTL}
-      contentContainerStyle={styles.chipRow}
-      renderItem={({ item: cat }) => (
-        <Pressable
-          onPress={() => {
-            haptic.light();
-            setSelectedCategory(cat.key);
-          }}
-          accessibilityRole="tab"
-          accessibilityState={{ selected: selectedCategory === cat.key }}
-        >
-          <LinearGradient
-            colors={
-              selectedCategory === cat.key
-                ? [colors.emeraldLight, colors.emerald]
-                : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']
-            }
-            style={styles.chip}
-          >
-            <Text
-              style={[
-                styles.chipText,
-                selectedCategory === cat.key && styles.chipTextActive,
-              ]}
-            >
-              {cat.label}
-            </Text>
-          </LinearGradient>
-        </Pressable>
-      )}
-    />
-  );
 
   return (
     <View style={styles.container}>
       <GlassHeader
-        title={t('gamification.series.title')}
+        title={t('series.discoverTitle', 'Series')}
         leftAction={{
           icon: 'arrow-left',
           onPress: () => router.back(),
-          accessibilityLabel: t('common.back'),
+          accessibilityLabel: t('common.back', 'Back'),
         }}
       />
 
-      <View style={styles.content}>
-        {isLoading ? (
-          <View style={styles.loadingWrap}>
-            <LoadingSkeleton />
+      <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
+        {seriesQuery.isLoading ? (
+          <View style={styles.listPadding}>
+            {renderCategoryChips()}
+            {renderSkeleton()}
           </View>
         ) : (
           <FlatList
-            data={seriesList}
-            renderItem={renderItem}
-            keyExtractor={keyExtractor}
-            ListHeaderComponent={ListHeader}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            onEndReached={() => {
-              if (hasNextPage) fetchNextPage();
-            }}
+            data={allSeries}
+            renderItem={renderSeriesCard}
+            keyExtractor={(item) => item.id}
+            ListHeaderComponent={renderCategoryChips}
+            ListEmptyComponent={
+              <EmptyState
+                icon="layers"
+                title={t('series.empty', 'No series found')}
+                subtitle={t('series.emptySub', 'Check back later for new content')}
+              />
+            }
+            ListFooterComponent={
+              seriesQuery.isFetchingNextPage ? (
+                <View style={styles.footerLoader}>
+                  <Skeleton.Rect width={120} height={20} borderRadius={radius.sm} />
+                </View>
+              ) : null
+            }
+            contentContainerStyle={styles.listPadding}
+            onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
             refreshControl={
               <RefreshControl
-                refreshing={isRefetching}
-                onRefresh={refetch}
+                refreshing={seriesQuery.isFetching && !seriesQuery.isLoading}
+                onRefresh={handleRefresh}
                 tintColor={colors.emerald}
-              />
-            }
-            ListEmptyComponent={
-              <EmptyState
-                icon="video"
-                title={t('gamification.series.empty')}
-                subtitle={t('gamification.series.emptySubtitle')}
               />
             }
           />
@@ -299,10 +317,10 @@ function SeriesDiscoverScreen() {
   );
 }
 
-export default function SeriesDiscoverScreenWrapper() {
+export default function SeriesDiscoverScreen() {
   return (
     <ScreenErrorBoundary>
-      <SeriesDiscoverScreen />
+      <SeriesDiscoverContent />
     </ScreenErrorBoundary>
   );
 }
@@ -314,47 +332,49 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingTop: 100,
   },
-  loadingWrap: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
-  },
-  listContent: {
+  listPadding: {
     paddingHorizontal: spacing.base,
     paddingBottom: spacing['2xl'],
   },
-  // Chips
+  // Category chips
   chipRow: {
     gap: spacing.sm,
-    paddingVertical: spacing.md,
+    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
   },
   chip: {
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
+    backgroundColor: colors.dark.bgCard,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  chipActive: {
+    backgroundColor: colors.active.emerald10,
+    borderColor: colors.emerald,
   },
   chipText: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: fontSize.sm,
     color: colors.text.secondary,
-  },
-  chipTextActive: {
-    color: '#FFFFFF',
+    fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
   },
-  // Card
+  chipTextActive: {
+    color: colors.emerald,
+  },
+  // Series card
   seriesCard: {
+    backgroundColor: colors.dark.bgCard,
     borderRadius: radius.lg,
     overflow: 'hidden',
-    borderWidth: 0.5,
-    borderColor: colors.dark.borderLight,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
     marginBottom: spacing.md,
-    flexDirection: 'row',
   },
   coverWrap: {
-    width: 120,
-    height: 140,
+    width: '100%',
+    height: 180,
     position: 'relative',
   },
   coverImage: {
@@ -362,89 +382,100 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   coverPlaceholder: {
-    width: '100%',
-    height: '100%',
+    backgroundColor: colors.dark.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  completeBadge: {
+  coverGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+  },
+  coverBadgeRow: {
     position: 'absolute',
     top: spacing.sm,
-    left: spacing.sm,
+    right: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  episodeBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xs,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(13,17,23,0.8)',
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
   },
-  completeBadgeText: {
+  episodeBadgeText: {
+    color: colors.text.primary,
+    fontSize: fontSize.xs,
     fontFamily: fonts.bodySemiBold,
-    fontSize: 9,
-    color: colors.gold,
   },
-  cardInfo: {
-    flex: 1,
-    padding: spacing.md,
-    gap: spacing.sm,
-    justifyContent: 'center',
+  coverBottom: {
+    position: 'absolute',
+    bottom: spacing.md,
+    left: spacing.md,
+    right: spacing.md,
   },
   seriesTitle: {
-    fontFamily: fonts.bodySemiBold,
-    fontSize: fontSize.base,
     color: colors.text.primary,
+    fontSize: fontSize.lg,
+    fontFamily: fonts.bodySemiBold,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  // Series info
+  seriesInfo: {
+    padding: spacing.md,
   },
   creatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
   },
-  creatorName: {
-    fontFamily: fonts.body,
-    fontSize: fontSize.xs,
-    color: colors.text.secondary,
+  creatorInfo: {
     flex: 1,
   },
-  metaRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  metaText: {
-    fontFamily: fonts.body,
-    fontSize: fontSize.xs,
-    color: colors.text.tertiary,
-  },
-  followBtnWrap: {
-    alignItems: 'flex-start',
-  },
-  followingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    backgroundColor: colors.active.emerald10,
-  },
-  followingText: {
+  creatorName: {
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
     fontFamily: fonts.bodySemiBold,
+  },
+  followerCount: {
+    color: colors.text.tertiary,
     fontSize: fontSize.xs,
-    color: colors.emerald,
+    fontFamily: fonts.body,
+    marginTop: 2,
+  },
+  followBtn: {
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.emerald,
+  },
+  followBtnActive: {
+    backgroundColor: colors.dark.surface,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+  },
+  followBtnText: {
+    color: '#FFFFFF',
+    fontSize: fontSize.sm,
+    fontFamily: fonts.bodySemiBold,
+  },
+  followBtnTextActive: {
+    color: colors.text.secondary,
   },
   // Skeleton
   skeletonWrap: {
     gap: spacing.md,
   },
-  skeletonCard: {
-    flexDirection: 'row',
-    borderRadius: radius.lg,
-    backgroundColor: colors.dark.bgCard,
-    overflow: 'hidden',
+  footerLoader: {
+    paddingVertical: spacing.base,
+    alignItems: 'center',
   },
 });

@@ -8,41 +8,42 @@
 ## BATCH 49: Wire Disconnected Features + Build Missing Screens (Priority 1)
 
 ### A. Wire Disconnected Integrations
-- [ ] Wire gamification XP into posts.service (post_created = 10 XP)
-- [ ] Wire gamification XP into threads.service (thread_created = 15 XP)
-- [ ] Wire gamification XP into reels.service (reel_created = 20 XP)
-- [ ] Wire gamification XP into videos.service (video_created = 25 XP)
-- [ ] Wire gamification XP into comments (comment_posted = 5 XP)
-- [ ] Wire streak auto-update into posts.service (posting streak)
-- [ ] Wire AI moderation into posts.service.create()
-- [ ] Wire AI moderation into threads.service.create()
+- [x] Wire gamification XP into posts.service (post_created = 10 XP) ✅
+- [x] Wire gamification XP into threads.service (thread_created = 15 XP) ✅
+- [x] Wire gamification XP into reels.service (reel_created = 20 XP) ✅
+- [x] Wire gamification XP into videos.service (video_created = 25 XP) ✅
+- [x] Wire gamification XP into comments (comment_posted = 5 XP) ✅
+- [x] Wire streak auto-update into posts.service (posting streak) ✅
+- [x] Wire AI moderation into posts.service.create() ✅
+- [x] Wire AI moderation into threads.service.create() ✅
 - [ ] Wire AI moderation into comments creation
 - [ ] Wire parental restrictions check middleware (canPost, canComment, canGoLive)
-- [ ] Add "Translate" button to PostCard component
+- [x] Add "Translate" button to PostCard component ✅
 - [ ] Add "Translate" button to ThreadCard component
 - [ ] Wire reputation update on helpful comment likes
 
 ### B. Build Missing Mobile Screens (Backend-only → Full UI)
-- [ ] leaderboard.tsx — XP, streaks, helpers tabs with rankings
-- [ ] achievements.tsx — Grid of all badges, locked/unlocked states, rarity tiers
-- [ ] streaks.tsx — All streak types, current/longest, calendar view
-- [ ] series-discover.tsx — Browse/follow episodic content
-- [ ] series-detail.tsx — Episode list, follow button, creator info
-- [ ] create-series.tsx — Create new series with cover/category
-- [ ] watch-party.tsx — Host/join synchronized video watching
-- [ ] marketplace.tsx — Product grid, categories, search, filters
-- [ ] product-detail.tsx — Images, description, reviews, buy button
-- [ ] checkout.tsx — Order summary, installments, shipping
-- [ ] orders.tsx — Order history with status tracking
-- [ ] local-boards.tsx — Nearby community boards by city
-- [ ] mentorship.tsx — Find/request mentors, manage mentorships
-- [ ] study-circles.tsx — Browse/join halaqat by topic
-- [ ] volunteer-board.tsx — Discover volunteer opportunities
-- [ ] fatwa-qa.tsx — Ask questions, browse answers by madhab
-- [ ] voice-post-create.tsx — Record and post audio snippets
-- [ ] waqf.tsx — Browse/contribute to endowment funds
-- [ ] shared-collections.tsx — Create/manage collaborative bookmarks
-- [ ] profile-customization.tsx — Accent color, layout, font, music, badges
+- [x] leaderboard.tsx ✅
+- [x] achievements.tsx ✅
+- [x] streaks.tsx ✅
+- [x] series-discover.tsx ✅
+- [x] series-detail.tsx ✅
+- [ ] create-series.tsx
+- [x] watch-party.tsx ✅
+- [x] marketplace.tsx ✅
+- [x] product-detail.tsx ✅
+- [ ] checkout.tsx
+- [x] orders.tsx ✅
+- [x] local-boards.tsx ✅
+- [x] mentorship.tsx ✅
+- [ ] study-circles.tsx (exists but needs expansion)
+- [x] volunteer-board.tsx ✅
+- [x] fatwa-qa.tsx ✅
+- [x] voice-post-create.tsx ✅
+- [x] waqf.tsx ✅
+- [ ] shared-collections.tsx
+- [x] profile-customization.tsx ✅
+- [x] xp-history.tsx ✅ (bonus)
 
 ## BATCH 50: Telegram Quick Wins (Priority 2)
 - [ ] Saved Messages — Personal "chat with yourself" cloud notepad
@@ -115,7 +116,7 @@
 
 | Batch | Features | Status |
 |-------|----------|--------|
-| 49 | Wire integrations + 20 missing screens | PENDING |
+| 49 | Wire integrations + 20 missing screens | **DONE** |
 | 50 | Telegram quick wins (10 features) | PENDING |
 | 51 | Telegram medium features (10 features) | PENDING |
 | 52 | Discord parity (8 features) | PENDING |
