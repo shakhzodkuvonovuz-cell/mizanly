@@ -2294,5 +2294,11 @@
     "livermorium": "Livermorium",
     "tennessine": "Tennessine",
     "oganesson": "Oganesson"
+  },
+  "createVideo": {
+    "selectThumbnail": "اختر صورة مصغرة",
+    "customThumbnail": "مخصص",
+    "normalizeAudio": "تسوية الصوت",
+    "normalizeAudioDesc": "مستويات صوت متسقة"
   }
 }

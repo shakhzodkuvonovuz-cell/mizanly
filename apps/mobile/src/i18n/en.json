@@ -2402,5 +2402,11 @@
       "errorTitle": "Could not load watch history",
       "errorSubtitle": "Pull to refresh"
     }
+  },
+  "createVideo": {
+    "selectThumbnail": "Select thumbnail",
+    "customThumbnail": "Custom",
+    "normalizeAudio": "Normalize audio",
+    "normalizeAudioDesc": "Consistent volume levels"
   }
 }
