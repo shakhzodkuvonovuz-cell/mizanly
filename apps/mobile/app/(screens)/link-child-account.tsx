@@ -1,0 +1,382 @@
+import { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  RefreshControl, TextInput, Alert,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Icon } from '@/components/ui/Icon';
+import { Avatar } from '@/components/ui/Avatar';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { GlassHeader } from '@/components/ui/GlassHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { GradientButton } from '@/components/ui/GradientButton';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { colors, spacing, fontSize, radius } from '@/theme';
+import { searchApi, parentalApi } from '@/services/api';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
+import type { User } from '@/types';
+
+export default function LinkChildAccountScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const haptic = useHaptic();
+  const { t, isRTL } = useTranslation();
+  const queryClient = useQueryClient();
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [pinStep, setPinStep] = useState<'search' | 'confirm' | 'pin' | 'confirmPin'>('search');
+
+  const searchResults = useQuery({
+    queryKey: ['user-search-link', searchQuery],
+    queryFn: () => searchApi.search(searchQuery, 'users'),
+    enabled: searchQuery.length >= 2,
+  });
+
+  const results = searchResults.data as { people?: User[] } | undefined;
+  const users = results?.people ?? [];
+
+  const linkMutation = useMutation({
+    mutationFn: (dto: { childUserId: string; pin: string }) =>
+      parentalApi.linkChild(dto),
+    onSuccess: () => {
+      haptic.success();
+      queryClient.invalidateQueries({ queryKey: ['parental-children'] });
+      queryClient.invalidateQueries({ queryKey: ['parental-has-controls'] });
+      router.back();
+    },
+    onError: (err: Error) => {
+      Alert.alert(t('common.error'), err.message);
+    },
+  });
+
+  const handleSelectUser = (user: User) => {
+    haptic.selection();
+    setSelectedUser(user);
+    setPinStep('confirm');
+  };
+
+  const handleConfirm = () => {
+    setPinStep('pin');
+  };
+
+  const handlePinDigit = (digit: string, isConfirm: boolean) => {
+    haptic.light();
+    if (isConfirm) {
+      const next = confirmPin + digit;
+      setConfirmPin(next);
+      if (next.length === 4) {
+        if (next === pin) {
+          // PINs match, link!
+          if (selectedUser) {
+            linkMutation.mutate({ childUserId: selectedUser.id, pin });
+          }
+        } else {
+          haptic.error();
+          setConfirmPin('');
+          Alert.alert(t('parentalControls.pinMismatch'), t('parentalControls.pinMismatchMessage'));
+        }
+      }
+    } else {
+      const next = pin + digit;
+      setPin(next);
+      if (next.length === 4) {
+        setPinStep('confirmPin');
+      }
+    }
+  };
+
+  const handlePinDelete = (isConfirm: boolean) => {
+    haptic.light();
+    if (isConfirm) {
+      setConfirmPin((p) => p.slice(0, -1));
+    } else {
+      setPin((p) => p.slice(0, -1));
+    }
+  };
+
+  const renderPinPad = (currentPin: string, isConfirm: boolean) => {
+    const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'];
+    return (
+      <Animated.View entering={FadeInDown.duration(400)} style={styles.pinContainer}>
+        <Icon name="lock" size="xl" color={colors.emerald} />
+        <Text style={styles.pinTitle}>
+          {isConfirm ? t('parentalControls.confirmNewPin') : t('parentalControls.setPin')}
+        </Text>
+        <Text style={styles.pinSubtitle}>
+          {isConfirm ? t('parentalControls.confirmPinSubtitle') : t('parentalControls.setPinSubtitle')}
+        </Text>
+
+        <View style={styles.pinDots}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={[styles.pinDot, i < currentPin.length && styles.pinDotFilled]} />
+          ))}
+        </View>
+
+        <View style={styles.numPad}>
+          {digits.map((d, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.numKey, d === '' && styles.numKeyEmpty]}
+              activeOpacity={d === '' ? 1 : 0.6}
+              onPress={() => {
+                if (d === 'del') handlePinDelete(isConfirm);
+                else if (d !== '') handlePinDigit(d, isConfirm);
+              }}
+              disabled={d === ''}
+            >
+              {d === 'del' ? (
+                <Icon name="arrow-left" size="md" color={colors.text.primary} />
+              ) : (
+                <Text style={styles.numKeyText}>{d}</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Animated.View>
+    );
+  };
+
+  // PIN setup step
+  if (pinStep === 'pin') {
+    return (
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('parentalControls.linkChildAccount')}
+            leftAction={{ icon: 'arrow-left', onPress: () => setPinStep('confirm'), accessibilityLabel: t('common.back') }}
+          />
+          <View style={[styles.pinGate, { paddingTop: insets.top + 80 }]}>
+            {renderPinPad(pin, false)}
+          </View>
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
+  // Confirm PIN step
+  if (pinStep === 'confirmPin') {
+    return (
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('parentalControls.linkChildAccount')}
+            leftAction={{ icon: 'arrow-left', onPress: () => { setPinStep('pin'); setPin(''); setConfirmPin(''); }, accessibilityLabel: t('common.back') }}
+          />
+          <View style={[styles.pinGate, { paddingTop: insets.top + 80 }]}>
+            {renderPinPad(confirmPin, true)}
+          </View>
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
+  // Confirmation step
+  if (pinStep === 'confirm' && selectedUser) {
+    return (
+      <ScreenErrorBoundary>
+        <View style={styles.container}>
+          <GlassHeader
+            title={t('parentalControls.linkChildAccount')}
+            leftAction={{ icon: 'arrow-left', onPress: () => { setPinStep('search'); setSelectedUser(null); }, accessibilityLabel: t('common.back') }}
+          />
+          <View style={[styles.confirmContainer, { paddingTop: insets.top + 80 }]}>
+            <Animated.View entering={FadeInDown.duration(400)}>
+              <LinearGradient
+                colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+                style={styles.confirmCard}
+              >
+                <Avatar
+                  uri={selectedUser.avatarUrl ?? null}
+                  name={selectedUser.displayName ?? selectedUser.username}
+                  size="xl"
+                />
+                <Text style={styles.confirmName}>
+                  {selectedUser.displayName ?? selectedUser.username}
+                </Text>
+                <Text style={styles.confirmUsername}>@{selectedUser.username}</Text>
+                <Text style={styles.confirmHint}>
+                  {t('parentalControls.linkConfirmHint')}
+                </Text>
+
+                <View style={styles.confirmActions}>
+                  <GradientButton
+                    label={t('parentalControls.linkAccount')}
+                    icon="check"
+                    onPress={handleConfirm}
+                    loading={linkMutation.isPending}
+                  />
+                </View>
+              </LinearGradient>
+            </Animated.View>
+          </View>
+        </View>
+      </ScreenErrorBoundary>
+    );
+  }
+
+  // Search step
+  return (
+    <ScreenErrorBoundary>
+      <View style={styles.container}>
+        <GlassHeader
+          title={t('parentalControls.linkChildAccount')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+        />
+
+        <View style={[styles.body, { paddingTop: insets.top + 60 }]}>
+          {/* Search Input */}
+          <View style={[styles.searchContainer, { flexDirection: rtlFlexRow(isRTL) }]}>
+            <Icon name="search" size="sm" color={colors.text.tertiary} />
+            <TextInput
+              style={[styles.searchInput, { textAlign: rtlTextAlign(isRTL) }]}
+              placeholder={t('parentalControls.searchPlaceholder')}
+              placeholderTextColor={colors.text.tertiary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')}>
+                <Icon name="x" size="sm" color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <FlatList
+            data={users}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={searchResults.isFetching && !searchResults.isLoading}
+                onRefresh={() => searchResults.refetch()}
+                tintColor={colors.emerald}
+              />
+            }
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
+                onPress={() => handleSelectUser(item)}
+                activeOpacity={0.7}
+              >
+                <Avatar
+                  uri={item.avatarUrl ?? null}
+                  name={item.displayName ?? item.username}
+                  size="md"
+                />
+                <View style={[styles.userInfo, rtlMargin(isRTL, spacing.md, 0)]}>
+                  <Text style={[styles.userName, { textAlign: rtlTextAlign(isRTL) }]}>
+                    {item.displayName ?? item.username}
+                  </Text>
+                  <Text style={[styles.userHandle, { textAlign: rtlTextAlign(isRTL) }]}>
+                    @{item.username}
+                  </Text>
+                </View>
+                <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+              </TouchableOpacity>
+            )}
+            ListEmptyComponent={
+              searchResults.isLoading ? (
+                <View style={{ gap: spacing.md, paddingTop: spacing.md }}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton.ConversationItem key={i} />
+                  ))}
+                </View>
+              ) : searchQuery.length >= 2 ? (
+                <EmptyState
+                  icon="search"
+                  title={t('parentalControls.noResults')}
+                  subtitle={t('parentalControls.noResultsSubtitle')}
+                />
+              ) : (
+                <EmptyState
+                  icon="search"
+                  title={t('parentalControls.searchHint')}
+                  subtitle={t('parentalControls.searchHintSubtitle')}
+                />
+              )
+            }
+          />
+        </View>
+      </View>
+    </ScreenErrorBoundary>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.dark.bg },
+  body: { flex: 1 },
+  listContent: { paddingHorizontal: spacing.base, paddingBottom: 60 },
+  pinGate: { flex: 1, alignItems: 'center' },
+
+  // Search
+  searchContainer: {
+    flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
+    backgroundColor: colors.dark.bgElevated, borderRadius: radius.md,
+    paddingHorizontal: spacing.md, marginHorizontal: spacing.base,
+    marginBottom: spacing.md, borderWidth: 1, borderColor: colors.dark.border,
+  },
+  searchInput: {
+    flex: 1, color: colors.text.primary, fontSize: fontSize.base,
+    paddingVertical: spacing.md,
+  },
+
+  // User row
+  userRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: spacing.md, paddingHorizontal: spacing.sm,
+    borderBottomWidth: 1, borderBottomColor: colors.dark.border,
+  },
+  userInfo: { flex: 1, marginLeft: spacing.md },
+  userName: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600' },
+  userHandle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: 2 },
+
+  // Confirm
+  confirmContainer: { flex: 1, alignItems: 'center', paddingHorizontal: spacing.base },
+  confirmCard: {
+    borderRadius: radius.lg, borderWidth: 1, borderColor: colors.dark.border,
+    padding: spacing.xl, alignItems: 'center', width: '100%',
+  },
+  confirmName: {
+    color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700',
+    marginTop: spacing.md,
+  },
+  confirmUsername: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  confirmHint: {
+    color: colors.text.tertiary, fontSize: fontSize.sm, textAlign: 'center',
+    marginTop: spacing.lg, lineHeight: 20,
+  },
+  confirmActions: { marginTop: spacing.xl, width: '100%' },
+
+  // PIN Pad
+  pinContainer: { alignItems: 'center', gap: spacing.base },
+  pinTitle: { color: colors.text.primary, fontSize: fontSize.lg, fontWeight: '700', marginTop: spacing.md },
+  pinSubtitle: { color: colors.text.secondary, fontSize: fontSize.sm, marginTop: spacing.xs },
+  pinDots: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.xl },
+  pinDot: {
+    width: 16, height: 16, borderRadius: radius.full,
+    borderWidth: 2, borderColor: colors.dark.border,
+  },
+  pinDotFilled: { backgroundColor: colors.emerald, borderColor: colors.emerald },
+  numPad: {
+    flexDirection: 'row', flexWrap: 'wrap', width: 260,
+    justifyContent: 'center', marginTop: spacing.xl,
+  },
+  numKey: {
+    width: 72, height: 72, borderRadius: radius.full,
+    alignItems: 'center', justifyContent: 'center', margin: spacing.xs,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  numKeyEmpty: { backgroundColor: 'transparent' },
+  numKeyText: { color: colors.text.primary, fontSize: fontSize.xl, fontWeight: '600' },
+});
