@@ -86,21 +86,24 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 601 |
-| Total Lines of Code | 55,844 |
+| Total Source Files | 615 |
+| Total Lines of Code | 151,461 |
+| Mobile Code | 105,045 lines |
+| Backend Code | 46,085 lines |
 | Mobile Screens | 164 |
 | Backend Modules | 59 |
 | API Endpoints | 549 |
 | API Controllers | 61 |
 | Prisma Models | 107 |
 | Prisma Schema Lines | 2,235 |
-| Test Files | 144 |
+| Test Files | 68 |
 | UI Components | 28 |
 | Custom Hooks | 13 |
 | Service Files | 16 |
-| Translation Keys | 2,659+ (per language) |
+| Translation Keys | 2,659 (EN) / 2,551 (AR) |
 | Supported Languages | 2 (English + Arabic) |
-| Git Commits | 306+ |
+| Git Commits | 307+ |
+| Plan Documents | 50 |
 | Development Batches | 43 |
 
 ---
