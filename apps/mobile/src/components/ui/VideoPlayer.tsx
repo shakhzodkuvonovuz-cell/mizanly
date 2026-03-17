@@ -16,12 +16,16 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
-type PlaybackSpeed = 0.5 | 1 | 1.25 | 1.5 | 2;
+type PlaybackSpeed = 0.25 | 0.5 | 1 | 1.25 | 1.5 | 2;
+type VideoQuality = 'auto' | '360p' | '720p' | '1080p' | '4k';
 
 interface VideoPlayerProps {
   uri: string;
+  hlsUrl?: string;
   thumbnailUrl?: string;
   duration?: number;
+  qualities?: string[];
+  isLooping?: boolean;
   autoPlay?: boolean;
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
@@ -29,8 +33,11 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({
   uri,
+  hlsUrl,
   thumbnailUrl,
   duration,
+  qualities,
+  isLooping,
   autoPlay = false,
   onProgress,
   onComplete,
@@ -46,6 +53,9 @@ export function VideoPlayer({
   const [isLoading, setIsLoading] = useState(true);
   const [isBuffering, setIsBuffering] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedQuality, setSelectedQuality] = useState<VideoQuality>('auto');
+  const [qualitySheetVisible, setQualitySheetVisible] = useState(false);
+  const [looping, setLooping] = useState(isLooping ?? false);
 
   const haptic = useHaptic();
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -165,6 +175,9 @@ export function VideoPlayer({
     resetControlsTimeout();
   };
 
+  // Prefer HLS URL (adaptive bitrate) over raw R2 URL
+  const effectiveUri = hlsUrl || uri;
+
   if (error) {
     return (
       <View style={styles.errorContainer}>
@@ -180,7 +193,7 @@ export function VideoPlayer({
       <Pressable onPress={handleVideoPress} style={styles.videoPressable}>
         <Video
           ref={videoRef}
-          source={{ uri }}
+          source={{ uri: effectiveUri }}
           style={styles.video}
           resizeMode={ResizeMode.CONTAIN}
           shouldPlay={autoPlay}
@@ -188,7 +201,7 @@ export function VideoPlayer({
           onPlaybackStatusUpdate={handlePlaybackStatusUpdate}
           volume={isMuted ? 0 : volume}
           rate={playbackSpeed}
-          isLooping={false}
+          isLooping={looping}
           onLoadStart={() => setIsLoading(true)}
         />
         {thumbnailUrl && !status?.isLoaded && (
@@ -220,12 +233,22 @@ export function VideoPlayer({
           >
             {/* Top controls row */}
             <View style={styles.topControls}>
-              <TouchableOpacity onPress={toggleFullscreen} style={styles.iconButton}>
-                <Icon name="maximize" size="md" color={colors.text.primary} />
+              <TouchableOpacity onPress={() => { haptic.light(); setLooping(!looping); }} style={styles.iconButton}>
+                <Icon name="repeat" size="md" color={looping ? colors.emerald : colors.text.primary} />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}>
-                <Text style={styles.speedText}>{playbackSpeed}x</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+                {qualities && qualities.length > 0 && (
+                  <TouchableOpacity onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}>
+                    <Text style={styles.speedText}>{selectedQuality === 'auto' ? 'Auto' : selectedQuality}</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={toggleFullscreen} style={styles.iconButton}>
+                  <Icon name="maximize" size="md" color={colors.text.primary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}>
+                  <Text style={styles.speedText}>{playbackSpeed}x</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Center play/pause button */}
@@ -285,6 +308,11 @@ export function VideoPlayer({
       {/* Speed selector bottom sheet */}
       <BottomSheet visible={speedSheetVisible} onClose={() => setSpeedSheetVisible(false)}>
         <BottomSheetItem
+          label="0.25x"
+          onPress={() => changeSpeed(0.25)}
+          icon={<Icon name="clock" size="md" color={colors.text.secondary} />}
+        />
+        <BottomSheetItem
           label="0.5x"
           onPress={() => changeSpeed(0.5)}
           icon={<Icon name="clock" size="md" color={colors.text.secondary} />}
@@ -309,6 +337,23 @@ export function VideoPlayer({
           onPress={() => changeSpeed(2)}
           icon={<Icon name="clock" size="md" color={colors.text.secondary} />}
         />
+      </BottomSheet>
+
+      {/* Quality selector bottom sheet */}
+      <BottomSheet visible={qualitySheetVisible} onClose={() => setQualitySheetVisible(false)}>
+        <BottomSheetItem
+          label="Auto"
+          onPress={() => { setSelectedQuality('auto'); setQualitySheetVisible(false); }}
+          icon={<Icon name="settings" size="md" color={selectedQuality === 'auto' ? colors.emerald : colors.text.secondary} />}
+        />
+        {(qualities || []).map((q) => (
+          <BottomSheetItem
+            key={q}
+            label={q}
+            onPress={() => { setSelectedQuality(q as VideoQuality); setQualitySheetVisible(false); }}
+            icon={<Icon name="layers" size="md" color={selectedQuality === q ? colors.emerald : colors.text.secondary} />}
+          />
+        ))}
       </BottomSheet>
     </View>
   );
