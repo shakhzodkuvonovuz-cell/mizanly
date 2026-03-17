@@ -17,21 +17,23 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi, threadsApi, reelsApi, videosApi, usersApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const REASONS = [
-  { label: 'Spam', value: 'SPAM' },
-  { label: 'Harassment', value: 'HARASSMENT' },
-  { label: 'Hate speech', value: 'HATE_SPEECH' },
-  { label: 'Nudity', value: 'NUDITY' },
-  { label: 'Violence', value: 'VIOLENCE' },
-  { label: 'Misinformation', value: 'MISINFORMATION' },
-  { label: 'Impersonation', value: 'IMPERSONATION' },
-  { label: 'Other', value: 'OTHER' },
+  { labelKey: 'screens.report.reasonSpam', value: 'SPAM' },
+  { labelKey: 'screens.report.reasonHarassment', value: 'HARASSMENT' },
+  { labelKey: 'screens.report.reasonHateSpeech', value: 'HATE_SPEECH' },
+  { labelKey: 'screens.report.reasonNudity', value: 'NUDITY' },
+  { labelKey: 'screens.report.reasonViolence', value: 'VIOLENCE' },
+  { labelKey: 'screens.report.reasonMisinformation', value: 'MISINFORMATION' },
+  { labelKey: 'screens.report.reasonImpersonation', value: 'IMPERSONATION' },
+  { labelKey: 'screens.report.reasonOther', value: 'OTHER' },
 ] as const;
 
 export default function ReportScreen() {
   const params = useLocalSearchParams<{ type: string; id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const [selectedReason, setSelectedReason] = useState<string>('');
   const [details, setDetails] = useState('');
 
@@ -39,7 +41,7 @@ export default function ReportScreen() {
     mutationFn: async () => {
       const { type, id } = params;
       const reason = selectedReason;
-      if (!reason) throw new Error('Please select a reason');
+      if (!reason) throw new Error(t('screens.report.selectReason'));
 
       switch (type) {
         case 'post':
@@ -60,11 +62,11 @@ export default function ReportScreen() {
       }
     },
     onSuccess: () => {
-      Alert.alert('Report Submitted', 'Thank you. We will review this content.');
+      Alert.alert(t('screens.report.successTitle'), t('screens.report.successMessage'));
       router.back();
     },
     onError: (error: Error) => {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('screens.report.errorTitle'), error.message);
     },
   });
 
@@ -75,7 +77,7 @@ export default function ReportScreen() {
   return (
     <View style={styles.container}>
       <GlassHeader
-        title="Report"
+        title={t('screens.report.title')}
         leftAction={{ 
           icon: 'arrow-left', 
           onPress: () => router.back(),
@@ -92,7 +94,7 @@ export default function ReportScreen() {
           >
             <Icon name="flag" size="lg" color={colors.error} />
             <Text style={styles.prompt}>
-              Why are you reporting this {params.type}?
+              {t('screens.report.whyReporting', { type: params.type })}
             </Text>
           </LinearGradient>
         </Animated.View>
@@ -107,7 +109,7 @@ export default function ReportScreen() {
               <Pressable
                 style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
                 onPress={() => setSelectedReason(reason.value)}
-                accessibilityLabel={reason.label}
+                accessibilityLabel={t(reason.labelKey)}
                 accessibilityRole="radio"
                 accessibilityState={{ selected: selectedReason === reason.value }}
               >
@@ -127,7 +129,7 @@ export default function ReportScreen() {
                     )}
                   </LinearGradient>
                   <Text style={[styles.reasonLabel, selectedReason === reason.value && styles.reasonLabelSelected]}>
-                    {reason.label}
+                    {t(reason.labelKey)}
                   </Text>
                   {selectedReason === reason.value && (
                     <LinearGradient
@@ -149,17 +151,17 @@ export default function ReportScreen() {
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             style={styles.detailsCard}
           >
-            <Text style={styles.detailsLabel}>Additional details (optional)</Text>
+            <Text style={styles.detailsLabel}>{t('screens.report.additionalDetails')}</Text>
             <TextInput
               style={styles.detailsInput}
-              placeholder="Provide more information..."
+              placeholder={t('screens.report.detailsPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={details}
               onChangeText={setDetails}
               multiline
               maxLength={500}
               textAlignVertical="top"
-              accessibilityLabel="Additional details input"
+              accessibilityLabel={t('screens.report.additionalDetails')}
             />
             <Text style={styles.charCount}>
               {details.length}/500
@@ -170,7 +172,7 @@ export default function ReportScreen() {
         {/* Submit button */}
         <Animated.View entering={FadeInUp.delay(600).duration(400)}>
           <GradientButton
-            label="Submit Report"
+            label={t('screens.report.submitReport')}
             onPress={handleSubmit}
             disabled={!selectedReason}
             loading={reportMutation.isPending}

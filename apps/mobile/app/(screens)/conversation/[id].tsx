@@ -35,6 +35,7 @@ import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { messagesApi, uploadApi } from '@/services/api';
 import type { Message, Conversation, ConversationMember } from '@/types';
+import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
 import { io, Socket } from 'socket.io-client';
 
 interface TenorGifResult {
@@ -327,12 +328,13 @@ function GifPicker({ visible, onClose, onSelect }: {
 }
 
 const ReadReceiptIcon = ({ status }: { status: 'sent' | 'delivered' | 'read' }) => {
+  const { isRTL } = useTranslation();
   const color = status === 'read' ? colors.emerald : colors.text.tertiary;
   return (
-    <View style={{ flexDirection: 'row', marginLeft: 4 }}>
+    <View style={{ flexDirection: rtlFlexRow(isRTL), ...rtlMargin(isRTL, 4, 0) }}>
       <Icon name="check" size={12} color={color} />
       {(status === 'delivered' || status === 'read') && (
-        <View style={{ marginLeft: -6 }}><Icon name="check" size={12} color={color} /></View>
+        <View style={rtlMargin(isRTL, -6, 0)}><Icon name="check" size={12} color={color} /></View>
       )}
     </View>
   );

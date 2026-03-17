@@ -21,6 +21,7 @@ import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 
 function ReplyRow({
   reply,
@@ -35,6 +36,7 @@ function ReplyRow({
   onReply: (id: string, username: string) => void;
   onDeleted: () => void;
 }) {
+  const { t, isRTL } = useTranslation();
   const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true });
   const hasReplies = (reply._count?.replies ?? 0) > 0;
   const [liked, setLiked] = useState(reply.isLiked ?? false);
@@ -73,19 +75,19 @@ function ReplyRow({
   }, [deleteMutation]);
 
   return (
-    <View style={styles.replyRow}>
+    <View style={[styles.replyRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       {/* Avatar + line column */}
-      <View style={styles.replyLeft}>
+      <View style={[styles.replyLeft, rtlMargin(isRTL, 0, spacing.sm)]}>
         <Avatar uri={reply.user.avatarUrl} name={reply.user.displayName} size="sm" />
         {hasReplies && <View style={styles.replyLine} />}
       </View>
 
       {/* Content column */}
       <View style={styles.replyRight}>
-        <View style={styles.replyTopRow}>
+        <View style={[styles.replyTopRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Text style={styles.replyName}>{reply.user.displayName}</Text>
           <Text style={styles.replyHandle}>@{reply.user.username}</Text>
-          <Text style={styles.replyTime}>{timeAgo}</Text>
+          <Text style={[styles.replyTime, isRTL ? { marginRight: 'auto', marginLeft: undefined } : undefined]}>{timeAgo}</Text>
         </View>
         <RichText content={reply.content} />
         {reply.mediaUrls.length > 0 && (
@@ -95,7 +97,7 @@ function ReplyRow({
             contentFit="cover"
           />
         )}
-        <View style={styles.replyActions}>
+        <View style={[styles.replyActions, { flexDirection: rtlFlexRow(isRTL) }]}>
           <TouchableOpacity
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
@@ -153,7 +155,7 @@ export default function ThreadDetailScreen() {
   const inputRef = useRef<TextInput>(null);
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const threadQuery = useQuery({
     queryKey: ['thread', id],
@@ -221,7 +223,7 @@ export default function ThreadDetailScreen() {
       <View>
         <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
         <View style={styles.repliesHeader}>
-          <Text style={styles.repliesTitle}>
+          <Text style={[styles.repliesTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('majlis.replies', { count: threadQuery.data.repliesCount })}
           </Text>
         </View>
@@ -301,12 +303,12 @@ export default function ThreadDetailScreen() {
         {user && (
           <View style={styles.inputWrap}>
             {replyTo && (
-              <View style={styles.replyBanner}>
-                <Text style={styles.replyBannerText}>
+              <View style={[styles.replyBanner, { flexDirection: rtlFlexRow(isRTL) }]}>
+                <Text style={[styles.replyBannerText, { textAlign: rtlTextAlign(isRTL) }]}>
                   Replying to @{replyTo.username}
                 </Text>
-                <Pressable 
-                  onPress={() => setReplyTo(null)} 
+                <Pressable
+                  onPress={() => setReplyTo(null)}
                   hitSlop={8}
                   accessibilityLabel="Cancel reply to user"
                   accessibilityRole="button"
@@ -315,7 +317,7 @@ export default function ThreadDetailScreen() {
                 </Pressable>
               </View>
             )}
-            <View style={styles.inputRow}>
+            <View style={[styles.inputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
               <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
               <TextInput
                 ref={inputRef}
@@ -364,7 +366,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md, paddingBottom: spacing.sm,
     borderBottomWidth: 0.5, borderBottomColor: colors.dark.border,
   },
-  replyLeft: { alignItems: 'center', marginRight: spacing.sm, paddingTop: 2 },
+  replyLeft: { alignItems: 'center', paddingTop: 2 },
   replyLine: {
     width: 2, flex: 1, backgroundColor: 'rgba(10, 123, 79, 0.3)',
     marginTop: spacing.xs, borderRadius: 1,
