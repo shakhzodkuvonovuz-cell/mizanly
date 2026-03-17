@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, TouchableOpacity,
-  FlatList, ActivityIndicator, Alert,
+  FlatList, Alert,
 } from 'react-native';
 import { Icon } from './Icon';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';

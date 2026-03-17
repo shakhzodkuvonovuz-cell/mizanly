@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Audio } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -28,6 +30,41 @@ export default function DuetCreateScreen() {
   const [originalVolume, setOriginalVolume] = useState(70);
   const [yourVolume, setYourVolume] = useState(90);
   const [isMuted, setIsMuted] = useState(false);
+  const [facing, setFacing] = useState<'front' | 'back'>('front');
+  const [permission, requestPermission] = useCameraPermissions();
+  const [audioPermission, setAudioPermission] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { granted } = await Audio.requestPermissionsAsync();
+      setAudioPermission(granted);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (isRecording) {
+      timerRef.current = setInterval(() => {
+        setRecordTime((prev) => {
+          if (prev >= 60) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 60;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording]);
 
   const originalCreator = {
     username: 'creative_artist',
@@ -48,26 +85,47 @@ export default function DuetCreateScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const toggleRecording = () => {
+  const handleRecord = async () => {
+    if (!cameraRef.current) return;
+
     if (isRecording) {
+      cameraRef.current.stopRecording();
       setIsRecording(false);
     } else {
       setIsRecording(true);
-      // Simulate recording time increasing
-      const interval = setInterval(() => {
-        setRecordTime((prev) => {
-          if (prev >= 60) {
-            clearInterval(interval);
-            setIsRecording(false);
-            return 60;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      try {
+        const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
+        if (video?.uri) {
+          setRecordedUri(video.uri);
+        }
+      } catch (_err: unknown) {
+        // Recording was cancelled or failed
+      } finally {
+        setIsRecording(false);
+      }
     }
   };
 
   const isTimeRunningOut = recordTime >= 50;
+
+  if (!permission?.granted) {
+    return (
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader title={t('duet.createDuet')} onBack={() => router.back()} />
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <EmptyState
+              icon="camera"
+              title={t('camera.permissionRequired')}
+              subtitle={t('camera.permissionMessage')}
+              actionLabel={t('camera.grantPermission')}
+              onAction={requestPermission}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
+    );
+  }
 
   return (
     <ScreenErrorBoundary>
@@ -155,12 +213,12 @@ export default function DuetCreateScreen() {
                           <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
                         </LinearGradient>
                       </View>
-                      <View style={[styles.videoPanel, styles.yourVideoPanel]}>
-                        <View style={[styles.videoPanelInner, styles.yourVideoPanelInner]}>
-                          <Icon name="camera" size="xl" color={colors.emerald} />
-                          <Text style={styles.tapRecordHint}>Tap to record</Text>
-                        </View>
-                      </View>
+                      <CameraView
+                        ref={cameraRef}
+                        style={[styles.videoPanel, styles.yourVideoPanel]}
+                        facing={facing}
+                        mode="video"
+                      />
                       <Text style={styles.panelUsername}>@your_username</Text>
                     </View>
                   </View>
@@ -191,9 +249,12 @@ export default function DuetCreateScreen() {
                           <Text style={[styles.panelLabel, styles.panelLabelActive]}>You</Text>
                         </LinearGradient>
                       </View>
-                      <View style={[styles.videoPanelTopBottom, styles.yourVideoPanel]}>
-                        <Icon name="camera" size="lg" color={colors.emerald} />
-                      </View>
+                      <CameraView
+                        ref={cameraRef}
+                        style={[styles.videoPanelTopBottom, styles.yourVideoPanel]}
+                        facing={facing}
+                        mode="video"
+                      />
                     </View>
                   </View>
                 )}
@@ -214,12 +275,12 @@ export default function DuetCreateScreen() {
                       </View>
                     </View>
                     <View style={styles.reactYourPanel}>
-                      <LinearGradient
-                        colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
+                      <CameraView
+                        ref={cameraRef}
                         style={styles.reactYourPanelGradient}
-                      >
-                        <Icon name="camera" size="md" color={colors.emerald} />
-                      </LinearGradient>
+                        facing={facing}
+                        mode="video"
+                      />
                     </View>
                   </View>
                 )}
@@ -297,7 +358,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <TouchableOpacity style={styles.controlButton}>
+              <TouchableOpacity style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
@@ -307,7 +368,7 @@ export default function DuetCreateScreen() {
               </TouchableOpacity>
 
               {/* Record Button */}
-              <TouchableOpacity style={styles.recordButton} onPress={toggleRecording}>
+              <TouchableOpacity style={styles.recordButton} onPress={handleRecord}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']

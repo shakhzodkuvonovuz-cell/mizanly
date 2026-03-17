@@ -9,8 +9,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { PanGestureHandler, PinchGestureHandler } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue, useAnimatedStyle, useAnimatedGestureHandler,
-  withSpring, runOnJS, withTiming, withDelay,
+  withSpring, runOnJS, withTiming, withDelay, FadeIn,
 } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
+import { MusicPicker } from '@/components/story/MusicPicker';
+import { DrawingCanvas } from '@/components/story/DrawingCanvas';
+import type { DrawPath } from '@/components/story/DrawingCanvas';
+import { TextEffects } from '@/components/story/TextEffects';
+import type { TextEffect } from '@/components/story/TextEffects';
 import { Icon } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -118,6 +124,14 @@ export default function CreateStoryScreen() {
 
   // ── Active tool ──
   const [activeTool, setActiveTool] = useState<'text' | 'filter' | 'sticker' | null>(null);
+
+  // ── Music / Drawing / Text Effects ──
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<{ id: string; title: string; artist: string } | null>(null);
+  const [showDrawing, setShowDrawing] = useState(false);
+  const [drawPaths, setDrawPaths] = useState<DrawPath[]>([]);
+  const [showTextEffects, setShowTextEffects] = useState(false);
+  const [textEffects, setTextEffects] = useState<TextEffect[]>([]);
 
   // ── Sticker hint toast ──
   const [showStickerHint, setShowStickerHint] = useState(false);
@@ -466,6 +480,18 @@ export default function CreateStoryScreen() {
               marginTop: 2,
             }}>{t('stories.filter')}</Text>
           </Pressable>
+          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowMusicPicker(true)}>
+            <Icon name="volume-x" size="sm" color={selectedTrack ? colors.emerald : colors.text.primary} />
+            <Text style={{ fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 2 }}>{t('story.music')}</Text>
+          </Pressable>
+          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowDrawing(true)}>
+            <Icon name="pencil" size="sm" color={drawPaths.length > 0 ? colors.emerald : colors.text.primary} />
+            <Text style={{ fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 2 }}>{t('story.draw')}</Text>
+          </Pressable>
+          <Pressable style={{ alignItems: 'center', padding: spacing.xs }} onPress={() => setShowTextEffects(true)}>
+            <Icon name="edit" size="sm" color={textEffects.length > 0 ? colors.emerald : colors.text.primary} />
+            <Text style={{ fontSize: fontSize.xs, color: colors.text.secondary, marginTop: 2 }}>{t('story.effects')}</Text>
+          </Pressable>
         </View>
       </View>
 
@@ -505,6 +531,38 @@ export default function CreateStoryScreen() {
           </View>
         )}
 
+        {/* Draw paths overlay */}
+        {drawPaths.length > 0 && (
+          <Svg style={StyleSheet.absoluteFill} width={SCREEN_W} height={CANVAS_H} pointerEvents="none">
+            {drawPaths.map((p, i) => (
+              <Path key={i} d={p.d} stroke={p.stroke} strokeWidth={p.strokeWidth}
+                opacity={p.opacity} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            ))}
+          </Svg>
+        )}
+
+        {/* Text effects overlay */}
+        {textEffects.map((te) => (
+          <Animated.View key={te.id} entering={FadeIn} style={[{
+            position: 'absolute' as const,
+            left: spacing.base,
+            right: spacing.base,
+            top: '40%' as unknown as number,
+          }, { alignItems: te.alignment === 'left' ? 'flex-start' : te.alignment === 'right' ? 'flex-end' : 'center' }]}>
+            <Text style={{
+              color: te.color,
+              fontSize: te.fontSize,
+              textAlign: te.alignment,
+              fontWeight: te.style === 'strong' || te.style === 'modern' ? '800' : '400',
+              fontStyle: te.style === 'cursive' ? 'italic' : 'normal',
+              ...(te.bgColor ? { backgroundColor: te.bgColor, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs } : {}),
+              ...(te.style === 'neon' ? { textShadowColor: te.color, textShadowRadius: 10, textShadowOffset: { width: 0, height: 0 } } : {}),
+            }}>
+              {te.text}
+            </Text>
+          </Animated.View>
+        ))}
+
         {/* Stickers on canvas */}
         {stickers.map(renderSticker)}
 
@@ -534,6 +592,29 @@ export default function CreateStoryScreen() {
           </Animated.View>
         )}
       </View>
+
+      {/* ── Selected track indicator ── */}
+      {selectedTrack && (
+        <Animated.View entering={FadeIn} style={{
+          flexDirection: 'row' as const,
+          alignItems: 'center' as const,
+          backgroundColor: colors.dark.bgCard,
+          paddingHorizontal: spacing.md,
+          paddingVertical: spacing.sm,
+          borderRadius: radius.md,
+          marginHorizontal: spacing.base,
+          marginTop: spacing.sm,
+          gap: spacing.sm,
+        }}>
+          <Icon name="volume-x" size="sm" color={colors.emerald} />
+          <Text style={{ flex: 1, color: colors.text.primary, fontSize: fontSize.sm }} numberOfLines={1}>
+            {selectedTrack.title} — {selectedTrack.artist}
+          </Text>
+          <Pressable onPress={() => setSelectedTrack(null)} hitSlop={8}>
+            <Icon name="x" size="sm" color={colors.text.secondary} />
+          </Pressable>
+        </Animated.View>
+      )}
 
       {/* ── Tool Panels ── */}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: spacing.base }}>
@@ -932,6 +1013,23 @@ export default function CreateStoryScreen() {
         </View>
       </ScrollView>
     </SafeAreaView>
+    <MusicPicker
+      visible={showMusicPicker}
+      onClose={() => setShowMusicPicker(false)}
+      onSelect={(track) => { setSelectedTrack({ id: track.id, title: track.title, artist: track.artist }); setShowMusicPicker(false); }}
+    />
+    <DrawingCanvas
+      visible={showDrawing}
+      onClose={() => setShowDrawing(false)}
+      onSave={(paths) => { setDrawPaths(paths); setShowDrawing(false); }}
+      canvasWidth={SCREEN_W}
+      canvasHeight={CANVAS_H}
+    />
+    <TextEffects
+      visible={showTextEffects}
+      onClose={() => setShowTextEffects(false)}
+      onAdd={(effect) => { setTextEffects(prev => [...prev, effect]); setShowTextEffects(false); }}
+    />
     </ScreenErrorBoundary>
   );
 }

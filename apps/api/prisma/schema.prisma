@@ -355,6 +355,10 @@ model User {
   audioRoomParticipations AudioRoomParticipant[]
   twoFactorSecret        TwoFactorSecret?
 
+  // Monetization: Tips
+  sentTips               Tip[]              @relation("TipSender")
+  receivedTips           Tip[]              @relation("TipReceiver")
+
   @@index([username])
   @@index([clerkId])
   @@index([createdAt(sort: Desc)])
@@ -902,7 +906,8 @@ model Conversation {
   createdBy      User?   @relation("ConversationCreator", fields: [createdById], references: [id])
   lastMessageText String?
   lastMessageAt   DateTime?
-  lastMessageById String?
+  lastMessageById      String?
+  disappearingDuration Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   members  ConversationMember[]
@@ -946,8 +951,11 @@ model Message {
   forwardedFromId String?
   editableUntil   DateTime?
   expiresAt DateTime?
-  isDeleted Boolean   @default(false)
-  editedAt  DateTime?
+  isDeleted    Boolean   @default(false)
+  editedAt     DateTime?
+  isScheduled  Boolean   @default(false)
+  scheduledAt  DateTime?
+  starredBy    String[]  @default([])
   createdAt DateTime @default(now())
   conversation Conversation    @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -1747,6 +1755,8 @@ model Tip {
   id          String   @id @default(cuid())
   senderId    String
   receiverId  String
+  sender      User     @relation("TipSender", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
   amount      Float
   currency    String   @default("USD") @db.VarChar(3)
   message     String?  @db.VarChar(500)
@@ -1835,4 +1845,63 @@ model TwoFactorSecret {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   @@map("two_factor_secrets")
+}
+
+model StoryChain {
+  id               String   @id @default(cuid())
+  prompt           String   @db.VarChar(300)
+  coverUrl         String?
+  createdById      String
+  participantCount Int      @default(0)
+  viewsCount       Int      @default(0)
+  createdAt        DateTime @default(now())
+  @@index([participantCount(sort: Desc)])
+  @@index([createdById])
+  @@map("story_chains")
+}
+
+model StoryChainEntry {
+  id           String   @id @default(cuid())
+  chainId      String
+  storyId      String
+  userId       String
+  createdAt    DateTime @default(now())
+  @@unique([chainId, userId])
+  @@index([chainId])
+  @@map("story_chain_entries")
+}
+
+model ReelTemplate {
+  id           String   @id @default(cuid())
+  name         String   @db.VarChar(100)
+  sourceReelId String
+  userId       String
+  segments     Json
+  useCount     Int      @default(0)
+  createdAt    DateTime @default(now())
+  @@index([useCount(sort: Desc)])
+  @@index([userId])
+  @@map("reel_templates")
+}
+
+// ============================================================
+// VIDEO REPLIES
+// Short video responses to comments on posts or reels
+// ============================================================
+
+model VideoReply {
+  id            String   @id @default(cuid())
+  userId        String
+  commentId     String
+  commentType   String   @db.VarChar(10)  // 'post' or 'reel'
+  mediaUrl      String
+  thumbnailUrl  String?
+  duration      Float?
+  viewsCount    Int      @default(0)
+  likesCount    Int      @default(0)
+  isDeleted     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  @@index([commentId])
+  @@index([userId])
+  @@map("video_replies")
 }

@@ -417,7 +417,7 @@ export class MessagesService {
     // Update conversation with disappearingDuration (field must exist in schema)
     await this.prisma.conversation.update({
       where: { id: conversationId },
-      data: { disappearingDuration: duration } as any, // TODO: Add field to schema
+      data: { disappearingDuration: duration },
     });
     return { success: true, duration };
   }
@@ -493,7 +493,7 @@ export class MessagesService {
         messageType: (messageType as MessageType) ?? 'TEXT',
         isScheduled: true,
         scheduledAt,
-      } as any, // TODO: Add fields to schema
+      },
       select: MESSAGE_SELECT,
     });
     return message;
@@ -505,7 +505,7 @@ export class MessagesService {
       where: {
         isDeleted: false,
         starredBy: { has: userId },
-      } as any,
+      },
       select: MESSAGE_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),

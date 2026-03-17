@@ -22,7 +22,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const Device = await import('expo-device');
 
     if (!Device.default.isDevice) {
-      console.log('Push notifications not supported on simulator/emulator');
+      if (__DEV__) console.log('Push notifications not supported on simulator/emulator');
       return null;
     }
 
@@ -43,7 +43,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     }
 
     if (finalStatus !== 'granted') {
-      console.log('Push notification permission denied');
+      if (__DEV__) console.log('Push notification permission denied');
       return null;
     }
 
@@ -66,7 +66,7 @@ export async function registerForPushNotifications(): Promise<string | null> {
     const platform = Platform.OS === 'ios' ? 'ios' : 'android';
     await devicesApi.register(tokenData.data, platform);
 
-    console.log('Push token registered:', tokenData.data);
+    if (__DEV__) console.log('Push token registered:', tokenData.data);
     return tokenData.data;
   } catch (error) {
     console.error('Error registering for push notifications:', error);
@@ -145,7 +145,7 @@ export async function configurePushChannels(): Promise<void> {
       });
     }
 
-    console.log('Notification channels configured');
+    if (__DEV__) console.log('Notification channels configured');
   } catch (error) {
     console.error('Error configuring notification channels:', error);
   }
@@ -180,7 +180,7 @@ export async function schedulePrayerNotification(
       trigger,
     });
 
-    console.log(`Prayer notification scheduled for ${prayerName} at ${trigger}`);
+    if (__DEV__) console.log(`Prayer notification scheduled for ${prayerName} at ${trigger}`);
     return notificationId;
   } catch (error) {
     console.error('Error scheduling prayer notification:', error);
@@ -227,7 +227,7 @@ export async function scheduleRamadanNotification(
       trigger,
     });
 
-    console.log(`Ramadan ${type} notification scheduled at ${trigger}`);
+    if (__DEV__) console.log(`Ramadan ${type} notification scheduled at ${trigger}`);
     return notificationId;
   } catch (error) {
     console.error('Error scheduling Ramadan notification:', error);
@@ -281,7 +281,7 @@ export async function getAllScheduledNotifications(): Promise<
 export async function unregisterPushToken(pushToken: string): Promise<void> {
   try {
     await devicesApi.unregister(pushToken);
-    console.log('Push token unregistered');
+    if (__DEV__) console.log('Push token unregistered');
   } catch (error) {
     console.error('Error unregistering push token:', error);
   }

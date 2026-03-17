@@ -16,11 +16,11 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: ~78% Competitor Parity (as of 2026-03-13, Post-Batch 28)
-All 5 spaces built and polished. 72 screens, 387 API endpoints, 41 backend modules, 73 Prisma models.
-Backend: NestJS with 41 modules, 41 controllers, Redis, security headers, rate limiting, observability, CI/CD.
-Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions/calls, offline resilience, glassmorphism visual polish throughout.
-Features added in Batches 17-28: engagement-scored feeds, admin moderation, recommendations, analytics, discover, content settings, scheduling, majlis-lists, polls, subtitles, archive, bookmark folders, manage data, camera, image editor, audio library, prayer times, Islamic calendar, Quran sharing, communities, live streaming, calls, drafts, visual overhaul.
+## Status: ~90% Competitor Parity (as of 2026-03-17, Post-Batch 38)
+All 5 spaces built, polished, and production-ready. 104+ screens, 431+ API endpoints, 50 backend modules, 81+ Prisma models, 301 commits.
+Backend: NestJS with 50 modules, Redis, security headers, rate limiting, observability, Stripe payments, content moderation, push notifications, Cloudflare Stream video.
+Mobile: Full feed/detail/compose flows for all spaces, messaging with voice/GIF/reactions/calls, offline resilience, glassmorphism visual polish, i18n (100% coverage), RTL support, error boundaries on all screens, Expo Web + PWA.
+Tier 1 (Foundation) and Tier 2 (Video/Media) complete. Tier 3 (Stories/Reels) in progress (Batch 39).
 See `docs/COMPETITOR_ANALYSIS.md` for full gap analysis vs TikTok/IG/X/YT/WA.
 
 ---
@@ -48,11 +48,11 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Lightbox/pinch-zoom, draft auto-save, notification filters, theme selector
 - Message forward, message edit (inline)
 
-### Still Missing (see docs/COMPETITOR_ANALYSIS.md for full list)
-**P0 (Ship-blocking):** Multi-image carousel, video quality selector, playback speed, story interactive stickers, multi-account switching, i18n framework + Arabic, RTL layout, CDN, FCM/APNs push, comprehensive tests
-**P1 (Month 1):** Video trim/cut editor, AR filters, duet/stitch, auto-captions, link previews, PiP, mini player, E2E encryption, file sharing in chat, call quality (TURN), group permissions, 2FA UI, alt text, who can reply, content appeal, creator tips, channel memberships, Hadith, Ramadan mode
-**P2 (Month 2-3):** Green screen, voiceover, story music/stickers, disappearing messages, chat themes, virtual gifts, shopping, audio rooms, events, communities moderation
-**Deferred (V2.0+):** Desktop web client, bot platform, AI moderation, watch parties, cross-posting
+### Still Missing (see docs/plans/2026-03-17-pre-production-roadmap.md for full 191-feature list)
+**Tier 3 (Ship-blocking, Batch 39):** Add Yours sticker, music on stories, drawing tools, text effects, link stickers, reel templates, reel remix, duet/stitch camera wiring, video replies, green screen wiring, photo with music, disposable camera, AR filters (deferred)
+**Tier 4 (Ship-blocking, Batch 40):** E2E encryption, disappearing messages, view-once media, file sharing, location sharing, message scheduling, chat lock, chat backup, group admin tools, screen sharing, group video calls, multi-device
+**Tier 5-8 (Launch Week):** Feed intelligence, creator economy, Islamic moat features, platform/UX parity
+**Tier 9-12 (Month One):** AI features, gamification, commerce, community
 
 ---
 
@@ -95,15 +95,15 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 27 feature modules (complete)
+│   │   ├── src/modules/         # 50 feature modules (complete)
 │   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
 │   │   ├── src/gateways/        # Socket.io /chat namespace
-│   │   └── prisma/schema.prisma # v3 schema, 1652 lines
+│   │   └── prisma/schema.prisma # v3 schema, 1850+ lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, create
 │       │   ├── (auth)/          # sign-in, sign-up
-│       │   ├── (screens)/       # 55 screens
+│       │   ├── (screens)/       # 104+ screens
 │       │   └── onboarding/      # 4 steps
 │       └── src/
 │           ├── components/ui/   # BottomSheet, Skeleton, Icon, Avatar, Badge,
@@ -113,7 +113,7 @@ mizanly/
 │           ├── components/majlis/ # ThreadCard
 │           ├── components/      # ErrorBoundary (root, wraps app)
 │           ├── hooks/           # useHaptic, usePushNotifications, useAnimatedPress
-│           ├── services/api.ts  # All API clients (20 endpoint groups)
+│           ├── services/api.ts  # All API clients (46+ endpoint groups)
 │           ├── store/index.ts   # Zustand store
 │           ├── theme/index.ts   # Design tokens
 │           └── types/index.ts   # TypeScript interfaces

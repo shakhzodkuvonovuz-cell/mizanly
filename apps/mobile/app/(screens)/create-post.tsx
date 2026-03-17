@@ -849,7 +849,7 @@ const styles = StyleSheet.create({
     top: -4,
     right: -4,
     backgroundColor: colors.emerald,
-    borderRadius: 10,
+    borderRadius: radius.md,
     minWidth: 18,
     height: 18,
     alignItems: 'center',

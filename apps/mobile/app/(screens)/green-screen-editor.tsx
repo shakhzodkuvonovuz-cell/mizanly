@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Audio } from 'expo-av';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -72,6 +74,39 @@ export default function GreenScreenEditorScreen() {
   const [blurIntensity, setBlurIntensity] = useState(30);
   const [edgeSmoothing, setEdgeSmoothing] = useState(50);
   const [isRecording, setIsRecording] = useState(false);
+  const [facing, setFacing] = useState<'front' | 'back'>('front');
+  const [permission, requestPermission] = useCameraPermissions();
+  const [audioPermission, setAudioPermission] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { granted } = await Audio.requestPermissionsAsync();
+      setAudioPermission(granted);
+    })();
+  }, []);
+
+  const handleRecord = async () => {
+    if (!cameraRef.current) return;
+
+    if (isRecording) {
+      cameraRef.current.stopRecording();
+      setIsRecording(false);
+    } else {
+      setIsRecording(true);
+      try {
+        const video = await cameraRef.current.recordAsync({ maxDuration: 60 });
+        if (video?.uri) {
+          setRecordedUri(video.uri);
+        }
+      } catch (_err: unknown) {
+        // Recording was cancelled or failed
+      } finally {
+        setIsRecording(false);
+      }
+    }
+  };
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
@@ -272,6 +307,25 @@ export default function GreenScreenEditorScreen() {
     return grad?.colors || ['#0A7B4F', '#066B42'];
   };
 
+  if (!permission?.granted) {
+    return (
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader title={t('screens.greenScreen.title')} onBack={() => router.back()} />
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <EmptyState
+              icon="camera"
+              title={t('camera.permissionRequired')}
+              subtitle={t('camera.permissionMessage')}
+              actionLabel={t('camera.grantPermission')}
+              onAction={requestPermission}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
+    );
+  }
+
   return (
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -291,18 +345,18 @@ export default function GreenScreenEditorScreen() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  {/* Subject Silhouette */}
-                  <View style={styles.subjectContainer}>
-                    <View style={styles.subjectSilhouette}>
-                      <Icon name="user" size="xl" color={colors.dark.surface} />
-                    </View>
-                    <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
-                  </View>
+                  {/* Camera overlay on background */}
+                  <CameraView
+                    ref={cameraRef}
+                    style={styles.cameraOverlay}
+                    facing={facing}
+                    mode="video"
+                  />
 
                   {/* Record Button Overlay */}
                   <TouchableOpacity
                     style={styles.recordOverlayButton}
-                    onPress={() => setIsRecording(!isRecording)}
+                    onPress={handleRecord}
                   >
                     <LinearGradient
                       colors={isRecording
@@ -320,18 +374,18 @@ export default function GreenScreenEditorScreen() {
                   colors={['rgba(28,35,51,0.8)', 'rgba(13,17,23,0.9)']}
                   style={[styles.previewGradient, getBackgroundStyle()]}
                 >
-                  {/* Subject Silhouette */}
-                  <View style={styles.subjectContainer}>
-                    <View style={styles.subjectSilhouette}>
-                      <Icon name="user" size="xl" color={colors.dark.surface} />
-                    </View>
-                    <Text style={styles.subjectHint}>{t('screens.greenScreen.subjectArea')}</Text>
-                  </View>
+                  {/* Camera overlay on background */}
+                  <CameraView
+                    ref={cameraRef}
+                    style={styles.cameraOverlay}
+                    facing={facing}
+                    mode="video"
+                  />
 
                   {/* Record Button Overlay */}
                   <TouchableOpacity
                     style={styles.recordOverlayButton}
-                    onPress={() => setIsRecording(!isRecording)}
+                    onPress={handleRecord}
                   >
                     <LinearGradient
                       colors={isRecording
@@ -498,23 +552,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     position: 'relative',
   },
-  subjectContainer: {
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  subjectSilhouette: {
-    width: 100,
-    height: 100,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: 'rgba(255,255,255,0.2)',
-  },
-  subjectHint: {
-    fontSize: fontSize.sm,
-    color: 'rgba(255,255,255,0.6)',
+  cameraOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: radius.lg,
   },
   recordOverlayButton: {
     position: 'absolute',

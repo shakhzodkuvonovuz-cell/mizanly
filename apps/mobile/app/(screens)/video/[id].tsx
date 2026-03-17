@@ -207,8 +207,6 @@ export default function VideoDetailScreen() {
   const handleQualityChange = useCallback((q: VideoQuality) => {
     setQuality(q);
     // TODO: switch video source based on quality
-    // For now, just log
-    console.log('Quality changed to', q);
   }, []);
 
   const handleSpeedChange = useCallback((s: PlaybackSpeed) => {
@@ -1266,7 +1264,7 @@ const styles = StyleSheet.create({
   chapterMarkerDotActive: {
     width: 14,
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius.sm,
   },
   chapterMarkerInfo: {
     flex: 1,

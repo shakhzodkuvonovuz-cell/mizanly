@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, TextInput,
-  ScrollView, Alert, Dimensions,
+  ScrollView, Alert, Dimensions, Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -25,6 +25,8 @@ import { reelsApi, uploadApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { MusicPicker } from '@/components/story/MusicPicker';
+import type { AudioTrack } from '@/types';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const VIDEO_PREVIEW_WIDTH = SCREEN_W - spacing.base * 2;
@@ -59,6 +61,8 @@ export default function CreateReelScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState<AutocompleteType>(null);
   const [autocompleteAnchor, setAutocompleteAnchor] = useState(0);
+  const [showMusicPicker, setShowMusicPicker] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
   const captionInputRef = useRef<TextInput>(null);
 
   const videoRef = useRef<Video>(null);
@@ -207,9 +211,7 @@ export default function CreateReelScreen() {
           hashtags,
           mentions,
           normalizeAudio,
-          // audioTrackId: undefined,
-          // isDuet: false,
-          // isStitch: false,
+          audioTrackId: selectedTrack?.id,
         });
       } finally {
         setIsUploading(false);
@@ -448,14 +450,14 @@ export default function CreateReelScreen() {
                 <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.toolbarButton} disabled>
+              <TouchableOpacity style={styles.toolbarButton} onPress={() => setShowMusicPicker(true)}>
                 <LinearGradient
-                  colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                  colors={selectedTrack ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)'] : ['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="music" size="md" color={colors.text.tertiary} />
+                  <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : colors.text.primary} />
                 </LinearGradient>
-                <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.sound')}</Text>
+                <Text style={styles.toolbarLabel}>{t('createReel.music')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.toolbarButton} disabled>
@@ -469,6 +471,19 @@ export default function CreateReelScreen() {
               </TouchableOpacity>
             </LinearGradient>
           </View>
+
+          {/* Selected track indicator */}
+          {selectedTrack && (
+            <Animated.View entering={FadeIn} style={styles.selectedTrackBar}>
+              <Icon name="volume-x" size="sm" color={colors.emerald} />
+              <Text style={styles.selectedTrackText} numberOfLines={1}>
+                {selectedTrack.title} — {selectedTrack.artist}
+              </Text>
+              <Pressable onPress={() => setSelectedTrack(null)} hitSlop={8}>
+                <Icon name="x" size="sm" color={colors.text.secondary} />
+              </Pressable>
+            </Animated.View>
+          )}
 
           {/* Extracted tags with premium badges */}
           {(hashtags.length > 0 || mentions.length > 0) && (
@@ -546,8 +561,17 @@ export default function CreateReelScreen() {
             />
           )}
         </BottomSheet>
+
+        <MusicPicker
+          visible={showMusicPicker}
+          onClose={() => setShowMusicPicker(false)}
+          onSelect={(track) => {
+            setSelectedTrack(track);
+            setShowMusicPicker(false);
+          }}
+        />
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }
@@ -679,7 +703,7 @@ const styles = StyleSheet.create({
   countdownCircle: {
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.emerald,
@@ -879,5 +903,22 @@ const styles = StyleSheet.create({
   },
   toggleThumbActive: {
     alignSelf: 'flex-end' as const,
+  },
+
+  // Selected track bar
+  selectedTrackBar: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    backgroundColor: colors.dark.bgCard,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    marginBottom: spacing.lg,
+    gap: spacing.sm,
+  },
+  selectedTrackText: {
+    flex: 1,
+    color: colors.text.primary,
+    fontSize: fontSize.sm,
   },
 });

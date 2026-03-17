@@ -891,7 +891,7 @@ export const audioTracksApi = {
   getByGenre: (genre: string) =>
     api.get<AudioTrack[]>(`/audio-tracks/genre/${genre}`),
   getReelsUsing: (trackId: string, cursor?: string) =>
-    api.get<PaginatedResponse<any>>(`/audio-tracks/${trackId}/reels${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Reel>>(`/audio-tracks/${trackId}/reels${cursor ? `?cursor=${cursor}` : ''}`),
   upload: (data: { title: string; artist: string; audioUrl: string; coverUrl?: string; duration: number; genre?: string }) =>
     api.post<AudioTrack>('/audio-tracks', data),
   delete: (id: string) =>

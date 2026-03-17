@@ -697,14 +697,14 @@ const styles = StyleSheet.create({
   toggleTrack: {
     width: 50,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.lg,
     padding: 4,
     justifyContent: 'center',
   },
   toggleThumb: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.md,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -715,7 +715,7 @@ const styles = StyleSheet.create({
   toggleThumbGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+    borderRadius: radius.md,
   },
 
   // Premium Card

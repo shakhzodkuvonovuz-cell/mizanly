@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { Audio } from 'expo-av';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -38,6 +40,42 @@ export default function StitchCreateScreen() {
   const [recordTime, setRecordTime] = useState(0);
   const [flashOn, setFlashOn] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [facing, setFacing] = useState<'front' | 'back'>('front');
+  const [permission, requestPermission] = useCameraPermissions();
+  const [audioPermission, setAudioPermission] = useState(false);
+  const cameraRef = useRef<CameraView>(null);
+  const [recordedUri, setRecordedUri] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const { granted } = await Audio.requestPermissionsAsync();
+      setAudioPermission(granted);
+    })();
+  }, []);
+
+  useEffect(() => {
+    if (isRecording) {
+      timerRef.current = setInterval(() => {
+        setRecordTime((prev) => {
+          const maxTime = 60 - selectedDuration;
+          if (prev >= maxTime) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            return maxTime;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    }
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [isRecording, selectedDuration]);
 
   const originalCreator = {
     username: 'viral_dancer',
@@ -56,27 +94,49 @@ export default function StitchCreateScreen() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const toggleRecording = () => {
+  const handleRecord = async () => {
+    if (!cameraRef.current) return;
+
     if (isRecording) {
+      cameraRef.current.stopRecording();
       setIsRecording(false);
     } else {
       setIsRecording(true);
-      const interval = setInterval(() => {
-        setRecordTime((prev) => {
-          const maxTime = 60 - selectedDuration;
-          if (prev >= maxTime) {
-            clearInterval(interval);
-            setIsRecording(false);
-            return maxTime;
-          }
-          return prev + 1;
-        });
-      }, 1000);
+      try {
+        const maxTime = 60 - selectedDuration;
+        const video = await cameraRef.current.recordAsync({ maxDuration: maxTime });
+        if (video?.uri) {
+          setRecordedUri(video.uri);
+        }
+      } catch (_err: unknown) {
+        // Recording was cancelled or failed
+      } finally {
+        setIsRecording(false);
+      }
     }
   };
 
   const yourClipDuration = 60 - selectedDuration;
   const totalDuration = selectedDuration + recordTime;
+
+  if (!permission?.granted) {
+    return (
+      <ScreenErrorBoundary>
+        <SafeAreaView style={styles.container}>
+          <GlassHeader title={t('stitch.createStitch')} onBack={() => router.back()} />
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <EmptyState
+              icon="camera"
+              title={t('camera.permissionRequired')}
+              subtitle={t('camera.permissionMessage')}
+              actionLabel={t('camera.grantPermission')}
+              onAction={requestPermission}
+            />
+          </View>
+        </SafeAreaView>
+      </ScreenErrorBoundary>
+    );
+  }
 
   return (
     <ScreenErrorBoundary>
@@ -233,16 +293,18 @@ export default function StitchCreateScreen() {
 
                 {/* Camera Preview */}
                 <View style={styles.cameraPreviewContainer}>
-                  <View style={styles.cameraPreview}>
-                    <Icon name="camera" size="xl" color={colors.emerald} />
-                    <Text style={styles.cameraHint}>Record your response</Text>
-                  </View>
+                  <CameraView
+                    ref={cameraRef}
+                    style={styles.cameraPreview}
+                    facing={facing}
+                    mode="video"
+                  />
                 </View>
 
                 {/* Recording Controls */}
                 <View style={styles.recordingControls}>
                   {/* Flip Camera */}
-                  <TouchableOpacity style={styles.controlButtonSmall}>
+                  <TouchableOpacity style={styles.controlButtonSmall} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlButtonGradientSmall}
@@ -252,7 +314,7 @@ export default function StitchCreateScreen() {
                   </TouchableOpacity>
 
                   {/* Record Button */}
-                  <TouchableOpacity style={styles.recordButtonSmall} onPress={toggleRecording}>
+                  <TouchableOpacity style={styles.recordButtonSmall} onPress={handleRecord}>
                     <LinearGradient
                       colors={isRecording
                         ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']

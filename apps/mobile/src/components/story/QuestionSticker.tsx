@@ -86,7 +86,6 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
 
   const handleReply = (questionId: string) => {
     // In a real app, this would open a reply composer or navigate
-    console.log('Reply to question', questionId);
   };
 
   const containerStyle = useAnimatedStyle(() => ({
