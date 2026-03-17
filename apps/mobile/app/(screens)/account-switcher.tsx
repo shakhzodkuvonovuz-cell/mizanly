@@ -1,15 +1,17 @@
-import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Switch } from 'react-native';
+import { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Switch, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useClerk, useAuth, useUser } from '@clerk/clerk-expo';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
+import { Avatar } from '@/components/ui/Avatar';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { usersApi } from '@/services/api';
@@ -17,6 +19,7 @@ import type { User } from '@/types';
 
 interface Account {
   id: string;
+  sessionId: string;
   displayName: string;
   username: string;
   avatarUrl: string | null;
@@ -37,9 +40,10 @@ function formatCount(n: number | undefined): string {
   return n.toString();
 }
 
-function mapUserToAccount(user: User): Account {
+function mapUserToAccount(user: User, sessionId: string, isActive: boolean): Account {
   return {
     id: user.id,
+    sessionId,
     displayName: user.displayName || user.username,
     username: user.username,
     avatarUrl: user.avatarUrl || null,
@@ -47,9 +51,9 @@ function mapUserToAccount(user: User): Account {
     followers: formatCount(user.followersCount),
     following: formatCount(user.followingCount),
     posts: formatCount(user.postsCount),
-    isActive: true,
+    isActive,
     unreadCount: 0,
-    lastActive: 'Active now',
+    lastActive: isActive ? 'Active now' : 'Tap to switch',
     isVerified: user.isVerified ?? false,
   };
 }
@@ -58,26 +62,99 @@ export default function AccountSwitcherScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const [autoSwitchOnNotification, setAutoSwitchOnNotification] = useState(false);
+  const [switching, setSwitching] = useState(false);
   const queryClient = useQueryClient();
+  const { setActive, signOut, client } = useClerk();
+  const { sessionId: activeSessionId } = useAuth();
+  const { user: clerkUser } = useUser();
 
+  // Fetch current user profile from our API
   const { data: currentUser, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['currentUser'],
     queryFn: () => usersApi.getMe(),
   });
 
+  // Build account list from Clerk sessions
+  const clerkSessions = client?.sessions ?? [];
+  const accounts: Account[] = useMemo(() => {
+    if (!currentUser) return [];
+    // Active session shows our API user data; other sessions show Clerk data
+    return clerkSessions.map((session) => {
+      const isActive = session.id === activeSessionId;
+      if (isActive) {
+        return mapUserToAccount(currentUser, session.id, true);
+      }
+      // For inactive sessions, use Clerk session user data
+      const su = session.user;
+      return {
+        id: su?.id ?? session.id,
+        sessionId: session.id,
+        displayName: su?.fullName ?? su?.username ?? 'Account',
+        username: su?.username ?? '',
+        avatarUrl: su?.imageUrl ?? null,
+        accountType: 'Personal' as const,
+        followers: '-',
+        following: '-',
+        posts: '-',
+        isActive: false,
+        unreadCount: 0,
+        lastActive: 'Tap to switch',
+        isVerified: false,
+      };
+    });
+  }, [clerkSessions, activeSessionId, currentUser]);
+
   const onRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  const accounts: Account[] = currentUser ? [mapUserToAccount(currentUser)] : [];
   const activeAccount = accounts.find(a => a.isActive);
   const otherAccounts = accounts.filter(a => !a.isActive);
 
-  const handleSwitchAccount = useCallback((_accountId: string) => {
-    // Multi-account switching handled by Clerk session management
-    // Refetch current user after switch
-    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
-  }, [queryClient]);
+  const handleSwitchAccount = useCallback(async (account: Account) => {
+    if (switching) return;
+    setSwitching(true);
+    try {
+      await setActive({ session: account.sessionId });
+      // Clear all cached data since we switched user context
+      queryClient.clear();
+      router.replace('/(tabs)/saf');
+    } catch {
+      Alert.alert(
+        t('screens.accountSwitcher.switchError') || 'Switch Failed',
+        t('screens.accountSwitcher.switchErrorMessage') || 'Could not switch accounts. Please try again.',
+      );
+    } finally {
+      setSwitching(false);
+    }
+  }, [switching, setActive, queryClient, router, t]);
+
+  const handleAddAccount = useCallback(() => {
+    // Navigate to sign-in screen to add another account
+    router.push('/(auth)/sign-in');
+  }, [router]);
+
+  const handleSignOutAll = useCallback(() => {
+    Alert.alert(
+      t('screens.accountSwitcher.signOutAllTitle') || 'Sign Out All',
+      t('screens.accountSwitcher.signOutAllMessage') || 'Are you sure you want to sign out of all accounts?',
+      [
+        { text: t('common.cancel') || 'Cancel', style: 'cancel' },
+        {
+          text: t('screens.accountSwitcher.signOutAll') || 'Sign Out All',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+              queryClient.clear();
+            } catch {
+              // Sign out failure is non-critical — Clerk will clear session
+            }
+          },
+        },
+      ],
+    );
+  }, [signOut, queryClient, t]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -110,10 +187,12 @@ export default function AccountSwitcherScreen() {
                 <View style={styles.heroContent}>
                   {/* Avatar with Online Ring */}
                   <View style={styles.heroAvatarContainer}>
-                    <View style={styles.heroAvatar}>
-                      <Icon name="user" size="xl" color={colors.text.tertiary} />
-                    </View>
-                    <View style={styles.onlineRing} />
+                    <Avatar
+                      uri={activeAccount.avatarUrl}
+                      name={activeAccount.displayName}
+                      size="xl"
+                      showOnline
+                    />
                   </View>
 
                   {/* Account Info */}
@@ -176,9 +255,11 @@ export default function AccountSwitcherScreen() {
                 >
                   {/* Avatar and Info */}
                   <View style={styles.accountRow}>
-                    <View style={styles.accountAvatar}>
-                      <Icon name="user" size="md" color={colors.text.tertiary} />
-                    </View>
+                    <Avatar
+                      uri={account.avatarUrl}
+                      name={account.displayName}
+                      size="lg"
+                    />
 
                     <View style={styles.accountInfo}>
                       <View style={styles.accountNameRow}>
@@ -209,7 +290,8 @@ export default function AccountSwitcherScreen() {
                       )}
                       <TouchableOpacity
                         style={styles.switchButton}
-                        onPress={() => handleSwitchAccount(account.id)}
+                        onPress={() => handleSwitchAccount(account)}
+                        disabled={switching}
                       >
                         <LinearGradient
                           colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
@@ -237,7 +319,7 @@ export default function AccountSwitcherScreen() {
 
         {/* Add Account Section */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-          <TouchableOpacity style={styles.addAccountCard}>
+          <TouchableOpacity style={styles.addAccountCard} onPress={handleAddAccount}>
             <LinearGradient
               colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
               style={[styles.addAccountGradient, styles.addAccountDashed]}
@@ -330,7 +412,7 @@ export default function AccountSwitcherScreen() {
                 <Text style={styles.securityText}>
                   {t('screens.accountSwitcher.securityText')}
                 </Text>
-                <TouchableOpacity>
+                <TouchableOpacity onPress={handleSignOutAll}>
                   <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
                 </TouchableOpacity>
               </View>
