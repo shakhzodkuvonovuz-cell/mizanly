@@ -3,7 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { authenticator } from 'otplib';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as qrcode from 'qrcode';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../../config/prisma.service';
@@ -32,7 +32,7 @@ export class TwoFactorService {
       throw new BadRequestException('Two-factor authentication is already enabled');
     }
 
-    const secret = authenticator.generateSecret(32);
+    const secret = generateSecret({ length: 32 });
     const backupCodes = this.generateBackupCodes(8);
     const backupCodesHashed = backupCodes.map(code => this.hashBackupCode(code));
 
@@ -59,7 +59,7 @@ export class TwoFactorService {
     }
 
     // Generate QR data URI
-    const otpauth = authenticator.keyuri(user.email, 'Mizanly', secret);
+    const otpauth = generateURI({ issuer: 'Mizanly', label: user.email, secret });
     const qrDataUri = await qrcode.toDataURL(otpauth);
 
     return {
@@ -84,8 +84,8 @@ export class TwoFactorService {
     }
 
     // Validate the TOTP token
-    const isValid = authenticator.verify({ token: code, secret: secretRecord.secret });
-    if (!isValid) {
+    const result = verifySync({ token: code, secret: secretRecord.secret });
+    if (!result.valid) {
       return false;
     }
 
@@ -113,7 +113,7 @@ export class TwoFactorService {
       return true;
     }
 
-    return authenticator.verify({ token: code, secret: secretRecord.secret });
+    return verifySync({ token: code, secret: secretRecord.secret }).valid;
   }
 
   /**
@@ -126,7 +126,7 @@ export class TwoFactorService {
     if (!secretRecord) {
       throw new BadRequestException('Two-factor authentication not set up');
     }
-    return authenticator.verify({ token: code, secret: secretRecord.secret });
+    return verifySync({ token: code, secret: secretRecord.secret }).valid;
   }
 
   /**

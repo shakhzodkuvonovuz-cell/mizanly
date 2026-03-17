@@ -29,7 +29,7 @@ export class StripeWebhookController {
 
   constructor(private paymentsService: PaymentsService) {
     this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-      apiVersion: '2025-03-31.basil',
+      apiVersion: '2026-02-25.clover',
     });
   }
 

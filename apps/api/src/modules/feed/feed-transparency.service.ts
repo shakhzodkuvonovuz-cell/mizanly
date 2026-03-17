@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
-interface ExplainResult {
+export interface ExplainResult {
   reasons: string[];
 }
 
@@ -18,7 +18,7 @@ interface EnhancedSearchPost {
   };
 }
 
-interface EnhancedSearchResult {
+export interface EnhancedSearchResult {
   data: EnhancedSearchPost[];
   meta: { cursor: string | null; hasMore: boolean };
 }

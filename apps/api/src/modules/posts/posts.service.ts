@@ -212,7 +212,7 @@ export class PostsService {
 
   private async getFavoritesFeed(userId: string, cursor?: string, limit = 20) {
     const circleMembers = await this.prisma.circleMember.findMany({
-      where: { circle: { userId } },
+      where: { circle: { ownerId: userId } },
       select: { userId: true },
     });
     const favoriteIds = circleMembers.map(m => m.userId);

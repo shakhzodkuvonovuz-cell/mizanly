@@ -14,7 +14,7 @@ interface ExportedMessage {
   sender: { username: string; displayName: string };
 }
 
-interface JsonExportResult {
+export interface JsonExportResult {
   conversation: {
     id: string;
     name: string;
@@ -34,12 +34,12 @@ interface JsonExportResult {
   exportedBy: string;
 }
 
-interface TextExportResult {
+export interface TextExportResult {
   text: string;
   messageCount: number;
 }
 
-interface ConversationStats {
+export interface ConversationStats {
   name: string;
   isGroup: boolean;
   memberCount: number;

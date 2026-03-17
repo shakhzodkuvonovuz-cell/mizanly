@@ -17,7 +17,8 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { IsString, IsOptional, IsBoolean, IsDateString, IsUrl, MaxLength, IsEnum, IsISO8601 } from 'class-validator';
-import { ClerkAuthGuard, OptionalClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { EventsService } from './events.service';
 

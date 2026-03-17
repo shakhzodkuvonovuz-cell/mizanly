@@ -83,11 +83,11 @@ export class CreatorService {
     // Total engagement across all posts and reels
     const [postStats, reelStats, tipRevenue] = await Promise.all([
       this.prisma.post.aggregate({
-        where: { userId, isDeleted: false },
+        where: { userId, isRemoved: false },
         _sum: { likesCount: true, commentsCount: true, viewsCount: true },
       }),
       this.prisma.reel.aggregate({
-        where: { userId, isDeleted: false },
+        where: { userId, isRemoved: false },
         _sum: { likesCount: true, commentsCount: true, viewsCount: true },
       }),
       this.prisma.tip.aggregate({
@@ -97,11 +97,11 @@ export class CreatorService {
     ]);
 
     const totalLikes =
-      (postStats._sum.likesCount ?? 0) + (reelStats._sum.likesCount ?? 0);
+      (postStats._sum?.likesCount ?? 0) + (reelStats._sum?.likesCount ?? 0);
     const totalViews =
-      (postStats._sum.viewsCount ?? 0) + (reelStats._sum.viewsCount ?? 0);
+      (postStats._sum?.viewsCount ?? 0) + (reelStats._sum?.viewsCount ?? 0);
     const totalComments =
-      (postStats._sum.commentsCount ?? 0) + (reelStats._sum.commentsCount ?? 0);
+      (postStats._sum?.commentsCount ?? 0) + (reelStats._sum?.commentsCount ?? 0);
 
     const engagementRate =
       totalViews > 0
@@ -144,7 +144,7 @@ export class CreatorService {
   async getContentPerformance(userId: string) {
     const [topPosts, topReels] = await Promise.all([
       this.prisma.post.findMany({
-        where: { userId, isDeleted: false },
+        where: { userId, isRemoved: false },
         select: {
           id: true,
           content: true,
@@ -158,7 +158,7 @@ export class CreatorService {
         take: 10,
       }),
       this.prisma.reel.findMany({
-        where: { userId, isDeleted: false },
+        where: { userId, isRemoved: false },
         select: {
           id: true,
           caption: true,

@@ -631,7 +631,7 @@ export default function CreateThreadScreen() {
                     </View>
                     <Text style={styles.pollAllowMultipleText}>{t('compose.allowMultipleAnswers')}</Text>
                   </TouchableOpacity>
-                </View>
+                </LinearGradient>
               )}
             </View>
           ))}

@@ -17,7 +17,8 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, messagesApi, uploadApi } from '@/services/api';
-import { useHaptic } from '@/hooks/useHaptic';\nimport { useTranslation } from '@/hooks/useTranslation';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -27,7 +28,8 @@ const MIN_MEMBERS = 2;
 export default function CreateGroupScreen() {
   const router = useRouter();
   const { user } = useUser();
-  const haptic = useHaptic();\n  const { t } = useTranslation();
+  const haptic = useHaptic();
+  const { t } = useTranslation();
   const [groupName, setGroupName] = useState('');
   const [avatarUri, setAvatarUri] = useState<string | undefined>();
   const [selectedMembers, setSelectedMembers] = useState<User[]>([]);

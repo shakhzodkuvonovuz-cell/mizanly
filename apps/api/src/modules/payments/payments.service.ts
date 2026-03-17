@@ -23,7 +23,7 @@ export class PaymentsService {
       this.logger.warn('STRIPE_SECRET_KEY environment variable is not set');
     }
     this.stripe = new Stripe(secretKey || '', {
-      apiVersion: '2025-03-31.basil',
+      apiVersion: '2026-02-25.clover',
     });
   }
 
@@ -177,12 +177,17 @@ export class PaymentsService {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    // Create Stripe subscription
+    // Create Stripe product for this tier, then create subscription
+    const product = await this.stripe.products.create({
+      name: tier.name,
+      metadata: { tierId, mizanlyTierId: tierId },
+    });
+
     const subscription = await this.stripe.subscriptions.create({
       customer: customerId,
       items: [{ price_data: {
           currency: tier.currency.toLowerCase(),
-          product_data: { name: tier.name },
+          product: product.id,
           unit_amount: Math.round(tier.price * 100),
           recurring: { interval: 'month' },
         } }],
@@ -223,25 +228,31 @@ export class PaymentsService {
     // Store mapping
     await this.storeSubscriptionMapping(subscription.id, dbSubscription.id);
 
+    const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
+    const paymentIntent = (latestInvoice as any)?.payment_intent as Stripe.PaymentIntent | null;
+
     return {
       subscriptionId: subscription.id,
       status: subscription.status,
-      clientSecret: (subscription.latest_invoice as Stripe.Invoice)?.payment_intent?.client_secret,
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      clientSecret: paymentIntent?.client_secret ?? null,
+      currentPeriodEnd: (subscription as any).current_period_end
+        ? new Date((subscription as any).current_period_end * 1000)
+        : null,
     };
   }
 
   async cancelSubscription(userId: string, subscriptionId: string) {
     let internalId: string;
-    let stripeSubscriptionId: string;
+    let stripeSubscriptionId: string | null;
 
     // Determine if subscriptionId is a Stripe subscription ID (starts with 'sub_')
     if (subscriptionId.startsWith('sub_')) {
       stripeSubscriptionId = subscriptionId;
-      internalId = await this.getInternalSubscriptionId(stripeSubscriptionId);
-      if (!internalId) {
+      const foundId = await this.getInternalSubscriptionId(stripeSubscriptionId);
+      if (!foundId) {
         throw new NotFoundException('Stripe subscription not found');
       }
+      internalId = foundId;
     } else {
       internalId = subscriptionId;
       stripeSubscriptionId = await this.getStripeSubscriptionId(internalId);
@@ -325,7 +336,7 @@ export class PaymentsService {
   }
 
   async handleInvoicePaid(invoice: Stripe.Invoice) {
-    const subscriptionId = invoice.subscription as string;
+    const subscriptionId = (invoice as any).subscription as string ?? '';
     if (!subscriptionId) return;
 
     const dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
@@ -336,7 +347,9 @@ export class PaymentsService {
 
     // Update subscription end date (extend by one period)
     const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const endDate = new Date(subscription.current_period_end * 1000);
+    const endDate = (subscription as any).current_period_end
+      ? new Date((subscription as any).current_period_end * 1000)
+      : new Date();
 
     await this.prisma.membershipSubscription.update({
       where: { id: dbSubscriptionId },

@@ -8,13 +8,10 @@ import {
   Param,
   Body,
   UseGuards,
-  ParseFloatPipe,
   ParseIntPipe,
-  Optional,
-  DefaultValuePipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsString, IsIn, Min, Max } from 'class-validator';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
+// class-validator imports removed (DTOs use @ApiProperty only)
 import { IslamicService } from './islamic.service';
 import {
   PrayerTimesResponse,
@@ -36,55 +33,55 @@ import { UpdateContentFilterDto } from './dto/content-filter.dto';
 import { SaveDhikrSessionDto, CreateDhikrChallengeDto, ContributeDhikrDto } from './dto/dhikr.dto';
 
 class PrayerTimesQueryDto {
-  @ApiQuery({ name: 'lat', required: true, description: 'Latitude', example: 24.7136 })
+  @ApiProperty({ description: 'Latitude', example: 24.7136 })
   lat: number;
 
-  @ApiQuery({ name: 'lng', required: true, description: 'Longitude', example: 46.6753 })
+  @ApiProperty({ description: 'Longitude', example: 46.6753 })
   lng: number;
 
-  @ApiQuery({ name: 'method', required: false, description: 'Calculation method (MWL, ISNA, Egypt, Makkah, Karachi)', example: 'MWL' })
+  @ApiProperty({ description: 'Calculation method (MWL, ISNA, Egypt, Makkah, Karachi)', example: 'MWL', required: false })
   method?: string;
 
-  @ApiQuery({ name: 'date', required: false, description: 'Date in YYYY-MM-DD format (default today)', example: '2026-03-13' })
+  @ApiProperty({ description: 'Date in YYYY-MM-DD format (default today)', example: '2026-03-13', required: false })
   date?: string;
 }
 
 class MosquesQueryDto {
-  @ApiQuery({ name: 'lat', required: true, description: 'Latitude', example: 24.7136 })
+  @ApiProperty({ description: 'Latitude', example: 24.7136 })
   lat: number;
 
-  @ApiQuery({ name: 'lng', required: true, description: 'Longitude', example: 46.6753 })
+  @ApiProperty({ description: 'Longitude', example: 46.6753 })
   lng: number;
 
-  @ApiQuery({ name: 'radius', required: false, description: 'Search radius in kilometers', example: 10 })
+  @ApiProperty({ description: 'Search radius in kilometers', example: 10, required: false })
   radius?: number;
 }
 
 class ZakatCalculationQueryDto {
-  @ApiQuery({ name: 'cash', required: true, description: 'Cash amount in base currency', example: 5000 })
+  @ApiProperty({ description: 'Cash amount in base currency', example: 5000 })
   cash: number;
 
-  @ApiQuery({ name: 'gold', required: true, description: 'Gold amount in grams', example: 50 })
+  @ApiProperty({ description: 'Gold amount in grams', example: 50 })
   gold: number;
 
-  @ApiQuery({ name: 'silver', required: true, description: 'Silver amount in grams', example: 200 })
+  @ApiProperty({ description: 'Silver amount in grams', example: 200 })
   silver: number;
 
-  @ApiQuery({ name: 'investments', required: true, description: 'Investment value', example: 10000 })
+  @ApiProperty({ description: 'Investment value', example: 10000 })
   investments: number;
 
-  @ApiQuery({ name: 'debts', required: true, description: 'Debts owed', example: 2000 })
+  @ApiProperty({ description: 'Debts owed', example: 2000 })
   debts: number;
 }
 
 class RamadanInfoQueryDto {
-  @ApiQuery({ name: 'year', required: false, description: 'Year (default current year)', example: 2026 })
+  @ApiProperty({ description: 'Year (default current year)', example: 2026, required: false })
   year?: number;
 
-  @ApiQuery({ name: 'lat', required: false, description: 'Latitude for prayer times', example: 24.7136 })
+  @ApiProperty({ description: 'Latitude for prayer times', example: 24.7136, required: false })
   lat?: number;
 
-  @ApiQuery({ name: 'lng', required: false, description: 'Longitude for prayer times', example: 46.6753 })
+  @ApiProperty({ description: 'Longitude for prayer times', example: 46.6753, required: false })
   lng?: number;
 }
 
@@ -133,8 +130,8 @@ export class IslamicController {
   @ApiOperation({ summary: 'List hadiths with pagination' })
   @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination (hadith ID)', example: 10 })
   @ApiResponse({ status: 200, description: 'Hadith list with pagination metadata', type: Object })
-  getHadiths(@Query('cursor', new Optional(), ParseIntPipe) cursor?: number) {
-    return this.islamicService.getHadiths(cursor);
+  getHadiths(@Query('cursor') cursor?: string) {
+    return this.islamicService.getHadiths(cursor ? parseInt(cursor, 10) : undefined);
   }
 
   @Get('mosques')

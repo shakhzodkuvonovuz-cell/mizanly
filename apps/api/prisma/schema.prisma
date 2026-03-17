@@ -235,6 +235,7 @@ model User {
   coverUrl     String?
   website      String?
   location     String?
+  phone        String?
 
   followersCount Int @default(0)
   followingCount Int @default(0)

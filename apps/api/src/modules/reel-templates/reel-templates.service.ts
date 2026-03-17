@@ -42,7 +42,7 @@ export class ReelTemplatesService {
         userId,
         name: data.name.trim(),
         sourceReelId: data.sourceReelId,
-        segments: data.segments,
+        segments: JSON.parse(JSON.stringify(data.segments)),
       },
     });
   }

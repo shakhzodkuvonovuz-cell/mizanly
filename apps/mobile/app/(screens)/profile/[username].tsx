@@ -399,6 +399,7 @@ export default function ProfileScreen() {
       <View style={[styles.avatarRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         <View style={styles.avatarRing}>
           <Avatar uri={profile.avatarUrl} name={profile.displayName} size="2xl" />
+        </View>
         {isOwnProfile ? (
           <View style={{ flexDirection: rtlFlexRow(isRTL) }}>
             <Pressable

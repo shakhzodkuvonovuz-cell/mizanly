@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
-interface GiftCatalogItem {
+export interface GiftCatalogItem {
   type: string;
   name: string;
   coins: number;
@@ -19,7 +19,7 @@ interface SendGiftData {
   contentType?: string;
 }
 
-interface CashoutResult {
+export interface CashoutResult {
   diamondsDeducted: number;
   usdAmount: number;
   remainingDiamonds: number;

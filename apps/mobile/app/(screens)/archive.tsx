@@ -81,8 +81,8 @@ export default function ArchiveScreen() {
   const handleUnarchive = useCallback(() => {
     if (!selectedStory) return;
     Alert.alert(
-      {t('screens.archive.unarchiveAlertTitle')},
-      {t('screens.archive.unarchiveAlertMessage')},
+      t('screens.archive.unarchiveAlertTitle'),
+      t('screens.archive.unarchiveAlertMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('screens.archive.unarchiveButton'), style: 'default', onPress: () => unarchiveMutation.mutate(selectedStory.id) },
@@ -93,8 +93,8 @@ export default function ArchiveScreen() {
   const handleDelete = useCallback(() => {
     if (!selectedStory) return;
     Alert.alert(
-      {t('screens.archive.deleteAlertTitle')},
-      {t('screens.archive.deleteAlertMessage')},
+      t('screens.archive.deleteAlertTitle'),
+      t('screens.archive.deleteAlertMessage'),
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(selectedStory.id) },
