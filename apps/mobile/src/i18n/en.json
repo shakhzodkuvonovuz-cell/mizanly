@@ -2747,5 +2747,22 @@
     "always": "Always",
     "never": "Never",
     "hint": "Control when videos and reels play automatically"
+  },
+  "collabPlaylist": {
+    "collaborative": "Collaborative Playlist",
+    "collaborativeHint": "Let others add videos to this playlist",
+    "collaborators": "Collaborators",
+    "invite": "Invite",
+    "invitePlaceholder": "Search by username...",
+    "editor": "Editor",
+    "viewer": "Viewer",
+    "changeRole": "Change Role",
+    "remove": "Remove",
+    "removeConfirm": "Remove {{name}} from playlist?",
+    "leave": "Leave Playlist",
+    "leaveConfirm": "Leave this collaborative playlist?",
+    "addedBy": "Added by {{name}}",
+    "noCollaborators": "No collaborators yet",
+    "noCollaboratorsSubtitle": "Invite friends to add videos together"
   }
 }

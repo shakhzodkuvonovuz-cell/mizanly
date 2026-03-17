@@ -10,6 +10,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PlaylistsService } from './playlists.service';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
+import { AddCollaboratorDto, UpdateCollaboratorDto } from './dto/collaborator.dto';
 
 @ApiTags('Playlists (Minbar)')
 @Controller('playlists')
@@ -100,5 +101,60 @@ export class PlaylistsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.playlistsService.removeItem(id, videoId, userId);
+  }
+
+  @Post(':id/collaborative')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle collaborative mode on a playlist' })
+  toggleCollaborative(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.playlistsService.toggleCollaborative(id, userId);
+  }
+
+  @Post(':id/collaborators')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add a collaborator to a playlist' })
+  addCollaborator(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: AddCollaboratorDto,
+  ) {
+    return this.playlistsService.addCollaborator(id, userId, dto);
+  }
+
+  @Delete(':id/collaborators/:userId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a collaborator from a playlist' })
+  removeCollaborator(
+    @Param('id') id: string,
+    @CurrentUser('id') currentUserId: string,
+    @Param('userId') collaboratorUserId: string,
+  ) {
+    return this.playlistsService.removeCollaborator(id, currentUserId, collaboratorUserId);
+  }
+
+  @Get(':id/collaborators')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'List collaborators of a playlist' })
+  getCollaborators(@Param('id') id: string) {
+    return this.playlistsService.getCollaborators(id);
+  }
+
+  @Patch(':id/collaborators/:userId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update collaborator role' })
+  updateCollaboratorRole(
+    @Param('id') id: string,
+    @CurrentUser('id') currentUserId: string,
+    @Param('userId') collaboratorUserId: string,
+    @Body() dto: UpdateCollaboratorDto,
+  ) {
+    return this.playlistsService.updateCollaboratorRole(id, currentUserId, collaboratorUserId, dto.role);
   }
 }

@@ -286,6 +286,14 @@ export interface VideoComment {
 }
 
 // ── Minbar: Playlists & Watch History ──
+export interface PlaylistCollaborator {
+  playlistId: string;
+  userId: string;
+  role: 'editor' | 'viewer';
+  addedAt: string;
+  user: { id: string; username: string; displayName: string; avatarUrl: string | null; isVerified: boolean };
+}
+
 export interface Playlist {
   id: string;
   channelId: string;
@@ -293,6 +301,8 @@ export interface Playlist {
   description?: string;
   thumbnailUrl?: string;
   isPublic: boolean;
+  isCollaborative?: boolean;
+  collaborators?: PlaylistCollaborator[];
   videosCount: number;
   createdAt: string;
   updatedAt: string;

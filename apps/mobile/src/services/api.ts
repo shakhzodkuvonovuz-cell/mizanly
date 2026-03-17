@@ -4,7 +4,7 @@ import type {
   Circle, CircleMember, ProfileLink, FollowRequest, TrendingHashtag,
   BlockedKeyword, Report, AdminStats, SuggestedUser, CreatorStat, Settings,
   BlockedUser, MutedUser,
-  Channel, Video, VideoComment, Playlist, PlaylistItem, WatchHistoryItem,
+  Channel, Video, VideoComment, Playlist, PlaylistItem, PlaylistCollaborator, WatchHistoryItem,
   ScheduledItem, MajlisList, Poll, SubtitleTrack, VideoChapter,
   BroadcastChannel, BroadcastMessage, LiveSession, LiveParticipant,
   CallSession, StickerPack, StickerItem, PostCollab,
@@ -455,6 +455,16 @@ export const playlistsApi = {
     api.post(`/playlists/${id}/items/${videoId}`).then(r => r.data),
   removeItem: (id: string, videoId: string) =>
     api.delete(`/playlists/${id}/items/${videoId}`).then(r => r.data),
+  toggleCollaborative: (id: string) =>
+    api.post(`/playlists/${id}/collaborative`).then(r => r.data),
+  getCollaborators: (id: string) =>
+    api.get<{ data: PlaylistCollaborator[] }>(`/playlists/${id}/collaborators`).then(r => r.data),
+  addCollaborator: (id: string, userId: string, role?: string) =>
+    api.post<PlaylistCollaborator>(`/playlists/${id}/collaborators`, { userId, role }).then(r => r.data),
+  removeCollaborator: (id: string, userId: string) =>
+    api.delete(`/playlists/${id}/collaborators/${userId}`).then(r => r.data),
+  updateCollaboratorRole: (id: string, userId: string, role: string) =>
+    api.patch<PlaylistCollaborator>(`/playlists/${id}/collaborators/${userId}`, { role }).then(r => r.data),
 };
 
 // ── Threads (Majlis) ──

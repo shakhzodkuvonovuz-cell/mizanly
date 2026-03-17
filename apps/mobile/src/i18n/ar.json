@@ -2639,5 +2639,22 @@
     "always": "دائماً",
     "never": "أبداً",
     "hint": "التحكم في تشغيل الفيديوهات والريلز تلقائياً"
+  },
+  "collabPlaylist": {
+    "collaborative": "قائمة تشغيل تعاونية",
+    "collaborativeHint": "اسمح للآخرين بإضافة فيديوهات لهذه القائمة",
+    "collaborators": "المتعاونون",
+    "invite": "دعوة",
+    "invitePlaceholder": "البحث باسم المستخدم...",
+    "editor": "محرر",
+    "viewer": "مشاهد",
+    "changeRole": "تغيير الدور",
+    "remove": "إزالة",
+    "removeConfirm": "إزالة {{name}} من القائمة؟",
+    "leave": "مغادرة القائمة",
+    "leaveConfirm": "مغادرة هذه القائمة التعاونية؟",
+    "addedBy": "أضافه {{name}}",
+    "noCollaborators": "لا يوجد متعاونون بعد",
+    "noCollaboratorsSubtitle": "ادعُ أصدقاءك لإضافة فيديوهات معاً"
   }
 }
