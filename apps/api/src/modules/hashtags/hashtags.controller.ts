@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HashtagsService } from './hashtags.service';
 
@@ -24,6 +25,17 @@ export class HashtagsController {
     if (!query) return { data: [], meta: { total: 0 } };
     const limitNum = limit ? Math.min(parseInt(limit, 10), 50) : 20;
     return this.service.search(query, limitNum);
+  }
+
+  @Get('following')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get hashtags the user follows' })
+  async getFollowedHashtags(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.service.getFollowedHashtags(userId, cursor);
   }
 
   @Get(':name')
@@ -64,5 +76,27 @@ export class HashtagsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.service.getThreadsByHashtag(name, userId, cursor);
+  }
+
+  @Post(':id/follow')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Follow a hashtag' })
+  async followHashtag(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.service.followHashtag(userId, id);
+  }
+
+  @Delete(':id/follow')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Unfollow a hashtag' })
+  async unfollowHashtag(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.service.unfollowHashtag(userId, id);
   }
 }

@@ -65,10 +65,18 @@ export class PostsService {
 
   async getFeed(
     userId: string,
-    type: 'following' | 'foryou' = 'following',
+    type: 'following' | 'foryou' | 'chronological' | 'favorites' = 'following',
     cursor?: string,
     limit = 20,
   ) {
+    if (type === 'chronological') {
+      return this.getChronologicalFeed(userId, cursor, limit);
+    }
+
+    if (type === 'favorites') {
+      return this.getFavoritesFeed(userId, cursor, limit);
+    }
+
     // Cache only "for you" feed for 30 seconds
     if (type === 'foryou') {
       const cacheKey = `feed:foryou:${userId}:${cursor ?? 'first'}`;
@@ -173,6 +181,61 @@ export class PostsService {
     };
 
     return result;
+  }
+
+  private async getChronologicalFeed(userId: string, cursor?: string, limit = 20) {
+    const followingIds = await this.prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+    const followIds = followingIds.map(f => f.followingId);
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        userId: { in: [...followIds, userId] },
+        isRemoved: false,
+      },
+      select: POST_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = posts.length > limit;
+    const items = hasMore ? posts.slice(0, limit) : posts;
+    const enriched = await this.enrichPostsForUser(items, userId);
+    return {
+      data: enriched,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
+  }
+
+  private async getFavoritesFeed(userId: string, cursor?: string, limit = 20) {
+    const circleMembers = await this.prisma.circleMember.findMany({
+      where: { circle: { userId } },
+      select: { userId: true },
+    });
+    const favoriteIds = circleMembers.map(m => m.userId);
+    if (favoriteIds.length === 0) return { data: [], meta: { cursor: null, hasMore: false } };
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        userId: { in: favoriteIds },
+        isRemoved: false,
+      },
+      select: POST_SELECT,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const hasMore = posts.length > limit;
+    const items = hasMore ? posts.slice(0, limit) : posts;
+    const enriched = await this.enrichPostsForUser(items, userId);
+    return {
+      data: enriched,
+      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+    };
   }
 
   private async enrichPostsForUser(posts: any[], userId: string) {

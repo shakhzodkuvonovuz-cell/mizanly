@@ -1948,3 +1948,86 @@ model ConversationKeyEnvelope {
   @@index([userId])
   @@map("conversation_key_envelopes")
 }
+
+model HashtagFollow {
+  userId    String
+  hashtagId String
+  createdAt DateTime @default(now())
+  @@id([userId, hashtagId])
+  @@index([userId])
+  @@index([hashtagId])
+  @@map("hashtag_follows")
+}
+
+// ============================================================
+// VIRTUAL GIFTS & COINS
+// In-app currency system for gifting and creator monetization
+// ============================================================
+
+model CoinBalance {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  coins     Int      @default(0)
+  diamonds  Int      @default(0)
+  updatedAt DateTime @updatedAt
+  @@map("coin_balances")
+}
+
+model CoinTransaction {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String   @db.VarChar(20)
+  amount      Int
+  description String?
+  createdAt   DateTime @default(now())
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("coin_transactions")
+}
+
+model GiftRecord {
+  id           String   @id @default(cuid())
+  senderId     String
+  receiverId   String
+  giftType     String   @db.VarChar(50)
+  coinCost     Int
+  contentId    String?
+  contentType  String?  @db.VarChar(10)
+  createdAt    DateTime @default(now())
+  @@index([receiverId])
+  @@index([senderId])
+  @@map("gift_records")
+}
+
+// ============================================================
+// POST PROMOTIONS & REMINDERS
+// Boost posts for reach and set reminders for scheduled content
+// ============================================================
+
+model PostPromotion {
+  id          String   @id @default(cuid())
+  postId      String
+  userId      String
+  budget      Float
+  currency    String   @default("USD") @db.VarChar(3)
+  targetReach Int
+  actualReach Int      @default(0)
+  status      String   @default("active") @db.VarChar(20)
+  startsAt    DateTime @default(now())
+  endsAt      DateTime
+  createdAt   DateTime @default(now())
+  @@index([postId])
+  @@index([userId])
+  @@map("post_promotions")
+}
+
+model PostReminder {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  remindAt  DateTime
+  sent      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@unique([postId, userId])
+  @@index([remindAt])
+  @@map("post_reminders")
+}

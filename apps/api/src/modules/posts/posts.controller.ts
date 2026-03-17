@@ -55,10 +55,10 @@ export class PostsController {
   @Get('feed')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get paginated feed (following | foryou)' })
+  @ApiOperation({ summary: 'Get paginated feed (following | foryou | chronological | favorites)' })
   getFeed(
     @CurrentUser('id') userId: string,
-    @Query('type') type: 'following' | 'foryou' = 'following',
+    @Query('type') type: 'following' | 'foryou' | 'chronological' | 'favorites' = 'following',
     @Query('cursor') cursor?: string,
   ) {
     return this.postsService.getFeed(userId, type, cursor);

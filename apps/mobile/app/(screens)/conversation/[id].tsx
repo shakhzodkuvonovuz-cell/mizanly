@@ -46,6 +46,12 @@ interface TenorGifResult {
   media_formats: { gif: { url: string } };
 }
 
+// Extended message type for E2E encryption fields (server may include these)
+interface EncryptedMessage extends Message {
+  isEncrypted?: boolean;
+  encNonce?: string | null;
+}
+
 const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
 const QUICK_REACTION_EMOJIS = ['❤️', '👍', '😂', '😮', '😢', '🤲'];
 
@@ -664,7 +670,7 @@ export default function ConversationScreen() {
   }, [id]);
 
   // Decrypt incoming encrypted messages
-  const getDecryptedContent = useCallback(async (message: { id: string; content: string | null; isEncrypted?: boolean; encNonce?: string | null }) => {
+  const getDecryptedContent = useCallback(async (message: Pick<EncryptedMessage, 'content' | 'isEncrypted' | 'encNonce'>) => {
     if (!message.isEncrypted || !message.content || !message.encNonce) {
       return message.content;
     }
@@ -675,38 +681,6 @@ export default function ConversationScreen() {
       return '[Encrypted message]';
     }
   }, [id]);
-
-  // Pre-decrypt encrypted messages and store in map
-  useEffect(() => {
-    const decryptAll = async () => {
-      const newMap = new Map<string, string>();
-      for (const msg of messages) {
-        if (msg.isEncrypted && msg.content && msg.encNonce) {
-          const existing = decryptedContents.get(msg.id);
-          if (existing) {
-            newMap.set(msg.id, existing);
-          } else {
-            const decrypted = await getDecryptedContent(msg as { id: string; content: string | null; isEncrypted?: boolean; encNonce?: string | null });
-            if (decrypted) {
-              newMap.set(msg.id, decrypted);
-            }
-          }
-        }
-      }
-      if (newMap.size > 0) {
-        setDecryptedContents(prev => {
-          const merged = new Map(prev);
-          for (const [k, v] of newMap) {
-            merged.set(k, v);
-          }
-          return merged;
-        });
-      }
-    };
-    if (isEncrypted) {
-      decryptAll();
-    }
-  }, [messages, isEncrypted, getDecryptedContent]);
 
   // Send button animation
   const sendScale = useSharedValue(0);
@@ -759,7 +733,40 @@ export default function ConversationScreen() {
     setRefreshing(false);
   }, [messagesQuery, convoQuery]);
 
-  const messages: Message[] = messagesQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const messages = (messagesQuery.data?.pages.flatMap((p) => p.data) ?? []) as EncryptedMessage[];
+
+  // Pre-decrypt encrypted messages and store in map
+  useEffect(() => {
+    const decryptAll = async () => {
+      const newMap = new Map<string, string>();
+      for (const msg of messages) {
+        if (msg.isEncrypted && msg.content && msg.encNonce) {
+          const existing = decryptedContents.get(msg.id);
+          if (existing) {
+            newMap.set(msg.id, existing);
+          } else {
+            const decrypted = await getDecryptedContent(msg);
+            if (decrypted) {
+              newMap.set(msg.id, decrypted);
+            }
+          }
+        }
+      }
+      if (newMap.size > 0) {
+        setDecryptedContents(prev => {
+          const merged = new Map(prev);
+          for (const [k, v] of newMap) {
+            merged.set(k, v);
+          }
+          return merged;
+        });
+      }
+    };
+    if (isEncrypted) {
+      decryptAll();
+    }
+  }, [messages, isEncrypted, getDecryptedContent]);
+
   const combinedMessages = [...messages, ...pendingMessages.map(p => ({
     ...p,
     // Convert PendingMessage to a shape compatible with Message
@@ -1259,8 +1266,9 @@ export default function ConversationScreen() {
                 new Date(member.lastReadAt) >= new Date(item.message.createdAt)
               ).slice(0, 3) ?? [];
               // Use decrypted content for encrypted messages
-              const displayMessage = (item.message.isEncrypted && decryptedContents.has(item.message.id))
-                ? { ...item.message, content: decryptedContents.get(item.message.id) ?? item.message.content }
+              const encMsg = item.message as EncryptedMessage;
+              const displayMessage = (encMsg.isEncrypted && decryptedContents.has(encMsg.id))
+                ? { ...item.message, content: decryptedContents.get(encMsg.id) ?? item.message.content }
                 : item.message;
               return (
                   <Swipeable
@@ -1556,7 +1564,7 @@ export default function ConversationScreen() {
             label={t('chat.enableEncryption')}
             icon={<Icon name="lock" size="sm" color={colors.text.primary} />}
             onPress={async () => {
-              const memberIds = convo.members.map((m: ConversationMember) => m.userId);
+              const memberIds = convo.members.map((m: ConversationMember) => m.userId).filter((uid): uid is string => !!uid);
               const success = await encryptionService.setupConversationEncryption(id, memberIds);
               if (success) {
                 setIsEncrypted(true);

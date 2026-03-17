@@ -351,6 +351,42 @@ export class HashtagsService {
     }));
   }
 
+  async followHashtag(userId: string, hashtagId: string) {
+    const hashtag = await this.prisma.hashtag.findUnique({ where: { id: hashtagId } });
+    if (!hashtag) throw new NotFoundException('Hashtag not found');
+    await this.prisma.hashtagFollow.upsert({
+      where: { userId_hashtagId: { userId, hashtagId } },
+      create: { userId, hashtagId },
+      update: {},
+    });
+    return { followed: true };
+  }
+
+  async unfollowHashtag(userId: string, hashtagId: string) {
+    await this.prisma.hashtagFollow.deleteMany({ where: { userId, hashtagId } });
+    return { followed: false };
+  }
+
+  async getFollowedHashtags(userId: string, cursor?: string, limit = 20) {
+    const follows = await this.prisma.hashtagFollow.findMany({
+      where: { userId },
+      take: limit + 1,
+      ...(cursor ? { cursor: { userId_hashtagId: { userId, hashtagId: cursor } }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+    });
+    const hasMore = follows.length > limit;
+    const data = hasMore ? follows.slice(0, limit) : follows;
+    const hashtagIds = data.map(f => f.hashtagId);
+    const hashtags = await this.prisma.hashtag.findMany({
+      where: { id: { in: hashtagIds } },
+      select: { id: true, name: true, postsCount: true },
+    });
+    return {
+      data: hashtags,
+      meta: { cursor: hasMore ? data[data.length - 1].hashtagId : null, hasMore },
+    };
+  }
+
   private async enrichThreads(threads: ThreadWithUser[], userId: string): Promise<EnrichedThread[]> {
     const threadIds = threads.map(t => t.id);
     const [reactions, saved] = await Promise.all([

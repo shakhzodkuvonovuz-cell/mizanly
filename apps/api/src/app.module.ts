@@ -60,6 +60,9 @@ import { StoryChainsModule } from './modules/story-chains/story-chains.module';
 import { VideoRepliesModule } from './modules/video-replies/video-replies.module';
 import { EncryptionModule } from './modules/encryption/encryption.module';
 import { ChatExportModule } from './modules/chat-export/chat-export.module';
+import { CreatorModule } from './modules/creator/creator.module';
+import { GiftsModule } from './modules/gifts/gifts.module';
+import { PromotionsModule } from './modules/promotions/promotions.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 
@@ -132,6 +135,9 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
     VideoRepliesModule,
     EncryptionModule,
     ChatExportModule,
+    CreatorModule,
+    GiftsModule,
+    PromotionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
