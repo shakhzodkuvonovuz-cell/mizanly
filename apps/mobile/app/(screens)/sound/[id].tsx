@@ -19,6 +19,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack, Reel } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
@@ -26,6 +27,7 @@ const ITEM_SIZE = (100 / GRID_COLUMNS) + '%';
 const COVER_SIZE = Dimensions.get('window').width * 0.6;
 
 export default function SoundScreen() {
+  const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -128,8 +130,8 @@ export default function SoundScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Sound"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.sound.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={{ paddingTop: insets.top + 52 }}>
           {renderSkeleton()}
@@ -142,15 +144,15 @@ export default function SoundScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Sound"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.sound.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={{ paddingTop: insets.top + 52, flex: 1 }}>
           <EmptyState
             icon="volume-x"
-            title="Sound not found"
-            subtitle="This audio track may have been removed or is unavailable"
-            actionLabel="Go back"
+            title={t('screens.sound.errorTitle')}
+            subtitle={t('screens.sound.notFoundSubtitle')}
+            actionLabel={t('screens.sound.errorAction')}
             onAction={() => router.back()}
           />
         </View>
@@ -162,8 +164,8 @@ export default function SoundScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Sound"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.sound.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <FlatList
               removeClippedSubviews={true}
@@ -201,7 +203,7 @@ export default function SoundScreen() {
                       colors={[colors.emerald, colors.gold]}
                       style={styles.trendingBadge}
                     >
-                      <Text style={styles.trendingBadgeText}>Trending</Text>
+                      <Text style={styles.trendingBadgeText}>{t('screens.sound.trending')}</Text>
                     </LinearGradient>
                   )}
                 </View>
@@ -217,20 +219,20 @@ export default function SoundScreen() {
                     style={styles.statBadge}
                   >
                     <Icon name="repeat" size="xs" color={colors.emerald} />
-                    <Text style={styles.statBadgeText}>{formatNumber(track.usageCount)} reels</Text>
+                    <Text style={styles.statBadgeText}>{formatNumber(track.usageCount)} {t('screens.sound.reels')}</Text>
                   </LinearGradient>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                     style={styles.statBadge}
                   >
                     <Icon name="play" size="xs" color={colors.emerald} />
-                    <Text style={styles.statBadgeText}>{formatNumber(track.playsCount || 0)} plays</Text>
+                    <Text style={styles.statBadgeText}>{formatNumber(track.playsCount || 0)} {t('screens.sound.plays')}</Text>
                   </LinearGradient>
                 </View>
 
                 {/* Use this sound button */}
                 <GradientButton
-                  label="Use this sound"
+                  label={t('screens.sound.useSound')}
                   onPress={handleUseSound}
                   style={styles.useButton}
                 />
@@ -247,8 +249,8 @@ export default function SoundScreen() {
             ) : (
               <EmptyState
                 icon="video"
-                title="No reels yet"
-                subtitle="Be the first to create a reel with this sound"
+                title={t('screens.sound.noReels')}
+                subtitle={t('screens.sound.noReelsSubtitle')}
                 style={styles.emptyState}
               />
             )

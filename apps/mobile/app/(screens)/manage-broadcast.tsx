@@ -17,8 +17,10 @@ import { broadcastApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ManageBroadcastScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams<{ channelId: string }>();
   const insets = useSafeAreaInsets();
@@ -49,7 +51,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.promoteToAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert('Success', 'User promoted to Admin');
+      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.promotedSuccess'));
     },
     onError: () => haptic.error(),
   });
@@ -58,7 +60,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.demoteFromAdmin(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert('Success', 'User demoted from Admin');
+      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.demotedSuccess'));
     },
     onError: () => haptic.error(),
   });
@@ -67,7 +69,7 @@ export default function ManageBroadcastScreen() {
     mutationFn: (userId: string) => broadcastApi.removeSubscriber(params.channelId!, userId),
     onSuccess: () => {
       haptic.success();
-      Alert.alert('Success', 'Subscriber removed');
+      Alert.alert(t('screens.manage-broadcast.successTitle'), t('screens.manage-broadcast.removedSuccess'));
     },
     onError: () => haptic.error(),
   });
@@ -75,21 +77,21 @@ export default function ManageBroadcastScreen() {
   const handleAction = (user: User) => {
     if (activeTab === 'subscribers') {
       Alert.alert(
-        'Manage Subscriber',
-        `Manage ${user.displayName || user.username}`,
+        t('screens.manage-broadcast.manageSubscriber'),
+        t('screens.manage-broadcast.manage', { name: user.displayName || user.username }),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Promote to Admin', onPress: () => promoteMutation.mutate(user.id) },
-          { text: 'Remove', style: 'destructive', onPress: () => removeMutation.mutate(user.id) },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('screens.manage-broadcast.makeAdmin'), onPress: () => promoteMutation.mutate(user.id) },
+          { text: t('common.remove'), style: 'destructive', onPress: () => removeMutation.mutate(user.id) },
         ]
       );
     } else {
       Alert.alert(
-        'Manage Admin',
-        `Manage ${user.displayName || user.username}`,
+        t('screens.manage-broadcast.manageAdmin'),
+        t('screens.manage-broadcast.manage', { name: user.displayName || user.username }),
         [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Demote to Subscriber', onPress: () => demoteMutation.mutate(user.id) },
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('screens.manage-broadcast.demoteToSubscriber'), onPress: () => demoteMutation.mutate(user.id) },
         ]
       );
     }
@@ -98,17 +100,17 @@ export default function ManageBroadcastScreen() {
   if (isChannelError || !params.channelId) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Manage Broadcast" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={t('screens.manage-broadcast.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ height: insets.top + 52 }} />
-        <EmptyState 
+        <EmptyState
           icon="flag"
-          title="Could not load channel" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Go Back" 
-          onAction={() => router.back()} 
+          title={t('screens.manage-broadcast.errorTitle')}
+          subtitle={t('screens.manage-broadcast.errorSubtitle')}
+          actionLabel={t('common.back')}
+          onAction={() => router.back()}
         />
       </View>
     );
@@ -117,9 +119,9 @@ export default function ManageBroadcastScreen() {
   if (isChannelLoading && !channel) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Manage Broadcast" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={t('screens.manage-broadcast.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -163,16 +165,16 @@ export default function ManageBroadcastScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader 
-          title={channel ? `Manage ${channel.name}` : "Manage Broadcast"} 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={channel ? t('screens.manage-broadcast.manageChannel', { name: channel.name }) : t('screens.manage-broadcast.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
       
         <View style={[styles.tabsWrap, { marginTop: insets.top + 52 }]}>
           <TabSelector 
             tabs={[
-              { key: 'subscribers', label: `Subscribers (${channel?.subscribersCount || 0})` },
-              { key: 'admins', label: 'Admins' },
+              { key: 'subscribers', label: `${t('screens.manage-broadcast.subscribers')} (${channel?.subscribersCount || 0})` },
+              { key: 'admins', label: t('screens.manage-broadcast.admins') },
             ]}
             activeTab={activeTab}
             onTabChange={(key) => setActiveTab(key as 'subscribers' | 'admins')}
@@ -200,10 +202,10 @@ export default function ManageBroadcastScreen() {
               </View>
             ) : (
               <View style={styles.emptyWrap}>
-                <EmptyState 
-                  icon="users" 
-                  title={activeTab === 'subscribers' ? "No subscribers yet" : "No admins"} 
-                  subtitle={activeTab === 'subscribers' ? "Share your channel link" : "Promote users to admin"} 
+                <EmptyState
+                  icon="users"
+                  title={activeTab === 'subscribers' ? t('screens.manage-broadcast.emptySubscribers') : t('screens.manage-broadcast.emptyAdmins')}
+                  subtitle={activeTab === 'subscribers' ? t('screens.manage-broadcast.emptySubscribersSubtitle') : t('screens.manage-broadcast.emptyAdminsSubtitle')}
                 />
               </View>
             )

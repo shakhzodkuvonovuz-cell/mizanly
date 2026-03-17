@@ -2131,7 +2131,19 @@
       "errorSubtitle": "Please try again later",
       "errorAction": "Go back",
       "mute": "Mute",
-      "unmute": "Unmute"
+      "unmute": "Unmute",
+      "joinError": "Failed to join live stream",
+      "shareMessage": "Watch {{title}} live on Mizanly!",
+      "errorSharing": "Error sharing",
+      "inviteToSpeak": "Invite to Speak",
+      "inviteToSpeakDesc": "Invite this user to become a speaker?",
+      "invite": "Invite",
+      "removeParticipant": "Remove Participant",
+      "removeParticipantConfirm": "Are you sure you want to remove this participant?",
+      "wantsToSpeak": "Wants to speak",
+      "notFoundTitle": "Stream not found",
+      "notFoundSubtitle": "This live stream may have ended or been removed",
+      "welcomeToStream": "Welcome to the stream!"
     },
     "majlis-lists": {
       "title": "Majlis Lists",
@@ -2147,7 +2159,14 @@
       "emptyTitle": "No lists yet",
       "emptySubtitle": "Create a list to organize your Majlis feed",
       "errorTitle": "Could not load lists",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "errorCreate": "Failed to create list",
+      "errorDelete": "Failed to delete list",
+      "requiredTitle": "Name Required",
+      "requiredName": "Please enter a name for the list",
+      "namePlaceholder": "e.g. Friends, Tech news",
+      "descPlaceholder": "What's this list about?",
+      "publicListDesc": "Anyone can see and subscribe to this list"
     },
     "manage-broadcast": {
       "title": "Manage Broadcast",
@@ -2159,9 +2178,20 @@
       "removeSubscriber": "Remove Subscriber",
       "removeSubscriberConfirm": "Remove {{name}} from channel?",
       "emptySubscribers": "No subscribers yet",
+      "emptySubscribersSubtitle": "Share your channel link",
       "emptyAdmins": "No admins yet",
+      "emptyAdminsSubtitle": "Promote users to admin",
       "errorTitle": "Could not load channel",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "successTitle": "Success",
+      "promotedSuccess": "User promoted to Admin",
+      "demotedSuccess": "User demoted from Admin",
+      "removedSuccess": "Subscriber removed",
+      "manageSubscriber": "Manage Subscriber",
+      "manageAdmin": "Manage Admin",
+      "manage": "Manage {{name}}",
+      "demoteToSubscriber": "Demote to Subscriber",
+      "manageChannel": "Manage {{name}}"
     },
     "muted": {
       "title": "Muted Accounts",
@@ -2283,7 +2313,11 @@
       "uploadingThumbnail": "Uploading thumbnail...",
       "successTitle": "Scheduled!",
       "successMessage": "Your live stream has been scheduled",
-      "errorTitle": "Error"
+      "errorTitle": "Error",
+      "errorSchedule": "Failed to schedule live stream. Please try again.",
+      "titlePlaceholder": "What are you streaming?",
+      "descriptionPlaceholder": "Tell viewers what your stream is about",
+      "thumbnailHint": "Recommended: 16:9 ratio"
     },
     "schedule-post": {
       "title": "Schedule Post",
@@ -2296,7 +2330,10 @@
       "timezone": "Timezone",
       "scheduledFor": "Scheduled for:",
       "highEngagement": "high engagement",
-      "schedule": "Schedule"
+      "schedule": "Schedule",
+      "post": "Post",
+      "willPostTo": "Will post to: {{space}}",
+      "reminderNote": "You'll receive a reminder 30 minutes before"
     },
     "share-profile": {
       "title": "Share Profile",
@@ -2305,7 +2342,9 @@
       "scanQR": "Scan QR",
       "hint": "Share your profile with friends",
       "errorTitle": "Could not load profile",
-      "errorSubtitle": "Please try again"
+      "errorSubtitle": "Please try again",
+      "profileUnavailable": "Profile unavailable",
+      "profileUnavailableDesc": "Unable to load your profile"
     },
     "sound": {
       "title": "Sound",
@@ -2315,6 +2354,7 @@
       "useSound": "Use this sound",
       "noReels": "No reels yet",
       "noReelsSubtitle": "Be the first to use this sound",
+      "notFoundSubtitle": "This audio track may have been removed or is unavailable",
       "errorTitle": "Could not load sound",
       "errorSubtitle": "Please try again",
       "errorAction": "Go back"

@@ -16,11 +16,13 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { stickersApi } from '@/services/api';
 import type { StickerPack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack; onPress: () => void; onAdd: () => void; onRemove: () => void; index: number }) {
+  const { t } = useTranslation();
   const [isAdded, setIsAdded] = useState(false);
   const haptic = useHaptic();
 
@@ -59,7 +61,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle} numberOfLines={1}>{pack.name}</Text>
             <Text style={styles.cardSubtitle}>
-              {pack.stickers?.length || 0} stickers • {pack.downloadCount || 0} downloads
+              {pack.stickers?.length || 0} {t('screens.sticker-browser.stickers')} • {pack.downloadCount || 0} {t('screens.sticker-browser.downloads')}
             </Text>
           </View>
           <Pressable onPress={handleToggle}>
@@ -68,7 +70,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
               style={[styles.addButton, isAdded && styles.addedButton]}
             >
               <Text style={[styles.addButtonText, isAdded && styles.addedButtonText]}>
-                {isAdded ? "Added" : "Add"}
+                {isAdded ? t('screens.sticker-browser.added') : t('screens.sticker-browser.addPack')}
               </Text>
             </LinearGradient>
           </Pressable>
@@ -79,6 +81,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
 }
 
 export default function StickerBrowserScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -152,7 +155,7 @@ export default function StickerBrowserScreen() {
 
     return (
       <View style={styles.featuredSection}>
-        <Text style={styles.sectionTitle}>Featured Packs</Text>
+        <Text style={styles.sectionTitle}>{t('screens.sticker-browser.featuredPacks')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
           {featuredData.map((pack) => (
             <Pressable key={pack.id} style={styles.featuredCard} onPress={() => setSelectedPack(pack)}>
@@ -174,9 +177,9 @@ export default function StickerBrowserScreen() {
   if (isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.sticker-browser.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ height: insets.top + 52 }} />
-        <EmptyState icon="smile" title="Couldn't load stickers" subtitle="Check your connection and try again" actionLabel="Retry" onAction={() => refetch()} />
+        <EmptyState icon="smile" title={t('screens.sticker-browser.noResults')} subtitle={t('screens.sticker-browser.noResultsSubtitle')} actionLabel={t('common.retry')} onAction={() => refetch()} />
       </View>
     );
   }
@@ -184,7 +187,7 @@ export default function StickerBrowserScreen() {
   if (isBrowseLoading && !browseData) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.sticker-browser.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
           <Skeleton.Rect width="100%" height={80} borderRadius={radius.md} />
@@ -198,7 +201,7 @@ export default function StickerBrowserScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader title="Stickers" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.sticker-browser.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
       
         <Animated.View entering={FadeInUp.delay(0).duration(400)} style={[styles.searchWrap, { marginTop: insets.top + 52 }]}>
           <LinearGradient
@@ -213,7 +216,7 @@ export default function StickerBrowserScreen() {
             </LinearGradient>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search sticker packs..."
+              placeholder={t('screens.sticker-browser.searchPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -257,8 +260,8 @@ export default function StickerBrowserScreen() {
               <View style={styles.emptyWrap}>
                 <EmptyState 
                   icon="smile" 
-                  title={debouncedQuery.length > 0 ? "No results found" : "No sticker packs"} 
-                  subtitle={debouncedQuery.length > 0 ? "Try a different search term" : "Sticker packs will appear here"} 
+                  title={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResults') : t('screens.sticker-browser.noResults')}
+                  subtitle={debouncedQuery.length > 0 ? t('screens.sticker-browser.noResultsSubtitle') : t('screens.sticker-browser.noResultsSubtitle')} 
                 />
               </View>
             ) : null
@@ -284,7 +287,7 @@ export default function StickerBrowserScreen() {
 
               <View style={{ marginTop: spacing.xl }}>
                 <GradientButton 
-                  title="Add to Collection"
+                  title={t('screens.sticker-browser.addToCollection')}
                   onPress={() => {
                     handleAdd(selectedPack.id);
                     setSelectedPack(null);

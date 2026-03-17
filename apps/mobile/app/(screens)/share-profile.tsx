@@ -16,8 +16,10 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function ShareProfileScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
   const [copied, setCopied] = useState(false);
@@ -66,7 +68,7 @@ export default function ShareProfileScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Share Profile"
+          title={t('screens.share-profile.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.headerSpacer} />
@@ -97,14 +99,14 @@ export default function ShareProfileScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Share Profile"
+          title={t('screens.share-profile.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <EmptyState
           icon="flag"
-          title="Couldn't load profile"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.share-profile.errorTitle')}
+          subtitle={t('screens.share-profile.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </View>
@@ -115,15 +117,15 @@ export default function ShareProfileScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Share Profile"
+          title={t('screens.share-profile.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="user"
-          title="Profile unavailable"
-          subtitle="Unable to load your profile"
-          actionLabel="Go back"
+          title={t('screens.share-profile.profileUnavailable')}
+          subtitle={t('screens.share-profile.profileUnavailableDesc')}
+          actionLabel={t('common.back')}
           onAction={() => router.back()}
         />
       </View>
@@ -134,10 +136,10 @@ export default function ShareProfileScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel="Go back" accessibilityRole="button">
+          <Pressable onPress={() => router.back()} hitSlop={8} accessibilityLabel={t('accessibility.goBack')} accessibilityRole="button">
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
           </Pressable>
-          <Text style={styles.headerTitle}>Share Profile</Text>
+          <Text style={styles.headerTitle}>{t('screens.share-profile.title')}</Text>
           <View style={{ width: 24 }} />
         </View>
 
@@ -186,7 +188,7 @@ export default function ShareProfileScreen() {
 
           {/* Share Hint */}
           <Animated.View entering={FadeInUp.delay(150).duration(400).springify()}>
-            <Text style={styles.shareHint}>Scan this QR code to visit your profile</Text>
+            <Text style={styles.shareHint}>{t('screens.share-profile.hint')}</Text>
           </Animated.View>
 
           {/* Glassmorphism Action Buttons */}
@@ -195,7 +197,7 @@ export default function ShareProfileScreen() {
             <Pressable
               style={styles.buttonWrapper}
               onPress={handleCopyLink}
-              accessibilityLabel={copied ? "Link copied" : "Copy profile link"}
+              accessibilityLabel={copied ? t('screens.share-profile.copied') : t('screens.share-profile.copyLink')}
               accessibilityRole="button"
             >
               <LinearGradient
@@ -204,7 +206,7 @@ export default function ShareProfileScreen() {
               >
                 <Icon name={copied ? 'check' : 'link'} size="md" color={copied ? '#fff' : colors.text.primary} />
                 <Text style={[styles.buttonLabel, copied && styles.buttonLabelActive]}>
-                  {copied ? 'Copied!' : 'Copy Link'}
+                  {copied ? t('screens.share-profile.copied') : t('screens.share-profile.copyLink')}
                 </Text>
               </LinearGradient>
             </Pressable>
@@ -213,7 +215,7 @@ export default function ShareProfileScreen() {
             <Pressable
               style={styles.buttonWrapper}
               onPress={handleShare}
-              accessibilityLabel="Share profile"
+              accessibilityLabel={t('screens.share-profile.title')}
               accessibilityRole="button"
             >
               <LinearGradient
@@ -221,7 +223,7 @@ export default function ShareProfileScreen() {
                 style={[styles.button, styles.shareButton]}
               >
                 <Icon name="share" size="md" color="#fff" />
-                <Text style={[styles.buttonLabel, styles.shareButtonLabel]}>Share</Text>
+                <Text style={[styles.buttonLabel, styles.shareButtonLabel]}>{t('common.share')}</Text>
               </LinearGradient>
             </Pressable>
 
@@ -229,7 +231,7 @@ export default function ShareProfileScreen() {
             <Pressable
               style={styles.buttonWrapper}
               onPress={handleScanQR}
-              accessibilityLabel="Scan QR code"
+              accessibilityLabel={t('screens.share-profile.scanQR')}
               accessibilityRole="button"
             >
               <LinearGradient
@@ -237,7 +239,7 @@ export default function ShareProfileScreen() {
                 style={styles.button}
               >
                 <Icon name="camera" size="md" color={colors.text.primary} />
-                <Text style={styles.buttonLabel}>Scan QR</Text>
+                <Text style={styles.buttonLabel}>{t('screens.share-profile.scanQR')}</Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>

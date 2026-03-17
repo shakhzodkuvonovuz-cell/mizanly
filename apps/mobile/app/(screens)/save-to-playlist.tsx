@@ -14,9 +14,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, playlistsApi } from '@/services/api';
 import type { Playlist } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function SaveToPlaylistScreen() {
+  const { t, isRTL } = useTranslation();
   const { videoId } = useLocalSearchParams<{ videoId: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -147,7 +149,7 @@ export default function SaveToPlaylistScreen() {
                 <Text style={[styles.playlistName, isInPlaylist && styles.playlistNameActive]} numberOfLines={1}>{item.title}</Text>
                 <View style={styles.metaRow}>
                   <Icon name="video" size={10} color={colors.text.tertiary} />
-                  <Text style={styles.playlistMeta}>{item.videosCount} videos</Text>
+                  <Text style={styles.playlistMeta}>{item.videosCount} {t('screens.save-to-playlist.videos')}</Text>
                 </View>
               </View>
             </View>
@@ -175,8 +177,8 @@ export default function SaveToPlaylistScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Save to playlist"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.save-to-playlist.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={[styles.content, { paddingTop: insets.top + 60 }]}>
           <Skeleton.Rect width="100%" height={56} borderRadius={radius.sm} style={{ marginBottom: spacing.sm }} />
@@ -191,15 +193,15 @@ export default function SaveToPlaylistScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Save to playlist"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.save-to-playlist.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={{ paddingTop: insets.top + 60 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load playlists. Please try again."
-            actionLabel="Go back"
+            title={t('screens.save-to-playlist.errorTitle')}
+            subtitle={t('screens.save-to-playlist.errorSubtitle')}
+            actionLabel={t('accessibility.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -211,12 +213,12 @@ export default function SaveToPlaylistScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Save to playlist"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.save-to-playlist.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           rightActions={[{
-            icon: <Text style={styles.createText}>New</Text>,
+            icon: <Text style={styles.createText}>{t('screens.save-to-playlist.newPlaylist')}</Text>,
             onPress: handleCreateNew,
-            accessibilityLabel: 'Create new playlist',
+            accessibilityLabel: t('screens.save-to-playlist.newPlaylist'),
           }]}
         />
 
@@ -239,9 +241,9 @@ export default function SaveToPlaylistScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="layers"
-              title="No playlists yet"
-              subtitle="Create a playlist to save videos for later"
-              actionLabel="Create playlist"
+              title={t('screens.save-to-playlist.emptyTitle')}
+              subtitle={t('screens.save-to-playlist.emptySubtitle')}
+              actionLabel={t('common.create')}
               onAction={handleCreateNew}
               style={styles.emptyState}
             />

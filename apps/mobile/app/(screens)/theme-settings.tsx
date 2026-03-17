@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius, iconSize } from '@/theme';
 import { useStore } from '@/store';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type ThemeOption = 'dark' | 'light' | 'system';
@@ -89,6 +90,7 @@ function ThemeSettingsSkeleton() {
 }
 
 export default function ThemeSettingsScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { theme, setTheme } = useStore();
   const systemTheme = useColorScheme() ?? 'dark';
@@ -107,20 +109,20 @@ export default function ThemeSettingsScreen() {
   const options: Array<{ value: ThemeOption; label: string; description: string; icon: React.ReactNode }> = [
     {
       value: 'dark',
-      label: 'Dark',
-      description: 'Easier on the eyes in low light',
+      label: t('screens.theme-settings.dark'),
+      description: t('screens.theme-settings.darkDesc'),
       icon: <Moon size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
     },
     {
       value: 'light',
-      label: 'Light',
-      description: 'Clean and bright',
+      label: t('screens.theme-settings.light'),
+      description: t('screens.theme-settings.lightDesc'),
       icon: <Sun size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
     },
     {
       value: 'system',
-      label: 'System',
-      description: 'Match device settings',
+      label: t('screens.theme-settings.system'),
+      description: t('screens.theme-settings.systemDesc'),
       icon: <Settings size={iconSize.md} color={colors.text.primary} strokeWidth={1.75} />,
     },
   ];
@@ -129,11 +131,11 @@ export default function ThemeSettingsScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Appearance"
+          title={t('screens.theme-settings.title')}
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
         <View style={{ paddingTop: 100 }}>
@@ -147,11 +149,11 @@ export default function ThemeSettingsScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Appearance"
+          title={t('screens.theme-settings.title')}
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
 
@@ -169,7 +171,7 @@ export default function ThemeSettingsScreen() {
                 >
                   <Icon name="eye" size="xs" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.previewTitle}>Preview</Text>
+                <Text style={styles.previewTitle}>{t('screens.theme-settings.preview')}</Text>
               </View>
               <View style={styles.swatchRow}>
                 <ColorSwatch bg={themeColors.bg} border={themeColors.border} text={colors.text.primary} />
@@ -194,7 +196,7 @@ export default function ThemeSettingsScreen() {
               >
                 <Icon name="settings" size="xs" color={colors.gold} />
               </LinearGradient>
-              <Text style={styles.sectionTitle}>Theme</Text>
+              <Text style={styles.sectionTitle}>{t('screens.theme-settings.themeLabel')}</Text>
             </View>
             <Animated.View entering={FadeInUp.delay(100).duration(500)}>
               <LinearGradient
@@ -219,7 +221,7 @@ export default function ThemeSettingsScreen() {
 
           {/* Note */}
           <Text style={styles.note}>
-            Changes apply immediately across the app. Some screens may require a restart to reflect fully.
+            {t('screens.theme-settings.note')}
           </Text>
         </ScrollView>
       </SafeAreaView>

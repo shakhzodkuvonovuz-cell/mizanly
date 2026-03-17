@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { usersApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 // Local type for watch history items (matches Step 4's WatchHistoryItem)
@@ -93,7 +94,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
               {item.channel.name}
             </Text>
             <Text style={styles.videoStats} numberOfLines={1}>
-              {formatViews(item.viewsCount)} views • {formatDuration(item.duration)}
+              {formatViews(item.viewsCount)} {t('screens.watch-history.views')} • {formatDuration(item.duration)}
             </Text>
           </View>
         </View>
@@ -103,6 +104,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
 }
 
 export default function WatchHistoryScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -129,12 +131,12 @@ export default function WatchHistoryScreen() {
 
   const handleClear = useCallback(() => {
     Alert.alert(
-      'Clear watch history?',
-      'This will remove all videos from your watch history and cannot be undone.',
+      t('screens.watch-history.clearConfirmTitle'),
+      t('screens.watch-history.clearConfirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Clear',
+          text: t('screens.watch-history.clear'),
           style: 'destructive',
           onPress: async () => {
             await usersApi.clearWatchHistory();
@@ -153,15 +155,15 @@ export default function WatchHistoryScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Watch History"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.watch-history.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
         <EmptyState
           icon="flag"
-          title="Couldn't load content"
-          subtitle="Check your connection and try again"
-          actionLabel="Retry"
+          title={t('screens.watch-history.errorTitle')}
+          subtitle={t('screens.watch-history.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => watchHistoryQuery.refetch()}
         />
       </View>
@@ -172,12 +174,12 @@ export default function WatchHistoryScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Watch History"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.watch-history.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
           rightActions={[{
-            icon: <Text style={styles.clearText}>Clear</Text>,
+            icon: <Text style={styles.clearText}>{t('screens.watch-history.clear')}</Text>,
             onPress: handleClear,
-            accessibilityLabel: 'Clear watch history',
+            accessibilityLabel: t('screens.watch-history.clearConfirmTitle'),
           }]}
         />
         <View style={styles.headerSpacer} />
@@ -198,8 +200,8 @@ export default function WatchHistoryScreen() {
             !watchHistoryQuery.isLoading ? (
               <EmptyState
                 icon="clock"
-                title="Your watch history is empty"
-                subtitle="Videos you watch will show up here so you can easily find them again"
+                title={t('screens.watch-history.emptyTitle')}
+                subtitle={t('screens.watch-history.emptySubtitle')}
               />
             ) : (
               <View style={styles.skeletonContainer}>

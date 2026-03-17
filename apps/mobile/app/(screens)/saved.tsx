@@ -17,6 +17,7 @@ import { usersApi } from '@/services/api';
 import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { useUser } from '@clerk/clerk-expo';
 import type { Post, Thread, Reel, Video } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -118,6 +119,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
 }
 
 export default function SavedScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState<Tab>('posts');
@@ -239,16 +241,16 @@ export default function SavedScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Saved"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.saved.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
         <TabSelector
           tabs={[
-            { key: 'posts', label: 'Posts' },
-            { key: 'threads', label: 'Threads' },
-            { key: 'reels', label: 'Reels' },
-            { key: 'videos', label: 'Videos' },
+            { key: 'posts', label: t('screens.saved.tabPosts') },
+            { key: 'threads', label: t('screens.saved.tabThreads') },
+            { key: 'reels', label: t('screens.saved.tabReels') },
+            { key: 'videos', label: t('screens.saved.tabVideos') },
           ]}
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
@@ -259,9 +261,9 @@ export default function SavedScreen() {
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
             icon="flag"
-            title="Couldn't load content"
-            subtitle="Check your connection and try again"
-            actionLabel="Retry"
+            title={t('screens.saved.errorTitle')}
+            subtitle={t('screens.saved.errorSubtitle')}
+            actionLabel={t('common.retry')}
             onAction={refetchCurrent}
           />
         </View>
@@ -273,17 +275,17 @@ export default function SavedScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Saved"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.saved.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
 
         <TabSelector
           tabs={[
-            { key: 'posts', label: 'Posts' },
-            { key: 'threads', label: 'Threads' },
-            { key: 'reels', label: 'Reels' },
-            { key: 'videos', label: 'Videos' },
+            { key: 'posts', label: t('screens.saved.tabPosts') },
+            { key: 'threads', label: t('screens.saved.tabThreads') },
+            { key: 'reels', label: t('screens.saved.tabReels') },
+            { key: 'videos', label: t('screens.saved.tabVideos') },
           ]}
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
@@ -313,7 +315,7 @@ export default function SavedScreen() {
             )}
             ListEmptyComponent={() =>
               !savedPostsQuery.isLoading ? (
-                <EmptyState icon="bookmark" title="Your saved posts will appear here" subtitle="Tap the bookmark icon on any post you love to keep it close" />
+                <EmptyState icon="bookmark" title={t('screens.saved.noPosts')} subtitle={t('screens.saved.noPostsSubtitle')} />
               ) : (
                 <View style={styles.gridLoadingContainer}>
                   {Array.from({ length: 9 }).map((_, i) => (
@@ -350,7 +352,7 @@ export default function SavedScreen() {
             )}
             ListEmptyComponent={() =>
               !savedThreadsQuery.isLoading ? (
-                <EmptyState icon="bookmark" title="Your saved threads will appear here" subtitle="Bookmark threads that inspire you to revisit anytime" />
+                <EmptyState icon="bookmark" title={t('screens.saved.noThreads')} subtitle={t('screens.saved.noThreadsSubtitle')} />
               ) : (
                 <View style={styles.listLoadingContainer}>
                   {Array.from({ length: 3 }).map((_, i) => (
@@ -400,7 +402,7 @@ export default function SavedScreen() {
             )}
             ListEmptyComponent={() =>
               !savedReelsQuery.isLoading ? (
-                <EmptyState icon="bookmark" title="Your saved reels will appear here" subtitle="Save reels you enjoy and watch them again later" />
+                <EmptyState icon="bookmark" title={t('screens.saved.noReels')} subtitle={t('screens.saved.noReelsSubtitle')} />
               ) : (
                 <View style={styles.gridLoadingContainer}>
                   {Array.from({ length: 9 }).map((_, i) => (
@@ -437,7 +439,7 @@ export default function SavedScreen() {
             )}
             ListEmptyComponent={() =>
               !savedVideosQuery.isLoading ? (
-                <EmptyState icon="bookmark" title="Your saved videos will appear here" subtitle="Bookmark videos to build your personal collection" />
+                <EmptyState icon="bookmark" title={t('screens.saved.noVideos')} subtitle={t('screens.saved.noVideosSubtitle')} />
               ) : (
                 <View style={styles.listLoadingContainer}>
                   {Array.from({ length: 4 }).map((_, i) => (

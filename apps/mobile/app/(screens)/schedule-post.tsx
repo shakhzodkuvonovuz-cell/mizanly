@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -17,6 +18,7 @@ type SpaceType = 'Saf' | 'Majlis' | 'Bakra';
 type AmPm = 'AM' | 'PM';
 
 export default function SchedulePostScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
   const [selectedDate, setSelectedDate] = useState(15); // March 15, 2026
@@ -64,9 +66,9 @@ export default function SchedulePostScreen() {
   };
 
   const quickDates = [
-    { label: 'Tomorrow', day: today + 1 },
-    { label: 'This Weekend', day: 15 },
-    { label: 'Next Week', day: 20 },
+    { label: t('common.tomorrow'), day: today + 1 },
+    { label: t('screens.schedule-post.thisWeekend'), day: 15 },
+    { label: t('screens.schedule-post.nextWeek'), day: 20 },
   ];
 
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -93,7 +95,7 @@ export default function SchedulePostScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
-      <GlassHeader title="Schedule Post" showBackButton />
+      <GlassHeader title={t('screens.schedule-post.title')} showBackButton />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
@@ -112,7 +114,7 @@ export default function SchedulePostScreen() {
                   <Icon name="user" size="md" color={colors.text.tertiary} />
                 </View>
                 <View style={styles.userInfo}>
-                  <Text style={styles.userName}>Your Name</Text>
+                  <Text style={styles.userName}>{t('screens.schedule-post.yourName')}</Text>
                   <Text style={styles.userHandle}>@username</Text>
                 </View>
                 <View style={styles.draftBadge}>
@@ -121,7 +123,7 @@ export default function SchedulePostScreen() {
                     style={styles.draftBadgeGradient}
                   >
                     <Icon name="check" size="xs" color={colors.emerald} />
-                    <Text style={styles.draftBadgeText}>Draft saved</Text>
+                    <Text style={styles.draftBadgeText}>{t('screens.schedule-post.draftSaved')}</Text>
                   </LinearGradient>
                 </View>
               </View>
@@ -143,7 +145,7 @@ export default function SchedulePostScreen() {
                     colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                     style={styles.spaceBadgeGradient}
                   >
-                    <Text style={styles.spaceBadgeText}>{postData.space} Post</Text>
+                    <Text style={styles.spaceBadgeText}>{postData.space} {t('screens.schedule-post.post')}</Text>
                   </LinearGradient>
                 </View>
               </View>
@@ -273,11 +275,11 @@ export default function SchedulePostScreen() {
                     <Icon name="clock" size="sm" color={colors.emerald} />
                   </LinearGradient>
                 </View>
-                <Text style={styles.timeTitle}>Time</Text>
+                <Text style={styles.timeTitle}>{t('screens.schedule-post.time')}</Text>
               </View>
 
               {/* Hour Selector */}
-              <Text style={styles.timeLabel}>Hour</Text>
+              <Text style={styles.timeLabel}>{t('screens.schedule-live.hour')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourScroll}>
                 {hours.map((hour) => (
                   <TouchableOpacity
@@ -304,7 +306,7 @@ export default function SchedulePostScreen() {
               </ScrollView>
 
               {/* Minute Selector */}
-              <Text style={styles.timeLabel}>Minute</Text>
+              <Text style={styles.timeLabel}>{t('screens.schedule-live.minute')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.minuteScroll}>
                 {minutes.map((minute) => (
                   <TouchableOpacity
@@ -363,7 +365,7 @@ export default function SchedulePostScreen() {
                   style={styles.bestTimeGradient}
                 >
                   <Icon name="trending-up" size="sm" color={colors.gold} />
-                  <Text style={styles.bestTimeText}>6:00 PM (high engagement)</Text>
+                  <Text style={styles.bestTimeText}>6:00 PM ({t('screens.schedule-post.highEngagement')})</Text>
                 </LinearGradient>
               </View>
             </LinearGradient>
@@ -380,7 +382,7 @@ export default function SchedulePostScreen() {
               <View style={styles.timezoneRow}>
                 <Icon name="globe" size="sm" color={colors.text.secondary} />
                 <View style={styles.timezoneInfo}>
-                  <Text style={styles.timezoneLabel}>Timezone</Text>
+                  <Text style={styles.timezoneLabel}>{t('screens.schedule-post.timezone')}</Text>
                   <Text style={styles.timezoneValue}>UTC+3 (Arabia Standard Time)</Text>
                 </View>
               </View>
@@ -397,17 +399,17 @@ export default function SchedulePostScreen() {
             >
               <View style={styles.summaryBorder} />
               <View style={styles.summaryContent}>
-                <Text style={styles.summaryLabel}>Scheduled for:</Text>
+                <Text style={styles.summaryLabel}>{t('screens.schedule-post.scheduledFor')}</Text>
                 <Text style={styles.summaryValue}>{formatScheduledTime()}</Text>
 
                 <View style={styles.summaryRow}>
                   <Icon name="share" size="xs" color={colors.text.secondary} />
-                  <Text style={styles.summaryDetail}>Will post to: {postData.space}</Text>
+                  <Text style={styles.summaryDetail}>{t('screens.schedule-post.willPostTo', { space: postData.space })}</Text>
                 </View>
 
                 <View style={styles.summaryRow}>
                   <Icon name="bell" size="xs" color={colors.text.secondary} />
-                  <Text style={styles.summaryDetail}>You&apos;ll receive a reminder 30 minutes before</Text>
+                  <Text style={styles.summaryDetail}>{t('screens.schedule-post.reminderNote')}</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -425,7 +427,7 @@ export default function SchedulePostScreen() {
           style={styles.bottomBarGradient}
         >
           <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
-            <Text style={styles.cancelButtonText}>Cancel</Text>
+            <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
             <LinearGradient
@@ -437,7 +439,7 @@ export default function SchedulePostScreen() {
               ) : (
                 <>
                   <Icon name="calendar" size="sm" color="#FFF" />
-                  <Text style={styles.scheduleButtonText}>Schedule</Text>
+                  <Text style={styles.scheduleButtonText}>{t('screens.schedule-post.schedule')}</Text>
                 </>
               )}
             </LinearGradient>

@@ -15,9 +15,11 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { messagesApi } from '@/services/api';
 import type { Message } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function StarredMessagesScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -81,7 +83,7 @@ export default function StarredMessagesScreen() {
       >
         <Pressable
           style={styles.messageInner}
-          accessibilityLabel={`Starred message from ${item.sender.displayName}: ${item.content || 'Media'}`}
+          accessibilityLabel={`${t('screens.starred-messages.starred')} ${item.sender.displayName}: ${item.content || t('screens.starred-messages.media')}`}
           accessibilityRole="none"
         >
           <Avatar
@@ -101,7 +103,7 @@ export default function StarredMessagesScreen() {
             {item.mediaUrl && (
               <View style={styles.mediaPlaceholder}>
                 <Icon name="image" size={20} color={colors.text.secondary} />
-                <Text style={styles.mediaText}>Media</Text>
+                <Text style={styles.mediaText}>{t('screens.starred-messages.media')}</Text>
               </View>
             )}
             <View style={styles.reactions}>
@@ -111,7 +113,7 @@ export default function StarredMessagesScreen() {
                     key={reaction.id}
                     style={styles.reactionChip}
                     onPress={() => handleUnstar(item.id)}
-                    accessibilityLabel="Unstar message"
+                    accessibilityLabel={t('screens.starred-messages.starred')}
                     accessibilityRole="button"
                   >
                     <LinearGradient
@@ -120,7 +122,7 @@ export default function StarredMessagesScreen() {
                     >
                       <Text style={styles.reactionEmoji}>{reaction.emoji}</Text>
                     </LinearGradient>
-                    <Text style={styles.reactionCountGold}>Starred</Text>
+                    <Text style={styles.reactionCountGold}>{t('screens.starred-messages.starred')}</Text>
                   </Pressable>
                 ) : (
                   <View key={reaction.id} style={styles.reactionChip}>
@@ -140,11 +142,11 @@ export default function StarredMessagesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
-          title="Starred Messages"
+          title={t('screens.starred-messages.title')}
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
         <View style={styles.skeletonContainer}>
@@ -160,18 +162,18 @@ export default function StarredMessagesScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
-          title="Starred Messages"
+          title={t('screens.starred-messages.title')}
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
         <EmptyState
           icon="slash"
-          title="Unable to load starred messages"
-          subtitle="Please try again later"
-          actionLabel="Retry"
+          title={t('screens.starred-messages.errorTitle')}
+          subtitle={t('screens.starred-messages.errorSubtitle')}
+          actionLabel={t('common.retry')}
           onAction={() => refetch()}
         />
       </SafeAreaView>
@@ -182,11 +184,11 @@ export default function StarredMessagesScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
         <GlassHeader
-          title="Starred Messages"
+          title={t('screens.starred-messages.title')}
           leftAction={{ 
             icon: 'arrow-left', 
             onPress: () => router.back(),
-            accessibilityLabel: 'Go back'
+            accessibilityLabel: t('accessibility.goBack')
           }}
         />
 
@@ -201,7 +203,7 @@ export default function StarredMessagesScreen() {
                   ? conversation.groupName
                   : conversation.otherUser?.displayName || conversation.otherUser?.username}
               </Text>
-              <Text style={styles.starredCount}>★ {messages.length} starred</Text>
+              <Text style={styles.starredCount}>★ {messages.length} {t('screens.starred-messages.starred')}</Text>
             </LinearGradient>
           </Animated.View>
         )}
@@ -224,8 +226,8 @@ export default function StarredMessagesScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="bookmark-filled"
-              title="No starred messages"
-              subtitle="Add a star reaction to messages to save them here"
+              title={t('screens.starred-messages.emptyTitle')}
+              subtitle={t('screens.starred-messages.emptySubtitle')}
             />
           }
           ListFooterComponent={

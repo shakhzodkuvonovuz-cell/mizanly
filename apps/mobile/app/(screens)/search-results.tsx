@@ -21,6 +21,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi, hashtagsApi, usersApi } from '@/services/api';
 import type { User, Post, Thread, Reel } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 type Hashtag = { id: string; name: string; postsCount: number };
@@ -56,7 +57,7 @@ function HashtagRow({ hashtag, onPress, index }: { hashtag: Hashtag; onPress: ()
           </LinearGradient>
           <View>
             <Text style={styles.hashtagName}>#{hashtag.name}</Text>
-            <Text style={styles.hashtagCount}>{hashtag.postsCount} posts</Text>
+            <Text style={styles.hashtagCount}>{hashtag.postsCount}</Text>
           </View>
         </LinearGradient>
       </Pressable>
@@ -95,6 +96,7 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
 }
 
 export default function SearchResultsScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const haptic = useHaptic();
   const params = useLocalSearchParams<{ query: string }>();
@@ -282,20 +284,20 @@ export default function SearchResultsScreen() {
               </View>
               <Text style={styles.userHandle}>@{user.username}</Text>
               {user._count && (
-                <Text style={styles.userFollowers}>{user._count.followers} followers</Text>
+                <Text style={styles.userFollowers}>{user._count.followers} {t('screens.search-results.followers')}</Text>
               )}
             </View>
           </Pressable>
           {user.isFollowing ? (
             <GradientButton
-              label="Following"
+              label={t('common.following')}
               size="sm"
               variant="secondary"
               onPress={handleFollow}
             />
           ) : (
             <GradientButton
-              label="Follow"
+              label={t('common.follow')}
               size="sm"
               onPress={handleFollow}
             />
@@ -309,8 +311,8 @@ export default function SearchResultsScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Search"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.search-results.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={styles.headerSpacer} />
 
@@ -329,7 +331,7 @@ export default function SearchResultsScreen() {
               </LinearGradient>
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search…"
+                placeholder={t('screens.search-results.placeholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={query}
                 onChangeText={handleQueryChange}
@@ -349,7 +351,13 @@ export default function SearchResultsScreen() {
         </Animated.View>
 
         <TabSelector
-          tabs={SEARCH_TABS.map((t) => ({ key: t.key, label: t.label }))}
+          tabs={[
+            { key: 'people', label: t('screens.search-results.tabPeople') },
+            { key: 'posts', label: t('screens.search-results.tabPosts') },
+            { key: 'threads', label: t('screens.search-results.tabThreads') },
+            { key: 'reels', label: t('screens.search-results.tabReels') },
+            { key: 'hashtags', label: t('screens.search-results.tabHashtags') },
+          ]}
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as SearchTab)}
           variant="underline"
@@ -359,16 +367,16 @@ export default function SearchResultsScreen() {
         {debouncedQuery.trim().length < 2 ? (
           <EmptyState
             icon="search"
-            title="Enter a search term"
-            subtitle="Type at least 2 characters to see results"
+            title={t('screens.search-results.enterTerm')}
+            subtitle={t('screens.search-results.minChars')}
           />
         ) : hasError ? (
           <View style={{ flex: 1, justifyContent: 'center' }}>
             <EmptyState
               icon="flag"
-              title="Couldn't load content"
-              subtitle="Check your connection and try again"
-              actionLabel="Retry"
+              title={t('screens.search-results.errorTitle')}
+              subtitle={t('screens.search-results.errorSubtitle')}
+              actionLabel={t('common.retry')}
               onAction={handleRefresh}
             />
           </View>
@@ -404,8 +412,8 @@ export default function SearchResultsScreen() {
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="users"
-                        title={`No people for "${debouncedQuery}"`}
-                        subtitle="Try a different search term"
+                        title={t('screens.search-results.noPeople')}
+                        subtitle={t('screens.search-results.noPeopleSubtitle')}
                       />
                     )}
                     contentContainerStyle={{ paddingBottom: 40 }}
@@ -439,8 +447,8 @@ export default function SearchResultsScreen() {
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="image"
-                        title={`No posts for "${debouncedQuery}"`}
-                        subtitle="Try a different search term"
+                        title={t('screens.search-results.noPosts')}
+                        subtitle={t('screens.search-results.noPostsSubtitle')}
                       />
                     )}
                     onEndReached={handleFetchNextPage}
@@ -476,8 +484,8 @@ export default function SearchResultsScreen() {
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="message-circle"
-                        title={`No threads for "${debouncedQuery}"`}
-                        subtitle="Try a different search term"
+                        title={t('screens.search-results.noThreads')}
+                        subtitle={t('screens.search-results.noThreadsSubtitle')}
                       />
                     )}
                     onEndReached={handleFetchNextPage}
@@ -528,8 +536,8 @@ export default function SearchResultsScreen() {
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="video"
-                        title={`No reels for "${debouncedQuery}"`}
-                        subtitle="Try a different search term"
+                        title={t('screens.search-results.noReels')}
+                        subtitle={t('screens.search-results.noReelsSubtitle')}
                       />
                     )}
                     onEndReached={handleFetchNextPage}
@@ -577,8 +585,8 @@ export default function SearchResultsScreen() {
                     ListEmptyComponent={() => (
                       <EmptyState
                         icon="hash"
-                        title={`No hashtags for "${debouncedQuery}"`}
-                        subtitle="Try a different search term"
+                        title={t('screens.search-results.noHashtags')}
+                        subtitle={t('screens.search-results.noHashtagsSubtitle')}
                       />
                     )}
                     onEndReached={handleFetchNextPage}

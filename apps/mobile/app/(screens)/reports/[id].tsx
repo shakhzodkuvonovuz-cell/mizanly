@@ -20,6 +20,7 @@ import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { reportsApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const REASONS = [
@@ -59,6 +60,7 @@ interface CreateReportDto {
 }
 
 export default function ReportScreen() {
+  const { t, isRTL } = useTranslation();
   const params = useLocalSearchParams<{ contentType: string; id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -96,13 +98,13 @@ export default function ReportScreen() {
     },
     onSuccess: () => {
       Alert.alert(
-        'Report Submitted',
-        'Thank you for your report. Our moderation team will review it shortly.',
-        [{ text: 'OK', onPress: () => router.back() }]
+        t('screens.reports-detail.successTitle'),
+        t('screens.reports-detail.successMessage'),
+        [{ text: t('common.ok'), onPress: () => router.back() }]
       );
     },
     onError: (error: Error) => {
-      Alert.alert('Error', error.message);
+      Alert.alert(t('screens.reports-detail.errorTitle'), error.message);
     },
   });
 
@@ -116,8 +118,8 @@ export default function ReportScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Report"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.reports-detail.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
         {isLoading ? (
@@ -144,7 +146,7 @@ export default function ReportScreen() {
             >
               <Icon name="flag" size="lg" color={colors.error} />
               <Text style={styles.prompt}>
-                Why are you reporting this {contentType}?
+                {t('screens.report.whyReporting', { type: contentType })}
               </Text>
             </LinearGradient>
           </Animated.View>
@@ -187,10 +189,10 @@ export default function ReportScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.detailsCard}
             >
-              <Text style={styles.detailsLabel}>Additional details (optional)</Text>
+              <Text style={styles.detailsLabel}>{t('screens.reports-detail.additionalDetails')}</Text>
               <TextInput
                 style={styles.detailsInput}
-                placeholder="Provide more information..."
+                placeholder={t('screens.reports-detail.detailsPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 value={details}
                 onChangeText={setDetails}
@@ -207,7 +209,7 @@ export default function ReportScreen() {
           {/* Submit button */}
           <Animated.View entering={FadeInUp.delay(700).duration(400)}>
             <GradientButton
-              label={reportMutation.isPending ? 'Submitting...' : 'Submit Report'}
+              label={reportMutation.isPending ? t('screens.reports-detail.submitting') : t('screens.reports-detail.submitReport')}
               onPress={handleSubmit}
               disabled={!isValid || reportMutation.isPending}
             />

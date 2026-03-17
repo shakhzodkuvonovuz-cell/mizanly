@@ -166,8 +166,8 @@ export default function PinnedMessagesScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="map-pin"
-              title="No pinned messages"
-              subtitle="Pin important messages to find them here later"
+              title={t('screens.pinned-messages.emptyTitle')}
+              subtitle={t('screens.pinned-messages.emptySubtitle')}
             />
           }
           ListFooterComponent={

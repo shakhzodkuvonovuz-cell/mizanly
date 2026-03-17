@@ -1898,7 +1898,19 @@
       "errorSubtitle": "يرجى المحاولة لاحقاً",
       "errorAction": "رجوع",
       "mute": "كتم",
-      "unmute": "إلغاء الكتم"
+      "unmute": "إلغاء الكتم",
+      "joinError": "فشل الانضمام إلى البث المباشر",
+      "shareMessage": "شاهد {{title}} مباشرة على ميزانلي!",
+      "errorSharing": "خطأ في المشاركة",
+      "inviteToSpeak": "دعوة للتحدث",
+      "inviteToSpeakDesc": "هل تريد دعوة هذا المستخدم ليصبح متحدثاً؟",
+      "invite": "دعوة",
+      "removeParticipant": "إزالة المشارك",
+      "removeParticipantConfirm": "هل أنت متأكد من إزالة هذا المشارك؟",
+      "wantsToSpeak": "يريد التحدث",
+      "notFoundTitle": "البث غير موجود",
+      "notFoundSubtitle": "ربما انتهى هذا البث المباشر أو تمت إزالته",
+      "welcomeToStream": "مرحباً بك في البث!"
     },
     "majlis-lists": {
       "title": "قوائم المجلس",
@@ -1914,7 +1926,14 @@
       "emptyTitle": "لا توجد قوائم بعد",
       "emptySubtitle": "أنشئ قائمة لتنظيم خلاصة المجلس",
       "errorTitle": "تعذر تحميل القوائم",
-      "errorSubtitle": "اسحب للتحديث"
+      "errorSubtitle": "اسحب للتحديث",
+      "errorCreate": "فشل إنشاء القائمة",
+      "errorDelete": "فشل حذف القائمة",
+      "requiredTitle": "الاسم مطلوب",
+      "requiredName": "يرجى إدخال اسم للقائمة",
+      "namePlaceholder": "مثال: أصدقاء، أخبار تقنية",
+      "descPlaceholder": "عن ماذا هذه القائمة؟",
+      "publicListDesc": "يمكن لأي شخص رؤية هذه القائمة والاشتراك فيها"
     },
     "manage-broadcast": {
       "title": "إدارة البث",
@@ -1926,9 +1945,20 @@
       "removeSubscriber": "إزالة المشترك",
       "removeSubscriberConfirm": "إزالة {{name}} من القناة؟",
       "emptySubscribers": "لا يوجد مشتركون بعد",
+      "emptySubscribersSubtitle": "شارك رابط قناتك",
       "emptyAdmins": "لا يوجد مشرفون بعد",
+      "emptyAdminsSubtitle": "قم بترقية المستخدمين إلى مشرفين",
       "errorTitle": "تعذر تحميل القناة",
-      "errorSubtitle": "اسحب للتحديث"
+      "errorSubtitle": "اسحب للتحديث",
+      "successTitle": "نجاح",
+      "promotedSuccess": "تمت ترقية المستخدم إلى مشرف",
+      "demotedSuccess": "تم تخفيض رتبة المستخدم من مشرف",
+      "removedSuccess": "تمت إزالة المشترك",
+      "manageSubscriber": "إدارة المشترك",
+      "manageAdmin": "إدارة المشرف",
+      "manage": "إدارة {{name}}",
+      "demoteToSubscriber": "تخفيض إلى مشترك",
+      "manageChannel": "إدارة {{name}}"
     },
     "muted": {
       "title": "الحسابات المكتومة",
@@ -2050,7 +2080,11 @@
       "uploadingThumbnail": "جاري رفع الصورة المصغرة...",
       "successTitle": "تمت الجدولة!",
       "successMessage": "تم جدولة بثك المباشر",
-      "errorTitle": "خطأ"
+      "errorTitle": "خطأ",
+      "errorSchedule": "فشل جدولة البث المباشر. يرجى المحاولة مرة أخرى.",
+      "titlePlaceholder": "ما الذي ستبثه؟",
+      "descriptionPlaceholder": "أخبر المشاهدين عن موضوع بثك",
+      "thumbnailHint": "الأبعاد الموصى بها: 16:9"
     },
     "schedule-post": {
       "title": "جدولة منشور",
@@ -2063,7 +2097,10 @@
       "timezone": "المنطقة الزمنية",
       "scheduledFor": "مجدول لـ:",
       "highEngagement": "تفاعل عالي",
-      "schedule": "جدولة"
+      "schedule": "جدولة",
+      "post": "منشور",
+      "willPostTo": "سيُنشر في: {{space}}",
+      "reminderNote": "ستتلقى تذكيراً قبل 30 دقيقة"
     },
     "share-profile": {
       "title": "مشاركة الملف الشخصي",
@@ -2072,7 +2109,9 @@
       "scanQR": "مسح QR",
       "hint": "شارك ملفك الشخصي مع الأصدقاء",
       "errorTitle": "تعذر تحميل الملف الشخصي",
-      "errorSubtitle": "يرجى المحاولة مرة أخرى"
+      "errorSubtitle": "يرجى المحاولة مرة أخرى",
+      "profileUnavailable": "الملف الشخصي غير متاح",
+      "profileUnavailableDesc": "تعذر تحميل ملفك الشخصي"
     },
     "sound": {
       "title": "صوت",
@@ -2082,6 +2121,7 @@
       "useSound": "استخدم هذا الصوت",
       "noReels": "لا توجد ريلز بعد",
       "noReelsSubtitle": "كن أول من يستخدم هذا الصوت",
+      "notFoundSubtitle": "ربما تمت إزالة هذا المقطع الصوتي أو أنه غير متاح",
       "errorTitle": "تعذر تحميل الصوت",
       "errorSubtitle": "يرجى المحاولة مرة أخرى",
       "errorAction": "رجوع"

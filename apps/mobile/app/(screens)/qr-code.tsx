@@ -10,9 +10,11 @@ import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QrCodeScreen() {
+  const { t, isRTL } = useTranslation();
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -35,7 +37,7 @@ export default function QrCodeScreen() {
         title: 'My Mizanly Profile',
       });
     } catch (err) {
-      Alert.alert('Error', 'Could not share QR code');
+      Alert.alert(t('common.error'), t('screens.qr-code.errorTitle'));
     }
   };
 
@@ -47,7 +49,7 @@ export default function QrCodeScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader title="QR Code" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }} />
+        <GlassHeader title={t('screens.qr-code.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
 
         {isLoading ? (
           <View style={[styles.content, { gap: spacing.lg, paddingTop: insets.top + 52 }]}>
@@ -64,7 +66,7 @@ export default function QrCodeScreen() {
         <View style={[styles.content, { paddingTop: insets.top + 52 }]}>
           <Animated.Text entering={FadeInUp.delay(100).duration(400)} style={styles.title}>@{username}</Animated.Text>
           <Animated.Text entering={FadeInUp.delay(150).duration(400)} style={styles.subtitle}>
-            Scan this code to visit this profile directly in Mizanly
+            {t('screens.qr-code.shareHint')}
           </Animated.Text>
 
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
@@ -87,7 +89,7 @@ export default function QrCodeScreen() {
           </Animated.View>
 
           <Animated.Text entering={FadeInUp.delay(250).duration(400)} style={styles.hint}>
-            Open the camera app on another device to scan
+            {t('screens.qr-code.saveHint')}
           </Animated.Text>
 
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttons}>
@@ -101,7 +103,7 @@ export default function QrCodeScreen() {
                 style={styles.shareGradient}
               >
                 <Icon name="share" size="md" color={colors.text.primary} />
-                <Text style={styles.buttonText}>Share</Text>
+                <Text style={styles.buttonText}>{t('common.share')}</Text>
               </LinearGradient>
             </Pressable>
 
@@ -115,7 +117,7 @@ export default function QrCodeScreen() {
                 style={styles.saveGradient}
               >
                 <Icon name="download" size="md" color="#fff" />
-                <Text style={[styles.buttonText, styles.saveButtonText]}>Save</Text>
+                <Text style={[styles.buttonText, styles.saveButtonText]}>{t('common.save')}</Text>
               </LinearGradient>
             </Pressable>
           </Animated.View>

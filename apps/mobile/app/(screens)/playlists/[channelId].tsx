@@ -15,9 +15,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
 import type { Playlist } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function ChannelPlaylistsScreen() {
+  const { t, isRTL } = useTranslation();
   const params = useLocalSearchParams<{ channelId: string }>();
   const router = useRouter();
   const [refreshing, setRefreshing] = useState(false);
@@ -29,13 +31,13 @@ export default function ChannelPlaylistsScreen() {
   if (!channelId) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
-            title="Invalid channel"
-            subtitle="Channel ID is missing"
-            actionLabel="Go back"
+            title={t('screens.playlists.errorTitle')}
+            subtitle={t('screens.playlists.errorSubtitle')}
+            actionLabel={t('accessibility.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -97,7 +99,7 @@ export default function ChannelPlaylistsScreen() {
               style={styles.videosBadge}
             >
               <Icon name="video" size="xs" color={colors.emerald} />
-              <Text style={styles.cardMeta}>{item.videosCount} videos</Text>
+              <Text style={styles.cardMeta}>{item.videosCount} {t('screens.playlists.videos')}</Text>
             </LinearGradient>
           </View>
         </LinearGradient>
@@ -109,7 +111,7 @@ export default function ChannelPlaylistsScreen() {
   if (playlistsQuery.isLoading) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={[styles.skeletonContainer, { paddingTop: insets.top + 56 }]}>
           {[...Array(4)].map((_, i) => (
             <View key={i} style={styles.skeletonRow}>
@@ -129,13 +131,13 @@ export default function ChannelPlaylistsScreen() {
   if (playlistsQuery.isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load playlists. Please try again."
-            actionLabel="Go back"
+            title={t('screens.playlists.errorTitle')}
+            subtitle={t('screens.playlists.errorSubtitle')}
+            actionLabel={t('accessibility.goBack')}
             onAction={() => router.back()}
           />
         </View>
@@ -147,12 +149,12 @@ export default function ChannelPlaylistsScreen() {
   if (!playlistsQuery.isFetching && playlists.length === 0) {
     return (
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="layers"
-            title="No playlists yet"
-            subtitle="This channel hasn't created any playlists"
+            title={t('screens.playlists.emptyTitle')}
+            subtitle={t('screens.playlists.emptySubtitle')}
           />
         </View>
       </View>
@@ -162,7 +164,7 @@ export default function ChannelPlaylistsScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader title="Playlists" leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} />
+        <GlassHeader title={t('screens.playlists.title')} leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} />
 
         <FlatList
           removeClippedSubviews={true}

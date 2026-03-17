@@ -21,6 +21,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi, uploadApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface Thumbnail {
   uri: string;
@@ -48,6 +49,7 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 const MINUTES = [0, 15, 30, 45];
 
 export default function ScheduleLiveScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useUser();
@@ -141,7 +143,7 @@ export default function ScheduleLiveScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Failed to schedule live stream. Please try again.');
+      Alert.alert(t('screens.schedule-live.errorTitle'), err.message || t('screens.schedule-live.errorSchedule'));
     },
   });
 
@@ -170,8 +172,8 @@ export default function ScheduleLiveScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Schedule Live"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.schedule-live.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
         <ScrollView
@@ -185,12 +187,12 @@ export default function ScheduleLiveScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>Title *</Text>
+              <Text style={styles.inputLabel}>{t('screens.schedule-live.titleLabel')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="What are you streaming?"
+                placeholder={t('screens.schedule-live.titlePlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
-                accessibilityLabel="Live stream title"
+                accessibilityLabel={t('screens.schedule-live.titleLabel')}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
@@ -208,12 +210,12 @@ export default function ScheduleLiveScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>Description (optional)</Text>
+              <Text style={styles.inputLabel}>{t('screens.schedule-live.descriptionLabel')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Tell viewers what your stream is about"
+                placeholder={t('screens.schedule-live.descriptionPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
-                accessibilityLabel="Live stream description"
+                accessibilityLabel={t('screens.schedule-live.descriptionLabel')}
                 value={description}
                 onChangeText={setDescription}
                 multiline
@@ -232,7 +234,7 @@ export default function ScheduleLiveScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>Thumbnail (optional)</Text>
+              <Text style={styles.inputLabel}>{t('screens.schedule-live.thumbnailLabel')}</Text>
               {thumbnail ? (
                 <View style={styles.thumbnailPreview}>
                   <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
@@ -248,8 +250,8 @@ export default function ScheduleLiveScreen() {
                   >
                     <Icon name="image" size="lg" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.thumbnailPlaceholderText}>Add a thumbnail</Text>
-                  <Text style={styles.thumbnailHint}>Recommended: 16:9 ratio</Text>
+                  <Text style={styles.thumbnailPlaceholderText}>{t('screens.schedule-live.addThumbnail')}</Text>
+                  <Text style={styles.thumbnailHint}>{t('screens.schedule-live.thumbnailHint')}</Text>
                 </TouchableOpacity>
               )}
             </LinearGradient>
@@ -261,7 +263,7 @@ export default function ScheduleLiveScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>Schedule Time *</Text>
+              <Text style={styles.inputLabel}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
               <TouchableOpacity
                 style={styles.dateSelector}
                 onPress={() => setShowDatePicker(true)}
@@ -280,7 +282,7 @@ export default function ScheduleLiveScreen() {
 
           <Animated.View entering={FadeInUp.delay(400).duration(400)}>
             <GradientButton
-              label={scheduleMutation.isPending ? 'Scheduling…' : 'Schedule Live'}
+              label={scheduleMutation.isPending ? t('screens.schedule-live.scheduling') : t('screens.schedule-live.scheduleLive')}
               onPress={handleSchedule}
               disabled={!canSchedule}
             />
@@ -289,11 +291,11 @@ export default function ScheduleLiveScreen() {
 
         {/* Date picker bottom sheet */}
         <BottomSheet visible={showDatePicker} onClose={() => setShowDatePicker(false)} snapPoint={0.6}>
-          <Text style={styles.sheetTitle}>Schedule Time</Text>
+          <Text style={styles.sheetTitle}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
 
           {/* Day selection */}
           <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>Day</Text>
+            <Text style={styles.pickerLabel}>{t('screens.schedule-live.day')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {dayOptions.map((day, idx) => (
                 <TouchableOpacity
@@ -311,7 +313,7 @@ export default function ScheduleLiveScreen() {
 
           {/* Hour selection */}
           <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>Hour</Text>
+            <Text style={styles.pickerLabel}>{t('screens.schedule-live.hour')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {HOURS.map((hour) => (
                 <TouchableOpacity
@@ -329,7 +331,7 @@ export default function ScheduleLiveScreen() {
 
           {/* Minute selection */}
           <View style={styles.pickerSection}>
-            <Text style={styles.pickerLabel}>Minute</Text>
+            <Text style={styles.pickerLabel}>{t('screens.schedule-live.minute')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {MINUTES.map((minute) => (
                 <TouchableOpacity
@@ -357,14 +359,14 @@ export default function ScheduleLiveScreen() {
             </Text>
           </View>
 
-          <GradientButton label="Confirm" onPress={handleDateSelect} />
+          <GradientButton label={t('common.confirm')} onPress={handleDateSelect} />
         </BottomSheet>
 
         {/* Upload overlay */}
         {uploading && (
           <View style={styles.uploadOverlay}>
             <Skeleton.Circle size={48} />
-            <Text style={styles.uploadText}>Uploading thumbnail...</Text>
+            <Text style={styles.uploadText}>{t('screens.schedule-live.uploadingThumbnail')}</Text>
           </View>
         )}
       </SafeAreaView>

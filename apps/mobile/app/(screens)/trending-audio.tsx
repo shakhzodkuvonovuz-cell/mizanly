@@ -15,9 +15,11 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { audioTracksApi } from '@/services/api';
 import type { AudioTrack } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function TrendingAudioScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -43,9 +45,9 @@ export default function TrendingAudioScreen() {
   };
 
   const formatUsage = (count: number) => {
-    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M reels`;
-    if (count >= 1000) return `${(count / 1000).toFixed(1)}K reels`;
-    return `${count} reels`;
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M ${t('screens.trending-audio.reels')}`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K ${t('screens.trending-audio.reels')}`;
+    return `${count} ${t('screens.trending-audio.reels')}`;
   };
 
   const renderItem = ({ item, index }: { item: AudioTrack; index: number }) => (
@@ -95,7 +97,7 @@ export default function TrendingAudioScreen() {
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.useButtonGradient}
           >
-            <Text style={styles.useButtonText}>Use</Text>
+            <Text style={styles.useButtonText}>{t('screens.trending-audio.use')}</Text>
           </LinearGradient>
         </Pressable>
       </LinearGradient>
@@ -106,15 +108,15 @@ export default function TrendingAudioScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Trending Audio" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.trending-audio.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <EmptyState 
           icon="music" 
-          title="Couldn't load audio" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
+          title={t('screens.trending-audio.errorTitle')}
+          subtitle={t('screens.trending-audio.errorSubtitle')}
+          actionLabel={t('common.retry')} 
           onAction={() => refetch()} 
         />
       </View>
@@ -125,8 +127,8 @@ export default function TrendingAudioScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader 
-          title="Trending Audio" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.trending-audio.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -142,8 +144,8 @@ export default function TrendingAudioScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader 
-          title="Trending Audio" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+          title={t('screens.trending-audio.title')} 
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }} 
         />
       
         <FlatList
@@ -159,8 +161,8 @@ export default function TrendingAudioScreen() {
             <View style={styles.emptyWrap}>
               <EmptyState 
                 icon="music" 
-                title="No trending audio" 
-                subtitle="Check back later for popular tracks" 
+                title={t('screens.trending-audio.emptyTitle')}
+                subtitle={t('screens.trending-audio.emptySubtitle')} 
               />
             </View>
           }

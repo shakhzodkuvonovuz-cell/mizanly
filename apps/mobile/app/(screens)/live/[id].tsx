@@ -32,6 +32,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { liveApi } from '@/services/api';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -55,6 +56,7 @@ interface LiveParticipant {
 }
 
 export default function LiveViewerScreen() {
+  const { t, isRTL } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useUser();
@@ -147,7 +149,7 @@ export default function LiveViewerScreen() {
       queryClient.invalidateQueries({ queryKey: ['live-participants', id] });
     },
     onError: (err: Error) => {
-      Alert.alert('Error', err.message || 'Failed to join live stream.');
+      Alert.alert(t('common.error'), err.message || t('screens.live.joinError'));
     },
   });
 
@@ -215,27 +217,27 @@ export default function LiveViewerScreen() {
     if (!live?.id) return;
     try {
       await Share.share({
-        message: `Join the live stream "${live.title}" on Mizanly!`,
+        message: t('screens.live.shareMessage', { title: live.title }),
         url: `https://mizanly.app/live/${live.id}`,
       });
-    } catch (error: any) {
-      if (error.message) {
-        Alert.alert('Error sharing', error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message) {
+        Alert.alert(t('screens.live.errorSharing'), error.message);
       }
     }
   }, [live?.id, live?.title]);
 
   const handleInviteSpeaker = (participantId: string) => {
-    Alert.alert('Invite to speak', 'This would send an invite to the user to become a speaker.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Invite', onPress: () => liveApi.inviteSpeaker(id, participantId).catch(() => {}) },
+    Alert.alert(t('screens.live.inviteToSpeak'), t('screens.live.inviteToSpeakDesc'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('screens.live.invite'), onPress: () => liveApi.inviteSpeaker(id, participantId).catch(() => {}) },
     ]);
   };
 
   const handleRemoveParticipant = (participantId: string) => {
-    Alert.alert('Remove participant', 'Are you sure?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: () => liveApi.removeParticipant(id, participantId).catch(() => {}) },
+    Alert.alert(t('screens.live.removeParticipant'), t('screens.live.removeParticipantConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.remove'), style: 'destructive', onPress: () => liveApi.removeParticipant(id, participantId).catch(() => {}) },
     ]);
   };
 
@@ -318,8 +320,8 @@ export default function LiveViewerScreen() {
             )}
           </View>
           <Text style={styles.participantRole}>
-            {isHost ? '👑 Host' : isSpeaker ? '🎤 Speaker' : '👤 Listener'}
-            {item.raisedHand ? ' • wants to speak' : ''}
+            {isHost ? `👑 ${t('screens.live.host')}` : isSpeaker ? `🎤 ${t('screens.live.speaker')}` : `👤 ${t('screens.live.listener')}`}
+            {item.raisedHand ? ` • ${t('screens.live.wantsToSpeak')}` : ''}
           </Text>
         </View>
         {canModerate && !isSelf && (
@@ -342,8 +344,8 @@ export default function LiveViewerScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Live"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.live.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ paddingTop: insets.top + 44 }}>
           <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} />
@@ -362,15 +364,15 @@ export default function LiveViewerScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Live"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.live.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ paddingTop: insets.top + 44, flex: 1 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load this live stream. Please try again."
-            actionLabel="Go back"
+            title={t('screens.live.errorTitle')}
+            subtitle={t('screens.live.errorSubtitle')}
+            actionLabel={t('screens.live.errorAction')}
             onAction={() => router.back()}
           />
         </View>
@@ -382,15 +384,15 @@ export default function LiveViewerScreen() {
     return (
       <View style={styles.container}>
         <GlassHeader
-          title="Live"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.live.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ paddingTop: insets.top + 44, flex: 1 }}>
           <EmptyState
             icon="video"
-            title="Live stream not found"
-            subtitle="This stream may have ended or is unavailable"
-            actionLabel="Go back"
+            title={t('screens.live.notFoundTitle')}
+            subtitle={t('screens.live.notFoundSubtitle')}
+            actionLabel={t('screens.live.errorAction')}
             onAction={() => router.back()}
           />
         </View>
@@ -414,19 +416,19 @@ export default function LiveViewerScreen() {
         </View>
 
         <GlassHeader
-          title="Live"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }}
+          title={t('screens.live.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
           rightActions={[
             {
               icon: 'users',
               onPress: () => setShowParticipants(true),
-              accessibilityLabel: 'Participants',
+              accessibilityLabel: t('screens.live.participants'),
               badge: participants.length > 0 ? participants.length : undefined,
             },
             {
               icon: 'message-circle',
               onPress: () => setShowChat(true),
-              accessibilityLabel: 'Chat',
+              accessibilityLabel: t('screens.live.chat'),
             },
           ]}
         />
@@ -435,7 +437,7 @@ export default function LiveViewerScreen() {
         <Animated.View style={[styles.liveBadgeContainer, { top: insets.top + 60 }]} entering={FadeIn}>
           <View style={styles.liveBadge}>
             <Animated.View style={[styles.liveDot, pulseStyle]} />
-            <Text style={styles.liveBadgeText}>LIVE</Text>
+            <Text style={styles.liveBadgeText}>{t('screens.live.liveLabel')}</Text>
           </View>
           <Animated.View style={[styles.viewerCountBadge, viewerCountStyle]}>
             <Icon name="eye" size={12} color="#fff" />
@@ -477,8 +479,8 @@ export default function LiveViewerScreen() {
                     <AudioBar key={i} value={bar} />
                   ))}
                 </View>
-                <Text style={styles.audioLabel}>Audio Space</Text>
-                <Text style={styles.audioHint}>Live conversation in progress</Text>
+                <Text style={styles.audioLabel}>{t('screens.live.audioSpace')}</Text>
+                <Text style={styles.audioHint}>{t('screens.live.audioSpaceDesc')}</Text>
                 {/* Waveform decoration */}
                 <View style={styles.waveformDecoration}>
                   {[...Array(20)].map((_, i) => (
@@ -501,7 +503,7 @@ export default function LiveViewerScreen() {
             <View style={styles.liveStats}>
               <Icon name="eye" size="xs" color={colors.gold} />
               <Text style={styles.liveStatsTextGold}>
-                {live.viewerCount.toLocaleString()} watching
+                {live.viewerCount.toLocaleString()} {t('screens.live.watching')}
               </Text>
               <Text style={styles.liveStatsDot}>•</Text>
               <Text style={styles.liveStatsText}>
@@ -524,10 +526,10 @@ export default function LiveViewerScreen() {
                   </LinearGradient>
                 </View>
                 <View style={styles.hostInfo}>
-                  <Text style={styles.hostName}>Hosted by {hostParticipant.user.username}</Text>
+                  <Text style={styles.hostName}>{t('screens.live.hostedBy')} {hostParticipant.user.username}</Text>
                   <View style={styles.liveStatusRow}>
                     <Animated.View style={[styles.liveStatusDot, pulseStyle]} />
-                    <Text style={styles.hostStatus}>Live now</Text>
+                    <Text style={styles.hostStatus}>{t('screens.live.liveNow')}</Text>
                   </View>
                 </View>
               </View>
@@ -549,23 +551,23 @@ export default function LiveViewerScreen() {
                   color={participants.find(p => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
                 />
                 <Text style={styles.actionLabel}>
-                  {participants.find(p => p.userId === user?.id)?.raisedHand ? 'Lower hand' : 'Raise hand'}
+                  {participants.find(p => p.userId === user?.id)?.raisedHand ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={() => setShowChat(true)}>
                 <Icon name="message-circle" size="md" color={colors.text.primary} />
-                <Text style={styles.actionLabel}>Chat</Text>
+                <Text style={styles.actionLabel}>{t('screens.live.chat')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
                 <Icon name="share" size="md" color={colors.text.primary} />
-                <Text style={styles.actionLabel}>Share</Text>
+                <Text style={styles.actionLabel}>{t('common.share')}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Speakers avatars */}
             {speakers.length > 0 && (
               <View style={styles.speakersSection}>
-                <Text style={styles.sectionTitle}>Speakers ({speakers.length})</Text>
+                <Text style={styles.sectionTitle}>{t('screens.live.speakers')} ({speakers.length})</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
                   {speakers.map((p) => (
                     <View key={p.id} style={styles.avatarWrap}>
@@ -580,7 +582,7 @@ export default function LiveViewerScreen() {
             {/* Raised hands */}
             {raisedHands.length > 0 && (
               <View style={styles.raisedHandsSection}>
-                <Text style={styles.sectionTitle}>Raised hands ({raisedHands.length})</Text>
+                <Text style={styles.sectionTitle}>{t('screens.live.raisedHands')} ({raisedHands.length})</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
                   {raisedHands.map((p) => (
                     <View key={p.id} style={styles.avatarWrap}>
@@ -597,7 +599,7 @@ export default function LiveViewerScreen() {
         {/* Participants bottom sheet */}
         <BottomSheet visible={showParticipants} onClose={() => setShowParticipants(false)} snapPoint={0.7}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Participants ({participants.length})</Text>
+            <Text style={styles.sheetTitle}>{t('screens.live.participants')} ({participants.length})</Text>
           </View>
           <FlatList
               removeClippedSubviews={true}
@@ -611,7 +613,7 @@ export default function LiveViewerScreen() {
         {/* Chat bottom sheet */}
         <BottomSheet visible={showChat} onClose={() => setShowChat(false)} snapPoint={0.7}>
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>Live Chat</Text>
+            <Text style={styles.sheetTitle}>{t('screens.live.liveChat')}</Text>
             <View style={styles.chatHeaderGlow} />
           </View>
 
@@ -625,7 +627,7 @@ export default function LiveViewerScreen() {
                 end={{ x: 1, y: 1 }}
                 style={styles.welcomeBubble}
               >
-                <Text style={styles.welcomeText}>Welcome to the live stream! 👋</Text>
+                <Text style={styles.welcomeText}>{t('screens.live.welcomeToStream')}</Text>
               </LinearGradient>
 
               {/* Sample message */}
@@ -674,7 +676,7 @@ export default function LiveViewerScreen() {
           <View style={styles.chatInputRow}>
             <TextInput
               style={styles.chatInput}
-              placeholder="Send a message..."
+              placeholder={t('screens.live.sendMessage')}
               placeholderTextColor={colors.text.tertiary}
               value={chatMessage}
               onChangeText={setChatMessage}

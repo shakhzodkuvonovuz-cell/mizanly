@@ -17,8 +17,10 @@ import { majlisListsApi } from '@/services/api';
 import type { MajlisList } from '@/types';
 import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function MajlisListsScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
@@ -48,7 +50,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert('Error', 'Failed to create list.');
+      Alert.alert(t('common.error'), t('screens.majlis-lists.errorCreate'));
     },
   });
 
@@ -60,7 +62,7 @@ export default function MajlisListsScreen() {
     },
     onError: () => {
       haptic.error();
-      Alert.alert('Error', 'Failed to delete list.');
+      Alert.alert(t('common.error'), t('screens.majlis-lists.errorDelete'));
     },
   });
 
@@ -73,7 +75,7 @@ export default function MajlisListsScreen() {
 
   const handleCreate = () => {
     if (!newName.trim()) {
-      Alert.alert('Required', 'Please enter a name for the list.');
+      Alert.alert(t('screens.majlis-lists.requiredTitle'), t('screens.majlis-lists.requiredName'));
       return;
     }
     createMutation.mutate({ name: newName.trim(), description: newDesc.trim() || undefined, isPublic });
@@ -81,11 +83,11 @@ export default function MajlisListsScreen() {
 
   const confirmDelete = (id: string, name: string) => {
     Alert.alert(
-      'Delete List',
-      `Are you sure you want to delete "${name}"?`,
+      t('screens.majlis-lists.deleteConfirmTitle'),
+      t('screens.majlis-lists.deleteConfirmMessage', { name }),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(id) },
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate(id) },
       ]
     );
   };
@@ -119,7 +121,7 @@ export default function MajlisListsScreen() {
             >
               <Icon name="users" size="xs" color={colors.gold} />
               <Text style={styles.membersText}>
-                {item.membersCount || 0} members
+                {item.membersCount || 0} {t('screens.majlis-lists.members')}
               </Text>
             </LinearGradient>
           </View>
@@ -142,17 +144,17 @@ export default function MajlisListsScreen() {
   if (isError) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Majlis Lists" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={t('screens.majlis-lists.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ height: insets.top + 52 }} />
-        <EmptyState 
-          icon="users" 
-          title="Couldn't load lists" 
-          subtitle="Check your connection and try again" 
-          actionLabel="Retry" 
-          onAction={() => refetch()} 
+        <EmptyState
+          icon="users"
+          title={t('screens.majlis-lists.errorTitle')}
+          subtitle={t('screens.majlis-lists.errorSubtitle')}
+          actionLabel={t('common.retry')}
+          onAction={() => refetch()}
         />
       </View>
     );
@@ -161,9 +163,9 @@ export default function MajlisListsScreen() {
   if (isLoading && !lists) {
     return (
       <View style={styles.container}>
-        <GlassHeader 
-          title="Majlis Lists" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
+        <GlassHeader
+          title={t('screens.majlis-lists.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ height: insets.top + 52 }} />
         <View style={{ padding: spacing.base, gap: spacing.md }}>
@@ -177,10 +179,10 @@ export default function MajlisListsScreen() {
   return (
     <ScreenErrorBoundary>
       <View style={styles.container}>
-        <GlassHeader 
-          title="Majlis Lists" 
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Go back' }} 
-          rightAction={{ icon: 'plus', onPress: () => setIsSheetVisible(true), accessibilityLabel: 'Create list' }}
+        <GlassHeader
+          title={t('screens.majlis-lists.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
+          rightAction={{ icon: 'plus', onPress: () => setIsSheetVisible(true), accessibilityLabel: t('screens.majlis-lists.createList') }}
         />
       
         <FlatList
@@ -194,11 +196,11 @@ export default function MajlisListsScreen() {
           }
           ListEmptyComponent={
             <View style={styles.emptyWrap}>
-              <EmptyState 
-                icon="users" 
-                title="No lists" 
-                subtitle="Create a list to curate threads" 
-                actionLabel="Create List"
+              <EmptyState
+                icon="users"
+                title={t('screens.majlis-lists.emptyTitle')}
+                subtitle={t('screens.majlis-lists.emptySubtitle')}
+                actionLabel={t('screens.majlis-lists.createList')}
                 onAction={() => setIsSheetVisible(true)}
               />
             </View>
@@ -207,32 +209,32 @@ export default function MajlisListsScreen() {
 
         <BottomSheet visible={isSheetVisible} onClose={() => setIsSheetVisible(false)}>
           <View style={styles.sheetContent}>
-            <Text style={styles.sheetTitle}>Create New List</Text>
-          
-            <Text style={styles.inputLabel}>Name</Text>
+            <Text style={styles.sheetTitle}>{t('screens.majlis-lists.createNew')}</Text>
+
+            <Text style={styles.inputLabel}>{t('screens.majlis-lists.name')}</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Friends, Tech news"
+              placeholder={t('screens.majlis-lists.namePlaceholder')}
               placeholderTextColor={colors.text.secondary}
               value={newName}
               onChangeText={setNewName}
             />
-          
-            <Text style={styles.inputLabel}>Description (Optional)</Text>
+
+            <Text style={styles.inputLabel}>{t('screens.majlis-lists.descriptionOptional')}</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
-              placeholder="What's this list about?"
+              placeholder={t('screens.majlis-lists.descPlaceholder')}
               placeholderTextColor={colors.text.secondary}
               value={newDesc}
               onChangeText={setNewDesc}
               multiline
               numberOfLines={3}
             />
-          
+
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>Public List</Text>
-                <Text style={styles.toggleDesc}>Anyone can see and subscribe to this list</Text>
+                <Text style={styles.toggleTitle}>{t('screens.majlis-lists.publicList')}</Text>
+                <Text style={styles.toggleDesc}>{t('screens.majlis-lists.publicListDesc')}</Text>
               </View>
               <Switch 
                 value={isPublic}
@@ -244,7 +246,7 @@ export default function MajlisListsScreen() {
 
             <View style={{ marginTop: spacing.xl }}>
               <GradientButton 
-                title={createMutation.isPending ? "Creating..." : "Create List"}
+                title={createMutation.isPending ? t('screens.majlis-lists.creating') : t('screens.majlis-lists.createList')}
                 onPress={handleCreate}
                 disabled={createMutation.isPending || newName.trim().length === 0}
               />

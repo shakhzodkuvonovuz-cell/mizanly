@@ -11,9 +11,11 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius } from '@/theme';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 export default function QRScannerScreen() {
+  const { t, isRTL } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
@@ -23,11 +25,11 @@ export default function QRScannerScreen() {
   useEffect(() => {
     if (permission && !permission.granted && !permission.canAskAgain) {
       Alert.alert(
-        'Camera Permission Required',
-        'Please enable camera access in settings to scan QR codes.',
+        t('screens.qr-scanner.cameraRequired'),
+        t('screens.qr-scanner.cameraRequiredDesc'),
         [
-          { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
-          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          { text: t('common.cancel'), style: 'cancel', onPress: () => router.back() },
+          { text: t('screens.qr-scanner.openSettings'), onPress: () => Linking.openSettings() },
         ]
       );
     }
@@ -46,11 +48,11 @@ export default function QRScannerScreen() {
       router.replace(`/(screens)/profile/${username}`);
     } else {
       Alert.alert(
-        'Invalid QR Code',
-        'This QR code does not contain a valid Mizanly profile link.',
+        t('screens.qr-scanner.invalidCode'),
+        t('screens.qr-scanner.invalidCode'),
         [
-          { text: 'Try Again', onPress: () => setScanned(false) },
-          { text: 'Cancel', style: 'cancel', onPress: () => router.back() },
+          { text: t('common.retry'), onPress: () => setScanned(false) },
+          { text: t('common.cancel'), style: 'cancel', onPress: () => router.back() },
         ]
       );
     }
@@ -61,8 +63,8 @@ export default function QRScannerScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Scan QR Code"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.qr-scanner.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={[styles.centered, { paddingTop: insets.top + 52 }]}>
           <Skeleton.Rect width={250} height={250} borderRadius={radius.lg} />
@@ -79,18 +81,18 @@ export default function QRScannerScreen() {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Scan QR Code"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.qr-scanner.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
         <View style={[styles.centered, { paddingTop: insets.top + 52 }]}>
           <EmptyState
             icon="camera"
-            title="Camera Access Required"
-            subtitle="Camera access is required to scan QR codes."
-            actionLabel="Grant Permission"
+            title={t('screens.qr-scanner.cameraRequired')}
+            subtitle={t('screens.qr-scanner.cameraRequiredDesc')}
+            actionLabel={t('screens.qr-scanner.openSettings')}
             onAction={requestPermission}
           />
-          <GradientButton label="Go Back" onPress={() => router.back()} variant="ghost" />
+          <GradientButton label={t('accessibility.goBack')} onPress={() => router.back()} variant="ghost" />
         </View>
       </SafeAreaView>
     );
@@ -100,8 +102,8 @@ export default function QRScannerScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container} edges={['top']}>
         <GlassHeader
-          title="Scan QR Code"
-          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: 'Back' }}
+          title={t('screens.qr-scanner.title')}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
         <Camera
@@ -126,7 +128,7 @@ export default function QRScannerScreen() {
               colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
               style={styles.instructionBg}
             >
-              <Text style={styles.instruction}>Align QR code within the frame</Text>
+              <Text style={styles.instruction}>{t('screens.qr-scanner.alignHint')}</Text>
             </LinearGradient>
             {scanned && (
               <View style={styles.scannedOverlay}>
@@ -136,14 +138,14 @@ export default function QRScannerScreen() {
                 >
                   <Icon name="check-circle" size="xl" color={colors.emerald} />
                 </LinearGradient>
-                <Text style={styles.scannedText}>Scanned successfully</Text>
+                <Text style={styles.scannedText}>{t('screens.qr-scanner.scannedSuccess')}</Text>
               </View>
             )}
           </View>
         </Camera>
 
         <View style={styles.footer}>
-          <GradientButton label="Close" onPress={() => router.back()} variant="secondary" />
+          <GradientButton label={t('common.close')} onPress={() => router.back()} variant="secondary" />
         </View>
       </SafeAreaView>
   
