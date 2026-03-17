@@ -23,6 +23,7 @@ export class PushTriggerService {
       return;
     }
 
+    // Check if user has push notifications muted for this type
     const actorName = notification.actor?.displayName || 'Someone';
 
     switch (notification.type) {
@@ -34,6 +35,7 @@ export class PushTriggerService {
           );
         }
         break;
+
       case NotificationType.COMMENT:
         if (notification.postId) {
           await this.sendSafe(
@@ -41,11 +43,12 @@ export class PushTriggerService {
             this.push.buildCommentNotification(
               actorName,
               notification.postId,
-              notification.body || '',
+              this.truncate(notification.body || '', 80),
             ),
           );
         }
         break;
+
       case NotificationType.FOLLOW:
         if (notification.actorId) {
           await this.sendSafe(
@@ -54,6 +57,23 @@ export class PushTriggerService {
           );
         }
         break;
+
+      case NotificationType.FOLLOW_REQUEST:
+        await this.sendSafe(notification.userId, {
+          title: 'Follow request',
+          body: `${actorName} requested to follow you`,
+          data: { type: 'follow', userId: notification.actorId || '', actorName },
+        });
+        break;
+
+      case NotificationType.FOLLOW_REQUEST_ACCEPTED:
+        await this.sendSafe(notification.userId, {
+          title: 'Follow request accepted',
+          body: `${actorName} accepted your follow request`,
+          data: { type: 'follow', userId: notification.actorId || '', actorName },
+        });
+        break;
+
       case NotificationType.MESSAGE:
         if (notification.conversationId) {
           await this.sendSafe(
@@ -61,13 +81,13 @@ export class PushTriggerService {
             this.push.buildMessageNotification(
               actorName,
               notification.conversationId,
-              notification.body || '',
+              this.truncate(notification.body || '', 80),
             ),
           );
         }
         break;
-      case NotificationType.MENTION:
-        // Could be mention in post or thread
+
+      case NotificationType.MENTION: {
         const targetId = notification.postId || notification.threadId || '';
         const targetType = notification.postId ? 'post' : 'thread';
         await this.sendSafe(
@@ -75,40 +95,149 @@ export class PushTriggerService {
           this.push.buildMentionNotification(actorName, targetId, targetType),
         );
         break;
+      }
+
       case NotificationType.THREAD_REPLY:
       case NotificationType.REPLY:
-        // Similar to comment but for threads
         if (notification.threadId) {
-          await this.sendSafe(
-            notification.userId,
-            this.push.buildCommentNotification(
-              actorName,
-              notification.threadId,
-              notification.body || '',
-            ),
-          );
-        }
-        break;
-      case NotificationType.FOLLOW_REQUEST:
-      case NotificationType.FOLLOW_REQUEST_ACCEPTED:
-        // Use generic notification with title/body if present
-        if (notification.title || notification.body) {
           await this.sendSafe(notification.userId, {
-            title: notification.title || 'Follow request',
-            body: notification.body || '',
+            title: 'New reply',
+            body: `${actorName} replied: ${this.truncate(notification.body || '', 80)}`,
+            data: { type: 'comment', threadId: notification.threadId, actorName },
           });
         }
         break;
-      // Add more types as needed
+
+      case NotificationType.REPOST:
+        if (notification.postId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildRepostNotification(actorName, notification.postId),
+          );
+        }
+        break;
+
+      case NotificationType.QUOTE_POST:
+        if (notification.postId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildQuotePostNotification(actorName, notification.postId),
+          );
+        }
+        break;
+
+      case NotificationType.CHANNEL_POST:
+        if (notification.postId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildChannelPostNotification(actorName, notification.title || 'Channel', notification.postId),
+          );
+        }
+        break;
+
+      case NotificationType.LIVE_STARTED:
+        if (notification.videoId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildLiveStartedNotification(actorName, notification.videoId),
+          );
+        }
+        break;
+
+      case NotificationType.VIDEO_PUBLISHED:
+        if (notification.videoId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildVideoPublishedNotification(actorName, notification.videoId, notification.title || ''),
+          );
+        }
+        break;
+
+      case NotificationType.REEL_LIKE:
+        if (notification.reelId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildReelLikeNotification(actorName, notification.reelId),
+          );
+        }
+        break;
+
+      case NotificationType.REEL_COMMENT:
+        if (notification.reelId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildReelCommentNotification(actorName, notification.reelId, this.truncate(notification.body || '', 80)),
+          );
+        }
+        break;
+
+      case NotificationType.VIDEO_LIKE:
+        if (notification.videoId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildVideoLikeNotification(actorName, notification.videoId),
+          );
+        }
+        break;
+
+      case NotificationType.VIDEO_COMMENT:
+        if (notification.videoId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildVideoCommentNotification(actorName, notification.videoId, this.truncate(notification.body || '', 80)),
+          );
+        }
+        break;
+
+      case NotificationType.STORY_REPLY:
+        await this.sendSafe(
+          notification.userId,
+          this.push.buildStoryReplyNotification(actorName, this.truncate(notification.body || '', 80)),
+        );
+        break;
+
+      case NotificationType.POLL_VOTE:
+        if (notification.postId) {
+          await this.sendSafe(
+            notification.userId,
+            this.push.buildPollVoteNotification(actorName, notification.postId),
+          );
+        }
+        break;
+
+      case NotificationType.CIRCLE_INVITE:
+        await this.sendSafe(
+          notification.userId,
+          this.push.buildCircleInviteNotification(actorName, notification.title || 'a circle'),
+        );
+        break;
+
+      case NotificationType.CIRCLE_JOIN:
+        await this.sendSafe(
+          notification.userId,
+          this.push.buildCircleJoinNotification(actorName, notification.title || 'your circle'),
+        );
+        break;
+
+      case NotificationType.SYSTEM:
+        if (notification.title || notification.body) {
+          await this.sendSafe(notification.userId, {
+            title: notification.title || 'Mizanly',
+            body: notification.body || '',
+            data: { type: 'system' },
+          });
+        }
+        break;
+
       default:
-        // For other types, send generic notification if title/body present
+        // Fallback for any future types — send generic if content exists
         if (notification.title || notification.body) {
           await this.sendSafe(notification.userId, {
             title: notification.title || 'New notification',
             body: notification.body || '',
           });
         }
-        this.logger.debug(`No push mapping for type ${notification.type}`);
+        this.logger.debug(`No specific push mapping for type ${notification.type}, used generic`);
     }
   }
 
@@ -124,5 +253,10 @@ export class PushTriggerService {
         error.stack,
       );
     }
+  }
+
+  private truncate(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    return text.slice(0, maxLength - 1) + '\u2026';
   }
 }

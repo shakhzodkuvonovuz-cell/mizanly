@@ -37,7 +37,8 @@ type NotificationData = {
 
 /**
  * Hook that handles incoming push notifications in foreground/background
- * and maps them to navigation routes
+ * and maps them to navigation routes.
+ * Called from usePushNotifications — do not call separately.
  */
 export function usePushNotificationHandler(isSignedIn: boolean = true) {
   const notificationListener = useRef<{ remove: () => void } | null>(null);
@@ -50,9 +51,7 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
         const Notifications = await import('expo-notifications');
 
         Notifications.setNotificationHandler({
-          handleNotification: async (notification) => {
-            const { data, title, body } = notification.request.content;
-
+          handleNotification: async () => {
             // In-app banner behavior
             return {
               shouldShowAlert: true,
@@ -62,8 +61,8 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
             };
           },
         });
-      } catch (error) {
-        console.error('Error setting notification handler:', error);
+      } catch {
+        // Notification handler config is non-critical
       }
     };
 
@@ -80,12 +79,9 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
 
         // Listener for notifications received while app is foregrounded
         notificationListener.current = Notifications.addNotificationReceivedListener(
-          (notification) => {
-            const { data, title, body } = notification.request.content;
-            console.log('Notification received in foreground:', { title, body, data });
-
-            // Update badge count, store locally, etc.
-            // Could dispatch to Zustand store for unread counts
+          () => {
+            // Foreground notification received — badge/count updates are handled
+            // by shouldSetBadge: true in the handler above
           }
         );
 
@@ -96,10 +92,8 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
             handleNotificationNavigation(data);
           }
         );
-
-        console.log('Push notification listeners registered');
-      } catch (error) {
-        console.error('Error setting up notification listeners:', error);
+      } catch {
+        // Notification listener setup is non-critical
       }
     };
 
@@ -146,7 +140,6 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
         if (data.username) {
           router.push(`/(screens)/profile/${data.username}` as never);
         } else if (data.userId) {
-          // Could fetch username or navigate to user profile by ID
           router.push(`/(screens)/profile/${data.userId}` as never);
         } else {
           router.push('/(screens)/notifications' as never);
@@ -177,7 +170,6 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
 
       case 'live':
         if (data.videoId) {
-          // Assuming live streams use videoId or a dedicated liveId
           router.push(`/(screens)/live/${data.videoId}` as never);
         } else {
           router.push('/(tabs)/minbar' as never);
@@ -190,7 +182,6 @@ export function usePushNotificationHandler(isSignedIn: boolean = true) {
 
       case 'event':
         if (data.eventId) {
-          // TODO: Create event-detail screen
           router.push(`/(screens)/event-detail/${data.eventId}` as never);
         } else {
           router.push('/(screens)/events' as never);

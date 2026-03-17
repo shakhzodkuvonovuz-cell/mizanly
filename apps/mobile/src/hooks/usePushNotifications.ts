@@ -1,11 +1,45 @@
-import { useEffect, useRef } from 'react';
-import { Platform } from 'react-native';
-import { router } from 'expo-router';
+import { useEffect, useRef, useCallback } from 'react';
+import { Platform, AppState, AppStateStatus } from 'react-native';
 import type { Subscription } from 'expo-notifications';
 import { devicesApi } from '@/services/api';
+import { usePushNotificationHandler } from './usePushNotificationHandler';
 
 export function usePushNotifications(isSignedIn: boolean) {
   const registered = useRef(false);
+  const tokenSubscription = useRef<Subscription | null>(null);
+  const appStateSubscription = useRef<ReturnType<typeof AppState.addEventListener> | null>(null);
+
+  // Wire up the notification handler (foreground behavior + tap navigation)
+  usePushNotificationHandler(isSignedIn);
+
+  // Reset badge count when app comes to foreground
+  useEffect(() => {
+    const resetBadge = async () => {
+      try {
+        const Notifications = await import('expo-notifications');
+        await Notifications.setBadgeCountAsync(0);
+      } catch {
+        // Badge reset is non-critical
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'active' && isSignedIn) {
+        resetBadge();
+      }
+    });
+    appStateSubscription.current = subscription;
+
+    // Also reset on mount if already active
+    if (isSignedIn) {
+      resetBadge();
+    }
+
+    return () => {
+      subscription.remove();
+      appStateSubscription.current = null;
+    };
+  }, [isSignedIn]);
 
   // Register push token (only when signed in)
   useEffect(() => {
@@ -43,49 +77,28 @@ export function usePushNotifications(isSignedIn: boolean) {
         const platform = Platform.OS === 'ios' ? 'ios' : 'android';
         await devicesApi.register(tokenData.data, platform);
         registered.current = true;
+
+        // Listen for token refreshes (e.g. after app reinstall, OS token rotation)
+        tokenSubscription.current = Notifications.addPushTokenListener(async (newToken) => {
+          try {
+            const newPlatform = Platform.OS === 'ios' ? 'ios' : 'android';
+            await devicesApi.register(newToken.data, newPlatform);
+          } catch {
+            // Token refresh registration is non-critical
+          }
+        });
       } catch {
         // Push registration is non-critical
       }
     };
 
     register();
-  }, [isSignedIn]);
 
-  // Handle notification taps (always active, regardless of sign-in state)
-  useEffect(() => {
-    let subscription: { remove: () => void } | undefined;
-
-    const setup = async () => {
-      try {
-        const Notifications = await import('expo-notifications');
-        const { router } = await import('expo-router');
-
-        subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-          const data = response.notification.request.content.data;
-          if (!data) return;
-
-          if (data.postId && typeof data.postId === 'string' && data.postId.length < 100) {
-            router.push(`/(screens)/post/${data.postId}` as never);
-          } else if (data.threadId && typeof data.threadId === 'string' && data.threadId.length < 100) {
-            router.push(`/(screens)/thread/${data.threadId}` as never);
-          } else if (data.reelId && typeof data.reelId === 'string' && data.reelId.length < 100) {
-            router.push(`/(screens)/reel/${data.reelId}` as never);
-          } else if (data.videoId && typeof data.videoId === 'string' && data.videoId.length < 100) {
-            router.push(`/(screens)/video/${data.videoId}` as never);
-          } else if (data.conversationId && typeof data.conversationId === 'string' && data.conversationId.length < 100) {
-            router.push(`/(screens)/conversation/${data.conversationId}` as never);
-          } else if (data.username && typeof data.username === 'string' && data.username.length < 100) {
-            router.push(`/(screens)/profile/${data.username}` as never);
-          } else {
-            router.push('/(screens)/notifications' as never);
-          }
-        });
-      } catch {
-        // Notification handling is non-critical
+    return () => {
+      if (tokenSubscription.current) {
+        tokenSubscription.current.remove();
+        tokenSubscription.current = null;
       }
     };
-
-    setup();
-    return () => subscription?.remove();
-  }, []);
+  }, [isSignedIn]);
 }

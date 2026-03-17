@@ -37,12 +37,17 @@ export class PushService {
       this.logger.debug(`No active device tokens for user ${userId}`);
       return;
     }
+
+    // Fetch unread count for badge
+    const badgeCount = await this.getUnreadCountForUser(userId);
+
     const messages = tokens.map(token => ({
       to: token,
       title: notification.title,
       body: notification.body,
       data: notification.data,
       sound: 'default' as const,
+      badge: badgeCount,
       priority: 'high' as const,
     }));
     await this.sendBatch(messages);
@@ -77,14 +82,19 @@ export class PushService {
       try {
         const response = await fetch(EXPO_PUSH_URL, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
           body: JSON.stringify(batch),
         });
         if (!response.ok) {
           this.logger.error(`Expo push API responded with status ${response.status}: ${await response.text()}`);
           continue;
         }
-        const tickets: ExpoPushTicket[] = await response.json();
+        // Expo returns { data: ExpoPushTicket[] }
+        const result = await response.json();
+        const tickets: ExpoPushTicket[] = result.data || result;
         await this.handlePushResponse(batch, tickets);
         allTickets.push(...tickets);
       } catch (error) {
@@ -143,6 +153,17 @@ export class PushService {
     return devices.map(d => d.pushToken);
   }
 
+  // Get unread notification count for badge
+  private async getUnreadCountForUser(userId: string): Promise<number> {
+    try {
+      return await this.prisma.notification.count({
+        where: { userId, isRead: false },
+      });
+    } catch {
+      return 0;
+    }
+  }
+
   // Build notification for different types
 
   buildLikeNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
@@ -182,6 +203,110 @@ export class PushService {
       title: 'You were mentioned',
       body: `${actorName} mentioned you in a ${targetType}`,
       data: { type: 'mention', targetId, targetType, actorName },
+    };
+  }
+
+  buildRepostNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Repost',
+      body: `${actorName} reposted your post`,
+      data: { type: 'like', postId, actorName },
+    };
+  }
+
+  buildQuotePostNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Quote post',
+      body: `${actorName} quoted your post`,
+      data: { type: 'like', postId, actorName },
+    };
+  }
+
+  buildReelLikeNotification(actorName: string, reelId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New like',
+      body: `${actorName} liked your reel`,
+      data: { type: 'like', reelId, actorName },
+    };
+  }
+
+  buildReelCommentNotification(actorName: string, reelId: string, preview: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New comment',
+      body: `${actorName} commented on your reel: ${preview}`,
+      data: { type: 'comment', reelId, actorName, preview },
+    };
+  }
+
+  buildVideoLikeNotification(actorName: string, videoId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New like',
+      body: `${actorName} liked your video`,
+      data: { type: 'like', videoId, actorName },
+    };
+  }
+
+  buildVideoCommentNotification(actorName: string, videoId: string, preview: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New comment',
+      body: `${actorName} commented on your video: ${preview}`,
+      data: { type: 'comment', videoId, actorName, preview },
+    };
+  }
+
+  buildVideoPublishedNotification(actorName: string, videoId: string, videoTitle: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New video',
+      body: `${actorName} published: ${videoTitle}`,
+      data: { type: 'like', videoId, actorName },
+    };
+  }
+
+  buildLiveStartedNotification(actorName: string, liveId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Live now',
+      body: `${actorName} is live now!`,
+      data: { type: 'live', videoId: liveId, actorName },
+    };
+  }
+
+  buildChannelPostNotification(actorName: string, channelName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: channelName,
+      body: `${actorName} posted in ${channelName}`,
+      data: { type: 'like', postId, actorName },
+    };
+  }
+
+  buildStoryReplyNotification(actorName: string, preview: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Story reply',
+      body: `${actorName} replied to your story: ${preview}`,
+      data: { type: 'message', actorName, preview },
+    };
+  }
+
+  buildCircleInviteNotification(actorName: string, circleName: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Circle invite',
+      body: `${actorName} invited you to join ${circleName}`,
+      data: { type: 'system', actorName, circleName },
+    };
+  }
+
+  buildCircleJoinNotification(actorName: string, circleName: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'New member',
+      body: `${actorName} joined ${circleName}`,
+      data: { type: 'system', actorName, circleName },
+    };
+  }
+
+  buildPollVoteNotification(actorName: string, postId: string): { title: string; body: string; data: Record<string, string> } {
+    return {
+      title: 'Poll vote',
+      body: `${actorName} voted on your poll`,
+      data: { type: 'like', postId, actorName },
     };
   }
 
