@@ -9,7 +9,7 @@ import type {
   BroadcastChannel, BroadcastMessage, LiveSession, LiveParticipant,
   CallSession, StickerPack, StickerItem, PostCollab,
   ChannelPost, AudioTrack, FeedDismissal,
-  HashtagInfo, BookmarkCollection, SearchSuggestion,
+  HashtagInfo, BookmarkCollection, SearchSuggestion, ModerationLogEntry,
 } from '@/types';
 
 // ── Request payload types (API layer only) ──
@@ -50,7 +50,6 @@ type CreateStoryPayload = {
   filter?: string;
   bgGradient?: string;
   stickerData?: object;
-  stickers?: string;
   closeFriendsOnly?: boolean;
 };
 
@@ -317,6 +316,14 @@ export const storiesApi = {
     api.post<Message>(`/stories/${storyId}/reply`, { content }),
   getReactionSummary: (storyId: string) =>
     api.get<Record<string, number>>(`/stories/${storyId}/reactions/summary`),
+  submitStickerResponse: (storyId: string, stickerType: string, responseData: Record<string, unknown>) =>
+    api.post(`/stories/${storyId}/sticker-response`, { stickerType, responseData }),
+  getStickerResponses: (storyId: string, type?: string) =>
+    api.get<{ stickerType: string; responseData: Record<string, unknown>; user: User }[]>(
+      `/stories/${storyId}/sticker-responses${type ? `?type=${encodeURIComponent(type)}` : ''}`,
+    ),
+  getStickerSummary: (storyId: string) =>
+    api.get<Record<string, Record<string, number>>>(`/stories/${storyId}/sticker-summary`),
 };
 
 // ── Reels (Bakra) ──
@@ -897,6 +904,26 @@ export const feedApi = {
     api.get<PaginatedResponse<any>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
   reportNotInterested: (contentId: string, contentType: string) =>
     api.post('/feed/not-interested', { contentId, contentType }),
+};
+
+// ── Moderation (user-facing appeal endpoints) ──
+export const moderationApi = {
+  getMyActions: (cursor?: string) =>
+    api.get<PaginatedResponse<ModerationLogEntry>>(`/moderation/my-actions${qs({ cursor })}`),
+  getMyAppeals: (cursor?: string) =>
+    api.get<PaginatedResponse<ModerationLogEntry>>(`/moderation/my-appeals${qs({ cursor })}`),
+  submitAppeal: (data: { moderationLogId: string; reason: string; details: string }) =>
+    api.post<ModerationLogEntry>('/moderation/appeal', data),
+};
+
+// ── Appeals (convenience alias used by appeal-moderation screen) ──
+export const appealsApi = {
+  getHistory: (reportId?: string) =>
+    api.get<ModerationLogEntry | null>(`/moderation/my-appeals${qs({ reportId })}`).then(
+      (res) => (Array.isArray(res) ? res[0] ?? null : res),
+    ),
+  submit: (data: { reportId: string; reason: string; details: string }) =>
+    moderationApi.submitAppeal({ moderationLogId: data.reportId, reason: data.reason, details: data.details }),
 };
 
 // ── Reports ──

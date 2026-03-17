@@ -1,12 +1,13 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
-  FlatList, Dimensions,
+  FlatList, Dimensions, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -14,6 +15,8 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { audioTracksApi } from '@/services/api';
+import type { AudioTrack as ApiAudioTrack } from '@/types';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -21,7 +24,7 @@ const CATEGORIES = [
   'Trending', 'Islamic', 'Nasheeds', 'Lo-fi', 'Acoustic', 'Hip Hop', 'Pop', 'Qiraat'
 ];
 
-interface AudioTrack {
+interface AudioTrackDisplay {
   id: string;
   title: string;
   artist: string;
@@ -31,17 +34,23 @@ interface AudioTrack {
   isFavorite: boolean;
 }
 
-// Mock data
-const MOCK_AUDIO: AudioTrack[] = [
-  { id: '1', title: 'Ramadan Vibes', artist: 'Omar Hisham', duration: '0:30', useCount: 12400, category: 'Islamic', isFavorite: true },
-  { id: '2', title: 'Peaceful Morning', artist: 'Maher Zain', duration: '0:45', useCount: 8900, category: 'Nasheeds', isFavorite: false },
-  { id: '3', title: 'Inspiration', artist: 'Sami Yusuf', duration: '1:00', useCount: 15600, category: 'Nasheeds', isFavorite: true },
-  { id: '4', title: 'Deep Focus', artist: 'Lofi Ummah', duration: '0:30', useCount: 5600, category: 'Lo-fi', isFavorite: false },
-  { id: '5', title: 'Eid Celebration', artist: 'Humood Alkhudher', duration: '0:45', useCount: 9200, category: 'Islamic', isFavorite: false },
-  { id: '6', title: 'Morning Dhikr', artist: 'Various Artists', duration: '0:30', useCount: 3400, category: 'Islamic', isFavorite: false },
-  { id: '7', title: 'Motivational Beat', artist: 'Noor Music', duration: '0:30', useCount: 2100, category: 'Hip Hop', isFavorite: false },
-  { id: '8', title: 'Guitar Soul', artist: 'Acoustic Vibes', duration: '1:00', useCount: 4500, category: 'Acoustic', isFavorite: true },
-];
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function mapApiTrack(track: ApiAudioTrack): AudioTrackDisplay {
+  return {
+    id: track.id,
+    title: track.title,
+    artist: track.artist,
+    duration: formatDuration(track.duration),
+    useCount: track.usageCount ?? 0,
+    category: track.genre || 'Trending',
+    isFavorite: false,
+  };
+}
 
 function Waveform({ isPlaying, color = colors.emerald }: { isPlaying: boolean; color?: string }) {
   const bars = 8;
@@ -94,7 +103,7 @@ function AudioCard({
   onToggleFavorite,
   index,
 }: {
-  track: AudioTrack;
+  track: AudioTrackDisplay;
   isPlaying: boolean;
   isCurrentTrack: boolean;
   onPlay: () => void;
@@ -158,15 +167,27 @@ export default function AudioLibraryScreen() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [currentTrackId, setCurrentTrackId] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [selectedTrack, setSelectedTrack] = useState<AudioTrack | null>(null);
+  const [selectedTrack, setSelectedTrack] = useState<AudioTrackDisplay | null>(null);
 
-  const filteredAudio = MOCK_AUDIO.filter(track => {
+  const { data: apiTracks, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['audio-tracks', activeCategory],
+    queryFn: () =>
+      activeCategory === 'Trending'
+        ? audioTracksApi.getTrending().then((data) => ({ data: Array.isArray(data) ? data : [] }))
+        : audioTracksApi.getByGenre(activeCategory).then((data) => ({ data: Array.isArray(data) ? data : [] })),
+  });
+
+  const allTracks: AudioTrackDisplay[] = useMemo(
+    () => (apiTracks?.data ?? []).map(mapApiTrack),
+    [apiTracks],
+  );
+
+  const filteredAudio = useMemo(() => allTracks.filter(track => {
     const matchesSearch = track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          track.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = activeCategory === 'Trending' || track.category === activeCategory;
     const matchesFavorites = !favoritesOnly || track.isFavorite;
-    return matchesSearch && matchesCategory && matchesFavorites;
-  });
+    return matchesSearch && matchesFavorites;
+  }), [allTracks, searchQuery, favoritesOnly]);
 
   const handlePlay = useCallback((trackId: string) => {
     if (currentTrackId === trackId) {
@@ -177,7 +198,7 @@ export default function AudioLibraryScreen() {
     }
   }, [currentTrackId, isPlaying]);
 
-  const handleSelect = useCallback((track: AudioTrack) => {
+  const handleSelect = useCallback((track: AudioTrackDisplay) => {
     setSelectedTrack(track);
   }, []);
 
@@ -250,6 +271,7 @@ export default function AudioLibraryScreen() {
         data={filteredAudio}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.audioList}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />}
         renderItem={({ item, index }) => (
           <AudioCard
             track={item}
@@ -261,13 +283,24 @@ export default function AudioLibraryScreen() {
             index={index}
           />
         )}
-        ListEmptyComponent={(
-          <EmptyState
-            icon="music"
-            title={t('audioLibrary.emptyState.title')}
-            subtitle={t('audioLibrary.emptyState.subtitle')}
-          />
-        )}
+        ListEmptyComponent={
+          isLoading ? (
+            <View style={{ padding: spacing.base, gap: spacing.md }}>
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.md} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState
+              icon="music"
+              title={t('audioLibrary.emptyState.title')}
+              subtitle={t('audioLibrary.emptyState.subtitle')}
+            />
+          )
+        }
+        refreshControl={
+          <RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />
+        }
         showsVerticalScrollIndicator={false}
       />
 
@@ -282,10 +315,10 @@ export default function AudioLibraryScreen() {
               <Waveform isPlaying={isPlaying} color="#fff" />
               <View style={styles.nowPlayingInfo}>
                 <Text style={styles.nowPlayingTitle} numberOfLines={1}>
-                  {MOCK_AUDIO.find(t => t.id === currentTrackId)?.title}
+                  {allTracks.find(t => t.id === currentTrackId)?.title}
                 </Text>
                 <Text style={styles.nowPlayingArtist} numberOfLines={1}>
-                  {MOCK_AUDIO.find(t => t.id === currentTrackId)?.artist}
+                  {allTracks.find(t => t.id === currentTrackId)?.artist}
                 </Text>
               </View>
               <TouchableOpacity onPress={handleUseSound} style={styles.nowPlayingUseButton}>

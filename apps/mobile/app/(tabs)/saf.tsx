@@ -23,13 +23,14 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import type { Post, StoryGroup } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 
 export default function SafScreen() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();
@@ -190,9 +191,9 @@ export default function SafScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Mizanly</Text>
-        <View style={styles.headerRight}>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
+        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <AnimatedPressable
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/create-story'); }}
@@ -237,7 +238,7 @@ export default function SafScreen() {
                 <Badge
                   count={unreadNotifications}
                   size="sm"
-                  style={styles.notifBadge}
+                  style={[styles.notifBadge, rtlAbsoluteEnd(isRTL, -8)]}
                 />
               )}
             </View>
@@ -299,7 +300,6 @@ const styles = StyleSheet.create({
   notifBadge: {
     position: 'absolute',
     top: -6,
-    right: -8,
   },
   footer: { paddingVertical: spacing.sm },
   storySeparator: {

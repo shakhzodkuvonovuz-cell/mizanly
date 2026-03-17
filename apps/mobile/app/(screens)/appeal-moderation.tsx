@@ -9,16 +9,19 @@ import {
   TextInput,
   Dimensions,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { CharCountRing } from '@/components/ui/CharCountRing';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { appealsApi } from '@/services/api';
 
 const { width } = Dimensions.get('window');
 
@@ -38,21 +41,13 @@ interface AppealHistory {
   status: AppealStatus;
 }
 
-// APPEAL_REASONS moved inside component
-
-const MOCK_HISTORY: AppealHistory = {
-  id: '1',
-  number: 1,
-  submittedDate: 'March 12, 2026',
-  status: 'review',
-};
-
 export default function AppealModerationScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const { reportId } = useLocalSearchParams<{ reportId: string }>();
+  const queryClient = useQueryClient();
   const [selectedReason, setSelectedReason] = useState<AppealReason | null>(null);
   const [details, setDetails] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
 
   const APPEAL_REASONS: { id: AppealReason; label: string }[] = [
     { id: 'no-violation', label: t('appealModeration.reason.noViolation') },
@@ -62,10 +57,37 @@ export default function AppealModerationScreen() {
     { id: 'other', label: t('appealModeration.reason.other') },
   ];
 
+  const { data: appealHistory, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['appealHistory', reportId],
+    queryFn: () => appealsApi.getHistory(reportId),
+    select: (response): AppealHistory | null => {
+      if (!response) return null;
+      const appeal = response as { id: string; appealNumber: number; createdAt: string; status: string };
+      return {
+        id: appeal.id,
+        number: appeal.appealNumber ?? 1,
+        submittedDate: new Date(appeal.createdAt).toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric',
+        }),
+        status: (appeal.status as AppealStatus) || 'submitted',
+      };
+    },
+  });
+
+  const submitAppealMutation = useMutation({
+    mutationFn: () => appealsApi.submit({
+      reportId: reportId || '',
+      reason: selectedReason || '',
+      details,
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appealHistory', reportId] });
+    },
+  });
+
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    refetch();
+  }, [refetch]);
 
   const isSubmitDisabled = !selectedReason || details.length < 50;
 
@@ -82,7 +104,7 @@ export default function AppealModerationScreen() {
 
   const getTimelineStyle = (step: AppealStatus) => {
     const statusOrder: AppealStatus[] = ['submitted', 'review', 'decision'];
-    const currentIndex = statusOrder.indexOf(MOCK_HISTORY.status);
+    const currentIndex = statusOrder.indexOf(appealHistory?.status ?? 'submitted');
     const stepIndex = statusOrder.indexOf(step);
 
     if (stepIndex < currentIndex) {
@@ -100,7 +122,7 @@ export default function AppealModerationScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Moderation Action Card */}
@@ -283,24 +305,39 @@ export default function AppealModerationScreen() {
               <Text style={styles.formTitle}>{t('appealModeration.historyTitle')}</Text>
             </View>
 
-            <View style={styles.historyEntry}>
+            {isLoading && (
+              <View style={{ gap: spacing.sm, padding: spacing.sm }}>
+                <Skeleton.Rect width="60%" height={16} borderRadius={radius.sm} />
+                <Skeleton.Rect width="80%" height={14} borderRadius={radius.sm} />
+                <Skeleton.Rect width="100%" height={40} borderRadius={radius.sm} />
+              </View>
+            )}
+
+            {!isLoading && !appealHistory && (
+              <EmptyState
+                icon="clock"
+                title={t('appealModeration.noHistory') || 'No appeal history'}
+              />
+            )}
+
+            {!isLoading && appealHistory && <View style={styles.historyEntry}>
               <View style={styles.historyHeader}>
-                <Text style={styles.historyTitle}>{t('appealModeration.appealNumber')}{MOCK_HISTORY.number}</Text>
+                <Text style={styles.historyTitle}>{t('appealModeration.appealNumber')}{appealHistory.number}</Text>
                 <LinearGradient
-                  colors={getStatusBadge(MOCK_HISTORY.status).colors}
+                  colors={getStatusBadge(appealHistory.status).colors}
                   style={styles.statusBadge}
                 >
                   <Text
                     style={[
                       styles.statusText,
-                      MOCK_HISTORY.status === 'review' && { color: colors.dark.bg },
+                      appealHistory.status === 'review' && { color: colors.dark.bg },
                     ]}
                   >
-                    {getStatusBadge(MOCK_HISTORY.status).text}
+                    {getStatusBadge(appealHistory.status).text}
                   </Text>
                 </LinearGradient>
               </View>
-              <Text style={styles.historyDate}>{t('appealModeration.submitted')} {MOCK_HISTORY.submittedDate}</Text>
+              <Text style={styles.historyDate}>{t('appealModeration.submitted')} {appealHistory.submittedDate}</Text>
 
               {/* Timeline */}
               <View style={styles.timeline}>
@@ -311,7 +348,7 @@ export default function AppealModerationScreen() {
                     <View key={step} style={styles.timelineItem}>
                       <View style={styles.timelineDotContainer}>
                         <View style={[styles.timelineDotBase, styles_result.dot]}>
-                          {step === 'review' && MOCK_HISTORY.status === 'review' && (
+                          {step === 'review' && appealHistory.status === 'review' && (
                             <LinearGradient
                               colors={[colors.gold, colors.goldLight]}
                               style={styles.timelineDotPulse}
@@ -323,7 +360,7 @@ export default function AppealModerationScreen() {
                       <Text
                         style={[
                           styles.timelineLabel,
-                          step === MOCK_HISTORY.status && styles.timelineLabelActive,
+                          step === appealHistory.status && styles.timelineLabelActive,
                         ]}
                       >
                         {step === 'submitted' ? t('appealModeration.status.submitted') : step === 'review' ? t('appealModeration.status.underReview') : t('appealModeration.status.decision')}
@@ -332,7 +369,7 @@ export default function AppealModerationScreen() {
                   );
                 })}
               </View>
-            </View>
+            </View>}
           </LinearGradient>
         </Animated.View>
 
@@ -376,13 +413,19 @@ export default function AppealModerationScreen() {
         <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
           <Text style={styles.cancelText}>{t('common.cancel')}</Text>
         </TouchableOpacity>
-        <TouchableOpacity disabled={isSubmitDisabled} activeOpacity={0.8}>
+        <TouchableOpacity
+          disabled={isSubmitDisabled || submitAppealMutation.isPending}
+          activeOpacity={0.8}
+          onPress={() => submitAppealMutation.mutate()}
+        >
           <LinearGradient
             colors={isSubmitDisabled ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)'] : [colors.emerald, colors.emeraldDark]}
             style={[styles.submitButton, isSubmitDisabled && styles.submitButtonDisabled]}
           >
             <Text style={[styles.submitText, isSubmitDisabled && styles.submitTextDisabled]}>
-              {t('appealModeration.submitAppeal')}
+              {submitAppealMutation.isPending
+                ? (t('common.submitting') || 'Submitting...')
+                : t('appealModeration.submitAppeal')}
             </Text>
           </LinearGradient>
         </TouchableOpacity>

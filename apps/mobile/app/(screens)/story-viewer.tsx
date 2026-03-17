@@ -140,14 +140,18 @@ export default function StoryViewerScreen() {
     });
   }, [group?.stories.length, router, progressValue]);
 
-  const handleStickerResponse = useCallback((stickerId: string, response: any) => {
+  const handleStickerResponse = useCallback((stickerId: string, response: Record<string, unknown>) => {
     setStickerResponses(prev => ({ ...prev, [stickerId]: response }));
-    // TODO: send to backend API
-  }, []);
+    // Find the sticker type for this response
+    const sticker = stickers.find(s => s.id === stickerId);
+    if (sticker && story?.id) {
+      storiesApi.submitStickerResponse(story.id, sticker.type, response).catch(() => {});
+    }
+  }, [stickers, story?.id]);
 
   const renderSticker = (sticker: Sticker) => {
     const { id, type, data, x, y, scale } = sticker;
-    const style = { position: 'absolute', left: x, top: y, transform: [{ scale }] };
+    const style = { position: 'absolute' as const, left: x, top: y, transform: [{ scale }] };
     switch (type) {
       case 'poll':
         const pollData = {

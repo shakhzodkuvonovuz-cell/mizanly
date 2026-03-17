@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ModerationService, CheckTextDto, CheckImageDto, ReviewActionDto } from './moderation.service';
+import { ModerationService, CheckTextDto, CheckImageDto, ReviewActionDto, SubmitAppealDto } from './moderation.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
@@ -64,5 +64,33 @@ export class ModerationController {
   @ApiOperation({ summary: 'Moderation stats (admin only)' })
   getStats(@CurrentUser('id') adminId: string) {
     return this.moderationService.getStats(adminId);
+  }
+
+  @Get('my-actions')
+  @ApiOperation({ summary: 'Get moderation actions against current user' })
+  getMyActions(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.moderationService.getMyActions(userId, cursor);
+  }
+
+  @Get('my-appeals')
+  @ApiOperation({ summary: 'Get user appeals for moderation actions' })
+  getMyAppeals(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.moderationService.getMyAppeals(userId, cursor);
+  }
+
+  @Post('appeal')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Submit appeal for a moderation action' })
+  submitAppeal(
+    @CurrentUser('id') userId: string,
+    @Body() dto: SubmitAppealDto,
+  ) {
+    return this.moderationService.submitAppeal(userId, dto);
   }
 }

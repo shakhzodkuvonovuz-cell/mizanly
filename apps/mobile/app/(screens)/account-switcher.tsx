@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -11,6 +12,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { VerifiedBadge } from '@/components/ui/VerifiedBadge';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { usersApi } from '@/services/api';
+import type { User } from '@/types';
 
 interface Account {
   id: string;
@@ -27,72 +30,54 @@ interface Account {
   isVerified: boolean;
 }
 
-const MOCK_ACCOUNTS: Account[] = [
-  {
-    id: '1',
-    displayName: 'Khalid Al-Rashid',
-    username: 'khalid_dev',
-    avatarUrl: null,
-    accountType: 'Personal',
-    followers: '1.2K',
-    following: '342',
-    posts: '89',
+function formatCount(n: number | undefined): string {
+  if (!n) return '0';
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+  return n.toString();
+}
+
+function mapUserToAccount(user: User): Account {
+  return {
+    id: user.id,
+    displayName: user.displayName || user.username,
+    username: user.username,
+    avatarUrl: user.avatarUrl || null,
+    accountType: user.isCreator ? 'Creator' : 'Personal',
+    followers: formatCount(user.followersCount),
+    following: formatCount(user.followingCount),
+    posts: formatCount(user.postsCount),
     isActive: true,
     unreadCount: 0,
     lastActive: 'Active now',
-    isVerified: false,
-  },
-  {
-    id: '2',
-    displayName: 'Mizanly Official',
-    username: 'mizanly',
-    avatarUrl: null,
-    accountType: 'Creator',
-    followers: '45.2K',
-    following: '128',
-    posts: '456',
-    isActive: false,
-    unreadCount: 3,
-    lastActive: 'Active 2h ago',
-    isVerified: true,
-  },
-  {
-    id: '3',
-    displayName: 'Design Studio',
-    username: 'khalid_designs',
-    avatarUrl: null,
-    accountType: 'Creator',
-    followers: '890',
-    following: '234',
-    posts: '67',
-    isActive: false,
-    unreadCount: 0,
-    lastActive: 'Active 5h ago',
-    isVerified: false,
-  },
-];
+    isVerified: user.isVerified ?? false,
+  };
+}
 
 export default function AccountSwitcherScreen() {
   const router = useRouter();
   const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
-  const [accounts, setAccounts] = useState<Account[]>(MOCK_ACCOUNTS);
   const [autoSwitchOnNotification, setAutoSwitchOnNotification] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: currentUser, isLoading, refetch, isRefetching } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => usersApi.getMe(),
+  });
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 1000);
-  }, []);
+    refetch();
+  }, [refetch]);
 
+  const accounts: Account[] = currentUser ? [mapUserToAccount(currentUser)] : [];
   const activeAccount = accounts.find(a => a.isActive);
   const otherAccounts = accounts.filter(a => !a.isActive);
 
-  const handleSwitchAccount = (accountId: string) => {
-    setAccounts(accounts.map(a => ({
-      ...a,
-      isActive: a.id === accountId,
-    })));
-  };
+  const handleSwitchAccount = useCallback((_accountId: string) => {
+    // Multi-account switching handled by Clerk session management
+    // Refetch current user after switch
+    queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+  }, [queryClient]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -100,10 +85,19 @@ export default function AccountSwitcherScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={onRefresh} />}
       >
+        {/* Loading State */}
+        {isLoading && (
+          <View style={{ padding: spacing.base, gap: spacing.md }}>
+            <Skeleton.Rect width="100%" height={140} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+            <Skeleton.Rect width="100%" height={80} borderRadius={radius.lg} />
+          </View>
+        )}
+
         {/* Current Account Hero Card */}
-        {activeAccount && (
+        {!isLoading && activeAccount && (
           <Animated.View entering={FadeInUp.delay(50).duration(400)}>
             <View style={styles.heroCard}>
               <LinearGradient
@@ -163,7 +157,7 @@ export default function AccountSwitcherScreen() {
         )}
 
         {/* Other Accounts Section */}
-        <Animated.View entering={FadeInUp.delay(100).duration(400)}>
+        {!isLoading && <Animated.View entering={FadeInUp.delay(100).duration(400)}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{t('screens.accountSwitcher.otherAccounts')}</Text>
             <Text style={styles.sectionCount}>{otherAccounts.length}</Text>
@@ -230,7 +224,16 @@ export default function AccountSwitcherScreen() {
               </Animated.View>
             ))}
           </View>
-        </Animated.View>
+        </Animated.View>}
+
+        {/* Empty State when no accounts loaded */}
+        {!isLoading && accounts.length === 0 && (
+          <EmptyState
+            icon="user"
+            title={t('screens.accountSwitcher.noAccounts') || 'No accounts found'}
+            subtitle={t('screens.accountSwitcher.noAccountsSubtitle') || 'Sign in to get started'}
+          />
+        )}
 
         {/* Add Account Section */}
         <Animated.View entering={FadeInUp.delay(200).duration(400)}>

@@ -35,6 +35,7 @@ import { Platform } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -458,7 +459,7 @@ const ReelItem = memo(function ReelItem({
 });
 
 export default function BakraScreen() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const haptic = useHaptic();
@@ -636,9 +637,9 @@ export default function BakraScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>Bakra</Text>
-        <View style={styles.headerRight}>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Bakra</Text>
+        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
           <TouchableOpacity
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}

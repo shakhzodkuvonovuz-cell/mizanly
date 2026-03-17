@@ -514,6 +514,27 @@ export interface Report {
   createdAt: string;
 }
 
+export interface ModerationLogEntry {
+  id: string;
+  moderatorId: string;
+  moderator?: { id: string; displayName?: string };
+  targetUserId?: string;
+  targetPostId?: string;
+  targetPost?: { id: string; content?: string; mediaUrls?: string[] };
+  targetCommentId?: string;
+  targetComment?: { id: string; content?: string };
+  targetMessageId?: string;
+  action: ModerationAction;
+  reason: string;
+  explanation: string;
+  reportId?: string;
+  isAppealed: boolean;
+  appealText?: string;
+  appealResolved?: boolean;
+  appealResult?: string;
+  createdAt: string;
+}
+
 export interface AdminStats {
   users: number;
   posts: number;

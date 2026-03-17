@@ -270,7 +270,7 @@ export default function CreateStoryScreen() {
         fontFamily: FONTS[fontIndex].id,
         filter: FILTERS[filterIndex].id,
         bgGradient: !mediaUri ? JSON.stringify(BG_GRADIENTS[bgGradientIndex]) : undefined,
-        stickers: stickers.length > 0 ? JSON.stringify(stickers) : undefined,
+        stickerData: stickers.length > 0 ? stickers : undefined,
         closeFriendsOnly,
       });
     },

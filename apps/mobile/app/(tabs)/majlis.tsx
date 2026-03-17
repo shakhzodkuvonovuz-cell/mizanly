@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd, rtlBorderStart } from '@/utils/rtl';
 import type { Thread } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -57,18 +58,19 @@ const AnimatedThreadCard = memo(function AnimatedThreadCard({ thread, viewerId, 
     opacity: opacity.value,
   }));
 
-  // Engagement glow: high engagement gets gold left border
+  // Engagement glow: high engagement gets gold start border
+  const { isRTL: isRTLLocal } = useTranslation();
   const hasHighEngagement = thread.likesCount > 50 || thread.repliesCount > 20;
 
   return (
-    <Animated.View style={[animStyle, hasHighEngagement && styles.highEngagementCard]}>
+    <Animated.View style={[animStyle, hasHighEngagement && rtlBorderStart(isRTLLocal, 2, colors.gold)]}>
       <ThreadCard thread={thread} viewerId={viewerId} isOwn={isOwn} />
     </Animated.View>
   );
 });
 
 export default function MajlisScreen() {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
   const { user } = useUser();
   const router = useRouter();
   const navigation = useNavigation();
@@ -189,8 +191,8 @@ export default function MajlisScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>{t('tabs.majlis')}</Text>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.majlis')}</Text>
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
@@ -211,7 +213,7 @@ export default function MajlisScreen() {
 
       {/* Trending hashtags */}
       {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0) ? (
-        <View style={styles.trendingHeader}>
+        <View style={[styles.trendingHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
           <Text style={styles.trendingHeaderText}>{t('tabs.trending')}</Text>
         </View>
@@ -263,7 +265,7 @@ export default function MajlisScreen() {
 
       {/* Floating compose button */}
       <AnimatedPressable
-        style={[styles.fab, fabStyle]}
+        style={[styles.fab, fabStyle, isRTL ? { left: spacing.lg, right: undefined } : undefined]}
         onPress={() => {
           haptic.medium();
           fabScale.value = withSequence(

@@ -108,3 +108,87 @@ export function rtlStyle<T extends ViewStyle | TextStyle>(
   }
   return resolved as T;
 }
+
+/**
+ * Returns alignSelf for start-aligned items, flipping for RTL.
+ * @param isRTL Whether the layout is RTL.
+ * @returns `flex-start` for LTR, `flex-end` for RTL.
+ */
+export function rtlAlignSelf(isRTL: boolean): 'flex-start' | 'flex-end' {
+  return isRTL ? 'flex-end' : 'flex-start';
+}
+
+/**
+ * Returns the correct directional border style for RTL (e.g., unread accent bars).
+ * @param isRTL Whether the layout is RTL.
+ * @param width Border width.
+ * @param color Border color.
+ * @returns Object with borderLeftWidth/Color or borderRightWidth/Color.
+ */
+export function rtlBorderStart(
+  isRTL: boolean,
+  width: number,
+  color: string,
+): Record<string, number | string> {
+  return isRTL
+    ? { borderRightWidth: width, borderRightColor: color }
+    : { borderLeftWidth: width, borderLeftColor: color };
+}
+
+/**
+ * Returns absolute positioning swapping left/right for RTL.
+ * @param isRTL Whether the layout is RTL.
+ * @param value Position value.
+ * @returns Object with { left: value } for LTR, { right: value } for RTL.
+ */
+export function rtlAbsoluteStart(
+  isRTL: boolean,
+  value: number,
+): { left?: number; right?: number } {
+  return isRTL ? { right: value } : { left: value };
+}
+
+/**
+ * Returns absolute positioning swapping right/left for RTL.
+ * @param isRTL Whether the layout is RTL.
+ * @param value Position value.
+ * @returns Object with { right: value } for LTR, { left: value } for RTL.
+ */
+export function rtlAbsoluteEnd(
+  isRTL: boolean,
+  value: number,
+): { left?: number; right?: number } {
+  return isRTL ? { left: value } : { right: value };
+}
+
+/**
+ * Returns the correct chevron/arrow icon name based on direction and RTL.
+ * @param isRTL Whether the layout is RTL.
+ * @param direction 'forward' or 'back'.
+ * @returns Icon name string.
+ */
+export function rtlChevron(
+  isRTL: boolean,
+  direction: 'forward' | 'back',
+): 'chevron-right' | 'chevron-left' {
+  if (direction === 'forward') {
+    return isRTL ? 'chevron-left' : 'chevron-right';
+  }
+  return isRTL ? 'chevron-right' : 'chevron-left';
+}
+
+/**
+ * Returns the correct arrow icon name based on direction and RTL.
+ * @param isRTL Whether the layout is RTL.
+ * @param direction 'forward' or 'back'.
+ * @returns Icon name string.
+ */
+export function rtlArrow(
+  isRTL: boolean,
+  direction: 'forward' | 'back',
+): 'arrow-left' | 'arrow-right' {
+  if (direction === 'back') {
+    return isRTL ? 'arrow-right' : 'arrow-left';
+  }
+  return isRTL ? 'arrow-left' : 'arrow-right';
+}

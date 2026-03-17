@@ -26,6 +26,7 @@ import { useStore } from '@/store';
 import { messagesApi } from '@/services/api';
 import type { Conversation } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { rtlFlexRow, rtlTextAlign, rtlBorderStart, rtlMargin, rtlAbsoluteEnd, rtlChevron } from '@/utils/rtl';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -47,7 +48,7 @@ const ConversationRow = memo(function ConversationRow({
   isOnline?: boolean;
   isTyping?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   function conversationName(convo: Conversation, myId?: string): string {
     if (convo.isGroup) return convo.groupName ?? t('risalah.group');
@@ -76,7 +77,7 @@ const ConversationRow = memo(function ConversationRow({
 
   return (
     <AnimatedPressable
-      style={[styles.chatItem, hasUnread && styles.chatItemUnread, animStyle]}
+      style={[styles.chatItem, { flexDirection: rtlFlexRow(isRTL) }, hasUnread && rtlBorderStart(isRTL, 3, colors.emerald), animStyle]}
       onPress={onPress}
       onPressIn={() => { scale.value = withSpring(0.98, animation.spring.snappy); }}
       onPressOut={() => { scale.value = withSpring(1, animation.spring.snappy); }}
@@ -86,13 +87,13 @@ const ConversationRow = memo(function ConversationRow({
     >
       <Avatar uri={avi} name={name} size="lg" showOnline={!item.isGroup && isOnline} />
       <View style={styles.chatInfo}>
-        <View style={styles.chatTopRow}>
-          <Text style={[styles.chatName, hasUnread && styles.chatNameUnread]} numberOfLines={1}>
+        <View style={[styles.chatTopRow, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Text style={[styles.chatName, hasUnread && styles.chatNameUnread, { textAlign: rtlTextAlign(isRTL) }, rtlMargin(isRTL, 0, spacing.sm)]} numberOfLines={1}>
             {name}
           </Text>
           <Text style={[styles.chatTime, hasUnread && styles.chatTimeUnread]}>{time}</Text>
         </View>
-        <View style={styles.chatBottomRow}>
+        <View style={[styles.chatBottomRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {isTyping ? (
             <Text style={styles.typingText} numberOfLines={1}>
               {t('risalah.typing')}
@@ -128,7 +129,7 @@ export default function RisalahScreen() {
   const navigation = useNavigation();
   const { user } = useUser();
   const haptic = useHaptic();
-  const { t } = useTranslation();
+  const { t, isRTL } = useTranslation();
 
   const TABS = [
     { key: 'chats', label: t('risalah.chats') },
@@ -262,7 +263,7 @@ export default function RisalahScreen() {
     if (archivedCount === 0) return null;
     return (
       <Pressable
-        style={styles.archivedRow}
+        style={[styles.archivedRow, { flexDirection: rtlFlexRow(isRTL) }]}
         onPress={() => router.push('/(screens)/archive')}
         accessibilityLabel={t('accessibility.archivedConversations')}
         accessibilityRole="button"
@@ -271,7 +272,7 @@ export default function RisalahScreen() {
         <Text style={styles.archivedText}>{t('risalah.archived')}</Text>
         <Badge count={archivedCount} color={colors.text.tertiary} size="xs" />
         <View style={{ flex: 1 }} />
-        <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
+        <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
       </Pressable>
     );
   }, [archivedCount, router]);
@@ -316,8 +317,8 @@ export default function RisalahScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
-        <Text style={styles.logo}>{t('tabs.risalah')}</Text>
+      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+        <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
         <Pressable
           hitSlop={8}
           onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
@@ -356,7 +357,7 @@ export default function RisalahScreen() {
       />
 
       {/* Filter chips */}
-      <View style={styles.filterChipRow}>
+      <View style={[styles.filterChipRow, { flexDirection: rtlFlexRow(isRTL) }]}>
         {(['all', 'unread', 'groups'] as const).map((chip) => (
           <Pressable
             key={chip}
@@ -393,7 +394,7 @@ export default function RisalahScreen() {
       />
       {/* Channels FAB */}
       <Pressable
-        style={styles.fab}
+        style={[styles.fab, isRTL ? { left: spacing.base, right: undefined } : undefined]}
         onPress={() => router.push('/(screens)/broadcast-channels')}
         accessibilityLabel={t('accessibility.broadcastChannels')}
         accessibilityRole="button"
@@ -421,10 +422,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.md,
   },
-  chatItemUnread: {
-    borderLeftWidth: 3,
-    borderLeftColor: colors.emerald,
-  },
+  chatItemUnread: {},
   chatInfo: { flex: 1 },
   chatTopRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.xs },
   chatName: {
@@ -432,7 +430,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontSize: fontSize.base,
     flex: 1,
-    marginRight: spacing.sm,
   },
   chatNameUnread: { fontWeight: '700' },
   chatTime: { color: colors.text.tertiary, fontSize: fontSize.xs },

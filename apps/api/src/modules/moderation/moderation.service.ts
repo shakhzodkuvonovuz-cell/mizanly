@@ -23,6 +23,12 @@ export interface ReviewActionDto {
   note?: string;
 }
 
+export interface SubmitAppealDto {
+  moderationLogId: string;
+  reason: 'no-violation' | 'out-of-context' | 'educational' | 'posted-by-mistake' | 'other';
+  details: string;
+}
+
 @Injectable()
 export class ModerationService {
   private readonly logger = new Logger(ModerationService.name);
@@ -211,6 +217,73 @@ export class ModerationService {
       autoFlagged,
       falsePositives,
     };
+  }
+
+  /** Get moderation actions targeting the current user */
+  async getMyActions(userId: string, cursor?: string) {
+    const limit = 20;
+    const logs = await this.prisma.moderationLog.findMany({
+      where: { targetUserId: userId },
+      include: {
+        moderator: { select: { id: true, displayName: true } },
+        targetPost: { select: { id: true, content: true, mediaUrls: true } },
+        targetComment: { select: { id: true, content: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+    });
+
+    const hasMore = logs.length > limit;
+    const data = hasMore ? logs.slice(0, limit) : logs;
+    return {
+      data,
+      meta: { cursor: data[data.length - 1]?.id ?? null, hasMore },
+    };
+  }
+
+  /** Get user's appeals (moderation logs where they submitted an appeal) */
+  async getMyAppeals(userId: string, cursor?: string) {
+    const limit = 20;
+    const logs = await this.prisma.moderationLog.findMany({
+      where: { targetUserId: userId, isAppealed: true },
+      include: {
+        moderator: { select: { id: true, displayName: true } },
+        targetPost: { select: { id: true, content: true, mediaUrls: true } },
+        targetComment: { select: { id: true, content: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+    });
+
+    const hasMore = logs.length > limit;
+    const data = hasMore ? logs.slice(0, limit) : logs;
+    return {
+      data,
+      meta: { cursor: data[data.length - 1]?.id ?? null, hasMore },
+    };
+  }
+
+  /** Submit an appeal for a moderation action */
+  async submitAppeal(userId: string, dto: SubmitAppealDto) {
+    const log = await this.prisma.moderationLog.findUnique({
+      where: { id: dto.moderationLogId },
+    });
+    if (!log) throw new NotFoundException('Moderation action not found');
+    if (log.targetUserId !== userId) throw new ForbiddenException('You can only appeal actions against you');
+    if (log.isAppealed) throw new BadRequestException('Appeal already submitted for this action');
+
+    const appealText = JSON.stringify({ reason: dto.reason, details: dto.details });
+
+    return this.prisma.moderationLog.update({
+      where: { id: dto.moderationLogId },
+      data: {
+        isAppealed: true,
+        appealText,
+        appealResolved: false,
+      },
+    });
   }
 
   private async verifyAdmin(userId: string) {

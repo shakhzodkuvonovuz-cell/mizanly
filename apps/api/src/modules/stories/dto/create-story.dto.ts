@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsUrl, IsObject, IsNumber, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUrl, IsArray, IsNumber, MaxLength, Allow } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateStoryDto {
@@ -39,10 +39,25 @@ export class CreateStoryDto {
   @MaxLength(7)
   bgColor?: string;
 
-  @ApiProperty({ required: false, description: 'Sticker data as JSON object' })
+  @ApiProperty({ required: false, description: 'Font family identifier' })
   @IsOptional()
-  @IsObject()
-  stickerData?: object;
+  @IsString()
+  fontFamily?: string;
+
+  @ApiProperty({ required: false, description: 'Filter identifier' })
+  @IsOptional()
+  @IsString()
+  filter?: string;
+
+  @ApiProperty({ required: false, description: 'Background gradient JSON for text-only stories' })
+  @IsOptional()
+  @IsString()
+  bgGradient?: string;
+
+  @ApiProperty({ required: false, description: 'Sticker data as JSON array of sticker objects' })
+  @IsOptional()
+  @IsArray()
+  stickerData?: object[];
 
   @ApiProperty({ required: false, description: 'Whether story is for close friends only' })
   @IsOptional()
