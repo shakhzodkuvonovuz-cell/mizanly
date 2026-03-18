@@ -9,7 +9,43 @@ import * as express from 'express';
 import helmet from 'helmet';
 import * as compression from 'compression';
 
+function validateEnv() {
+  const logger = new Logger('EnvValidation');
+  const required: [string, string][] = [
+    ['DATABASE_URL', 'PostgreSQL connection string'],
+    ['CLERK_SECRET_KEY', 'Clerk authentication'],
+  ];
+  const recommended: [string, string][] = [
+    ['REDIS_URL', 'Redis (caching, rate limiting, presence)'],
+    ['CLERK_PUBLISHABLE_KEY', 'Clerk frontend key'],
+    ['STRIPE_SECRET_KEY', 'Stripe payments'],
+    ['ANTHROPIC_API_KEY', 'AI features (Claude)'],
+    ['SENTRY_DSN', 'Error monitoring'],
+  ];
+
+  let fatal = false;
+  for (const [key, desc] of required) {
+    if (!process.env[key]) {
+      logger.error(`Missing required env var: ${key} — ${desc}`);
+      fatal = true;
+    }
+  }
+  if (fatal) {
+    logger.error('Cannot start — required environment variables are missing');
+    process.exit(1);
+  }
+
+  for (const [key, desc] of recommended) {
+    if (!process.env[key]) {
+      logger.warn(`Missing recommended env var: ${key} — ${desc} (will use fallback)`);
+    }
+  }
+}
+
 async function bootstrap() {
+  // Validate environment before anything else
+  validateEnv();
+
   // Initialize Sentry before creating the app
   initSentry();
 

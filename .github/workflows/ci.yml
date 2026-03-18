@@ -16,8 +16,10 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
+      - run: npx prisma generate --schema=apps/api/prisma/schema.prisma
       - run: npm run lint --workspace=apps/api
       - run: npm run lint --workspace=apps/mobile
+      - run: npx tsc --noEmit --project apps/api/tsconfig.json
       - run: npm run typecheck --workspace=apps/mobile
 
   build-mobile:

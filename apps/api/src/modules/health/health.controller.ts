@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
@@ -35,6 +35,30 @@ export class HealthController {
       },
       version: process.env.npm_package_version ?? '0.1.0',
     };
+  }
+
+  @Get('ready')
+  @ApiOperation({ summary: 'Readiness probe — returns 200 if DB+Redis are up, 503 otherwise' })
+  async ready() {
+    const [dbOk, redisOk] = await Promise.all([
+      this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
+      this.redis.ping().then(() => true).catch(() => false),
+    ]);
+    if (!dbOk || !redisOk) {
+      throw new ServiceUnavailableException({
+        status: 'not_ready',
+        database: dbOk ? 'up' : 'down',
+        redis: redisOk ? 'up' : 'down',
+      });
+    }
+    return { status: 'ready' };
+  }
+
+  @Get('live')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Liveness probe — always returns 200 if process is running' })
+  live() {
+    return { status: 'alive', uptime: Math.round(process.uptime()) };
   }
 
   @Get('metrics')
