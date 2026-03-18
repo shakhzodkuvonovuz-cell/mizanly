@@ -45,7 +45,23 @@ describe('MessagesService', () => {
               upsert: jest.fn(),
               deleteMany: jest.fn(),
             },
-            $transaction: jest.fn(),
+            user: {
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            dMNote: {
+              upsert: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              delete: jest.fn(),
+            },
+            $transaction: jest.fn().mockImplementation(async (fn: unknown) => {
+              if (typeof fn === 'function') return fn({
+                message: { create: jest.fn().mockResolvedValue({ id: 'msg-tx', content: 'test' }) },
+                conversation: { update: jest.fn() },
+                conversationMember: { updateMany: jest.fn(), findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), findUnique: jest.fn() },
+              });
+              return Promise.all(fn as Promise<unknown>[]);
+            }),
           },
         },
       ],
