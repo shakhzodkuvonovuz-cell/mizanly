@@ -132,6 +132,7 @@ class ApiClient {
   }
 
   private async request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const startTime = Date.now();
     let token: string | null = null;
     try {
       token = this.getToken ? await this.getToken() : null;
@@ -162,7 +163,15 @@ class ApiClient {
       return { data: json.data, meta: json.meta } as T;
     }
     // Non-paginated: { success, data, timestamp } — return just data
-    return json.data !== undefined ? json.data : json;
+    const result = json.data !== undefined ? json.data : json;
+
+    // Log slow API calls in dev (>2s)
+    const duration = Date.now() - startTime;
+    if (__DEV__ && duration > 2000) {
+      console.warn(`[API] Slow: ${options.method || 'GET'} ${path} — ${duration}ms`);
+    }
+
+    return result;
   }
 
   get<T>(path: string) { return this.request<T>(path); }
