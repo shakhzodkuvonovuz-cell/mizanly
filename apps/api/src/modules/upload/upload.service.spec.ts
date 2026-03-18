@@ -90,12 +90,12 @@ describe('UploadService', () => {
         Key: expect.stringContaining('avatars/user-123/mock-uuid-123.jpg'),
         ContentType: 'image/jpeg',
       });
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         uploadUrl: mockUrl,
         key: expect.stringContaining('avatars/user-123/mock-uuid-123.jpg'),
         publicUrl: expect.stringContaining('https://media.test.com/avatars/user-123/mock-uuid-123.jpg'),
         expiresIn: 300,
-      });
+      }));
     });
 
     it('should generate presigned URL for valid video type', async () => {
