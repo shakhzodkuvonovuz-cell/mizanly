@@ -52,6 +52,7 @@
     "socket.io": "^4.8.0",
     "stripe": "^20.4.1",
     "svix": "^1.45.0",
+    "tsconfig-paths": "^4.2.0",
     "uuid": "^11.0.0"
   },
   "devDependencies": {
