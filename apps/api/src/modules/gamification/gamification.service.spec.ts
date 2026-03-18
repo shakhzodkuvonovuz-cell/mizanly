@@ -17,11 +17,11 @@ describe('GamificationService', () => {
           provide: PrismaService,
           useValue: {
             userStreak: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn() },
-            userXP: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), findMany: jest.fn() },
+            userXP: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn(), findMany: jest.fn() },
             xPHistory: { create: jest.fn(), findMany: jest.fn() },
             achievement: { findMany: jest.fn(), findUnique: jest.fn() },
             userAchievement: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
-            challenge: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
+            challenge: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn(), update: jest.fn() },
             challengeParticipant: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn(), findMany: jest.fn() },
             series: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
             seriesEpisode: { create: jest.fn(), findFirst: jest.fn() },
@@ -29,6 +29,7 @@ describe('GamificationService', () => {
             profileCustomization: { findUnique: jest.fn(), create: jest.fn(), upsert: jest.fn() },
             comment: { groupBy: jest.fn() },
             user: { findMany: jest.fn() },
+            $transaction: jest.fn().mockResolvedValue([]),
             $executeRaw: jest.fn(),
           },
         },
@@ -103,7 +104,7 @@ describe('GamificationService', () => {
     it('should calculate progress to next level', async () => {
       prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId: 'user-1', totalXP: 200, level: 2 });
 
-      const result = await service.getXP('user-1');
+      const result = await service.getXP('user-1') as any;
       expect(result.progressToNext).toBeDefined();
       expect(result.nextLevelXP).toBeGreaterThan(200);
     });
@@ -111,11 +112,17 @@ describe('GamificationService', () => {
 
   describe('awardXP', () => {
     it('should increase XP and update level', async () => {
-      prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId: 'user-1', totalXP: 90, level: 1 });
-      prisma.xPHistory.create.mockResolvedValue({});
+      prisma.userXP.upsert.mockResolvedValue({ userId: 'user-1', totalXP: 100, level: 1 });
       prisma.userXP.update.mockResolvedValue({ totalXP: 100, level: 2 });
+      prisma.xPHistory.create.mockResolvedValue({});
 
-      const result = await service.awardXP('user-1', 'post_created');
+      await service.awardXP('user-1', 'post_created');
+      expect(prisma.userXP.upsert).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-1' },
+          update: { totalXP: { increment: 10 } },
+        }),
+      );
       expect(prisma.xPHistory.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ amount: 10, reason: 'post_created' }),

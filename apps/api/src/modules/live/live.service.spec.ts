@@ -22,6 +22,7 @@ describe('LiveService', () => {
         update: jest.fn(),
         updateMany: jest.fn(),
       },
+      $executeRaw: jest.fn().mockResolvedValue(1),
     };
 
     const module = await Test.createTestingModule({

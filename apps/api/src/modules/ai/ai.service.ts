@@ -83,7 +83,7 @@ export class AiService {
     if (prompt.includes('translate')) return '[Translation unavailable]';
     if (prompt.includes('moderate')) return JSON.stringify({ safe: true, flags: [], confidence: 0.5 });
     if (prompt.includes('summarize')) return 'Summary unavailable';
-    if (prompt.includes('reply')) return JSON.stringify(['Thanks!', 'I agree', 'Interesting']);
+    if (prompt.includes('reply')) return JSON.stringify([{text:'Thanks!',tone:'friendly'},{text:'I agree',tone:'brief'},{text:'Interesting',tone:'brief'}]);
     return '';
   }
 
