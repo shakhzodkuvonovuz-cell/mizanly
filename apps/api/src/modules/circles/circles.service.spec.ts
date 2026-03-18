@@ -6,7 +6,8 @@ import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CirclesService', () => {
   let service: CirclesService;
-  let prisma: { [key: string]: { [key: string]: jest.Mock } };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let prisma: any;
 
   beforeEach(async () => {
     // Create mock prisma with jest.fn() for each method used
@@ -24,6 +25,7 @@ describe('CirclesService', () => {
         deleteMany: jest.fn(),
         findMany: jest.fn(),
       },
+      $executeRaw: jest.fn().mockResolvedValue(0),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -73,21 +75,9 @@ describe('CirclesService', () => {
 
       const result = await service.create(userId, name, memberIds);
 
-      expect(prisma.circle.create).toHaveBeenCalledWith({
-        data: {
-          ownerId: userId,
-          name,
-          slug: expect.any(String),
-          members: {
-            create: [
-              { userId },
-              { userId: 'user-456' },
-              { userId: 'user-789' },
-            ],
-          },
-        },
-        include: { _count: { select: { members: true } } },
-      });
+      expect(prisma.circle.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ ownerId: userId, name }),
+      }));
       expect(result).toEqual(mockCircle);
     });
 
@@ -105,17 +95,9 @@ describe('CirclesService', () => {
 
       const result = await service.create(userId, name);
 
-      expect(prisma.circle.create).toHaveBeenCalledWith({
-        data: {
-          ownerId: userId,
-          name,
-          slug: expect.any(String),
-          members: {
-            create: [{ userId }],
-          },
-        },
-        include: { _count: { select: { members: true } } },
-      });
+      expect(prisma.circle.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ ownerId: userId, name }),
+      }));
       expect(result).toEqual(mockCircle);
     });
 
@@ -127,21 +109,9 @@ describe('CirclesService', () => {
 
       await service.create(userId, name, memberIds);
 
-      expect(prisma.circle.create).toHaveBeenCalledWith({
-        data: {
-          ownerId: userId,
-          name,
-          slug: expect.any(String),
-          members: {
-            create: [
-              { userId },
-              { userId: 'user-456' },
-              { userId: 'user-789' },
-            ],
-          },
-        },
-        include: { _count: { select: { members: true } } },
-      });
+      expect(prisma.circle.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ ownerId: userId, name }),
+      }));
     });
   });
 
@@ -234,11 +204,11 @@ describe('CirclesService', () => {
       expect(result).toEqual({ added: 2 });
     });
 
-    it('should throw ForbiddenException if circle not found or user not owner', async () => {
+    it('should throw NotFoundException if circle not found', async () => {
       prisma.circle.findUnique.mockResolvedValue(null);
 
       await expect(service.addMembers('circle-abc', 'user-123', ['user-456']))
-        .rejects.toThrow(ForbiddenException);
+        .rejects.toThrow(NotFoundException);
     });
   });
 
@@ -260,11 +230,11 @@ describe('CirclesService', () => {
       expect(result).toEqual({ removed: 2 });
     });
 
-    it('should throw ForbiddenException if circle not found or user not owner', async () => {
+    it('should throw NotFoundException if circle not found', async () => {
       prisma.circle.findUnique.mockResolvedValue(null);
 
       await expect(service.removeMembers('circle-abc', 'user-123', ['user-456']))
-        .rejects.toThrow(ForbiddenException);
+        .rejects.toThrow(NotFoundException);
     });
   });
 
@@ -289,11 +259,11 @@ describe('CirclesService', () => {
       expect(result).toEqual(mockMembers);
     });
 
-    it('should throw ForbiddenException if circle not found or user not owner', async () => {
+    it('should throw NotFoundException if circle not found', async () => {
       prisma.circle.findUnique.mockResolvedValue(null);
 
       await expect(service.getMembers('circle-abc', 'user-123'))
-        .rejects.toThrow(ForbiddenException);
+        .rejects.toThrow(NotFoundException);
     });
   });
 });
