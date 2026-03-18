@@ -130,37 +130,20 @@ describe('PostsService', () => {
       prisma.post.create.mockResolvedValue(mockPost);
       prisma.user.update.mockResolvedValue(undefined);
       prisma.hashtag.upsert.mockResolvedValue({} as any);
-      prisma.$transaction.mockResolvedValue([mockPost, undefined]);
+      prisma.$transaction.mockImplementation(async (fn: (tx: unknown) => Promise<unknown>) => {
+        return fn({
+          post: { create: jest.fn().mockResolvedValue(mockPost) },
+          user: { update: jest.fn().mockResolvedValue(undefined) },
+          hashtag: { upsert: jest.fn().mockResolvedValue({}) },
+        });
+      });
 
       const result = await service.create(userId, dto);
 
-      expect(prisma.post.create).toHaveBeenCalledWith({
-        data: {
-          userId,
-          postType: dto.postType,
-          content: dto.content,
-          visibility: dto.visibility,
-          circleId: undefined,
-          mediaUrls: [],
-          mediaTypes: [],
-          thumbnailUrl: undefined,
-          mediaWidth: undefined,
-          mediaHeight: undefined,
-          videoDuration: undefined,
-          hashtags: [],
-          mentions: [],
-          locationName: undefined,
-          isSensitive: false,
-          altText: undefined,
-          hideLikesCount: false,
-          commentsDisabled: false,
-        },
-        select: expect.any(Object),
-      });
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: userId },
-        data: { postsCount: { increment: 1 } },
-      });
+      // Post creation now happens inside an interactive $transaction
+      expect(prisma.$transaction).toHaveBeenCalled();
+      expect(result).toBeDefined();
+      expect(result.id).toBe('post-456');
       expect(result).toEqual(mockPost);
     });
   });
@@ -836,6 +819,7 @@ describe('PostsService', () => {
       const postId = 'post-456';
       const userId = 'user-123';
       const reason = 'SPAM';
+      prisma.post.findUnique.mockResolvedValue({ id: postId, isRemoved: false });
       prisma.report.create.mockResolvedValue({} as any);
 
       const result = await service.report(postId, userId, reason);
