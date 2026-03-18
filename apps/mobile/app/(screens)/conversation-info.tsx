@@ -262,7 +262,7 @@ export default function ConversationInfoScreen() {
               <View style={styles.nameRow}>
                 <Text style={styles.heroName}>{name}</Text>
                 {isGroup && isCreator && (
-                  <Pressable onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
+                  <Pressable onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel={t('accessibility.editGroupName')}>
                     <Icon name="edit" size={16} color={colors.text.secondary} />
                   </Pressable>
                 )}

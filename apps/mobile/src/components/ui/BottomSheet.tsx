@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { View, StyleSheet, Pressable, useWindowDimensions, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -101,7 +102,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
         <Pressable
           style={StyleSheet.absoluteFill}
           onPress={close}
-          accessibilityLabel="Close"
+          accessibilityLabel={t('common.close')}
           accessibilityRole="button"
         />
       </Animated.View>

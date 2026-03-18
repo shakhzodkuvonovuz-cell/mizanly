@@ -236,7 +236,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           style={styles.moreBtn}
           hitSlop={8}
           onPress={() => { haptic.light(); setShowMenu(true); }}
-          accessibilityLabel="More options"
+          accessibilityLabel={t('accessibility.moreOptions')}
           accessibilityRole="button"
           accessibilityHint="Open post options menu"
         >
@@ -287,7 +287,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
         <View style={styles.mediaContainer}>
           <Pressable
             onPress={handleDoubleTap}
-            accessibilityLabel="Double-tap to like"
+            accessibilityLabel={t('accessibility.doubleTapLike')}
             accessibilityRole="button"
             accessibilityHint="Double tap to like this post"
           >
@@ -315,7 +315,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
               <Pressable
                 style={styles.sensitiveRevealBtn}
                 onPress={() => setRevealed(true)}
-                accessibilityLabel="Show sensitive content"
+                accessibilityLabel={t('accessibility.showSensitive')}
                 accessibilityRole="button"
               >
                 <Text style={styles.sensitiveRevealText}>View</Text>
@@ -344,7 +344,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           count={post.commentsCount > 0 ? post.commentsCount : undefined}
           onPress={() => router.push(`/(screens)/post/${post.id}`)}
           hapticType="light"
-          accessibilityLabel="Comment on post"
+          accessibilityLabel={t('accessibility.commentOnPost')}
           accessibilityHint="View or add comments"
         />
 
@@ -353,7 +353,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           count={post.sharesCount > 0 ? post.sharesCount : undefined}
           onPress={handleShare}
           hapticType="light"
-          accessibilityLabel="Share post"
+          accessibilityLabel={t('accessibility.sharePost')}
           accessibilityHint="Share this post with others"
         />
 
@@ -376,22 +376,22 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
         {isOwn ? (
           <>
             <BottomSheetItem
-              label="Copy Link"
+              label={t('common.copyLink')}
               icon={<Icon name="link" size="sm" color={colors.text.primary} />}
               onPress={handleCopyLink}
             />
             <BottomSheetItem
-              label="Share as Story"
+              label={t('common.shareAsStory')}
               icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
               onPress={() => shareAsStoryMutation.mutate()}
             />
             <BottomSheetItem
-              label="Not interested"
+              label={t('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
-              label="Delete post"
+              label={t('common.delete')}
               icon={<Icon name="trash" size="sm" color={colors.error} />}
               onPress={handleDelete}
               destructive
@@ -400,22 +400,22 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
         ) : (
           <>
             <BottomSheetItem
-              label="Not interested"
+              label={t('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
-              label="Copy Link"
+              label={t('common.copyLink')}
               icon={<Icon name="link" size="sm" color={colors.text.primary} />}
               onPress={handleCopyLink}
             />
             <BottomSheetItem
-              label="Share as Story"
+              label={t('common.shareAsStory')}
               icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
               onPress={() => shareAsStoryMutation.mutate()}
             />
             <BottomSheetItem
-              label="Report"
+              label={t('common.report')}
               icon={<Icon name="flag" size="sm" color={colors.error} />}
               onPress={handleReport}
               destructive

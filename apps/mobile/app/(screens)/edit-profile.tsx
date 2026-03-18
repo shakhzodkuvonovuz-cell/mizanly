@@ -583,7 +583,7 @@ export default function EditProfileScreen() {
                     />
                     <TextInput
                       style={[styles.addLinkInput, styles.addLinkInputBottom]}
-                      placeholder="URL (https://...)"
+                      placeholder={t('editProfile.urlPlaceholder')}
                       placeholderTextColor={colors.text.tertiary}
                       value={newLinkUrl}
                       onChangeText={setNewLinkUrl}

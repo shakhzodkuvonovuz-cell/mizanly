@@ -439,7 +439,7 @@ export default function CreateStoryScreen() {
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.dark.bg }}>
       {/* ── Header ── */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: 'rgba(13, 17, 23, 0.92)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.dark.border }}>
-        <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel="Close" accessibilityRole="button">
+        <Pressable onPress={handleClose} hitSlop={8} accessibilityLabel={t('common.close')} accessibilityRole="button">
           <Icon name="x" size="md" color={colors.text.primary} />
         </Pressable>
         <Text style={{ color: colors.text.primary, fontSize: fontSize.md, fontWeight: '700', letterSpacing: 0.2 }}>{t('stories.newStory')}</Text>
@@ -452,7 +452,7 @@ export default function CreateStoryScreen() {
               backgroundColor: activeTool === 'text' ? colors.active.emerald20 : 'transparent',
               borderRadius: radius.full,
             }}
-            accessibilityLabel="Add text"
+            accessibilityLabel={t('accessibility.addText')}
             accessibilityRole="button"
           >
             <Icon name="edit" size="sm" color={activeTool === 'text' ? colors.emerald : colors.text.primary} />
@@ -753,7 +753,7 @@ export default function CreateStoryScreen() {
                 flexDirection: 'row', alignItems: 'center',
                 backgroundColor: textBgEnabled ? colors.active.emerald10 : colors.dark.surface,
                 paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
-              }} accessibilityLabel="Toggle text background" accessibilityRole="button">
+              }} accessibilityLabel={t('accessibility.toggleTextBg')} accessibilityRole="button">
                 <Text style={{ color: textBgEnabled ? colors.emerald : colors.text.secondary, fontSize: fontSize.xs }}>
                   BG
                 </Text>
@@ -989,10 +989,10 @@ export default function CreateStoryScreen() {
             <TextInput value={sliderEmoji} onChangeText={setSliderEmoji} placeholder={t('stories.emojiOptional')}
               placeholderTextColor={colors.text.tertiary} maxLength={2} style={[editorInput, { marginTop: spacing.sm }]} />
             <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
-              <TextInput value={sliderMin} onChangeText={setSliderMin} placeholder="Min"
+              <TextInput value={sliderMin} onChangeText={setSliderMin} placeholder={t('common.min')}
                 placeholderTextColor={colors.text.tertiary} keyboardType="numeric"
                 style={[editorInput, { flex: 1 }]} />
-              <TextInput value={sliderMax} onChangeText={setSliderMax} placeholder="Max"
+              <TextInput value={sliderMax} onChangeText={setSliderMax} placeholder={t('common.max')}
                 placeholderTextColor={colors.text.tertiary} keyboardType="numeric"
                 style={[editorInput, { flex: 1 }]} />
             </View>

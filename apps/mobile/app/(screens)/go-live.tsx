@@ -120,9 +120,9 @@ export default function GoLiveScreen() {
               <Text style={styles.inputLabel}>{t('common.title')}</Text>
               <TextInput
                 style={styles.input}
-                placeholder="What are you streaming?"
+                placeholder={t('minbar.streamTitlePlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
-                accessibilityLabel="Live stream title"
+                accessibilityLabel={t('accessibility.streamTitle')}
                 value={title}
                 onChangeText={setTitle}
                 maxLength={100}
@@ -143,9 +143,9 @@ export default function GoLiveScreen() {
               <Text style={styles.inputLabel}>{t('common.descriptionOptional')}</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Tell viewers what your stream is about"
+                placeholder={t('minbar.streamDescPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
-                accessibilityLabel="Live stream description"
+                accessibilityLabel={t('accessibility.streamDesc')}
                 value={description}
                 onChangeText={setDescription}
                 multiline

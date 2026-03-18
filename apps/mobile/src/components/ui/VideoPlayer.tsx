@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -254,7 +255,7 @@ export function VideoPlayer({
                 )}
                 {enablePiP && isPiPSupported && (
                   <Pressable onPress={() => { enterPiP(); haptic.light(); }} style={styles.iconButton}
-                    accessibilityLabel="Picture in Picture" accessibilityRole="button">
+                    accessibilityLabel={t('minbar.pictureInPicture')} accessibilityRole="button">
                     <Icon name="layers" size="md" color={colors.text.primary} />
                   </Pressable>
                 )}
@@ -359,7 +360,7 @@ export function VideoPlayer({
       {/* Quality selector bottom sheet */}
       <BottomSheet visible={qualitySheetVisible} onClose={() => setQualitySheetVisible(false)}>
         <BottomSheetItem
-          label="Auto"
+          label={t('minbar.all')}
           onPress={() => { setSelectedQuality('auto'); setQualitySheetVisible(false); }}
           icon={<Icon name="settings" size="md" color={selectedQuality === 'auto' ? colors.emerald : colors.text.secondary} />}
         />

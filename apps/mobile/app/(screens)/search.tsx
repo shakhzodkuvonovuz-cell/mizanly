@@ -659,7 +659,7 @@ export default function SearchScreen() {
                 }}
                 style={styles.clearButton}
                 accessibilityRole="button"
-                accessibilityLabel="Clear all recent searches"
+                accessibilityLabel={t('search.clearAll')}
               >
                 <Text style={styles.clearButtonText}>{t('search.clearAll')}</Text>
               </Pressable>
@@ -681,7 +681,7 @@ export default function SearchScreen() {
                   style={styles.exploreItem}
                   onPress={() => router.push(`/post/${item.id}`)}
                   accessibilityRole="button"
-                  accessibilityLabel="View post"
+                  accessibilityLabel={t('accessibility.viewPost')}
                 >
                   {item.mediaUrls[0] ? (
                     <Image

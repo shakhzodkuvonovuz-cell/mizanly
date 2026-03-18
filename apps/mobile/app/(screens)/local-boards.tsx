@@ -77,7 +77,7 @@ export default function LocalBoardsScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Local Boards"
+          title={t('community.localBoards')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -85,7 +85,7 @@ export default function LocalBoardsScreen() {
           <Icon name="search" size="sm" color={colors.text.tertiary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by city..."
+            placeholder={t('community.searchByCity')}
             placeholderTextColor={colors.text.tertiary}
             value={search}
             onChangeText={setSearch}
@@ -112,7 +112,7 @@ export default function LocalBoardsScreen() {
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={120} borderRadius={radius.lg} />)}
               </View>
             ) : (
-              <EmptyState icon="map-pin" title="No local boards" subtitle="Be the first to create a board for your community" />
+              <EmptyState icon="map-pin" title={t('community.noLocalBoards')} subtitle={t('community.createBoardHint')} />
             )
           }
         />

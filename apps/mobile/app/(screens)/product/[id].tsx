@@ -246,7 +246,7 @@ function ProductDetailScreen() {
         <View style={styles.emptyWrap}>
           <EmptyState
             icon="search"
-            title="Product not found"
+            title={t('marketplace.notFound')}
             actionLabel={t('common.retry')}
             onAction={() => refetch()}
           />

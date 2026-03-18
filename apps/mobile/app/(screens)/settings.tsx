@@ -549,7 +549,7 @@ export default function SettingsScreen() {
           </LinearGradient>
 
           {/* AI Section */}
-          <SectionHeader title="AI" icon="loader" />
+          <SectionHeader title={t('settings.sections.ai')} icon="loader" />
           <LinearGradient
             colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
             start={{ x: 0, y: 0 }}

@@ -262,7 +262,7 @@ export default function MosqueFinderScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Nearby Mosques"
+          title={t('islamic.nearbyMosques')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 

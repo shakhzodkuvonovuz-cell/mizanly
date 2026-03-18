@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -101,7 +102,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
       <Pressable
         style={styles.replyButton}
         onPress={() => handleReply(item.id)}
-        accessibilityLabel="Reply to question"
+        accessibilityLabel={t('common.reply')}
         accessibilityRole="button"
       >
         <Icon name="send" size="xs" color={colors.emerald} />
@@ -120,14 +121,14 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
         <>
           <TextInput
             style={styles.input}
-            placeholder="Type your question..."
+            placeholder={t('saf.questionPlaceholder')}
             placeholderTextColor={colors.text.tertiary}
             value={inputText}
             onChangeText={setInputText}
             multiline
             maxLength={200}
             editable={!isSubmitting}
-            accessibilityLabel="Question input"
+            accessibilityLabel={t('accessibility.questionInput')}
             accessibilityHint="Type your question for the story creator"
           />
           <View style={styles.inputFooter}>
@@ -139,7 +140,7 @@ export function QuestionSticker({ data, onResponse, isCreator = false, style }: 
               ]}
               onPress={handleSubmit}
               disabled={inputText.trim().length === 0 || isSubmitting}
-              accessibilityLabel="Submit question"
+              accessibilityLabel={t('common.submit')}
               accessibilityRole="button"
             >
               <Icon

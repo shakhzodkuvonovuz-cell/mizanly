@@ -93,7 +93,7 @@ export default function VoicePostCreateScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Voice Post"
+          title={t('community.voicePost')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 

@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { View, StyleSheet } from 'react-native';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing } from '@/theme';
@@ -42,7 +43,7 @@ export class ScreenErrorBoundary extends Component<ScreenErrorBoundaryProps, Scr
       <View style={styles.container}>
         <EmptyState
           icon="slash"
-          title="Something went wrong"
+          title={t('common.error')}
           subtitle={this.state.error?.message ?? 'An unexpected error occurred. Please try again.'}
           actionLabel="Try again"
           onAction={this.handleRetry}

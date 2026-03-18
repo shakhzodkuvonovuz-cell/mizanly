@@ -178,7 +178,7 @@ export default function FatwaQAScreen() {
                 style={styles.questionInput}
                 value={question}
                 onChangeText={(t) => setQuestion(t.slice(0, 2000))}
-                placeholder="Ask your question in detail..."
+                placeholder={t('community.questionPlaceholder')}
                 placeholderTextColor={colors.text.tertiary}
                 multiline
                 maxLength={2000}

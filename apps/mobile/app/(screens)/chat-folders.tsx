@@ -193,12 +193,12 @@ export default function ChatFoldersScreen() {
         {/* Context menu */}
         <BottomSheet visible={!!menuFolder} onClose={() => setMenuFolder(null)}>
           <BottomSheetItem
-            label="Edit Folder"
+            label={t('risalah.editFolder')}
             icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
             onPress={() => { setMenuFolder(null); }}
           />
           <BottomSheetItem
-            label="Delete Folder"
+            label={t('risalah.deleteFolder')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={() => menuFolder && deleteMutation.mutate(menuFolder.id as string)}

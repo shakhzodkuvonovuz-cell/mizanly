@@ -105,7 +105,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
         style={[styles.logoContainer, collapsed && styles.logoContainerCollapsed]}
         onPress={() => handleNav('/(tabs)/saf')}
         accessibilityRole="link"
-        accessibilityLabel="Mizanly Home"
+        accessibilityLabel={t('common.home')}
       >
         <View style={styles.logoMark}>
           <Text style={styles.logoLetter}>M</Text>

@@ -617,7 +617,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             }}
           />
           <BottomSheetItem
-            label="Copy link"
+            label={t('common.copyLink')}
             icon={<Icon name="link" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setShowMenu(false);
@@ -640,7 +640,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             }}
           />
           <BottomSheetItem
-            label="Copy link"
+            label={t('common.copyLink')}
             icon={<Icon name="link" size="sm" color={colors.text.primary} />}
             onPress={() => {
               setShowShareSheet(false);

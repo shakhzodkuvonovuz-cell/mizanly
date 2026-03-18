@@ -253,7 +253,7 @@ function ExploreGridItem({ item }: { item: ExploreItem }) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel="View post"
+      accessibilityLabel={t('accessibility.viewPost')}
     >
       {thumbnailUrl ? (
         <Image source={{ uri: thumbnailUrl }} style={styles.gridImage} />

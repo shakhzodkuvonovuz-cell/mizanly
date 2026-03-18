@@ -180,8 +180,8 @@ export default function PlaylistDetailScreen() {
         <View style={{ flex: 1, paddingTop: insets.top + 56 }}>
           <EmptyState
             icon="slash"
-            title="Something went wrong"
-            subtitle="Could not load playlist. Please try again."
+            title={t('common.error')}
+            subtitle={t('common.errorSubtitle')}
             actionLabel="Go back"
             onAction={() => router.back()}
           />
@@ -225,13 +225,13 @@ export default function PlaylistDetailScreen() {
               ) : itemsQuery.isError ? (
                 <EmptyState
                   icon="slash"
-                  title="Could not load videos"
-                  subtitle="Please pull to refresh"
+                  title={t('minbar.noVideosYet')}
+                  subtitle={t('common.pullToRefresh')}
                   actionLabel="Retry"
                   onAction={() => itemsQuery.refetch()}
                 />
               ) : (
-                <EmptyState icon="video" title="No videos yet" subtitle="Videos added to this playlist will appear here" />
+                <EmptyState icon="video" title={t('minbar.noVideosYet')} subtitle={t('minbar.playlistEmpty')} />
               )
             }
             onEndReached={onEndReached}

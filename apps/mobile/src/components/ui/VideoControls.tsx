@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -181,7 +182,7 @@ export function VideoControls({
               accessibilityRole="button"
               onPress={onMinimize}
               style={styles.iconButton}
-              accessibilityLabel="Minimize player"
+              accessibilityLabel={t('minbar.minimize')}
             >
               <Icon name="chevron-down" size="md" color={colors.text.primary} />
             </Pressable>
@@ -191,7 +192,7 @@ export function VideoControls({
               accessibilityRole="button"
               onPress={onFullscreen}
               style={styles.iconButton}
-              accessibilityLabel="Enter fullscreen"
+              accessibilityLabel={t('minbar.fullscreen')}
             >
               <Icon name="maximize" size="md" color={colors.text.primary} />
             </Pressable>
@@ -205,7 +206,7 @@ export function VideoControls({
           accessibilityRole="button"
           onPress={handleSkipBackward}
           style={styles.skipButton}
-          accessibilityLabel="Skip back 10 seconds"
+          accessibilityLabel={t('minbar.skipBack')}
         >
           <Icon name="rewind" size="xl" color={colors.text.primary} />
         </Pressable>
@@ -221,7 +222,7 @@ export function VideoControls({
           accessibilityRole="button"
           onPress={handleSkipForward}
           style={styles.skipButton}
-          accessibilityLabel="Skip forward 10 seconds"
+          accessibilityLabel={t('minbar.skipForward')}
         >
           <Icon name="fast-forward" size="xl" color={colors.text.primary} />
         </Pressable>

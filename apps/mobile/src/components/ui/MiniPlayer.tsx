@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -263,7 +264,7 @@ export function MiniPlayer() {
             <Pressable
               onPress={handleClose}
               style={styles.actionButton}
-              accessibilityLabel="Close mini player"
+              accessibilityLabel={t('common.close')}
               accessibilityRole="button"
             >
               <Icon name="x" size="md" color={colors.text.secondary} />

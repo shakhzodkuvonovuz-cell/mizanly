@@ -39,7 +39,7 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
 
       style={styles.gridItem}
       accessibilityRole="button"
-      accessibilityLabel="View post"
+      accessibilityLabel={t('accessibility.viewPost')}
     >
       {post.mediaUrls.length > 0 ? (
         <Image
@@ -69,7 +69,7 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
 
       style={styles.gridItem}
       accessibilityRole="button"
-      accessibilityLabel="View reel"
+      accessibilityLabel={t('accessibility.viewReel')}
     >
       {hasThumbnail ? (
         <Image

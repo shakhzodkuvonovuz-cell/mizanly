@@ -127,8 +127,8 @@ function CrossPostContent() {
         />
         <EmptyState
           icon="slash"
-          title="Post not found"
-          subtitle="This post may have been deleted."
+          title={t('common.notFound')}
+          subtitle={t('common.mayBeDeleted')}
         />
       </View>
     );

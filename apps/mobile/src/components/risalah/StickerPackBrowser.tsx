@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -285,7 +286,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
         <View style={styles.header}>
           <Pressable
             onPress={onClose}
-            accessibilityLabel="Close"
+            accessibilityLabel={t('common.close')}
             accessibilityRole="button"
             style={styles.backButton}
           >
@@ -301,7 +302,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             <Icon name="search" size="sm" color={colors.text.tertiary} />
             <TextInput
               style={styles.searchTextInput}
-              placeholder="Search sticker packs..."
+              placeholder={t('risalah.searchStickers')}
               placeholderTextColor={colors.text.tertiary}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -372,8 +373,8 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             ListEmptyComponent={
               <EmptyState
                 icon="search"
-                title="No sticker packs found"
-                subtitle="Try searching with different keywords"
+                title={t('risalah.noStickerPacks')}
+                subtitle={t('risalah.stickerSearchHint')}
               />
             }
           />

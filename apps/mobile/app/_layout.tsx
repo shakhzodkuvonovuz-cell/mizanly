@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { I18nManager, Alert, AppState, AppStateStatus, Platform, View, Text, StyleSheet } from 'react-native';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
+import { useTranslation } from '@/hooks/useTranslation';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
@@ -179,7 +180,7 @@ function BiometricLockOverlay() {
       <Icon name="lock" size="xl" color={colors.emerald} />
       <Text style={lockStyles.text}>Tap to unlock</Text>
       <View style={lockStyles.buttonWrap}>
-        <GradientButton label="Unlock" onPress={authenticate} />
+        <GradientButton label={t('common.unlock')} onPress={authenticate} />
       </View>
     </View>
   );

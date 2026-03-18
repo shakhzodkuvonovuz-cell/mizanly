@@ -143,7 +143,7 @@ export default function SavedMessagesScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Saved Messages"
+          title={t('risalah.savedMessages')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightAction={{ icon: 'search', onPress: () => setSearchMode(!searchMode) }}
         />
@@ -166,7 +166,7 @@ export default function SavedMessagesScreen() {
               style={styles.searchInput}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              placeholder="Search saved messages..."
+              placeholder={t('risalah.searchSavedMessages')}
               placeholderTextColor={colors.text.tertiary}
               autoFocus
             />
@@ -196,8 +196,8 @@ export default function SavedMessagesScreen() {
             ) : (
               <EmptyState
                 icon="bookmark"
-                title="No saved messages"
-                subtitle="Forward messages here or type a note below"
+                title={t('risalah.noSavedMessages')}
+                subtitle={t('risalah.savedMessagesHint')}
               />
             )
           }
@@ -209,7 +209,7 @@ export default function SavedMessagesScreen() {
             style={[styles.composeInput, isRTL && { textAlign: 'right' }]}
             value={newMessage}
             onChangeText={setNewMessage}
-            placeholder="Type a note..."
+            placeholder={t('risalah.typeNote')}
             placeholderTextColor={colors.text.tertiary}
             multiline
             maxLength={5000}
@@ -234,7 +234,7 @@ export default function SavedMessagesScreen() {
             onPress={() => menuItem && pinMutation.mutate(menuItem.id as string)}
           />
           <BottomSheetItem
-            label="Delete"
+            label={t('common.delete')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             destructive
             onPress={() => menuItem && deleteMutation.mutate(menuItem.id as string)}

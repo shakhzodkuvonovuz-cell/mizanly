@@ -72,7 +72,7 @@ function ReelGridItem({ reel, onPress, index }: { reel: Reel; onPress: () => voi
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="View reel"
+        accessibilityLabel={t('accessibility.viewReel')}
       >
         <Image
           source={{ uri: reel.thumbnailUrl || reel.videoUrl }}

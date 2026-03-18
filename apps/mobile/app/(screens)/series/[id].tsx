@@ -312,8 +312,8 @@ function SeriesDetailScreen() {
           ListEmptyComponent={
             <EmptyState
               icon="video"
-              title="No episodes yet"
-              subtitle="Episodes will appear here when published"
+              title={t('series.noEpisodes')}
+              subtitle={t('series.episodesHint')}
             />
           }
         />

@@ -91,7 +91,7 @@ export default function WaqfScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Waqf Endowments"
+          title={t('community.waqfEndowments')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -120,7 +120,7 @@ export default function WaqfScreen() {
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={180} borderRadius={radius.lg} />)}
               </View>
             ) : (
-              <EmptyState icon="heart" title="No waqf funds yet" subtitle="Create an endowment to support the community" />
+              <EmptyState icon="heart" title={t('community.noWaqfFunds')} subtitle={t('community.waqfHint')} />
             )
           }
         />

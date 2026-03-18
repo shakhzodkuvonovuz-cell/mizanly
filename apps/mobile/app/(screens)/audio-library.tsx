@@ -150,7 +150,7 @@ function AudioCard({
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : colors.text.tertiary} />
           </Pressable>
           <GradientButton
-            label="Use"
+            label={t('common.select')}
             size="sm"
             onPress={onSelect}
           />

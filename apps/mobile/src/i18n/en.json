@@ -10,6 +10,8 @@
     "next": "Next",
     "back": "Back",
     "search": "Search",
+    "searchUsers": "Search users...",
+    "searchLocations": "Search locations...",
     "share": "Share",
     "edit": "Edit",
     "settings": "Settings",
@@ -96,6 +98,10 @@
     "record": "Record",
     "upload": "Upload",
     "me": "Me",
+    "min": "Min",
+    "max": "Max",
+    "unlock": "Unlock",
+    "home": "Home",
     "download": "Download",
     "import": "Import",
     "export": "Export",
@@ -112,6 +118,7 @@
     "unauthorized": "Unauthorized access",
     "forbidden": "Access forbidden",
     "notFound": "Resource not found",
+    "mayBeDeleted": "This item may have been deleted.",
     "timeout": "Request timeout",
     "invalidInput": "Invalid input",
     "requiredField": "This field is required",
@@ -413,6 +420,9 @@
     "addComment": "Add a comment...",
     "startConversation": "Start the conversation",
     "firstToShare": "Be the first to share your thoughts",
+    "noComments": "No comments yet",
+    "beFirstToComment": "Be the first to comment",
+    "questionPlaceholder": "Type your question...",
     "couldNotLoadContent": "Could not load this content",
     "goBack": "Go Back"
   },
@@ -589,7 +599,23 @@
     "chatFolders": "Chat Folders",
     "folderNamePlaceholder": "Folder name...",
     "noFoldersYet": "No folders yet",
-    "createFoldersHint": "Create folders to organize your chats"
+    "createFoldersHint": "Create folders to organize your chats",
+    "savedMessages": "Saved Messages",
+    "noSavedMessages": "No saved messages",
+    "savedMessagesHint": "Forward messages here or type a note below",
+    "searchSavedMessages": "Search saved messages...",
+    "typeNote": "Type a note...",
+    "editFolder": "Edit Folder",
+    "deleteFolder": "Delete Folder",
+    "deleteForEveryone": "Delete for Everyone",
+    "searchStickers": "Search stickers...",
+    "noStickerPacks": "No sticker packs found",
+    "stickerSearchHint": "Try searching with different keywords",
+    "noRecentStickers": "No recent stickers",
+    "useStickersHint": "Use some stickers and they will appear here",
+    "browseMorePacks": "Browse more sticker packs",
+    "noStickersInPack": "No stickers in this pack",
+    "addMorePacks": "Add more sticker packs to get started"
   },
   "minbar": {
     "home": "Home",
@@ -705,6 +731,10 @@
     "zakat": "Zakat",
     "sadaqah": "Sadaqah",
     "charity": "Charity",
+    "dailyHadith": "Daily Hadith",
+    "nearbyMosques": "Nearby Mosques",
+    "locationCoords": "Lat: {{lat}}, Lng: {{lng}}",
+    "detectingLocation": "Detecting location...",
     "continueWatching": "Continue Watching",
     "noSubscribedVideos": "No subscribed videos",
     "subscribeToSeeVideos": "Subscribe to channels to see their videos here",
@@ -718,7 +748,12 @@
     "categoryEducation": "Education",
     "categoryLifestyle": "Lifestyle",
     "categoryTech": "Tech",
-    "categoryEntertainment": "Entertainment"
+    "categoryEntertainment": "Entertainment",
+    "streamTitlePlaceholder": "What are you streaming?",
+    "streamDescPlaceholder": "Tell viewers what your stream is about",
+    "playlistEmpty": "Videos added to this playlist will appear here",
+    "skipBack": "Skip back 10 seconds",
+    "skipForward": "Skip forward 10 seconds"
   },
   "profile": {
     "followers": "Followers",
@@ -817,6 +852,8 @@
     "bookmark": "Bookmark",
     "notes": "Notes",
     "search": "Search",
+    "searchUsers": "Search users...",
+    "searchLocations": "Search locations...",
     "juz": "Juz",
     "page": "Page",
     "hizb": "Hizb",
@@ -2002,6 +2039,8 @@
     "createStory": "Create story",
     "createStoryHint": "Create a new story",
     "search": "Search",
+    "searchUsers": "Search users...",
+    "searchLocations": "Search locations...",
     "searchHint": "Search for people, hashtags, and content",
     "notifications": "Notifications",
     "notificationsHint": "View your notifications",
@@ -2029,7 +2068,27 @@
     "unlikeReply": "Unlike reply",
     "likeReply": "Like reply",
     "deleteReply": "Delete reply",
-    "replyInput": "Reply input field"
+    "replyInput": "Reply input field",
+    "moreOptions": "More options",
+    "replyToThread": "Reply to thread",
+    "shareThread": "Share thread",
+    "doubleTapLike": "Double-tap to like",
+    "showSensitive": "Show sensitive content",
+    "commentOnPost": "Comment on post",
+    "sharePost": "Share post",
+    "viewPost": "View post",
+    "viewReel": "View reel",
+    "attachMedia": "Attach media",
+    "gifPicker": "GIF picker",
+    "messageInput": "Message input",
+    "sendMessage": "Send message",
+    "recordVoice": "Record voice message",
+    "editGroupName": "Edit group name",
+    "addText": "Add text",
+    "toggleTextBg": "Toggle text background",
+    "streamTitle": "Live stream title",
+    "streamDesc": "Live stream description",
+    "questionInput": "Question input"
   },
   "compose": {
     "whatsOnYourMind": "What's on your mind?",
@@ -2069,7 +2128,22 @@
     "findMentor": "Find a mentor",
     "findMentorHint": "Search for experienced community members",
     "noMentorships": "No mentorships",
-    "noMentorshipsHint": "Request a mentor or accept mentee requests"
+    "noMentorshipsHint": "Request a mentor or accept mentee requests",
+    "localBoards": "Local Boards",
+    "noLocalBoards": "No local boards",
+    "createBoardHint": "Be the first to create a board for your community",
+    "searchByCity": "Search by city...",
+    "voicePost": "Voice Post",
+    "waqfEndowments": "Waqf Endowments",
+    "noWaqfFunds": "No waqf funds yet",
+    "waqfHint": "Create an endowment to support the community",
+    "watchParties": "Watch Parties",
+    "noWatchParties": "No watch parties",
+    "watchPartyHint": "Start a watch party to watch videos together",
+    "startParty": "Start Party",
+    "partyNamePlaceholder": "Party name...",
+    "videoIdPlaceholder": "Video ID...",
+    "questionPlaceholder": "Ask your question in detail..."
   },
   "discover": {
     "title": "Discover",
@@ -2115,7 +2189,8 @@
     "birthdayPlaceholder": "YYYY-MM-DD",
     "linkTitlePlaceholder": "Link title",
     "loadErrorTitle": "Could not load profile",
-    "loadErrorSubtitle": "Please try again later"
+    "loadErrorSubtitle": "Please try again later",
+    "urlPlaceholder": "URL (https://...)"
   },
   "screens": {
     "followers": {
@@ -2190,6 +2265,7 @@
     "playlist": {
       "title": "Playlist",
       "notFound": "Playlist not found",
+    "mayBeDeleted": "This item may have been deleted.",
       "videos": "video",
       "videosPlural": "videos"
     },
@@ -2375,6 +2451,7 @@
     "playlist": {
       "title": "Playlist",
       "notFound": "Playlist not found",
+    "mayBeDeleted": "This item may have been deleted.",
       "videos": "video",
       "videosPlural": "videos",
       "noVideos": "No videos yet",
@@ -2383,7 +2460,8 @@
       "errorSubtitle": "Could not load playlist. Please try again.",
       "errorAction": "Go back",
       "loadErrorTitle": "Could not load videos",
-      "loadErrorSubtitle": "Please pull to refresh"
+      "loadErrorSubtitle": "Please pull to refresh",
+    "urlPlaceholder": "URL (https://...)"
     },
     "playlists": {
       "title": "Playlists",
@@ -2670,6 +2748,10 @@
     "year": "Year"
   },
   "charity": {
+    "dailyHadith": "Daily Hadith",
+    "nearbyMosques": "Nearby Mosques",
+    "locationCoords": "Lat: {{lat}}, Lng: {{lng}}",
+    "detectingLocation": "Detecting location...",
     "title": "Sadaqah",
     "campaigns": "Charity Campaigns",
     "donate": "Donate",
@@ -2882,6 +2964,7 @@
   "channel": {
     "subscribers": "Subscribers",
     "notFound": "Channel not found",
+    "mayBeDeleted": "This item may have been deleted.",
     "notFoundSubtitle": "This channel may have been removed or doesn't exist",
     "noVideosYet": "No videos yet",
     "noVideosSubtitle": "This channel hasn't uploaded any videos",
@@ -3147,6 +3230,8 @@
     "searchPlaceholder": "Search products...",
     "empty": "No products found",
     "emptySub": "Try a different search or category",
+    "noEpisodes": "No episodes yet",
+    "episodesHint": "Episodes will appear here when published",
     "muslimOwned": "Muslim-owned",
     "halalCertified": "Halal Certified",
     "reviews": "{{count}} reviews",
@@ -3158,12 +3243,15 @@
     "categoryBooks": "Books",
     "categoryArt": "Art",
     "categoryElectronics": "Electronics",
-    "categoryServices": "Services"
+    "categoryServices": "Services",
+    "notFound": "Product not found"
   },
   "orders": {
     "title": "My Orders",
     "empty": "No orders yet",
     "emptySub": "Your orders will appear here",
+    "noEpisodes": "No episodes yet",
+    "episodesHint": "Episodes will appear here when published",
     "pending": "Pending",
     "paid": "Paid",
     "shipped": "Shipped",
@@ -3177,7 +3265,9 @@
     "follow": "Follow",
     "following": "Following",
     "empty": "No series found",
-    "emptySub": "Check back later for new content"
+    "emptySub": "Check back later for new content",
+    "noEpisodes": "No episodes yet",
+    "episodesHint": "Episodes will appear here when published"
   },
   "gamification": {
     "streaks": {
@@ -3190,7 +3280,8 @@
       "days": "{{count}} days",
       "longest": "Longest: {{count}} days",
       "keepGoing": "Keep it going!",
-      "broken": "Streak broken — start again today"
+      "broken": "Streak broken — start again today",
+    "startHint": "Start a streak by using Mizanly daily"
     },
     "xp": {
       "title": "Level & XP",
@@ -3198,7 +3289,8 @@
       "totalXP": "{{xp}} XP",
       "nextLevel": "{{xp}} XP to next level",
       "history": "XP History",
-      "earned": "+{{amount}} XP"
+      "earned": "+{{amount}} XP",
+    "startEarning": "Start earning XP by using Mizanly"
     },
     "achievements": {
       "title": "Achievements",

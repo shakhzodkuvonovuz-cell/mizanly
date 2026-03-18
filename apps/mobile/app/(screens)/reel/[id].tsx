@@ -364,14 +364,14 @@ export default function ReelDetailScreen() {
                 onPress={handleLike}
                 disabled={likeMutation.isPending}
                 activeColor={colors.like}
-                accessibilityLabel="Like"
+                accessibilityLabel={t('common.like')}
               />
 
               <ActionButton
                 icon={<Icon name="message-circle" size={28} color={colors.text.primary} />}
                 count={reelQuery.data.commentsCount}
                 onPress={() => inputRef.current?.focus()}
-                accessibilityLabel="Comment"
+                accessibilityLabel={t('accessibility.commentReel')}
               />
 
               <ActionButton
@@ -379,7 +379,7 @@ export default function ReelDetailScreen() {
                 count={reelQuery.data.sharesCount}
                 onPress={handleShare}
                 disabled={shareMutation.isPending}
-                accessibilityLabel="Share"
+                accessibilityLabel={t('common.share')}
               />
 
               <ActionButton
@@ -389,7 +389,7 @@ export default function ReelDetailScreen() {
                 onPress={handleBookmark}
                 disabled={bookmarkMutation.isPending}
                 activeColor={colors.gold}
-                accessibilityLabel="Bookmark"
+                accessibilityLabel={t('common.bookmark')}
               />
             </View>
           </Animated.View>

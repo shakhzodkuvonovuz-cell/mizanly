@@ -180,7 +180,7 @@ export default function SignInScreen() {
             <Pressable
               style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
               onPress={() => haptic.light()}
-              accessibilityLabel="Sign in with Google"
+              accessibilityLabel={t('auth.signInWith') + " Google"}
               accessibilityRole="button"
             >
               <Text style={styles.socialText}>{t('auth.google')}</Text>
@@ -188,7 +188,7 @@ export default function SignInScreen() {
             <Pressable
               style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
               onPress={() => haptic.light()}
-              accessibilityLabel="Sign in with Apple"
+              accessibilityLabel={t('auth.signInWith') + " Apple"}
               accessibilityRole="button"
             >
               <Text style={styles.socialText}>{t('auth.apple')}</Text>

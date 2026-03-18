@@ -1432,7 +1432,7 @@ export default function ConversationScreen() {
               hitSlop={8}
               onPress={pickAndSendMedia}
               disabled={uploadingMedia}
-              accessibilityLabel="Attach media"
+              accessibilityLabel={t('accessibility.attachMedia')}
               accessibilityRole="button"
             >
               <Icon
@@ -1446,7 +1446,7 @@ export default function ConversationScreen() {
               hitSlop={8}
               onPress={() => setShowGifPicker(true)}
               disabled={uploadingMedia}
-              accessibilityLabel="GIF picker"
+              accessibilityLabel={t('accessibility.gifPicker')}
               accessibilityRole="button"
             >
               <Icon name="smile" size="sm" color={colors.text.secondary} />
@@ -1454,9 +1454,9 @@ export default function ConversationScreen() {
             <TextInput
               ref={inputRef}
               style={styles.input}
-              placeholder="Message…"
+              placeholder={t('risalah.typeMessage')}
               placeholderTextColor={colors.text.tertiary}
-              accessibilityLabel="Message input"
+              accessibilityLabel={t('accessibility.messageInput')}
               value={text}
               onChangeText={handleChangeText}
               multiline
@@ -1468,7 +1468,7 @@ export default function ConversationScreen() {
                   onPress={handleSend}
                   disabled={isSending}
                   style={styles.sendCircle}
-                  accessibilityLabel="Send message"
+                  accessibilityLabel={t('accessibility.sendMessage')}
                   accessibilityRole="button"
                 >
                   <Icon name="send" size="xs" color="#FFF" />
@@ -1497,7 +1497,7 @@ export default function ConversationScreen() {
                     onPressIn={handleVoiceStart}
                     onPressOut={handleVoiceStop}
                     disabled={uploadingVoice}
-                    accessibilityLabel="Record voice message"
+                    accessibilityLabel={t('accessibility.recordVoice')}
                     accessibilityRole="button"
                   >
                     <Icon
@@ -1563,7 +1563,7 @@ export default function ConversationScreen() {
         </View>
         {contextMenuMsg?.content ? (
           <BottomSheetItem
-            label="Copy Text"
+            label={t('common.copy')}
             icon={<Icon name="edit" size="sm" color={colors.text.secondary} />}
             onPress={() => {
               Clipboard.setStringAsync(contextMenuMsg.content ?? '');
@@ -1572,7 +1572,7 @@ export default function ConversationScreen() {
           />
         ) : null}
         <BottomSheetItem
-          label="Reply"
+          label={t('common.reply')}
           icon={<Icon name="message-circle" size="sm" color={colors.text.secondary} />}
           onPress={() => {
             if (contextMenuMsg) {
@@ -1587,7 +1587,7 @@ export default function ConversationScreen() {
           }}
         />
         <BottomSheetItem
-          label="Forward"
+          label={t('risalah.forward')}
           icon={<Icon name="repeat" size="sm" color={colors.text.secondary} />}
           onPress={() => {
             if (contextMenuMsg) {
@@ -1627,7 +1627,7 @@ export default function ConversationScreen() {
           }}
         />
         <BottomSheetItem
-          label="React"
+          label={t('risalah.react')}
           icon={<Icon name="smile" size="sm" color={colors.text.secondary} />}
           onPress={() => {
             setShowReactionPicker(true);
@@ -1655,7 +1655,7 @@ export default function ConversationScreen() {
           <>
             {isMessageEditable(contextMenuMsg) && (
               <BottomSheetItem
-                label="Edit"
+                label={t('common.edit')}
                 icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
                 onPress={() => {
                   setEditingMsg(contextMenuMsg);
@@ -1667,7 +1667,7 @@ export default function ConversationScreen() {
             )}
             {isMessageDeletableForEveryone(contextMenuMsg) ? (
               <BottomSheetItem
-                label="Delete for Everyone"
+                label={t('risalah.deleteForEveryone')}
                 icon={<Icon name="trash" size="sm" color={colors.error} />}
                 destructive
                 onPress={() => {
@@ -1679,7 +1679,7 @@ export default function ConversationScreen() {
               />
             ) : (
               <BottomSheetItem
-                label="Delete"
+                label={t('common.delete')}
                 icon={<Icon name="trash" size="sm" color={colors.error} />}
                 destructive
                 onPress={() => {

@@ -269,7 +269,7 @@ export default function HadithScreen() {
     <ScreenErrorBoundary>
       <SafeAreaView style={styles.container}>
         <GlassHeader
-          title="Daily Hadith"
+          title={t('islamic.dailyHadith')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 

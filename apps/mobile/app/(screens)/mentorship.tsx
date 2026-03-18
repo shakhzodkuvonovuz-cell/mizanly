@@ -142,7 +142,7 @@ export default function MentorshipScreen() {
               <Icon name="search" size="sm" color={colors.text.tertiary} />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search users..."
+                placeholder={t('common.searchUsers')}
                 placeholderTextColor={colors.text.tertiary}
                 value={searchQuery}
                 onChangeText={setSearchQuery}

@@ -670,7 +670,7 @@ export default function VideoDetailScreen() {
                 count={video.likesCount}
                 onPress={handleLike}
                 activeColor={colors.error}
-                accessibilityLabel="Like"
+                accessibilityLabel={t('common.like')}
               />
               <ActionButton
                 icon={<Icon name="thumbs-down" size="md" color={colors.text.primary} />}
@@ -679,13 +679,13 @@ export default function VideoDetailScreen() {
                 count={video.dislikesCount}
                 onPress={handleDislike}
                 activeColor={colors.error}
-                accessibilityLabel="Dislike"
+                accessibilityLabel={t('minbar.dislike')}
               />
               <ActionButton
                 icon={<Icon name="message-circle" size="md" color={colors.text.primary} />}
                 count={video.commentsCount}
                 onPress={() => setCommentSheetOpen(true)}
-                accessibilityLabel="Comments"
+                accessibilityLabel={t('accessibility.commentReel')}
               />
               <ActionButton
                 icon={<Icon name="bookmark" size="md" color={colors.text.primary} />}
@@ -693,12 +693,12 @@ export default function VideoDetailScreen() {
                 isActive={video.isBookmarked}
                 onPress={handleBookmark}
                 activeColor={colors.gold}
-                accessibilityLabel="Bookmark"
+                accessibilityLabel={t('common.bookmark')}
               />
               <ActionButton
                 icon={<Icon name="share" size="md" color={colors.text.primary} />}
                 onPress={handleShare}
-                accessibilityLabel="Share"
+                accessibilityLabel={t('common.share')}
               />
             </View>
 
@@ -855,12 +855,12 @@ export default function VideoDetailScreen() {
               value={commentText}
               onChangeText={setCommentText}
               multiline
-              accessibilityLabel="Comment input field"
+              accessibilityLabel={t('accessibility.commentTextInput')}
             />
             <Pressable 
               onPress={handleCommentSubmit} 
               disabled={!commentText.trim()}
-              accessibilityLabel="Send comment"
+              accessibilityLabel={t('accessibility.sendComment')}
               accessibilityRole="button"
             >
               <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />

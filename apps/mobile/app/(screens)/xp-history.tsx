@@ -246,7 +246,7 @@ function XPHistoryScreen() {
           <EmptyState
             icon="trending-up"
             title={t('gamification.xp.history')}
-            subtitle="Start earning XP by using Mizanly"
+            subtitle={t('gamification.xp.startEarning')}
           />
         ) : (
           <FlatList

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
   Text,
@@ -178,7 +179,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
           <Icon name="search" size="sm" color={colors.text.secondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search stickers..."
+            placeholder={t('risalah.searchStickers')}
             placeholderTextColor={colors.text.tertiary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -220,8 +221,8 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
             ) : recentStickers.length === 0 ? (
               <EmptyState
                 icon="clock"
-                title="No recent stickers"
-                subtitle="Use some stickers and they'll appear here"
+                title={t('risalah.noRecentStickers')}
+                subtitle={t('risalah.useStickersHint')}
               />
             ) : (
               <FlatList
@@ -260,7 +261,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
               <Pressable
                 style={styles.addMoreButton}
                 onPress={handleAddMore}
-                accessibilityLabel="Browse more sticker packs"
+                accessibilityLabel={t('risalah.browseMorePacks')}
                 accessibilityRole="button"
               >
                 <Icon name="plus" size="sm" color={colors.text.secondary} />
@@ -288,8 +289,8 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
               ) : stickers.length === 0 ? (
                 <EmptyState
                   icon="smile"
-                  title="No stickers in this pack"
-                  subtitle="Add more sticker packs to get started"
+                  title={t('risalah.noStickersInPack')}
+                  subtitle={t('risalah.addMorePacks')}
                 />
               ) : (
                 <FlatList

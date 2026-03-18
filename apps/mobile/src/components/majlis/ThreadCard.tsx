@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { View, Text, StyleSheet, Alert, Share , Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -226,7 +227,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
             <Pressable
               hitSlop={8}
               onPress={() => { haptic.light(); setShowMenu(true); }}
-              accessibilityLabel="More options"
+              accessibilityLabel={t('accessibility.moreOptions')}
               accessibilityRole="button"
               accessibilityHint="Open thread options menu"
             >
@@ -313,7 +314,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               count={thread.repliesCount > 0 ? thread.repliesCount : undefined}
               onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
               hapticType="light"
-              accessibilityLabel="Reply to thread"
+              accessibilityLabel={t('accessibility.replyToThread')}
               accessibilityHint="Reply to this thread"
             />
 
@@ -346,7 +347,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               icon={<Icon name="share" size="xs" color={colors.text.secondary} />}
               onPress={handleShare}
               hapticType="light"
-              accessibilityLabel="Share thread"
+              accessibilityLabel={t('accessibility.shareThread')}
               accessibilityHint="Share this thread with others"
             />
 
@@ -368,12 +369,12 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
       {/* More menu */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         <BottomSheetItem
-          label="Share"
+          label={t('common.share')}
           icon={<Icon name="share" size="sm" color={colors.text.primary} />}
           onPress={() => { setShowMenu(false); handleShare(); }}
         />
         <BottomSheetItem
-          label="Copy Link"
+          label={t('common.copyLink')}
           icon={<Icon name="link" size="sm" color={colors.text.primary} />}
           onPress={handleCopyLink}
         />
@@ -384,7 +385,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
         />
         {isOwn ? (
           <BottomSheetItem
-            label="Delete thread"
+            label={t('common.delete')}
             icon={<Icon name="trash" size="sm" color={colors.error} />}
             onPress={handleDelete}
             destructive
@@ -392,12 +393,12 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
         ) : (
           <>
             <BottomSheetItem
-              label="Not interested"
+              label={t('common.notInterested')}
               icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
-              label="Report"
+              label={t('common.report')}
               icon={<Icon name="flag" size="sm" color={colors.error} />}
               onPress={handleReport}
               destructive

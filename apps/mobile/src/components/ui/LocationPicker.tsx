@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   View, Text, TextInput, StyleSheet,
   FlatList, Alert,
@@ -115,7 +116,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
             <Icon name="search" size="sm" color={colors.text.tertiary} />
             <TextInput
               style={styles.input}
-              placeholder="Search locations..."
+              placeholder={t('common.searchLocations')}
               placeholderTextColor={colors.text.tertiary}
               value={query}
               onChangeText={setQuery}

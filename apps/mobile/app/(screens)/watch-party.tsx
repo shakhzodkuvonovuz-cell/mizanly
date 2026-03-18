@@ -102,7 +102,7 @@ export default function WatchPartyScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Watch Parties"
+          title={t('community.watchParties')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightAction={{ icon: 'plus', onPress: () => { setCreateSheetOpen(true); haptic.light(); } }}
         />
@@ -121,7 +121,7 @@ export default function WatchPartyScreen() {
                 {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={160} borderRadius={radius.lg} />)}
               </View>
             ) : (
-              <EmptyState icon="video" title="No watch parties" subtitle="Start a watch party to watch videos together with friends" actionLabel="Start Party" onAction={() => setCreateSheetOpen(true)} />
+              <EmptyState icon="video" title={t('community.noWatchParties')} subtitle={t('community.watchPartyHint')} actionLabel={t('community.startParty')} onAction={() => setCreateSheetOpen(true)} />
             )
           }
         />
@@ -134,14 +134,14 @@ export default function WatchPartyScreen() {
               style={styles.createInput}
               value={newTitle}
               onChangeText={setNewTitle}
-              placeholder="Party name..."
+              placeholder={t('community.partyNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
             />
             <TextInput
               style={styles.createInput}
               value={newVideoId}
               onChangeText={setNewVideoId}
-              placeholder="Video ID..."
+              placeholder={t('community.videoIdPlaceholder')}
               placeholderTextColor={colors.text.tertiary}
             />
             <Pressable

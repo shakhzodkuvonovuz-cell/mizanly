@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { View, Text, StyleSheet, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -166,8 +167,8 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   ) : (
     <EmptyState
       icon="message-circle"
-      title="No comments yet"
-      subtitle="Be the first to comment"
+      title={t('saf.noComments')}
+      subtitle={t('saf.beFirstToComment')}
     />
   );
 
@@ -226,7 +227,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           <TextInput
             ref={inputRef}
             style={styles.input}
-            placeholder="Add a comment..."
+            placeholder={t('saf.addComment')}
             placeholderTextColor={colors.text.tertiary}
             value={newComment}
             onChangeText={setNewComment}

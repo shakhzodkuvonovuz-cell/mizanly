@@ -287,7 +287,7 @@ function StreaksScreen() {
           <EmptyState
             icon="trending-up"
             title={t('gamification.streaks.title')}
-            subtitle="Start a streak by using Mizanly daily"
+            subtitle={t('gamification.streaks.startHint')}
             actionLabel={t('common.retry')}
             onAction={() => refetch()}
           />
