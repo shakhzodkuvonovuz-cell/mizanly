@@ -1,0 +1,3474 @@
+[
+  {
+    "path": "common.min",
+    "value": "Min"
+  },
+  {
+    "path": "common.bluetooth",
+    "value": "Bluetooth"
+  },
+  {
+    "path": "common.wifi",
+    "value": "Wi-Fi"
+  },
+  {
+    "path": "auth.google",
+    "value": "Google"
+  },
+  {
+    "path": "auth.apple",
+    "value": "Apple"
+  },
+  {
+    "path": "auth.facebook",
+    "value": "Facebook"
+  },
+  {
+    "path": "auth.twitter",
+    "value": "Twitter"
+  },
+  {
+    "path": "auth.github",
+    "value": "GitHub"
+  },
+  {
+    "path": "auth.microsoft",
+    "value": "Microsoft"
+  },
+  {
+    "path": "auth.saveBackupCodes",
+    "value": "Save Backup Codes"
+  },
+  {
+    "path": "tabs.saf",
+    "value": "Saf"
+  },
+  {
+    "path": "tabs.bakra",
+    "value": "Bakra"
+  },
+  {
+    "path": "tabs.majlis",
+    "value": "Majlis"
+  },
+  {
+    "path": "tabs.risalah",
+    "value": "Risalah"
+  },
+  {
+    "path": "tabs.minbar",
+    "value": "Minbar"
+  },
+  {
+    "path": "tabs.mosques",
+    "value": "Mosques"
+  },
+  {
+    "path": "saf.video",
+    "value": "Video"
+  },
+  {
+    "path": "saf.caption",
+    "value": "Caption"
+  },
+  {
+    "path": "saf.mention",
+    "value": "Mention"
+  },
+  {
+    "path": "saf.followUser",
+    "value": "Follow User"
+  },
+  {
+    "path": "saf.unfollowUser",
+    "value": "Unfollow User"
+  },
+  {
+    "path": "saf.unblockUser",
+    "value": "Unblock User"
+  },
+  {
+    "path": "saf.muteUser",
+    "value": "Mute User"
+  },
+  {
+    "path": "saf.unmuteUser",
+    "value": "Unmute User"
+  },
+  {
+    "path": "saf.restrictUser",
+    "value": "Restrict User"
+  },
+  {
+    "path": "saf.unrestrictUser",
+    "value": "Unrestrict User"
+  },
+  {
+    "path": "saf.sharePost",
+    "value": "Share Post"
+  },
+  {
+    "path": "saf.saveToCollection",
+    "value": "Save to Collection"
+  },
+  {
+    "path": "saf.removeFromAlbum",
+    "value": "Remove from Album"
+  },
+  {
+    "path": "saf.viewWebsiteClicks",
+    "value": "View Website Clicks"
+  },
+  {
+    "path": "saf.viewEmailClicks",
+    "value": "View Email Clicks"
+  },
+  {
+    "path": "saf.viewPhoneCalls",
+    "value": "View Phone Calls"
+  },
+  {
+    "path": "saf.viewGetDirections",
+    "value": "View Get Directions"
+  },
+  {
+    "path": "saf.viewSaved",
+    "value": "View Saved"
+  },
+  {
+    "path": "saf.viewLiked",
+    "value": "View Liked"
+  },
+  {
+    "path": "saf.viewCommented",
+    "value": "View Commented"
+  },
+  {
+    "path": "saf.viewShared",
+    "value": "View Shared"
+  },
+  {
+    "path": "saf.viewTagged",
+    "value": "View Tagged"
+  },
+  {
+    "path": "saf.viewMentioned",
+    "value": "View Mentioned"
+  },
+  {
+    "path": "saf.viewReposted",
+    "value": "View Reposted"
+  },
+  {
+    "path": "saf.viewQuoted",
+    "value": "View Quoted"
+  },
+  {
+    "path": "saf.viewArchived",
+    "value": "View Archived"
+  },
+  {
+    "path": "saf.viewDeleted",
+    "value": "View Deleted"
+  },
+  {
+    "path": "saf.viewHidden",
+    "value": "View Hidden"
+  },
+  {
+    "path": "saf.viewReported",
+    "value": "View Reported"
+  },
+  {
+    "path": "saf.viewBlocked",
+    "value": "View Blocked"
+  },
+  {
+    "path": "saf.viewMuted",
+    "value": "View Muted"
+  },
+  {
+    "path": "saf.viewRestricted",
+    "value": "View Restricted"
+  },
+  {
+    "path": "saf.viewFollowing",
+    "value": "View Following"
+  },
+  {
+    "path": "saf.viewFollowers",
+    "value": "View Followers"
+  },
+  {
+    "path": "saf.viewMutual",
+    "value": "View Mutual"
+  },
+  {
+    "path": "saf.viewSuggested",
+    "value": "View Suggested"
+  },
+  {
+    "path": "saf.viewDiscover",
+    "value": "View Discover"
+  },
+  {
+    "path": "saf.viewTrending",
+    "value": "View Trending"
+  },
+  {
+    "path": "saf.viewPopular",
+    "value": "View Popular"
+  },
+  {
+    "path": "saf.viewRecent",
+    "value": "View Recent"
+  },
+  {
+    "path": "saf.viewNearby",
+    "value": "View Nearby"
+  },
+  {
+    "path": "saf.viewGlobal",
+    "value": "View Global"
+  },
+  {
+    "path": "saf.viewLocal",
+    "value": "View Local"
+  },
+  {
+    "path": "saf.viewNational",
+    "value": "View National"
+  },
+  {
+    "path": "saf.viewInternational",
+    "value": "View International"
+  },
+  {
+    "path": "saf.viewWorldwide",
+    "value": "View Worldwide"
+  },
+  {
+    "path": "bakra.react",
+    "value": "React"
+  },
+  {
+    "path": "bakra.comment",
+    "value": "Comment"
+  },
+  {
+    "path": "bakra.viewWebsiteClicks",
+    "value": "View Website Clicks"
+  },
+  {
+    "path": "bakra.viewEmailClicks",
+    "value": "View Email Clicks"
+  },
+  {
+    "path": "bakra.viewPhoneCalls",
+    "value": "View Phone Calls"
+  },
+  {
+    "path": "bakra.viewGetDirections",
+    "value": "View Get Directions"
+  },
+  {
+    "path": "bakra.viewSaved",
+    "value": "View Saved"
+  },
+  {
+    "path": "bakra.viewLiked",
+    "value": "View Liked"
+  },
+  {
+    "path": "bakra.viewCommented",
+    "value": "View Commented"
+  },
+  {
+    "path": "bakra.viewShared",
+    "value": "View Shared"
+  },
+  {
+    "path": "bakra.viewTagged",
+    "value": "View Tagged"
+  },
+  {
+    "path": "bakra.viewMentioned",
+    "value": "View Mentioned"
+  },
+  {
+    "path": "bakra.viewReposted",
+    "value": "View Reposted"
+  },
+  {
+    "path": "bakra.viewQuoted",
+    "value": "View Quoted"
+  },
+  {
+    "path": "bakra.viewArchived",
+    "value": "View Archived"
+  },
+  {
+    "path": "bakra.viewDeleted",
+    "value": "View Deleted"
+  },
+  {
+    "path": "bakra.viewHidden",
+    "value": "View Hidden"
+  },
+  {
+    "path": "bakra.viewReported",
+    "value": "View Reported"
+  },
+  {
+    "path": "bakra.viewBlocked",
+    "value": "View Blocked"
+  },
+  {
+    "path": "bakra.viewMuted",
+    "value": "View Muted"
+  },
+  {
+    "path": "bakra.viewRestricted",
+    "value": "View Restricted"
+  },
+  {
+    "path": "bakra.viewFollowing",
+    "value": "View Following"
+  },
+  {
+    "path": "bakra.viewFollowers",
+    "value": "View Followers"
+  },
+  {
+    "path": "bakra.viewMutual",
+    "value": "View Mutual"
+  },
+  {
+    "path": "bakra.viewSuggested",
+    "value": "View Suggested"
+  },
+  {
+    "path": "bakra.viewDiscover",
+    "value": "View Discover"
+  },
+  {
+    "path": "bakra.viewTrending",
+    "value": "View Trending"
+  },
+  {
+    "path": "bakra.viewPopular",
+    "value": "View Popular"
+  },
+  {
+    "path": "bakra.viewRecent",
+    "value": "View Recent"
+  },
+  {
+    "path": "bakra.viewNearby",
+    "value": "View Nearby"
+  },
+  {
+    "path": "bakra.viewGlobal",
+    "value": "View Global"
+  },
+  {
+    "path": "bakra.viewLocal",
+    "value": "View Local"
+  },
+  {
+    "path": "bakra.viewNational",
+    "value": "View National"
+  },
+  {
+    "path": "bakra.viewInternational",
+    "value": "View International"
+  },
+  {
+    "path": "bakra.viewWorldwide",
+    "value": "View Worldwide"
+  },
+  {
+    "path": "bakra.replyingTo",
+    "value": "Replying to @{{username}}"
+  },
+  {
+    "path": "bakra.replyToUser",
+    "value": "Reply to @{{username}}..."
+  },
+  {
+    "path": "bakra.startConversation",
+    "value": "Start the conversation"
+  },
+  {
+    "path": "bakra.questionPlaceholder",
+    "value": "Type your question..."
+  },
+  {
+    "path": "bakra.goBack",
+    "value": "Go Back"
+  },
+  {
+    "path": "majlis.tweet",
+    "value": "Tweet"
+  },
+  {
+    "path": "majlis.tweets",
+    "value": "Tweets"
+  },
+  {
+    "path": "majlis.retweet",
+    "value": "Retweet"
+  },
+  {
+    "path": "majlis.retweets",
+    "value": "Retweets"
+  },
+  {
+    "path": "majlis.quote",
+    "value": "Quote"
+  },
+  {
+    "path": "majlis.quotes",
+    "value": "Quotes"
+  },
+  {
+    "path": "risalah.typeMessage",
+    "value": "Type a message..."
+  },
+  {
+    "path": "risalah.unarchive",
+    "value": "Unarchive"
+  },
+  {
+    "path": "risalah.markUnread",
+    "value": "Mark as Unread"
+  },
+  {
+    "path": "risalah.markRead",
+    "value": "Mark as Read"
+  },
+  {
+    "path": "risalah.unblockUser",
+    "value": "Unblock User"
+  },
+  {
+    "path": "risalah.reportUser",
+    "value": "Report User"
+  },
+  {
+    "path": "risalah.groupCall",
+    "value": "Group Call"
+  },
+  {
+    "path": "risalah.removeParticipants",
+    "value": "Remove Participants"
+  },
+  {
+    "path": "risalah.makeAdmin",
+    "value": "Make Admin"
+  },
+  {
+    "path": "risalah.removeAdmin",
+    "value": "Remove Admin"
+  },
+  {
+    "path": "risalah.muteNotifications",
+    "value": "Mute Notifications"
+  },
+  {
+    "path": "risalah.unmuteNotifications",
+    "value": "Unmute Notifications"
+  },
+  {
+    "path": "risalah.searchParticipants",
+    "value": "Search Participants"
+  },
+  {
+    "path": "risalah.files",
+    "value": "Files"
+  },
+  {
+    "path": "risalah.voice",
+    "value": "Voice"
+  },
+  {
+    "path": "risalah.polls",
+    "value": "Polls"
+  },
+  {
+    "path": "risalah.stickers",
+    "value": "Stickers"
+  },
+  {
+    "path": "risalah.gifs",
+    "value": "GIFs"
+  },
+  {
+    "path": "risalah.emoji",
+    "value": "Emoji"
+  },
+  {
+    "path": "risalah.online",
+    "value": "online"
+  },
+  {
+    "path": "risalah.lastSeen",
+    "value": "last seen"
+  },
+  {
+    "path": "risalah.seen",
+    "value": "seen"
+  },
+  {
+    "path": "risalah.delivered",
+    "value": "delivered"
+  },
+  {
+    "path": "risalah.sent",
+    "value": "sent"
+  },
+  {
+    "path": "risalah.pending",
+    "value": "pending"
+  },
+  {
+    "path": "risalah.failed",
+    "value": "failed"
+  },
+  {
+    "path": "risalah.encrypted",
+    "value": "encrypted"
+  },
+  {
+    "path": "risalah.selfDestructing",
+    "value": "Self-destructing"
+  },
+  {
+    "path": "risalah.messageTimer",
+    "value": "Message timer"
+  },
+  {
+    "path": "risalah.seconds",
+    "value": "seconds"
+  },
+  {
+    "path": "risalah.minutes",
+    "value": "minutes"
+  },
+  {
+    "path": "risalah.hours",
+    "value": "hours"
+  },
+  {
+    "path": "risalah.days",
+    "value": "days"
+  },
+  {
+    "path": "risalah.weeks",
+    "value": "weeks"
+  },
+  {
+    "path": "risalah.months",
+    "value": "months"
+  },
+  {
+    "path": "risalah.years",
+    "value": "years"
+  },
+  {
+    "path": "minbar.video",
+    "value": "Video"
+  },
+  {
+    "path": "minbar.remix",
+    "value": "Remix"
+  },
+  {
+    "path": "minbar.theaterMode",
+    "value": "Theater mode"
+  },
+  {
+    "path": "minbar.statsForNerds",
+    "value": "Stats for nerds"
+  },
+  {
+    "path": "minbar.premiering",
+    "value": "Premiering"
+  },
+  {
+    "path": "minbar.ended",
+    "value": "Ended"
+  },
+  {
+    "path": "minbar.upcoming",
+    "value": "Upcoming"
+  },
+  {
+    "path": "minbar.watch",
+    "value": "Watch"
+  },
+  {
+    "path": "minbar.restart",
+    "value": "Restart"
+  },
+  {
+    "path": "minbar.shuffle",
+    "value": "Shuffle"
+  },
+  {
+    "path": "minbar.repeat",
+    "value": "Repeat"
+  },
+  {
+    "path": "minbar.repeatOne",
+    "value": "Repeat one"
+  },
+  {
+    "path": "minbar.playAll",
+    "value": "Play all"
+  },
+  {
+    "path": "minbar.playNext",
+    "value": "Play next"
+  },
+  {
+    "path": "minbar.playLater",
+    "value": "Play later"
+  },
+  {
+    "path": "minbar.removeFromPlaylist",
+    "value": "Remove from playlist"
+  },
+  {
+    "path": "minbar.renamePlaylist",
+    "value": "Rename playlist"
+  },
+  {
+    "path": "minbar.unlisted",
+    "value": "Unlisted"
+  },
+  {
+    "path": "minbar.adult",
+    "value": "Adult"
+  },
+  {
+    "path": "minbar.familyFriendly",
+    "value": "Family friendly"
+  },
+  {
+    "path": "minbar.educational",
+    "value": "Educational"
+  },
+  {
+    "path": "minbar.inspirational",
+    "value": "Inspirational"
+  },
+  {
+    "path": "minbar.religious",
+    "value": "Religious"
+  },
+  {
+    "path": "minbar.dua",
+    "value": "Dua"
+  },
+  {
+    "path": "minbar.nearbyMosques",
+    "value": "Nearby Mosques"
+  },
+  {
+    "path": "minbar.locationCoords",
+    "value": "Lat: {{lat}}, Lng: {{lng}}"
+  },
+  {
+    "path": "profile.viewWebsiteClicks",
+    "value": "View Website Clicks"
+  },
+  {
+    "path": "profile.viewEmailClicks",
+    "value": "View Email Clicks"
+  },
+  {
+    "path": "profile.viewPhoneCalls",
+    "value": "View Phone Calls"
+  },
+  {
+    "path": "profile.viewGetDirections",
+    "value": "View Get Directions"
+  },
+  {
+    "path": "profile.viewSaved",
+    "value": "View Saved"
+  },
+  {
+    "path": "profile.viewLiked",
+    "value": "View Liked"
+  },
+  {
+    "path": "profile.viewCommented",
+    "value": "View Commented"
+  },
+  {
+    "path": "profile.viewShared",
+    "value": "View Shared"
+  },
+  {
+    "path": "profile.viewTagged",
+    "value": "View Tagged"
+  },
+  {
+    "path": "profile.viewMentioned",
+    "value": "View Mentioned"
+  },
+  {
+    "path": "profile.viewReposted",
+    "value": "View Reposted"
+  },
+  {
+    "path": "profile.viewQuoted",
+    "value": "View Quoted"
+  },
+  {
+    "path": "profile.viewArchived",
+    "value": "View Archived"
+  },
+  {
+    "path": "profile.viewDeleted",
+    "value": "View Deleted"
+  },
+  {
+    "path": "profile.viewHidden",
+    "value": "View Hidden"
+  },
+  {
+    "path": "profile.viewReported",
+    "value": "View Reported"
+  },
+  {
+    "path": "profile.viewBlocked",
+    "value": "View Blocked"
+  },
+  {
+    "path": "profile.viewMuted",
+    "value": "View Muted"
+  },
+  {
+    "path": "profile.viewRestricted",
+    "value": "View Restricted"
+  },
+  {
+    "path": "profile.viewFollowing",
+    "value": "View Following"
+  },
+  {
+    "path": "profile.viewFollowers",
+    "value": "View Followers"
+  },
+  {
+    "path": "profile.viewMutual",
+    "value": "View Mutual"
+  },
+  {
+    "path": "profile.viewSuggested",
+    "value": "View Suggested"
+  },
+  {
+    "path": "profile.viewDiscover",
+    "value": "View Discover"
+  },
+  {
+    "path": "profile.viewTrending",
+    "value": "View Trending"
+  },
+  {
+    "path": "profile.viewPopular",
+    "value": "View Popular"
+  },
+  {
+    "path": "profile.viewRecent",
+    "value": "View Recent"
+  },
+  {
+    "path": "profile.viewNearby",
+    "value": "View Nearby"
+  },
+  {
+    "path": "profile.viewGlobal",
+    "value": "View Global"
+  },
+  {
+    "path": "profile.viewLocal",
+    "value": "View Local"
+  },
+  {
+    "path": "profile.viewNational",
+    "value": "View National"
+  },
+  {
+    "path": "profile.viewInternational",
+    "value": "View International"
+  },
+  {
+    "path": "profile.viewWorldwide",
+    "value": "View Worldwide"
+  },
+  {
+    "path": "profile.website",
+    "value": "Website"
+  },
+  {
+    "path": "profile.pronouns",
+    "value": "Pronouns"
+  },
+  {
+    "path": "profile.interests",
+    "value": "Interests"
+  },
+  {
+    "path": "profile.hobbies",
+    "value": "Hobbies"
+  },
+  {
+    "path": "profile.work",
+    "value": "Work"
+  },
+  {
+    "path": "profile.relationship",
+    "value": "Relationship"
+  },
+  {
+    "path": "profile.single",
+    "value": "Single"
+  },
+  {
+    "path": "profile.inARelationship",
+    "value": "In a relationship"
+  },
+  {
+    "path": "profile.engaged",
+    "value": "Engaged"
+  },
+  {
+    "path": "profile.married",
+    "value": "Married"
+  },
+  {
+    "path": "profile.complicated",
+    "value": "It's complicated"
+  },
+  {
+    "path": "profile.openRelationship",
+    "value": "Open relationship"
+  },
+  {
+    "path": "profile.widowed",
+    "value": "Widowed"
+  },
+  {
+    "path": "profile.separated",
+    "value": "Separated"
+  },
+  {
+    "path": "profile.divorced",
+    "value": "Divorced"
+  },
+  {
+    "path": "islamic.mosque",
+    "value": "Nearby Mosques"
+  },
+  {
+    "path": "islamic.reciter",
+    "value": "Reciter"
+  },
+  {
+    "path": "islamic.juz",
+    "value": "Juz"
+  },
+  {
+    "path": "islamic.hizb",
+    "value": "Hizb"
+  },
+  {
+    "path": "islamic.rub",
+    "value": "Rub"
+  },
+  {
+    "path": "islamic.sajdah",
+    "value": "Sajdah"
+  },
+  {
+    "path": "islamic.ruku",
+    "value": "Ruku"
+  },
+  {
+    "path": "islamic.manzil",
+    "value": "Manzil"
+  },
+  {
+    "path": "islamic.qibla",
+    "value": "Qibla"
+  },
+  {
+    "path": "islamic.prayerNotifications",
+    "value": "Prayer Notifications"
+  },
+  {
+    "path": "islamic.prayerAdjustments",
+    "value": "Prayer Adjustments"
+  },
+  {
+    "path": "islamic.prayerLocation",
+    "value": "Prayer Location"
+  },
+  {
+    "path": "islamic.prayerCalendar",
+    "value": "Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarExport",
+    "value": "Export Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarImport",
+    "value": "Import Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarSync",
+    "value": "Sync Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarShare",
+    "value": "Share Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarPrint",
+    "value": "Print Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarUpload",
+    "value": "Upload Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarView",
+    "value": "View Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarList",
+    "value": "List Prayer Calendars"
+  },
+  {
+    "path": "islamic.prayerCalendarUpdate",
+    "value": "Update Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarRemove",
+    "value": "Remove Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarRestore",
+    "value": "Restore Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarRename",
+    "value": "Rename Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarMove",
+    "value": "Move Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarPaste",
+    "value": "Paste Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarSelect",
+    "value": "Select Prayer Calendar"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAll",
+    "value": "Select All Prayer Calendars"
+  },
+  {
+    "path": "islamic.prayerCalendarInvertSelection",
+    "value": "Invert Selection"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectNone",
+    "value": "Select None"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectMultiple",
+    "value": "Select Multiple"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectSingle",
+    "value": "Select Single"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectRange",
+    "value": "Select Range"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectRandom",
+    "value": "Select Random"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectPrevious",
+    "value": "Select Previous"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectNext",
+    "value": "Select Next"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectFirst",
+    "value": "Select First"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectLast",
+    "value": "Select Last"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectMiddle",
+    "value": "Select Middle"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectCenter",
+    "value": "Select Center"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectEdge",
+    "value": "Select Edge"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectCorner",
+    "value": "Select Corner"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllCorners",
+    "value": "Select All Corners"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllEdges",
+    "value": "Select All Edges"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllCenters",
+    "value": "Select All Centers"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllMiddles",
+    "value": "Select All Middles"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllFirsts",
+    "value": "Select All Firsts"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllLasts",
+    "value": "Select All Lasts"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllPrevious",
+    "value": "Select All Previous"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllNext",
+    "value": "Select All Next"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllRandom",
+    "value": "Select All Random"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllRange",
+    "value": "Select All Range"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllMultiple",
+    "value": "Select All Multiple"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllSingle",
+    "value": "Select All Single"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllNone",
+    "value": "Select All None"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllInvert",
+    "value": "Select All Invert"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllClear",
+    "value": "Select All Clear"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllDeselect",
+    "value": "Select All Deselect"
+  },
+  {
+    "path": "islamic.prayerCalendarSelectAllSelect",
+    "value": "Select All Select"
+  },
+  {
+    "path": "monetization.deposit",
+    "value": "Deposit"
+  },
+  {
+    "path": "monetization.transaction",
+    "value": "Transaction"
+  },
+  {
+    "path": "monetization.transactions",
+    "value": "Transactions"
+  },
+  {
+    "path": "monetization.code",
+    "value": "Code"
+  },
+  {
+    "path": "monetization.valid",
+    "value": "Valid"
+  },
+  {
+    "path": "monetization.invalid",
+    "value": "Invalid"
+  },
+  {
+    "path": "monetization.expired",
+    "value": "Expired"
+  },
+  {
+    "path": "monetization.disputed",
+    "value": "Disputed"
+  },
+  {
+    "path": "monetization.chargeback",
+    "value": "Chargeback"
+  },
+  {
+    "path": "monetization.fraud",
+    "value": "Fraud"
+  },
+  {
+    "path": "monetization.suspicious",
+    "value": "Suspicious"
+  },
+  {
+    "path": "monetization.unrestricted",
+    "value": "Unrestricted"
+  },
+  {
+    "path": "monetization.unverified",
+    "value": "Unverified"
+  },
+  {
+    "path": "monetization.identity",
+    "value": "Identity"
+  },
+  {
+    "path": "monetization.document",
+    "value": "Document"
+  },
+  {
+    "path": "monetization.selfie",
+    "value": "Selfie"
+  },
+  {
+    "path": "monetization.proof",
+    "value": "Proof"
+  },
+  {
+    "path": "monetization.verification",
+    "value": "Verification"
+  },
+  {
+    "path": "monetization.review",
+    "value": "Review"
+  },
+  {
+    "path": "monetization.updateInformation",
+    "value": "Update Information"
+  },
+  {
+    "path": "monetization.submitInformation",
+    "value": "Submit Information"
+  },
+  {
+    "path": "monetization.resubmit",
+    "value": "Resubmit"
+  },
+  {
+    "path": "monetization.startVerification",
+    "value": "Start Verification"
+  },
+  {
+    "path": "monetization.finishVerification",
+    "value": "Finish Verification"
+  },
+  {
+    "path": "monetization.helpCenter",
+    "value": "Help Center"
+  },
+  {
+    "path": "monetization.faq",
+    "value": "FAQ"
+  },
+  {
+    "path": "monetization.terms",
+    "value": "Terms"
+  },
+  {
+    "path": "monetization.policy",
+    "value": "Policy"
+  },
+  {
+    "path": "monetization.agreement",
+    "value": "Agreement"
+  },
+  {
+    "path": "monetization.contract",
+    "value": "Contract"
+  },
+  {
+    "path": "monetization.license",
+    "value": "License"
+  },
+  {
+    "path": "monetization.permission",
+    "value": "Permission"
+  },
+  {
+    "path": "monetization.confidentiality",
+    "value": "Confidentiality"
+  },
+  {
+    "path": "monetization.disclosure",
+    "value": "Disclosure"
+  },
+  {
+    "path": "monetization.consent",
+    "value": "Consent"
+  },
+  {
+    "path": "monetization.optIn",
+    "value": "Opt-in"
+  },
+  {
+    "path": "monetization.optOut",
+    "value": "Opt-out"
+  },
+  {
+    "path": "monetization.newsletter",
+    "value": "Newsletter"
+  },
+  {
+    "path": "monetization.marketing",
+    "value": "Marketing"
+  },
+  {
+    "path": "monetization.promotional",
+    "value": "Promotional"
+  },
+  {
+    "path": "monetization.advertising",
+    "value": "Advertising"
+  },
+  {
+    "path": "monetization.sponsorship",
+    "value": "Sponsorship"
+  },
+  {
+    "path": "monetization.partnership",
+    "value": "Partnership"
+  },
+  {
+    "path": "monetization.collaboration",
+    "value": "Collaboration"
+  },
+  {
+    "path": "monetization.affiliate",
+    "value": "Affiliate"
+  },
+  {
+    "path": "monetization.referral",
+    "value": "Referral"
+  },
+  {
+    "path": "monetization.royalty",
+    "value": "Royalty"
+  },
+  {
+    "path": "monetization.licenseFee",
+    "value": "License Fee"
+  },
+  {
+    "path": "monetization.subscriptionFee",
+    "value": "Subscription Fee"
+  },
+  {
+    "path": "monetization.membershipFee",
+    "value": "Membership Fee"
+  },
+  {
+    "path": "monetization.processingFee",
+    "value": "Processing Fee"
+  },
+  {
+    "path": "monetization.transactionFee",
+    "value": "Transaction Fee"
+  },
+  {
+    "path": "monetization.withdrawalFee",
+    "value": "Withdrawal Fee"
+  },
+  {
+    "path": "monetization.exchangeFee",
+    "value": "Exchange Fee"
+  },
+  {
+    "path": "monetization.serviceFee",
+    "value": "Service Fee"
+  },
+  {
+    "path": "monetization.platformFee",
+    "value": "Platform Fee"
+  },
+  {
+    "path": "monetization.hostFee",
+    "value": "Host Fee"
+  },
+  {
+    "path": "monetization.guestFee",
+    "value": "Guest Fee"
+  },
+  {
+    "path": "monetization.userFee",
+    "value": "User Fee"
+  },
+  {
+    "path": "monetization.merchantFee",
+    "value": "Merchant Fee"
+  },
+  {
+    "path": "monetization.sellerFee",
+    "value": "Seller Fee"
+  },
+  {
+    "path": "monetization.payerFee",
+    "value": "Payer Fee"
+  },
+  {
+    "path": "monetization.payeeFee",
+    "value": "Payee Fee"
+  },
+  {
+    "path": "monetization.senderFee",
+    "value": "Sender Fee"
+  },
+  {
+    "path": "monetization.receiverFee",
+    "value": "Receiver Fee"
+  },
+  {
+    "path": "monetization.recipientFee",
+    "value": "Recipient Fee"
+  },
+  {
+    "path": "monetization.nonprofitFee",
+    "value": "Nonprofit Fee"
+  },
+  {
+    "path": "monetization.organizationFee",
+    "value": "Organization Fee"
+  },
+  {
+    "path": "monetization.startupFee",
+    "value": "Startup Fee"
+  },
+  {
+    "path": "monetization.individualFee",
+    "value": "Individual Fee"
+  },
+  {
+    "path": "monetization.personalFee",
+    "value": "Personal Fee"
+  },
+  {
+    "path": "monetization.familyFee",
+    "value": "Family Fee"
+  },
+  {
+    "path": "monetization.groupFee",
+    "value": "Group Fee"
+  },
+  {
+    "path": "monetization.teamFee",
+    "value": "Team Fee"
+  },
+  {
+    "path": "monetization.societyFee",
+    "value": "Society Fee"
+  },
+  {
+    "path": "monetization.governmentFee",
+    "value": "Government Fee"
+  },
+  {
+    "path": "monetization.publicFee",
+    "value": "Public Fee"
+  },
+  {
+    "path": "monetization.privateFee",
+    "value": "Private Fee"
+  },
+  {
+    "path": "monetization.hiddenFee",
+    "value": "Hidden Fee"
+  },
+  {
+    "path": "monetization.visibleFee",
+    "value": "Visible Fee"
+  },
+  {
+    "path": "monetization.transparentFee",
+    "value": "Transparent Fee"
+  },
+  {
+    "path": "monetization.opaqueFee",
+    "value": "Opaque Fee"
+  },
+  {
+    "path": "monetization.fixedFee",
+    "value": "Fixed Fee"
+  },
+  {
+    "path": "monetization.variableFee",
+    "value": "Variable Fee"
+  },
+  {
+    "path": "monetization.percentageFee",
+    "value": "Percentage Fee"
+  },
+  {
+    "path": "monetization.flatFee",
+    "value": "Flat Fee"
+  },
+  {
+    "path": "monetization.tieredFee",
+    "value": "Tiered Fee"
+  },
+  {
+    "path": "monetization.graduatedFee",
+    "value": "Graduated Fee"
+  },
+  {
+    "path": "monetization.progressiveFee",
+    "value": "Progressive Fee"
+  },
+  {
+    "path": "monetization.regressiveFee",
+    "value": "Regressive Fee"
+  },
+  {
+    "path": "monetization.linearFee",
+    "value": "Linear Fee"
+  },
+  {
+    "path": "monetization.nonlinearFee",
+    "value": "Nonlinear Fee"
+  },
+  {
+    "path": "monetization.staticFee",
+    "value": "Static Fee"
+  },
+  {
+    "path": "monetization.recurringFee",
+    "value": "Recurring Fee"
+  },
+  {
+    "path": "monetization.oneTimeFee",
+    "value": "One-time Fee"
+  },
+  {
+    "path": "monetization.monthlyFee",
+    "value": "Monthly Fee"
+  },
+  {
+    "path": "monetization.weeklyFee",
+    "value": "Weekly Fee"
+  },
+  {
+    "path": "monetization.hourlyFee",
+    "value": "Hourly Fee"
+  },
+  {
+    "path": "monetization.minuteFee",
+    "value": "Minute Fee"
+  },
+  {
+    "path": "monetization.secondFee",
+    "value": "Second Fee"
+  },
+  {
+    "path": "monetization.millisecondFee",
+    "value": "Millisecond Fee"
+  },
+  {
+    "path": "monetization.microsecondFee",
+    "value": "Microsecond Fee"
+  },
+  {
+    "path": "monetization.nanosecondFee",
+    "value": "Nanosecond Fee"
+  },
+  {
+    "path": "monetization.picosecondFee",
+    "value": "Picosecond Fee"
+  },
+  {
+    "path": "monetization.femtosecondFee",
+    "value": "Femtosecond Fee"
+  },
+  {
+    "path": "monetization.zeptosecondFee",
+    "value": "Zeptosecond Fee"
+  },
+  {
+    "path": "monetization.yoctosecondFee",
+    "value": "Yoctosecond Fee"
+  },
+  {
+    "path": "monetization.planckTimeFee",
+    "value": "Planck Time Fee"
+  },
+  {
+    "path": "notifications.follows",
+    "value": "Follows"
+  },
+  {
+    "path": "notifications.updates",
+    "value": "Updates"
+  },
+  {
+    "path": "notifications.weather",
+    "value": "Weather"
+  },
+  {
+    "path": "notifications.traffic",
+    "value": "Traffic"
+  },
+  {
+    "path": "notifications.fitness",
+    "value": "Fitness"
+  },
+  {
+    "path": "notifications.finance",
+    "value": "Finance"
+  },
+  {
+    "path": "notifications.shopping",
+    "value": "Shopping"
+  },
+  {
+    "path": "notifications.travel",
+    "value": "Travel"
+  },
+  {
+    "path": "notifications.work",
+    "value": "Work"
+  },
+  {
+    "path": "notifications.personal",
+    "value": "Personal"
+  },
+  {
+    "path": "notifications.friends",
+    "value": "Friends"
+  },
+  {
+    "path": "notifications.secret",
+    "value": "Secret"
+  },
+  {
+    "path": "notifications.hidden",
+    "value": "Hidden"
+  },
+  {
+    "path": "notifications.visible",
+    "value": "Visible"
+  },
+  {
+    "path": "notifications.deleted",
+    "value": "Deleted"
+  },
+  {
+    "path": "notifications.spam",
+    "value": "Spam"
+  },
+  {
+    "path": "notifications.trash",
+    "value": "Trash"
+  },
+  {
+    "path": "notifications.outbox",
+    "value": "Outbox"
+  },
+  {
+    "path": "notifications.sent",
+    "value": "Sent"
+  },
+  {
+    "path": "notifications.received",
+    "value": "Received"
+  },
+  {
+    "path": "notifications.error",
+    "value": "Error"
+  },
+  {
+    "path": "notifications.debug",
+    "value": "Debug"
+  },
+  {
+    "path": "notifications.trace",
+    "value": "Trace"
+  },
+  {
+    "path": "notifications.log",
+    "value": "Log"
+  },
+  {
+    "path": "notifications.critical",
+    "value": "Critical"
+  },
+  {
+    "path": "notifications.emergency",
+    "value": "Emergency"
+  },
+  {
+    "path": "notifications.normal",
+    "value": "Normal"
+  },
+  {
+    "path": "notifications.low",
+    "value": "Low"
+  },
+  {
+    "path": "notifications.high",
+    "value": "High"
+  },
+  {
+    "path": "notifications.urgent",
+    "value": "Urgent"
+  },
+  {
+    "path": "notifications.important",
+    "value": "Important"
+  },
+  {
+    "path": "notifications.minor",
+    "value": "Minor"
+  },
+  {
+    "path": "notifications.major",
+    "value": "Major"
+  },
+  {
+    "path": "notifications.blocker",
+    "value": "Blocker"
+  },
+  {
+    "path": "notifications.trivial",
+    "value": "Trivial"
+  },
+  {
+    "path": "notifications.cosmetic",
+    "value": "Cosmetic"
+  },
+  {
+    "path": "notifications.performance",
+    "value": "Performance"
+  },
+  {
+    "path": "notifications.securityIssue",
+    "value": "Security Issue"
+  },
+  {
+    "path": "notifications.bug",
+    "value": "Bug"
+  },
+  {
+    "path": "notifications.feature",
+    "value": "Feature"
+  },
+  {
+    "path": "notifications.enhancement",
+    "value": "Enhancement"
+  },
+  {
+    "path": "notifications.task",
+    "value": "Task"
+  },
+  {
+    "path": "notifications.initiative",
+    "value": "Initiative"
+  },
+  {
+    "path": "notifications.goal",
+    "value": "Goal"
+  },
+  {
+    "path": "notifications.objective",
+    "value": "Objective"
+  },
+  {
+    "path": "notifications.keyResult",
+    "value": "Key Result"
+  },
+  {
+    "path": "notifications.metric",
+    "value": "Metric"
+  },
+  {
+    "path": "notifications.kpi",
+    "value": "KPI"
+  },
+  {
+    "path": "notifications.okr",
+    "value": "OKR"
+  },
+  {
+    "path": "notifications.roi",
+    "value": "ROI"
+  },
+  {
+    "path": "notifications.ctr",
+    "value": "CTR"
+  },
+  {
+    "path": "notifications.cpc",
+    "value": "CPC"
+  },
+  {
+    "path": "notifications.cpm",
+    "value": "CPM"
+  },
+  {
+    "path": "notifications.cpa",
+    "value": "CPA"
+  },
+  {
+    "path": "notifications.cpl",
+    "value": "CPL"
+  },
+  {
+    "path": "notifications.cps",
+    "value": "CPS"
+  },
+  {
+    "path": "notifications.cpv",
+    "value": "CPV"
+  },
+  {
+    "path": "notifications.cpi",
+    "value": "CPI"
+  },
+  {
+    "path": "notifications.cpe",
+    "value": "CPE"
+  },
+  {
+    "path": "notifications.cpd",
+    "value": "CPD"
+  },
+  {
+    "path": "notifications.cpcv",
+    "value": "CPCV"
+  },
+  {
+    "path": "notifications.cpcl",
+    "value": "CPCL"
+  },
+  {
+    "path": "notifications.cpsv",
+    "value": "CPSV"
+  },
+  {
+    "path": "notifications.cpsi",
+    "value": "CPSI"
+  },
+  {
+    "path": "notifications.cpse",
+    "value": "CPSE"
+  },
+  {
+    "path": "notifications.cpsd",
+    "value": "CPSD"
+  },
+  {
+    "path": "notifications.cpsc",
+    "value": "CPSC"
+  },
+  {
+    "path": "notifications.cpsp",
+    "value": "CPSP"
+  },
+  {
+    "path": "notifications.cpsr",
+    "value": "CPSR"
+  },
+  {
+    "path": "notifications.cpst",
+    "value": "CPST"
+  },
+  {
+    "path": "notifications.cpsu",
+    "value": "CPSU"
+  },
+  {
+    "path": "notifications.cpsw",
+    "value": "CPSW"
+  },
+  {
+    "path": "notifications.cpsx",
+    "value": "CPSX"
+  },
+  {
+    "path": "notifications.cpsy",
+    "value": "CPSY"
+  },
+  {
+    "path": "notifications.cpsz",
+    "value": "CPSZ"
+  },
+  {
+    "path": "settings.tShirt",
+    "value": "T-Shirt"
+  },
+  {
+    "path": "settings.cpu",
+    "value": "CPU"
+  },
+  {
+    "path": "settings.gpu",
+    "value": "GPU"
+  },
+  {
+    "path": "settings.apu",
+    "value": "APU"
+  },
+  {
+    "path": "settings.dsp",
+    "value": "DSP"
+  },
+  {
+    "path": "settings.fpga",
+    "value": "FPGA"
+  },
+  {
+    "path": "settings.asic",
+    "value": "ASIC"
+  },
+  {
+    "path": "settings.soc",
+    "value": "SoC"
+  },
+  {
+    "path": "editProfile.urlPlaceholder",
+    "value": "URL (https://...)"
+  },
+  {
+    "path": "screens.search-results.tabReels",
+    "value": "Reels"
+  },
+  {
+    "path": "screens.report.reasonSpam",
+    "value": "Spam"
+  },
+  {
+    "path": "screens.report.errorTitle",
+    "value": "Error"
+  },
+  {
+    "path": "screens.playlist.videos",
+    "value": "video"
+  },
+  {
+    "path": "screens.playlist.urlPlaceholder",
+    "value": "URL (https://...)"
+  },
+  {
+    "path": "screens.saved.tabReels",
+    "value": "Reels"
+  },
+  {
+    "path": "screens.saved.noThreads",
+    "value": "No saved threads"
+  },
+  {
+    "path": "screens.saved.noThreadsSubtitle",
+    "value": "Threads you save will appear here"
+  },
+  {
+    "path": "screens.saved.noReels",
+    "value": "No saved reels"
+  },
+  {
+    "path": "screens.saved.noReelsSubtitle",
+    "value": "Reels you save will appear here"
+  },
+  {
+    "path": "screens.theme-settings.lightDesc",
+    "value": "Light background with dark text"
+  },
+  {
+    "path": "screens.theme-settings.systemDesc",
+    "value": "Follow your device settings"
+  },
+  {
+    "path": "screens.theme-settings.note",
+    "value": "Some screens may require a restart to fully apply"
+  },
+  {
+    "path": "screens.hashtag.posts",
+    "value": "posts"
+  },
+  {
+    "path": "screens.hashtag.emptyTitle",
+    "value": "No posts yet"
+  },
+  {
+    "path": "screens.live.liveLabel",
+    "value": "LIVE"
+  },
+  {
+    "path": "screens.live.audioSpaceDesc",
+    "value": "Live conversation in progress"
+  },
+  {
+    "path": "screens.live.watching",
+    "value": "watching"
+  },
+  {
+    "path": "screens.live.hostedBy",
+    "value": "Hosted by"
+  },
+  {
+    "path": "screens.live.lowerHand",
+    "value": "Lower hand"
+  },
+  {
+    "path": "screens.live.raiseHand",
+    "value": "Raise hand"
+  },
+  {
+    "path": "screens.live.speakers",
+    "value": "Speakers"
+  },
+  {
+    "path": "screens.live.raisedHands",
+    "value": "Raised hands"
+  },
+  {
+    "path": "screens.live.liveChat",
+    "value": "Live Chat"
+  },
+  {
+    "path": "screens.live.sendMessage",
+    "value": "Send a message..."
+  },
+  {
+    "path": "screens.live.host",
+    "value": "Host"
+  },
+  {
+    "path": "screens.live.coHost",
+    "value": "Co-host"
+  },
+  {
+    "path": "screens.live.speaker",
+    "value": "Speaker"
+  },
+  {
+    "path": "screens.live.listener",
+    "value": "Listener"
+  },
+  {
+    "path": "screens.live.leaveStream",
+    "value": "Leave Stream"
+  },
+  {
+    "path": "screens.live.streamEnded",
+    "value": "Stream Ended"
+  },
+  {
+    "path": "screens.live.streamEndedDesc",
+    "value": "This live stream has ended"
+  },
+  {
+    "path": "screens.live.errorSubtitle",
+    "value": "Please try again later"
+  },
+  {
+    "path": "screens.live.joinError",
+    "value": "Failed to join live stream"
+  },
+  {
+    "path": "screens.live.shareMessage",
+    "value": "Watch {{title}} live on Mizanly!"
+  },
+  {
+    "path": "screens.live.errorSharing",
+    "value": "Error sharing"
+  },
+  {
+    "path": "screens.live.inviteToSpeak",
+    "value": "Invite to Speak"
+  },
+  {
+    "path": "screens.live.inviteToSpeakDesc",
+    "value": "Invite this user to become a speaker?"
+  },
+  {
+    "path": "screens.live.removeParticipant",
+    "value": "Remove Participant"
+  },
+  {
+    "path": "screens.live.wantsToSpeak",
+    "value": "Wants to speak"
+  },
+  {
+    "path": "screens.live.notFoundTitle",
+    "value": "Stream not found"
+  },
+  {
+    "path": "screens.live.notFoundSubtitle",
+    "value": "This live stream may have ended or been removed"
+  },
+  {
+    "path": "screens.live.welcomeToStream",
+    "value": "Welcome to the stream!"
+  },
+  {
+    "path": "screens.majlis-lists.title",
+    "value": "Majlis Lists"
+  },
+  {
+    "path": "screens.majlis-lists.publicList",
+    "value": "Public List"
+  },
+  {
+    "path": "screens.majlis-lists.creating",
+    "value": "Creating..."
+  },
+  {
+    "path": "screens.majlis-lists.members",
+    "value": "members"
+  },
+  {
+    "path": "screens.majlis-lists.emptyTitle",
+    "value": "No lists yet"
+  },
+  {
+    "path": "screens.majlis-lists.errorCreate",
+    "value": "Failed to create list"
+  },
+  {
+    "path": "screens.majlis-lists.errorDelete",
+    "value": "Failed to delete list"
+  },
+  {
+    "path": "screens.majlis-lists.requiredTitle",
+    "value": "Name Required"
+  },
+  {
+    "path": "screens.majlis-lists.requiredName",
+    "value": "Please enter a name for the list"
+  },
+  {
+    "path": "screens.majlis-lists.namePlaceholder",
+    "value": "e.g. Friends, Tech news"
+  },
+  {
+    "path": "screens.majlis-lists.descPlaceholder",
+    "value": "What's this list about?"
+  },
+  {
+    "path": "screens.manage-broadcast.title",
+    "value": "Manage Broadcast"
+  },
+  {
+    "path": "screens.manage-broadcast.subscribers",
+    "value": "Subscribers"
+  },
+  {
+    "path": "screens.manage-broadcast.removeAdmin",
+    "value": "Remove Admin"
+  },
+  {
+    "path": "screens.manage-broadcast.removeAdminConfirm",
+    "value": "Remove {{name}} as admin?"
+  },
+  {
+    "path": "screens.manage-broadcast.makeAdmin",
+    "value": "Make Admin"
+  },
+  {
+    "path": "screens.manage-broadcast.removeSubscriber",
+    "value": "Remove Subscriber"
+  },
+  {
+    "path": "screens.manage-broadcast.removeSubscriberConfirm",
+    "value": "Remove {{name}} from channel?"
+  },
+  {
+    "path": "screens.manage-broadcast.emptySubscribers",
+    "value": "No subscribers yet"
+  },
+  {
+    "path": "screens.manage-broadcast.emptySubscribersSubtitle",
+    "value": "Share your channel link"
+  },
+  {
+    "path": "screens.manage-broadcast.emptyAdmins",
+    "value": "No admins yet"
+  },
+  {
+    "path": "screens.manage-broadcast.emptyAdminsSubtitle",
+    "value": "Promote users to admin"
+  },
+  {
+    "path": "screens.manage-broadcast.promotedSuccess",
+    "value": "User promoted to Admin"
+  },
+  {
+    "path": "screens.manage-broadcast.demotedSuccess",
+    "value": "User demoted from Admin"
+  },
+  {
+    "path": "screens.manage-broadcast.removedSuccess",
+    "value": "Subscriber removed"
+  },
+  {
+    "path": "screens.manage-broadcast.manageSubscriber",
+    "value": "Manage Subscriber"
+  },
+  {
+    "path": "screens.manage-broadcast.manageAdmin",
+    "value": "Manage Admin"
+  },
+  {
+    "path": "screens.manage-broadcast.manage",
+    "value": "Manage {{name}}"
+  },
+  {
+    "path": "screens.manage-broadcast.manageChannel",
+    "value": "Manage {{name}}"
+  },
+  {
+    "path": "screens.muted.emptyTitle",
+    "value": "No muted accounts"
+  },
+  {
+    "path": "screens.restricted.title",
+    "value": "Restricted Accounts"
+  },
+  {
+    "path": "screens.restricted.emptyTitle",
+    "value": "No restricted accounts"
+  },
+  {
+    "path": "screens.restricted.info",
+    "value": "Restricted accounts can see your profile but their interactions are hidden from you"
+  },
+  {
+    "path": "screens.mutual-followers.title",
+    "value": "Followers you know"
+  },
+  {
+    "path": "screens.mutual-followers.emptyTitle",
+    "value": "No mutual followers"
+  },
+  {
+    "path": "screens.mutual-followers.emptySubtitle",
+    "value": "You don't have any followers in common"
+  },
+  {
+    "path": "screens.my-reports.statusReviewing",
+    "value": "Reviewing"
+  },
+  {
+    "path": "screens.my-reports.statusResolved",
+    "value": "Resolved"
+  },
+  {
+    "path": "screens.my-reports.statusDismissed",
+    "value": "Dismissed"
+  },
+  {
+    "path": "screens.my-reports.targetReel",
+    "value": "Reel"
+  },
+  {
+    "path": "screens.my-reports.targetVideo",
+    "value": "Video"
+  },
+  {
+    "path": "screens.my-reports.targetComment",
+    "value": "Comment"
+  },
+  {
+    "path": "screens.my-reports.emptyTitle",
+    "value": "No reports"
+  },
+  {
+    "path": "screens.my-reports.emptySubtitle",
+    "value": "Reports you submit will appear here"
+  },
+  {
+    "path": "screens.pinned-messages.title",
+    "value": "Pinned Messages"
+  },
+  {
+    "path": "screens.pinned-messages.emptyTitle",
+    "value": "No pinned messages"
+  },
+  {
+    "path": "screens.pinned-messages.emptySubtitle",
+    "value": "Pin important messages to find them easily"
+  },
+  {
+    "path": "screens.playlists.emptyTitle",
+    "value": "No playlists"
+  },
+  {
+    "path": "screens.playlists.emptySubtitle",
+    "value": "Playlists will appear here"
+  },
+  {
+    "path": "screens.qr-code.shareHint",
+    "value": "Share your QR code for others to find you"
+  },
+  {
+    "path": "screens.qr-code.saveHint",
+    "value": "Save QR code to your device"
+  },
+  {
+    "path": "screens.qr-scanner.cameraRequiredDesc",
+    "value": "Please allow camera access to scan QR codes"
+  },
+  {
+    "path": "screens.qr-scanner.scannedSuccess",
+    "value": "Scanned successfully"
+  },
+  {
+    "path": "screens.qr-scanner.invalidCode",
+    "value": "Invalid QR code"
+  },
+  {
+    "path": "screens.qr-scanner.openSettings",
+    "value": "Open Settings"
+  },
+  {
+    "path": "screens.reports-detail.submitting",
+    "value": "Submitting..."
+  },
+  {
+    "path": "screens.reports-detail.errorTitle",
+    "value": "Error"
+  },
+  {
+    "path": "screens.reports-detail.reasonSpam",
+    "value": "Spam"
+  },
+  {
+    "path": "screens.save-to-playlist.title",
+    "value": "Save to playlist"
+  },
+  {
+    "path": "screens.save-to-playlist.emptyTitle",
+    "value": "No playlists yet"
+  },
+  {
+    "path": "screens.schedule-live.title",
+    "value": "Schedule Live"
+  },
+  {
+    "path": "screens.schedule-live.titleLabel",
+    "value": "Title *"
+  },
+  {
+    "path": "screens.schedule-live.thumbnailLabel",
+    "value": "Thumbnail (optional)"
+  },
+  {
+    "path": "screens.schedule-live.scheduleTimeLabel",
+    "value": "Schedule Time *"
+  },
+  {
+    "path": "screens.schedule-live.scheduling",
+    "value": "Scheduling…"
+  },
+  {
+    "path": "screens.schedule-live.scheduleLive",
+    "value": "Schedule Live"
+  },
+  {
+    "path": "screens.schedule-live.day",
+    "value": "Day"
+  },
+  {
+    "path": "screens.schedule-live.hour",
+    "value": "Hour"
+  },
+  {
+    "path": "screens.schedule-live.minute",
+    "value": "Minute"
+  },
+  {
+    "path": "screens.schedule-live.uploadingThumbnail",
+    "value": "Uploading thumbnail..."
+  },
+  {
+    "path": "screens.schedule-live.successTitle",
+    "value": "Scheduled!"
+  },
+  {
+    "path": "screens.schedule-live.successMessage",
+    "value": "Your live stream has been scheduled"
+  },
+  {
+    "path": "screens.schedule-live.errorTitle",
+    "value": "Error"
+  },
+  {
+    "path": "screens.schedule-live.errorSchedule",
+    "value": "Failed to schedule live stream. Please try again."
+  },
+  {
+    "path": "screens.schedule-live.titlePlaceholder",
+    "value": "What are you streaming?"
+  },
+  {
+    "path": "screens.schedule-live.descriptionPlaceholder",
+    "value": "Tell viewers what your stream is about"
+  },
+  {
+    "path": "screens.schedule-live.thumbnailHint",
+    "value": "Recommended: 16:9 ratio"
+  },
+  {
+    "path": "screens.schedule-post.title",
+    "value": "Schedule Post"
+  },
+  {
+    "path": "screens.schedule-post.yourName",
+    "value": "Your Name"
+  },
+  {
+    "path": "screens.schedule-post.quickPick",
+    "value": "Quick Pick"
+  },
+  {
+    "path": "screens.schedule-post.thisWeekend",
+    "value": "This Weekend"
+  },
+  {
+    "path": "screens.schedule-post.nextWeek",
+    "value": "Next Week"
+  },
+  {
+    "path": "screens.schedule-post.scheduledFor",
+    "value": "Scheduled for:"
+  },
+  {
+    "path": "screens.schedule-post.highEngagement",
+    "value": "high engagement"
+  },
+  {
+    "path": "screens.schedule-post.willPostTo",
+    "value": "Will post to: {{space}}"
+  },
+  {
+    "path": "screens.schedule-post.reminderNote",
+    "value": "You'll receive a reminder 30 minutes before"
+  },
+  {
+    "path": "screens.share-profile.copied",
+    "value": "Copied!"
+  },
+  {
+    "path": "screens.share-profile.scanQR",
+    "value": "Scan QR"
+  },
+  {
+    "path": "screens.share-profile.hint",
+    "value": "Share your profile with friends"
+  },
+  {
+    "path": "screens.share-profile.profileUnavailable",
+    "value": "Profile unavailable"
+  },
+  {
+    "path": "screens.share-profile.profileUnavailableDesc",
+    "value": "Unable to load your profile"
+  },
+  {
+    "path": "screens.sound.title",
+    "value": "Sound"
+  },
+  {
+    "path": "screens.sound.reels",
+    "value": "reels"
+  },
+  {
+    "path": "screens.sound.plays",
+    "value": "plays"
+  },
+  {
+    "path": "screens.sound.useSound",
+    "value": "Use this sound"
+  },
+  {
+    "path": "screens.sound.noReels",
+    "value": "No reels yet"
+  },
+  {
+    "path": "screens.sound.notFoundSubtitle",
+    "value": "This audio track may have been removed or is unavailable"
+  },
+  {
+    "path": "screens.starred-messages.title",
+    "value": "Starred Messages"
+  },
+  {
+    "path": "screens.starred-messages.starred",
+    "value": "Starred"
+  },
+  {
+    "path": "screens.starred-messages.emptyTitle",
+    "value": "No starred messages"
+  },
+  {
+    "path": "screens.starred-messages.emptySubtitle",
+    "value": "Star important messages to find them easily"
+  },
+  {
+    "path": "screens.sticker-browser.title",
+    "value": "Stickers"
+  },
+  {
+    "path": "screens.sticker-browser.searchPlaceholder",
+    "value": "Search sticker packs..."
+  },
+  {
+    "path": "screens.sticker-browser.featuredPacks",
+    "value": "Featured Packs"
+  },
+  {
+    "path": "screens.sticker-browser.stickers",
+    "value": "stickers"
+  },
+  {
+    "path": "screens.sticker-browser.downloads",
+    "value": "downloads"
+  },
+  {
+    "path": "screens.trending-audio.title",
+    "value": "Trending Audio"
+  },
+  {
+    "path": "screens.trending-audio.use",
+    "value": "Use"
+  },
+  {
+    "path": "screens.trending-audio.reels",
+    "value": "reels"
+  },
+  {
+    "path": "screens.trending-audio.emptyTitle",
+    "value": "No trending audio"
+  },
+  {
+    "path": "screens.watch-history.title",
+    "value": "Watch History"
+  },
+  {
+    "path": "screens.watch-history.clearConfirmMessage",
+    "value": "This will remove all items from your watch history."
+  },
+  {
+    "path": "screens.watch-history.emptyTitle",
+    "value": "No watch history"
+  },
+  {
+    "path": "screens.watch-history.emptySubtitle",
+    "value": "Videos you watch will appear here"
+  },
+  {
+    "path": "screens.islamicCalendar.sun",
+    "value": "Sun"
+  },
+  {
+    "path": "screens.islamicCalendar.mon",
+    "value": "Mon"
+  },
+  {
+    "path": "screens.islamicCalendar.tue",
+    "value": "Tue"
+  },
+  {
+    "path": "screens.islamicCalendar.wed",
+    "value": "Wed"
+  },
+  {
+    "path": "screens.islamicCalendar.thu",
+    "value": "Thu"
+  },
+  {
+    "path": "screens.islamicCalendar.fri",
+    "value": "Fri"
+  },
+  {
+    "path": "screens.islamicCalendar.sat",
+    "value": "Sat"
+  },
+  {
+    "path": "screens.islamicCalendar.currentHijriSub",
+    "value": "Hijri Date"
+  },
+  {
+    "path": "screens.islamicCalendar.currentGregorianDate",
+    "value": "Gregorian Date"
+  },
+  {
+    "path": "screens.islamicCalendar.legendEid",
+    "value": "Eid"
+  },
+  {
+    "path": "screens.islamicCalendar.legendImportant",
+    "value": "Important"
+  },
+  {
+    "path": "screens.islamicCalendar.upcomingEvents",
+    "value": "Upcoming Events"
+  },
+  {
+    "path": "screens.islamicCalendar.badgeEid",
+    "value": "EID"
+  },
+  {
+    "path": "screens.islamicCalendar.badgeEvent",
+    "value": "EVENT"
+  },
+  {
+    "path": "screens.islamicCalendar.islamicNewYear",
+    "value": "Islamic New Year"
+  },
+  {
+    "path": "screens.islamicCalendar.israAndMiraj",
+    "value": "Isra and Mi'raj"
+  },
+  {
+    "path": "screens.islamicCalendar.firstDayOfRamadan",
+    "value": "First Day of Ramadan"
+  },
+  {
+    "path": "screens.islamicCalendar.laylatAlQadr",
+    "value": "Laylat al-Qadr"
+  },
+  {
+    "path": "screens.islamicCalendar.descIslamicNewYear",
+    "value": "The first day of Muharram marks the beginning of the Islamic New Year. A time for reflection and gratitude."
+  },
+  {
+    "path": "screens.islamicCalendar.descDayOfAshura",
+    "value": "The 10th of Muharram. A day of fasting and remembrance, commemorating the salvation of Prophet Musa (AS)."
+  },
+  {
+    "path": "screens.islamicCalendar.descIsraAndMiraj",
+    "value": "The Night Journey and Ascension of Prophet Muhammad (PBUH) from Makkah to Jerusalem and to the heavens."
+  },
+  {
+    "path": "screens.islamicCalendar.descFirstDayOfRamadan",
+    "value": "The beginning of the blessed month of fasting, prayer, and spiritual reflection."
+  },
+  {
+    "path": "screens.islamicCalendar.descLaylatAlQadr",
+    "value": "The Night of Decree, better than a thousand months. Seek it in the last ten nights of Ramadan."
+  },
+  {
+    "path": "screens.islamicCalendar.descEidAlFitr",
+    "value": "The Festival of Breaking the Fast. A joyous celebration marking the end of Ramadan."
+  },
+  {
+    "path": "screens.islamicCalendar.descDayOfArafah",
+    "value": "The 9th of Dhu al-Hijjah. Standing at Arafah is the essence of Hajj. Fasting on this day expiates sins."
+  },
+  {
+    "path": "screens.islamicCalendar.descEidAlAdha",
+    "value": "The Festival of Sacrifice. Commemorating Prophet Ibrahim's (AS) willingness to sacrifice his son."
+  },
+  {
+    "path": "createVideo.selectThumbnail",
+    "value": "Select thumbnail"
+  },
+  {
+    "path": "qibla.bearing",
+    "value": "{{degrees}}° {{direction}}"
+  },
+  {
+    "path": "qibla.permissionNeeded",
+    "value": "Location permission is required for Qibla direction"
+  },
+  {
+    "path": "qibla.north",
+    "value": "N"
+  },
+  {
+    "path": "qibla.south",
+    "value": "S"
+  },
+  {
+    "path": "qibla.east",
+    "value": "E"
+  },
+  {
+    "path": "qibla.west",
+    "value": "W"
+  },
+  {
+    "path": "qibla.northeast",
+    "value": "NE"
+  },
+  {
+    "path": "qibla.southeast",
+    "value": "SE"
+  },
+  {
+    "path": "qibla.southwest",
+    "value": "SW"
+  },
+  {
+    "path": "qibla.northwest",
+    "value": "NW"
+  },
+  {
+    "path": "nasheed.heading",
+    "value": "Listen Without Music"
+  },
+  {
+    "path": "nasheed.description",
+    "value": "When enabled, background music in reels and stories will be replaced with Islamic nasheeds. Perfect for users who prefer music-free content."
+  },
+  {
+    "path": "nasheed.sampleTitle",
+    "value": "Sample Nasheeds"
+  },
+  {
+    "path": "nasheed.info",
+    "value": "Music in reels and stories will be replaced with nasheeds when available"
+  },
+  {
+    "path": "eidCards.title",
+    "value": "Islamic Holiday Cards"
+  },
+  {
+    "path": "eidCards.shareAsPost",
+    "value": "Share as Post"
+  },
+  {
+    "path": "quranRoom.title",
+    "value": "Quran Reading Room"
+  },
+  {
+    "path": "quranRoom.showTranslation",
+    "value": "Show Translation"
+  },
+  {
+    "path": "quranRoom.nextVerse",
+    "value": "Next Verse"
+  },
+  {
+    "path": "quranRoom.prevVerse",
+    "value": "Previous Verse"
+  },
+  {
+    "path": "quranPlan.currentJuz",
+    "value": "Juz {{juz}}"
+  },
+  {
+    "path": "quranPlan.currentPage",
+    "value": "Page {{page}}"
+  },
+  {
+    "path": "quranPlan.markReading",
+    "value": "Mark Today's Reading"
+  },
+  {
+    "path": "quranPlan.noHistory",
+    "value": "No completed plans yet"
+  },
+  {
+    "path": "quranPlan.startPlan",
+    "value": "Start Plan"
+  },
+  {
+    "path": "hajj.startTracker",
+    "value": "Start Hajj Tracker"
+  },
+  {
+    "path": "hajj.shareProgress",
+    "value": "Share Progress"
+  },
+  {
+    "path": "hajj.reset",
+    "value": "Reset Tracker"
+  },
+  {
+    "path": "charity.nearbyMosques",
+    "value": "Nearby Mosques"
+  },
+  {
+    "path": "charity.locationCoords",
+    "value": "Lat: {{lat}}, Lng: {{lng}}"
+  },
+  {
+    "path": "charity.campaign",
+    "value": "Campaign"
+  },
+  {
+    "path": "charity.donors",
+    "value": "{{count}} donors"
+  },
+  {
+    "path": "charity.raised",
+    "value": "{{amount}} raised of {{goal}}"
+  },
+  {
+    "path": "charity.myDonations",
+    "value": "My Donations"
+  },
+  {
+    "path": "charity.noDonations",
+    "value": "No donations yet"
+  },
+  {
+    "path": "charity.success",
+    "value": "JazakAllahu Khairan"
+  },
+  {
+    "path": "charity.successMessage",
+    "value": "Your donation has been received"
+  },
+  {
+    "path": "tafsir.share",
+    "value": "Share Tafsir"
+  },
+  {
+    "path": "scholar.apply",
+    "value": "Submit Application"
+  },
+  {
+    "path": "scholar.badgePreview",
+    "value": "Your Scholar Badge"
+  },
+  {
+    "path": "contentFilter.strictness",
+    "value": "Filter Level"
+  },
+  {
+    "path": "contentFilter.moderateDesc",
+    "value": "Hides explicitly non-Islamic content"
+  },
+  {
+    "path": "contentFilter.strictDesc",
+    "value": "Hides music, mixed-gender, and questionable content"
+  },
+  {
+    "path": "contentFilter.familyDesc",
+    "value": "Strictest — safe for all ages"
+  },
+  {
+    "path": "contentFilter.hideMusic",
+    "value": "Hide music content"
+  },
+  {
+    "path": "contentFilter.hideMixedGender",
+    "value": "Hide mixed-gender content"
+  },
+  {
+    "path": "contentFilter.saved",
+    "value": "Settings saved"
+  },
+  {
+    "path": "dhikr.progress",
+    "value": "{{current}} / {{target}}"
+  },
+  {
+    "path": "dhikr.leaderboard",
+    "value": "Top Contributors"
+  },
+  {
+    "path": "dhikr.streak",
+    "value": "{{count}} day streak"
+  },
+  {
+    "path": "dhikr.todayCount",
+    "value": "{{count}} today"
+  },
+  {
+    "path": "dhikr.shareProgress",
+    "value": "Share Progress"
+  },
+  {
+    "path": "dhikr.noActive",
+    "value": "No active challenges"
+  },
+  {
+    "path": "dhikr.stats",
+    "value": "Your Stats"
+  },
+  {
+    "path": "biometric.faceId",
+    "value": "Face ID"
+  },
+  {
+    "path": "biometric.notEnrolled",
+    "value": "No biometrics enrolled. Set up Face ID or fingerprint in device settings."
+  },
+  {
+    "path": "biometric.unlockPrompt",
+    "value": "Unlock Mizanly"
+  },
+  {
+    "path": "undoSend.sending",
+    "value": "Sending message..."
+  },
+  {
+    "path": "undoSend.cancelled",
+    "value": "Message cancelled"
+  },
+  {
+    "path": "dmNotes.placeholder",
+    "value": "Share a thought..."
+  },
+  {
+    "path": "dmNotes.post",
+    "value": "Post Note"
+  },
+  {
+    "path": "dmNotes.update",
+    "value": "Update Note"
+  },
+  {
+    "path": "dmNotes.currentNote",
+    "value": "Your current note"
+  },
+  {
+    "path": "dmNotes.noNote",
+    "value": "No active note"
+  },
+  {
+    "path": "dmNotes.posted",
+    "value": "Note posted!"
+  },
+  {
+    "path": "dmNotes.deleted",
+    "value": "Note deleted"
+  },
+  {
+    "path": "hideReply.hide",
+    "value": "Hide reply"
+  },
+  {
+    "path": "hideReply.hidden",
+    "value": "Reply hidden"
+  },
+  {
+    "path": "hideReply.unhidden",
+    "value": "Reply visible again"
+  },
+  {
+    "path": "muteConversation.mute",
+    "value": "Mute Conversation"
+  },
+  {
+    "path": "muteConversation.unmute",
+    "value": "Unmute Conversation"
+  },
+  {
+    "path": "crossPost.selectSpaces",
+    "value": "Select spaces to share to"
+  },
+  {
+    "path": "crossPost.bakra",
+    "value": "Bakra (Reels)"
+  },
+  {
+    "path": "quietMode.startTime",
+    "value": "Start Time"
+  },
+  {
+    "path": "quietMode.autoReplyHint",
+    "value": "Sent to people who message you"
+  },
+  {
+    "path": "quietMode.infoTitle",
+    "value": "How it works"
+  },
+  {
+    "path": "quietMode.infoBody",
+    "value": "When Quiet Mode is on, you won't receive push notifications. People who message you will see your auto-reply."
+  },
+  {
+    "path": "quietMode.active",
+    "value": "Quiet Mode is on"
+  },
+  {
+    "path": "quietMode.scheduled",
+    "value": "Scheduled: {{start}} - {{end}}"
+  },
+  {
+    "path": "screenTime.sessions",
+    "value": "Sessions"
+  },
+  {
+    "path": "screenTime.noLimit",
+    "value": "No limit"
+  },
+  {
+    "path": "screenTime.setLimit",
+    "value": "Set Daily Limit"
+  },
+  {
+    "path": "screenTime.limitReached",
+    "value": "You've reached your daily limit"
+  },
+  {
+    "path": "screenTime.takeBreak",
+    "value": "Take a Break Reminders"
+  },
+  {
+    "path": "screenTime.takeBreakHint",
+    "value": "Get reminded when you've been scrolling too long"
+  },
+  {
+    "path": "screenTime.hours",
+    "value": "{{count}}h"
+  },
+  {
+    "path": "screenTime.minutes",
+    "value": "{{count}}m"
+  },
+  {
+    "path": "collabPlaylist.invitePlaceholder",
+    "value": "Search by username..."
+  },
+  {
+    "path": "collabPlaylist.editor",
+    "value": "Editor"
+  },
+  {
+    "path": "collabPlaylist.removeConfirm",
+    "value": "Remove {{name}} from playlist?"
+  },
+  {
+    "path": "collabPlaylist.leave",
+    "value": "Leave Playlist"
+  },
+  {
+    "path": "collabPlaylist.leaveConfirm",
+    "value": "Leave this collaborative playlist?"
+  },
+  {
+    "path": "collabPlaylist.noCollaborators",
+    "value": "No collaborators yet"
+  },
+  {
+    "path": "collabPlaylist.noCollaboratorsSubtitle",
+    "value": "Invite friends to add videos together"
+  },
+  {
+    "path": "channel.subscribers",
+    "value": "Subscribers"
+  },
+  {
+    "path": "channel.totalViews",
+    "value": "Total views"
+  },
+  {
+    "path": "channel.reportChannel",
+    "value": "Report Channel"
+  },
+  {
+    "path": "channel.shareChannel",
+    "value": "Share Channel"
+  },
+  {
+    "path": "channelTrailer.watchTrailer",
+    "value": "Watch Trailer"
+  },
+  {
+    "path": "channelTrailer.subscribeToUnlock",
+    "value": "Subscribe to unlock all content"
+  },
+  {
+    "path": "channelTrailer.setTrailer",
+    "value": "Set Channel Trailer"
+  },
+  {
+    "path": "channelTrailer.removeTrailer",
+    "value": "Remove Trailer"
+  },
+  {
+    "path": "channelTrailer.selectVideo",
+    "value": "Select a video as your channel trailer"
+  },
+  {
+    "path": "downloads.downloading",
+    "value": "Downloading"
+  },
+  {
+    "path": "downloads.paused",
+    "value": "Paused"
+  },
+  {
+    "path": "downloads.playOffline",
+    "value": "Play Offline"
+  },
+  {
+    "path": "shareReceive.majlis",
+    "value": "Majlis — Discussion"
+  },
+  {
+    "path": "shareReceive.minbar",
+    "value": "Minbar — Long Video"
+  },
+  {
+    "path": "shareReceive.preview",
+    "value": "Shared Content"
+  },
+  {
+    "path": "shareReceive.success",
+    "value": "Shared successfully!"
+  },
+  {
+    "path": "widgets.prayerTimesDesc",
+    "value": "Shows next prayer time with countdown"
+  },
+  {
+    "path": "widgets.unreadDesc",
+    "value": "Shows unread message and notification counts"
+  },
+  {
+    "path": "widgets.nextPrayer",
+    "value": "Next: {{prayer}}"
+  },
+  {
+    "path": "miniPlayer.paused",
+    "value": "Paused"
+  },
+  {
+    "path": "parentalControls.confirmPinSubtitle",
+    "value": "Re-enter your 4-digit PIN to confirm"
+  },
+  {
+    "path": "parentalControls.pinMismatch",
+    "value": "PIN Mismatch"
+  },
+  {
+    "path": "parentalControls.pinMismatchMessage",
+    "value": "PINs do not match. Please try again."
+  },
+  {
+    "path": "parentalControls.linkedAccounts",
+    "value": "Linked Accounts"
+  },
+  {
+    "path": "parentalControls.noChildren",
+    "value": "No Linked Accounts"
+  },
+  {
+    "path": "parentalControls.noChildrenSubtitle",
+    "value": "Link a child account to set up parental controls"
+  },
+  {
+    "path": "parentalControls.linkChildAccount",
+    "value": "Link Child Account"
+  },
+  {
+    "path": "parentalControls.linkAccount",
+    "value": "Link Account"
+  },
+  {
+    "path": "parentalControls.linkConfirmHint",
+    "value": "This will enable parental controls on their account. You can manage their content restrictions, screen time, and activity."
+  },
+  {
+    "path": "parentalControls.searchPlaceholder",
+    "value": "Search by username..."
+  },
+  {
+    "path": "parentalControls.noResults",
+    "value": "No Users Found"
+  },
+  {
+    "path": "parentalControls.searchHint",
+    "value": "Search for a User"
+  },
+  {
+    "path": "parentalControls.restrictedMode",
+    "value": "Restricted Mode"
+  },
+  {
+    "path": "parentalControls.dmDisabled",
+    "value": "Disabled"
+  },
+  {
+    "path": "parentalControls.activityDigest",
+    "value": "Weekly Activity Digest"
+  },
+  {
+    "path": "parentalControls.weeklyReport",
+    "value": "Weekly Activity Report"
+  },
+  {
+    "path": "parentalControls.unlinkAccount",
+    "value": "Unlink Account"
+  },
+  {
+    "path": "premiere.scheduledFor",
+    "value": "Premiering {{date}}"
+  },
+  {
+    "path": "premiere.countdown",
+    "value": "Premiering in"
+  },
+  {
+    "path": "premiere.removeReminder",
+    "value": "Remove Reminder"
+  },
+  {
+    "path": "premiere.viewers",
+    "value": "{{count}} waiting"
+  },
+  {
+    "path": "premiere.themeEmerald",
+    "value": "Emerald"
+  },
+  {
+    "path": "premiere.themeGold",
+    "value": "Gold"
+  },
+  {
+    "path": "premiere.themeCosmic",
+    "value": "Cosmic"
+  },
+  {
+    "path": "premiere.enableChat",
+    "value": "Live Chat"
+  },
+  {
+    "path": "premiere.confirm",
+    "value": "Your video will premiere on {{date}} at {{time}}"
+  },
+  {
+    "path": "clips.myClips",
+    "value": "My Clips"
+  },
+  {
+    "path": "clips.preview",
+    "value": "Preview Clip"
+  },
+  {
+    "path": "clips.share",
+    "value": "Share Clip"
+  },
+  {
+    "path": "clips.clipsCount",
+    "value": "{{count}} clips"
+  },
+  {
+    "path": "clips.noClips",
+    "value": "No clips yet"
+  },
+  {
+    "path": "endScreens.typeWatchNext",
+    "value": "Watch Next"
+  },
+  {
+    "path": "endScreens.watchNext",
+    "value": "Watch Next"
+  },
+  {
+    "path": "endScreens.labelRequired",
+    "value": "Every end screen needs a label"
+  },
+  {
+    "path": "endScreens.targetId",
+    "value": "Target ID"
+  },
+  {
+    "path": "endScreens.url",
+    "value": "URL"
+  },
+  {
+    "path": "endScreens.timing",
+    "value": "Show at"
+  },
+  {
+    "path": "endScreens.decrease",
+    "value": "Decrease"
+  },
+  {
+    "path": "endScreens.increase",
+    "value": "Increase"
+  },
+  {
+    "path": "endScreens.secondsBefore",
+    "value": "{{seconds}}s before end"
+  },
+  {
+    "path": "endScreens.save",
+    "value": "Save End Screens"
+  },
+  {
+    "path": "endScreens.deleteAll",
+    "value": "Remove All"
+  },
+  {
+    "path": "endScreens.empty",
+    "value": "No end screens"
+  },
+  {
+    "path": "ai.tabs.ideas",
+    "value": "Ideas"
+  },
+  {
+    "path": "ai.suggestions",
+    "value": "Suggestions"
+  },
+  {
+    "path": "ai.translating",
+    "value": "Translating..."
+  },
+  {
+    "path": "ai.translatedFrom",
+    "value": "Translated from {{language}}"
+  },
+  {
+    "path": "ai.showOriginal",
+    "value": "Show Original"
+  },
+  {
+    "path": "ai.selectLanguage",
+    "value": "Select Language"
+  },
+  {
+    "path": "ai.refreshReplies",
+    "value": "Refresh suggestions"
+  },
+  {
+    "path": "ai.summary",
+    "value": "TLDR"
+  },
+  {
+    "path": "ai.showFull",
+    "value": "Show Full"
+  },
+  {
+    "path": "ai.spaceRecommendation",
+    "value": "Recommended: {{space}}"
+  },
+  {
+    "path": "ai.spaceReason",
+    "value": "{{reason}}"
+  },
+  {
+    "path": "ai.moderate.suggestion",
+    "value": "Suggestion: {{text}}"
+  },
+  {
+    "path": "ai.avatar.currentPhoto",
+    "value": "Your Current Photo"
+  },
+  {
+    "path": "ai.avatar.styleAnime",
+    "value": "Anime"
+  },
+  {
+    "path": "ai.avatar.styleWatercolor",
+    "value": "Watercolor"
+  },
+  {
+    "path": "ai.avatar.styleIslamic",
+    "value": "Islamic Art"
+  },
+  {
+    "path": "ai.avatar.generate",
+    "value": "Generate Avatar"
+  },
+  {
+    "path": "ai.avatar.generating",
+    "value": "Generating..."
+  },
+  {
+    "path": "ai.avatar.setProfile",
+    "value": "Set as Profile"
+  },
+  {
+    "path": "ai.avatar.gallery",
+    "value": "Your Avatars"
+  },
+  {
+    "path": "ai.avatar.empty",
+    "value": "No avatars yet"
+  },
+  {
+    "path": "ai.avatar.emptySubtitle",
+    "value": "Generate your first AI avatar"
+  },
+  {
+    "path": "ai.captions.generate",
+    "value": "Generate Captions"
+  },
+  {
+    "path": "ai.captions.generating",
+    "value": "Transcribing audio..."
+  },
+  {
+    "path": "ai.captions.toggle",
+    "value": "Show Captions"
+  },
+  {
+    "path": "marketplace.episodesHint",
+    "value": "Episodes will appear here when published"
+  },
+  {
+    "path": "orders.episodesHint",
+    "value": "Episodes will appear here when published"
+  },
+  {
+    "path": "gamification.xp.totalXP",
+    "value": "{{xp}} XP"
+  },
+  {
+    "path": "gamification.xp.earned",
+    "value": "+{{amount}} XP"
+  },
+  {
+    "path": "gamification.leaderboard.rank",
+    "value": "#{{rank}}"
+  },
+  {
+    "path": "gamification.challenges.progress",
+    "value": "{{current}}/{{target}}"
+  },
+  {
+    "path": "gamification.series.episodes",
+    "value": "{{count}} episodes"
+  },
+  {
+    "path": "gamification.series.follow",
+    "value": "Follow Series"
+  },
+  {
+    "path": "gamification.series.newEpisode",
+    "value": "New Episode!"
+  },
+  {
+    "path": "gamification.series.empty",
+    "value": "No series yet"
+  },
+  {
+    "path": "gamification.profileCustomization.layout",
+    "value": "Layout Style"
+  },
+  {
+    "path": "gamification.profileCustomization.music",
+    "value": "Profile Music"
+  },
+  {
+    "path": "gamification.profileCustomization.showBadges",
+    "value": "Show Badges"
+  },
+  {
+    "path": "gamification.profileCustomization.showLevel",
+    "value": "Show Level"
+  },
+  {
+    "path": "gamification.profileCustomization.showStreak",
+    "value": "Show Streak"
+  },
+  {
+    "path": "gamification.profileCustomization.layoutMagazine",
+    "value": "Magazine"
+  },
+  {
+    "path": "gamification.profileCustomization.layoutMinimal",
+    "value": "Minimal"
+  },
+  {
+    "path": "gamification.profileCustomization.fontSerif",
+    "value": "Serif"
+  },
+  {
+    "path": "gamification.profileCustomization.fontMono",
+    "value": "Monospace"
+  },
+  {
+    "path": "gamification.profileCustomization.save",
+    "value": "Save Changes"
+  },
+  {
+    "path": "gamification.profileCustomization.uploadBackground",
+    "value": "Upload Background"
+  },
+  {
+    "path": "gamification.profileCustomization.musicUrl",
+    "value": "Music URL"
+  },
+  {
+    "path": "gamification.social",
+    "value": "Social"
+  },
+  {
+    "path": "gamification.milestone",
+    "value": "Milestone"
+  },
+  {
+    "path": "gamification.categories.dhikr",
+    "value": "Dhikr"
+  },
+  {
+    "path": "gamification.categories.photography",
+    "value": "Photography"
+  },
+  {
+    "path": "gamification.categories.fitness",
+    "value": "Fitness"
+  },
+  {
+    "path": "gamification.categories.cooking",
+    "value": "Cooking"
+  },
+  {
+    "path": "gamification.marketplace.paymentOptions",
+    "value": "Payment Options"
+  },
+  {
+    "path": "gamification.marketplace.installment",
+    "value": "{{count}}x payment"
+  },
+  {
+    "path": "gamification.orders.title",
+    "value": "My Orders"
+  },
+  {
+    "path": "gamification.orders.emptySubtitle",
+    "value": "Your purchases will appear here"
+  }
+]
