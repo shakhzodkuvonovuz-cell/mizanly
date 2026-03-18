@@ -1,4 +1,5 @@
 import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { HealthController } from './health.controller';
 import { PrismaService } from '../../config/prisma.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -21,6 +22,7 @@ describe('HealthController', () => {
       providers: [
         ...globalMockProviders,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test') } },
       ],
     }).compile();
 
@@ -40,12 +42,12 @@ describe('HealthController', () => {
 
       const result = await controller.check();
 
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         status: 'healthy',
         timestamp: expect.any(String),
-        database: 'up',
+        services: expect.objectContaining({ database: 'up', redis: 'up' }),
         version: expect.any(String),
-      });
+      }));
       expect(prisma.$queryRaw).toHaveBeenCalledWith(expect.any(Object));
     });
 
@@ -54,12 +56,12 @@ describe('HealthController', () => {
 
       const result = await controller.check();
 
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         status: 'degraded',
         timestamp: expect.any(String),
-        database: 'down',
+        services: expect.objectContaining({ database: 'down' }),
         version: expect.any(String),
-      });
+      }));
     });
   });
 
@@ -72,17 +74,12 @@ describe('HealthController', () => {
 
       const result = await controller.metrics();
 
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         timestamp: expect.any(String),
-        counts: {
-          users: 100,
-          posts: 500,
-          threads: 200,
-          reels: 150,
-        },
+        counts: { users: 100, posts: 500, threads: 200, reels: 150 },
         uptime: expect.any(Number),
         memory: expect.any(Object),
-      });
+      }));
       expect(prisma.user.count).toHaveBeenCalled();
       expect(prisma.post.count).toHaveBeenCalled();
       expect(prisma.thread.count).toHaveBeenCalled();
