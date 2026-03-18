@@ -33,6 +33,7 @@ export interface Post {
   postType: PostType;
   content?: string;
   visibility: Visibility;
+  space?: 'SAF' | 'BAKRA' | 'MAJLIS' | 'MINBAR';
   mediaUrls: string[];
   mediaTypes: string[];
   thumbnailUrl?: string;
