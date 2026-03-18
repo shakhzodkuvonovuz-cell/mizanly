@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { Prisma } from '@prisma/client';
+import { cacheAside } from '../../common/utils/cache';
 
 const POST_SELECT = {
   id: true,
@@ -146,7 +147,11 @@ export class HashtagsService {
   ) {}
 
   async getTrendingRaw(limit = 50) {
-    // Raw SQL to sum all counts and order by total engagement
+    // Cache trending hashtags for 5 minutes (expensive query, slow-changing data)
+    return cacheAside(this.redis, `trending:hashtags:${limit}`, 300, () => this.fetchTrendingHashtags(limit));
+  }
+
+  private async fetchTrendingHashtags(limit: number) {
     const hashtags = await this.prisma.$queryRaw<Array<{
       id: string;
       name: string;

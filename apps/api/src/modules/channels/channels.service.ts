@@ -13,6 +13,7 @@ import { UpdateChannelDto } from './dto/update-channel.dto';
 import { Prisma, VideoStatus } from '@prisma/client';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
+import { cacheAside } from '../../common/utils/cache';
 import { sanitizeText } from '@/common/utils/sanitize';
 
 const CHANNEL_SELECT = {
@@ -417,7 +418,11 @@ export class ChannelsService {
   }
 
   async getRecommended(userId: string, limit = 10) {
-    // Raw SQL to get recommended channel IDs with proper ordering
+    // Cache recommended channels per user for 10 minutes
+    return cacheAside(this.redis, `recommended:channels:${userId}:${limit}`, 600, () => this.fetchRecommendedChannels(userId, limit));
+  }
+
+  private async fetchRecommendedChannels(userId: string, limit: number) {
     const channelIds = await this.prisma.$queryRaw<Array<{ id: string }>>`
       SELECT c.id
       FROM "Channel" c
