@@ -89,7 +89,7 @@ function ReplyRow({
           <Text style={styles.replyHandle}>@{reply.user.username}</Text>
           <Text style={[styles.replyTime, isRTL ? { marginRight: 'auto', marginLeft: undefined } : undefined]}>{timeAgo}</Text>
         </View>
-        <RichText content={reply.content} />
+        <RichText text={reply.content} />
         {reply.mediaUrls.length > 0 && (
           <Image
             source={{ uri: reply.mediaUrls[0] }}

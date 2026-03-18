@@ -149,8 +149,7 @@ export default function RisalahScreen() {
   useScrollToTop(listRef);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('tabPress', (e) => {
-      // Only if already on this tab
+    const unsubscribe = navigation.addListener('focus' as never, () => {
       listRef.current?.scrollToOffset({ offset: 0, animated: true });
     });
     return unsubscribe;
@@ -271,7 +270,7 @@ export default function RisalahScreen() {
       >
         <Icon name="layers" size="sm" color={colors.text.secondary} />
         <Text style={styles.archivedText}>{t('risalah.archived')}</Text>
-        <Badge count={archivedCount} color={colors.text.tertiary} size="xs" />
+        <Badge count={archivedCount} color={colors.text.tertiary} size="sm" />
         <View style={{ flex: 1 }} />
         <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
       </Pressable>
@@ -282,7 +281,7 @@ export default function RisalahScreen() {
   const renderItem = useCallback(({ item }: { item: Conversation }) => {
     const otherUserId = item.isGroup ? undefined : item.members.find(m => m.user.id !== user?.id)?.user.id;
     const isOnline = otherUserId ? onlineUsers.has(otherUserId) : false;
-    const isTyping = typingUsers.get(item.id)?.size > 0;
+    const isTyping = (typingUsers.get(item.id)?.size ?? 0) > 0;
     const renderRightActions = () => (
       <Pressable
         style={styles.archiveAction}

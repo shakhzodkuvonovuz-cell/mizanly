@@ -183,8 +183,8 @@ function LeaderboardScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['leaderboard', activeTab],
     queryFn: async () => {
-      const res = await gamificationApi.getLeaderboard(activeTab, 50);
-      return res.data as { entries: LeaderboardEntry[] };
+      const res = await gamificationApi.getLeaderboard(activeTab, 50) as { entries: LeaderboardEntry[] };
+      return res;
     },
   });
 

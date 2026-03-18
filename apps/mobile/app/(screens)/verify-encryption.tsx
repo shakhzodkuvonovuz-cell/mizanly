@@ -59,8 +59,8 @@ function VerifyEncryptionContent() {
         if (userId) {
           try {
             const response = await encryptionApi.getPublicKey(userId);
-            if (!cancelled && response.data?.fingerprint) {
-              setTheirFingerprint(response.data.fingerprint);
+            if (!cancelled && response?.fingerprint) {
+              setTheirFingerprint(response.fingerprint);
             }
           } catch {
             // Their key not available

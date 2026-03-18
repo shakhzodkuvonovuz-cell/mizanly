@@ -121,8 +121,8 @@ export default function StickerBrowserScreen() {
   } = useInfiniteQuery({
     queryKey: ['sticker-browse'],
     queryFn: ({ pageParam }) => stickersApi.browsePacks(pageParam as string | undefined),
-    getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
-    initialPageParam: undefined,
+    getNextPageParam: (lastPage) => lastPage?.meta?.hasMore ? lastPage.meta.cursor ?? undefined : undefined,
+    initialPageParam: undefined as string | undefined,
     enabled: debouncedQuery.length === 0,
   });
 
@@ -141,12 +141,12 @@ export default function StickerBrowserScreen() {
     setRefreshing(false);
   }, [refetch, haptic]);
 
-  const handleAdd = (id: string) => addMutation.mutateDisabled ? null : addMutation.mutate(id);
-  const handleRemove = (id: string) => removeMutation.mutateDisabled ? null : removeMutation.mutate(id);
+  const handleAdd = (id: string) => addMutation.mutate(id);
+  const handleRemove = (id: string) => removeMutation.mutate(id);
 
   const packs = debouncedQuery.length > 0 
     ? (searchData || [])
-    : (browseData?.pages.flatMap((page) => page.data) ?? []);
+    : (browseData?.pages.flatMap((page) => (page as { data: StickerPack[] })?.data ?? []) ?? []);
 
   const renderFeatured = () => {
     if (debouncedQuery.length > 0) return null;
@@ -286,8 +286,8 @@ export default function StickerBrowserScreen() {
               </View>
 
               <View style={{ marginTop: spacing.xl }}>
-                <GradientButton 
-                  title={t('screens.sticker-browser.addToCollection')}
+                <GradientButton
+                  label={t('screens.sticker-browser.addToCollection')}
                   onPress={() => {
                     handleAdd(selectedPack.id);
                     setSelectedPack(null);

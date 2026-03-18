@@ -201,8 +201,7 @@ function PhotoMusicScreen() {
       // Upload all images
       const uploadedUrls: string[] = [];
       for (const img of images) {
-        const presignResponse = await uploadApi.getPresignUrl('image/jpeg', 'stories');
-        const presignData = presignResponse.data;
+        const presignData = await uploadApi.getPresignUrl('image/jpeg', 'stories');
 
         const response = await fetch(img.uri);
         const blob = await response.blob();
@@ -486,7 +485,7 @@ function PhotoMusicScreen() {
             <GradientButton
               label={t('photoMusic.addMorePhotos', { count: MAX_IMAGES - images.length })}
               onPress={pickImages}
-              variant="outline"
+              variant="secondary"
               icon="plus"
             />
           </Animated.View>

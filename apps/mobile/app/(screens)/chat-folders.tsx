@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
@@ -15,7 +16,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
-const FOLDER_ICONS = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
+const FOLDER_ICONS: IconName[] = ['users', 'heart', 'globe', 'layers', 'bell', 'bookmark', 'flag', 'lock'];
 const FOLDER_COLORS = [colors.emerald, colors.gold, '#58A6FF', '#9333EA', '#F85149', '#EC4899', '#F59E0B', '#10B981'];
 
 export default function ChatFoldersScreen() {
@@ -68,7 +69,7 @@ export default function ChatFoldersScreen() {
   const folders = Array.isArray(foldersQuery.data) ? foldersQuery.data : [];
 
   const renderFolder = ({ item, index }: { item: Record<string, unknown>; index: number }) => {
-    const iconName = (item.icon as string) || FOLDER_ICONS[index % FOLDER_ICONS.length];
+    const iconName = ((item.icon as string) || FOLDER_ICONS[index % FOLDER_ICONS.length]) as IconName;
     const color = FOLDER_COLORS[index % FOLDER_COLORS.length];
     const convCount = ((item.conversationIds as string[]) || []).length;
 
@@ -86,8 +87,8 @@ export default function ChatFoldersScreen() {
             <Text style={styles.folderName}>{item.name as string}</Text>
             <Text style={styles.folderMeta}>
               {convCount} chat{convCount !== 1 ? 's' : ''}
-              {item.includeGroups && ' · Groups'}
-              {item.includeChannels && ' · Channels'}
+              {Boolean(item.includeGroups) && ' · Groups'}
+              {Boolean(item.includeChannels) && ' · Channels'}
             </Text>
           </View>
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />

@@ -207,7 +207,7 @@ export default function CreatePlaylistScreen() {
                 value={isPublic}
                 onValueChange={setIsPublic}
                 trackColor={{ false: colors.dark.border, true: colors.emerald }}
-                thumbColor={colors.dark.text}
+                thumbColor={colors.text.primary}
               />
             </LinearGradient>
           </Animated.View>
@@ -215,7 +215,7 @@ export default function CreatePlaylistScreen() {
           {/* Create Button */}
           <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.buttonWrap}>
             <GradientButton
-              title={createMutation.isPending ? t('createPlaylist.creating') : t('createPlaylist.create')}
+              label={createMutation.isPending ? t('createPlaylist.creating') : t('createPlaylist.create')}
               onPress={handleCreate}
               disabled={createMutation.isPending || title.trim().length === 0 || !channelId}
             />

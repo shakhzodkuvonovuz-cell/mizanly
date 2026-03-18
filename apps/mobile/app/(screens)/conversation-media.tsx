@@ -352,7 +352,7 @@ export default function ConversationMediaScreen() {
         <TabSelector
           tabs={tabs}
           activeKey={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={(key: string) => setActiveTab(key as TabKey)}
           variant="underline"
           style={styles.tabSelector}
         />

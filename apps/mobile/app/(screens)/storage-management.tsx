@@ -107,7 +107,7 @@ function StorageCategoryRow({
   return (
     <Animated.View
       entering={FadeInDown.delay(index * 60).duration(300)}
-      style={[styles.categoryRow, rtlFlexRow(isRTL)]}
+      style={[styles.categoryRow, { flexDirection: rtlFlexRow(isRTL) }]}
     >
       <View style={[styles.categoryIcon, { backgroundColor: colors.active.emerald10 }]}>
         <Icon name={icon} size="sm" color={colors.emerald} />

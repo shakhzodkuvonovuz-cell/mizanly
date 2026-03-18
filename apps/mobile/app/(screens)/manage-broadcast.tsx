@@ -176,7 +176,7 @@ export default function ManageBroadcastScreen() {
               { key: 'subscribers', label: `${t('screens.manage-broadcast.subscribers')} (${channel?.subscribersCount || 0})` },
               { key: 'admins', label: t('screens.manage-broadcast.admins') },
             ]}
-            activeTab={activeTab}
+            activeKey={activeTab}
             onTabChange={(key) => setActiveTab(key as 'subscribers' | 'admins')}
           />
         </View>

@@ -80,11 +80,11 @@ export default function FatwaQAScreen() {
             <Avatar uri={asker?.avatarUrl as string | null} name={asker?.displayName as string || ''} size="sm" />
             <View style={{ flex: 1 }}>
               <Text style={styles.askerName}>{asker?.displayName as string}</Text>
-              {item.madhab && (
+              {Boolean(item.madhab) ? (
                 <View style={styles.madhabBadge}>
-                  <Text style={styles.madhabBadgeText}>{item.madhab as string}</Text>
+                  <Text style={styles.madhabBadgeText}>{String(item.madhab)}</Text>
                 </View>
-              )}
+              ) : null}
             </View>
             <View style={[styles.statusBadge, { backgroundColor: isAnswered ? colors.emerald + '20' : colors.gold + '20' }]}>
               <Icon name={isAnswered ? 'check-circle' : 'clock'} size="xs" color={isAnswered ? colors.emerald : colors.gold} />
@@ -94,12 +94,12 @@ export default function FatwaQAScreen() {
             </View>
           </View>
           <Text style={styles.questionText}>{item.question as string}</Text>
-          {isAnswered && item.answerId && (
+          {isAnswered && Boolean(item.answerId) ? (
             <View style={styles.answerCard}>
               <Icon name="check-circle" size="sm" color={colors.emerald} />
-              <Text style={styles.answerText} numberOfLines={3}>{item.answerId as string}</Text>
+              <Text style={styles.answerText} numberOfLines={3}>{String(item.answerId)}</Text>
             </View>
-          )}
+          ) : null}
         </View>
       </Animated.View>
     );
@@ -146,7 +146,7 @@ export default function FatwaQAScreen() {
               ))}
             </View>
 
-            <FlatList
+            <FlatList<Record<string, unknown>>
               data={questions}
               renderItem={renderQuestion}
               keyExtractor={(item) => item.id as string}

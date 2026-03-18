@@ -206,7 +206,7 @@ export default function CommunitiesScreen() {
     const matchesTab = activeTab === 'discover' || community.isJoined;
     const matchesCategory = activeCategory === 'All' || community.category === activeCategory;
     const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         community.description.toLowerCase().includes(searchQuery.toLowerCase());
+                         (community.description ?? '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesCategory && matchesSearch;
   });
 
@@ -248,7 +248,6 @@ export default function CommunitiesScreen() {
       <View style={styles.container}>
         <GlassHeader
           title={t('screens.communities.title')}
-          subtitle={activeTab === 'joined' ? t('screens.communities.joinedCount', { count: joinedCount }) : undefined}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 

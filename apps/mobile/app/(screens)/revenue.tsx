@@ -339,7 +339,7 @@ function RevenueContent() {
         <GradientButton
           label={t('revenue.cashOut', 'Cash Out')}
           icon="send"
-          onPress={() => router.push('/(screens)/cashout')}
+          onPress={() => router.push('/(screens)/cashout' as never)}
           fullWidth
           size="lg"
         />

@@ -14,6 +14,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-q
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -59,7 +60,7 @@ interface VolunteerResponse {
   meta: { cursor: string | null; hasMore: boolean };
 }
 
-function getCategoryIcon(category: string): string {
+function getCategoryIcon(category: string): IconName {
   switch (category) {
     case 'disaster_relief': return 'heart';
     case 'mosque': return 'globe';

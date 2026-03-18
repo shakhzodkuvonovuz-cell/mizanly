@@ -92,7 +92,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   );
 }
 
-function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: string; label: string; emoji: string }[] }) {
+function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: CategoryKey; label: string; emoji: string }[] }) {
   return (
     <View style={styles.categoriesSection}>
       <ScrollView
@@ -290,7 +290,7 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
 
-  const CATEGORIES = [
+  const CATEGORIES: { key: CategoryKey; label: string; emoji: string }[] = [
     { key: 'all', label: t('discover.all'), emoji: '🌟' },
     { key: 'trending', label: t('discover.trending'), emoji: '🔥' },
     { key: 'food', label: t('discover.categories.food'), emoji: '🍽️' },

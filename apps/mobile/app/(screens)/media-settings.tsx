@@ -83,7 +83,7 @@ function SettingRow({
   };
 
   return (
-    <View style={[styles.settingRow, rtlFlexRow(isRTL)]}>
+    <View style={[styles.settingRow, { flexDirection: rtlFlexRow(isRTL) }]}>
       <View style={styles.settingIcon}>
         <Icon name={icon} size="sm" color={disabled ? colors.text.tertiary : colors.text.secondary} />
       </View>
@@ -243,7 +243,7 @@ export default function MediaSettingsScreen() {
                   ]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
-                  style={[styles.dataSaverGradient, rtlFlexRow(isRTL)]}
+                  style={[styles.dataSaverGradient, { flexDirection: rtlFlexRow(isRTL) }]}
                 >
                   <View style={styles.dataSaverInfo}>
                     <Text style={[styles.dataSaverTitle, { textAlign: rtlTextAlign(isRTL) }]}>

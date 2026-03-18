@@ -51,11 +51,7 @@ export default function VoiceRecorderScreen() {
     }
     await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
     const rec = new Audio.Recording();
-    await rec.prepareToRecordAsync({
-      ...Audio.RecordingOptionsPresets.HIGH_QUALITY,
-      extension: '.m4a',
-      outputFormat: Audio.RECORDING_OPTION_IOS_OUTPUT_FORMAT_MPEG4AAC,
-    });
+    await rec.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
     await rec.startAsync();
     recording.current = rec;
     setState('recording');
@@ -120,7 +116,7 @@ export default function VoiceRecorderScreen() {
   const send = useCallback(() => {
     if (!uri) return;
     setUploading(true);
-    router.back({ audioUri: uri });
+    router.back();
   }, [uri, router]);
 
   const cancel = useCallback(() => {
@@ -204,8 +200,8 @@ export default function VoiceRecorderScreen() {
                   style={[s.recordButton, (isRecorded || isPlaying) && s.playButton]}
                 >
                   <Icon
-                    name={isRecording || isPlaying ? 'square' : isRecorded ? 'play' : 'mic'}
-                    size="3xl"
+                    name={isRecording || isPlaying ? 'pause' : isRecorded ? 'play' : 'mic'}
+                    size="xl"
                     color="#FFF"
                   />
                 </LinearGradient>

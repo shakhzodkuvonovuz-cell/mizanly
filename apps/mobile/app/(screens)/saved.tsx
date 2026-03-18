@@ -255,8 +255,6 @@ export default function SavedScreen() {
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
           variant="underline"
-          accessibilityLabel="Saved categories tabs"
-          accessibilityRole="tablist"
         />
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <EmptyState
@@ -290,8 +288,6 @@ export default function SavedScreen() {
           activeKey={activeTab}
           onTabChange={(key) => setActiveTab(key as typeof activeTab)}
           variant="underline"
-          accessibilityLabel="Saved categories tabs"
-          accessibilityRole="tablist"
         />
 
         {activeTab === 'posts' ? (

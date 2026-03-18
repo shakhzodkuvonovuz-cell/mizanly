@@ -212,7 +212,7 @@ function ProductDetailScreen() {
       }),
     onSuccess: () => {
       haptic.success();
-      router.push('/(screens)/orders' as `/${string}`);
+      router.push('/(screens)/orders' as `/${string}` as never);
     },
   });
 
@@ -353,7 +353,7 @@ function ProductDetailScreen() {
               Seller
             </Text>
             <Pressable
-              onPress={() => router.push(`/(screens)/profile/${data.seller.id}` as `/${string}`)}
+              onPress={() => router.push(`/(screens)/profile/${data.seller.id}` as never)}
               accessibilityLabel={`View ${data.seller.displayName}'s profile`}
             >
               <LinearGradient

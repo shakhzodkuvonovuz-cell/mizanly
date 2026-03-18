@@ -94,7 +94,7 @@ function HajjCompanionContent() {
   const progress: HajjProgress | null = useMemo(() => {
     const raw = progressQuery.data;
     if (!raw) return null;
-    const rawObj = raw as Record<string, unknown>;
+    const rawObj = raw as unknown as Record<string, unknown>;
     if ('data' in rawObj && rawObj.data !== undefined) {
       return rawObj.data as HajjProgress | null;
     }
@@ -252,10 +252,7 @@ function HajjCompanionContent() {
                   style={styles.stepRow}
                   activeOpacity={0.7}
                   onPress={() =>
-                    router.push({
-                      pathname: '/(screens)/hajj-step' as `/${string}`,
-                      params: { step: step.step },
-                    })
+                    router.push(`/(screens)/hajj-step?step=${step.step}` as never)
                   }
                 >
                   {/* Timeline line */}

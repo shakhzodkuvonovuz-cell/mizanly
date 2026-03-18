@@ -311,7 +311,7 @@ export default function QuranShareScreen() {
 
                     {/* Tafsir Button */}
                     <TouchableOpacity
-                      onPress={() => router.push(`/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as `/${string}`)}
+                      onPress={() => router.push(`/(screens)/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as never)}
                       style={styles.tafsirButton}
                     >
                       <Icon name="book-open" size="sm" color={colors.gold} />

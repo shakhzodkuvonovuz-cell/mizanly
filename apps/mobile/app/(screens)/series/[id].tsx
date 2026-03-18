@@ -74,11 +74,11 @@ function EpisodeRow({
 
   const handlePress = () => {
     if (episode.videoId) {
-      router.push(`/(screens)/video/${episode.videoId}` as `/${string}`);
+      router.push({ pathname: '/(screens)/video/[id]', params: { id: episode.videoId } });
     } else if (episode.reelId) {
-      router.push(`/(screens)/reel/${episode.reelId}` as `/${string}`);
+      router.push({ pathname: '/(screens)/reel/[id]', params: { id: episode.reelId } });
     } else if (episode.postId) {
-      router.push(`/(screens)/post/${episode.postId}` as `/${string}`);
+      router.push({ pathname: '/(screens)/post/[id]', params: { id: episode.postId } });
     }
   };
 
@@ -149,8 +149,8 @@ function SeriesDetailScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['series', id],
     queryFn: async () => {
-      const res = await gamificationApi.getSeries(id);
-      return res.data as SeriesDetail;
+      const res = await gamificationApi.getSeries(id) as { data?: SeriesDetail } & SeriesDetail;
+      return (res.data ?? res) as SeriesDetail;
     },
     enabled: !!id,
   });
@@ -211,7 +211,7 @@ function SeriesDetailScreen() {
       {/* Creator info */}
       <Animated.View entering={FadeIn.duration(400)} style={styles.creatorCard}>
         <Pressable
-          onPress={() => router.push(`/(screens)/profile/${data.creator.id}` as `/${string}`)}
+          onPress={() => router.push(`/(screens)/profile/${data.creator.id}` as never)}
           style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}
           accessibilityLabel={`View ${data.creator.displayName}'s profile`}
           accessibilityRole="button"

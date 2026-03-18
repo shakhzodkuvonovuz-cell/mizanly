@@ -32,7 +32,7 @@ export default function WaqfScreen() {
     initialPageParam: undefined as string | undefined,
   });
 
-  const funds = fundsQuery.data?.pages.flatMap((p: { data?: Array<Record<string, unknown>> }) => p.data || []) || [];
+  const funds = fundsQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
 
   const renderFund = ({ item, index }: { item: Record<string, unknown>; index: number }) => {
     const goal = item.goalAmount as number;

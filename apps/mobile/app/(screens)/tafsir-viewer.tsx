@@ -38,7 +38,7 @@ export default function TafsirViewerScreen() {
     queryKey: ['tafsir', surahNumber, verseNumber],
     queryFn: async () => {
       const res = await islamicApi.getTafsir(surahNumber, verseNumber);
-      return (res as { data: TafsirEntry }).data;
+      return res as TafsirEntry;
     },
     enabled: !!surah && !!verse,
   });
@@ -48,7 +48,7 @@ export default function TafsirViewerScreen() {
     queryKey: ['tafsir-sources'],
     queryFn: async () => {
       const res = await islamicApi.getTafsirSources();
-      return (res as { data: Array<{ name: string }> }).data;
+      return res as Array<{ name: string }>;
     },
   });
 

@@ -11,6 +11,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withDelay,
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -193,7 +194,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
 
   useEffect(() => {
     slideIn.value = withSpring(0, animation.spring.responsive);
-    fadeIn.value = withTiming(1, { duration: 300, delay: index * 50 });
+    fadeIn.value = withDelay(index * 50, withTiming(1, { duration: 300 }));
   }, []);
 
   const entranceStyle = useAnimatedStyle(() => ({
@@ -380,7 +381,7 @@ export default function NotificationsScreen() {
           title={t('notifications.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
           rightActions={[{
-            component: (
+            icon: (
               <GradientButton
                 label={t('notifications.markAllRead')}
                 size="sm"

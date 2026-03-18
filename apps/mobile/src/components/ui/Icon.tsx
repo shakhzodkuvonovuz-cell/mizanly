@@ -6,14 +6,14 @@ import {
   Plus, Camera, ImageIcon, Mic, Phone, Video, Settings,
   Bell, User, Users, UserPlus, Globe, Lock, Flag, Trash2, Pencil,
   X, ChevronRight, ChevronLeft, ChevronDown, Repeat2, Eye, EyeOff,
-  VolumeX, Mail, Hash, TrendingUp, MapPin, Link, Clock,
+  VolumeX, Mail, Hash, TrendingUp, TrendingDown, MapPin, Link, Clock,
   Check, CheckCheck, Paperclip, Smile, AtSign, Filter,
   Layers, CirclePlus, Edit3, Slash, LogOut, BarChart2, Loader,
   Maximize, Pause, Rewind, FastForward, Volume1, Volume2, Music,
-  Sun, Circle, Droplet, SlidersHorizontal,
+  Sun, Circle, Droplet, SlidersHorizontal, Minus, Square,
   Moon, Star, Gift, BookOpen, Calculator, Calendar,
-  Scissors, Type, LayoutGrid,
-  Radio, Info, FileText, Shield, Download, ThumbsDown,
+  Scissors, Type, LayoutGrid, Archive, Briefcase, CreditCard,
+  Radio, Info, FileText, Shield, Download, ThumbsDown, AlertCircle,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
@@ -33,7 +33,8 @@ export type IconName =
   | 'sun' | 'circle' | 'droplet' | 'sliders'
   | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar'
   | 'scissors' | 'type' | 'layout'
-  | 'arrow-right' | 'user-plus' | 'radio' | 'info' | 'file-text' | 'shield' | 'download' | 'thumbs-down';
+  | 'arrow-right' | 'user-plus' | 'radio' | 'info' | 'file-text' | 'shield' | 'download' | 'thumbs-down'
+  | 'trending-down' | 'minus' | 'square' | 'archive' | 'briefcase' | 'credit-card' | 'alert-circle';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -130,6 +131,13 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'shield': Shield,
   'download': Download,
   'thumbs-down': ThumbsDown,
+  'trending-down': TrendingDown,
+  'minus': Minus,
+  'square': Square,
+  'archive': Archive,
+  'briefcase': Briefcase,
+  'credit-card': CreditCard,
+  'alert-circle': AlertCircle,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

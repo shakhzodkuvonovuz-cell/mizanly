@@ -237,8 +237,8 @@ function ChallengesScreen() {
       const params: { cursor?: string; category?: string } = {};
       if (pageParam) params.cursor = pageParam as string;
       if (selectedCategory !== 'all') params.category = selectedCategory;
-      const res = await gamificationApi.getChallenges(params);
-      return res.data as { data: Challenge[]; meta: { cursor?: string; hasMore: boolean } };
+      const res = await gamificationApi.getChallenges(params) as { data: Challenge[]; meta: { cursor?: string; hasMore: boolean } };
+      return res;
     },
     getNextPageParam: (lastPage) => lastPage.meta.cursor,
     initialPageParam: undefined as string | undefined,
@@ -248,8 +248,8 @@ function ChallengesScreen() {
   const myQuery = useQuery({
     queryKey: ['challenges', 'my'],
     queryFn: async () => {
-      const res = await gamificationApi.getMyChallenges();
-      return res.data as { data: Challenge[] };
+      const res = await gamificationApi.getMyChallenges() as { data: Challenge[] };
+      return res;
     },
     enabled: activeTab === 'my',
   });

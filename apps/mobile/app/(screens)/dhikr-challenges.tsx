@@ -185,7 +185,7 @@ export default function DhikrChallengesScreen() {
     <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
       <ChallengeCard
         challenge={item}
-        onPress={() => router.push(`/(screens)/dhikr-challenge-detail?id=${item.id}`)}
+        onPress={() => router.push(`/(screens)/dhikr-challenge-detail?id=${item.id}` as never)}
       />
     </Animated.View>
   ), [router]);

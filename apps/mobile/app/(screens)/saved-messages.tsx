@@ -88,7 +88,7 @@ export default function SavedMessagesScreen() {
     },
   });
 
-  const messages = messagesQuery.data?.pages.flatMap((p: { data?: Array<Record<string, unknown>> }) => p.data || []) || [];
+  const messages = messagesQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
 
   const renderMessage = useCallback(({ item, index }: { item: Record<string, unknown>; index: number }) => {
     const isPinned = item.isPinned as boolean;
@@ -128,7 +128,7 @@ export default function SavedMessagesScreen() {
             </View>
           )}
 
-          {item.content && (
+          {Boolean(item.content) && (
             <Text style={styles.messageText}>{item.content as string}</Text>
           )}
 

@@ -240,13 +240,13 @@ export default function MajlisListsScreen() {
                 value={isPublic}
                 onValueChange={setIsPublic}
                 trackColor={{ false: colors.dark.surface, true: colors.emerald }}
-                thumbColor={colors.dark.text}
+                thumbColor={colors.text.primary}
               />
             </View>
 
             <View style={{ marginTop: spacing.xl }}>
               <GradientButton 
-                title={createMutation.isPending ? t('screens.majlis-lists.creating') : t('screens.majlis-lists.createList')}
+                label={createMutation.isPending ? t('screens.majlis-lists.creating') : t('screens.majlis-lists.createList')}
                 onPress={handleCreate}
                 disabled={createMutation.isPending || newName.trim().length === 0}
               />

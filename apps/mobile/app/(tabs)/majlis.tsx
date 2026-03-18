@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -92,12 +92,11 @@ export default function MajlisScreen() {
     opacity: feedOpacity.value,
   }));
 
-  const feedRef = useRef<FlashList<Thread>>(null);
-  useScrollToTop(feedRef);
+  const feedRef = useRef<FlashListRef<Thread>>(null);
+  useScrollToTop(feedRef as React.RefObject<FlashListRef<Thread>>);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('tabPress', (e) => {
-      // Only if already on this tab
+    const unsubscribe = navigation.addListener('focus' as never, () => {
       feedRef.current?.scrollToOffset({ offset: 0, animated: true });
     });
     return unsubscribe;
@@ -214,7 +213,7 @@ export default function MajlisScreen() {
       />
 
       {/* Trending hashtags */}
-      {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0) ? (
+      {trendingHashtagsQuery.isLoading || (trendingHashtagsQuery.data && trendingHashtagsQuery.data.length > 0) ? (
         <View style={[styles.trendingHeader, { flexDirection: rtlFlexRow(isRTL) }]}>
           <Icon name="trending-up" size="sm" color={colors.gold} />
           <Text style={styles.trendingHeaderText}>{t('tabs.trending')}</Text>
@@ -226,9 +225,9 @@ export default function MajlisScreen() {
             <Skeleton.Rect key={i} width={80} height={32} borderRadius={radius.full} />
           ))}
         </ScrollView>
-      ) : trendingHashtagsQuery.data?.data && trendingHashtagsQuery.data.data.length > 0 ? (
+      ) : trendingHashtagsQuery.data && trendingHashtagsQuery.data.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.hashtagContainer}>
-          {trendingHashtagsQuery.data.data.map((hashtag) => (
+          {trendingHashtagsQuery.data.map((hashtag) => (
             <Pressable
               key={hashtag.name}
               style={styles.hashtagChip}
@@ -251,15 +250,9 @@ export default function MajlisScreen() {
           ref={feedRef}
           data={threads}
           keyExtractor={keyExtractor}
-          estimatedItemSize={120}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.4}
-          onRefresh={onRefresh}
-          refreshing={refreshing}
           renderItem={renderItem}
-          maxToRenderPerBatch={5}
-          windowSize={5}
-          removeClippedSubviews={true}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
         />

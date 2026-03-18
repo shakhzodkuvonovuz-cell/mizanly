@@ -84,7 +84,8 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
-  const hasWatchProgress = video.progress !== undefined && video.progress > 0 && video.progress < 1;
+  const watchProgress = video.progress ?? 0;
+  const hasWatchProgress = watchProgress > 0 && watchProgress < 1;
 
   return (
     <TouchableOpacity
@@ -111,7 +112,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
         {/* Watch progress bar */}
         {hasWatchProgress && (
           <View style={styles.watchProgressBarBg}>
-            <View style={[styles.watchProgressBarFill, { width: `${video.progress * 100}%` }]} />
+            <View style={[styles.watchProgressBarFill, { width: `${watchProgress * 100}%` }]} />
           </View>
         )}
         <View style={styles.durationBadge}>
@@ -435,23 +436,12 @@ export default function MinbarScreen() {
         ref={feedRef}
         data={videos}
         keyExtractor={keyExtractor}
-        estimatedItemSize={260}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
         renderItem={renderVideoItem}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews={true}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={colors.emerald}
-          />
-        }
       />
       <BottomSheet
         visible={!!selectedVideoId}

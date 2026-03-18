@@ -127,7 +127,7 @@ export default function BroadcastChannelsScreen() {
   }, [searchQuery]);
 
   const handleChannelPress = useCallback((channel: BroadcastChannelWithSubscription) => {
-    navigation.navigate('broadcast/[id]', { id: channel.id });
+    router.push(`/(screens)/broadcast/${channel.id}` as never);
   }, [navigation]);
 
   const handleSubscribe = useCallback(async (channel: BroadcastChannelWithSubscription) => {
@@ -297,7 +297,7 @@ export default function BroadcastChannelsScreen() {
               { key: 'my', label: t('broadcastChannels.tab.myChannels') },
             ]}
             activeKey={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={(key: string) => setActiveTab(key as TabKey)}
             variant="underline"
             style={styles.tabSelector}
           />

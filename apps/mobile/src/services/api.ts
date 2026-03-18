@@ -34,6 +34,7 @@ type CreatePostPayload = {
   mediaWidth?: number;
   mediaHeight?: number;
   visibility?: string;
+  circleId?: string;
   locationName?: string;
   hashtags?: string[];
   hideLikesCount?: boolean;
@@ -63,6 +64,14 @@ type CreateThreadPayload = {
   visibility?: string;
   isQuotePost?: boolean;
   quoteText?: string;
+  isChainHead?: boolean;
+  chainId?: string;
+  circleId?: string;
+  replyPermission?: string;
+  pollQuestion?: string;
+  pollOptions?: string[];
+  pollDuration?: number;
+  poll?: { question: string; options: (string | { text: string; position: number })[]; duration?: number; allowMultiple?: boolean };
 };
 
 type CreateReelPayload = {
@@ -75,6 +84,7 @@ type CreateReelPayload = {
   audioTrackId?: string;
   isDuet?: boolean;
   isStitch?: boolean;
+  normalizeAudio?: boolean;
 };
 
 type CreateVideoData = {
@@ -86,6 +96,8 @@ type CreateVideoData = {
   duration: number;
   category?: string;
   tags?: string[];
+  normalizeAudio?: boolean;
+  chapters?: { title: string; startTime: number }[];
 };
 
 type SendMessagePayload = {
@@ -551,8 +563,8 @@ export const messagesApi = {
   archive: (id: string, archived: boolean) =>
     api.post(`/messages/conversations/${id}/archive`, { archived }),
   createDM: (targetUserId: string) => api.post<Conversation>('/messages/dm', { targetUserId }),
-  createGroup: (groupName: string, memberIds: string[]) =>
-    api.post<Conversation>('/messages/groups', { groupName, memberIds }),
+  createGroup: (groupName: string, memberIds: string[], groupAvatarUrl?: string) =>
+    api.post<Conversation>('/messages/groups', { groupName, memberIds, groupAvatarUrl }),
   updateGroup: (id: string, data: { groupName?: string; groupAvatarUrl?: string }) =>
     api.patch<Conversation>(`/messages/groups/${id}`, data),
   addMembers: (id: string, memberIds: string[]) =>
@@ -944,6 +956,8 @@ export const collabsApi = {
     api.delete(`/collabs/${id}`),
   getMyPending: () =>
     api.get<PostCollab[]>('/collabs/pending'),
+  getAccepted: (cursor?: string) =>
+    api.get<PaginatedResponse<PostCollab>>(`/collabs/accepted${cursor ? `?cursor=${cursor}` : ''}`),
   getPostCollabs: (postId: string) =>
     api.get<PostCollab[]>(`/collabs/post/${postId}`),
 };

@@ -96,11 +96,11 @@ export default function ChatThemePickerScreen() {
     setTimeout(() => setRefreshing(false), 1000);
   }, []);
 
-  const getCurrentTheme = () => {
+  const getCurrentTheme = (): ThemeOption => {
     return (
       SOLID_COLORS.find(t => t.id === selectedTheme) ||
       GRADIENTS.find(t => t.id === selectedTheme) ||
-      { color: colors.dark.bg }
+      { id: 'default', name: 'Default', color: colors.dark.bg }
     );
   };
 
@@ -258,8 +258,7 @@ export default function ChatThemePickerScreen() {
             {currentTheme.gradient && (
               <LinearGradient
                 colors={currentTheme.gradient}
-                style={StyleSheet.absoluteFill}
-                opacity={0.3}
+                style={[StyleSheet.absoluteFill, { opacity: 0.3 }]}
               />
             )}
             {/* Mock Chat Messages */}

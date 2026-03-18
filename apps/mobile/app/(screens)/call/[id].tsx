@@ -63,7 +63,10 @@ export default function CallScreen() {
 
   const { data: call, isLoading } = useQuery({
     queryKey: ['call', id],
-    queryFn: () => api.get<CallSession>(`/calls/${id}`).then(r => r.data as unknown as CallSession),
+    queryFn: async (): Promise<Call> => {
+      const r = await api.get(`/calls/${id}`);
+      return r as Call;
+    },
     enabled: !!id,
   });
 

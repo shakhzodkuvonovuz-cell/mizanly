@@ -250,8 +250,8 @@ function StreaksScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['streaks'],
     queryFn: async () => {
-      const res = await gamificationApi.getStreaks();
-      return res.data as { streaks: Streak[]; calendar: StreakDay[] };
+      const res = await gamificationApi.getStreaks() as { streaks: Streak[]; calendar: StreakDay[] };
+      return res;
     },
   });
 

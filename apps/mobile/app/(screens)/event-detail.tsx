@@ -76,7 +76,7 @@ export default function EventDetailScreen() {
     queryFn: async () => {
       if (!id) throw new Error('No event ID');
       const res = await eventsApi.getById(id);
-      return (res as { data: EventWithCounts }).data;
+      return res as EventWithCounts;
     },
     enabled: !!id,
   });
@@ -90,7 +90,7 @@ export default function EventDetailScreen() {
     queryFn: async () => {
       if (!id) return { data: [], meta: { hasMore: false } };
       const res = await eventsApi.listAttendees(id, undefined, 'going');
-      return (res as { data: { data: User[]; meta: { hasMore: boolean } } }).data;
+      return res as { data: User[]; meta: { hasMore: boolean } };
     },
     enabled: !!id,
   });
@@ -202,11 +202,7 @@ export default function EventDetailScreen() {
       <GlassHeader
         title={t('events.event')}
         onBack={() => router.back()}
-        rightAction={
-          <TouchableOpacity style={styles.shareButton} activeOpacity={0.8}>
-            <Icon name="share" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
-        }
+        rightAction={{ icon: 'share', onPress: () => {} }}
       />
 
       <ScrollView

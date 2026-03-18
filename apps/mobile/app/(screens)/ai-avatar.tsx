@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -21,7 +22,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { AiAvatar } from '@/types';
 
-const STYLES = [
+const STYLES: { id: string; label: string; icon: IconName; color: string }[] = [
   { id: 'default', label: 'ai.avatar.styleDefault', icon: 'user', color: colors.emerald },
   { id: 'anime', label: 'ai.avatar.styleAnime', icon: 'smile', color: '#EC4899' },
   { id: 'watercolor', label: 'ai.avatar.styleWatercolor', icon: 'image', color: colors.info },

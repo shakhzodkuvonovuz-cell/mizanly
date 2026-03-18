@@ -359,7 +359,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     reactionMutation.mutate(emoji);
   };
 
-  const timeAgo = story.createdAt
+  const timeAgo = story?.createdAt
     ? formatDistanceToNowStrict(new Date(story.createdAt), { addSuffix: true })
     : '';
 

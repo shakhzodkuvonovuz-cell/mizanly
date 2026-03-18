@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
+import type { IconName } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
@@ -19,7 +20,7 @@ import type { AiCaptionSuggestion } from '@/types';
 
 type TabId = 'captions' | 'hashtags' | 'ideas';
 
-const TABS: { id: TabId; icon: string; label: string }[] = [
+const TABS: { id: TabId; icon: IconName; label: string }[] = [
   { id: 'captions', icon: 'pencil', label: 'ai.tabs.captions' },
   { id: 'hashtags', icon: 'hash', label: 'ai.tabs.hashtags' },
   { id: 'ideas', icon: 'loader', label: 'ai.tabs.ideas' },

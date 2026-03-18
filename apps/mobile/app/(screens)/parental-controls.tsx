@@ -599,7 +599,7 @@ export default function ParentalControlsScreen() {
               <GradientButton
                 label={t('parentalControls.linkChildAccount')}
                 icon="plus"
-                onPress={() => router.push('/(screens)/link-child-account')}
+                onPress={() => router.push('/(screens)/link-child-account' as never)}
               />
             </View>
           }

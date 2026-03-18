@@ -37,7 +37,7 @@ export default function LocalBoardsScreen() {
     initialPageParam: undefined as string | undefined,
   });
 
-  const boards = boardsQuery.data?.pages.flatMap((p: { data?: Array<Record<string, unknown>> }) => p.data || []) || [];
+  const boards = boardsQuery.data?.pages.flatMap((p) => ((p as Record<string, unknown>).data as Array<Record<string, unknown>>) || []) || [];
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
@@ -55,7 +55,7 @@ export default function LocalBoardsScreen() {
               <Text style={styles.boardLocation}>{item.city as string}, {item.country as string}</Text>
             </View>
           </View>
-          {item.description && (
+          {Boolean(item.description) && (
             <Text style={styles.boardDesc} numberOfLines={2}>{item.description as string}</Text>
           )}
           <View style={styles.boardStats}>

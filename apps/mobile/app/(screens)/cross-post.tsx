@@ -137,8 +137,7 @@ function CrossPostContent() {
     <View style={styles.container}>
       <GlassHeader
         title={t('crossPost.title')}
-        leftIcon={<Icon name="arrow-left" size="md" color={colors.text.primary} />}
-        onLeftPress={() => router.back()}
+        leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
       />
       <ScrollView
         style={styles.scrollView}

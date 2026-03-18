@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Pressable, Image, type ViewToken, Alert } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -272,7 +272,7 @@ const ReelItem = memo(function ReelItem({
                   onPress={() => {
                     if (!item.user?.isFollowing) {
                       followMutation.mutate(item.user.id);
-                      haptic('medium');
+                      haptic.medium();
                     }
                   }}
                   style={{
@@ -374,7 +374,7 @@ const ReelItem = memo(function ReelItem({
           {/* Duet button */}
           <Pressable
             onPress={() => {
-              haptic('light');
+              haptic.light();
               router.push(`/(screens)/create-reel?duetWith=${item.id}`);
             }}
             style={{ alignItems: 'center', marginTop: spacing.md }}
@@ -393,7 +393,7 @@ const ReelItem = memo(function ReelItem({
           {/* Stitch button */}
           <Pressable
             onPress={() => {
-              haptic('light');
+              haptic.light();
               router.push(`/(screens)/create-reel?stitchFrom=${item.id}`);
             }}
             style={{ alignItems: 'center', marginTop: spacing.md }}
@@ -410,16 +410,15 @@ const ReelItem = memo(function ReelItem({
           </Pressable>
           <ActionButton
             onPress={() => onBookmark(item)}
-            accessibilityLabel={item.isSaved ? t('accessibility.removeBookmark') : t('accessibility.bookmarkReel')}
+            accessibilityLabel={item.isBookmarked ? t('accessibility.removeBookmark') : t('accessibility.bookmarkReel')}
           >
             <Icon
-              name={item.isSaved ? 'bookmark-filled' : 'bookmark'}
+              name={item.isBookmarked ? 'bookmark-filled' : 'bookmark'}
               size="lg"
-              color={item.isSaved ? colors.gold : colors.text.primary}
-              fill={item.isSaved ? colors.gold : undefined}
-              style={item.isSaved ? undefined : styles.iconShadow}
+              color={item.isBookmarked ? colors.gold : colors.text.primary}
+              fill={item.isBookmarked ? colors.gold : undefined}
+              style={item.isBookmarked ? undefined : styles.iconShadow}
             />
-            {item.savesCount > 0 && <Text style={styles.actionCount}>{item.savesCount}</Text>}
           </ActionButton>
           <ActionButton
             onPress={() => setShowMoreMenu(true)}
@@ -472,8 +471,8 @@ export default function BakraScreen() {
   const setVideoRef = useCallback((id: string, ref: Video) => {
     videoRefs.current[id] = ref;
   }, []);
-  const listRef = useRef<FlashList<Reel>>(null);
-  useScrollToTop(listRef);
+  const listRef = useRef<FlashListRef<Reel>>(null);
+  useScrollToTop(listRef as React.RefObject<FlashListRef<Reel>>);
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed'],
@@ -498,19 +497,20 @@ export default function BakraScreen() {
 
   const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
     if (viewableItems.length > 0) {
-      const index = viewableItems[0].index;
-      if (index !== undefined && index !== currentIndex) {
+      const rawIndex = viewableItems[0].index;
+      if (rawIndex != null && rawIndex !== currentIndex) {
+        const idx: number = rawIndex;
         // Pause previous video
         const prevReel = reels[currentIndex];
         if (prevReel && videoRefs.current[prevReel.id]) {
           videoRefs.current[prevReel.id].pauseAsync();
         }
         // Play new video
-        const newReel = reels[index];
+        const newReel = reels[idx];
         if (newReel && videoRefs.current[newReel.id]) {
           videoRefs.current[newReel.id].playAsync();
         }
-        setCurrentIndex(index);
+        setCurrentIndex(idx);
       }
     }
   }, [currentIndex, reels]);
@@ -665,20 +665,10 @@ export default function BakraScreen() {
         ref={listRef}
         data={reels}
         keyExtractor={keyExtractor}
-        getItemLayout={getItemLayout}
-        estimatedItemSize={VIDEO_HEIGHT}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
         renderItem={renderItem}
-        pagingEnabled
-        snapToInterval={VIDEO_HEIGHT}
-        decelerationRate="fast"
         showsVerticalScrollIndicator={false}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews={true}
         viewabilityConfig={{ itemVisiblePercentThreshold: 80 }}
         onViewableItemsChanged={handleViewableItemsChanged}
         ListEmptyComponent={listEmpty}

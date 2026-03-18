@@ -451,7 +451,7 @@ function MessageBubble({
         {!isOwn && isGroupStart && (
           <Text style={styles.senderName}>{message.sender.displayName}</Text>
         )}
-        {(message.isForwarded || message.forwardedFrom) && (
+        {message.isForwarded && (
           <View style={[styles.forwardedLabel, { flexDirection: rtlFlexRow(isRTL) }]}>
             <Icon name="share" size={10} color={colors.text.tertiary} />
             <Text style={styles.forwardedText}>{t('messages.forwarded')}</Text>
@@ -1657,7 +1657,7 @@ export default function ConversationScreen() {
                 icon={<Icon name="pencil" size="sm" color={colors.text.secondary} />}
                 onPress={() => {
                   setEditingMsg(contextMenuMsg);
-                  setText(contextMenuMsg.content);
+                  setText(contextMenuMsg.content ?? '');
                   setContextMenuMsg(null);
                   inputRef.current?.focus();
                 }}

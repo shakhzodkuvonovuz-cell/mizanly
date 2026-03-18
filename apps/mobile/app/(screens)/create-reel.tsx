@@ -548,16 +548,20 @@ export default function CreateReelScreen() {
         >
           {showAutocomplete === 'hashtag' && (
             <Autocomplete
+              visible
               type="hashtag"
               query=""
               onSelect={(item) => insertAtCursor(`#${item}`)}
+              onClose={() => setShowAutocomplete(null)}
             />
           )}
           {showAutocomplete === 'mention' && (
             <Autocomplete
+              visible
               type="mention"
               query=""
               onSelect={(item) => insertAtCursor(`@${item}`)}
+              onClose={() => setShowAutocomplete(null)}
             />
           )}
         </BottomSheet>

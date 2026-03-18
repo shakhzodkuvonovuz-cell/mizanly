@@ -154,8 +154,7 @@ function DisposableCameraScreen() {
       setIsPosting(true);
 
       const uploadPhoto = async (uri: string): Promise<string> => {
-        const presignResponse = await uploadApi.getPresignUrl('image/jpeg', 'stories');
-        const presignData = presignResponse.data;
+        const presignData = await uploadApi.getPresignUrl('image/jpeg', 'stories');
 
         const response = await fetch(uri);
         const blob = await response.blob();

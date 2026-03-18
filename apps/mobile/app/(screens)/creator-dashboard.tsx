@@ -142,8 +142,8 @@ function CreatorDashboardContent() {
       setTopPosts((content.topPosts as TopPost[]) ?? []);
       setBestTimes((content.bestTimes as BestTimeSlot[]) ?? []);
 
-      setAudienceData(audienceRes as AudienceData);
-      setRevenueData(revenueRes as RevenueData);
+      setAudienceData(audienceRes as unknown as AudienceData);
+      setRevenueData(revenueRes as unknown as RevenueData);
     } catch {
       // Show empty state on failure
     } finally {
@@ -225,10 +225,7 @@ function CreatorDashboardContent() {
                   <Pressable
                     style={styles.postGridItem}
                     onPress={() =>
-                      router.push({
-                        pathname: '/(screens)/post-insights',
-                        params: { postId: post.id, postType: post.postType },
-                      })
+                      router.push(`/(screens)/post-insights?postId=${post.id}&postType=${post.postType}` as never)
                     }
                     accessibilityRole="button"
                     accessibilityLabel={`${t('creatorDashboard.postInsights', 'Post insights')}: ${formatNumber(post.views)} ${t('creatorDashboard.views', 'views')}`}

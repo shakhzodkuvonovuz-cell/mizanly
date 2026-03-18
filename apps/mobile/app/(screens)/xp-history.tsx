@@ -182,16 +182,16 @@ function XPHistoryScreen() {
   const xpQuery = useQuery({
     queryKey: ['xp'],
     queryFn: async () => {
-      const res = await gamificationApi.getXP();
-      return res.data as XPData;
+      const res = await gamificationApi.getXP() as XPData;
+      return res;
     },
   });
 
   const historyQuery = useInfiniteQuery({
     queryKey: ['xp-history'],
     queryFn: async ({ pageParam }) => {
-      const res = await gamificationApi.getXPHistory(pageParam as string | undefined);
-      return res.data as { data: XPEvent[]; meta: { cursor?: string; hasMore: boolean } };
+      const res = await gamificationApi.getXPHistory(pageParam as string | undefined) as { data: XPEvent[]; meta: { cursor?: string; hasMore: boolean } };
+      return res;
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,

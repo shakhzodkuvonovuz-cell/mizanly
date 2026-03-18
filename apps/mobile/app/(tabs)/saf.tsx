@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -48,12 +48,11 @@ export default function SafScreen() {
     { key: 'foryou', label: t('saf.forYou') },
   ];
 
-  const feedRef = useRef<FlashList<Post>>(null);
-  useScrollToTop(feedRef);
+  const feedRef = useRef<FlashListRef<Post>>(null);
+  useScrollToTop(feedRef as React.RefObject<FlashListRef<Post>>);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('tabPress', (e) => {
-      // Only if already on this tab
+    const unsubscribe = navigation.addListener('focus' as never, () => {
       feedRef.current?.scrollToOffset({ offset: 0, animated: true });
     });
     return unsubscribe;
@@ -270,15 +269,9 @@ export default function SafScreen() {
         ref={feedRef}
         data={posts}
         keyExtractor={keyExtractor}
-        estimatedItemSize={450}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.4}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
         renderItem={renderItem}
-        maxToRenderPerBatch={5}
-        windowSize={5}
-        removeClippedSubviews={true}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}

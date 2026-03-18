@@ -14,7 +14,22 @@ declare module 'expo-location' {
     region: string | null;
     street: string | null;
   }>>;
+  export function geocodeAsync(address: string): Promise<Array<{ latitude: number; longitude: number; altitude: number | null; accuracy: number | null }>>;
   export const Accuracy: { Balanced: number; High: number; Highest: number; Low: number; Lowest: number };
+}
+
+declare module 'expo-sensors' {
+  export interface MagnetometerMeasurement {
+    x: number;
+    y: number;
+    z: number;
+    timestamp: number;
+  }
+  export const Magnetometer: {
+    isAvailableAsync(): Promise<boolean>;
+    addListener(listener: (data: MagnetometerMeasurement) => void): { remove(): void };
+    setUpdateInterval(intervalMs: number): void;
+  };
 }
 
 declare module 'expo-contacts' {

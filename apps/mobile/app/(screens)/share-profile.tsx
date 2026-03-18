@@ -83,8 +83,8 @@ export default function ShareProfileScreen() {
               <Skeleton.Circle size={48} />
             </View>
           </LinearGradient>
-          <Skeleton.Text width="50%" height={24} style={{ marginTop: spacing.xl }} />
-          <Skeleton.Text width="30%" height={18} style={{ marginTop: spacing.sm }} />
+          <Skeleton.Rect width="50%" height={24} borderRadius={4} style={{ marginTop: spacing.xl }} />
+          <Skeleton.Rect width="30%" height={18} borderRadius={4} style={{ marginTop: spacing.sm }} />
           <View style={styles.buttonRow}>
             <Skeleton.Rect width={100} height={48} borderRadius={radius.lg} />
             <Skeleton.Rect width={100} height={48} borderRadius={radius.lg} />

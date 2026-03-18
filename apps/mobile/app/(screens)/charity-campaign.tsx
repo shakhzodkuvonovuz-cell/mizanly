@@ -38,7 +38,7 @@ function CampaignScreenContent() {
 
   const handleDonate = () => {
     router.push({
-      pathname: '/(screens)/donate',
+      pathname: '/(screens)/donate' as never,
       params: { campaignId: id },
     });
   };

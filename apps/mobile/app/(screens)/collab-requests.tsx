@@ -21,7 +21,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import type { PostCollab, Post, User } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-type CollabItem = PostCollab & { post: Post };
+type CollabItem = PostCollab;
 interface AcceptedResponse {
   data: CollabItem[];
   meta: { cursor: string | null; hasMore: boolean };
@@ -40,7 +40,7 @@ export default function CollabRequestsScreen() {
   // Pending invites (non‑paginated)
   const pendingQuery = useQuery({
     queryKey: ['collabs', 'pending'],
-    queryFn: () => collabsApi.getPending(),
+    queryFn: () => collabsApi.getMyPending(),
     enabled: activeTab === 'pending',
   });
 
@@ -49,7 +49,7 @@ export default function CollabRequestsScreen() {
     queryKey: ['collabs', 'accepted'],
     queryFn: ({ pageParam }) => collabsApi.getAccepted(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: AcceptedResponse) => last.meta?.hasMore ? last.meta.cursor : undefined,
+    getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: activeTab === 'accepted',
   });
 
@@ -87,7 +87,7 @@ export default function CollabRequestsScreen() {
   const confirmAccept = (collab: CollabItem) => {
     Alert.alert(
       t('collabRequests.acceptAlert.title'),
-      t('collabRequests.acceptAlert.message', { postPreview: collab.post.content?.substring(0, 50) ?? t('collabRequests.thisPost') }),
+      t('collabRequests.acceptAlert.message', { postPreview: collab.post?.content?.substring(0, 50) ?? t('collabRequests.thisPost') }),
       [
         { text: t('common.cancel'), style: 'cancel' },
         { text: t('collabRequests.accept'), onPress: () => acceptMutation.mutate(collab.id) },
@@ -119,6 +119,7 @@ export default function CollabRequestsScreen() {
 
   const renderPendingItem = ({ item, index }: { item: CollabItem; index: number }) => {
     const post = item.post;
+    if (!post) return null;
     const thumbnail = post.mediaUrls?.[0];
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
@@ -179,6 +180,7 @@ export default function CollabRequestsScreen() {
 
   const renderAcceptedItem = ({ item, index }: { item: CollabItem; index: number }) => {
     const post = item.post;
+    if (!post) return null;
     const thumbnail = post.mediaUrls?.[0];
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>

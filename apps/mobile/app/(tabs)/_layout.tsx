@@ -90,7 +90,7 @@ function CreateButton() {
   const navigate = (path: string) => {
     haptic.light();
     setOpen(false);
-    router.push(path as `/${string}`);
+    router.push(path as never);
   };
 
   return (

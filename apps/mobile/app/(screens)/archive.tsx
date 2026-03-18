@@ -131,7 +131,7 @@ export default function ArchiveScreen() {
         <View style={styles.skeletonGrid as ViewStyle}>
           {Array.from({ length: 12 }).map((_, i) => (
             <View key={i} style={styles.skeletonItem as ViewStyle}>
-              <Skeleton.Rect width="100%" height="100%" borderRadius={radius.sm} />
+              <Skeleton.Rect width="100%" height={120} borderRadius={radius.sm} />
               <View style={styles.skeletonPlayOverlay as ViewStyle}>
                 <Icon name="play" size="xs" color="rgba(255,255,255,0.3)" />
               </View>

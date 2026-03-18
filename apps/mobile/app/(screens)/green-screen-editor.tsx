@@ -516,7 +516,7 @@ export default function GreenScreenEditorScreen() {
             <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera')}>
+            <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera' as never)}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}

@@ -223,7 +223,7 @@ export default function EditChannelScreen() {
 
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttonWrap}>
             <GradientButton
-              title={updateMutation.isPending ? t('screens.editChannel.saving') : t('screens.editChannel.saveChanges')}
+              label={updateMutation.isPending ? t('screens.editChannel.saving') : t('screens.editChannel.saveChanges')}
               onPress={handleSave}
               disabled={updateMutation.isPending || name.trim().length === 0}
             />

@@ -385,7 +385,7 @@ export default function DhikrCounterScreen() {
                 </LinearGradient>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => router.push('/(screens)/dhikr-challenges')}
+                onPress={() => router.push('/(screens)/dhikr-challenges' as never)}
                 activeOpacity={0.8}
                 style={styles.actionButtonWrapper}
               >

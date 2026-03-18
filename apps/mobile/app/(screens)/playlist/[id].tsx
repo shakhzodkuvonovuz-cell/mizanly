@@ -44,11 +44,11 @@ export default function PlaylistDetailScreen() {
     queryKey: ['playlist-items', playlistId],
     queryFn: ({ pageParam }) => playlistsApi.getItems(playlistId!, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: { meta?: { hasMore?: boolean; cursor?: string } }) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!playlistId,
   });
 
-  const items: PlaylistItem[] = itemsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const items: PlaylistItem[] = itemsQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

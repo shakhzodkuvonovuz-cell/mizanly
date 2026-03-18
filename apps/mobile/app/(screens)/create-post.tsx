@@ -483,7 +483,7 @@ export default function CreatePostScreen() {
           query={autocompleteQuery}
           onSelect={(value) => {
             // Find cursor position and replace the partial tag
-            const cursorPos = inputRef.current?._lastNativeText?.length ?? content.length;
+            const cursorPos = content.length;
             const lastHashIndex = content.lastIndexOf('#', cursorPos - 1);
             const lastAtIndex = content.lastIndexOf('@', cursorPos - 1);
 

@@ -114,7 +114,7 @@ export default function CreateEventScreen() {
       };
       const response = await eventsApi.create(dto);
       const eventId = (response as { id?: string }).id ?? '';
-      router.push(`/(screens)/event-detail?id=${eventId}` as `/${string}`);
+      router.push(`/(screens)/event-detail?id=${eventId}` as never);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('events.createFailed');
       setError(message);
