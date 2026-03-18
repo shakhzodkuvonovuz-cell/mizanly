@@ -93,16 +93,12 @@ describe('PollsService', () => {
       const mockVote = { optionId: 'opt1' };
       prisma.poll.findUnique.mockResolvedValue(mockPoll);
       prisma.pollVote.findFirst.mockResolvedValue(mockVote);
+      prisma.pollVote.findMany.mockResolvedValue([mockVote]);
 
       const result = await service.getPoll(pollId, userId);
 
-      expect(prisma.pollVote.findFirst).toHaveBeenCalledWith({
-        where: {
-          userId,
-          option: { pollId },
-        },
-      });
-      expect(result.userVotedOptionId).toBe('opt1');
+      expect(prisma.pollVote.findMany).toHaveBeenCalled();
+      expect(result.userVotedOptionIds).toContain('opt1');
     });
 
     it('should throw NotFoundException if poll does not exist', async () => {
@@ -300,7 +296,7 @@ describe('PollsService', () => {
         include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
         orderBy: { createdAt: 'desc' },
         take: 21,
-        cursor: { userId_optionId: { userId: 'user-1', optionId: 'opt1' } },
+        cursor: { userId_optionId: { userId: 'user-1_opt1', optionId: 'opt1' } },
         skip: 1,
       });
     });
