@@ -111,22 +111,28 @@ export class GamificationService {
   async awardXP(userId: string, reason: string, customAmount?: number) {
     const amount = customAmount || XP_REWARDS[reason] || 5;
 
-    let xp = await this.prisma.userXP.findUnique({ where: { userId } });
-    if (!xp) {
-      xp = await this.prisma.userXP.create({ data: { userId, totalXP: 0, level: 1 } });
-    }
+    // Use upsert + atomic increment to avoid race conditions
+    // when multiple XP awards happen concurrently
+    const xp = await this.prisma.userXP.upsert({
+      where: { userId },
+      create: { userId, totalXP: amount, level: getLevelForXP(amount) },
+      update: { totalXP: { increment: amount } },
+    });
 
-    const newTotalXP = xp.totalXP + amount;
-    const newLevel = getLevelForXP(newTotalXP);
+    // Recalculate level from the atomically-updated totalXP
+    const newLevel = getLevelForXP(xp.totalXP);
+    if (newLevel !== xp.level) {
+      await this.prisma.userXP.update({
+        where: { userId },
+        data: { level: newLevel },
+      });
+    }
 
     await this.prisma.xPHistory.create({
       data: { userXPId: xp.id, amount, reason },
     });
 
-    return this.prisma.userXP.update({
-      where: { userId },
-      data: { totalXP: newTotalXP, level: newLevel },
-    });
+    return { ...xp, level: newLevel };
   }
 
   async getXPHistory(userId: string, cursor?: string, limit = 20) {

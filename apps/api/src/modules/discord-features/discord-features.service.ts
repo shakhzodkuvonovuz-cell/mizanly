@@ -114,6 +114,9 @@ export class DiscordFeaturesService {
   }
 
   async executeWebhook(token: string, dto: { content: string; username?: string; avatarUrl?: string }) {
+    if (!dto.content || dto.content.length > 4000) {
+      throw new BadRequestException('Content is required and must be under 4000 characters');
+    }
     const webhook = await this.prisma.webhook.findUnique({ where: { token } });
     if (!webhook || !webhook.isActive) throw new NotFoundException('Webhook not found');
 

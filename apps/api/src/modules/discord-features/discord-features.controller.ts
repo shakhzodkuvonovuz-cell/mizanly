@@ -93,6 +93,7 @@ export class DiscordFeaturesController {
   }
 
   @Post('webhooks/:token/execute')
+  @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Execute webhook (external)' })
   executeWebhook(@Param('token') token: string, @Body() dto: { content: string; username?: string }) {
     return this.service.executeWebhook(token, dto);

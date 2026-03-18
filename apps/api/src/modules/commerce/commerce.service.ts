@@ -70,31 +70,40 @@ export class CommerceService {
     if (product.sellerId === userId) throw new BadRequestException('Cannot buy your own product');
 
     const qty = dto.quantity || 1;
+    if (qty < 1 || qty > 100) throw new BadRequestException('Invalid quantity');
     if (product.stock < qty) throw new BadRequestException('Not enough stock');
 
     const installments = dto.installments || 1;
     if (installments < 1 || installments > 4) throw new BadRequestException('Installments must be 1-4');
 
-    const order = await this.prisma.order.create({
-      data: {
-        buyerId: userId,
-        productId: dto.productId,
-        quantity: qty,
-        totalAmount: product.price * qty,
-        currency: product.currency,
-        installments,
-        shippingAddress: dto.shippingAddress,
-      },
-      include: { product: true },
-    });
+    // Use a transaction to atomically check stock and create order
+    // This prevents overselling under concurrent orders
+    return this.prisma.$transaction(async (tx) => {
+      // Atomically decrement stock only if sufficient
+      const updated = await tx.product.updateMany({
+        where: { id: dto.productId, stock: { gte: qty }, status: 'active' },
+        data: { stock: { decrement: qty }, salesCount: { increment: qty } },
+      });
 
-    // Reduce stock
-    await this.prisma.product.update({
-      where: { id: dto.productId },
-      data: { stock: { decrement: qty } },
-    });
+      if (updated.count === 0) {
+        throw new BadRequestException('Product unavailable or insufficient stock');
+      }
 
-    return order;
+      const order = await tx.order.create({
+        data: {
+          buyerId: userId,
+          productId: dto.productId,
+          quantity: qty,
+          totalAmount: product.price * qty,
+          currency: product.currency,
+          installments,
+          shippingAddress: dto.shippingAddress,
+        },
+        include: { product: true },
+      });
+
+      return order;
+    });
   }
 
   async getMyOrders(userId: string, cursor?: string, limit = 20) {
@@ -114,9 +123,34 @@ export class CommerceService {
   }
 
   async updateOrderStatus(orderId: string, sellerId: string, status: string) {
+    const VALID_STATUSES = ['pending', 'paid', 'shipped', 'delivered', 'cancelled', 'refunded'];
+    if (!VALID_STATUSES.includes(status)) throw new BadRequestException('Invalid order status');
+
     const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { product: true } });
     if (!order) throw new NotFoundException();
     if (order.product.sellerId !== sellerId) throw new ForbiddenException();
+
+    // Validate status transitions
+    const VALID_TRANSITIONS: Record<string, string[]> = {
+      pending: ['paid', 'cancelled'],
+      paid: ['shipped', 'refunded'],
+      shipped: ['delivered'],
+      delivered: [],
+      cancelled: [],
+      refunded: [],
+    };
+    if (!VALID_TRANSITIONS[order.status]?.includes(status)) {
+      throw new BadRequestException(`Cannot transition from ${order.status} to ${status}`);
+    }
+
+    // Restore stock on cancellation/refund
+    if ((status === 'cancelled' || status === 'refunded') && order.status !== 'cancelled' && order.status !== 'refunded') {
+      await this.prisma.product.update({
+        where: { id: order.productId },
+        data: { stock: { increment: order.quantity } },
+      });
+    }
+
     return this.prisma.order.update({ where: { id: orderId }, data: { status } });
   }
 
@@ -190,19 +224,25 @@ export class CommerceService {
   }
 
   async donateZakat(userId: string, fundId: string, dto: { amount: number; isAnonymous?: boolean }) {
+    if (!dto.amount || dto.amount <= 0 || dto.amount > 1_000_000) {
+      throw new BadRequestException('Invalid donation amount');
+    }
+
     const fund = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
     if (!fund || fund.status !== 'active') throw new NotFoundException('Fund not found or closed');
 
-    const donation = await this.prisma.zakatDonation.create({
-      data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
-    });
+    // Transaction: create donation + update fund atomically
+    const [donation] = await this.prisma.$transaction([
+      this.prisma.zakatDonation.create({
+        data: { fundId, donorId: userId, amount: dto.amount, isAnonymous: dto.isAnonymous || false },
+      }),
+      this.prisma.zakatFund.update({
+        where: { id: fundId },
+        data: { raisedAmount: { increment: dto.amount } },
+      }),
+    ]);
 
-    await this.prisma.zakatFund.update({
-      where: { id: fundId },
-      data: { raisedAmount: { increment: dto.amount } },
-    });
-
-    // Check if goal reached
+    // Check if goal reached (separate query, non-critical)
     const updated = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
     if (updated && updated.raisedAmount >= updated.goalAmount) {
       await this.prisma.zakatFund.update({ where: { id: fundId }, data: { status: 'completed' } });
