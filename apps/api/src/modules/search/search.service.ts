@@ -130,7 +130,7 @@ const CHANNEL_SEARCH_SELECT = {
   },
 };
 
-interface SearchResults {
+export interface SearchResults {
   people?: Prisma.UserGetPayload<{ select: typeof USER_SEARCH_SELECT }>[];
   threads?: Prisma.ThreadGetPayload<{ select: typeof THREAD_SEARCH_SELECT }>[];
   posts?: Prisma.PostGetPayload<{ select: typeof POST_SEARCH_SELECT }>[];

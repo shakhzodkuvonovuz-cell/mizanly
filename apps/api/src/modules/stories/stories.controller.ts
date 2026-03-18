@@ -42,6 +42,20 @@ export class StoriesController {
     return this.storiesService.create(userId, dto);
   }
 
+  @Get('highlights/:userId')
+  @ApiOperation({ summary: "Get user's highlight albums" })
+  getHighlights(@Param('userId') userId: string) {
+    return this.storiesService.getHighlights(userId);
+  }
+
+  @Get('me/archived')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get archived stories for current user' })
+  getArchived(@CurrentUser('id') userId: string) {
+    return this.storiesService.getArchived(userId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get story by ID' })
   getById(@Param('id') id: string) {
@@ -109,12 +123,6 @@ export class StoriesController {
     return this.storiesService.getReactionSummary(id, userId);
   }
 
-  @Get('highlights/:userId')
-  @ApiOperation({ summary: "Get user's highlight albums" })
-  getHighlights(@Param('userId') userId: string) {
-    return this.storiesService.getHighlights(userId);
-  }
-
   @Post('highlights')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -148,14 +156,6 @@ export class StoriesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.storiesService.deleteHighlight(albumId, userId);
-  }
-
-  @Get('me/archived')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get archived stories for current user' })
-  getArchived(@CurrentUser('id') userId: string) {
-    return this.storiesService.getArchived(userId);
   }
 
   @Post('highlights/:albumId/stories/:storyId')

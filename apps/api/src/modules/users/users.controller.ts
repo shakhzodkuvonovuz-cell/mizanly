@@ -204,6 +204,52 @@ export class UsersController {
     return this.usersService.findByPhoneNumbers(userId, dto.phoneNumbers);
   }
 
+  @Get('me/liked-posts')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Posts liked by current user' })
+  getLikedPosts(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.usersService.getLikedPosts(userId, cursor);
+  }
+
+  @Post('me/delete-account')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Request account deletion (30-day grace)' })
+  requestAccountDeletion(@CurrentUser('id') userId: string) {
+    return this.usersService.requestAccountDeletion(userId);
+  }
+
+  @Post('me/cancel-deletion')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel pending account deletion' })
+  cancelAccountDeletion(@CurrentUser('id') userId: string) {
+    return this.usersService.cancelAccountDeletion(userId);
+  }
+
+  @Patch('me/nasheed-mode')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle nasheed mode' })
+  updateNasheedMode(
+    @CurrentUser('id') userId: string,
+    @Body() body: { nasheedMode: boolean },
+  ) {
+    return this.usersService.updateNasheedMode(userId, body.nasheedMode);
+  }
+
+  @Get('me/export-data')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Export all user data (GDPR)' })
+  exportData(@CurrentUser('id') userId: string) {
+    return this.usersService.exportData(userId);
+  }
+
   // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
   @UseGuards(OptionalClerkAuthGuard)
@@ -265,52 +311,6 @@ export class UsersController {
     @Query('limit') limit?: number,
   ) {
     return this.usersService.getMutualFollowers(currentUserId, targetUsername, limit ?? 20);
-  }
-
-  @Get('me/liked-posts')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Posts liked by current user' })
-  getLikedPosts(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.usersService.getLikedPosts(userId, cursor);
-  }
-
-  @Post('me/delete-account')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Request account deletion (30-day grace)' })
-  requestAccountDeletion(@CurrentUser('id') userId: string) {
-    return this.usersService.requestAccountDeletion(userId);
-  }
-
-  @Post('me/cancel-deletion')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Cancel pending account deletion' })
-  cancelAccountDeletion(@CurrentUser('id') userId: string) {
-    return this.usersService.cancelAccountDeletion(userId);
-  }
-
-  @Patch('me/nasheed-mode')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Toggle nasheed mode' })
-  updateNasheedMode(
-    @CurrentUser('id') userId: string,
-    @Body() body: { nasheedMode: boolean },
-  ) {
-    return this.usersService.updateNasheedMode(userId, body.nasheedMode);
-  }
-
-  @Get('me/export-data')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Export all user data (GDPR)' })
-  exportData(@CurrentUser('id') userId: string) {
-    return this.usersService.exportData(userId);
   }
 
   @Post(':id/report')

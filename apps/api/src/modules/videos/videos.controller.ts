@@ -51,6 +51,18 @@ export class VideosController {
     return this.videosService.getFeed(userId, category, cursor);
   }
 
+  @Get('comments/:commentId/replies')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get replies to a video comment' })
+  getCommentReplies(
+    @Param('commentId') commentId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 20;
+    return this.videosService.getCommentReplies(commentId, cursor, limitNum);
+  }
+
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get video by ID' })
@@ -211,18 +223,6 @@ export class VideosController {
   ) {
     const limitNum = limit ? parseInt(limit, 10) : 10;
     return this.videosService.getRecommended(id, limitNum, userId);
-  }
-
-  @Get('comments/:commentId/replies')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get replies to a video comment' })
-  getCommentReplies(
-    @Param('commentId') commentId: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const limitNum = limit ? parseInt(limit, 10) : 20;
-    return this.videosService.getCommentReplies(commentId, cursor, limitNum);
   }
 
   @Post(':id/record-progress')
