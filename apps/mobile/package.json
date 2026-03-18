@@ -18,6 +18,7 @@
     "@expo-google-fonts/dm-sans": "^0.4.2",
     "@expo-google-fonts/noto-naskh-arabic": "^0.4.5",
     "@expo-google-fonts/playfair-display": "^0.4.2",
+    "@expo/config-plugins": "^55.0.6",
     "@expo/metro-runtime": "~4.0.0",
     "@react-native-community/netinfo": "11.4.1",
     "@react-navigation/bottom-tabs": "^7.0.0",

@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
+    minHeight: 52,
     gap: spacing.xs,
   },
   at: { color: colors.text.secondary, fontSize: fontSize.base },

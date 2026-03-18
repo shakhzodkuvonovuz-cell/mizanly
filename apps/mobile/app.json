@@ -12,14 +12,17 @@
       "resizeMode": "contain",
       "backgroundColor": "#0D1117"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.mizanly.mobile",
       "infoPlist": {
         "NSCameraUsageDescription": "Mizanly needs camera access to create posts, stories, and reels",
         "NSMicrophoneUsageDescription": "Mizanly needs microphone access for voice notes and video recording",
-        "NSPhotoLibraryUsageDescription": "Mizanly needs photo library access to share images and videos"
+        "NSPhotoLibraryUsageDescription": "Mizanly needs photo library access to share images and videos",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -27,7 +30,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0D1117"
       },
-      "package": "app.mizanly.mobile"
+      "package": "app.mizanly.mobile",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -35,26 +43,44 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      ["expo-router", {
-        "origin": "https://mizanly.app"
-      }],
+      [
+        "expo-router",
+        {
+          "origin": "https://mizanly.app"
+        }
+      ],
       "expo-image-picker",
       "expo-camera",
-      ["expo-av", { "microphonePermission": "Allow Mizanly to access your microphone for voice notes and video." }],
-      ["expo-notifications", {
-        "icon": "./assets/images/icon.png",
-        "color": "#0A7B4F",
-        "sounds": []
-      }]
+      [
+        "expo-av",
+        {
+          "microphonePermission": "Allow Mizanly to access your microphone for voice notes and video."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#0A7B4F",
+          "sounds": []
+        }
+      ],
+      "expo-font",
+      "expo-localization",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
       "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID"
+        "projectId": "d5a4cde9-ecd1-4d17-bfb1-1d84fccd4b89"
+      },
+      "router": {
+        "origin": "https://mizanly.app"
       }
     },
-    "owner": "mizanly"
+    "owner": "shaxzodbek"
   }
 }
