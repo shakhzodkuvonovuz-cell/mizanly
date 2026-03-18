@@ -3,8 +3,10 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 import { createHash } from 'crypto';
 
 interface StoreEnvelopeData {
@@ -149,27 +151,37 @@ export class EncryptionService {
       throw new ForbiddenException('Not a member');
     }
 
-    // Get current max version
-    const latest = await this.prisma.conversationKeyEnvelope.findFirst({
-      where: { conversationId },
-      orderBy: { version: 'desc' },
-    });
-    const newVersion = (latest?.version ?? 0) + 1;
+    // Get current max version and create envelopes in a serializable transaction
+    // to avoid race conditions with concurrent rotations
+    try {
+      const result = await this.prisma.$transaction(async (tx) => {
+        const latest = await tx.conversationKeyEnvelope.findFirst({
+          where: { conversationId },
+          orderBy: { version: 'desc' },
+        });
+        const newVersion = (latest?.version ?? 0) + 1;
 
-    // Create all new envelopes in a transaction
-    const creates = envelopes.map((env) =>
-      this.prisma.conversationKeyEnvelope.create({
-        data: {
-          conversationId,
-          userId: env.userId,
-          encryptedKey: env.encryptedKey,
-          nonce: env.nonce,
-          version: newVersion,
-        },
-      }),
-    );
-    await this.prisma.$transaction(creates);
+        for (const env of envelopes) {
+          await tx.conversationKeyEnvelope.create({
+            data: {
+              conversationId,
+              userId: env.userId,
+              encryptedKey: env.encryptedKey,
+              nonce: env.nonce,
+              version: newVersion,
+            },
+          });
+        }
 
-    return { version: newVersion, envelopeCount: envelopes.length };
+        return { version: newVersion, envelopeCount: envelopes.length };
+      });
+
+      return result;
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictException('Key rotation conflict — please retry');
+      }
+      throw e;
+    }
   }
 }
