@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable,
+  View, Text, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -30,6 +30,7 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const hiddenInputRef = useRef<TextInput>(null);
@@ -158,7 +159,7 @@ export default function SignUpScreen() {
               autoFocus
             />
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
             <Text style={styles.hintText}>{t('auth.checkSpam')}</Text>
 
@@ -223,7 +224,7 @@ export default function SignUpScreen() {
               />
             </View>
 
-            {/* Password input with icon */}
+            {/* Password input with icon + show/hide */}
             <View style={[styles.inputRow, passwordFocused && styles.inputRowFocused]}>
               <Icon
                 name="lock"
@@ -236,11 +237,18 @@ export default function SignUpScreen() {
                 placeholderTextColor={colors.text.tertiary}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 autoComplete="new-password"
                 onFocus={() => setPasswordFocused(true)}
                 onBlur={() => setPasswordFocused(false)}
               />
+              <Pressable
+                onPress={() => setShowPassword((v) => !v)}
+                hitSlop={12}
+                accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <Icon name={showPassword ? 'eye-off' : 'eye'} size="sm" color={colors.text.tertiary} />
+              </Pressable>
             </View>
 
             {/* Password strength indicator */}
@@ -263,7 +271,7 @@ export default function SignUpScreen() {
               ))}
             </View>
 
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {error ? <Text style={styles.error} accessibilityRole="alert">{error}</Text> : null}
 
             <GradientButton
               label={t('auth.createAccount')}
@@ -284,13 +292,13 @@ export default function SignUpScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            {/* Social auth placeholder */}
+            {/* Social auth */}
             <View style={styles.socialRow}>
-              <Pressable style={styles.socialBtn}>
+              <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
                 <Icon name="globe" size="sm" color={colors.text.primary} />
                 <Text style={styles.socialText}>{t('auth.google')}</Text>
               </Pressable>
-              <Pressable style={styles.socialBtn}>
+              <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
                 <Icon name="lock" size="sm" color={colors.text.primary} />
                 <Text style={styles.socialText}>{t('auth.apple')}</Text>
               </Pressable>
@@ -300,9 +308,9 @@ export default function SignUpScreen() {
           {/* Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>{t('auth.alreadyHaveAccount')}</Text>
-            <TouchableOpacity onPress={() => router.replace('/(auth)/sign-in')}>
+            <Pressable onPress={() => router.replace('/(auth)/sign-in')} hitSlop={8} accessibilityRole="link">
               <Text style={styles.footerLink}>{t('auth.signIn')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -335,7 +343,8 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    minHeight: 52,
+    paddingVertical: 14,
   },
   inputRowFocused: {
     borderColor: colors.emerald,
@@ -388,7 +397,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.dark.border,
   },
-  socialText: { color: colors.text.primary, fontSize: fontSize.sm },
+  socialBtnPressed: { opacity: 0.7, transform: [{ scale: 0.97 }] },
+  socialText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   footerText: { color: colors.text.secondary, fontSize: fontSize.sm },
   footerLink: { color: colors.gold, fontSize: fontSize.sm, fontWeight: '600' },

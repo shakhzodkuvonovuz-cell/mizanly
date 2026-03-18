@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform,
+  View, Text, TextInput, StyleSheet, Pressable,
+  KeyboardAvoidingView, Platform, AccessibilityInfo,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
@@ -11,11 +11,14 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   withTiming,
+  withDelay,
+  FadeInDown,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius, animation } from '@/theme';
+import { useHaptic } from '@/hooks/useHaptic';
+import { colors, spacing, fontSize, radius, animation, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export default function SignInScreen() {
@@ -23,8 +26,10 @@ export default function SignInScreen() {
   const router = useRouter();
   const { t } = useTranslation();
 
+  const haptic = useHaptic();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [emailFocused, setEmailFocused] = useState(false);
@@ -109,7 +114,7 @@ export default function SignInScreen() {
             />
           </View>
 
-          {/* Password input with icon */}
+          {/* Password input with icon + show/hide toggle */}
           <View style={[styles.inputRow, passwordFocused && styles.inputRowFocused]}>
             <Icon
               name="lock"
@@ -122,14 +127,37 @@ export default function SignInScreen() {
               placeholderTextColor={colors.text.tertiary}
               value={password}
               onChangeText={setPassword}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               autoComplete="password"
               onFocus={() => setPasswordFocused(true)}
               onBlur={() => setPasswordFocused(false)}
             />
+            <Pressable
+              onPress={() => setShowPassword((v) => !v)}
+              hitSlop={12}
+              accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}
+              accessibilityRole="button"
+            >
+              <Icon
+                name={showPassword ? 'eye-off' : 'eye'}
+                size="sm"
+                color={colors.text.tertiary}
+              />
+            </Pressable>
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? (
+            <Text style={styles.error} accessibilityRole="alert">{error}</Text>
+          ) : null}
+
+          {/* Forgot password */}
+          <Pressable
+            onPress={() => router.push('/(auth)/forgot-password' as never)}
+            style={styles.forgotBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.forgotText}>{t('auth.forgotPassword') || 'Forgot password?'}</Text>
+          </Pressable>
 
           <GradientButton
             label={t('auth.signIn')}
@@ -146,13 +174,23 @@ export default function SignInScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Social auth placeholder */}
+          {/* Social auth */}
           <View style={styles.socialRow}>
-            <Pressable style={styles.socialBtn}>
+            <Pressable
+              style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
+              onPress={() => haptic.light()}
+              accessibilityLabel="Sign in with Google"
+              accessibilityRole="button"
+            >
               <Icon name="globe" size="sm" color={colors.text.primary} />
               <Text style={styles.socialText}>{t('auth.google')}</Text>
             </Pressable>
-            <Pressable style={styles.socialBtn}>
+            <Pressable
+              style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}
+              onPress={() => haptic.light()}
+              accessibilityLabel="Sign in with Apple"
+              accessibilityRole="button"
+            >
               <Icon name="lock" size="sm" color={colors.text.primary} />
               <Text style={styles.socialText}>{t('auth.apple')}</Text>
             </Pressable>
@@ -162,9 +200,13 @@ export default function SignInScreen() {
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>{t('auth.dontHaveAccount')}</Text>
-          <TouchableOpacity onPress={() => router.replace('/(auth)/sign-up')}>
+          <Pressable
+            onPress={() => router.replace('/(auth)/sign-up')}
+            hitSlop={8}
+            accessibilityRole="link"
+          >
             <Text style={styles.footerLink}>{t('auth.signUp')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -194,7 +236,8 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
     borderRadius: radius.md,
     paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+    minHeight: 52,
+    paddingVertical: 14,
   },
   inputRowFocused: {
     borderColor: colors.emerald,
@@ -235,7 +278,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.dark.border,
   },
-  socialText: { color: colors.text.primary, fontSize: fontSize.sm },
+  socialBtnPressed: {
+    opacity: 0.7,
+    transform: [{ scale: 0.97 }],
+  },
+  socialText: { color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' },
+  forgotBtn: { alignSelf: 'flex-end', marginTop: -spacing.xs },
+  forgotText: { color: colors.text.secondary, fontSize: fontSize.sm },
   footer: { flexDirection: 'row', justifyContent: 'center', marginTop: spacing['2xl'] },
   footerText: { color: colors.text.secondary, fontSize: fontSize.sm },
   footerLink: { color: colors.gold, fontSize: fontSize.sm, fontWeight: '600' },
