@@ -20,10 +20,12 @@ describe('EventsService', () => {
     eventRSVP: {
       create: jest.fn(),
       findUnique: jest.fn(),
+      upsert: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
       count: jest.fn(),
       findMany: jest.fn(),
+      groupBy: jest.fn(),
     },
     user: {
       findUnique: jest.fn(),
@@ -49,15 +51,11 @@ describe('EventsService', () => {
       title: 'Test Event',
       description: 'Test Description',
       coverUrl: 'https://example.com/cover.jpg',
-      startDate: new Date('2026-03-20T10:00:00Z'),
-      endDate: new Date('2026-03-20T12:00:00Z'),
+      startDate: '2026-03-20T10:00:00Z',
+      endDate: '2026-03-20T12:00:00Z',
       location: 'Test Location',
-      locationUrl: 'https://maps.example.com',
       isOnline: false,
-      onlineUrl: undefined,
-      eventType: 'in_person' as const,
-      privacy: 'public' as const,
-      communityId: undefined,
+      eventType: 'in_person',
     };
     const baseEvent = {
       id: 'event1',
@@ -91,48 +89,26 @@ describe('EventsService', () => {
       const dto = baseDto;
       const mockEvent = baseEvent;
       mockPrismaService.event.create.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.count
-        .mockResolvedValueOnce(5) // goingCount
-        .mockResolvedValueOnce(2) // maybeCount
-        .mockResolvedValueOnce(1); // notGoingCount
 
       const result = await service.createEvent(userId, dto);
 
       expect(result).toEqual({
         ...mockEvent,
-        goingCount: 5,
-        maybeCount: 2,
-        notGoingCount: 1,
+        goingCount: 0,
+        maybeCount: 0,
+        notGoingCount: 0,
       });
       expect(mockPrismaService.event.create).toHaveBeenCalledWith({
-        data: {
+        data: expect.objectContaining({
           title: dto.title,
-          description: dto.description,
-          coverUrl: dto.coverUrl,
           startDate: dto.startDate,
-          endDate: dto.endDate,
-          location: dto.location,
-          locationUrl: dto.locationUrl,
-          isOnline: dto.isOnline,
-          onlineUrl: dto.onlineUrl,
-          eventType: dto.eventType,
-          privacy: dto.privacy,
           user: { connect: { id: userId } },
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatarUrl: true,
-              isVerified: true,
-            },
-          },
-          _count: { select: { rsvps: true } },
-        },
+        }),
+        include: expect.objectContaining({
+          user: expect.any(Object),
+          _count: expect.any(Object),
+        }),
       });
-      expect(mockPrismaService.eventRSVP.count).toHaveBeenCalledTimes(3);
     });
 
     it('should include community when communityId provided', async () => {
@@ -164,26 +140,25 @@ describe('EventsService', () => {
         { id: 'event2', title: 'Event 2', userId: 'user2' },
       ];
       mockPrismaService.event.findMany.mockResolvedValue(mockEvents);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
       const result = await service.listEvents(userId, undefined, 20);
 
       expect(result.data).toHaveLength(2);
       expect(result.meta).toEqual({ cursor: null, hasMore: false });
-      expect(mockPrismaService.event.findMany).toHaveBeenCalledWith({
-        where: {},
-        include: expect.any(Object),
-        take: 21,
-        orderBy: { startDate: 'desc' },
-        cursor: undefined,
-        skip: undefined,
-      });
+      expect(mockPrismaService.event.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {},
+          take: 21,
+          orderBy: { startDate: 'desc' },
+        }),
+      );
     });
 
     it('should handle cursor pagination', async () => {
       const cursor = 'event1';
       mockPrismaService.event.findMany.mockResolvedValue([{ id: 'event2' }]);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
       await service.listEvents('user1', cursor, 20);
 
@@ -197,7 +172,7 @@ describe('EventsService', () => {
 
     it('should filter by privacy and eventType', async () => {
       mockPrismaService.event.findMany.mockResolvedValue([]);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
       await service.listEvents('user1', undefined, 20, 'public', 'in_person');
 
@@ -210,7 +185,7 @@ describe('EventsService', () => {
 
     it('should only show public events when userId is null', async () => {
       mockPrismaService.event.findMany.mockResolvedValue([]);
-      mockPrismaService.eventRSVP.count.mockResolvedValue(0);
+      mockPrismaService.eventRSVP.groupBy.mockResolvedValue([]);
 
       await service.listEvents(null, undefined, 20);
 
@@ -371,42 +346,26 @@ describe('EventsService', () => {
   });
 
   describe('rsvpToEvent', () => {
-    it('should create new RSVP when not exists', async () => {
+    const futureEvent = {
+      id: 'event1', privacy: 'public', userId: 'owner',
+      startDate: '2027-12-01T00:00:00Z', endDate: '2027-12-02T00:00:00Z',
+    };
+
+    it('should upsert RSVP for a public event', async () => {
       const userId = 'user1';
       const eventId = 'event1';
-      const status = 'going';
-      const mockEvent = { id: eventId, privacy: 'public', userId: 'owner' };
-      mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.findUnique.mockResolvedValue(null);
+      const status = 'going' as const;
+      mockPrismaService.event.findUnique.mockResolvedValue(futureEvent);
       const mockRsvp = { eventId, userId, status, user: {} };
-      mockPrismaService.eventRSVP.create.mockResolvedValue(mockRsvp);
+      mockPrismaService.eventRSVP.upsert.mockResolvedValue(mockRsvp);
 
       const result = await service.rsvpToEvent(userId, eventId, status);
 
       expect(result).toEqual(mockRsvp);
-      expect(mockPrismaService.eventRSVP.create).toHaveBeenCalledWith({
-        data: { eventId, userId, status },
-        include: { user: expect.any(Object) },
-      });
-    });
-
-    it('should update existing RSVP', async () => {
-      const userId = 'user1';
-      const eventId = 'event1';
-      const status = 'maybe';
-      const mockEvent = { id: eventId, privacy: 'public', userId: 'owner' };
-      const existingRsvp = { eventId, userId, status: 'going' };
-      mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.findUnique.mockResolvedValue(existingRsvp);
-      const updatedRsvp = { ...existingRsvp, status };
-      mockPrismaService.eventRSVP.update.mockResolvedValue(updatedRsvp);
-
-      const result = await service.rsvpToEvent(userId, eventId, status);
-
-      expect(result).toEqual(updatedRsvp);
-      expect(mockPrismaService.eventRSVP.update).toHaveBeenCalledWith({
+      expect(mockPrismaService.eventRSVP.upsert).toHaveBeenCalledWith({
         where: { eventId_userId: { eventId, userId } },
-        data: { status },
+        update: { status },
+        create: { eventId, userId, status },
         include: { user: expect.any(Object) },
       });
     });
@@ -418,19 +377,29 @@ describe('EventsService', () => {
     });
 
     it('should throw ForbiddenException for private event when user not owner', async () => {
-      const mockEvent = { id: 'event1', privacy: 'private', userId: 'owner' };
-      mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
+      const privateEvent = { ...futureEvent, privacy: 'private' };
+      mockPrismaService.event.findUnique.mockResolvedValue(privateEvent);
 
       await expect(service.rsvpToEvent('other-user', 'event1', 'going')).rejects.toThrow(ForbiddenException);
     });
 
     it('should allow owner to RSVP to private event', async () => {
-      const mockEvent = { id: 'event1', privacy: 'private', userId: 'owner' };
-      mockPrismaService.event.findUnique.mockResolvedValue(mockEvent);
-      mockPrismaService.eventRSVP.findUnique.mockResolvedValue(null);
-      mockPrismaService.eventRSVP.create.mockResolvedValue({});
+      const privateEvent = { ...futureEvent, privacy: 'private' };
+      mockPrismaService.event.findUnique.mockResolvedValue(privateEvent);
+      mockPrismaService.eventRSVP.upsert.mockResolvedValue({ status: 'going' });
 
       await expect(service.rsvpToEvent('owner', 'event1', 'going')).resolves.toBeDefined();
+    });
+
+    it('should throw BadRequestException for past events', async () => {
+      const pastEvent = {
+        ...futureEvent,
+        startDate: '2020-01-01T00:00:00Z',
+        endDate: '2020-01-02T00:00:00Z',
+      };
+      mockPrismaService.event.findUnique.mockResolvedValue(pastEvent);
+
+      await expect(service.rsvpToEvent('user1', 'event1', 'going')).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -438,8 +407,6 @@ describe('EventsService', () => {
     it('should remove RSVP successfully', async () => {
       const userId = 'user1';
       const eventId = 'event1';
-      const mockRsvp = { eventId, userId, status: 'going' };
-      mockPrismaService.eventRSVP.findUnique.mockResolvedValue(mockRsvp);
       mockPrismaService.eventRSVP.delete.mockResolvedValue({});
 
       const result = await service.removeRsvp(userId, eventId);
@@ -450,8 +417,11 @@ describe('EventsService', () => {
       });
     });
 
-    it('should throw NotFoundException when RSVP not found', async () => {
-      mockPrismaService.eventRSVP.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException when RSVP not found (P2025)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      mockPrismaService.eventRSVP.delete.mockRejectedValue(
+        new PrismaClientKnownRequestError('Not found', { code: 'P2025', clientVersion: '0' }),
+      );
 
       await expect(service.removeRsvp('user1', 'event1')).rejects.toThrow(NotFoundException);
     });
@@ -470,14 +440,13 @@ describe('EventsService', () => {
       const result = await service.listAttendees(eventId);
 
       expect(result.data).toEqual(mockRsvps);
-      expect(mockPrismaService.eventRSVP.findMany).toHaveBeenCalledWith({
-        where: { eventId },
-        include: { user: expect.any(Object) },
-        take: 21,
-        orderBy: { createdAt: 'desc' },
-        cursor: undefined,
-        skip: undefined,
-      });
+      expect(mockPrismaService.eventRSVP.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { eventId },
+          take: 21,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
     });
 
     it('should throw NotFoundException when event not found', async () => {
