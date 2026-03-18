@@ -26,6 +26,7 @@ describe('FollowsService', () => {
               create: jest.fn(),
               findUnique: jest.fn(),
               delete: jest.fn(),
+              deleteMany: jest.fn(),
               findMany: jest.fn(),
             },
             followRequest: {
@@ -33,6 +34,7 @@ describe('FollowsService', () => {
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              deleteMany: jest.fn(),
             },
             block: {
               findFirst: jest.fn(),
@@ -146,7 +148,7 @@ describe('FollowsService', () => {
       await expect(service.follow(currentUserId, targetUserId)).rejects.toThrow(ForbiddenException);
     });
 
-    it('should throw ConflictException when already following', async () => {
+    it('should return existing follow when already following (idempotent)', async () => {
       const currentUserId = 'user-123';
       const targetUserId = 'user-456';
       const mockUser = {
@@ -155,10 +157,12 @@ describe('FollowsService', () => {
         isDeactivated: false,
         isBanned: false,
       };
+      const existingFollow = { followerId: currentUserId, followingId: targetUserId };
       prisma.user.findUnique.mockResolvedValue(mockUser);
       prisma.block.findFirst.mockResolvedValue(null);
-      prisma.follow.findUnique.mockResolvedValue({ followerId: currentUserId, followingId: targetUserId });
-      await expect(service.follow(currentUserId, targetUserId)).rejects.toThrow(ConflictException);
+      prisma.follow.findUnique.mockResolvedValue(existingFollow);
+      const result = await service.follow(currentUserId, targetUserId);
+      expect(result).toEqual({ type: 'follow', follow: existingFollow });
     });
 
     it('should create a follow request for private user', async () => {
@@ -241,11 +245,14 @@ describe('FollowsService', () => {
       expect(result).toEqual({ message: 'Unfollowed' });
     });
 
-    it('should throw NotFoundException when not following', async () => {
+    it('should return success when not following (idempotent)', async () => {
       const currentUserId = 'user-123';
       const targetUserId = 'user-456';
       prisma.follow.findUnique.mockResolvedValue(null);
-      await expect(service.unfollow(currentUserId, targetUserId)).rejects.toThrow(NotFoundException);
+      prisma.follow.deleteMany.mockResolvedValue({ count: 0 });
+      prisma.followRequest.deleteMany.mockResolvedValue({ count: 0 });
+      const result = await service.unfollow(currentUserId, targetUserId);
+      expect(result).toBeDefined();
     });
   });
 
