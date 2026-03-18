@@ -9,6 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { createClerkClient } from '@clerk/backend';
 import { RegisterDto } from './dto/register.dto';
 import { SetInterestsDto } from './dto/set-interests.dto';
+import { AnalyticsService } from '../../common/services/analytics.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private config: ConfigService,
+    private analytics: AnalyticsService,
   ) {
     this.clerk = createClerkClient({
       secretKey: this.config.get('CLERK_SECRET_KEY'),
@@ -64,6 +66,13 @@ export class AuthService {
       create: { userId: user.id },
       update: {},
     });
+
+    // Track user registration
+    this.analytics.track('user_registered', user.id, {
+      username: user.username,
+      language: user.language,
+    });
+    this.analytics.increment('registrations:daily');
 
     return user;
   }
