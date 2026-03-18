@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "description": "Mizanly NestJS Backend API",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "nest build",
     "start": "nest start",
