@@ -18,6 +18,7 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
+import { AsyncJobService } from '../../common/services/async-jobs.service';
 
 const POST_SELECT = {
   id: true,
@@ -65,6 +66,7 @@ export class PostsService {
     @Inject('REDIS') private redis: Redis,
     private gamification: GamificationService,
     private ai: AiService,
+    private jobs: AsyncJobService,
   ) {}
 
   async getFeed(
@@ -356,7 +358,7 @@ export class PostsService {
               body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
             });
             if (notification) {
-              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
             }
           } catch (err) {
             this.logger.error('Failed to create mention notification', err);
@@ -365,8 +367,8 @@ export class PostsService {
       }
     }
     // Gamification: award XP + update streak (fire-and-forget)
-    this.gamification.awardXP(userId, 'post_created').catch(() => {});
-    this.gamification.updateStreak(userId, 'posting').catch(() => {});
+    this.jobs.enqueue('award-xp:post_created', () => this.gamification.awardXP(userId, 'post_created'));
+    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
 
     // AI moderation: check content asynchronously (flag for review, don't block)
     if (dto.content) {
@@ -487,7 +489,7 @@ export class PostsService {
               type: 'LIKE', postId,
             });
             if (notification) {
-              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
             }
           } catch (err) {
             this.logger.error('Failed to create notification', err);
@@ -679,7 +681,7 @@ export class PostsService {
             body: dto.content.substring(0, 100),
           });
           if (notification) {
-            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+            this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
           }
         }
       } else if (post.userId !== userId) {
@@ -691,7 +693,7 @@ export class PostsService {
           body: dto.content.substring(0, 100),
         });
         if (notification) {
-          this.pushTrigger.triggerPush(notification.id).catch(() => {});
+          this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
         }
       }
     } catch (err) {
@@ -699,7 +701,7 @@ export class PostsService {
     }
 
     // Gamification: award XP for commenting
-    this.gamification.awardXP(userId, 'comment_posted').catch(() => {});
+    this.jobs.enqueue('award-xp:comment_posted', () => this.gamification.awardXP(userId, 'comment_posted'));
 
     return comment;
   }
