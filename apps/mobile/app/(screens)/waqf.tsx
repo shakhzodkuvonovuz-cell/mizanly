@@ -10,6 +10,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
@@ -17,6 +18,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v
 
 export default function WaqfScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
 
   const fundsQuery = useInfiniteQuery({

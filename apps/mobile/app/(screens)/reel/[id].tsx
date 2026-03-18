@@ -489,7 +489,7 @@ export default function ReelDetailScreen() {
                 </View>
               )}
               <View style={styles.inputRow}>
-                <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
+                <Avatar uri={user.imageUrl} name={user.fullName ?? t('common.me')} size="sm" />
                 <TextInput
                   ref={inputRef}
                   style={styles.input}

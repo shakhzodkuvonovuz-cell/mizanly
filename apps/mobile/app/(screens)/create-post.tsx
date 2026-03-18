@@ -265,7 +265,7 @@ export default function CreatePostScreen() {
         >
           {/* User row */}
           <View style={styles.userRow}>
-            <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="md" />
+            <Avatar uri={user?.imageUrl} name={user?.fullName ?? t('common.me')} size="md" />
             <View>
               <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
               {/* Visibility picker */}

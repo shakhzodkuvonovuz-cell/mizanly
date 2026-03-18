@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useStore } from '@/store';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -19,6 +20,7 @@ const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v
 
 export default function WatchPartyScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const user = useStore(s => s.user);

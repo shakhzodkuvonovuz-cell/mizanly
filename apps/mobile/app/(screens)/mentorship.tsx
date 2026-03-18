@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
 import { useStore } from '@/store';
@@ -29,6 +30,7 @@ const TOPICS: { id: string; label: string; icon: IconName }[] = [
 
 export default function MentorshipScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const user = useStore(s => s.user);
@@ -113,7 +115,7 @@ export default function MentorshipScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Mentorship"
+          title={t('community.mentorship')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -150,7 +152,7 @@ export default function MentorshipScreen() {
               keyExtractor={(item) => item.id as string}
               contentContainerStyle={styles.list}
               ListEmptyComponent={
-                <EmptyState icon="users" title="Find a mentor" subtitle="Search for experienced community members" />
+                <EmptyState icon="users" title={t('community.findMentor')} subtitle={t('community.findMentorHint')} />
               }
             />
           </>
@@ -172,7 +174,7 @@ export default function MentorshipScreen() {
                   {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={80} borderRadius={radius.lg} />)}
                 </View>
               ) : (
-                <EmptyState icon="users" title="No mentorships" subtitle="Request a mentor or accept mentee requests" />
+                <EmptyState icon="users" title={t('community.noMentorships')} subtitle={t('community.noMentorshipsHint')} />
               )
             }
           />

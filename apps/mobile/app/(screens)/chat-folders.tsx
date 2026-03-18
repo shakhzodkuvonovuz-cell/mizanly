@@ -13,6 +13,7 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -22,6 +23,7 @@ const FOLDER_COLORS = [colors.emerald, colors.gold, '#58A6FF', '#9333EA', '#F851
 export default function ChatFoldersScreen() {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const [createMode, setCreateMode] = useState(false);
@@ -100,7 +102,7 @@ export default function ChatFoldersScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Chat Folders"
+          title={t('risalah.chatFolders')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightAction={{ icon: 'plus', onPress: () => { setCreateMode(true); haptic.light(); } }}
         />
@@ -123,7 +125,7 @@ export default function ChatFoldersScreen() {
               style={styles.createInput}
               value={newName}
               onChangeText={setNewName}
-              placeholder="Folder name..."
+              placeholder={t('risalah.folderNamePlaceholder')}
               placeholderTextColor={colors.text.tertiary}
               maxLength={50}
               autoFocus
@@ -176,8 +178,8 @@ export default function ChatFoldersScreen() {
             ) : (
               <EmptyState
                 icon="layers"
-                title="No folders yet"
-                subtitle="Create folders to organize your chats"
+                title={t('risalah.noFoldersYet')}
+                subtitle={t('risalah.createFoldersHint')}
                 actionLabel="Create Folder"
                 onAction={() => setCreateMode(true)}
               />

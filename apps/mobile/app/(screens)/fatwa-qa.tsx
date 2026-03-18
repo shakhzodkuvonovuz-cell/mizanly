@@ -14,6 +14,7 @@ import { CharCountRing } from '@/components/ui/CharCountRing';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -27,6 +28,7 @@ const MADHABS = [
 
 export default function FatwaQAScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
 
@@ -109,7 +111,7 @@ export default function FatwaQAScreen() {
     <ScreenErrorBoundary>
       <View style={styles.container}>
         <GlassHeader
-          title="Fatwa Q&A"
+          title={t('community.fatwaQA')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
 
@@ -161,7 +163,7 @@ export default function FatwaQAScreen() {
                     {[1, 2, 3].map(i => <Skeleton.Rect key={i} width="100%" height={140} borderRadius={radius.lg} />)}
                   </View>
                 ) : (
-                  <EmptyState icon="globe" title="No questions yet" subtitle="Be the first to ask a question" />
+                  <EmptyState icon="globe" title={t('community.noQuestionsYet')} subtitle={t('community.askFirstQuestion')} />
                 )
               }
             />

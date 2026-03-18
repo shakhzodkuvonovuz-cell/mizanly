@@ -8,6 +8,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
@@ -15,6 +16,7 @@ const MAX_DURATION = 120; // 2 minutes max
 
 export default function VoicePostCreateScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
   const recordingRef = useRef<Audio.Recording | null>(null);

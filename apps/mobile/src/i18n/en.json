@@ -585,7 +585,11 @@
     "days": "days",
     "weeks": "weeks",
     "months": "months",
-    "years": "years"
+    "years": "years",
+    "chatFolders": "Chat Folders",
+    "folderNamePlaceholder": "Folder name...",
+    "noFoldersYet": "No folders yet",
+    "createFoldersHint": "Create folders to organize your chats"
   },
   "minbar": {
     "home": "Home",
@@ -2056,6 +2060,16 @@
       "followers": "Followers",
       "circle": "Circle"
     }
+  },
+  "community": {
+    "fatwaQA": "Fatwa Q&A",
+    "noQuestionsYet": "No questions yet",
+    "askFirstQuestion": "Be the first to ask a question",
+    "mentorship": "Mentorship",
+    "findMentor": "Find a mentor",
+    "findMentorHint": "Search for experienced community members",
+    "noMentorships": "No mentorships",
+    "noMentorshipsHint": "Request a mentor or accept mentee requests"
   },
   "discover": {
     "title": "Discover",

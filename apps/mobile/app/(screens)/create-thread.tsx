@@ -548,7 +548,7 @@ export default function CreateThreadScreen() {
                 onTogglePoll={index === 0 ? () => setPoll((p) => p ? null : { question: '', options: ['', ''], allowMultiple: false }) : undefined}
                 hasPoll={index === 0 && !!poll}
                 avatar={user?.imageUrl}
-                name={user?.fullName ?? user?.username ?? 'Me'}
+                name={user?.fullName ?? user?.username ?? t('common.me')}
                 autocomplete={autocomplete}
                 setAutocomplete={setAutocomplete}
                 setShowAutocomplete={setShowAutocomplete}
@@ -649,7 +649,7 @@ export default function CreateThreadScreen() {
                 colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
                 style={styles.addPartAvatarContainer}
               >
-                <Avatar uri={user?.imageUrl} name={user?.fullName ?? 'Me'} size="sm" />
+                <Avatar uri={user?.imageUrl} name={user?.fullName ?? t('common.me')} size="sm" />
               </LinearGradient>
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'transparent']}
