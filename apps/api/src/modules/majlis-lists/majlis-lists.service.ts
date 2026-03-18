@@ -150,7 +150,7 @@ export class MajlisListsService {
     }
 
     const { isPublic, ...rest } = dto;
-    const data: any = { ...rest };
+    const data: Prisma.MajlisListUpdateInput = { ...rest };
     if (isPublic !== undefined) {
       data.isPrivate = !isPublic;
     }

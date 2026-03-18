@@ -72,6 +72,9 @@ export class LiveService {
 
   async startLive(sessionId: string, userId: string) {
     const session = await this.requireHost(sessionId, userId);
+    if (session.status === LiveStatus.ENDED) throw new BadRequestException('Cannot restart an ended session');
+    if (session.status === LiveStatus.CANCELLED) throw new BadRequestException('Cannot start a cancelled session');
+    if (session.status === LiveStatus.LIVE) throw new BadRequestException('Session is already live');
     if (session.status !== LiveStatus.SCHEDULED) throw new BadRequestException('Can only start a scheduled session');
     return this.prisma.liveSession.update({
       where: { id: sessionId },
@@ -93,7 +96,10 @@ export class LiveService {
   }
 
   async cancelLive(sessionId: string, userId: string) {
-    await this.requireHost(sessionId, userId);
+    const session = await this.requireHost(sessionId, userId);
+    // Only SCHEDULED or LIVE sessions can be cancelled; ENDED/CANCELLED cannot
+    if (session.status === LiveStatus.ENDED) throw new BadRequestException('Cannot cancel an ended session');
+    if (session.status === LiveStatus.CANCELLED) throw new BadRequestException('Session is already cancelled');
     return this.prisma.liveSession.update({
       where: { id: sessionId },
       data: { status: LiveStatus.CANCELLED },
@@ -104,10 +110,15 @@ export class LiveService {
     const session = await this.getById(sessionId);
     if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
 
+    // Host is always implicitly in the session — don't add as participant
+    if (session.hostId === userId) {
+      return { joined: true, currentViewers: session.currentViewers };
+    }
+
     const existing = await this.prisma.liveParticipant.findUnique({
       where: { sessionId_userId: { sessionId, userId } },
     });
-    if (existing && !existing.leftAt) return existing;
+    if (existing && !existing.leftAt) return { joined: true, currentViewers: session.currentViewers };
 
     if (existing) {
       await this.prisma.liveParticipant.update({
@@ -120,31 +131,38 @@ export class LiveService {
       });
     }
 
-    const updated = await this.prisma.liveSession.update({
+    // Atomically increment viewers and update peak in one query
+    await this.prisma.$executeRaw`
+      UPDATE "LiveSession"
+      SET "currentViewers" = "currentViewers" + 1,
+          "totalViews" = "totalViews" + 1,
+          "peakViewers" = GREATEST("peakViewers", "currentViewers" + 1)
+      WHERE id = ${sessionId}
+    `;
+    const updated = await this.prisma.liveSession.findUnique({
       where: { id: sessionId },
-      data: {
-        currentViewers: { increment: 1 },
-        totalViews: { increment: 1 },
-      },
+      select: { currentViewers: true },
     });
-    if (updated.currentViewers > updated.peakViewers) {
-      await this.prisma.liveSession.update({
-        where: { id: sessionId },
-        data: { peakViewers: updated.currentViewers },
-      });
-    }
-    return { joined: true, currentViewers: updated.currentViewers };
+    return { joined: true, currentViewers: updated?.currentViewers ?? 0 };
   }
 
   async leave(sessionId: string, userId: string) {
+    // Only mark as left if participant exists and hasn't already left
+    const participant = await this.prisma.liveParticipant.findUnique({
+      where: { sessionId_userId: { sessionId, userId } },
+    });
+    if (!participant || participant.leftAt) return { left: true };
+
     await this.prisma.liveParticipant.update({
       where: { sessionId_userId: { sessionId, userId } },
       data: { leftAt: new Date() },
-    }).catch(() => {});
-    await this.prisma.liveSession.update({
-      where: { id: sessionId },
-      data: { currentViewers: { decrement: 1 } },
-    }).catch(() => {});
+    });
+    // Use GREATEST to prevent negative viewers
+    await this.prisma.$executeRaw`
+      UPDATE "LiveSession"
+      SET "currentViewers" = GREATEST("currentViewers" - 1, 0)
+      WHERE id = ${sessionId}
+    `;
     return { left: true };
   }
 

@@ -12,11 +12,11 @@ import { ReportDto } from './dto/report.dto';
 @ApiTags('reels')
 @ApiBearerAuth()
 @Controller('reels')
-@UseGuards(ClerkAuthGuard)
 export class ReelsController {
   constructor(private readonly reelsService: ReelsService) {}
 
   @Post()
+  @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a reel' })
   create(
@@ -25,6 +25,8 @@ export class ReelsController {
   ) {
     return this.reelsService.create(userId, dto);
   }
+
+  // --- Static GET routes MUST come before :id parameterized routes ---
 
   @Get('feed')
   @UseGuards(OptionalClerkAuthGuard)
@@ -35,6 +37,30 @@ export class ReelsController {
   ) {
     return this.reelsService.getFeed(userId, cursor);
   }
+
+  @Get('user/:username')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get reels by username' })
+  getUserReels(
+    @Param('username') username: string,
+    @CurrentUser('id') userId?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getUserReels(username, cursor, 20, userId);
+  }
+
+  @Get('audio/:audioTrackId')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get reels using specific audio track' })
+  getByAudioTrack(
+    @Param('audioTrackId') audioTrackId: string,
+    @CurrentUser('id') userId?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.reelsService.getByAudioTrack(audioTrackId, cursor, 20, userId);
+  }
+
+  // --- Parameterized :id routes below ---
 
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
@@ -47,24 +73,28 @@ export class ReelsController {
   }
 
   @Delete(':id')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Delete a reel' })
   delete(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.delete(id, userId);
   }
 
   @Post(':id/like')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Like a reel' })
   like(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.like(id, userId);
   }
 
   @Delete(':id/like')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Unlike a reel' })
   unlike(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.unlike(id, userId);
   }
 
   @Post(':id/comment')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Add a comment to a reel' })
   comment(
     @Param('id') id: string,
@@ -79,12 +109,14 @@ export class ReelsController {
   @ApiOperation({ summary: 'Get comments for a reel (cursor paginated)' })
   getComments(
     @Param('id') id: string,
+    @CurrentUser('id') userId?: string,
     @Query('cursor') cursor?: string,
   ) {
-    return this.reelsService.getComments(id, cursor);
+    return this.reelsService.getComments(id, userId, cursor);
   }
 
   @Delete(':id/comments/:commentId')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Delete a comment from a reel' })
   deleteComment(
     @Param('id') id: string,
@@ -95,18 +127,21 @@ export class ReelsController {
   }
 
   @Post(':id/share')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Share a reel' })
   share(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.share(id, userId);
   }
 
   @Post(':id/bookmark')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Bookmark a reel' })
   bookmark(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.bookmark(id, userId);
   }
 
   @Delete(':id/bookmark')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Remove bookmark from a reel' })
   unbookmark(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.reelsService.unbookmark(id, userId);
@@ -124,18 +159,8 @@ export class ReelsController {
     return { viewed: true };
   }
 
-  @Get('user/:username')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get reels by username' })
-  getUserReels(
-    @Param('username') username: string,
-    @CurrentUser('id') userId?: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.reelsService.getUserReels(username, cursor, 20, userId);
-  }
-
   @Post(':id/report')
+  @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Report a reel' })
   report(
@@ -144,17 +169,6 @@ export class ReelsController {
     @Body() dto: ReportDto,
   ) {
     return this.reelsService.report(id, userId, dto.reason);
-  }
-
-  @Get('audio/:audioTrackId')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get reels using specific audio track' })
-  getByAudioTrack(
-    @Param('audioTrackId') audioTrackId: string,
-    @CurrentUser('id') userId?: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.reelsService.getByAudioTrack(audioTrackId, cursor, 20, userId);
   }
 
   @Get(':id/duets')
@@ -180,6 +194,7 @@ export class ReelsController {
   }
 
   @Patch(':id/archive')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Archive a reel' })
   archive(
     @Param('id') id: string,
@@ -189,6 +204,7 @@ export class ReelsController {
   }
 
   @Patch(':id/unarchive')
+  @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Unarchive a reel' })
   unarchive(
     @Param('id') id: string,
@@ -198,6 +214,7 @@ export class ReelsController {
   }
 
   @Get(':id/share-link')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get shareable link for a reel' })
   getShareLink(
     @Param('id') id: string,

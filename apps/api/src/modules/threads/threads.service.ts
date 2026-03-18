@@ -98,29 +98,38 @@ export class ThreadsService {
     private ai: AiService,
   ) {}
 
+  /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us) */
+  private async getExcludedUserIds(userId: string): Promise<string[]> {
+    const [blockedByMe, blockedMe, mutes] = await Promise.all([
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true } }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+    ]);
+    const ids = new Set<string>();
+    for (const b of blockedByMe) ids.add(b.blockedId);
+    for (const b of blockedMe) ids.add(b.blockerId);
+    for (const m of mutes) ids.add(m.mutedId);
+    return [...ids];
+  }
+
   async getFeed(
     userId: string,
     type: 'foryou' | 'following' | 'trending' = 'foryou',
     cursor?: string,
     limit = 20,
   ) {
-    const [follows, blocks, mutes] = await Promise.all([
+    const [follows, excludedIds] = await Promise.all([
       type === 'following'
         ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
         : Promise.resolve([]),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      this.getExcludedUserIds(userId),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
-    const excludedIds = [
-      ...blocks.map((b) => b.blockedId),
-      ...mutes.map((m) => m.mutedId),
-    ];
 
     // For You feed: engagement-weighted scoring
     if (type === 'foryou') {
-      const where: any = {
+      const where: Prisma.ThreadWhereInput = {
         isChainHead: true,
         isRemoved: false,
         visibility: 'PUBLIC',
@@ -131,7 +140,7 @@ export class ThreadsService {
       if (cursor) {
         where.createdAt = {
           lt: new Date(cursor),
-          gte: new Date(Date.now() - 72 * 60 * 60 * 1000)
+          gte: new Date(Date.now() - 72 * 60 * 60 * 1000),
         };
       }
 
@@ -163,7 +172,7 @@ export class ThreadsService {
       return {
         data,
         meta: {
-          cursor: hasMore ? data[data.length - 1].createdAt : null,
+          cursor: hasMore && data.length > 0 ? data[data.length - 1].createdAt : null,
           hasMore,
         },
       };
@@ -171,9 +180,13 @@ export class ThreadsService {
 
     // Following feed: chronological from followed users
     if (type === 'following') {
-      const where: any = { isRemoved: false, isChainHead: true };
-      where.userId = { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) };
-      where.user = { isDeactivated: false };
+      const allowedUserIds = [userId, ...followingIds].filter(id => !excludedIds.includes(id));
+      const where: Prisma.ThreadWhereInput = {
+        isRemoved: false,
+        isChainHead: true,
+        userId: { in: allowedUserIds },
+        user: { isDeactivated: false },
+      };
 
       const threads = await this.prisma.thread.findMany({
         where,
@@ -187,12 +200,12 @@ export class ThreadsService {
       const items = hasMore ? threads.slice(0, limit) : threads;
       return {
         data: items,
-        meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
       };
     }
 
     // Trending feed: sorted by likesCount (already engagement-based)
-    const where: any = {
+    const where: Prisma.ThreadWhereInput = {
       isRemoved: false,
       isChainHead: true,
       visibility: 'PUBLIC',
@@ -212,7 +225,7 @@ export class ThreadsService {
     const items = hasMore ? threads.slice(0, limit) : threads;
     return {
       data: items,
-      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+      meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
     };
   }
 
@@ -315,6 +328,17 @@ export class ThreadsService {
     let isBookmarked = false;
 
     if (viewerId) {
+      // Check if blocked in either direction
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: thread.user.id },
+            { blockerId: thread.user.id, blockedId: viewerId },
+          ],
+        },
+      });
+      if (block) throw new NotFoundException('Thread not found');
+
       const [reaction, bookmark] = await Promise.all([
         this.prisma.threadReaction.findUnique({
           where: { userId_threadId: { userId: viewerId, threadId } },
@@ -364,13 +388,15 @@ export class ThreadsService {
           data: { likesCount: { increment: 1 } },
         }),
       ]);
-      // Notify thread owner
-      this.notifications.create({
-        userId: thread.userId, actorId: userId,
-        type: 'LIKE', threadId,
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      // Notify thread owner (skip self-notification)
+      if (thread.userId !== userId) {
+        this.notifications.create({
+          userId: thread.userId, actorId: userId,
+          type: 'LIKE', threadId,
+        }).catch((err) => this.logger.error('Failed to create notification', err));
+      }
     } catch (err: unknown) {
-      if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
+      if (err instanceof Error && 'code' in err && (err as Prisma.PrismaClientKnownRequestError).code === 'P2002') {
         return { liked: true };
       }
       throw err;
@@ -397,6 +423,9 @@ export class ThreadsService {
     const original = await this.prisma.thread.findUnique({ where: { id: threadId } });
     if (!original || original.isRemoved) throw new NotFoundException('Thread not found');
 
+    // Prevent self-reposting
+    if (original.userId === userId) throw new BadRequestException('Cannot repost your own thread');
+
     // Check if user already reposted
     const existingRepost = await this.prisma.thread.findFirst({
       where: { userId, repostOfId: threadId, isRemoved: false },
@@ -420,7 +449,7 @@ export class ThreadsService {
         data: { repostsCount: { increment: 1 } },
       }),
     ]);
-    // Notify thread owner
+    // Notify thread owner (always different user due to self-repost guard above)
     this.notifications.create({
       userId: original.userId, actorId: userId,
       type: 'REPOST', threadId,
@@ -481,8 +510,13 @@ export class ThreadsService {
   }
 
   async getReplies(threadId: string, cursor?: string, limit = 20, viewerId?: string) {
+    // Filter out replies from blocked/muted users
+    const excludedIds = viewerId ? await this.getExcludedUserIds(viewerId) : [];
+    const whereClause: Prisma.ThreadReplyWhereInput = { threadId, parentId: null };
+    if (excludedIds.length) whereClause.userId = { notIn: excludedIds };
+
     const replies = await this.prisma.threadReply.findMany({
-      where: { threadId, parentId: null },
+      where: whereClause,
       select: REPLY_SELECT,
       take: limit + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
@@ -502,13 +536,13 @@ export class ThreadsService {
       const likedSet = new Set(liked.map((l) => l.replyId));
       return {
         data: items.map((r) => ({ ...r, isLiked: likedSet.has(r.id) })),
-        meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+        meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
       };
     }
 
     return {
       data: items.map((r) => ({ ...r, isLiked: false })),
-      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+      meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
     };
   }
 
@@ -565,12 +599,14 @@ export class ThreadsService {
         data: { repliesCount: { increment: 1 } },
       }),
     ]);
-    // Notify thread owner
-    this.notifications.create({
-      userId: thread.userId, actorId: userId,
-      type: 'THREAD_REPLY', threadId,
-      body: content.substring(0, 100),
-    }).catch((err) => this.logger.error('Failed to create notification', err));
+    // Notify thread owner (skip self-notification)
+    if (thread.userId !== userId) {
+      this.notifications.create({
+        userId: thread.userId, actorId: userId,
+        type: 'THREAD_REPLY', threadId,
+        body: content.substring(0, 100),
+      }).catch((err) => this.logger.error('Failed to create notification', err));
+    }
     return reply;
   }
 
@@ -624,9 +660,22 @@ export class ThreadsService {
     return { voted: true };
   }
 
-  async getUserThreads(username: string, cursor?: string, limit = 20) {
+  async getUserThreads(username: string, cursor?: string, limit = 20, viewerId?: string) {
     const user = await this.prisma.user.findUnique({ where: { username } });
     if (!user) throw new NotFoundException('User not found');
+
+    // If viewer is authenticated, check if blocked in either direction
+    if (viewerId && viewerId !== user.id) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: viewerId, blockedId: user.id },
+            { blockerId: user.id, blockedId: viewerId },
+          ],
+        },
+      });
+      if (block) throw new NotFoundException('User not found');
+    }
 
     const threads = await this.prisma.thread.findMany({
       where: { userId: user.id, isRemoved: false, isChainHead: true },
@@ -640,12 +689,15 @@ export class ThreadsService {
     const items = hasMore ? threads.slice(0, limit) : threads;
     return {
       data: items,
-      meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
+      meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
     };
   }
 
   async report(threadId: string, userId: string, reason: string) {
-    const reasonMap: Record<string, string> = {
+    const thread = await this.prisma.thread.findUnique({ where: { id: threadId }, select: { id: true, isRemoved: true } });
+    if (!thread || thread.isRemoved) throw new NotFoundException('Thread not found');
+
+    const reasonMap: Record<string, ReportReason> = {
       SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
       INAPPROPRIATE: 'OTHER', HATE_SPEECH: 'HATE_SPEECH',
     };
@@ -653,7 +705,7 @@ export class ThreadsService {
       data: {
         reporterId: userId,
         description: `thread:${threadId}`,
-        reason: (reasonMap[reason] ?? 'OTHER') as ReportReason,
+        reason: reasonMap[reason] ?? 'OTHER',
       },
     });
     return { reported: true };

@@ -310,7 +310,7 @@ export class UsersService {
     const hasMore = saved.length > limit;
     const items = hasMore ? saved.slice(0, limit) : saved;
     return {
-      data: items.map((s: any) => s.post),
+      data: items.map((s) => s.post),
       meta: {
         cursor: hasMore ? items[items.length - 1].postId : null,
         hasMore,
@@ -342,7 +342,7 @@ export class UsersService {
     const hasMore = bookmarks.length > limit;
     const items = hasMore ? bookmarks.slice(0, limit) : bookmarks;
     return {
-      data: items.map((b: any) => b.thread),
+      data: items.map((b) => b.thread),
       meta: {
         cursor: hasMore ? items[items.length - 1].threadId : null,
         hasMore,
@@ -385,7 +385,7 @@ export class UsersService {
     const hasMore = interactions.length > limit;
     const items = hasMore ? interactions.slice(0, limit) : interactions;
     return {
-      data: items.map((i: any) => ({ ...i.reel, isBookmarked: true })),
+      data: items.map((i) => ({ ...i.reel, isBookmarked: true })),
       meta: {
         cursor: hasMore ? items[items.length - 1].reelId : null,
         hasMore,
@@ -432,7 +432,7 @@ export class UsersService {
     const hasMore = bookmarks.length > limit;
     const items = hasMore ? bookmarks.slice(0, limit) : bookmarks;
     return {
-      data: items.map((b: any) => ({ ...b.video, isBookmarked: true })),
+      data: items.map((b) => ({ ...b.video, isBookmarked: true })),
       meta: {
         cursor: hasMore ? items[items.length - 1].videoId : null,
         hasMore,
@@ -494,7 +494,7 @@ export class UsersService {
     const hasMore = items.length > limit;
     const result = hasMore ? items.slice(0, limit) : items;
     return {
-      data: result.map((w: any) => w.video),
+      data: result.map((w) => w.video),
       meta: {
         cursor: hasMore ? result[result.length - 1].videoId : null,
         hasMore,
@@ -542,7 +542,7 @@ export class UsersService {
     const hasMore = items.length > limit;
     const result = hasMore ? items.slice(0, limit) : items;
     return {
-      data: result.map((w: any) => ({
+      data: result.map((w) => ({
         ...w.video,
         progress: w.progress,
         completed: w.completed,
@@ -624,7 +624,7 @@ export class UsersService {
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
-      data: items.map((f: any) => f.follower),
+      data: items.map((f) => f.follower),
       meta: {
         cursor: hasMore ? items[items.length - 1].followerId : null,
         hasMore,
@@ -667,7 +667,7 @@ export class UsersService {
     const hasMore = follows.length > limit;
     const items = hasMore ? follows.slice(0, limit) : follows;
     return {
-      data: items.map((f: any) => f.following),
+      data: items.map((f) => f.following),
       meta: {
         cursor: hasMore ? items[items.length - 1].followingId : null,
         hasMore,

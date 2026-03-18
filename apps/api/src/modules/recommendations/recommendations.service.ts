@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ReelStatus, PostVisibility } from '@prisma/client';
+import { Prisma, ReelStatus, PostVisibility } from '@prisma/client';
 
 const POST_SELECT = {
   id: true,
@@ -240,7 +240,7 @@ export class RecommendationsService {
   }
 
   async suggestedPosts(userId?: string, limit = 20) {
-    const where: any = {
+    const where: Prisma.PostWhereInput = {
       isRemoved: false,
       visibility: PostVisibility.PUBLIC,
       scheduledAt: null,
@@ -251,7 +251,7 @@ export class RecommendationsService {
       where.userId = { not: userId };
       const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
-        where.user = { ...where.user, id: { notIn: excludedIds } };
+        where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
     }
 
@@ -270,7 +270,7 @@ export class RecommendationsService {
   }
 
   async suggestedReels(userId?: string, limit = 20) {
-    const where: any = {
+    const where: Prisma.ReelWhereInput = {
       isRemoved: false,
       status: ReelStatus.READY,
       scheduledAt: null,
@@ -281,7 +281,7 @@ export class RecommendationsService {
       where.userId = { not: userId };
       const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
-        where.user = { ...where.user, id: { notIn: excludedIds } };
+        where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
     }
 
@@ -300,7 +300,7 @@ export class RecommendationsService {
   }
 
   async suggestedChannels(userId?: string, limit = 20) {
-    const where: any = {
+    const where: Prisma.ChannelWhereInput = {
       user: { isDeactivated: false },
     };
     // If authenticated, exclude user's own channel and blocked/muted users
@@ -308,7 +308,7 @@ export class RecommendationsService {
       where.userId = { not: userId };
       const excludedIds = await this.getExcludedUserIds(userId);
       if (excludedIds.length) {
-        where.user = { ...where.user, id: { notIn: excludedIds } };
+        where.user = { ...(where.user as Prisma.UserWhereInput), id: { notIn: excludedIds } };
       }
     }
 

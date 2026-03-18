@@ -2,14 +2,13 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
-  ConflictException,
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
-import { Notification } from '@prisma/client';
+import { Prisma, Notification } from '@prisma/client';
 
 @Injectable()
 export class FollowsService {
@@ -33,7 +32,7 @@ export class FollowsService {
       throw new NotFoundException('User not found');
     }
 
-    // Check block
+    // Check block in either direction
     const block = await this.prisma.block.findFirst({
       where: {
         OR: [
@@ -44,7 +43,7 @@ export class FollowsService {
     });
     if (block) throw new ForbiddenException('Cannot follow this user');
 
-    // Check already following
+    // Check already following — return idempotent success
     const existing = await this.prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -53,10 +52,10 @@ export class FollowsService {
         },
       },
     });
-    if (existing) throw new ConflictException('Already following');
+    if (existing) return { type: 'follow', follow: existing };
 
     if (target.isPrivate) {
-      // Create follow request
+      // Check for existing pending request — return idempotent success
       const existingRequest = await this.prisma.followRequest.findUnique({
         where: {
           senderId_receiverId: {
@@ -65,15 +64,57 @@ export class FollowsService {
           },
         },
       });
-      if (existingRequest) throw new ConflictException('Follow request already sent');
+      if (existingRequest && existingRequest.status === 'PENDING') {
+        return { type: 'request', request: existingRequest };
+      }
 
-      const request = await this.prisma.followRequest.create({
-        data: { senderId: currentUserId, receiverId: targetUserId },
-      });
-      // Notify target of incoming follow request
+      // Create follow request, handle P2002 race condition
+      try {
+        const request = await this.prisma.followRequest.create({
+          data: { senderId: currentUserId, receiverId: targetUserId },
+        });
+        // Notify target of incoming follow request
+        this.notifications.create({
+          userId: targetUserId, actorId: currentUserId,
+          type: 'FOLLOW_REQUEST', followRequestId: request.id,
+        })
+          .then((notification: Notification | null) => {
+            if (notification) {
+              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+            }
+          })
+          .catch((err) => this.logger.error('Failed to create notification', err));
+        return { type: 'request', request };
+      } catch (err) {
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+          const req = await this.prisma.followRequest.findUnique({
+            where: { senderId_receiverId: { senderId: currentUserId, receiverId: targetUserId } },
+          });
+          return { type: 'request', request: req };
+        }
+        throw err;
+      }
+    }
+
+    // Direct follow — handle P2002 race condition
+    try {
+      const [follow] = await this.prisma.$transaction([
+        this.prisma.follow.create({
+          data: { followerId: currentUserId, followingId: targetUserId },
+        }),
+        this.prisma.user.update({
+          where: { id: currentUserId },
+          data: { followingCount: { increment: 1 } },
+        }),
+        this.prisma.user.update({
+          where: { id: targetUserId },
+          data: { followersCount: { increment: 1 } },
+        }),
+      ]);
+      // Notify target of new follower
       this.notifications.create({
         userId: targetUserId, actorId: currentUserId,
-        type: 'FOLLOW_REQUEST', followRequestId: request.id,
+        type: 'FOLLOW',
       })
         .then((notification: Notification | null) => {
           if (notification) {
@@ -81,39 +122,21 @@ export class FollowsService {
           }
         })
         .catch((err) => this.logger.error('Failed to create notification', err));
-      return { type: 'request', request };
+
+      return { type: 'follow', follow };
+    } catch (err) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const follow = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: currentUserId, followingId: targetUserId } },
+        });
+        return { type: 'follow', follow };
+      }
+      throw err;
     }
-
-    // Direct follow
-    const [follow] = await this.prisma.$transaction([
-      this.prisma.follow.create({
-        data: { followerId: currentUserId, followingId: targetUserId },
-      }),
-      this.prisma.user.update({
-        where: { id: currentUserId },
-        data: { followingCount: { increment: 1 } },
-      }),
-      this.prisma.user.update({
-        where: { id: targetUserId },
-        data: { followersCount: { increment: 1 } },
-      }),
-    ]);
-    // Notify target of new follower
-    this.notifications.create({
-      userId: targetUserId, actorId: currentUserId,
-      type: 'FOLLOW',
-    })
-      .then((notification: Notification | null) => {
-        if (notification) {
-          this.pushTrigger.triggerPush(notification.id).catch(() => {});
-        }
-      })
-      .catch((err) => this.logger.error('Failed to create notification', err));
-
-    return { type: 'follow', follow };
   }
 
   async unfollow(currentUserId: string, targetUserId: string) {
+    // Idempotent: if not following, just return success
     const existing = await this.prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -122,7 +145,13 @@ export class FollowsService {
         },
       },
     });
-    if (!existing) throw new NotFoundException('Not following this user');
+    if (!existing) {
+      // Also clean up any pending follow request (idempotent)
+      await this.prisma.followRequest.deleteMany({
+        where: { senderId: currentUserId, receiverId: targetUserId, status: 'PENDING' },
+      });
+      return { message: 'Unfollowed' };
+    }
 
     await this.prisma.$transaction([
       this.prisma.follow.delete({
@@ -250,25 +279,54 @@ export class FollowsService {
     });
     if (!request) throw new NotFoundException('Request not found');
     if (request.receiverId !== currentUserId) throw new ForbiddenException();
-    if (request.status !== 'PENDING') throw new BadRequestException('Request already handled');
+    if (request.status !== 'PENDING') {
+      // Idempotent: if already accepted, just return success
+      if (request.status === 'ACCEPTED') return { message: 'Follow request accepted' };
+      throw new BadRequestException('Request already handled');
+    }
 
-    await this.prisma.$transaction([
-      this.prisma.followRequest.update({
+    // Check block — don't accept if a block now exists
+    const block = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: currentUserId, blockedId: request.senderId },
+          { blockerId: request.senderId, blockedId: currentUserId },
+        ],
+      },
+    });
+    if (block) {
+      await this.prisma.followRequest.update({
         where: { id: requestId },
-        data: { status: 'ACCEPTED' },
-      }),
-      this.prisma.follow.create({
-        data: { followerId: request.senderId, followingId: request.receiverId },
-      }),
-      this.prisma.user.update({
-        where: { id: request.senderId },
-        data: { followingCount: { increment: 1 } },
-      }),
-      this.prisma.user.update({
-        where: { id: request.receiverId },
-        data: { followersCount: { increment: 1 } },
-      }),
-    ]);
+        data: { status: 'DECLINED' },
+      });
+      throw new ForbiddenException('Cannot accept follow from this user');
+    }
+
+    try {
+      await this.prisma.$transaction([
+        this.prisma.followRequest.update({
+          where: { id: requestId },
+          data: { status: 'ACCEPTED' },
+        }),
+        this.prisma.follow.create({
+          data: { followerId: request.senderId, followingId: request.receiverId },
+        }),
+        this.prisma.user.update({
+          where: { id: request.senderId },
+          data: { followingCount: { increment: 1 } },
+        }),
+        this.prisma.user.update({
+          where: { id: request.receiverId },
+          data: { followersCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (err) {
+      // P2002: follow already exists (concurrent accept) — idempotent
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return { message: 'Follow request accepted' };
+      }
+      throw err;
+    }
     // Notify requester that their request was accepted
     this.notifications.create({
       userId: request.senderId, actorId: request.receiverId,

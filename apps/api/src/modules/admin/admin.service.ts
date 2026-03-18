@@ -23,7 +23,7 @@ export class AdminService {
   async getReports(adminId: string, status?: string, cursor?: string, limit = 20) {
     await this.assertAdmin(adminId);
 
-    const where: any = {};
+    const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (cursor) where.createdAt = { lt: new Date(cursor) };
 

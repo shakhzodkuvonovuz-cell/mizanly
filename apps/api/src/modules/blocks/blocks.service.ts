@@ -1,9 +1,9 @@
 import {
   Injectable,
   BadRequestException,
-  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
@@ -15,10 +15,18 @@ export class BlocksService {
       throw new BadRequestException('Cannot block yourself');
     }
 
+    // Validate target user exists
+    const target = await this.prisma.user.findUnique({
+      where: { id: blockedId },
+      select: { id: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+
+    // Idempotent: if already blocked, return success
     const existing = await this.prisma.block.findUnique({
       where: { blockerId_blockedId: { blockerId, blockedId } },
     });
-    if (existing) throw new ConflictException('Already blocked');
+    if (existing) return { message: 'User blocked' };
 
     // Count follows being deleted to decrement counts accurately
     const deletedFollows = await this.prisma.follow.findMany({
@@ -40,46 +48,55 @@ export class BlocksService {
       (f) => f.followerId === blockedId && f.followingId === blockerId,
     );
 
-    await this.prisma.$transaction([
-      this.prisma.block.create({ data: { blockerId, blockedId } }),
-      this.prisma.follow.deleteMany({
-        where: {
-          OR: [
-            { followerId: blockerId, followingId: blockedId },
-            { followerId: blockedId, followingId: blockerId },
-          ],
-        },
-      }),
-      this.prisma.followRequest.deleteMany({
-        where: {
-          OR: [
-            { senderId: blockerId, receiverId: blockedId },
-            { senderId: blockedId, receiverId: blockerId },
-          ],
-        },
-      }),
-      ...(blockerWasFollowing
-        ? [
-            this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
-            this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
-          ]
-        : []),
-      ...(blockedWasFollowing
-        ? [
-            this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
-            this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
-          ]
-        : []),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.block.create({ data: { blockerId, blockedId } }),
+        this.prisma.follow.deleteMany({
+          where: {
+            OR: [
+              { followerId: blockerId, followingId: blockedId },
+              { followerId: blockedId, followingId: blockerId },
+            ],
+          },
+        }),
+        this.prisma.followRequest.deleteMany({
+          where: {
+            OR: [
+              { senderId: blockerId, receiverId: blockedId },
+              { senderId: blockedId, receiverId: blockerId },
+            ],
+          },
+        }),
+        ...(blockerWasFollowing
+          ? [
+              this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockerId}`,
+              this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockedId}`,
+            ]
+          : []),
+        ...(blockedWasFollowing
+          ? [
+              this.prisma.$executeRaw`UPDATE "User" SET "followingCount" = GREATEST("followingCount" - 1, 0) WHERE id = ${blockedId}`,
+              this.prisma.$executeRaw`UPDATE "User" SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${blockerId}`,
+            ]
+          : []),
+      ]);
+    } catch (err) {
+      // P2002: concurrent block race condition — idempotent
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        return { message: 'User blocked' };
+      }
+      throw err;
+    }
 
     return { message: 'User blocked' };
   }
 
   async unblock(blockerId: string, blockedId: string) {
+    // Idempotent: if not blocked, return success
     const existing = await this.prisma.block.findUnique({
       where: { blockerId_blockedId: { blockerId, blockedId } },
     });
-    if (!existing) throw new NotFoundException('Block not found');
+    if (!existing) return { message: 'User unblocked' };
 
     await this.prisma.block.delete({
       where: { blockerId_blockedId: { blockerId, blockedId } },

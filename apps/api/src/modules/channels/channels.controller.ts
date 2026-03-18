@@ -37,6 +37,27 @@ export class ChannelsController {
     return this.channelsService.create(userId, dto);
   }
 
+  // Static routes MUST be above :handle wildcard
+  @Get('me/channels')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current user channels' })
+  getMyChannels(@CurrentUser('id') userId: string) {
+    return this.channelsService.getMyChannels(userId);
+  }
+
+  @Get('recommended')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get recommended channels (excludes subscribed)' })
+  getRecommended(
+    @CurrentUser('id') userId: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+    return this.channelsService.getRecommended(userId, limitNum);
+  }
+
   @Get(':handle')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get channel by handle' })
@@ -103,14 +124,6 @@ export class ChannelsController {
     return this.channelsService.getVideos(handle, userId, cursor);
   }
 
-  @Get('me/channels')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current user channels' })
-  getMyChannels(@CurrentUser('id') userId: string) {
-    return this.channelsService.getMyChannels(userId);
-  }
-
   @Get(':handle/analytics')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -157,15 +170,4 @@ export class ChannelsController {
     return this.channelsService.removeTrailer(handle, userId);
   }
 
-  @Get('recommended')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get recommended channels (excludes subscribed)' })
-  getRecommended(
-    @CurrentUser('id') userId: string,
-    @Query('limit') limit?: string,
-  ) {
-    const limitNum = limit ? parseInt(limit, 10) : 10;
-    return this.channelsService.getRecommended(userId, limitNum);
-  }
 }

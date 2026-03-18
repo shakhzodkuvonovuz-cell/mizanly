@@ -27,6 +27,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class ThreadsController {
   constructor(private threadsService: ThreadsService) {}
 
+  // --- Static routes MUST be above :id param routes ---
+
   @Get('feed')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -39,6 +41,28 @@ export class ThreadsController {
     return this.threadsService.getFeed(userId, type ?? 'foryou', cursor);
   }
 
+  @Get('user/:username')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: "Get user's threads by username" })
+  getUserThreads(
+    @Param('username') username: string,
+    @Query('cursor') cursor?: string,
+    @CurrentUser('id') viewerId?: string,
+  ) {
+    return this.threadsService.getUserThreads(username, cursor, 20, viewerId);
+  }
+
+  @Post('polls/:optionId/vote')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Vote on a poll option' })
+  votePoll(
+    @Param('optionId') optionId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.threadsService.votePoll(optionId, userId);
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
@@ -47,6 +71,8 @@ export class ThreadsController {
   create(@CurrentUser('id') userId: string, @Body() dto: CreateThreadDto) {
     return this.threadsService.create(userId, dto);
   }
+
+  // --- Param routes below ---
 
   @Get(':id')
   @UseGuards(OptionalClerkAuthGuard)
@@ -173,26 +199,6 @@ export class ThreadsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.threadsService.deleteReply(replyId, userId);
-  }
-
-  @Post('polls/:optionId/vote')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Vote on a poll option' })
-  votePoll(
-    @Param('optionId') optionId: string,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.threadsService.votePoll(optionId, userId);
-  }
-
-  @Get('user/:username')
-  @ApiOperation({ summary: "Get user's threads by username" })
-  getUserThreads(
-    @Param('username') username: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.threadsService.getUserThreads(username, cursor);
   }
 
   @Post(':id/report')

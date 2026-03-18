@@ -21,42 +21,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 export class FollowsController {
   constructor(private followsService: FollowsService) {}
 
-  @Post(':userId')
-  @ApiOperation({ summary: 'Follow a user (or create request if private)' })
-  follow(
-    @CurrentUser('id') currentUserId: string,
-    @Param('userId') targetUserId: string,
-  ) {
-    return this.followsService.follow(currentUserId, targetUserId);
-  }
-
-  @Delete(':userId')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Unfollow a user' })
-  unfollow(
-    @CurrentUser('id') currentUserId: string,
-    @Param('userId') targetUserId: string,
-  ) {
-    return this.followsService.unfollow(currentUserId, targetUserId);
-  }
-
-  @Get(':userId/followers')
-  @ApiOperation({ summary: 'Followers list (cursor paginated)' })
-  getFollowers(
-    @Param('userId') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.followsService.getFollowers(userId, cursor);
-  }
-
-  @Get(':userId/following')
-  @ApiOperation({ summary: 'Following list (cursor paginated)' })
-  getFollowing(
-    @Param('userId') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.followsService.getFollowing(userId, cursor);
-  }
+  // --- Static routes MUST come before :userId param routes ---
 
   @Get('requests/incoming')
   @ApiOperation({ summary: 'Own incoming follow requests' })
@@ -96,5 +61,44 @@ export class FollowsController {
   @ApiOperation({ summary: 'People you may know (friends-of-friends)' })
   getSuggestions(@CurrentUser('id') userId: string) {
     return this.followsService.getSuggestions(userId);
+  }
+
+  // --- Param routes AFTER static routes ---
+
+  @Post(':userId')
+  @ApiOperation({ summary: 'Follow a user (or create request if private)' })
+  follow(
+    @CurrentUser('id') currentUserId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.followsService.follow(currentUserId, targetUserId);
+  }
+
+  @Delete(':userId')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unfollow a user' })
+  unfollow(
+    @CurrentUser('id') currentUserId: string,
+    @Param('userId') targetUserId: string,
+  ) {
+    return this.followsService.unfollow(currentUserId, targetUserId);
+  }
+
+  @Get(':userId/followers')
+  @ApiOperation({ summary: 'Followers list (cursor paginated)' })
+  getFollowers(
+    @Param('userId') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.followsService.getFollowers(userId, cursor);
+  }
+
+  @Get(':userId/following')
+  @ApiOperation({ summary: 'Following list (cursor paginated)' })
+  getFollowing(
+    @Param('userId') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.followsService.getFollowing(userId, cursor);
   }
 }

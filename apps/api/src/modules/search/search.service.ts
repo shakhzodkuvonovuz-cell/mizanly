@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 
 const USER_SEARCH_SELECT = {
@@ -129,6 +130,16 @@ const CHANNEL_SEARCH_SELECT = {
   },
 };
 
+interface SearchResults {
+  people?: Prisma.UserGetPayload<{ select: typeof USER_SEARCH_SELECT }>[];
+  threads?: Prisma.ThreadGetPayload<{ select: typeof THREAD_SEARCH_SELECT }>[];
+  posts?: Prisma.PostGetPayload<{ select: typeof POST_SEARCH_SELECT }>[];
+  reels?: Prisma.ReelGetPayload<{ select: typeof REEL_SEARCH_SELECT }>[];
+  videos?: Prisma.VideoGetPayload<{ select: typeof VIDEO_SEARCH_SELECT }>[];
+  channels?: Prisma.ChannelGetPayload<{ select: typeof CHANNEL_SEARCH_SELECT }>[];
+  hashtags?: Prisma.HashtagGetPayload<{}>[];
+}
+
 @Injectable()
 export class SearchService {
   constructor(private prisma: PrismaService) {}
@@ -247,7 +258,7 @@ export class SearchService {
 
     // For people, tags, or no type specified, return the aggregate SearchResults format
     // At this point, type is narrowed to 'people' | 'tags' | undefined
-    const results: any = {};
+    const results: SearchResults = {};
     const isAggregate = !type;
 
     if (isAggregate || type === 'people') {

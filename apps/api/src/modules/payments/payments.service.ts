@@ -229,15 +229,14 @@ export class PaymentsService {
     await this.storeSubscriptionMapping(subscription.id, dbSubscription.id);
 
     const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-    const paymentIntent = (latestInvoice as any)?.payment_intent as Stripe.PaymentIntent | null;
+    const paymentIntent = (latestInvoice as unknown as { payment_intent?: Stripe.PaymentIntent | null })?.payment_intent ?? null;
 
+    const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
     return {
       subscriptionId: subscription.id,
       status: subscription.status,
       clientSecret: paymentIntent?.client_secret ?? null,
-      currentPeriodEnd: (subscription as any).current_period_end
-        ? new Date((subscription as any).current_period_end * 1000)
-        : null,
+      currentPeriodEnd: periodEnd ? new Date(periodEnd * 1000) : null,
     };
   }
 
@@ -336,7 +335,7 @@ export class PaymentsService {
   }
 
   async handleInvoicePaid(invoice: Stripe.Invoice) {
-    const subscriptionId = (invoice as any).subscription as string ?? '';
+    const subscriptionId = String((invoice as unknown as { subscription?: string }).subscription ?? '');
     if (!subscriptionId) return;
 
     const dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
@@ -347,9 +346,8 @@ export class PaymentsService {
 
     // Update subscription end date (extend by one period)
     const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-    const endDate = (subscription as any).current_period_end
-      ? new Date((subscription as any).current_period_end * 1000)
-      : new Date();
+    const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+    const endDate = periodEnd ? new Date(periodEnd * 1000) : new Date();
 
     await this.prisma.membershipSubscription.update({
       where: { id: dbSubscriptionId },

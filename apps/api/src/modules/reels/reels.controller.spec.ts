@@ -115,10 +115,10 @@ describe('ReelsController', () => {
   });
 
   describe('getComments', () => {
-    it('should call service.getComments with id and cursor', async () => {
+    it('should call service.getComments with id, userId, and cursor', async () => {
       mockService.getComments.mockResolvedValue({ data: [] });
-      await controller.getComments('reel-1', 'cursor-1');
-      expect(mockService.getComments).toHaveBeenCalledWith('reel-1', 'cursor-1');
+      await controller.getComments('reel-1', 'user-1', 'cursor-1');
+      expect(mockService.getComments).toHaveBeenCalledWith('reel-1', 'user-1', 'cursor-1');
     });
   });
 

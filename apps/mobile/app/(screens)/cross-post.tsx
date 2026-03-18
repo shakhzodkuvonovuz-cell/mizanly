@@ -92,7 +92,7 @@ function CrossPostContent() {
   };
 
   // Available spaces (exclude the post's current space)
-  const currentSpace = (post as any)?.space;
+  const currentSpace = (post as unknown as { space?: string })?.space;
   const availableSpaces = SPACES.filter(s => s.key !== currentSpace);
 
   if (postQuery.isLoading) {

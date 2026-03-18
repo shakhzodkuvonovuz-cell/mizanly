@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nest
 import { PrismaService } from '../../config/prisma.service';
 import { DevicesService } from '../devices/devices.service';
 import { PushTriggerService } from './push-trigger.service';
-import { NotificationType } from '@prisma/client';
+import { NotificationType, Prisma } from '@prisma/client';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -21,7 +21,7 @@ export class NotificationsService {
     cursor?: string,
     limit = 30,
   ) {
-    const where: any = { userId };
+    const where: Prisma.NotificationWhereInput = { userId };
 
     if (filter === 'mentions') {
       where.type = { in: ['MENTION', 'THREAD_REPLY', 'REPLY'] };

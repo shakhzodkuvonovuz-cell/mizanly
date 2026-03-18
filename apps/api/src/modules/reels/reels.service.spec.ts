@@ -1,11 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ReelsService } from './reels.service';
 import { StreamService } from '../stream/stream.service';
-import { ReelStatus, ReportReason, ReactionType } from '@prisma/client';
+import { GamificationService } from '../gamification/gamification.service';
+import { Prisma, ReelStatus, ReportReason, ReactionType } from '@prisma/client';
 
 describe('ReelsService', () => {
   const REEL_SELECT = {
@@ -124,6 +125,13 @@ describe('ReelsService', () => {
             get: jest.fn(),
             setex: jest.fn(),
             del: jest.fn(),
+          },
+        },
+        {
+          provide: GamificationService,
+          useValue: {
+            awardXP: jest.fn().mockResolvedValue(undefined),
+            updateStreak: jest.fn().mockResolvedValue(undefined),
           },
         },
       ],
@@ -348,18 +356,14 @@ describe('ReelsService', () => {
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelReaction.findUnique.mockResolvedValue(null);
       prisma.$transaction.mockResolvedValue([{}, {}, {}]);
       notifications.create.mockResolvedValue(undefined);
 
       const result = await service.like(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reelReaction.findUnique).toHaveBeenCalledWith({
-        where: { userId_reelId: { userId, reelId } },
-      });
       expect(prisma.$transaction).toHaveBeenCalled();
-      // Check transaction includes reelReaction.create, reelInteraction.upsert, reel.update
+      // Notify reel owner (not self)
       expect(notifications.create).toHaveBeenCalledWith({
         userId: mockReel.userId,
         actorId: userId,
@@ -369,17 +373,37 @@ describe('ReelsService', () => {
       expect(result).toEqual({ liked: true });
     });
 
-    it('should throw ConflictException if already liked', async () => {
+    it('should not notify when liking own reel', async () => {
+      const userId = 'user-123';
+      const reelId = 'reel-456';
+      const mockReel = {
+        id: reelId,
+        userId, // same user
+        status: ReelStatus.READY,
+      };
+
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
+      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
+
+      await service.like(reelId, userId);
+
+      expect(notifications.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw ConflictException on duplicate like (P2002)', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReel = {
         id: reelId,
         status: ReelStatus.READY,
       };
-      const mockReaction = { userId, reelId, reaction: ReactionType.LIKE };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelReaction.findUnique.mockResolvedValue(mockReaction);
+      const p2002Error = new Prisma.PrismaClientKnownRequestError(
+        'Unique constraint failed',
+        { code: 'P2002', clientVersion: '5.0.0' },
+      );
+      prisma.$transaction.mockRejectedValue(p2002Error);
 
       await expect(service.like(reelId, userId)).rejects.toThrow(ConflictException);
     });
@@ -402,30 +426,29 @@ describe('ReelsService', () => {
     it('should delete like and decrement count', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
-      const mockReaction = { userId, reelId, reaction: ReactionType.LIKE };
       const mockReel = { id: reelId, status: ReelStatus.READY };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelReaction.findUnique.mockResolvedValue(mockReaction);
       prisma.$transaction.mockResolvedValue([{}, {}, 1]);
 
       const result = await service.unlike(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reelReaction.findUnique).toHaveBeenCalledWith({
-        where: { userId_reelId: { userId, reelId } },
-      });
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ liked: false });
     });
 
-    it('should throw NotFoundException if like not found', async () => {
+    it('should throw NotFoundException if like not found (P2025)', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReel = { id: reelId, status: ReelStatus.READY };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelReaction.findUnique.mockResolvedValue(null);
+      const p2025Error = new Prisma.PrismaClientKnownRequestError(
+        'Record not found',
+        { code: 'P2025', clientVersion: '5.0.0' },
+      );
+      prisma.$transaction.mockRejectedValue(p2025Error);
 
       await expect(service.unlike(reelId, userId)).rejects.toThrow(NotFoundException);
     });
@@ -484,7 +507,7 @@ describe('ReelsService', () => {
   });
 
   describe('view', () => {
-    it('should increment viewsCount and create view record', async () => {
+    it('should increment viewsCount via interactive transaction', async () => {
       const userId = 'user-123';
       const reelId = 'reel-456';
       const mockReel = {
@@ -493,15 +516,21 @@ describe('ReelsService', () => {
       };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelInteraction.findUnique.mockResolvedValue(null);
-      prisma.$transaction.mockResolvedValue([{}, {}]);
+      // Interactive transaction: the service passes a callback function
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          reelInteraction: {
+            findUnique: jest.fn().mockResolvedValue(null),
+            upsert: jest.fn().mockResolvedValue({}),
+          },
+          $executeRaw: jest.fn().mockResolvedValue(1),
+        };
+        return fn(tx);
+      });
 
       const result = await service.view(reelId, userId);
 
       expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId } });
-      expect(prisma.reelInteraction.findUnique).toHaveBeenCalledWith({
-        where: { userId_reelId: { userId, reelId } },
-      });
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
     });
@@ -513,15 +542,21 @@ describe('ReelsService', () => {
         id: reelId,
         status: ReelStatus.READY,
       };
-      const mockInteraction = { userId, reelId, viewed: true };
 
       prisma.reel.findUnique.mockResolvedValue(mockReel);
-      prisma.reelInteraction.findUnique.mockResolvedValue(mockInteraction);
+      // Interactive transaction: viewed=true means early return
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        const tx = {
+          reelInteraction: {
+            findUnique: jest.fn().mockResolvedValue({ viewed: true }),
+          },
+        };
+        return fn(tx);
+      });
 
       const result = await service.view(reelId, userId);
 
-      expect(prisma.reelInteraction.findUnique).toHaveBeenCalled();
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
     });
   });
@@ -565,7 +600,7 @@ describe('ReelsService', () => {
       expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
-    it('should throw ForbiddenException when deleting another user\'s comment', async () => {
+    it('should throw ForbiddenException when deleting another user\'s comment (and not reel owner)', async () => {
       const userId = 'user-123';
       const otherUserId = 'other-456';
       const reelId = 'reel-456';
@@ -575,13 +610,37 @@ describe('ReelsService', () => {
         reelId,
         userId: otherUserId,
       };
+      const mockReel = { userId: 'reel-owner-999' }; // neither comment owner nor reel owner
 
       prisma.reelComment.findUnique.mockResolvedValue(mockComment);
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
 
       await expect(service.deleteComment(reelId, commentId, userId))
         .rejects.toThrow(ForbiddenException);
       expect(prisma.reelComment.findUnique).toHaveBeenCalled();
+      expect(prisma.reel.findUnique).toHaveBeenCalledWith({ where: { id: reelId }, select: { userId: true } });
       expect(prisma.$transaction).not.toHaveBeenCalled();
+    });
+
+    it('should allow reel owner to delete another user\'s comment', async () => {
+      const reelOwner = 'reel-owner-123';
+      const commentAuthor = 'other-456';
+      const reelId = 'reel-456';
+      const commentId = 'comment-789';
+      const mockComment = {
+        id: commentId,
+        reelId,
+        userId: commentAuthor,
+      };
+
+      prisma.reelComment.findUnique.mockResolvedValue(mockComment);
+      prisma.reel.findUnique.mockResolvedValue({ userId: reelOwner });
+      prisma.$transaction.mockResolvedValue([{}, 1]);
+
+      const result = await service.deleteComment(reelId, commentId, reelOwner);
+
+      expect(result).toEqual({ deleted: true });
+      expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
 });

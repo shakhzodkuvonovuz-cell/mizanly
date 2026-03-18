@@ -393,13 +393,15 @@ export class VideosService {
         }
       });
 
-      // Notify video owner
-      this.notifications.create({
-        userId: video.userId,
-        actorId: userId,
-        type: 'VIDEO_LIKE',
-        videoId,
-      }).catch((err) => this.logger.error('Failed to create notification', err));
+      // Notify video owner (not self)
+      if (video.userId !== userId) {
+        this.notifications.create({
+          userId: video.userId,
+          actorId: userId,
+          type: 'VIDEO_LIKE',
+          videoId,
+        }).catch((err) => this.logger.error('Failed to create notification', err));
+      }
     } catch (err: unknown) {
       if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
         return { liked: true };
