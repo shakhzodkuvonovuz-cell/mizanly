@@ -1,6 +1,12 @@
 import { AsyncJobService } from '../services/async-jobs.service';
 import { AnalyticsService } from '../services/analytics.service';
 import { FeatureFlagsService } from '../services/feature-flags.service';
+import { PushTriggerService } from '../../modules/notifications/push-trigger.service';
+import { PushService } from '../../modules/notifications/push.service';
+import { NotificationsService } from '../../modules/notifications/notifications.service';
+import { GamificationService } from '../../modules/gamification/gamification.service';
+import { AiService } from '../../modules/ai/ai.service';
+import { StreamService } from '../../modules/stream/stream.service';
 
 /**
  * Shared mock providers for test modules.
@@ -8,8 +14,51 @@ import { FeatureFlagsService } from '../services/feature-flags.service';
  */
 
 export const mockPushTriggerService = {
-  provide: 'PushTriggerService',
+  provide: PushTriggerService,
   useValue: { triggerPush: jest.fn().mockResolvedValue(undefined) },
+};
+
+export const mockPushService = {
+  provide: PushService,
+  useValue: { sendPush: jest.fn().mockResolvedValue(undefined) },
+};
+
+export const mockNotificationsService = {
+  provide: NotificationsService,
+  useValue: {
+    create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
+    getNotifications: jest.fn().mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } }),
+    markRead: jest.fn().mockResolvedValue({ read: true }),
+    markAllRead: jest.fn().mockResolvedValue({ read: true }),
+    getUnreadCount: jest.fn().mockResolvedValue(0),
+  },
+};
+
+export const mockGamificationService = {
+  provide: GamificationService,
+  useValue: {
+    awardXP: jest.fn().mockResolvedValue({ totalXP: 100, level: 1 }),
+    updateStreak: jest.fn().mockResolvedValue({ currentDays: 1 }),
+    getXP: jest.fn().mockResolvedValue({ totalXP: 0, level: 1 }),
+    getStreaks: jest.fn().mockResolvedValue([]),
+  },
+};
+
+export const mockAiService = {
+  provide: AiService,
+  useValue: {
+    moderateContent: jest.fn().mockResolvedValue({ safe: true, flags: [], confidence: 0 }),
+    suggestCaptions: jest.fn().mockResolvedValue([]),
+    suggestHashtags: jest.fn().mockResolvedValue([]),
+    translateText: jest.fn().mockResolvedValue({ translatedText: '' }),
+  },
+};
+
+export const mockStreamService = {
+  provide: StreamService,
+  useValue: {
+    uploadVideo: jest.fn().mockResolvedValue({ uid: 'stream-1', playback: { hls: 'hls-url' } }),
+  },
 };
 
 export const mockRedis = {
@@ -71,8 +120,13 @@ export const mockFeatureFlagsService = {
 
 /** All global service mocks — add to providers array */
 export const globalMockProviders = [
-  mockPushTriggerService,
   mockRedis,
+  mockPushTriggerService,
+  mockPushService,
+  mockNotificationsService,
+  mockGamificationService,
+  mockAiService,
+  mockStreamService,
   mockAsyncJobService,
   mockAnalyticsService,
   mockFeatureFlagsService,

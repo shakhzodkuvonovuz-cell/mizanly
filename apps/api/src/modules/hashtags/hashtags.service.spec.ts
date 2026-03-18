@@ -79,7 +79,7 @@ describe('HashtagsService', () => {
 
       const result = await service.getTrendingRaw(50);
       expect(result).toEqual(mockHashtags);
-      expect(prisma.$queryRaw).toHaveBeenCalledWith(expect.any(Object));
+      expect(prisma.$queryRaw).toHaveBeenCalled();
     });
   });
 

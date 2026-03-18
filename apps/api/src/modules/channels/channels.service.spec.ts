@@ -148,6 +148,7 @@ describe('ChannelsService', () => {
         videosCount: 5,
         totalViews: 1000,
         isVerified: false,
+        trailerVideo: null,
         createdAt: new Date(),
         user: {
           id: 'owner-123',

@@ -454,6 +454,7 @@ describe('ThreadsService', () => {
         createdAt: new Date(),
       } as any;
 
+      prisma.thread.findUnique.mockResolvedValue({ id: threadId, isRemoved: false });
       prisma.report.create.mockResolvedValue(mockReport);
 
       const result = await service.report(threadId, userId, reason);

@@ -29,12 +29,20 @@ describe('PlaylistsService', () => {
             },
             playlistItem: {
               create: jest.fn(),
+              findUnique: jest.fn(),
               findMany: jest.fn(),
               delete: jest.fn(),
               aggregate: jest.fn(),
             },
             channel: {
               findUnique: jest.fn(),
+            },
+            playlistCollaborator: {
+              findUnique: jest.fn().mockResolvedValue(null),
+              findMany: jest.fn().mockResolvedValue([]),
+              create: jest.fn(),
+              delete: jest.fn(),
+              deleteMany: jest.fn(),
             },
             $executeRaw: jest.fn(),
             $transaction: jest.fn(),
@@ -545,6 +553,7 @@ describe('PlaylistsService', () => {
         channel: { userId: USER_ID },
       };
       prisma.playlist.findUnique.mockResolvedValue(mockPlaylist);
+      prisma.playlistItem.findUnique.mockResolvedValue({ playlistId: PLAYLIST_ID, videoId: VIDEO_ID });
       prisma.$transaction.mockResolvedValue([{}, {}]);
 
       const result = await service.removeItem(PLAYLIST_ID, VIDEO_ID, USER_ID);
