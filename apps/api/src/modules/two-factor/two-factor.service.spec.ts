@@ -17,16 +17,14 @@ declare module 'qrcode' {
   export const toDataURL: (text: string) => Promise<string>;
 }
 
-// Mock external modules
+// Mock external modules — must match actual named imports
 jest.mock('otplib', () => ({
-  authenticator: {
-    generateSecret: jest.fn(),
-    keyuri: jest.fn(),
-    verify: jest.fn(),
-  },
+  generateSecret: jest.fn().mockReturnValue('MOCKSECRETBASE32AAAA'),
+  generateURI: jest.fn().mockReturnValue('otpauth://totp/Mizanly:user@test.com?secret=MOCK'),
+  verifySync: jest.fn().mockReturnValue({ valid: true }),
 }));
 jest.mock('qrcode', () => ({
-  toDataURL: jest.fn(),
+  toDataURL: jest.fn().mockResolvedValue('data:image/png;base64,mock'),
 }));
 
 describe('TwoFactorService', () => {
@@ -58,8 +56,8 @@ describe('TwoFactorService', () => {
     },
   };
 
-  // Mocked module instances
-  const mockAuthenticator = require('otplib').authenticator;
+  // Mocked module instances — match the named exports from otplib
+  const mockOtplib = require('otplib');
   const mockQrcode = require('qrcode');
 
   beforeEach(async () => {
@@ -68,9 +66,9 @@ describe('TwoFactorService', () => {
 
     // Set up default mock implementations
     mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
-    mockAuthenticator.generateSecret.mockReturnValue(mockSecret);
-    mockAuthenticator.keyuri.mockReturnValue('otpauth://totp/Mizanly:test@example.com?secret=ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&issuer=Mizanly');
-    mockAuthenticator.verify.mockReturnValue(true);
+    mockOtplib.generateSecret.mockReturnValue(mockSecret);
+    mockOtplib.generateURI.mockReturnValue('otpauth://totp/Mizanly:test@example.com?secret=ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&issuer=Mizanly');
+    mockOtplib.verifySync.mockReturnValue({ valid: true });
     mockQrcode.toDataURL.mockResolvedValue(mockQrDataUri);
 
     const module: TestingModule = await Test.createTestingModule({
@@ -111,8 +109,8 @@ describe('TwoFactorService', () => {
       expect(mockPrismaService.twoFactorSecret.findUnique).toHaveBeenCalledWith({
         where: { userId: mockUserId },
       });
-      expect(mockAuthenticator.generateSecret).toHaveBeenCalledWith(32);
-      expect(mockAuthenticator.keyuri).toHaveBeenCalledWith(mockUser.email, 'Mizanly', mockSecret);
+      expect(mockOtplib.generateSecret).toHaveBeenCalledWith({ length: 32 });
+      expect(mockOtplib.generateURI).toHaveBeenCalledWith({ issuer: 'Mizanly', label: mockUser.email, secret: mockSecret });
       expect(mockQrcode.toDataURL).toHaveBeenCalledWith('otpauth://totp/Mizanly:test@example.com?secret=ABCDEFGHIJKLMNOPQRSTUVWXYZ234567&issuer=Mizanly');
       expect(mockPrismaService.twoFactorSecret.create).toHaveBeenCalledWith({
         data: {
@@ -216,7 +214,7 @@ describe('TwoFactorService', () => {
       expect(mockPrismaService.twoFactorSecret.findUnique).toHaveBeenCalledWith({
         where: { userId: mockUserId },
       });
-      expect(mockAuthenticator.verify).toHaveBeenCalledWith({
+      expect(mockOtplib.verifySync).toHaveBeenCalledWith({
         token: '123456',
         secret: mockSecret,
       });
@@ -237,7 +235,7 @@ describe('TwoFactorService', () => {
         isEnabled: false,
       };
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
-      mockAuthenticator.verify.mockReturnValue(false);
+      mockOtplib.verifySync.mockReturnValue({ valid: false });
 
       const result = await service.verify(mockUserId, 'wrongcode');
 
@@ -249,7 +247,7 @@ describe('TwoFactorService', () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(null);
 
       await expect(service.verify(mockUserId, '123456')).rejects.toThrow(BadRequestException);
-      expect(mockAuthenticator.verify).not.toHaveBeenCalled();
+      expect(mockOtplib.verifySync).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if already enabled', async () => {
@@ -261,7 +259,7 @@ describe('TwoFactorService', () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
 
       await expect(service.verify(mockUserId, '123456')).rejects.toThrow(BadRequestException);
-      expect(mockAuthenticator.verify).not.toHaveBeenCalled();
+      expect(mockOtplib.verifySync).not.toHaveBeenCalled();
     });
   });
 
@@ -273,14 +271,14 @@ describe('TwoFactorService', () => {
         isEnabled: true,
       };
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
-      mockAuthenticator.verify.mockReturnValue(true);
+      mockOtplib.verifySync.mockReturnValue({ valid: true });
 
       const result = await service.validate(mockUserId, '123456');
 
       expect(mockPrismaService.twoFactorSecret.findUnique).toHaveBeenCalledWith({
         where: { userId: mockUserId },
       });
-      expect(mockAuthenticator.verify).toHaveBeenCalledWith({
+      expect(mockOtplib.verifySync).toHaveBeenCalledWith({
         token: '123456',
         secret: mockSecret,
       });
@@ -294,7 +292,7 @@ describe('TwoFactorService', () => {
         isEnabled: true,
       };
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
-      mockAuthenticator.verify.mockReturnValue(false);
+      mockOtplib.verifySync.mockReturnValue({ valid: false });
 
       const result = await service.validate(mockUserId, 'wrongcode');
 
@@ -331,7 +329,7 @@ describe('TwoFactorService', () => {
         isEnabled: true,
       };
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
-      mockAuthenticator.verify.mockReturnValue(true);
+      mockOtplib.verifySync.mockReturnValue({ valid: true });
       mockPrismaService.twoFactorSecret.update.mockResolvedValue({
         ...secretRecord,
         isEnabled: false,
@@ -341,7 +339,7 @@ describe('TwoFactorService', () => {
       await service.disable(mockUserId, '123456');
 
       expect(mockPrismaService.twoFactorSecret.findUnique).toHaveBeenCalledTimes(2); // once in disable, once in verifyToken
-      expect(mockAuthenticator.verify).toHaveBeenCalledWith({
+      expect(mockOtplib.verifySync).toHaveBeenCalledWith({
         token: '123456',
         secret: mockSecret,
       });
@@ -358,7 +356,7 @@ describe('TwoFactorService', () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(null);
 
       await expect(service.disable(mockUserId, '123456')).rejects.toThrow(BadRequestException);
-      expect(mockAuthenticator.verify).not.toHaveBeenCalled();
+      expect(mockOtplib.verifySync).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if 2FA not enabled', async () => {
@@ -370,7 +368,7 @@ describe('TwoFactorService', () => {
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
 
       await expect(service.disable(mockUserId, '123456')).rejects.toThrow(BadRequestException);
-      expect(mockAuthenticator.verify).not.toHaveBeenCalled();
+      expect(mockOtplib.verifySync).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException for invalid verification code', async () => {
@@ -380,7 +378,7 @@ describe('TwoFactorService', () => {
         isEnabled: true,
       };
       mockPrismaService.twoFactorSecret.findUnique.mockResolvedValue(secretRecord);
-      mockAuthenticator.verify.mockReturnValue(false);
+      mockOtplib.verifySync.mockReturnValue({ valid: false });
 
       await expect(service.disable(mockUserId, 'wrongcode')).rejects.toThrow(BadRequestException);
       expect(mockPrismaService.twoFactorSecret.update).not.toHaveBeenCalled();
