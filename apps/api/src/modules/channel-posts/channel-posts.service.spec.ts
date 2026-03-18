@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { ChannelPostsService } from './channel-posts.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ForbiddenException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ChannelPostsService', () => {
   let service: ChannelPostsService;
@@ -13,7 +14,8 @@ describe('ChannelPostsService', () => {
       $executeRaw: jest.fn(),
     };
     const module = await Test.createTestingModule({
-      providers: [ChannelPostsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ...globalMockProviders,ChannelPostsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(ChannelPostsService);
   });

@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { HealthController } from './health.controller';
 import { PrismaService } from '../../config/prisma.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('HealthController', () => {
   let controller: HealthController;
@@ -18,6 +19,7 @@ describe('HealthController', () => {
     const module = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
+        ...globalMockProviders,
         { provide: PrismaService, useValue: mockPrismaService },
       ],
     }).compile();

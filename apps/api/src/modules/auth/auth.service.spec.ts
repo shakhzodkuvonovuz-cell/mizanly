@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { AuthService } from './auth.service';
 import { createClerkClient } from '@clerk/backend';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 // Mock the Clerk client
 jest.mock('@clerk/backend', () => ({
@@ -26,6 +27,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         AuthService,
         {
           provide: PrismaService,

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RecommendationsService } from './recommendations.service';
 import { PrismaService } from '../../config/prisma.service';
 import { PostVisibility, ReelStatus } from '@prisma/client';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('RecommendationsService', () => {
   let service: RecommendationsService;
@@ -10,6 +11,7 @@ describe('RecommendationsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         RecommendationsService,
         {
           provide: PrismaService,

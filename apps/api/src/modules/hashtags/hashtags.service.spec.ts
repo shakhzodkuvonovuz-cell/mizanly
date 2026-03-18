@@ -3,6 +3,7 @@ import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { HashtagsService } from './hashtags.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('HashtagsService', () => {
   let service: HashtagsService;
@@ -12,6 +13,7 @@ describe('HashtagsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         HashtagsService,
         {
           provide: PrismaService,

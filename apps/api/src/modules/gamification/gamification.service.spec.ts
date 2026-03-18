@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { GamificationService } from './gamification.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('GamificationService', () => {
   let service: GamificationService;
@@ -10,6 +11,7 @@ describe('GamificationService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         GamificationService,
         {
           provide: PrismaService,

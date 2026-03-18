@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ChannelPostsController } from './channel-posts.controller';
 import { ChannelPostsService } from './channel-posts.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ChannelPostsController', () => {
   let controller: ChannelPostsController;
@@ -21,6 +22,7 @@ describe('ChannelPostsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ChannelPostsController],
       providers: [
+        ...globalMockProviders,
         { provide: ChannelPostsService, useValue: mockService },
       ],
     }).compile();

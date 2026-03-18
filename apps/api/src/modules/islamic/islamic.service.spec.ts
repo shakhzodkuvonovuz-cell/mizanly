@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { IslamicService } from './islamic.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 
 // Mock the hadiths.json import
@@ -52,7 +53,8 @@ describe('IslamicService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [IslamicService],
+      providers: [
+        ...globalMockProviders,IslamicService],
     }).compile();
 
     service = module.get<IslamicService>(IslamicService);

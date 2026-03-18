@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { LiveService } from './live.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('LiveService', () => {
   let service: LiveService;
@@ -24,7 +25,8 @@ describe('LiveService', () => {
     };
 
     const module = await Test.createTestingModule({
-      providers: [LiveService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ...globalMockProviders,LiveService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(LiveService);
   });

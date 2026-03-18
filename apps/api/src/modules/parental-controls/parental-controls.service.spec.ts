@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ParentalControlsService } from './parental-controls.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 // Mock bcrypt
 jest.mock('bcrypt', () => ({
@@ -33,6 +34,7 @@ describe('ParentalControlsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         ParentalControlsService,
         {
           provide: PrismaService,

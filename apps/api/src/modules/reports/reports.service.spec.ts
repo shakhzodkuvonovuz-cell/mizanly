@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException, ConflictException, ForbiddenExc
 import { PrismaService } from '../../config/prisma.service';
 import { ReportsService } from './reports.service';
 import { ReportStatus, ReportReason, ModerationAction } from '@prisma/client';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ReportsService', () => {
   let service: ReportsService;
@@ -11,6 +12,7 @@ describe('ReportsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         ReportsService,
         {
           provide: PrismaService,

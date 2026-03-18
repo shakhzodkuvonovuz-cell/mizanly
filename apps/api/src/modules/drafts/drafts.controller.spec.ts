@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { DraftsController } from './drafts.controller';
 import { DraftsService } from './drafts.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('DraftsController', () => {
   let controller: DraftsController;
@@ -18,7 +19,8 @@ describe('DraftsController', () => {
 
     const module = await Test.createTestingModule({
       controllers: [DraftsController],
-      providers: [{ provide: DraftsService, useValue: service }],
+      providers: [
+        ...globalMockProviders,{ provide: DraftsService, useValue: service }],
     }).compile();
 
     controller = module.get(DraftsController);

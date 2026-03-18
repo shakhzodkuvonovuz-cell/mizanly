@@ -2,13 +2,15 @@ import { Test } from '@nestjs/testing';
 import { AudioTracksService } from './audio-tracks.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('AudioTracksService', () => {
   let service: AudioTracksService;
   let prisma: Record<string, any>;
   beforeEach(async () => {
     prisma = { audioTrack: { findUnique: jest.fn(), findFirst: jest.fn(), findMany: jest.fn(), create: jest.fn(), delete: jest.fn() }, reel: { findMany: jest.fn() }, $executeRaw: jest.fn() };
-    const module = await Test.createTestingModule({ providers: [AudioTracksService, { provide: PrismaService, useValue: prisma }] }).compile();
+    const module = await Test.createTestingModule({ providers: [
+        ...globalMockProviders,AudioTracksService, { provide: PrismaService, useValue: prisma }] }).compile();
     service = module.get(AudioTracksService);
   });
   it('creates track', async () => { prisma.audioTrack.findFirst.mockResolvedValue(null); prisma.audioTrack.create.mockResolvedValue({ id: 'at1' }); const r = await service.create('user-1', { title: 'T', artist: 'A', duration: 30, audioUrl: 'u' }); expect(r.id).toBe('at1'); });

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AudioTracksController } from './audio-tracks.controller';
 import { AudioTracksService } from './audio-tracks.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('AudioTracksController', () => {
   let controller: AudioTracksController;
@@ -19,6 +20,7 @@ describe('AudioTracksController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AudioTracksController],
       providers: [
+        ...globalMockProviders,
         { provide: AudioTracksService, useValue: mockService },
       ],
     }).compile();

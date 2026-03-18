@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FeedController } from './feed.controller';
 import { FeedService } from './feed.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FeedController', () => {
   let controller: FeedController;
@@ -20,6 +21,7 @@ describe('FeedController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FeedController],
       providers: [
+        ...globalMockProviders,
         { provide: FeedService, useValue: mockService },
       ],
     }).compile();

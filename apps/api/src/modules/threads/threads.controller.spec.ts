@@ -5,6 +5,7 @@ import { ThreadsService } from './threads.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ThreadsController', () => {
   let controller: ThreadsController;
@@ -41,6 +42,7 @@ describe('ThreadsController', () => {
     const module = await Test.createTestingModule({
       controllers: [ThreadsController],
       providers: [
+        ...globalMockProviders,
         { provide: ThreadsService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

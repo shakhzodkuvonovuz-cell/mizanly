@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { StickersService } from './stickers.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StickersService', () => {
   let service: StickersService;
@@ -14,7 +15,8 @@ describe('StickersService', () => {
       userStickerPack: { findMany: jest.fn(), upsert: jest.fn(), delete: jest.fn() },
     };
     const module = await Test.createTestingModule({
-      providers: [StickersService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ...globalMockProviders,StickersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(StickersService);
   });

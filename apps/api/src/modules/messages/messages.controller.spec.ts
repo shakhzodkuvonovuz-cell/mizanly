@@ -5,6 +5,7 @@ import { MessagesService } from './messages.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('MessagesController', () => {
   let controller: MessagesController;
@@ -39,6 +40,7 @@ describe('MessagesController', () => {
     const module = await Test.createTestingModule({
       controllers: [MessagesController],
       providers: [
+        ...globalMockProviders,
         { provide: MessagesService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

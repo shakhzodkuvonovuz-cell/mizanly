@@ -5,6 +5,7 @@ import { PostsService } from './posts.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('PostsController', () => {
   let controller: PostsController;
@@ -41,6 +42,7 @@ describe('PostsController', () => {
     const module = await Test.createTestingModule({
       controllers: [PostsController],
       providers: [
+        ...globalMockProviders,
         { provide: PostsService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

@@ -5,6 +5,7 @@ import { ReelsService } from './reels.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ReelsController', () => {
   let controller: ReelsController;
@@ -37,6 +38,7 @@ describe('ReelsController', () => {
     const module = await Test.createTestingModule({
       controllers: [ReelsController],
       providers: [
+        ...globalMockProviders,
         { provide: ReelsService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

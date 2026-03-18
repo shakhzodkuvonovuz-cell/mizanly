@@ -3,6 +3,7 @@ import { NotFoundException, BadRequestException, ConflictException, ForbiddenExc
 import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FollowsService } from './follows.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FollowsService', () => {
   let service: FollowsService;
@@ -12,6 +13,7 @@ describe('FollowsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         FollowsService,
         {
           provide: PrismaService,

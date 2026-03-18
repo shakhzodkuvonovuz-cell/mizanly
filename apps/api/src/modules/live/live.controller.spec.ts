@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { LiveController } from './live.controller';
 import { LiveService } from './live.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('LiveController', () => {
   let controller: LiveController;
@@ -27,6 +28,7 @@ describe('LiveController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [LiveController],
       providers: [
+        ...globalMockProviders,
         { provide: LiveService, useValue: mockService },
       ],
     }).compile();

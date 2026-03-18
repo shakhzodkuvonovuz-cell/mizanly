@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { CollabsService } from './collabs.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CollabsService', () => {
   let service: CollabsService;
@@ -13,7 +14,8 @@ describe('CollabsService', () => {
       postCollab: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), update: jest.fn(), delete: jest.fn() },
     };
     const module = await Test.createTestingModule({
-      providers: [CollabsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ...globalMockProviders,CollabsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(CollabsService);
   });

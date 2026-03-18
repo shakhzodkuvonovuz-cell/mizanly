@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { StreamService } from './stream.service';
 import { PrismaService } from '../../config/prisma.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch as any;
@@ -15,6 +16,7 @@ describe('StreamService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         StreamService,
         {
           provide: ConfigService,

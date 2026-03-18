@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CallsController } from './calls.controller';
 import { CallsService } from './calls.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CallsController', () => {
   let controller: CallsController;
@@ -20,6 +21,7 @@ describe('CallsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CallsController],
       providers: [
+        ...globalMockProviders,
         { provide: CallsService, useValue: mockService },
       ],
     }).compile();

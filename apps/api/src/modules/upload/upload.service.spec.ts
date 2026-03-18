@@ -5,6 +5,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadService } from './upload.service';
 import { v4 as uuidv4 } from 'uuid';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 jest.mock('@aws-sdk/s3-request-presigner');
 jest.mock('@aws-sdk/client-s3', () => {
@@ -59,6 +60,7 @@ describe('UploadService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         UploadService,
         {
           provide: ConfigService,

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { SearchService } from './search.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('SearchService', () => {
   let service: SearchService;
@@ -9,6 +10,7 @@ describe('SearchService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         SearchService,
         {
           provide: PrismaService,

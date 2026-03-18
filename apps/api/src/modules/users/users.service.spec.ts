@@ -3,6 +3,7 @@ import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { UsersService } from './users.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -12,6 +13,7 @@ describe('UsersService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         UsersService,
         {
           provide: PrismaService,

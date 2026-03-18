@@ -3,6 +3,7 @@ import { NotFoundException, ForbiddenException, BadRequestException } from '@nes
 import { PrismaService } from '../../config/prisma.service';
 import { SubtitlesService } from './subtitles.service';
 import { VideoStatus } from '@prisma/client';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('SubtitlesService', () => {
   let service: SubtitlesService;
@@ -11,6 +12,7 @@ describe('SubtitlesService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         SubtitlesService,
         {
           provide: PrismaService,

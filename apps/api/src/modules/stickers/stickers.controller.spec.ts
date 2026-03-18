@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StickersController } from './stickers.controller';
 import { StickersService } from './stickers.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StickersController', () => {
   let controller: StickersController;
@@ -23,6 +24,7 @@ describe('StickersController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [StickersController],
       providers: [
+        ...globalMockProviders,
         { provide: StickersService, useValue: mockService },
       ],
     }).compile();

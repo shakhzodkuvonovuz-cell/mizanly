@@ -1,13 +1,15 @@
 import { Test } from '@nestjs/testing';
 import { FeedService } from './feed.service';
 import { PrismaService } from '../../config/prisma.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FeedService', () => {
   let service: FeedService;
   let prisma: Record<string, any>;
   beforeEach(async () => {
     prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() } };
-    const module = await Test.createTestingModule({ providers: [FeedService, { provide: PrismaService, useValue: prisma }] }).compile();
+    const module = await Test.createTestingModule({ providers: [
+        ...globalMockProviders,FeedService, { provide: PrismaService, useValue: prisma }] }).compile();
     service = module.get(FeedService);
   });
   it('logs interaction', async () => {

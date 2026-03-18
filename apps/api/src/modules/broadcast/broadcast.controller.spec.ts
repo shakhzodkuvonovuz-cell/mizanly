@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BroadcastController } from './broadcast.controller';
 import { BroadcastService } from './broadcast.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('BroadcastController', () => {
   let controller: BroadcastController;
@@ -33,6 +34,7 @@ describe('BroadcastController', () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BroadcastController],
       providers: [
+        ...globalMockProviders,
         { provide: BroadcastService, useValue: mockService },
       ],
     }).compile();

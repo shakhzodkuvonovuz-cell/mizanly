@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { DraftsService } from './drafts.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException, ForbiddenException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('DraftsService', () => {
   let service: DraftsService;
@@ -21,6 +22,7 @@ describe('DraftsService', () => {
 
     const module = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         DraftsService,
         { provide: PrismaService, useValue: prisma },
       ],

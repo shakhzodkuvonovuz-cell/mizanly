@@ -4,6 +4,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { AudioRoomsService } from './audio-rooms.service';
 import { CreateAudioRoomDto } from './dto/create-audio-room.dto';
 import { AudioRoomRole, RoleChangeDto } from './dto/role-change.dto';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('AudioRoomsService', () => {
   let service: AudioRoomsService;
@@ -32,6 +33,7 @@ describe('AudioRoomsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         AudioRoomsService,
         { provide: PrismaService, useValue: mockPrismaService },
       ],

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { AiService } from './ai.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('AiService', () => {
   let service: AiService;
@@ -13,6 +14,7 @@ describe('AiService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         AiService,
         {
           provide: PrismaService,

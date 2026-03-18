@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { WatchHistoryService } from './watch-history.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('WatchHistoryService', () => {
   let service: WatchHistoryService;
@@ -27,6 +28,7 @@ describe('WatchHistoryService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         WatchHistoryService,
         {
           provide: PrismaService,

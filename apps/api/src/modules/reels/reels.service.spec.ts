@@ -7,6 +7,7 @@ import { ReelsService } from './reels.service';
 import { StreamService } from '../stream/stream.service';
 import { GamificationService } from '../gamification/gamification.service';
 import { Prisma, ReelStatus, ReportReason, ReactionType } from '@prisma/client';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('ReelsService', () => {
   const REEL_SELECT = {
@@ -47,6 +48,7 @@ describe('ReelsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         ReelsService,
         {
           provide: PrismaService,

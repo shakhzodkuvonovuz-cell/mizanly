@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { CallsService } from './calls.service';
 import { PrismaService } from '../../config/prisma.service';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('CallsService', () => {
   let service: CallsService;
@@ -13,7 +14,8 @@ describe('CallsService', () => {
       callParticipant: { findFirst: jest.fn(), findMany: jest.fn(), updateMany: jest.fn() },
     };
     const module = await Test.createTestingModule({
-      providers: [CallsService, { provide: PrismaService, useValue: prisma }],
+      providers: [
+        ...globalMockProviders,CallsService, { provide: PrismaService, useValue: prisma }],
     }).compile();
     service = module.get(CallsService);
   });

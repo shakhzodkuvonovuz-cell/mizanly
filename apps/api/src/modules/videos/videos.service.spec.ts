@@ -6,6 +6,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { VideosService } from './videos.service';
 import { StreamService } from '../stream/stream.service';
 import { VideoStatus, VideoCategory } from '@prisma/client';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('VideosService', () => {
   let service: VideosService;
@@ -16,6 +17,7 @@ describe('VideosService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         VideosService,
         {
           provide: PrismaService,

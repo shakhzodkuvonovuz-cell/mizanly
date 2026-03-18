@@ -5,6 +5,7 @@ import { MajlisListsService } from './majlis-lists.service';
 import { CreateListDto } from './dto/create-list.dto';
 import { UpdateListDto } from './dto/update-list.dto';
 import { AddMemberDto } from './dto/add-member.dto';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('MajlisListsService', () => {
   let service: MajlisListsService;
@@ -13,6 +14,7 @@ describe('MajlisListsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         MajlisListsService,
         {
           provide: PrismaService,

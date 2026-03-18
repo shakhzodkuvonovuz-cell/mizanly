@@ -5,6 +5,7 @@ import { PlaylistsService } from './playlists.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('PlaylistsController', () => {
   let controller: PlaylistsController;
@@ -30,6 +31,7 @@ describe('PlaylistsController', () => {
     const module = await Test.createTestingModule({
       controllers: [PlaylistsController],
       providers: [
+        ...globalMockProviders,
         { provide: PlaylistsService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

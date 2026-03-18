@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../config/prisma.service';
 import { MessagesService } from '../modules/messages/messages.service';
 import { ChatGateway } from './chat.gateway';
+import { globalMockProviders } from '../common/test/mock-providers';
 
 jest.mock('@clerk/backend');
 
@@ -30,6 +31,7 @@ describe('ChatGateway', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         ChatGateway,
         {
           provide: MessagesService,

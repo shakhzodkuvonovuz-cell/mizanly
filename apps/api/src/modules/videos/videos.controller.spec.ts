@@ -5,6 +5,7 @@ import { VideosService } from './videos.service';
 import { PrismaService } from '../../config/prisma.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('VideosController', () => {
   let controller: VideosController;
@@ -37,6 +38,7 @@ describe('VideosController', () => {
     const module = await Test.createTestingModule({
       controllers: [VideosController],
       providers: [
+        ...globalMockProviders,
         { provide: VideosService, useValue: mockService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: PrismaService, useValue: mockPrismaService },

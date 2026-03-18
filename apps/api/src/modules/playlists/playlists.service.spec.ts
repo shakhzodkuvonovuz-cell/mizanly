@@ -4,6 +4,7 @@ import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PlaylistsService } from './playlists.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('PlaylistsService', () => {
   let service: PlaylistsService;
@@ -14,6 +15,7 @@ describe('PlaylistsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         PlaylistsService,
         {
           provide: PrismaService,

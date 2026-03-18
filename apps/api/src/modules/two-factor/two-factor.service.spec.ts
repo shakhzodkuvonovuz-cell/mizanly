@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { TwoFactorService } from './two-factor.service';
 import { PrismaService } from '../../config/prisma.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { globalMockProviders } from '../../common/test/mock-providers';
 
 // Type declarations for mocked modules
 declare module 'otplib' {
@@ -74,6 +75,7 @@ describe('TwoFactorService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
+        ...globalMockProviders,
         TwoFactorService,
         { provide: PrismaService, useValue: mockPrismaService },
       ],
