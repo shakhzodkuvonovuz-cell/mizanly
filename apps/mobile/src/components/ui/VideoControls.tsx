@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   Pressable,
   Platform,
   useWindowDimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -176,79 +176,79 @@ export function VideoControls({
         </View>
         <View style={styles.topIcons}>
           {onMinimize && (
-            <TouchableOpacity
+            <Pressable
               onPress={onMinimize}
               style={styles.iconButton}
               accessibilityLabel="Minimize player"
             >
               <Icon name="chevron-down" size="md" color={colors.text.primary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
           {onFullscreen && (
-            <TouchableOpacity
+            <Pressable
               onPress={onFullscreen}
               style={styles.iconButton}
               accessibilityLabel="Enter fullscreen"
             >
               <Icon name="maximize" size="md" color={colors.text.primary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </View>
 
       {/* Center play/skip buttons */}
       <View style={styles.centerRow}>
-        <TouchableOpacity
+        <Pressable
           onPress={handleSkipBackward}
           style={styles.skipButton}
           accessibilityLabel="Skip back 10 seconds"
         >
           <Icon name="rewind" size="xl" color={colors.text.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           onPress={handlePlayPause}
           style={styles.playButton}
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
         >
           <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           onPress={handleSkipForward}
           style={styles.skipButton}
           accessibilityLabel="Skip forward 10 seconds"
         >
           <Icon name="fast-forward" size="xl" color={colors.text.primary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Bottom bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity
+        <Pressable
           onPress={() => setQualitySheetVisible(true)}
           style={styles.iconButton}
           accessibilityLabel={`Quality: ${quality}`}
         >
           <Icon name="layers" size="md" color={colors.text.primary} />
           <Text style={styles.iconLabel}>{quality}</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => setSpeedSheetVisible(true)}
           style={styles.iconButton}
           accessibilityLabel={`Speed: ${speed}x`}
         >
           <Icon name="clock" size="md" color={colors.text.primary} />
           <Text style={styles.iconLabel}>{speed}x</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={handleVolumeButtonPress}
           style={styles.iconButton}
           accessibilityLabel={volume === 0 ? 'Unmute' : 'Mute'}
         >
           <Icon name={volumeIcon} size="md" color={colors.text.primary} />
           <Text style={styles.iconLabel}>{Math.round(volume * 100)}%</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Seek bar */}

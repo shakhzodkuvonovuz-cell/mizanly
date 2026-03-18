@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -104,7 +104,7 @@ export default function VideoEditorScreen() {
                 />
               </View>
             </View>
-            <TouchableOpacity style={styles.splitButton}>
+            <Pressable style={styles.splitButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.splitButtonGradient}
@@ -112,13 +112,13 @@ export default function VideoEditorScreen() {
                 <Icon name="scissors" size="sm" color={colors.text.primary} />
                 <Text style={styles.splitButtonText}>{t('videoEditor.splitAtPlayhead')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.deleteButton}>
+            </Pressable>
+            <Pressable style={styles.deleteButton}>
               <View style={styles.deleteButtonInner}>
                 <Icon name="trash" size="sm" color={colors.error} />
                 <Text style={styles.deleteButtonText}>{t('videoEditor.deleteSelectedSegment')}</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         );
 
@@ -128,7 +128,7 @@ export default function VideoEditorScreen() {
             <Text style={styles.toolPanelTitle}>{t('videoEditor.playbackSpeed')}</Text>
             <View style={styles.speedGrid}>
               {SPEED_OPTIONS.map((speed) => (
-                <TouchableOpacity
+                <Pressable
                   key={speed}
                   style={styles.speedButton}
                   onPress={() => setPlaybackSpeed(speed)}
@@ -147,7 +147,7 @@ export default function VideoEditorScreen() {
                       {speed}x
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -163,7 +163,7 @@ export default function VideoEditorScreen() {
                   key={filter.id}
                   entering={FadeInUp.delay(index * 50).duration(300)}
                 >
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.filterButton}
                     onPress={() => setSelectedFilter(filter.id)}
                   >
@@ -177,7 +177,7 @@ export default function VideoEditorScreen() {
                       <View style={[styles.filterPreview, { backgroundColor: filter.color }]} />
                       <Text style={styles.filterName}>{filter.name}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </Animated.View>
               ))}
             </View>
@@ -188,7 +188,7 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.addCaption')}</Text>
-            <TouchableOpacity style={styles.addTextButton}>
+            <Pressable style={styles.addTextButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.addTextButtonGradient}
@@ -196,12 +196,12 @@ export default function VideoEditorScreen() {
                 <Icon name="type" size="sm" color={colors.text.primary} />
                 <Text style={styles.addTextButtonText}>{t('videoEditor.addTextOverlay')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             <Text style={styles.toolSubTitle}>{t('videoEditor.fontStyle')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.fontScroll}>
               {FONT_OPTIONS.map((font) => (
-                <TouchableOpacity
+                <Pressable
                   key={font}
                   style={styles.fontButton}
                   onPress={() => setSelectedFont(font)}
@@ -220,14 +220,14 @@ export default function VideoEditorScreen() {
                       {font}
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
 
             <Text style={styles.toolSubTitle}>{t('videoEditor.textColor')}</Text>
             <View style={styles.colorRow}>
               {TEXT_COLORS.map((color) => (
-                <TouchableOpacity
+                <Pressable
                   key={color}
                   style={[
                     styles.colorCircle,
@@ -245,7 +245,7 @@ export default function VideoEditorScreen() {
         return (
           <View style={styles.toolPanel}>
             <Text style={styles.toolPanelTitle}>{t('videoEditor.backgroundMusic')}</Text>
-            <TouchableOpacity style={styles.libraryButton}>
+            <Pressable style={styles.libraryButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.libraryButtonGradient}
@@ -254,7 +254,7 @@ export default function VideoEditorScreen() {
                 <Text style={styles.libraryButtonText}>{t('videoEditor.addFromAudioLibrary')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             <View style={styles.currentTrackCard}>
               <LinearGradient
@@ -274,9 +274,9 @@ export default function VideoEditorScreen() {
                     <Text style={styles.trackName}>Summer Vibes</Text>
                     <Text style={styles.trackArtist}>by AudioLibrary</Text>
                   </View>
-                  <TouchableOpacity style={styles.removeTrackButton}>
+                  <Pressable style={styles.removeTrackButton}>
                     <Icon name="x" size="xs" color={colors.error} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </LinearGradient>
             </View>
@@ -351,17 +351,17 @@ export default function VideoEditorScreen() {
             </View>
 
             {/* Playback Speed Badge */}
-            <TouchableOpacity style={styles.speedBadge} onPress={cyclePlaybackSpeed}>
+            <Pressable style={styles.speedBadge} onPress={cyclePlaybackSpeed}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.8)', 'rgba(28,35,51,0.6)']}
                 style={styles.speedBadgeGradient}
               >
                 <Text style={styles.speedBadgeText}>{playbackSpeed}x</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Play/Pause Button */}
-            <TouchableOpacity
+            <Pressable
               style={styles.playButton}
               onPress={() => setIsPlaying(!isPlaying)}
             >
@@ -371,7 +371,7 @@ export default function VideoEditorScreen() {
               >
                 <Icon name={isPlaying ? 'pause' : 'play'} size="xl" color="#FFF" />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Video Placeholder Icon */}
             <View style={styles.videoPlaceholder}>
@@ -453,7 +453,7 @@ export default function VideoEditorScreen() {
               { id: 'music', icon: 'music' as IconName, label: t('videoEditor.music') },
               { id: 'volume', icon: 'volume-2' as IconName, label: t('videoEditor.volume') },
             ].map((tool) => (
-              <TouchableOpacity
+              <Pressable
                 key={tool.id}
                 style={styles.toolTab}
                 onPress={() => setSelectedTool(tool.id as ToolTab)}
@@ -477,7 +477,7 @@ export default function VideoEditorScreen() {
                     {tool.label}
                   </Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </ScrollView>
         </Animated.View>
@@ -500,7 +500,7 @@ export default function VideoEditorScreen() {
             <Text style={styles.qualityLabel}>{t('videoEditor.exportQuality')}</Text>
             <View style={styles.qualityButtons}>
               {(['720p', '1080p', '4K'] as QualityOption[]).map((quality) => (
-                <TouchableOpacity
+                <Pressable
                   key={quality}
                   style={styles.qualityButton}
                   onPress={() => setSelectedQuality(quality)}
@@ -519,7 +519,7 @@ export default function VideoEditorScreen() {
                       {quality}
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -535,10 +535,10 @@ export default function VideoEditorScreen() {
           colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
           style={styles.bottomBarGradient}
         >
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+          <Pressable style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExport} disabled={isExporting}>
+          </Pressable>
+          <Pressable style={styles.exportButton} onPress={handleExport} disabled={isExporting}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.exportButtonGradient}
@@ -552,7 +552,7 @@ export default function VideoEditorScreen() {
                 </>
               )}
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </LinearGradient>
       </View>
     </SafeAreaView>

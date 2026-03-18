@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   Image,
   Platform,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -245,7 +245,7 @@ export function MiniPlayer() {
             </View>
 
             {/* Play/Pause button */}
-            <TouchableOpacity
+            <Pressable
               onPress={handlePlayPause}
               style={styles.actionButton}
               accessibilityLabel={miniPlayerPlaying ? 'Pause' : 'Play'}
@@ -256,17 +256,17 @@ export function MiniPlayer() {
                 size="md"
                 color={colors.text.primary}
               />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Close button */}
-            <TouchableOpacity
+            <Pressable
               onPress={handleClose}
               style={styles.actionButton}
               accessibilityLabel="Close mini player"
               accessibilityRole="button"
             >
               <Icon name="x" size="md" color={colors.text.secondary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Hidden audio-only Video component for playback */}

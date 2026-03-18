@@ -9,7 +9,7 @@ import {
   TextInput,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { Stack, useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';

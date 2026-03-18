@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Pressable, Image, type ViewToken, Alert } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, Image, type ViewToken, Alert, RefreshControl } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -69,17 +69,16 @@ function ActionButton({
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={styles.actionButton}
       onPress={handlePress}
-      activeOpacity={0.7}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
     >
       <Animated.View style={animatedStyle}>
         {children}
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -252,10 +251,9 @@ const ReelItem = memo(function ReelItem({
 
         {/* User info & caption */}
         <View style={styles.infoContainer}>
-          <TouchableOpacity
+          <Pressable
             style={styles.userRow}
             onPress={() => onProfilePress(item.user.username)}
-            activeOpacity={0.7}
             accessibilityLabel={t('accessibility.viewProfile', { username: item.user.username })}
             accessibilityRole="button"
           >
@@ -315,7 +313,7 @@ const ReelItem = memo(function ReelItem({
                 {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
               </Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
           {item.caption && (
             <>
               <Text style={styles.caption} numberOfLines={captionExpanded ? undefined : 3}>
@@ -642,22 +640,22 @@ export default function BakraScreen() {
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Bakra</Text>
         <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <TouchableOpacity
+          <Pressable
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
             accessibilityLabel={t('accessibility.search')}
             accessibilityRole="button"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             hitSlop={8}
             onPress={() => { haptic.light(); router.push('/(screens)/create-reel'); }}
             accessibilityLabel={t('accessibility.uploadReel')}
             accessibilityRole="button"
           >
             <Icon name="circle-plus" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
 
@@ -673,6 +671,8 @@ export default function BakraScreen() {
         onViewableItemsChanged={handleViewableItemsChanged}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
+        estimatedItemSize={SCREEN_H}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
       {commentsReel && (
         <CommentsSheet

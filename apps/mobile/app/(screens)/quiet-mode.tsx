@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  Switch, TouchableOpacity, Pressable,
-} from 'react-native';
+  Switch, Pressable,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -224,28 +224,26 @@ export default function QuietModeScreen() {
                   <Text style={[styles.timeLabel, { textAlign: rtlTextAlign(isRTL) }]}>
                     {t('quietMode.startTime')}
                   </Text>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowStartPicker(true); }}
-                    activeOpacity={0.7}
                   >
                     <Text style={styles.timeButtonText}>{startTime}</Text>
                     <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
                 <View style={styles.divider} />
                 <View style={[styles.timeRow, { flexDirection: rtlFlexRow(isRTL) }]}>
                   <Text style={[styles.timeLabel, { textAlign: rtlTextAlign(isRTL) }]}>
                     {t('quietMode.endTime')}
                   </Text>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowEndPicker(true); }}
-                    activeOpacity={0.7}
                   >
                     <Text style={styles.timeButtonText}>{endTime}</Text>
                     <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </>
             )}

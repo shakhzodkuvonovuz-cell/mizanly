@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, StyleSheet, type DimensionValue } from 'react-native';
+import { View, StyleSheet, I18nManager, type DimensionValue } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -28,7 +28,7 @@ function ShimmerBase({ width, height, borderRadius = radius.sm, style }: {
   }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(shimmer.value, [0, 1], [-300, 300]) }],
+    transform: [{ translateX: interpolate(shimmer.value, [0, 1], I18nManager.isRTL ? [300, -300] : [-300, 300]) }],
   }));
 
   return (

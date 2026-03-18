@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Dimensions } from 'react-native';
 import Animated, { FadeInUp, FadeIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSpring } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Audio } from 'expo-av';
@@ -126,10 +126,10 @@ export default function VoicePostCreateScreen() {
 
           {/* Record button */}
           <Animated.View style={[styles.recordSection, pulseStyle]}>
-            <TouchableOpacity
+            <Pressable
               style={[styles.recordButton, isRecording && styles.recordButtonActive]}
               onPress={isRecording ? stopRecording : startRecording}
-              activeOpacity={0.7}
+
             >
               <LinearGradient
                 colors={isRecording ? ['#F85149', '#E11D48'] : [colors.emerald, '#0D9B63']}
@@ -137,7 +137,7 @@ export default function VoicePostCreateScreen() {
               >
                 <Icon name={isRecording ? 'square' : 'mic'} size="xl" color="#FFF" />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
             <Text style={styles.recordHint}>
               {isRecording ? 'Tap to stop' : recordingUri ? 'Tap to re-record' : 'Tap to record'}
             </Text>
@@ -146,7 +146,7 @@ export default function VoicePostCreateScreen() {
           {/* Post button */}
           {recordingUri && !isRecording && (
             <Animated.View entering={FadeInUp.duration(300)} style={styles.postSection}>
-              <TouchableOpacity
+              <Pressable
                 style={[styles.postBtn, postMutation.isPending && { opacity: 0.5 }]}
                 onPress={() => postMutation.mutate()}
                 disabled={postMutation.isPending}
@@ -155,7 +155,7 @@ export default function VoicePostCreateScreen() {
                   <Icon name="send" size="sm" color="#FFF" />
                   <Text style={styles.postText}>Post Voice</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           )}
         </View>

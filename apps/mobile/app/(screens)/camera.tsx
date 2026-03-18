@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Dimensions,
+  View, Text, StyleSheet, Pressable, Dimensions,
   StatusBar, Animated as RNAnimated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -148,28 +148,28 @@ export default function CameraScreen() {
         <SafeAreaView style={styles.topControls} edges={['top']}>
           <View style={styles.topControlsRow}>
             {/* Close Button */}
-            <TouchableOpacity
+            <Pressable
               style={styles.controlPill}
               onPress={() => router.back()}
             >
               <Icon name="x" size="sm" color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Flash Toggle */}
-            <TouchableOpacity
+            <Pressable
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
               onPress={() => setFlashOn(!flashOn)}
             >
               <Icon name={flashOn ? 'eye' : 'eye-off'} size="sm" color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Camera Flip */}
-            <TouchableOpacity
+            <Pressable
               style={styles.controlPill}
               onPress={() => setIsFrontCamera(!isFrontCamera)}
             >
               <Icon name="repeat" size="sm" color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Recording Timer */}
@@ -186,7 +186,7 @@ export default function CameraScreen() {
           {/* Mode Selector */}
           <View style={styles.modeSelector}>
             {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
-              <TouchableOpacity
+              <Pressable
                 key={m}
                 style={[styles.modePill, mode === m && styles.modePillActive]}
                 onPress={() => setMode(m)}
@@ -194,27 +194,27 @@ export default function CameraScreen() {
                 <Text style={[styles.modeText, mode === m && styles.modeTextActive]}>
                   {t(`screens.camera.mode${m.charAt(0).toUpperCase() + m.slice(1)}`)}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 
           {/* Capture Controls */}
           <View style={styles.captureContainer}>
             {/* Gallery Shortcut */}
-            <TouchableOpacity style={styles.galleryButton}>
+            <Pressable style={styles.galleryButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.galleryThumbnail}
               >
                 <Icon name="image" size="sm" color={colors.text.tertiary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Capture Button */}
             <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
-              <TouchableOpacity
+              <Pressable
                 onPress={handleCapturePress}
-                activeOpacity={0.8}
+               
                 style={styles.captureButtonTouch}
               >
                 <Animated.View style={[styles.captureButtonInner, animatedCaptureStyle]}>
@@ -234,7 +234,7 @@ export default function CameraScreen() {
                     <View style={styles.progressRingInner} />
                   </Animated.View>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
 
             {/* Spacer for symmetry */}

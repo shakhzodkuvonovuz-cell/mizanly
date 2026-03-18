@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -155,17 +155,17 @@ function CommentRow({
         </View>
         {editing ? (
           <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
-            <TouchableOpacity onPress={() => setEditing(false)} accessibilityLabel={t('accessibility.cancelEditing')} accessibilityRole="button">
+            <Pressable onPress={() => setEditing(false)} accessibilityLabel={t('accessibility.cancelEditing')} accessibilityRole="button">
               <Text style={styles.commentAction}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               onPress={() => editMutation.mutate(editText.trim())}
               disabled={!editText.trim() || editMutation.isPending}
               accessibilityLabel={t('accessibility.saveComment')}
               accessibilityRole="button"
             >
               <Text style={[styles.commentAction, { color: colors.emerald }]}>{t('common.save')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ) : (
           <View style={[styles.commentMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
@@ -173,24 +173,24 @@ function CommentRow({
             {localLikes > 0 && (
               <Text style={styles.commentLikesLabel}>{t('saf.likes', { count: localLikes })}</Text>
             )}
-            <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)} accessibilityLabel={t('accessibility.replyToComment')} accessibilityRole="button">
+            <Pressable onPress={() => onReply(comment.id, comment.user.username)} accessibilityLabel={t('accessibility.replyToComment')} accessibilityRole="button">
               <Text style={styles.commentAction}>{t('common.reply')}</Text>
-            </TouchableOpacity>
+            </Pressable>
             {canEdit && (
-              <TouchableOpacity onPress={() => setEditing(true)} accessibilityLabel={t('accessibility.editComment')} accessibilityRole="button">
+              <Pressable onPress={() => setEditing(true)} accessibilityLabel={t('accessibility.editComment')} accessibilityRole="button">
                 <Text style={styles.commentAction}>{t('common.edit')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
             {canDelete && (
-              <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending} accessibilityLabel={t('accessibility.deleteComment')} accessibilityRole="button">
+              <Pressable onPress={handleDelete} disabled={deleteMutation.isPending} accessibilityLabel={t('accessibility.deleteComment')} accessibilityRole="button">
                 <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
         )}
       </View>
       {!editing && (
-        <TouchableOpacity
+        <Pressable
           onPress={() => { viewerId && likeMutation.mutate(); haptic.medium(); }}
           disabled={!viewerId}
           hitSlop={8}
@@ -204,7 +204,7 @@ function CommentRow({
             color={localLiked ? colors.like : colors.text.tertiary}
             fill={localLiked ? colors.like : undefined}
           />
-        </TouchableOpacity>
+        </Pressable>
       )}
     </Animated.View>
     </View>

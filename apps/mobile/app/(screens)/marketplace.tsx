@@ -9,7 +9,7 @@ import {
   Pressable,
   Dimensions,
   ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -30,17 +30,9 @@ const { width: screenWidth } = Dimensions.get('window');
 const GRID_GAP = spacing.sm;
 const COLUMN_WIDTH = (screenWidth - spacing.base * 2 - GRID_GAP) / 2;
 
-const CATEGORIES = [
-  { key: 'all', label: 'All' },
-  { key: 'food', label: 'Food' },
-  { key: 'clothing', label: 'Clothing' },
-  { key: 'books', label: 'Books' },
-  { key: 'art', label: 'Art' },
-  { key: 'electronics', label: 'Electronics' },
-  { key: 'services', label: 'Services' },
-] as const;
+const CATEGORY_KEYS = ['all', 'food', 'clothing', 'books', 'art', 'electronics', 'services'] as const;
 
-type CategoryKey = typeof CATEGORIES[number]['key'];
+type CategoryKey = typeof CATEGORY_KEYS[number];
 
 interface Product {
   id: string;
@@ -99,6 +91,11 @@ function MarketplaceContent() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryKey>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchActive, setSearchActive] = useState(false);
+
+  const CATEGORIES = CATEGORY_KEYS.map((key) => ({
+    key,
+    label: t(`marketplace.category${key.charAt(0).toUpperCase() + key.slice(1)}`),
+  }));
 
   const productsQuery = useInfiniteQuery<ProductsResponse>({
     queryKey: ['marketplace-products', selectedCategory, searchQuery],

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform, ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -295,11 +295,9 @@ export default function SignUpScreen() {
             {/* Social auth */}
             <View style={styles.socialRow}>
               <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
-                <Icon name="globe" size="sm" color={colors.text.primary} />
                 <Text style={styles.socialText}>{t('auth.google')}</Text>
               </Pressable>
               <Pressable style={({ pressed }) => [styles.socialBtn, pressed && styles.socialBtnPressed]}>
-                <Icon name="lock" size="sm" color={colors.text.primary} />
                 <Text style={styles.socialText}>{t('auth.apple')}</Text>
               </Pressable>
             </View>

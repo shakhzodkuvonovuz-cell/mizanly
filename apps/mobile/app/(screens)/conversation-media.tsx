@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  TouchableOpacity, RefreshControl, Linking,
-} from 'react-native';
+  RefreshControl, Linking,
+, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -238,10 +238,10 @@ export default function ConversationMediaScreen() {
 
   const renderLinkItem = ({ item, index }: { item: LinkItem; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-      <TouchableOpacity
+      <Pressable
         style={styles.linkItem}
         onPress={() => handleOpenLink(item.url)}
-        activeOpacity={0.7}
+
         accessibilityLabel={`${t('conversationMedia.accessibility.openLink')} ${item.url}`}
         accessibilityRole="link"
       >
@@ -260,16 +260,16 @@ export default function ConversationMediaScreen() {
           </Text>
         </View>
         <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 
   const renderDocItem = ({ item, index }: { item: DocItem; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-      <TouchableOpacity
+      <Pressable
         style={styles.docItem}
         onPress={() => handleOpenLink(item.url)}
-        activeOpacity={0.7}
+
         accessibilityLabel={`${t('conversationMedia.accessibility.openDocument')} ${item.fileName}`}
         accessibilityRole="link"
       >
@@ -293,7 +293,7 @@ export default function ConversationMediaScreen() {
           </Text>
         </View>
         <Icon name="download" size="sm" color={colors.text.tertiary} />
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 
@@ -424,7 +424,7 @@ export default function ConversationMediaScreen() {
           </View>
         </BottomSheet>
       </SafeAreaView>
-  
+
     </ScreenErrorBoundary>
   );
 }

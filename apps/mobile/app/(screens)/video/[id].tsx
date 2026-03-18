@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Alert, Share,
   RefreshControl, TextInput, KeyboardAvoidingView, Platform, AppState, Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
@@ -428,7 +428,7 @@ export default function VideoDetailScreen() {
     const isCurrent = Math.abs(currentProgress - (chapter.startTime / (video?.duration || 1))) < 0.05;
 
     return (
-      <TouchableOpacity
+      <Pressable
         style={[
           styles.chapterMarker,
           isCurrent && styles.chapterMarkerActive,
@@ -455,7 +455,7 @@ export default function VideoDetailScreen() {
             <Text style={styles.nowPlayingText}>{t('video.nowPlaying')}</Text>
           </Animated.View>
         )}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
@@ -474,13 +474,13 @@ export default function VideoDetailScreen() {
           <Text style={styles.commentTime}>
             {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
           </Text>
-          <TouchableOpacity 
+          <Pressable 
             onPress={() => setReplyToId(item.id)}
             accessibilityLabel={t('comments.replyTo', { username: item.user.username })}
             accessibilityRole="button"
           >
             <Text style={styles.commentAction}>{t('common.reply')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>
@@ -567,8 +567,7 @@ export default function VideoDetailScreen() {
         >
           {/* Cinematic Video Player with gradient overlay */}
           <View style={styles.videoContainer}>
-            <TouchableOpacity
-              activeOpacity={1}
+            <Pressable
               onPress={handleClearModeToggle}
               style={styles.videoWrapper}
             >
@@ -623,7 +622,7 @@ export default function VideoDetailScreen() {
                   </Text>
                 </LinearGradient>
               </Animated.View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Title & stats with cinematic styling */}
@@ -703,7 +702,7 @@ export default function VideoDetailScreen() {
             </View>
 
             {/* Channel row */}
-            <TouchableOpacity 
+            <Pressable 
               style={styles.channelRow} 
               onPress={handleChannelPress}
               accessibilityLabel={`Go to ${video.channel.name}'s channel`}
@@ -721,7 +720,7 @@ export default function VideoDetailScreen() {
                   {video.channel.subscribersCount.toLocaleString()} {t('channel.subscribers')}
                 </Text>
               </View>
-              <TouchableOpacity
+              <Pressable
                 style={[
                   styles.subscribeButton,
                   video.isSubscribed && styles.subscribedButton,
@@ -736,8 +735,8 @@ export default function VideoDetailScreen() {
                 ]}>
                   {video.isSubscribed ? t('minbar.subscribed') : t('minbar.subscribe')}
                 </Text>
-              </TouchableOpacity>
-            </TouchableOpacity>
+              </Pressable>
+            </Pressable>
 
             {/* Description */}
             {video.description && (
@@ -764,7 +763,7 @@ export default function VideoDetailScreen() {
                   end={{ x: 1, y: 1 }}
                   style={styles.chaptersGradient}
                 >
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.chapterHeader}
                     onPress={() => setShowChapters(!showChapters)}
                     accessibilityLabel={showChapters ? "Hide chapters" : "Show chapters"}
@@ -784,7 +783,7 @@ export default function VideoDetailScreen() {
                       size="sm"
                       color={colors.text.tertiary}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
 
                   {showChapters && (
                     <View style={styles.chaptersTimeline}>
@@ -808,13 +807,13 @@ export default function VideoDetailScreen() {
             <View style={styles.commentsSection}>
               <View style={styles.commentsHeader}>
                 <Text style={styles.commentsTitle}>{t('saf.comments')} ({video.commentsCount})</Text>
-                <TouchableOpacity 
+                <Pressable 
                   onPress={() => setCommentSheetOpen(true)}
                   accessibilityLabel={t('comments.viewAll')}
                   accessibilityRole="button"
                 >
                   <Text style={styles.viewAll}>{t('common.viewAll')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
               {comments.slice(0, 2).map(comment => (
                 <View key={comment.id} style={styles.commentPreview}>
@@ -857,14 +856,14 @@ export default function VideoDetailScreen() {
               multiline
               accessibilityLabel="Comment input field"
             />
-            <TouchableOpacity 
+            <Pressable 
               onPress={handleCommentSubmit} 
               disabled={!commentText.trim()}
               accessibilityLabel="Send comment"
               accessibilityRole="button"
             >
               <Icon name="send" size="sm" color={commentText.trim() ? colors.emerald : colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </BottomSheet>
 

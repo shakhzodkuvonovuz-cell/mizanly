@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl, TextInput, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -123,10 +123,10 @@ export default function LinkChildAccountScreen() {
 
         <View style={styles.numPad}>
           {digits.map((d, i) => (
-            <TouchableOpacity
+            <Pressable
               key={i}
               style={[styles.numKey, d === '' && styles.numKeyEmpty]}
-              activeOpacity={d === '' ? 1 : 0.6}
+
               onPress={() => {
                 if (d === 'del') handlePinDelete(isConfirm);
                 else if (d !== '') handlePinDigit(d, isConfirm);
@@ -138,7 +138,7 @@ export default function LinkChildAccountScreen() {
               ) : (
                 <Text style={styles.numKeyText}>{d}</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
       </Animated.View>
@@ -246,9 +246,9 @@ export default function LinkChildAccountScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
 
@@ -264,10 +264,10 @@ export default function LinkChildAccountScreen() {
               />
             }
             renderItem={({ item }) => (
-              <TouchableOpacity
+              <Pressable
                 style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => handleSelectUser(item)}
-                activeOpacity={0.7}
+
               >
                 <Avatar
                   uri={item.avatarUrl ?? null}
@@ -283,7 +283,7 @@ export default function LinkChildAccountScreen() {
                   </Text>
                 </View>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
             ListEmptyComponent={
               searchResults.isLoading ? (

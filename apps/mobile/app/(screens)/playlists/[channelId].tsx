@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Image,
+  View, Text, StyleSheet, Pressable, Image,
   RefreshControl, FlatList,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -70,9 +70,8 @@ export default function ChannelPlaylistsScreen() {
 
   const renderPlaylistItem = ({ item, index }: { item: Playlist; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <TouchableOpacity
+      <Pressable
         style={styles.playlistCard}
-        activeOpacity={0.8}
         onPress={() => router.push(`/(screens)/playlist/${item.id}`)}
         accessibilityLabel={`Playlist: ${item.title}, ${item.videosCount} videos`}
         accessibilityRole="button"
@@ -103,7 +102,7 @@ export default function ChannelPlaylistsScreen() {
             </LinearGradient>
           </View>
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 

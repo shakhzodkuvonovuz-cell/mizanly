@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, Pressable, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   Alert, Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -290,11 +290,11 @@ export default function CallScreen() {
             {callStatus === 'ringing' && isIncoming ? (
               <>
                 {/* Decline Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.controlButton}
                   onPress={handleDecline}
                   disabled={declineMutation.isPending}
-                  activeOpacity={0.8}
+
                 >
                   <LinearGradient
                     colors={[colors.error, 'rgba(248,81,73,0.8)']}
@@ -307,14 +307,14 @@ export default function CallScreen() {
                     )}
                   </LinearGradient>
                   <Text style={styles.controlLabel}>{t('calls.decline')}</Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Answer Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.controlButton}
                   onPress={handleAnswer}
                   disabled={answerMutation.isPending}
-                  activeOpacity={0.8}
+
                 >
                   <LinearGradient
                     colors={[colors.emerald, colors.gold]}
@@ -327,15 +327,15 @@ export default function CallScreen() {
                     )}
                   </LinearGradient>
                   <Text style={styles.controlLabel}>{t('calls.answer')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </>
             ) : (
               <>
                 {/* Mute Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.controlButton}
                   onPress={toggleMute}
-                  activeOpacity={0.8}
+
                 >
                   <LinearGradient
                     colors={isMuted ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -344,13 +344,13 @@ export default function CallScreen() {
                     <Icon name={isMuted ? 'volume-x' : 'mic'} size="lg" color={colors.text.primary} />
                   </LinearGradient>
                   <Text style={styles.controlLabel}>{isMuted ? t('calls.unmute') : t('calls.mute')}</Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Speaker Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.controlButton}
                   onPress={toggleSpeaker}
-                  activeOpacity={0.8}
+
                 >
                   <LinearGradient
                     colors={isSpeaker ? [colors.emerald, colors.gold] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -359,14 +359,14 @@ export default function CallScreen() {
                     <Icon name="volume-x" size="lg" color={colors.text.primary} />
                   </LinearGradient>
                   <Text style={styles.controlLabel}>{isSpeaker ? t('calls.speakerOff') : t('calls.speaker')}</Text>
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Flip Camera Button */}
                 {isVideo && (
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.controlButton}
                     onPress={toggleCamera}
-                    activeOpacity={0.8}
+
                   >
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -375,15 +375,15 @@ export default function CallScreen() {
                       <Icon name="repeat" size="lg" color={colors.text.primary} />
                     </LinearGradient>
                     <Text style={styles.controlLabel}>{t('calls.flip')}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
 
                 {/* End Call Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.controlButton}
                   onPress={handleEndCall}
                   disabled={endCallMutation.isPending}
-                  activeOpacity={0.8}
+
                 >
                   <LinearGradient
                     colors={[colors.error, 'rgba(248,81,73,0.8)']}
@@ -396,13 +396,13 @@ export default function CallScreen() {
                     )}
                   </LinearGradient>
                   <Text style={styles.controlLabel}>{t('calls.end')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </>
             )}
           </Animated.View>
         </View>
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }

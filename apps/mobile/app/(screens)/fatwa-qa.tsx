@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -116,7 +116,7 @@ export default function FatwaQAScreen() {
         {/* Tabs */}
         <View style={styles.tabs}>
           {(['browse', 'ask'] as const).map(tab => (
-            <TouchableOpacity
+            <Pressable
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}
@@ -125,7 +125,7 @@ export default function FatwaQAScreen() {
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'browse' ? 'Browse' : 'Ask'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
@@ -134,7 +134,7 @@ export default function FatwaQAScreen() {
             {/* Madhab filter */}
             <View style={styles.filterRow}>
               {MADHABS.map(m => (
-                <TouchableOpacity
+                <Pressable
                   key={m.id}
                   style={[styles.filterChip, selectedMadhab === m.id && styles.filterChipActive]}
                   onPress={() => { setSelectedMadhab(m.id); haptic.light(); }}
@@ -142,7 +142,7 @@ export default function FatwaQAScreen() {
                   <Text style={[styles.filterChipText, selectedMadhab === m.id && styles.filterChipTextActive]}>
                     {m.label}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
 
@@ -185,14 +185,14 @@ export default function FatwaQAScreen() {
             </View>
 
             <Text style={[styles.askLabel, { marginTop: spacing.xl }]}>Preferred Madhab</Text>
-            <TouchableOpacity style={styles.madhabSelector} onPress={() => setMadhabSheetOpen(true)}>
+            <Pressable style={styles.madhabSelector} onPress={() => setMadhabSheetOpen(true)}>
               <Text style={styles.madhabSelectorText}>
                 {MADHABS.find(m => m.id === askMadhab)?.label || 'Any Madhab'}
               </Text>
               <Icon name="chevron-down" size="sm" color={colors.text.secondary} />
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={[styles.submitBtn, (!question.trim() || askMutation.isPending) && { opacity: 0.5 }]}
               onPress={() => askMutation.mutate()}
               disabled={!question.trim() || askMutation.isPending}
@@ -201,7 +201,7 @@ export default function FatwaQAScreen() {
                 <Icon name="send" size="sm" color="#FFF" />
                 <Text style={styles.submitText}>Submit Question</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         )}
 

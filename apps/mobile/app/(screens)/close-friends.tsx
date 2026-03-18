@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, Pressable,
+  View, Text, StyleSheet, FlatList, Pressable,
   RefreshControl, Switch, TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -35,7 +35,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
 }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <Pressable onPress={onPress}>
         <LinearGradient
           colors={isCloseFriend ? ['rgba(10,123,79,0.12)', 'rgba(10,123,79,0.04)'] : ['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
           style={styles.row}
@@ -59,14 +59,14 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
           {!isMe && (
             <View style={styles.actions}>
               {isCloseFriend && (
-                <TouchableOpacity
+                <Pressable
                   onPress={() => onToggle(user.id, false)}
                   hitSlop={8}
                   style={styles.removeBtn}
                   disabled={disabled}
                 >
                   <Icon name="x" size="sm" color={disabled ? colors.text.tertiary : colors.error} />
-                </TouchableOpacity>
+                </Pressable>
               )}
               <Switch
                 value={isCloseFriend}
@@ -79,7 +79,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
             </View>
           )}
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

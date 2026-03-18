@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   Dimensions,
   TextInput,
@@ -227,7 +227,7 @@ export default function TwoFactorSetupScreen() {
                 {t('auth.step1Description')}
               </Text>
 
-              <TouchableOpacity
+              <Pressable
                 style={styles.appPickerButton}
                 onPress={() => setShowAppPicker(true)}
               >
@@ -243,9 +243,9 @@ export default function TwoFactorSetupScreen() {
                   </View>
                   <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 style={styles.nextButton}
                 onPress={() => setActiveStep('qr')}
               >
@@ -256,7 +256,7 @@ export default function TwoFactorSetupScreen() {
                   <Text style={styles.nextButtonText}>{t('common.continue')}</Text>
                   <Icon name="chevron-right" size="sm" color={colors.text.primary} />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
 
             {/* Step 2: QR Code */}
@@ -306,7 +306,7 @@ export default function TwoFactorSetupScreen() {
                 {/* Manual Secret */}
                 <View style={styles.secretContainer}>
                   <Text style={styles.secretLabel}>{t('auth.enterSecretManually')}</Text>
-                  <TouchableOpacity onPress={() => {}}>
+                  <Pressable onPress={() => {}}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.secretBox}
@@ -314,10 +314,10 @@ export default function TwoFactorSetupScreen() {
                       <Text style={styles.secretText} selectable>{secret}</Text>
                       <Icon name="layers" size="xs" color={colors.emerald} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
-                <TouchableOpacity
+                <Pressable
                   style={styles.nextButton}
                   onPress={() => setActiveStep('verify')}
                 >
@@ -328,7 +328,7 @@ export default function TwoFactorSetupScreen() {
                     <Text style={styles.nextButtonText}>{t('auth.scannedCodeButton')}</Text>
                     <Icon name="chevron-right" size="sm" color="#fff" />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             )}
 
@@ -376,7 +376,7 @@ export default function TwoFactorSetupScreen() {
                   ))}
                 </View>
 
-                <TouchableOpacity
+                <Pressable
                   style={styles.nextButton}
                   onPress={handleEnable2FA}
                   disabled={isEnabling || verificationCode.some(d => d === '')}
@@ -397,7 +397,7 @@ export default function TwoFactorSetupScreen() {
                       </>
                     )}
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             )}
 
@@ -422,7 +422,7 @@ export default function TwoFactorSetupScreen() {
                 {/* Backup Codes Grid */}
                 <View style={styles.backupGrid}>
                   {backupCodes.map((code, idx) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={idx}
                       onPress={() => copyBackupCode(code)}
                     >
@@ -443,12 +443,12 @@ export default function TwoFactorSetupScreen() {
                           <Icon name="check" size="xs" color={colors.emerald} />
                         )}
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
 
                 <View style={styles.backupActions}>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.backupActionButton}
                     onPress={copyAllBackupCodes}
                   >
@@ -459,9 +459,9 @@ export default function TwoFactorSetupScreen() {
                       <Icon name="layers" size="sm" color={colors.text.primary} />
                       <Text style={styles.backupActionText}>{t('common.copyAll')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.backupActionButton}
                     onPress={downloadBackupCodes}
                   >
@@ -472,10 +472,10 @@ export default function TwoFactorSetupScreen() {
                       <Icon name="chevron-down" size="sm" color={colors.text.primary} />
                       <Text style={styles.backupActionText}>{t('common.download')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
-                <TouchableOpacity
+                <Pressable
                   style={styles.nextButton}
                   onPress={() => router.back()}
                 >
@@ -486,7 +486,7 @@ export default function TwoFactorSetupScreen() {
                     <Text style={styles.nextButtonText}>{t('common.done')}</Text>
                     <Icon name="check" size="sm" color="#fff" />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             )}
           </Animated.View>

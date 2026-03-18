@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl, Image,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet,
   FlatList, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { Icon } from './Icon';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';
 import { Skeleton } from './Skeleton';
@@ -121,14 +121,14 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
               autoFocus
             />
             {query.length > 0 && (
-                <TouchableOpacity onPress={() => setQuery('')}>
+                <Pressable onPress={() => setQuery('')}>
                   <Icon name="x" size="sm" color={colors.text.tertiary} />
-                </TouchableOpacity>
+                </Pressable>
               )}
           </View>
         </View>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.currentLocation}
           onPress={handleCurrentLocation}
         >
@@ -136,7 +136,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
             <Icon name="map-pin" size="md" color={colors.emerald} />
           </View>
           <Text style={styles.currentLocationText}>Use Current Location</Text>
-        </TouchableOpacity>
+        </Pressable>
 
         {recentLocations.length > 0 && !query && (
           <View style={styles.section}>

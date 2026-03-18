@@ -5,7 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Dimensions,
 } from 'react-native';
@@ -119,9 +119,9 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
         </View>
 
         {/* Directions Button */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => haptic.light()}
-          activeOpacity={0.8}
+         
           style={styles.directionsButton}
         >
           <LinearGradient
@@ -131,7 +131,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
             <Icon name="map-pin" size="xs" color={colors.text.primary} />
             <Text style={styles.directionsText}>{t('islamic.directions')}</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </LinearGradient>
     </Animated.View>
   );
@@ -287,9 +287,9 @@ export default function MosqueFinderScreen() {
                     placeholderTextColor={colors.text.tertiary}
                   />
                   {searchQuery.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Pressable onPress={() => setSearchQuery('')}>
                       <Icon name="x" size="sm" color={colors.text.secondary} />
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                 </LinearGradient>
               </Animated.View>

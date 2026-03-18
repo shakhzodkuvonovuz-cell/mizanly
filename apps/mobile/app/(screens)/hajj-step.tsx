@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl,
-} from 'react-native';
+  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl,
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
@@ -198,13 +198,13 @@ function HajjStepContent() {
         <Animated.View entering={FadeInUp.delay(100).duration(300)}>
           <Text style={styles.sectionTitle}>{t('hajj.duas')}</Text>
           {step.duas.map((dua, duaIndex) => (
-            <TouchableOpacity
+            <Pressable
               key={duaIndex}
               style={styles.duaCard}
               onPress={() =>
                 setExpandedDua(expandedDua === duaIndex ? null : duaIndex)
               }
-              activeOpacity={0.7}
+
             >
               <Text style={styles.duaArabic}>{dua.arabic}</Text>
               {expandedDua === duaIndex && (
@@ -221,7 +221,7 @@ function HajjStepContent() {
                   color={colors.text.tertiary}
                 />
               </View>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </Animated.View>
 
@@ -229,11 +229,11 @@ function HajjStepContent() {
         <Animated.View entering={FadeInUp.delay(200).duration(300)}>
           <Text style={styles.sectionTitle}>{t('hajj.checklist')}</Text>
           {step.checklist.map((item, idx) => (
-            <TouchableOpacity
+            <Pressable
               key={idx}
               style={styles.checkItem}
               onPress={() => toggleCheckItem(idx)}
-              activeOpacity={0.7}
+
             >
               <View
                 style={[
@@ -253,17 +253,17 @@ function HajjStepContent() {
               >
                 {item}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </Animated.View>
 
         {/* Mark complete button */}
         {isCurrent && (
           <Animated.View entering={FadeInUp.delay(300).duration(300)}>
-            <TouchableOpacity
+            <Pressable
               style={styles.completeButton}
               onPress={handleMarkComplete}
-              activeOpacity={0.7}
+
             >
               <LinearGradient
                 colors={[colors.emerald, '#0A6B42']}
@@ -276,7 +276,7 @@ function HajjStepContent() {
                   {t('hajj.markComplete')}
                 </Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         )}
 

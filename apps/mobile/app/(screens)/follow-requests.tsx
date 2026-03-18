@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -42,18 +42,18 @@ function RequestRow({
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.row}
       >
-        <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
+        <Pressable onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
           <Avatar uri={follower.avatarUrl} name={follower.displayName} size="md" />
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.info}>
-          <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
+          <Pressable onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
             <Text style={styles.name}>{follower.displayName}</Text>
             <Text style={styles.username}>@{follower.username}</Text>
             {follower.bio ? (
               <Text style={styles.bio} numberOfLines={1}>{follower.bio}</Text>
             ) : null}
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.actions}>
@@ -61,22 +61,22 @@ function RequestRow({
             <Skeleton.Circle size={32} />
           ) : (
             <>
-              <TouchableOpacity onPress={onAccept}>
+              <Pressable onPress={onAccept}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                   style={styles.acceptBtn}
                 >
                   <Text style={styles.acceptText}>{t('screens.followRequests.confirm')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={onDecline}>
+              </Pressable>
+              <Pressable onPress={onDecline}>
                 <LinearGradient
                   colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
                   style={styles.declineBtn}
                 >
                   <Text style={styles.declineText}>{t('common.delete')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </>
           )}
         </View>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useColorScheme } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, useColorScheme } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Moon, Sun, Settings } from 'lucide-react-native';
@@ -25,9 +25,8 @@ interface ThemeRadioProps {
 
 function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioProps) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.9}
       accessibilityLabel={`Select ${label} theme`}
       accessibilityRole="radio"
       accessibilityState={{ selected: isActive }}
@@ -55,7 +54,7 @@ function ThemeRadio({ icon, label, description, isActive, onPress }: ThemeRadioP
           </LinearGradient>
         )}
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

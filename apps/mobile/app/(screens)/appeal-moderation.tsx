@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Dimensions,
 } from 'react-native';
@@ -172,10 +172,10 @@ export default function AppealModerationScreen() {
               </View>
             </View>
 
-            <TouchableOpacity style={styles.guidelinesLink} activeOpacity={0.8}>
+            <Pressable style={styles.guidelinesLink}>
               <Icon name="link" size="xs" color={colors.emerald} />
               <Text style={styles.guidelinesText}>{t('appealModeration.guidelinesText')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
         </Animated.View>
 
@@ -198,14 +198,14 @@ export default function AppealModerationScreen() {
             {/* Reason Selector */}
             <Text style={styles.reasonLabel}>{t('appealModeration.reasonLabel')}</Text>
             {APPEAL_REASONS.map((reason, index) => (
-              <TouchableOpacity
+              <Pressable
                 key={reason.id}
                 style={[
                   styles.reasonRow,
                   index < APPEAL_REASONS.length - 1 && styles.reasonRowBorder,
                 ]}
                 onPress={() => setSelectedReason(reason.id)}
-                activeOpacity={0.8}
+               
               >
                 <View
                   style={[
@@ -225,7 +225,7 @@ export default function AppealModerationScreen() {
                 >
                   {reason.label}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
 
             {/* Details Input */}
@@ -272,21 +272,21 @@ export default function AppealModerationScreen() {
             <Text style={styles.evidenceLabel}>{t('appealModeration.evidenceLabel')}</Text>
 
             <View style={styles.evidenceButtons}>
-              <TouchableOpacity style={styles.evidenceButton} activeOpacity={0.8}>
+              <Pressable style={styles.evidenceButton}>
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="image" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />
                   <Text style={styles.evidenceButtonText}>{t('appealModeration.uploadImage')}</Text>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity style={styles.evidenceButton} activeOpacity={0.8}>
+              <Pressable style={styles.evidenceButton}>
                 <View style={styles.evidenceButtonInner}>
                   <Icon name="paperclip" size="md" color={colors.emerald} />
                   <Icon name="plus" size="xs" color={colors.gold} style={styles.evidencePlus} />
                   <Text style={styles.evidenceButtonText}>{t('appealModeration.uploadDocument')}</Text>
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </LinearGradient>
         </Animated.View>
@@ -413,12 +413,12 @@ export default function AppealModerationScreen() {
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.8}>
+        <Pressable onPress={() => router.back()}>
           <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           disabled={isSubmitDisabled || submitAppealMutation.isPending}
-          activeOpacity={0.8}
+         
           onPress={() => submitAppealMutation.mutate()}
         >
           <LinearGradient
@@ -431,7 +431,7 @@ export default function AppealModerationScreen() {
                 : t('appealModeration.submitAppeal')}
             </Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
     </ScreenErrorBoundary>

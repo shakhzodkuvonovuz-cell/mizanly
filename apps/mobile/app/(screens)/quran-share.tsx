@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl,
-} from 'react-native';
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -183,7 +183,7 @@ export default function QuranShareScreen() {
         >
           {/* Surah Selector */}
           <Animated.View entering={FadeInUp.duration(500)}>
-            <TouchableOpacity
+            <Pressable
               style={styles.surahSelector}
               onPress={() => setShowSurahPicker(true)}
             >
@@ -207,12 +207,12 @@ export default function QuranShareScreen() {
                 </View>
                 <Icon name="chevron-down" size="sm" color={colors.text.tertiary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Verse Navigation */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.verseNav}>
-            <TouchableOpacity
+            <Pressable
               style={styles.navButton}
               onPress={handlePrevVerse}
               disabled={currentVerse === 1}
@@ -223,7 +223,7 @@ export default function QuranShareScreen() {
               >
                 <Icon name="chevron-left" size="sm" color={currentVerse === 1 ? colors.text.tertiary : colors.emerald} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             <LinearGradient
               colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
@@ -232,7 +232,7 @@ export default function QuranShareScreen() {
               <Text style={styles.verseNumberText}>{t('screens.quranShare.verseNumber', { number: currentVerse })}</Text>
             </LinearGradient>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.navButton}
               onPress={handleNextVerse}
               disabled={currentVerse === currentSurah.verses}
@@ -243,7 +243,7 @@ export default function QuranShareScreen() {
               >
                 <Icon name="chevron-right" size="sm" color={currentVerse === currentSurah.verses ? colors.text.tertiary : colors.emerald} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Verse Card */}
@@ -310,13 +310,13 @@ export default function QuranShareScreen() {
                     </View>
 
                     {/* Tafsir Button */}
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => router.push(`/(screens)/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as never)}
                       style={styles.tafsirButton}
                     >
                       <Icon name="book-open" size="sm" color={colors.gold} />
                       <Text style={styles.tafsirButtonText}>{t('tafsir.viewTafsir')}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </>
                 ) : (
                   <EmptyState
@@ -331,7 +331,7 @@ export default function QuranShareScreen() {
 
           {/* Share Options */}
           <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.shareOptions}>
-            <TouchableOpacity
+            <Pressable
               style={styles.shareButton}
               onPress={() => setShowShareOptions(true)}
             >
@@ -342,9 +342,9 @@ export default function QuranShareScreen() {
                 <Icon name="share" size="sm" color="#fff" />
                 <Text style={styles.shareButtonText}>{t('screens.quranShare.shareThisVerse')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.copyButton}
               onPress={handleCopyText}
             >
@@ -355,7 +355,7 @@ export default function QuranShareScreen() {
                 <Icon name="link" size="sm" color={colors.text.secondary} />
                 <Text style={styles.copyButtonText}>{t('screens.quranShare.copyText')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </ScrollView>
 

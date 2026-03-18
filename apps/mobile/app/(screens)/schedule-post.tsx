@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -221,13 +221,13 @@ export default function SchedulePostScreen() {
                   </LinearGradient>
                 </View>
                 <View style={styles.monthNavigation}>
-                  <TouchableOpacity onPress={() => changeMonth(-1)}>
+                  <Pressable onPress={() => changeMonth(-1)}>
                     <Icon name="chevron-left" size="md" color={colors.text.secondary} />
-                  </TouchableOpacity>
+                  </Pressable>
                   <Text style={styles.monthText}>{monthNames[currentMonth]} {currentYear}</Text>
-                  <TouchableOpacity onPress={() => changeMonth(1)}>
+                  <Pressable onPress={() => changeMonth(1)}>
                     <Icon name="chevron-right" size="md" color={colors.text.secondary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </View>
 
@@ -253,7 +253,7 @@ export default function SchedulePostScreen() {
                   const isPast = day < today && currentMonth === 2;
 
                   return (
-                      <TouchableOpacity
+                      <Pressable
                         key={day}
                         style={styles.calendarDay}
                         onPress={() => !isPast && setSelectedDate(day)}
@@ -273,7 +273,7 @@ export default function SchedulePostScreen() {
                         ) : (
                           <Text style={[styles.dayText, isPast && styles.pastDayText]}>{day}</Text>
                         )}
-                      </TouchableOpacity>
+                      </Pressable>
                   
                   );
                 })}
@@ -282,7 +282,7 @@ export default function SchedulePostScreen() {
               {/* Quick Date Buttons */}
               <View style={styles.quickDates}>
                 {quickDates.map((quick) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={quick.label}
                     style={styles.quickDateButton}
                     onPress={() => setSelectedDate(quick.day)}
@@ -301,7 +301,7 @@ export default function SchedulePostScreen() {
                         {quick.label}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </View>
             </LinearGradient>
@@ -332,7 +332,7 @@ export default function SchedulePostScreen() {
               <Text style={styles.timeLabel}>{t('screens.schedule-live.hour')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hourScroll}>
                 {hours.map((hour) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={hour}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedHour(hour)}
@@ -351,7 +351,7 @@ export default function SchedulePostScreen() {
                         {hour}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </ScrollView>
 
@@ -359,7 +359,7 @@ export default function SchedulePostScreen() {
               <Text style={styles.timeLabel}>{t('screens.schedule-live.minute')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.minuteScroll}>
                 {minutes.map((minute) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={minute}
                     style={styles.timeOptionButton}
                     onPress={() => setSelectedMinute(minute)}
@@ -378,14 +378,14 @@ export default function SchedulePostScreen() {
                         {minute.toString().padStart(2, '0')}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </ScrollView>
 
               {/* AM/PM Toggle */}
               <View style={styles.ampmContainer}>
                 {(['AM', 'PM'] as AmPm[]).map((ampm) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={ampm}
                     style={styles.ampmButton}
                     onPress={() => setSelectedAmPm(ampm)}
@@ -404,7 +404,7 @@ export default function SchedulePostScreen() {
                         {ampm}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </View>
 
@@ -476,10 +476,10 @@ export default function SchedulePostScreen() {
           colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
           style={styles.bottomBarGradient}
         >
-          <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+          <Pressable style={styles.cancelButton} onPress={() => router.back()}>
             <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
+          </Pressable>
+          <Pressable style={styles.scheduleButton} onPress={handleSchedule} disabled={isScheduling}>
             <LinearGradient
               colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
               style={styles.scheduleButtonGradient}
@@ -493,7 +493,7 @@ export default function SchedulePostScreen() {
                 </>
               )}
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </LinearGradient>
       </View>
     </SafeAreaView>

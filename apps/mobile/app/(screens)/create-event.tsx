@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Switch,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -26,7 +26,7 @@ import type { Community } from '@/types/communities';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Alert } from 'react-native';
+import { Alert , Pressable } from 'react-native';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -168,11 +168,10 @@ export default function CreateEventScreen() {
       >
         {/* Cover Image Section */}
         <Animated.View entering={FadeInUp.duration(400)}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.coverContainer, hasCover && styles.coverHasImage]}
             onPress={() => setHasCover(!hasCover)}
-            activeOpacity={0.8}
-          >
+                     >
             <LinearGradient
               colors={['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)']}
               style={styles.coverGradient}
@@ -189,12 +188,12 @@ export default function CreateEventScreen() {
             </LinearGradient>
             {hasCover && (
               <View style={styles.coverOverlay}>
-                <TouchableOpacity style={styles.changeButton} activeOpacity={0.8}>
+                <Pressable style={styles.changeButton}>
                   <Text style={styles.changeText}>{t('common.change')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
 
         {/* Title Card */}
@@ -274,23 +273,23 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.dateTime')}</Text>
             </View>
 
-            <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('start')} activeOpacity={0.8}>
+            <Pressable style={styles.dateRow} onPress={() => setShowDatePicker('start')}>
               <Text style={styles.dateLabel}>{t('events.start')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(startDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
               </View>
-            </TouchableOpacity>
+            </Pressable>
 
             <View style={styles.dateDivider} />
 
-            <TouchableOpacity style={styles.dateRow} onPress={() => setShowDatePicker('end')} activeOpacity={0.8}>
+            <Pressable style={styles.dateRow} onPress={() => setShowDatePicker('end')}>
               <Text style={styles.dateLabel}>{t('events.end')}</Text>
               <View style={styles.dateValue}>
                 <Text style={styles.dateText}>{formatDateTime(endDate)}</Text>
                 <Icon name="chevron-right" size="xs" color={colors.text.tertiary} />
               </View>
-            </TouchableOpacity>
+            </Pressable>
 
             <View style={styles.toggleRow}>
               <Text style={styles.toggleLabel}>{t('events.allDay')}</Text>
@@ -360,12 +359,11 @@ export default function CreateEventScreen() {
               {(['in-person', 'online', 'hybrid'] as EventType[]).map((type) => {
                 const eventTypeLabel = type === 'in-person' ? t('events.inPerson') : type === 'online' ? t('events.online') : t('events.hybrid');
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={type}
                     style={styles.pillButton}
                     onPress={() => setEventType(type)}
-                    activeOpacity={0.8}
-                  >
+                                     >
                     {eventType === type ? (
                       <LinearGradient
                         colors={[colors.emerald, colors.emeraldDark]}
@@ -382,7 +380,7 @@ export default function CreateEventScreen() {
                         </Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
             </View>
@@ -409,12 +407,11 @@ export default function CreateEventScreen() {
               {(['public', 'members', 'invite'] as PrivacyType[]).map((type) => {
                 const privacyLabel = type === 'public' ? t('events.public') : type === 'members' ? t('events.members') : t('events.inviteOnly');
                 return (
-                    <TouchableOpacity
+                    <Pressable
                       key={type}
                       style={styles.pillButton}
                       onPress={() => setPrivacy(type)}
-                      activeOpacity={0.8}
-                    >
+                                         >
                       {privacy === type ? (
                         <LinearGradient
                           colors={[colors.emerald, colors.emeraldDark]}
@@ -431,7 +428,7 @@ export default function CreateEventScreen() {
                           </Text>
                         </View>
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                 
                 );
               })}
@@ -455,14 +452,14 @@ export default function CreateEventScreen() {
               <Text style={styles.formLabel}>{t('events.community')}</Text>
             </View>
 
-            <TouchableOpacity style={styles.communityDropdown} activeOpacity={0.8}>
+            <Pressable style={styles.communityDropdown}>
               <Text style={selectedCommunity ? styles.dropdownValue : styles.dropdownPlaceholder}>
                 {selectedCommunity
                   ? communities.find(c => c.id === selectedCommunity)?.name
                   : t('events.postToCommunity')}
               </Text>
               <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
 
             <Text style={styles.sectionTitle}>{t('events.yourCommunities')}</Text>
             {communitiesLoading ? (
@@ -483,7 +480,7 @@ export default function CreateEventScreen() {
               />
             ) : (
               communities.map((community, index) => (
-                <TouchableOpacity
+                <Pressable
                   key={community.id}
                   style={[
                     styles.communityRow,
@@ -491,8 +488,7 @@ export default function CreateEventScreen() {
                     selectedCommunity === community.id && styles.communityRowSelected,
                   ]}
                   onPress={() => setSelectedCommunity(community.id)}
-                  activeOpacity={0.8}
-                >
+                                 >
                   <Avatar uri={community.avatarUrl} name={community.name} size="sm" />
                   <View style={styles.communityInfo}>
                     <Text style={styles.communityName}>{community.name}</Text>
@@ -506,7 +502,7 @@ export default function CreateEventScreen() {
                       <Icon name="check" size="xs" color={colors.text.primary} />
                     </LinearGradient>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               ))
             )}
           </LinearGradient>
@@ -562,17 +558,17 @@ export default function CreateEventScreen() {
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity activeOpacity={0.8}>
+        <Pressable>
           <Text style={styles.draftText}>{t('events.saveDraft')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8} onPress={handleSubmit} disabled={submitting}>
+        </Pressable>
+        <Pressable onPress={handleSubmit} disabled={submitting}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.createButton}
           >
             <Text style={styles.createText}>{submitting ? t('events.creating') : t('events.createEvent')}</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Date Picker Bottom Sheet */}
@@ -585,11 +581,11 @@ export default function CreateEventScreen() {
           <Text style={styles.datePickerHint}>
             {t('events.datePickerHint')}
           </Text>
-          <TouchableOpacity style={styles.confirmButton} onPress={() => handleDateSelect(tempDate)}>
+          <Pressable style={styles.confirmButton} onPress={() => handleDateSelect(tempDate)}>
             <LinearGradient colors={[colors.emerald, colors.emeraldDark]} style={styles.confirmButtonGradient}>
               <Text style={styles.confirmButtonText}>{t('common.confirm')}</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </BottomSheet>
     </SafeAreaView>

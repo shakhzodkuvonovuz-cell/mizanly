@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert, Share,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 // GlassHeader handles safe area insets internally
@@ -89,17 +89,17 @@ function CommentRow({
           {localLikes > 0 && (
             <Text style={styles.commentLikesLabel}>{localLikes} {t('saf.likes')}</Text>
           )}
-          <TouchableOpacity onPress={() => onReply(comment.id, comment.user.username)}>
+          <Pressable onPress={() => onReply(comment.id, comment.user.username)}>
             <Text style={styles.commentAction}>{t('common.reply')}</Text>
-          </TouchableOpacity>
+          </Pressable>
           {isOwn && (
-            <TouchableOpacity onPress={handleDelete} disabled={deleteMutation.isPending}>
+            <Pressable onPress={handleDelete} disabled={deleteMutation.isPending}>
               <Text style={styles.commentActionDestructive}>{t('common.delete')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </View>
-      <TouchableOpacity
+      <Pressable
           onPress={() => { viewerId && handleLikeComment(); }}
           disabled={!viewerId}
           hitSlop={8}
@@ -111,7 +111,7 @@ function CommentRow({
             color={localLiked ? colors.like : colors.text.tertiary}
             fill={localLiked ? colors.like : undefined}
           />
-        </TouchableOpacity>
+        </Pressable>
     </View>
   );
 }
@@ -302,13 +302,13 @@ export default function ReelDetailScreen() {
           {/* Video Controls Overlay - Show play button when paused */}
           {!isPlaying && (
             <View style={styles.videoControls}>
-              <TouchableOpacity onPress={handlePlayPause} style={styles.controlButton}>
+              <Pressable onPress={handlePlayPause} style={styles.controlButton}>
                 <Icon
                   name="play"
                   size={44}
                   color={colors.text.primary}
                 />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
 
@@ -332,9 +332,9 @@ export default function ReelDetailScreen() {
                 <Text style={styles.reelUsername}>@{reelQuery.data.user.username}</Text>
                 <Text style={styles.reelDisplayName}>{reelQuery.data.user.displayName}</Text>
               </View>
-              <TouchableOpacity style={styles.followButton}>
+              <Pressable style={styles.followButton}>
                 <Text style={styles.followButtonText}>{t('common.follow')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {reelQuery.data.caption && (
@@ -500,7 +500,7 @@ export default function ReelDetailScreen() {
                   multiline
                   maxLength={500}
                 />
-                <TouchableOpacity
+                <Pressable
                   onPress={() => canSend && sendMutation.mutate()}
                   disabled={!canSend}
                 >
@@ -511,7 +511,7 @@ export default function ReelDetailScreen() {
                       {t('common.send')}
                     </Text>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           )}

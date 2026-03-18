@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   Pressable,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Video, AVPlaybackStatus, ResizeMode, Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -242,52 +242,52 @@ export function VideoPlayer({
           >
             {/* Top controls row */}
             <View style={styles.topControls}>
-              <TouchableOpacity onPress={() => { haptic.light(); setLooping(!looping); }} style={styles.iconButton}>
+              <Pressable onPress={() => { haptic.light(); setLooping(!looping); }} style={styles.iconButton}>
                 <Icon name="repeat" size="md" color={looping ? colors.emerald : colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
               <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                 {qualities && qualities.length > 0 && (
-                  <TouchableOpacity onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}>
+                  <Pressable onPress={() => setQualitySheetVisible(true)} style={styles.iconButton}>
                     <Text style={styles.speedText}>{selectedQuality === 'auto' ? 'Auto' : selectedQuality}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
                 {enablePiP && isPiPSupported && (
-                  <TouchableOpacity onPress={() => { enterPiP(); haptic.light(); }} style={styles.iconButton}
+                  <Pressable onPress={() => { enterPiP(); haptic.light(); }} style={styles.iconButton}
                     accessibilityLabel="Picture in Picture" accessibilityRole="button">
                     <Icon name="layers" size="md" color={colors.text.primary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
-                <TouchableOpacity onPress={toggleFullscreen} style={styles.iconButton}>
+                <Pressable onPress={toggleFullscreen} style={styles.iconButton}>
                   <Icon name="maximize" size="md" color={colors.text.primary} />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}>
+                </Pressable>
+                <Pressable onPress={() => setSpeedSheetVisible(true)} style={styles.iconButton}>
                   <Text style={styles.speedText}>{playbackSpeed}x</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
 
             {/* Center play/pause button */}
             <View style={styles.centerControls}>
-              <TouchableOpacity onPress={skipBackward} style={styles.skipButton}>
+              <Pressable onPress={skipBackward} style={styles.skipButton}>
                 <Icon name="rewind" size="xl" color={colors.text.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={togglePlayPause} style={styles.playButton}>
+              </Pressable>
+              <Pressable onPress={togglePlayPause} style={styles.playButton}>
                 <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
-              </TouchableOpacity>
-              <TouchableOpacity onPress={skipForward} style={styles.skipButton}>
+              </Pressable>
+              <Pressable onPress={skipForward} style={styles.skipButton}>
                 <Icon name="fast-forward" size="xl" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {/* Bottom controls row */}
             <View style={styles.bottomControls}>
-              <TouchableOpacity onPress={toggleMute} style={styles.iconButton}>
+              <Pressable onPress={toggleMute} style={styles.iconButton}>
                 <Icon
                   name={isMuted ? 'volume-x' : volume > 0.5 ? 'volume-2' : 'volume-1'}
                   size="md"
                   color={colors.text.primary}
                 />
-              </TouchableOpacity>
+              </Pressable>
               <Text style={styles.timeText}>{formatTime(position)}</Text>
               {/* Seek bar */}
               <View

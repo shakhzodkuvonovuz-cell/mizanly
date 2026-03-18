@@ -7,7 +7,7 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -202,11 +202,11 @@ function AchievementsScreen() {
 
   const categories: { key: AchievementCategory; label: string }[] = [
     { key: 'all', label: t('common.viewAll') },
-    { key: 'content', label: 'Content' },
-    { key: 'social', label: 'Social' },
-    { key: 'islamic', label: 'Islamic' },
-    { key: 'milestone', label: 'Milestone' },
-    { key: 'special', label: 'Special' },
+    { key: 'content', label: t('gamification.achievements.categoryContent') },
+    { key: 'social', label: t('gamification.achievements.categorySocial') },
+    { key: 'islamic', label: t('gamification.achievements.categoryIslamic') },
+    { key: 'milestone', label: t('gamification.achievements.categoryMilestone') },
+    { key: 'special', label: t('gamification.achievements.categorySpecial') },
   ];
 
   const handleCategoryChange = useCallback(
@@ -292,7 +292,7 @@ function AchievementsScreen() {
           <EmptyState
             icon="check-circle"
             title={t('gamification.achievements.title')}
-            subtitle="Start using Mizanly to unlock achievements"
+            subtitle={t('gamification.achievements.startUsing')}
             actionLabel={t('common.retry')}
             onAction={() => refetch()}
           />
@@ -317,7 +317,7 @@ function AchievementsScreen() {
               <EmptyState
                 icon="check-circle"
                 title={t('gamification.achievements.locked')}
-                subtitle="No achievements in this category"
+                subtitle={t('gamification.achievements.noneInCategory')}
               />
             }
           />

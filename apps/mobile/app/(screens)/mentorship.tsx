@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -60,9 +60,9 @@ export default function MentorshipScreen() {
 
   const renderMentor = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <TouchableOpacity
+      <Pressable
         style={styles.mentorCard}
-        activeOpacity={0.7}
+
         onPress={() => {
           setSelectedMentorId(item.id as string);
           setRequestSheetOpen(true);
@@ -77,7 +77,7 @@ export default function MentorshipScreen() {
         <View style={styles.requestBtn}>
           <Icon name="send" size="sm" color={colors.emerald} />
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 
@@ -120,7 +120,7 @@ export default function MentorshipScreen() {
         {/* Tabs */}
         <View style={styles.tabs}>
           {(['find', 'mine'] as const).map(tab => (
-            <TouchableOpacity
+            <Pressable
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}
@@ -128,7 +128,7 @@ export default function MentorshipScreen() {
               <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                 {tab === 'find' ? 'Find a Mentor' : 'My Mentorships'}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 

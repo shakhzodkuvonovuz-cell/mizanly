@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
   KeyboardAvoidingView, Platform, AccessibilityInfo,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -182,7 +182,6 @@ export default function SignInScreen() {
               accessibilityLabel="Sign in with Google"
               accessibilityRole="button"
             >
-              <Icon name="globe" size="sm" color={colors.text.primary} />
               <Text style={styles.socialText}>{t('auth.google')}</Text>
             </Pressable>
             <Pressable
@@ -191,7 +190,6 @@ export default function SignInScreen() {
               accessibilityLabel="Sign in with Apple"
               accessibilityRole="button"
             >
-              <Icon name="lock" size="sm" color={colors.text.primary} />
               <Text style={styles.socialText}>{t('auth.apple')}</Text>
             </Pressable>
           </View>

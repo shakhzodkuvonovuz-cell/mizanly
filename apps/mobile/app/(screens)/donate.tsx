@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   FlatList,
   StyleSheet,
   RefreshControl,
@@ -184,14 +184,14 @@ function DonateScreenContent() {
       <Text style={styles.sectionLabel}>{t('charity.amount')}</Text>
       <View style={styles.amountGrid}>
         {PRESET_AMOUNTS.map((amt) => (
-          <TouchableOpacity
+          <Pressable
             key={amt}
             style={[
               styles.amountChip,
               !isCustom && selectedAmount === amt && styles.amountChipActive,
             ]}
             onPress={() => handlePresetPress(amt)}
-            activeOpacity={0.7}
+           
           >
             <Text
               style={[
@@ -201,7 +201,7 @@ function DonateScreenContent() {
             >
               {formatAmount(amt, currency)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -222,16 +222,16 @@ function DonateScreenContent() {
       {/* Currency selector */}
       <View style={styles.currencyRow}>
         {CURRENCIES.map((cur) => (
-          <TouchableOpacity
+          <Pressable
             key={cur}
             style={[styles.currencyPill, currency === cur && styles.currencyPillActive]}
             onPress={() => setCurrency(cur)}
-            activeOpacity={0.7}
+           
           >
             <Text style={[styles.currencyText, currency === cur && styles.currencyTextActive]}>
               {cur.toUpperCase()}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 

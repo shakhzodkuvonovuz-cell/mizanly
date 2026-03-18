@@ -8,7 +8,7 @@ import {
   Pressable,
   ScrollView,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';

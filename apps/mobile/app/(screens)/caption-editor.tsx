@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions, TextInput, FlatList } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -201,14 +201,14 @@ export default function CaptionEditorScreen() {
                 {formatTime(item.startTime)} - {formatTime(item.endTime)}
               </Text>
             </LinearGradient>
-            <TouchableOpacity
+            <Pressable
               style={styles.deleteButton}
               onPress={() => handleDeleteCaption(item.id)}
             >
               <View style={styles.deleteButtonInner}>
                 <Icon name="trash" size="xs" color={colors.error} />
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </View>
           <TextInput
             style={styles.captionInput}
@@ -346,7 +346,7 @@ export default function CaptionEditorScreen() {
 
                 {/* Playback Controls */}
                 <View style={styles.playbackControls}>
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.controlCircle}
                     onPress={() => setCurrentTime(Math.max(0, currentTime - 5))}
                   >
@@ -356,9 +356,9 @@ export default function CaptionEditorScreen() {
                     >
                       <Icon name="rewind" size="sm" color={colors.text.primary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity
+                  <Pressable
                     style={[styles.controlCircle, styles.playCircle]}
                     onPress={() => setIsPlaying(!isPlaying)}
                   >
@@ -368,9 +368,9 @@ export default function CaptionEditorScreen() {
                     >
                       <Icon name={isPlaying ? 'pause' : 'play'} size="md" color="#FFF" />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.controlCircle}
                     onPress={() => setCurrentTime(Math.min(90, currentTime + 5))}
                   >
@@ -380,7 +380,7 @@ export default function CaptionEditorScreen() {
                     >
                       <Icon name="fast-forward" size="sm" color={colors.text.primary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </LinearGradient>
             </View>
@@ -390,7 +390,7 @@ export default function CaptionEditorScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(400)}>
             <View style={styles.listHeader}>
               <Text style={styles.listTitle}>{t('captionEditor.captions', { count: captions.length })}</Text>
-              <TouchableOpacity style={styles.addCaptionButton} onPress={handleAddCaption}>
+              <Pressable style={styles.addCaptionButton} onPress={handleAddCaption}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                   style={styles.addCaptionGradient}
@@ -398,7 +398,7 @@ export default function CaptionEditorScreen() {
                   <Icon name="circle-plus" size="xs" color={colors.emerald} />
                   <Text style={styles.addCaptionText}>{t('common.add')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {captions.length === 0 ? (
@@ -444,7 +444,7 @@ export default function CaptionEditorScreen() {
                 <Text style={styles.styleLabel}>{t('captionEditor.font')}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
                   {FONT_OPTIONS.map((font) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={font}
                       style={styles.selectorButton}
                       onPress={() => setSelectedFont(font)}
@@ -463,7 +463,7 @@ export default function CaptionEditorScreen() {
                           {t(`captionEditor.fontOption.${font.toLowerCase()}`)}
                         </Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </ScrollView>
 
@@ -471,7 +471,7 @@ export default function CaptionEditorScreen() {
                 <Text style={styles.styleLabel}>{t('captionEditor.size')}</Text>
                 <View style={styles.selectorRow}>
                   {SIZE_OPTIONS.map((size) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={size}
                       style={styles.selectorButton}
                       onPress={() => setSelectedSize(size)}
@@ -490,7 +490,7 @@ export default function CaptionEditorScreen() {
                           {t(`captionEditor.sizeOption.${size.toLowerCase()}`)}
                         </Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
 
@@ -498,7 +498,7 @@ export default function CaptionEditorScreen() {
                 <Text style={styles.styleLabel}>{t('captionEditor.position')}</Text>
                 <View style={styles.selectorRow}>
                   {POSITION_OPTIONS.map((position) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={position}
                       style={styles.selectorButton}
                       onPress={() => setSelectedPosition(position)}
@@ -517,7 +517,7 @@ export default function CaptionEditorScreen() {
                           {t(`captionEditor.positionOption.${position.toLowerCase()}`)}
                         </Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
 
@@ -525,7 +525,7 @@ export default function CaptionEditorScreen() {
                 <Text style={styles.styleLabel}>{t('captionEditor.background')}</Text>
                 <View style={styles.selectorRow}>
                   {BACKGROUND_OPTIONS.map((bg) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={bg}
                       style={styles.selectorButton}
                       onPress={() => setSelectedBackground(bg)}
@@ -544,7 +544,7 @@ export default function CaptionEditorScreen() {
                           {t(`captionEditor.backgroundOption.${bg.toLowerCase().replace(/\s+/g, '')}`)}
                         </Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
 
@@ -552,7 +552,7 @@ export default function CaptionEditorScreen() {
                 <Text style={styles.styleLabel}>{t('captionEditor.color')}</Text>
                 <View style={styles.colorRow}>
                   {TEXT_COLORS.map((color) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={color}
                       style={[
                         styles.colorCircle,
@@ -577,7 +577,7 @@ export default function CaptionEditorScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <TouchableOpacity
+            <Pressable
               style={styles.autoGenButton}
               onPress={handleAutoGenerate}
               disabled={generateMutation.isPending}
@@ -598,9 +598,9 @@ export default function CaptionEditorScreen() {
                   </>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               style={styles.saveButton}
               onPress={handleSave}
               disabled={saveMutation.isPending}
@@ -616,7 +616,7 @@ export default function CaptionEditorScreen() {
                 )}
                 <Text style={styles.saveText}>{t('common.save')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
         </View>
       </SafeAreaView>

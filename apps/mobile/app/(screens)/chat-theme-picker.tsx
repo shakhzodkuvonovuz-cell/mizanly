@@ -5,10 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
   FlatList,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -121,10 +121,10 @@ export default function ChatThemePickerScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
-          activeOpacity={0.8}
+
         >
           <View
             style={[
@@ -143,7 +143,7 @@ export default function ChatThemePickerScreen() {
             )}
           </View>
           <Text style={styles.themeName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -154,10 +154,10 @@ export default function ChatThemePickerScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
-          activeOpacity={0.8}
+
         >
           <LinearGradient
             colors={item.gradient || ['#0D1117', '#0D1117']}
@@ -173,7 +173,7 @@ export default function ChatThemePickerScreen() {
             )}
           </LinearGradient>
           <Text style={styles.themeName}>{t(`chatThemePicker.themeName.${item.id}`)}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -183,10 +183,10 @@ export default function ChatThemePickerScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.patternItem, isSelected && styles.patternItemSelected]}
           onPress={() => setSelectedTheme(item.id)}
-          activeOpacity={0.8}
+
         >
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -200,7 +200,7 @@ export default function ChatThemePickerScreen() {
               <Icon name="check" size="xs" color={colors.emerald} />
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -211,10 +211,10 @@ export default function ChatThemePickerScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.photoItem, isUpload && styles.photoItemUpload, isSelected && styles.photoItemSelected]}
           onPress={() => !isUpload && setSelectedTheme(item.id)}
-          activeOpacity={0.8}
+
         >
           {isUpload ? (
             <View style={styles.uploadContent}>
@@ -233,7 +233,7 @@ export default function ChatThemePickerScreen() {
               <Icon name="check" size="xs" color={colors.text.primary} />
             </View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -304,10 +304,10 @@ export default function ChatThemePickerScreen() {
             const isActive = activeTab === tab.id;
             return (
                 <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
-                  <TouchableOpacity
+                  <Pressable
                     style={[styles.tab, isActive && styles.tabActive]}
                     onPress={() => setActiveTab(tab.id)}
-                    activeOpacity={0.8}
+
                   >
                     {isActive ? (
                       <LinearGradient
@@ -321,9 +321,9 @@ export default function ChatThemePickerScreen() {
                         <Text style={styles.tabText}>{t(`chatThemePicker.tab.${tab.id}`)}</Text>
                       </View>
                     )}
-                  </TouchableOpacity>
+                  </Pressable>
                 </Animated.View>
-            
+
             );
           })}
         </ScrollView>
@@ -416,17 +416,17 @@ export default function ChatThemePickerScreen() {
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity activeOpacity={0.8}>
+        <Pressable>
           <Text style={styles.resetText}>{t('chatThemePicker.resetToDefault')}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity activeOpacity={0.8}>
+        </Pressable>
+        <Pressable>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.applyButton}
           >
             <Text style={styles.applyText}>{t('chatThemePicker.apply')}</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
     </ScreenErrorBoundary>

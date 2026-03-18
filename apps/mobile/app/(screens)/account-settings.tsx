@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   ScrollView, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,10 +39,10 @@ function Row({
     onPress();
   } : undefined;
   return (
-    <TouchableOpacity
+    <Pressable
       style={styles.row}
       onPress={handlePress}
-      activeOpacity={handlePress ? 0.7 : 1}
+
       disabled={!handlePress}
     >
       <View style={styles.rowText}>
@@ -53,7 +53,7 @@ function Row({
       {onPress ? (
         <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
       ) : null}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
-  TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform,
+  TextInput, Alert, KeyboardAvoidingView, Platform,
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -128,7 +128,7 @@ export default function BlockedKeywordsScreen() {
                   maxLength={50}
                 />
               </LinearGradient>
-              <TouchableOpacity
+              <Pressable
                 onPress={handleAdd}
                 disabled={!newWord.trim() || addMutation.isPending}
                 accessibilityLabel={t('screens.blockedKeywords.addKeywordLabel')}
@@ -140,7 +140,7 @@ export default function BlockedKeywordsScreen() {
                 >
                   <Text style={styles.addBtnText}>{t('screens.blockedKeywords.addButton')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 
@@ -173,7 +173,7 @@ export default function BlockedKeywordsScreen() {
                       <Icon name="slash" size="xs" color={colors.error} />
                     </LinearGradient>
                     <Text style={styles.keywordText}>{item.word}</Text>
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => handleDelete(item.id, item.word)}
                       hitSlop={8}
                       disabled={deleteMutation.isPending}
@@ -186,7 +186,7 @@ export default function BlockedKeywordsScreen() {
                       >
                         <Icon name="x" size="sm" color={colors.error} />
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   </LinearGradient>
                 </Animated.View>
               )}

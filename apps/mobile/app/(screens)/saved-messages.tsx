@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity,
+  View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
   TextInput, Keyboard,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -98,9 +98,8 @@ export default function SavedMessagesScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 40).duration(250)} exiting={SlideOutRight.duration(200)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.messageCard, isPinned && styles.messageCardPinned]}
-          activeOpacity={0.7}
           onLongPress={() => { setMenuItem(item); haptic.light(); }}
         >
           {isPinned && (
@@ -133,7 +132,7 @@ export default function SavedMessagesScreen() {
           )}
 
           <Text style={styles.timeText}>{timeAgo}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   }, []);
@@ -169,9 +168,9 @@ export default function SavedMessagesScreen() {
               placeholderTextColor={colors.text.tertiary}
               autoFocus
             />
-            <TouchableOpacity onPress={() => { setSearchMode(false); setSearchQuery(''); }}>
+            <Pressable onPress={() => { setSearchMode(false); setSearchQuery(''); }}>
               <Icon name="x" size="sm" color={colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         )}
 
@@ -213,7 +212,7 @@ export default function SavedMessagesScreen() {
             multiline
             maxLength={5000}
           />
-          <TouchableOpacity
+          <Pressable
             style={[styles.sendBtn, !newMessage.trim() && { opacity: 0.3 }]}
             onPress={() => newMessage.trim() && saveMutation.mutate()}
             disabled={!newMessage.trim() || saveMutation.isPending}
@@ -221,7 +220,7 @@ export default function SavedMessagesScreen() {
             <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.sendGradient}>
               <Icon name="send" size="sm" color="#FFF" />
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Context menu */}

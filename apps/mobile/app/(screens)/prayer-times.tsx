@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, RefreshControl, Switch,
-} from 'react-native';
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl, Switch,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
@@ -18,6 +18,7 @@ import { islamicApi } from '@/services/islamicApi';
 import type { PrayerTimes as ApiPrayerTimes, PrayerMethodInfo, PrayerNotificationSetting } from '@/types/islamic';
 import * as Location from 'expo-location';
 import { useTranslation } from '@/hooks/useTranslation';
+import { formatHijriDate } from '@/utils/hijri';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -373,11 +374,11 @@ export default function PrayerTimesScreen() {
             >
               <View style={styles.locationRow}>
                 <Icon name="map-pin" size="sm" color={colors.emerald} />
-                <Text style={styles.locationText}>Dubai, United Arab Emirates</Text>
+                <Text style={styles.locationText}>{userLocation ? t('islamic.locationCoords', { lat: userLocation.lat.toFixed(2), lng: userLocation.lng.toFixed(2) }) : t('islamic.detectingLocation')}</Text>
               </View>
-              <TouchableOpacity onPress={() => { /* Open location picker */ }}>
+              <Pressable onPress={() => { /* Open location picker */ }}>
                 <Text style={styles.changeLocation}>{t('common.change')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 
@@ -422,7 +423,7 @@ export default function PrayerTimesScreen() {
 
           {/* Qibla Compass */}
           <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/(screens)/qibla-compass' as never)}>
+            <Pressable onPress={() => router.push('/(screens)/qibla-compass' as never)}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                 style={styles.qiblaCard}
@@ -474,7 +475,7 @@ export default function PrayerTimesScreen() {
                   </Text>
                 </View>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* All Prayers List */}
@@ -501,7 +502,7 @@ export default function PrayerTimesScreen() {
           </View>
 
           {/* Calculation Method */}
-          <TouchableOpacity
+          <Pressable
             style={styles.methodSelector}
             onPress={() => setShowMethodPicker(true)}
           >
@@ -518,15 +519,15 @@ export default function PrayerTimesScreen() {
               </View>
               <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Date Info */}
           <View style={styles.dateInfo}>
             <Text style={styles.dateText}>
-              15 Ramadan 1446 AH
+              {formatHijriDate(new Date(), 'en')}
             </Text>
             <Text style={styles.dateSubtext}>
-              Friday, March 14, 2025
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Text>
           </View>
         </ScrollView>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
@@ -94,25 +94,25 @@ export default function CreateClipScreen() {
           <Animated.View entering={FadeInUp.delay(100).duration(300)} style={styles.timeSection}>
             <Text style={styles.sectionLabel}>{t('clips.from')}</Text>
             <View style={styles.timeControls}>
-              <TouchableOpacity onPress={() => adjustStart(-5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustStart(-5)} style={styles.timeBtn}>
                 <Icon name="chevron-left" size="sm" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
               <View style={styles.timeDisplay}>
                 <Text style={styles.timeText}>{formatTime(startTime)}</Text>
               </View>
-              <TouchableOpacity onPress={() => adjustStart(5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustStart(5)} style={styles.timeBtn}>
                 <Icon name="chevron-right" size="sm" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
               <Text style={styles.timeSep}>—</Text>
-              <TouchableOpacity onPress={() => adjustEnd(-5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustEnd(-5)} style={styles.timeBtn}>
                 <Icon name="chevron-left" size="sm" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
               <View style={styles.timeDisplay}>
                 <Text style={styles.timeText}>{formatTime(endTime)}</Text>
               </View>
-              <TouchableOpacity onPress={() => adjustEnd(5)} style={styles.timeBtn}>
+              <Pressable onPress={() => adjustEnd(5)} style={styles.timeBtn}>
                 <Icon name="chevron-right" size="sm" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
             <Text style={styles.durationLabel}>
               {t('clips.duration')}: {formatTime(clipDuration)}
@@ -147,7 +147,7 @@ export default function CreateClipScreen() {
 
           {/* Submit */}
           <Animated.View entering={FadeInDown.delay(250).duration(300)} style={styles.submitSection}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => createMutation.mutate()}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}
@@ -157,7 +157,7 @@ export default function CreateClipScreen() {
                   {createMutation.isPending ? t('clips.creating') : t('clips.create')}
                 </Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </ScrollView>
       </View>

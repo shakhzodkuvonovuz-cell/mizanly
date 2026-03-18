@@ -3,7 +3,7 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Dimensions,
   Alert,
@@ -176,9 +176,9 @@ export default function TwoFactorVerifyScreen() {
             maxLength={6}
             editable={!loading}
           />
-          <TouchableOpacity onPress={() => setBackupCode('')}>
+          <Pressable onPress={() => setBackupCode('')}>
             <Icon name="x" size="sm" color={colors.text.tertiary} />
-          </TouchableOpacity>
+          </Pressable>
         </LinearGradient>
       </Animated.View>
       <Text style={styles.backupHint}>
@@ -218,7 +218,7 @@ export default function TwoFactorVerifyScreen() {
             {mode === 'code' ? renderCodeInput() : renderBackupInput()}
 
             {/* Mode Toggle */}
-            <TouchableOpacity
+            <Pressable
               style={styles.modeToggle}
               onPress={() => {
                 setMode(mode === 'code' ? 'backup' : 'code');
@@ -233,10 +233,10 @@ export default function TwoFactorVerifyScreen() {
                 {mode === 'code' ? t('screens.2faVerify.useBackupCodeInstead') : t('screens.2faVerify.useAuthenticatorCodeInstead')}
               </Text>
               <Icon name={mode === 'code' ? 'lock' : 'phone'} size="xs" color={colors.emerald} />
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Verify Button */}
-            <TouchableOpacity
+            <Pressable
               style={styles.verifyButton}
               onPress={handleVerify}
               disabled={loading || (mode === 'code' && verificationCode.some(d => d === '')) || (mode === 'backup' && backupCode.length !== 6)}
@@ -257,10 +257,10 @@ export default function TwoFactorVerifyScreen() {
                   </>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Lost Access Link */}
-            <TouchableOpacity
+            <Pressable
               style={styles.lostAccessLink}
               onPress={() =>
                 Alert.alert(
@@ -275,7 +275,7 @@ export default function TwoFactorVerifyScreen() {
             >
               <Icon name="circle" size="xs" color={colors.text.tertiary} />
               <Text style={styles.lostAccessText}>{t('screens.2faVerify.lostAccessLinkText')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Help Info */}

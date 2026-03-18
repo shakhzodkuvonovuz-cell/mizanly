@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, TextInput,
   ScrollView, Alert, Dimensions, Pressable,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -317,7 +317,7 @@ export default function CreateReelScreen() {
                 </LinearGradient>
               </View>
 
-              <TouchableOpacity
+              <Pressable
                 style={styles.removeVideoButton}
                 onPress={removeVideo}
                 hitSlop={8}
@@ -328,10 +328,10 @@ export default function CreateReelScreen() {
                 >
                   <Icon name="x" size="sm" color="#fff" />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           ) : (
-            <TouchableOpacity style={styles.uploadPlaceholder} onPress={pickVideo}>
+            <Pressable style={styles.uploadPlaceholder} onPress={pickVideo}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(200,150,62,0.05)']}
                 style={styles.uploadPlaceholderGradient}
@@ -342,7 +342,7 @@ export default function CreateReelScreen() {
                 <Text style={styles.uploadText}>{t('createReel.selectVideo')}</Text>
                 <Text style={styles.uploadSubtext}>{t('createReel.videoRequirements')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           )}
 
           {/* Thumbnail filmstrip */}
@@ -351,7 +351,7 @@ export default function CreateReelScreen() {
               <Text style={styles.sectionLabel}>{t('createReel.selectThumbnail')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                 {thumbnailOptions.map((frame, index) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={index}
                     onPress={() => { setThumbnailUri(frame); setCustomThumbnail(false); }}
                     style={[
@@ -360,9 +360,9 @@ export default function CreateReelScreen() {
                     ]}
                   >
                     <Image source={{ uri: frame }} style={styles.thumbnailImage} />
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
-                <TouchableOpacity
+                <Pressable
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
                       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -377,7 +377,7 @@ export default function CreateReelScreen() {
                 >
                   <Icon name="image" size="md" color={colors.text.secondary} />
                   <Text style={styles.uploadThumbnailText}>{t('createReel.customThumbnail')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </ScrollView>
             </View>
           )}
@@ -424,7 +424,7 @@ export default function CreateReelScreen() {
               end={{ x: 1, y: 1 }}
               style={styles.toolbarCard}
             >
-              <TouchableOpacity
+              <Pressable
                 style={styles.toolbarButton}
                 onPress={() => handleToolbarPress('hashtag')}
               >
@@ -435,9 +435,9 @@ export default function CreateReelScreen() {
                   <Icon name="hash" size="md" color={colors.emerald} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.hashtag')}</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 style={styles.toolbarButton}
                 onPress={() => handleToolbarPress('mention')}
               >
@@ -448,9 +448,9 @@ export default function CreateReelScreen() {
                   <Icon name="at-sign" size="md" color={colors.gold} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.mention')}</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity style={styles.toolbarButton} onPress={() => setShowMusicPicker(true)}>
+              <Pressable style={styles.toolbarButton} onPress={() => setShowMusicPicker(true)}>
                 <LinearGradient
                   colors={selectedTrack ? ['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)'] : ['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
                   style={styles.toolbarBtnGradient}
@@ -458,9 +458,9 @@ export default function CreateReelScreen() {
                   <Icon name="volume-x" size="md" color={selectedTrack ? colors.emerald : colors.text.primary} />
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.music')}</Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity style={styles.toolbarButton} disabled>
+              <Pressable style={styles.toolbarButton} disabled>
                 <LinearGradient
                   colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
                   style={styles.toolbarBtnGradient}
@@ -468,7 +468,7 @@ export default function CreateReelScreen() {
                   <Icon name="repeat" size="md" color={colors.text.tertiary} />
                 </LinearGradient>
                 <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.duet')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </View>
 
@@ -531,12 +531,12 @@ export default function CreateReelScreen() {
               <Text style={styles.toggleLabel}>{t('createReel.normalizeAudio')}</Text>
               <Text style={styles.toggleSubtitle}>{t('createReel.normalizeAudioDesc')}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setNormalizeAudio(!normalizeAudio)}
               style={[styles.toggle, normalizeAudio && styles.toggleActive]}
             >
               <View style={[styles.toggleThumb, normalizeAudio && styles.toggleThumbActive]} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
 

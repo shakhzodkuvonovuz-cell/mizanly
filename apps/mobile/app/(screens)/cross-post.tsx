@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, RefreshControl, Pressable,
   TextInput, Alert, Image,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -186,7 +186,7 @@ function CrossPostContent() {
           {availableSpaces.map(space => {
             const isSelected = selectedSpaces.has(space.key);
             return (
-              <TouchableOpacity
+              <Pressable
                 key={space.key}
                 style={[
                   styles.spaceOption,
@@ -194,7 +194,6 @@ function CrossPostContent() {
                   { flexDirection: rtlFlexRow(isRTL) },
                 ]}
                 onPress={() => toggleSpace(space.key)}
-                activeOpacity={0.7}
               >
                 <View style={[styles.spaceIconWrap, isSelected && styles.spaceIconWrapSelected]}>
                   <Icon
@@ -210,7 +209,7 @@ function CrossPostContent() {
                 <View style={[styles.checkbox, isSelected && styles.checkboxSelected]}>
                   {isSelected && <Icon name="check" size="xs" color="#fff" />}
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </Animated.View>

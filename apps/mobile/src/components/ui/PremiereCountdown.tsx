@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet , Pressable } from 'react-native';
 import Animated, { FadeIn, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
@@ -111,7 +111,7 @@ export function PremiereCountdown({
       )}
 
       <View style={styles.actions}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.reminderBtn, isReminderSet && { borderColor: colors.gold }]}
           onPress={() => {
             haptic.light();
@@ -122,7 +122,7 @@ export function PremiereCountdown({
           <Text style={[styles.reminderText, isReminderSet && { color: colors.gold }]}>
             {isReminderSet ? t('premiere.reminderSet') : t('premiere.setReminder')}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.viewerBadge}>
           <Icon name="eye" size="xs" color={colors.text.secondary} />

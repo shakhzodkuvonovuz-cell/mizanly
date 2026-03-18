@@ -5,7 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -51,7 +51,7 @@ function PlanCard({
   t: (key: string, params?: Record<string, string | number>) => string;
 }) {
   return (
-    <TouchableOpacity onPress={() => onSelect(option.type)} activeOpacity={0.8}>
+    <Pressable onPress={() => onSelect(option.type)}>
       <LinearGradient
         colors={['rgba(10,123,79,0.25)', 'rgba(200,150,62,0.1)']}
         style={styles.planCard}
@@ -67,7 +67,7 @@ function PlanCard({
           <Icon name="chevron-right" size="xs" color={colors.emerald} />
         </View>
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -437,9 +437,9 @@ function QuranReadingPlanContent() {
 
             {/* Mark Reading Button */}
             <Animated.View entering={FadeInUp.delay(250).duration(400)}>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => setMarkSheetVisible(true)}
-                activeOpacity={0.8}
+               
               >
                 <LinearGradient
                   colors={[colors.emerald, colors.emeraldDark]}
@@ -450,7 +450,7 @@ function QuranReadingPlanContent() {
                     {t('quranPlan.markReading')}
                   </Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
 
             {/* Heat Map */}

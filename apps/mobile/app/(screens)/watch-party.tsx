@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -61,7 +61,7 @@ export default function WatchPartyScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-        <TouchableOpacity style={styles.partyCard} activeOpacity={0.7} onPress={() => haptic.light()}>
+        <Pressable style={styles.partyCard} onPress={() => haptic.light()}>
           <View style={styles.partyHeader}>
             {isLive && (
               <View style={styles.liveBadge}>
@@ -85,13 +85,13 @@ export default function WatchPartyScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.joinBtn}>
+          <Pressable style={styles.joinBtn}>
             <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.joinBtnGradient}>
               <Icon name="play" size="sm" color="#FFF" />
               <Text style={styles.joinBtnText}>Join Party</Text>
             </LinearGradient>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -142,7 +142,7 @@ export default function WatchPartyScreen() {
               placeholder="Video ID..."
               placeholderTextColor={colors.text.tertiary}
             />
-            <TouchableOpacity
+            <Pressable
               style={[styles.createBtn, (!newTitle || !newVideoId) && { opacity: 0.5 }]}
               onPress={() => createMutation.mutate()}
               disabled={!newTitle || !newVideoId || createMutation.isPending}
@@ -150,7 +150,7 @@ export default function WatchPartyScreen() {
               <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.createBtnGradient}>
                 <Text style={styles.createBtnText}>Start</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </BottomSheet>
       </View>

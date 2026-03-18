@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, TouchableOpacity,
+  View, Text, TextInput, StyleSheet,
   FlatList, Keyboard,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';
@@ -90,7 +90,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
     if (type === 'hashtag') {
       const hashtag = item as HashtagResult;
       return (
-        <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
+        <Pressable style={styles.item} onPress={() => handleSelect(item)}>
           <View style={styles.hashtagIcon}>
             <Icon name="hash" size="md" color={colors.emerald} />
           </View>
@@ -100,19 +100,19 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
               {hashtag.postsCount.toLocaleString()} posts
             </Text>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       );
     }
 
     const user = item as User;
     return (
-      <TouchableOpacity style={styles.item} onPress={() => handleSelect(item)}>
+      <Pressable style={styles.item} onPress={() => handleSelect(item)}>
         <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
         <View style={styles.itemContent}>
           <Text style={styles.itemTitle}>{user.displayName}</Text>
           <Text style={styles.itemSubtitle}>@{user.username}</Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -122,9 +122,9 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
         <Text style={styles.headerTitle}>
           {type === 'hashtag' ? 'Hashtags' : 'People'}
         </Text>
-        <TouchableOpacity onPress={onClose} hitSlop={8}>
+        <Pressable onPress={onClose} hitSlop={8}>
           <Icon name="x" size="sm" color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -140,7 +140,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
               : `No users found for "${query}"`}
           </Text>
           {type === 'hashtag' && (
-            <TouchableOpacity
+            <Pressable
               style={styles.createTag}
               onPress={() => {
                 onSelect(`#${query.replace(/^#/, '')}`);
@@ -150,7 +150,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
               <Text style={styles.createTagText}>
                 Create #{query.replace(/^#/, '')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       ) : (

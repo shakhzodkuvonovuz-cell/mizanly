@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   Platform,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -189,8 +189,7 @@ function SpaceCard({
       entering={FadeInUp.delay(200 + index * 80).duration(350)}
       style={styles.spaceCardWrapper}
     >
-      <TouchableOpacity
-        activeOpacity={0.7}
+      <Pressable
         onPress={onPress}
         style={[
           styles.spaceCard,
@@ -216,7 +215,7 @@ function SpaceCard({
         {selected && (
           <View style={[styles.selectedDot, { backgroundColor: space.accentColor }]} />
         )}
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

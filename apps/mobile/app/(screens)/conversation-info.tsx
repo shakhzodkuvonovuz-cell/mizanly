@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable, ScrollView, Alert,
+  View, Text, StyleSheet, Pressable, ScrollView, Alert,
   TextInput, FlatList, RefreshControl, Switch,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -248,7 +248,7 @@ export default function ConversationInfoScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.heroCard}
             >
-              <TouchableOpacity onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
+              <Pressable onPress={isGroup && isCreator ? pickAvatar : undefined} style={{ position: 'relative' }}>
                 <Avatar uri={avatarUri} name={name} size="2xl" />
                 {isGroup && isCreator && (
                   <LinearGradient
@@ -258,13 +258,13 @@ export default function ConversationInfoScreen() {
                     <Icon name="edit" size={16} color={colors.text.primary} />
                   </LinearGradient>
                 )}
-              </TouchableOpacity>
+              </Pressable>
               <View style={styles.nameRow}>
                 <Text style={styles.heroName}>{name}</Text>
                 {isGroup && isCreator && (
-                  <TouchableOpacity onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
+                  <Pressable onPress={() => setEditNameSheetOpen(true)} style={styles.editNameBtn} accessibilityLabel="Edit group name">
                     <Icon name="edit" size={16} color={colors.text.secondary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
               </View>
               {isGroup && (
@@ -275,7 +275,7 @@ export default function ConversationInfoScreen() {
               )}
               {isGroup && isCreator && (
                 <View style={styles.adminActions}>
-                  <TouchableOpacity style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
+                  <Pressable style={styles.adminAction} onPress={() => setAddMembersSheetOpen(true)}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                       style={styles.adminActionIconBg}
@@ -283,7 +283,7 @@ export default function ConversationInfoScreen() {
                       <Icon name="plus" size="xs" color={colors.emerald} />
                     </LinearGradient>
                     <Text style={styles.adminActionText}>{t('groups.addMembers')}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               )}
             </LinearGradient>
@@ -292,7 +292,7 @@ export default function ConversationInfoScreen() {
           {/* Quick actions */}
           {!isGroup && otherMember && (
             <Animated.View entering={FadeInUp.delay(80).duration(400)} style={styles.quickActions}>
-              <TouchableOpacity
+              <Pressable
                 style={styles.quickAction}
                 onPress={() => router.push(`/(screens)/profile/${otherMember.user.username}`)}
               >
@@ -303,7 +303,7 @@ export default function ConversationInfoScreen() {
                   <Icon name="user" size="md" color={colors.emerald} />
                 </LinearGradient>
                 <Text style={styles.quickActionLabel}>{t('common.profile')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           )}
 
@@ -325,12 +325,12 @@ export default function ConversationInfoScreen() {
                 </View>
                 {convo.members.map((m, index) => (
                   <Animated.View key={m.user.id} entering={FadeInUp.delay(index * 80).duration(400)}>
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.memberRow}
                       onPress={() => router.push(`/(screens)/profile/${m.user.username}`)}
                       onLongPress={() => handleMemberLongPress(m.user.id, m.user.username)}
                       delayLongPress={500}
-                      activeOpacity={0.7}
+                     
                       accessibilityLabel={`${m.user.displayName}, @${m.user.username}`}
                       accessibilityHint="Press to view profile, long press to view member actions"
                       accessibilityRole="button"
@@ -354,7 +354,7 @@ export default function ConversationInfoScreen() {
                       {m.user.id === user?.id && (
                         <Text style={styles.youLabel}>{t('common.you')}</Text>
                       )}
-                    </TouchableOpacity>
+                    </Pressable>
                   </Animated.View>
                 ))}
               </LinearGradient>
@@ -400,7 +400,7 @@ export default function ConversationInfoScreen() {
               style={styles.optionsCardGlass}
             >
               {isGroup && !isCreator && (
-                <TouchableOpacity style={styles.actionRow} onPress={handleLeave}>
+                <Pressable style={styles.actionRow} onPress={handleLeave}>
                   {leaveGroupMutation.isPending
                     ? <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                         <Skeleton.Rect width={24} height={24} borderRadius={radius.full} />
@@ -415,10 +415,10 @@ export default function ConversationInfoScreen() {
                         <Text style={styles.actionDestructive}>{t('conversation.leaveGroup')}</Text>
                       </View>
                   }
-                </TouchableOpacity>
+                </Pressable>
               )}
               {!isGroup && (
-                <TouchableOpacity
+                <Pressable
                   style={styles.actionRow}
                   onPress={() => {
                     const other = convo?.members.find((m) => m.user.id !== user?.id);
@@ -444,7 +444,7 @@ export default function ConversationInfoScreen() {
                     </LinearGradient>
                     <Text style={styles.actionDestructive}>{t('conversation.blockUser')}</Text>
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </LinearGradient>
           </Animated.View>
@@ -476,7 +476,7 @@ export default function ConversationInfoScreen() {
                 size={28}
               />
             </View>
-            <TouchableOpacity
+            <Pressable
               style={[styles.sheetButton, !newGroupName.trim() && styles.sheetButtonDisabled]}
               onPress={handleUpdateGroupName}
               disabled={!newGroupName.trim() || updateGroupMutation.isPending}
@@ -486,7 +486,7 @@ export default function ConversationInfoScreen() {
               ) : (
                 <Text style={styles.sheetButtonText}>{t('common.save')}</Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </BottomSheet>
 
@@ -563,11 +563,11 @@ export default function ConversationInfoScreen() {
                 removeClippedSubviews={true}
                 refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
                 renderItem={({ item }) => (
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.userRow}
                     onPress={() => setSelectedNewMembers(prev => [...prev, item])}
                     disabled={addMembersMutation.isPending}
-                    activeOpacity={0.7}
+                   
                   >
                     <Avatar uri={item.avatarUrl} name={item.displayName} size="md" />
                     <View style={styles.userInfo}>
@@ -578,7 +578,7 @@ export default function ConversationInfoScreen() {
                       <Text style={styles.handle}>@{item.username}</Text>
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
                 ListEmptyComponent={() =>
                   debouncedSearchQuery.trim().length >= 2 ? (
@@ -595,7 +595,7 @@ export default function ConversationInfoScreen() {
             )}
 
             {/* Add button */}
-            <TouchableOpacity
+            <Pressable
               style={[styles.sheetButton, selectedNewMembers.length === 0 && styles.sheetButtonDisabled]}
               onPress={handleAddSelectedMembers}
               disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}
@@ -607,7 +607,7 @@ export default function ConversationInfoScreen() {
                   {t('common.add')} {selectedNewMembers.length > 0 ? `(${selectedNewMembers.length})` : ''}
                 </Text>
               )}
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </BottomSheet>
 

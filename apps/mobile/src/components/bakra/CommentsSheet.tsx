@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
+import { View, Text, StyleSheet, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -127,7 +127,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           </View>
           <Text style={styles.commentText}>{item.content}</Text>
           <View style={styles.commentActions}>
-            <TouchableOpacity
+            <Pressable
               style={styles.commentAction}
               onPress={() => handleLikeComment(item.id)}
               hitSlop={8}
@@ -138,8 +138,8 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
               <Text style={styles.commentActionText}>
                 {item.likesCount > 0 ? item.likesCount : ''}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               style={styles.commentAction}
               onPress={() => setReplyTo(item)}
               hitSlop={8}
@@ -148,7 +148,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
               <Text style={styles.commentActionText}>
                 {item._count?.replies ? item._count.replies : ''}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </View>
@@ -185,9 +185,9 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
         {/* Header with comment count */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Comments · {reel.commentsCount}</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={8}>
+          <Pressable onPress={onClose} hitSlop={8}>
             <Icon name="x" size="sm" color={colors.text.primary} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Comments list */}

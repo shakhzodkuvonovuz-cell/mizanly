@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   ScrollView, Switch, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -48,9 +48,8 @@ function Row({
   icon?: IconName;
 }) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={onPress ? 0.8 : 1}
       disabled={!onPress && !onToggle}
       accessibilityLabel={label}
       accessibilityRole={onToggle !== undefined ? 'switch' : 'button'}
@@ -74,10 +73,9 @@ function Row({
           </View>
         </View>
         {onToggle !== undefined && value !== undefined ? (
-          <TouchableOpacity
+          <Pressable
             style={[styles.toggleTrack, value && styles.toggleTrackActive]}
             onPress={() => onToggle(!value)}
-            activeOpacity={0.9}
           >
             <View style={[styles.toggleThumb, value && styles.toggleThumbActive]}>
               <LinearGradient
@@ -85,12 +83,12 @@ function Row({
                 style={styles.toggleThumbGradient}
               />
             </View>
-          </TouchableOpacity>
+          </Pressable>
         ) : onPress ? (
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
         ) : null}
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -195,9 +193,9 @@ export default function ContentSettingsScreen() {
           <Text style={{ color: colors.error, fontSize: fontSize.base, marginBottom: spacing.md }}>
             {t('settings.loadError')}
           </Text>
-          <TouchableOpacity onPress={() => settingsQuery.refetch()}>
+          <Pressable onPress={() => settingsQuery.refetch()}>
             <Text style={{ color: colors.emerald, fontSize: fontSize.base }}>{t('common.tryAgain')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -231,7 +229,7 @@ export default function ContentSettingsScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.card}
             >
-              <TouchableOpacity
+              <Pressable
                 style={styles.rowPressable}
                 onPress={() => setSafPickerVisible(true)}
                 accessibilityLabel={t('settings.safDefaultFeed')}
@@ -260,9 +258,9 @@ export default function ContentSettingsScreen() {
                   </LinearGradient>
                   <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
               <View style={styles.divider} />
-              <TouchableOpacity
+              <Pressable
                 style={styles.rowPressable}
                 onPress={() => setMajlisPickerVisible(true)}
                 accessibilityLabel={t('settings.majlisDefaultFeed')}
@@ -291,7 +289,7 @@ export default function ContentSettingsScreen() {
                   </LinearGradient>
                   <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 
@@ -343,7 +341,7 @@ export default function ContentSettingsScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.card}
             >
-              <TouchableOpacity
+              <Pressable
                 style={styles.rowPressable}
                 onPress={() => setDailyReminderPickerVisible(true)}
                 accessibilityLabel={t('settings.dailyReminder.label')}
@@ -372,7 +370,7 @@ export default function ContentSettingsScreen() {
                   </LinearGradient>
                   <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
         </ScrollView>

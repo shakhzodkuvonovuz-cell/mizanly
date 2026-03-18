@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -262,10 +262,10 @@ export default function EventDetailScreen() {
               <Text style={styles.infoMain}>{formatEventDate(event.startDate)}</Text>
               <Text style={styles.infoSub}>{formatEventTime(event.startDate, event.endDate)}</Text>
             </View>
-            <TouchableOpacity style={styles.addToCalendar} activeOpacity={0.8}>
+            <Pressable style={styles.addToCalendar}>
               <Icon name="calendar" size="xs" color={colors.emerald} />
               <Text style={styles.addText}>{t('events.add')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
         </Animated.View>
 
@@ -285,9 +285,9 @@ export default function EventDetailScreen() {
               <View style={styles.infoTextContainer}>
                 <Text style={styles.infoMain}>{event.location}</Text>
               </View>
-              <TouchableOpacity style={styles.directionsButton} activeOpacity={0.8}>
+              <Pressable style={styles.directionsButton}>
                 <Icon name="map-pin" size="xs" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
         )}
@@ -300,9 +300,9 @@ export default function EventDetailScreen() {
               style={styles.descriptionCard}
             >
               <Text style={styles.descriptionText}>{event.description}</Text>
-              <TouchableOpacity activeOpacity={0.8}>
+              <Pressable>
                 <Text style={styles.readMore}>{t('common.readMore')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
         )}
@@ -321,11 +321,11 @@ export default function EventDetailScreen() {
                 const label = status === 'going' ? t('events.going') : status === 'maybe' ? t('events.maybe') : t('events.cantGo');
 
                 return (
-                    <TouchableOpacity
+                    <Pressable
                       key={status}
                       style={styles_result.button}
                       onPress={() => handleRsvp(status)}
-                      activeOpacity={0.8}
+
                       disabled={rsvpMutation.isPending}
                     >
                       {isSelected && status === 'going' ? (
@@ -350,8 +350,8 @@ export default function EventDetailScreen() {
                           <Text style={styles_result.text}>{label}</Text>
                         </View>
                       )}
-                    </TouchableOpacity>
-                
+                    </Pressable>
+
                 );
               })}
             </View>
@@ -403,10 +403,10 @@ export default function EventDetailScreen() {
                   )}
                 </View>
 
-                <TouchableOpacity style={styles.seeAllButton} activeOpacity={0.8}>
+                <Pressable style={styles.seeAllButton}>
                   <Text style={styles.seeAllText}>{t('events.seeAllAttendees')}</Text>
                   <Icon name="chevron-right" size="xs" color={colors.text.secondary} />
-                </TouchableOpacity>
+                </Pressable>
               </>
             )}
           </LinearGradient>
@@ -418,7 +418,7 @@ export default function EventDetailScreen() {
 
       {/* Bottom Bar */}
       <View style={styles.bottomBar}>
-        <TouchableOpacity style={styles.shareEventButton} activeOpacity={0.8}>
+        <Pressable style={styles.shareEventButton}>
           <LinearGradient
             colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
             style={styles.shareButtonInner}
@@ -426,9 +426,9 @@ export default function EventDetailScreen() {
             <Icon name="share" size="sm" color={colors.text.primary} />
             <Text style={styles.shareButtonText}>{t('events.shareEvent')}</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity activeOpacity={0.8} disabled={rsvpMutation.isPending}>
+        <Pressable disabled={rsvpMutation.isPending}>
           <LinearGradient
             colors={[colors.emerald, colors.emeraldDark]}
             style={styles.rsvpConfirmButton}
@@ -437,7 +437,7 @@ export default function EventDetailScreen() {
               {t('events.rsvp')}: {rsvpStatus === 'going' ? t('events.going') : rsvpStatus === 'maybe' ? t('events.maybe') : rsvpStatus === 'not-going' ? t('events.cantGo') : t('events.respond')}
             </Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
     </ScreenErrorBoundary>

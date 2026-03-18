@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet,
   FlatList, Pressable, Dimensions, RefreshControl,
   type ViewStyle, type ImageStyle,
 } from 'react-native';

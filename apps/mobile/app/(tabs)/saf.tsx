@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -275,6 +275,8 @@ export default function SafScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
+        estimatedItemSize={400}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
     </SafeAreaView>
     </ScreenErrorBoundary>

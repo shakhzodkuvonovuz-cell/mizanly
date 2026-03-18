@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert,
+  View, Text, StyleSheet, Pressable, ScrollView, Alert,
   RefreshControl, FlatList, TextInput, Platform, Share, Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -333,13 +333,13 @@ export default function LiveViewerScreen() {
         {canModerate && !isSelf && (
           <View style={styles.participantActions}>
             {item.role === 'LISTENER' && (
-              <TouchableOpacity onPress={() => handleInviteSpeaker(item.id)} style={styles.participantActionBtn}>
+              <Pressable onPress={() => handleInviteSpeaker(item.id)} style={styles.participantActionBtn}>
                 <Icon name="mic" size="sm" color={colors.text.secondary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
-            <TouchableOpacity onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
+            <Pressable onPress={() => handleRemoveParticipant(item.id)} style={styles.participantActionBtn}>
               <Icon name="x" size="sm" color={colors.error} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
       </View>
@@ -550,7 +550,7 @@ export default function LiveViewerScreen() {
 
             {/* Quick actions */}
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.actionButton} onPress={handleRaiseHand}>
+              <Pressable style={styles.actionButton} onPress={handleRaiseHand}>
                 <Icon
                   name={participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? 'user' : 'user'}
                   size="md"
@@ -559,15 +559,15 @@ export default function LiveViewerScreen() {
                 <Text style={styles.actionLabel}>
                   {participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
                 </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={() => setShowChat(true)}>
+              </Pressable>
+              <Pressable style={styles.actionButton} onPress={() => setShowChat(true)}>
                 <Icon name="message-circle" size="md" color={colors.text.primary} />
                 <Text style={styles.actionLabel}>{t('screens.live.chat')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+              </Pressable>
+              <Pressable style={styles.actionButton} onPress={handleShare}>
                 <Icon name="share" size="md" color={colors.text.primary} />
                 <Text style={styles.actionLabel}>{t('common.share')}</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {/* Speakers avatars */}
@@ -668,13 +668,13 @@ export default function LiveViewerScreen() {
             {/* Floating emoji reaction bar */}
             <View style={styles.reactionBar}>
               {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
-                <TouchableOpacity
+                <Pressable
                   key={emoji}
                   style={styles.reactionButton}
                   onPress={() => addFloatingReaction(emoji)}
                 >
                   <Text style={styles.reactionEmoji}>{emoji}</Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </View>
@@ -688,7 +688,7 @@ export default function LiveViewerScreen() {
               onChangeText={setChatMessage}
               multiline
             />
-            <TouchableOpacity
+            <Pressable
               style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
               onPress={handleSendChat}
               disabled={!chatMessage.trim()}
@@ -699,7 +699,7 @@ export default function LiveViewerScreen() {
               >
                 <Icon name="send" size={14} color={chatMessage.trim() ? '#fff' : colors.text.tertiary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </BottomSheet>
       </View>

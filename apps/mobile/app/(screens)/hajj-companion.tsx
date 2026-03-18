@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Share,
-} from 'react-native';
+  View, Text, StyleSheet, Pressable, ScrollView, RefreshControl, Share,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -164,10 +164,10 @@ function HajjCompanionContent() {
               <Text style={styles.startSubtitle}>
                 {t('hajj.year')}: {currentYear}
               </Text>
-              <TouchableOpacity
+              <Pressable
                 style={styles.startButton}
                 onPress={() => createMutation.mutate(currentYear)}
-                activeOpacity={0.7}
+
               >
                 <LinearGradient
                   colors={[colors.emerald, '#0A6B42']}
@@ -177,7 +177,7 @@ function HajjCompanionContent() {
                 >
                   <Text style={styles.startButtonText}>{t('hajj.startTracker')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
         </ScrollView>
@@ -242,9 +242,9 @@ function HajjCompanionContent() {
                 key={step.step}
                 entering={FadeInUp.delay(index * 80).duration(300)}
               >
-                <TouchableOpacity
+                <Pressable
                   style={styles.stepRow}
-                  activeOpacity={0.7}
+  
                   onPress={() =>
                     router.push(`/(screens)/hajj-step?step=${step.step}` as never)
                   }
@@ -301,7 +301,7 @@ function HajjCompanionContent() {
                     size="sm"
                     color={colors.text.tertiary}
                   />
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             );
           })}
@@ -309,24 +309,22 @@ function HajjCompanionContent() {
 
         {/* Action buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity
+          <Pressable
             style={styles.shareButton}
             onPress={handleShare}
-            activeOpacity={0.7}
           >
             <Icon name="share" size="sm" color={colors.emerald} />
             <Text style={styles.shareButtonText}>
               {t('hajj.shareProgress')}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             style={styles.resetButton}
             onPress={() => setShowResetSheet(true)}
-            activeOpacity={0.7}
           >
             <Text style={styles.resetButtonText}>{t('hajj.reset')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={{ height: spacing['2xl'] }} />

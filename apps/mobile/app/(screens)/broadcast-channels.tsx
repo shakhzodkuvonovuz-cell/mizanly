@@ -10,8 +10,7 @@ import {
   Alert,
   NativeSyntheticEvent,
   TextInputSubmitEditingEventData,
-  TouchableOpacity,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import { Stack, useNavigation, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -173,7 +172,7 @@ export default function BroadcastChannelsScreen() {
               </Text>
             </LinearGradient>
           </View>
-          <TouchableOpacity onPress={(e) => {
+          <Pressable onPress={(e) => {
             handleSubscribe(item);
           }}>
             <LinearGradient
@@ -184,7 +183,7 @@ export default function BroadcastChannelsScreen() {
                 {item.isSubscribed ? t('broadcastChannels.subscribed') : t('broadcastChannels.subscribe')}
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </LinearGradient>
       </Pressable>
     </Animated.View>

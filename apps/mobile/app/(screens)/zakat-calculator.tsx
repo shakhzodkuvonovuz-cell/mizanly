@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   KeyboardAvoidingView,
   Platform,
@@ -319,7 +319,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Next Button */}
                 <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-                  <TouchableOpacity onPress={goNext} activeOpacity={0.8}>
+                  <Pressable onPress={goNext}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.nextButton}
@@ -327,7 +327,7 @@ export default function ZakatCalculatorScreen() {
                       <Text style={styles.nextButtonText}>{t('screens.zakatCalculator.nextDeductions')}</Text>
                       <Icon name="chevron-right" size="sm" color={colors.text.primary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </Animated.View>
               </Animated.View>
             )}
@@ -380,7 +380,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Buttons */}
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity onPress={goBack} activeOpacity={0.8} style={styles.backButton}>
+                  <Pressable onPress={goBack} style={styles.backButton}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.backButtonGradient}
@@ -388,9 +388,9 @@ export default function ZakatCalculatorScreen() {
                       <Icon name="chevron-left" size="sm" color={colors.text.secondary} />
                       <Text style={styles.backButtonText}>{t('common.back')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity onPress={goNext} activeOpacity={0.8} style={styles.calculateButton}>
+                  <Pressable onPress={goNext} style={styles.calculateButton}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.calculateButtonGradient}
@@ -398,7 +398,7 @@ export default function ZakatCalculatorScreen() {
                       <Text style={styles.calculateButtonText}>{t('screens.zakatCalculator.calculateZakat')}</Text>
                       <Icon name="check-circle" size="sm" color={colors.text.primary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </Animated.View>
             )}
@@ -472,7 +472,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Action Buttons */}
                 <View style={styles.buttonRow}>
-                  <TouchableOpacity onPress={reset} activeOpacity={0.8} style={styles.actionButtonHalf}>
+                  <Pressable onPress={reset} style={styles.actionButtonHalf}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.actionButtonHalfGradient}
@@ -480,9 +480,9 @@ export default function ZakatCalculatorScreen() {
                       <Icon name="repeat" size="sm" color={colors.text.secondary} />
                       <Text style={styles.actionButtonHalfText}>{t('screens.zakatCalculator.recalculate')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
-                  <TouchableOpacity onPress={() => {}} activeOpacity={0.8} style={styles.actionButtonHalf}>
+                  <Pressable onPress={() => {}} style={styles.actionButtonHalf}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.actionButtonHalfGradient}
@@ -490,7 +490,7 @@ export default function ZakatCalculatorScreen() {
                       <Icon name="share" size="sm" color={colors.text.primary} />
                       <Text style={styles.shareButtonText}>{t('common.share')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </Animated.View>
             )}

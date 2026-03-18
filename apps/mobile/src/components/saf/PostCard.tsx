@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Share, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Alert, Share, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -210,10 +210,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
     <Animated.View entering={FadeInUp.duration(400).springify()} style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
+        <Pressable
           style={styles.userInfo}
           onPress={() => router.push(`/(screens)/profile/${post.user.username}`)}
-          activeOpacity={0.8}
+         
           accessibilityLabel={`View ${post.user.displayName}'s profile`}
           accessibilityRole="button"
           accessibilityHint="Open user profile"
@@ -231,8 +231,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
             </View>
             <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
           </View>
-        </TouchableOpacity>
-        <TouchableOpacity
+        </Pressable>
+        <Pressable
           style={styles.moreBtn}
           hitSlop={8}
           onPress={() => { haptic.light(); setShowMenu(true); }}
@@ -241,7 +241,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           accessibilityHint="Open post options menu"
         >
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Caption */}
@@ -255,7 +255,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
           />
           {/* Translate button */}
           {post.content.length > 10 && (
-            <TouchableOpacity
+            <Pressable
               style={styles.translateBtn}
               onPress={async () => {
                 if (translatedText) {
@@ -277,7 +277,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
               <Text style={styles.translateText}>
                 {isTranslating ? tr('ai.translating') : translatedText ? tr('ai.showOriginal') : tr('ai.translate')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </>
       ) : null}

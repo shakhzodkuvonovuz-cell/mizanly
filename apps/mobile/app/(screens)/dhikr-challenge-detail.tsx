@@ -5,7 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -220,9 +220,9 @@ export default function DhikrChallengeDetailScreen() {
               </>
             ) : (
               <View style={styles.contributeSection}>
-                <TouchableOpacity
+                <Pressable
                   onPress={handleContributeTap}
-                  activeOpacity={0.8}
+                 
                   style={styles.contributeCounter}
                 >
                   <LinearGradient
@@ -238,7 +238,7 @@ export default function DhikrChallengeDetailScreen() {
                       </Text>
                     </View>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
                 <View style={styles.contributeActions}>
                   <GradientButton
                     label={t('dhikr.contribute')}
@@ -246,7 +246,7 @@ export default function DhikrChallengeDetailScreen() {
                     loading={contributeMutation.isPending}
                     icon="send"
                   />
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => {
                       setShowContribute(false);
                       setContributeCount(0);
@@ -254,7 +254,7 @@ export default function DhikrChallengeDetailScreen() {
                     style={styles.cancelBtn}
                   >
                     <Icon name="x" size="sm" color={colors.text.tertiary} />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </View>
             )}

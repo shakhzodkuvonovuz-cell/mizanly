@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   Linking,
   Image,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';
@@ -90,19 +90,19 @@ export function LinkPreview({ url, onPress }: LinkPreviewProps) {
   if (error) {
     // Fallback to simple link display
     return (
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.7}>
+      <Pressable onPress={handlePress}>
         <View style={styles.errorContainer}>
           <Icon name="link" size="sm" color={colors.emerald} />
           <Text style={styles.errorText} numberOfLines={1}>
             {url}
           </Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
   return (
-    <TouchableOpacity onPress={handlePress} activeOpacity={0.8}>
+    <Pressable onPress={handlePress}>
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -190,7 +190,7 @@ export function LinkPreview({ url, onPress }: LinkPreviewProps) {
           <View style={styles.glassBorder} />
         </LinearGradient>
       </Animated.View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

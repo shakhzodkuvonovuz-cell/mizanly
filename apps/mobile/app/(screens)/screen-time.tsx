@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-} from 'react-native';
+  View, Text, StyleSheet, ScrollView, Pressable, RefreshControl,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -281,8 +281,7 @@ export default function ScreenTimeScreen() {
           <Text style={[styles.sectionTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('screenTime.dailyLimit')}
           </Text>
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <Pressable
             onPress={() => {
               haptic.light();
               setLimitSheetVisible(true);
@@ -314,11 +313,10 @@ export default function ScreenTimeScreen() {
                 </View>
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Take a Break Reminder */}
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <Pressable
             onPress={() => {
               haptic.light();
               setTakeBreakEnabled(!takeBreakEnabled);
@@ -351,7 +349,7 @@ export default function ScreenTimeScreen() {
                 ]} />
               </View>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </ScrollView>
 
         {/* Limit Picker BottomSheet */}

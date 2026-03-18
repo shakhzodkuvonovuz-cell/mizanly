@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, TextInput } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -75,9 +75,8 @@ export default function ChatFoldersScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-        <TouchableOpacity
+        <Pressable
           style={styles.folderCard}
-          activeOpacity={0.7}
           onLongPress={() => { setMenuFolder(item); haptic.light(); }}
         >
           <View style={[styles.folderIcon, { backgroundColor: color + '15' }]}>
@@ -92,7 +91,7 @@ export default function ChatFoldersScreen() {
             </Text>
           </View>
           <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };
@@ -133,21 +132,21 @@ export default function ChatFoldersScreen() {
             <Text style={styles.iconLabel}>Icon</Text>
             <View style={styles.iconGrid}>
               {FOLDER_ICONS.map((icon, i) => (
-                <TouchableOpacity
+                <Pressable
                   key={icon}
                   style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
                   onPress={() => { setSelectedIcon(i); haptic.light(); }}
                 >
                   <Icon name={icon} size="sm" color={selectedIcon === i ? FOLDER_COLORS[i] : colors.text.secondary} />
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
 
             <View style={styles.createActions}>
-              <TouchableOpacity onPress={() => setCreateMode(false)} style={styles.cancelBtn}>
+              <Pressable onPress={() => setCreateMode(false)} style={styles.cancelBtn}>
                 <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 style={[styles.createBtn, !newName.trim() && { opacity: 0.5 }]}
                 onPress={() => newName.trim() && createMutation.mutate()}
                 disabled={!newName.trim() || createMutation.isPending}
@@ -155,7 +154,7 @@ export default function ChatFoldersScreen() {
                 <LinearGradient colors={[colors.emerald, '#0D9B63']} style={styles.createBtnGradient}>
                   <Text style={styles.createBtnText}>Create</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Animated.View>
         )}

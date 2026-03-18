@@ -3,14 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   FlatList,
   Image,
   Pressable,
   Dimensions,
   TextInput,
   RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';
@@ -122,7 +122,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
   );
 
   const renderPackTab = ({ item }: { item: StickerPack }) => (
-    <TouchableOpacity
+    <Pressable
       key={item.id}
       style={[
         styles.packTab,
@@ -148,7 +148,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
       >
         {item.name}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const renderRecentSticker = (sticker: StickerItem, index: number) => (
@@ -184,9 +184,9 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
             clearButtonMode="while-editing"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')}>
+            <Pressable onPress={() => setSearchQuery('')}>
               <Icon name="x" size="sm" color={colors.text.secondary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
 
@@ -256,7 +256,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
                 contentContainerStyle={styles.packTabsList}
                 keyExtractor={item => item.id}
               />
-              <TouchableOpacity
+              <Pressable
                 style={styles.addMoreButton}
                 onPress={handleAddMore}
                 accessibilityLabel="Browse more sticker packs"
@@ -264,7 +264,7 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
               >
                 <Icon name="plus" size="sm" color={colors.text.secondary} />
                 <Text style={styles.addMoreText}>Add more</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
 
             {/* Sticker grid */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import type { IconName } from '@/components/ui/Icon';
@@ -56,16 +56,16 @@ export default function EidCardsScreen() {
         <ScrollView contentContainerStyle={styles.scrollContent}>
           <View style={styles.grid}>
             {occasions.map((occ) => (
-              <TouchableOpacity
+              <Pressable
                 key={occ.id}
                 onPress={() => handleOccasionPress(occ.id)}
                 style={styles.card}
-                activeOpacity={0.7}
+               
               >
                 <Icon name={occ.icon} size="xl" color={colors.gold} />
                 <Text style={styles.cardNameAr}>{occ.nameAr}</Text>
                 <Text style={styles.cardName}>{occ.name}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         </ScrollView>

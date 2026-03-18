@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -47,9 +47,9 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
   const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <TouchableOpacity
+      <Pressable
         style={styles.videoCard}
-        activeOpacity={0.8}
+       
         onPress={onPress}
       >
         {/* Thumbnail with progress bar */}
@@ -99,7 +99,7 @@ function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: 
             </Text>
           </View>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

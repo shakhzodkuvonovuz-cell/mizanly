@@ -1,8 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput,
+  View, Text, StyleSheet, Pressable, ScrollView, TextInput,
   FlatList, Dimensions, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming } from 'react-native-reanimated';
@@ -119,14 +119,14 @@ function AudioCard({
         style={[styles.audioCard, isCurrentTrack && styles.audioCardActive]}
       >
         {/* Play Button */}
-        <TouchableOpacity onPress={onPlay} style={styles.playButton}>
+        <Pressable onPress={onPlay} style={styles.playButton}>
           <LinearGradient
             colors={[colors.emerald, colors.gold]}
             style={styles.playButtonInner}
           >
             <Icon name={isPlaying ? 'volume-x' : 'play'} size="sm" color="#fff" />
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Waveform Preview */}
         <View style={styles.waveformContainer}>
@@ -145,9 +145,9 @@ function AudioCard({
 
         {/* Actions */}
         <View style={styles.trackActions}>
-          <TouchableOpacity onPress={onToggleFavorite} style={styles.favoriteButton}>
+          <Pressable onPress={onToggleFavorite} style={styles.favoriteButton}>
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : colors.text.tertiary} />
-          </TouchableOpacity>
+          </Pressable>
           <GradientButton
             label="Use"
             size="sm"
@@ -234,9 +234,9 @@ export default function AudioLibraryScreen() {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
           </LinearGradient>
         </View>
@@ -247,15 +247,15 @@ export default function AudioLibraryScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
         >
-          <TouchableOpacity
+          <Pressable
             style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
             onPress={() => setFavoritesOnly(!favoritesOnly)}
           >
             <Icon name="heart" size="xs" color={favoritesOnly ? '#fff' : colors.text.tertiary} />
             <Text style={[styles.categoryText, favoritesOnly && styles.categoryTextActive]}>{t('audioLibrary.category.favorites')}</Text>
-          </TouchableOpacity>
+          </Pressable>
           {CATEGORIES.map((category) => (
-            <TouchableOpacity
+            <Pressable
               key={category}
               style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
               onPress={() => setActiveCategory(category)}
@@ -263,7 +263,7 @@ export default function AudioLibraryScreen() {
               <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
                 {t(`audioLibrary.category.${category.toLowerCase()}`)}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
 
@@ -319,10 +319,10 @@ export default function AudioLibraryScreen() {
                     {allTracks.find(t => t.id === currentTrackId)?.artist}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={handleUseSound} style={styles.nowPlayingUseButton}>
+                <Pressable onPress={handleUseSound} style={styles.nowPlayingUseButton}>
                   <Text style={styles.nowPlayingUseText}>{t('audioLibrary.useThisSound')}</Text>
                   <Icon name="chevron-right" size="xs" color="#fff" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </LinearGradient>
           </Animated.View>
@@ -331,7 +331,7 @@ export default function AudioLibraryScreen() {
         {/* Selected Track Overlay */}
         {selectedTrack && (
           <View style={styles.overlay}>
-            <TouchableOpacity style={styles.overlayBg} onPress={() => setSelectedTrack(null)} />
+            <Pressable style={styles.overlayBg} onPress={() => setSelectedTrack(null)} />
             <Animated.View entering={FadeInUp} style={styles.selectedTrackCard}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.95)', 'rgba(28,35,51,0.98)']}
@@ -351,12 +351,12 @@ export default function AudioLibraryScreen() {
                   label={t('audioLibrary.useThisSound')}
                   onPress={handleUseSound}
                 />
-                <TouchableOpacity
+                <Pressable
                   onPress={() => setSelectedTrack(null)}
                   style={styles.selectedTrackCancel}
                 >
                   <Text style={styles.selectedTrackCancelText}>{t('common.cancel')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </LinearGradient>
             </Animated.View>
           </View>

@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Image,
-  RefreshControl, FlatList, Dimensions, Pressable, Alert, Share,
+  View, Text, StyleSheet, Pressable, ScrollView, Image,
+  RefreshControl, FlatList, Dimensions, Alert, Share,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -58,7 +58,7 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <TouchableOpacity style={styles.videoCard} activeOpacity={0.8} onPress={handlePress}>
+    <Pressable style={styles.videoCard} onPress={handlePress}>
       {/* Thumbnail */}
       <View style={styles.thumbnailContainer}>
         {video.thumbnailUrl ? (
@@ -75,14 +75,14 @@ function VideoCard({ video }: { video: Video }) {
 
       {/* Info row */}
       <View style={styles.infoRow}>
-        <TouchableOpacity style={styles.channelAvatar} onPress={handleChannelPress} hitSlop={8}>
+        <Pressable style={styles.channelAvatar} onPress={handleChannelPress} hitSlop={8}>
           <Avatar
             uri={video.channel.avatarUrl}
             name={video.channel.name}
             size="sm"
             showRing={false}
           />
-        </TouchableOpacity>
+        </Pressable>
         <View style={styles.videoDetails}>
           <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
           <Text style={styles.videoCardChannelName} numberOfLines={1}>{video.channel.name}</Text>
@@ -90,11 +90,11 @@ function VideoCard({ video }: { video: Video }) {
             {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
         </View>
-        <TouchableOpacity style={styles.moreButton} hitSlop={8}>
+        <Pressable style={styles.moreButton} hitSlop={8}>
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -107,7 +107,7 @@ function VideoCard({ video }: { video: Video }) {
 
     return (
       <Animated.View entering={FadeInUp.delay(100)} style={styles.featuredContainer}>
-        <TouchableOpacity style={styles.featuredCard} onPress={onPress} activeOpacity={0.9}>
+        <Pressable style={styles.featuredCard} onPress={onPress}>
           <Image source={{ uri: video.thumbnailUrl || '' }} style={styles.featuredThumbnail} />
           <LinearGradient
             colors={['transparent', 'rgba(13,17,23,0.8)', 'rgba(13,17,23,0.98)']}
@@ -130,7 +130,7 @@ function VideoCard({ video }: { video: Video }) {
           <View style={styles.featuredDurationBadge}>
             <Text style={styles.durationText}>{durationText}</Text>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   }
@@ -145,7 +145,7 @@ function VideoCard({ video }: { video: Video }) {
   };
 
   return (
-    <TouchableOpacity style={styles.playlistCard} onPress={handlePress}>
+    <Pressable style={styles.playlistCard} onPress={handlePress}>
       {playlist.thumbnailUrl ? (
         <Image source={{ uri: playlist.thumbnailUrl }} style={styles.playlistThumbnail} />
       ) : (
@@ -157,7 +157,7 @@ function VideoCard({ video }: { video: Video }) {
         <Text style={styles.playlistTitle} numberOfLines={2}>{playlist.title}</Text>
         <Text style={styles.playlistMeta}>{playlist.videosCount} videos</Text>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -385,9 +385,9 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
       {showTrailerSection && channel.trailerVideo && (
         <Animated.View entering={FadeInUp.delay(150)} style={styles.trailerContainer}>
           <Text style={styles.trailerSectionTitle}>{t('channelTrailer.title')}</Text>
-          <TouchableOpacity
+          <Pressable
             style={styles.trailerCard}
-            activeOpacity={0.9}
+           
             onPress={() => router.push(`/(screens)/video/${channel.trailerVideo!.id}`)}
           >
             {channel.trailerVideo.thumbnailUrl ? (
@@ -417,7 +417,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 </Text>
               </View>
             )}
-          </TouchableOpacity>
+          </Pressable>
         </Animated.View>
       )}
 
@@ -668,9 +668,9 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               const mins = Math.floor(item.duration / 60);
               const secs = Math.floor(item.duration % 60);
               return (
-                <TouchableOpacity
+                <Pressable
                   style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
-                  activeOpacity={0.7}
+                 
                   onPress={() => {
                     haptic.light();
                     setTrailerMutation.mutate(item.id);
@@ -695,7 +695,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   {isCurrentTrailer && (
                     <Icon name="check-circle" size="sm" color={colors.emerald} />
                   )}
-                </TouchableOpacity>
+                </Pressable>
               );
             }}
             ListEmptyComponent={

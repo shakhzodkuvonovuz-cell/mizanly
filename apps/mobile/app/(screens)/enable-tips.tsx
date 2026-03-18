@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Switch,
   Alert,
@@ -51,12 +51,12 @@ function CustomToggle({
         <Text style={styles.toggleLabel}>{label}</Text>
         {description && <Text style={styles.toggleDescription}>{description}</Text>}
       </View>
-      <TouchableOpacity
+      <Pressable
         onPress={() => {
           haptic.light();
           onValueChange(!value);
         }}
-        activeOpacity={0.8}
+
       >
         <LinearGradient
           colors={value ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
@@ -69,7 +69,7 @@ function CustomToggle({
             ]}
           />
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }
@@ -190,12 +190,12 @@ export default function EnableTipsScreen() {
               {/* Main Toggle */}
               <View style={styles.mainToggleRow}>
                 <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
-                <TouchableOpacity
+                <Pressable
                   onPress={() => {
                     haptic.medium();
                     setIsEnabled(!isEnabled);
                   }}
-                  activeOpacity={0.8}
+          
                 >
                   <LinearGradient
                     colors={isEnabled ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
@@ -208,7 +208,7 @@ export default function EnableTipsScreen() {
                       ]}
                     />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </LinearGradient>
           </Animated.View>
@@ -235,14 +235,14 @@ export default function EnableTipsScreen() {
                   {/* Preset Amounts */}
                   <View style={styles.presetRow}>
                     {PRESET_AMOUNTS.map(amount => (
-                      <TouchableOpacity
+                      <Pressable
                         key={amount}
                         onPress={() => {
                           haptic.light();
                           setMinTipAmount(amount);
                           setCustomAmount('');
                         }}
-                        activeOpacity={0.8}
+                
                       >
                         <LinearGradient
                           colors={
@@ -261,7 +261,7 @@ export default function EnableTipsScreen() {
                             ${amount}
                           </Text>
                         </LinearGradient>
-                      </TouchableOpacity>
+                      </Pressable>
                     ))}
                   </View>
 
@@ -379,9 +379,9 @@ export default function EnableTipsScreen() {
                     <Text style={styles.configTitle}>{t('screens.enableTips.configTitle.paymentMethod')}</Text>
                   </View>
 
-                  <TouchableOpacity
+                  <Pressable
                     onPress={handleConnectPayment}
-                    activeOpacity={0.8}
+            
                     style={styles.connectButton}
                   >
                     <LinearGradient
@@ -402,7 +402,7 @@ export default function EnableTipsScreen() {
                         {isConnected ? t('screens.enableTips.connected') : t('screens.enableTips.connectPaymentMethod')}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
                   <Text
                     style={[
@@ -420,14 +420,14 @@ export default function EnableTipsScreen() {
           {/* Save Button */}
           {isEnabled && (
             <Animated.View entering={FadeInUp.delay(500).duration(400)}>
-              <TouchableOpacity onPress={handleSave} activeOpacity={0.8}>
+              <Pressable onPress={handleSave}>
                 <LinearGradient
                   colors={[colors.emerald, colors.emeraldDark]}
                   style={styles.saveButton}
                 >
                   <Text style={styles.saveButtonText}>{t('screens.enableTips.saveSettings')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </Animated.View>
           )}
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, withSpring, useAnimatedStyle, withRepeat } from 'react-native-reanimated';
@@ -298,7 +298,7 @@ export default function DuetCreateScreen() {
                   { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
                   { id: 'react', icon: 'user' as IconName, label: 'React' },
                 ].map((layout) => (
-                  <TouchableOpacity
+                  <Pressable
                     key={layout.id}
                     style={styles.layoutButton}
                     onPress={() => setLayoutMode(layout.id as LayoutMode)}
@@ -322,7 +322,7 @@ export default function DuetCreateScreen() {
                         {layout.label}
                       </Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -358,17 +358,17 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <TouchableOpacity style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
+              <Pressable style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
                 >
                   <Icon name="repeat" size="md" color={colors.text.secondary} />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Record Button */}
-              <TouchableOpacity style={styles.recordButton} onPress={handleRecord}>
+              <Pressable style={styles.recordButton} onPress={handleRecord}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -385,10 +385,10 @@ export default function DuetCreateScreen() {
                     />
                   )}
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Flash Toggle */}
-              <TouchableOpacity
+              <Pressable
                 style={styles.controlButton}
                 onPress={() => setFlashOn(!flashOn)}
               >
@@ -405,7 +405,7 @@ export default function DuetCreateScreen() {
                     color={flashOn ? colors.gold : colors.text.secondary}
                   />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Animated.View>
 
@@ -426,7 +426,7 @@ export default function DuetCreateScreen() {
                     </LinearGradient>
                   </View>
                   <Text style={styles.audioTitle}>Audio Settings</Text>
-                  <TouchableOpacity
+                  <Pressable
                     style={[styles.muteButton, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
@@ -434,7 +434,7 @@ export default function DuetCreateScreen() {
                     <Text style={[styles.muteButtonText, isMuted && styles.muteButtonTextActive]}>
                       {isMuted ? 'Muted' : 'Mute Original'}
                     </Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 <View style={styles.volumeSliders}>
@@ -460,7 +460,7 @@ export default function DuetCreateScreen() {
 
           {/* Next Button */}
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-            <TouchableOpacity
+            <Pressable
               style={styles.nextButton}
               onPress={() => router.push('/create-reel')}
             >
@@ -471,7 +471,7 @@ export default function DuetCreateScreen() {
                 <Text style={styles.nextButtonText}>Next</Text>
                 <Icon name="chevron-right" size="sm" color="#FFF" />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Bottom Spacing */}

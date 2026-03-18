@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Alert,
 } from 'react-native';
@@ -318,10 +318,10 @@ function ScholarVerificationContent() {
       {/* Specialization */}
       <Animated.View entering={FadeInUp.delay(100).duration(400)} style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{t('scholar.specialization')}</Text>
-        <TouchableOpacity
+        <Pressable
           style={styles.pickerButton}
           onPress={() => setSpecSheetVisible(true)}
-          activeOpacity={0.7}
+         
         >
           <Text style={[styles.pickerText, !specialization && styles.pickerPlaceholder]}>
             {specialization
@@ -329,16 +329,16 @@ function ScholarVerificationContent() {
               : t('scholar.specialization')}
           </Text>
           <Icon name="chevron-down" size={18} color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
 
       {/* Madhab */}
       <Animated.View entering={FadeInUp.delay(200).duration(400)} style={styles.fieldContainer}>
         <Text style={styles.fieldLabel}>{t('scholar.madhab')}</Text>
-        <TouchableOpacity
+        <Pressable
           style={styles.pickerButton}
           onPress={() => setMadhabSheetVisible(true)}
-          activeOpacity={0.7}
+         
         >
           <Text style={[styles.pickerText, !madhab && styles.pickerPlaceholder]}>
             {madhab
@@ -346,7 +346,7 @@ function ScholarVerificationContent() {
               : t('scholar.madhab')}
           </Text>
           <Icon name="chevron-down" size={18} color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
 
       {/* Documents */}
@@ -359,16 +359,16 @@ function ScholarVerificationContent() {
             <Text style={styles.documentText} numberOfLines={1}>
               {url.split('/').pop()}
             </Text>
-            <TouchableOpacity onPress={() => handleRemoveDocument(index)}>
+            <Pressable onPress={() => handleRemoveDocument(index)}>
               <Icon name="x" size={16} color={colors.error} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         ))}
 
-        <TouchableOpacity style={styles.addDocButton} onPress={handleAddDocument} activeOpacity={0.7}>
+        <Pressable style={styles.addDocButton} onPress={handleAddDocument}>
           <Icon name="plus" size={18} color={colors.emerald} />
           <Text style={styles.addDocText}>{t('scholar.addDocument')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
 
       {/* Submit */}

@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { View, StyleSheet, Pressable, useWindowDimensions, Platform } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -29,6 +29,14 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
   const context = useSharedValue({ y: 0 });
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const maxHeight = snapPoint ? SCREEN_HEIGHT * snapPoint : undefined;
 
@@ -41,7 +49,11 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
     haptic.light();
     backdropOpacity.value = withTiming(0, { duration: animation.timing.fast });
     translateY.value = withSpring(SCREEN_HEIGHT, animation.spring.responsive);
-    setTimeout(onClose, 250);
+    setTimeout(() => {
+      if (mountedRef.current) {
+        onClose();
+      }
+    }, 250);
   }, [haptic, translateY, backdropOpacity, onClose, SCREEN_HEIGHT]);
 
   useEffect(() => {

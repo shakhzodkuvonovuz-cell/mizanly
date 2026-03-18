@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Platform } from 'react-native';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -92,7 +92,7 @@ export default function VideoPremiereScreen() {
             <Text style={styles.label}>Countdown Theme</Text>
             <View style={styles.themeRow}>
               {THEMES.map(theme => (
-                <TouchableOpacity
+                <Pressable
                   key={theme.id}
                   onPress={() => { setSelectedTheme(theme.id); haptic.light(); }}
                   style={[styles.themeCard, selectedTheme === theme.id && styles.themeCardActive]}
@@ -102,7 +102,7 @@ export default function VideoPremiereScreen() {
                     style={styles.themeGradient}
                   />
                   <Text style={styles.themeLabel}>{t(theme.label)}</Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </Animated.View>
@@ -113,17 +113,17 @@ export default function VideoPremiereScreen() {
               <Text style={styles.toggleLabel}>{t('premiere.enableChat')}</Text>
               <Text style={styles.toggleHint}>{t('premiere.enableChatHint')}</Text>
             </View>
-            <TouchableOpacity
+            <Pressable
               onPress={() => { setChatEnabled(!chatEnabled); haptic.light(); }}
               style={[styles.toggleBtn, chatEnabled && styles.toggleBtnActive]}
             >
               <View style={[styles.toggleKnob, chatEnabled && styles.toggleKnobActive]} />
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Submit */}
           <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.submitSection}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => createMutation.mutate()}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}
@@ -134,7 +134,7 @@ export default function VideoPremiereScreen() {
               >
                 <Text style={styles.submitText}>{t('premiere.schedule')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </ScrollView>
       </View>

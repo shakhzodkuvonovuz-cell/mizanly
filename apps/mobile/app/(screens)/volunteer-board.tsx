@@ -7,7 +7,7 @@ import {
   RefreshControl,
   Pressable,
   ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';

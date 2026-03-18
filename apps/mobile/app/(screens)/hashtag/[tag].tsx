@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';

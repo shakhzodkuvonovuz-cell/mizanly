@@ -5,9 +5,9 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -55,7 +55,7 @@ function ChallengeCard({
     : 0;
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <Pressable onPress={onPress}>
       <LinearGradient
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.challengeCard}
@@ -87,7 +87,7 @@ function ChallengeCard({
           </View>
         </View>
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -224,12 +224,12 @@ export default function DhikrChallengesScreen() {
         )}
 
         {/* FAB */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => {
             haptic.light();
             setShowCreateSheet(true);
           }}
-          activeOpacity={0.8}
+
           style={styles.fab}
         >
           <LinearGradient
@@ -240,7 +240,7 @@ export default function DhikrChallengesScreen() {
           >
             <Icon name="plus" size="md" color={colors.text.primary} />
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
 
         {/* Create Challenge BottomSheet */}
         <BottomSheet visible={showCreateSheet} onClose={() => setShowCreateSheet(false)}>
@@ -258,14 +258,14 @@ export default function DhikrChallengesScreen() {
             />
 
             <Text style={styles.inputLabel}>{t('dhikr.phrase')}</Text>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setShowPhraseSheet(true)}
-              activeOpacity={0.8}
+
               style={styles.pickerButton}
             >
               <Text style={styles.pickerText}>{selectedPhraseLabel}</Text>
               <Icon name="chevron-down" size="xs" color={colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
 
             <Text style={styles.inputLabel}>{t('dhikr.target')}</Text>
             <TextInput

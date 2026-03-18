@@ -7,7 +7,7 @@ import {
   Pressable,
   Alert,
   ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';

@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, Pressable, ScrollView,
   FlatList, TextInput, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -65,7 +65,7 @@ function CommunityCard({
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(500)} style={animatedStyle}>
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
+      <Pressable onPress={handlePress}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           style={styles.communityCard}
@@ -118,7 +118,7 @@ function CommunityCard({
             </View>
 
             {/* Join Button */}
-            <TouchableOpacity
+            <Pressable
               style={[styles.joinButton, community.isJoined && styles.joinButtonJoined]}
               onPress={() => onJoin(community.id)}
             >
@@ -130,10 +130,10 @@ function CommunityCard({
                   {community.isJoined ? t('screens.communities.joinButtonJoined') : t('screens.communities.joinButtonJoin')}
                 </Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -155,14 +155,14 @@ function FAB({ onPress }: { onPress: () => void }) {
 
   return (
     <Animated.View style={[styles.fab, animatedStyle]}>
-      <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
+      <Pressable onPress={handlePress}>
         <LinearGradient
           colors={[colors.emerald, colors.gold]}
           style={styles.fabGradient}
         >
           <Icon name="plus" size="md" color="#fff" />
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -266,16 +266,16 @@ export default function CommunitiesScreen() {
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
           </LinearGradient>
         </View>
 
         {/* Tabs */}
         <View style={styles.tabsContainer}>
-          <TouchableOpacity
+          <Pressable
             style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
             onPress={() => setActiveTab('discover')}
           >
@@ -286,9 +286,9 @@ export default function CommunitiesScreen() {
               <Icon name="search" size="xs" color={activeTab === 'discover' ? colors.emerald : colors.text.tertiary} />
               <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>{t('screens.communities.tabDiscover')}</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             style={[styles.tab, activeTab === 'joined' && styles.tabActive]}
             onPress={() => setActiveTab('joined')}
           >
@@ -301,7 +301,7 @@ export default function CommunitiesScreen() {
                 {t('screens.communities.tabJoined')} {joinedCount > 0 && `(${joinedCount})`}
               </Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Categories (only show on Discover) */}
@@ -312,7 +312,7 @@ export default function CommunitiesScreen() {
             contentContainerStyle={styles.categoriesContainer}
           >
             {CATEGORIES.map((category) => (
-              <TouchableOpacity
+              <Pressable
                 key={category}
                 style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
                 onPress={() => setActiveCategory(category)}
@@ -320,7 +320,7 @@ export default function CommunitiesScreen() {
                 <Text style={[styles.categoryText, activeCategory === category && styles.categoryTextActive]}>
                   {t(`screens.communities.category.${category.toLowerCase()}`)}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </ScrollView>
         )}
@@ -363,7 +363,7 @@ export default function CommunitiesScreen() {
         {/* Create Community FAB */}
         <FAB onPress={handleCreateCommunity} />
       </View>
-  
+
     </ScreenErrorBoundary>
   );
 }

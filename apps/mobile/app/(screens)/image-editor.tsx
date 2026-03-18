@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions,
+  View, Text, StyleSheet, Pressable, ScrollView, Dimensions,
   Image as RNImage, StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -78,7 +78,7 @@ export default function ImageEditorScreen() {
       <Text style={styles.tabTitle}>{t('screens.imageEditor.aspectRatio')}</Text>
       <View style={styles.aspectRow}>
         {ASPECT_RATIOS.map((ar) => (
-          <TouchableOpacity
+          <Pressable
             key={ar.value}
             style={[styles.aspectButton, aspectRatio === ar.value && styles.aspectButtonActive]}
             onPress={() => setAspectRatio(ar.value)}
@@ -89,7 +89,7 @@ export default function ImageEditorScreen() {
             <Text style={[styles.aspectLabel, aspectRatio === ar.value && styles.aspectLabelActive]}>
               {t(`screens.imageEditor.aspectRatio.${ar.value}`)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -119,7 +119,7 @@ export default function ImageEditorScreen() {
         contentContainerStyle={styles.filterScroll}
       >
         {FILTERS.map((filter, index) => (
-          <TouchableOpacity
+          <Pressable
             key={filter.id}
             style={[styles.filterItem, selectedFilter === filter.id && styles.filterItemActive]}
             onPress={() => setSelectedFilter(filter.id)}
@@ -134,7 +134,7 @@ export default function ImageEditorScreen() {
             <Text style={[styles.filterName, selectedFilter === filter.id && styles.filterNameActive]}>
               {t(`screens.imageEditor.filter.${filter.id}`)}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </ScrollView>
     </View>
@@ -231,7 +231,7 @@ export default function ImageEditorScreen() {
           {/* Tab Selector */}
           <View style={styles.tabBar}>
             {(['crop', 'filter', 'adjust'] as EditTab[]).map((tab) => (
-              <TouchableOpacity
+              <Pressable
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.tabActive]}
                 onPress={() => setActiveTab(tab)}
@@ -245,7 +245,7 @@ export default function ImageEditorScreen() {
                 <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
                   {t(`screens.imageEditor.tab.${tab}`)}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
 

@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -294,17 +294,16 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
     onPress();
   };
   return (
-    <TouchableOpacity 
+    <Pressable 
       onPress={handlePress} 
       style={styles.reactionBtn} 
-      activeOpacity={0.7}
       accessibilityLabel={t('accessibility.reactWithEmoji', { emoji })}
       accessibilityRole="button"
     >
       <Animated.Text style={[styles.reactionEmoji, animatedStyle]}>
         {emoji}
       </Animated.Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -412,7 +411,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
               />
               <Text style={styles.userName}>{group.user.displayName}</Text>
               <Text style={styles.timeAgo}>{timeAgo}</Text>
-              <TouchableOpacity
+              <Pressable
                 onPress={() => router.back()}
                 hitSlop={12}
                 style={styles.closeBtn}
@@ -420,28 +419,26 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                 accessibilityRole="button"
               >
                 <Icon name="x" size="sm" color={colors.text.primary} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </SafeAreaView>
         </LinearGradient>
 
         {/* Tap zones */}
         <View style={styles.tapZones} pointerEvents="box-none">
-          <TouchableOpacity
+          <Pressable
             style={styles.tapLeft}
             onPress={handleTapLeft}
             onPressIn={() => setPaused(true)}
             onPressOut={() => setPaused(false)}
-            activeOpacity={1}
             accessibilityLabel={t('accessibility.previousStorySlide')}
             accessibilityRole="button"
           />
-          <TouchableOpacity
+          <Pressable
             style={styles.tapRight}
             onPress={handleTapRight}
             onPressIn={() => setPaused(true)}
             onPressOut={() => setPaused(false)}
-            activeOpacity={1}
             accessibilityLabel={t('accessibility.nextStorySlide')}
             accessibilityRole="button"
           />
@@ -479,10 +476,9 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
         {/* Bottom area: reply bar for others, views tap for own */}
         {ownStory ? (
           <SafeAreaView edges={['bottom']} style={styles.bottomBar}>
-            <TouchableOpacity
+            <Pressable
               style={styles.viewsBtn}
               onPress={() => setShowViewers(true)}
-              activeOpacity={0.8}
               accessibilityLabel={t('accessibility.viewViewers', { count: story?.viewsCount })}
               accessibilityRole="button"
             >
@@ -490,7 +486,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                 <Icon name="eye" size="sm" color="#fff" />
                 <Text style={styles.viewsBtnText}>{t('saf.views', { count: story?.viewsCount })}</Text>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </SafeAreaView>
         ) : (
           <KeyboardAvoidingView
@@ -511,7 +507,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                     onBlur={() => setShowReply(false)}
                     accessibilityLabel={t('accessibility.storyReplyInput')}
                   />
-                  <TouchableOpacity
+                  <Pressable
                     onPress={() => replyMutation.mutate()}
                     disabled={!replyText.trim() || replyMutation.isPending}
                     hitSlop={8}
@@ -524,10 +520,10 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                       size="sm"
                       color={replyText.trim() ? colors.emerald : 'rgba(255,255,255,0.5)'}
                     />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               ) : (
-                <TouchableOpacity
+                <Pressable
                   style={styles.replyPlaceholder}
                   onPress={() => { setShowReply(true); setPaused(true); }}
                   accessibilityLabel={t('accessibility.tapToReply')}
@@ -536,7 +532,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
                   <Text style={styles.replyPlaceholderText}>
                     {t('saf.replyToStory')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </SafeAreaView>
           </KeyboardAvoidingView>

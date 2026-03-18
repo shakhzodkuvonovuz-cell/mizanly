@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  View, Text, StyleSheet, Pressable, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -171,9 +171,9 @@ function CalendarDay({
 
   if (hasEvent && onPress) {
     return (
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress}>
+      <Pressable onPress={onPress}>
         {content}
-      </TouchableOpacity>
+      </Pressable>
     );
   }
 
@@ -337,28 +337,28 @@ export default function IslamicCalendarScreen() {
             >
               {/* Month Header */}
               <View style={styles.monthHeader}>
-                <TouchableOpacity onPress={handlePrevMonth} style={styles.monthNavButton}>
+                <Pressable onPress={handlePrevMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
                   >
                     <Icon name="chevron-left" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
 
                 <View style={styles.monthTitleContainer}>
                   <Text style={styles.monthTitleArabic}>{HIJRI_MONTHS_AR[currentMonth]}</Text>
                   <Text style={styles.monthTitle}>{HIJRI_MONTHS_EN[currentMonth]} {currentYear}</Text>
                 </View>
 
-                <TouchableOpacity onPress={handleNextMonth} style={styles.monthNavButton}>
+                <Pressable onPress={handleNextMonth} style={styles.monthNavButton}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                     style={styles.monthNavGradient}
                   >
                     <Icon name="chevron-right" size="sm" color={colors.emerald} />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               {/* Weekday Headers */}
@@ -427,7 +427,7 @@ export default function IslamicCalendarScreen() {
 
           {/* Quick Links */}
           <View style={styles.quickLinks}>
-            <TouchableOpacity style={styles.quickLink}>
+            <Pressable style={styles.quickLink}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)']}
                 style={styles.quickLinkGradient}
@@ -435,9 +435,9 @@ export default function IslamicCalendarScreen() {
                 <Icon name="clock" size="sm" color={colors.emerald} />
                 <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.prayerTimes')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.quickLink}>
+            <Pressable style={styles.quickLink}>
               <LinearGradient
                 colors={['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.1)']}
                 style={styles.quickLinkGradient}
@@ -445,7 +445,7 @@ export default function IslamicCalendarScreen() {
                 <Icon name="book-open" size="sm" color={colors.gold} />
                 <Text style={styles.quickLinkText}>{t('screens.islamicCalendar.quran')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </ScrollView>
 

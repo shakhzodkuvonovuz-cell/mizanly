@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@tanstack/react-query';
@@ -90,15 +90,14 @@ export default function SuggestedScreen() {
                   <Text style={styles.handle}>@{item.username}</Text>
                   {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
                 </View>
-                <TouchableOpacity
+                <Pressable
                   style={[styles.followBtn, isFollowing && styles.followingBtn]}
                   onPress={() => handleFollow(item.id)}
-                  activeOpacity={0.8}
                 >
                   <Text style={[styles.followBtnText, isFollowing && styles.followingBtnText]}>
                     {isFollowing ? t('onboarding.suggested.following') : t('onboarding.suggested.follow')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             );
           }}
@@ -106,17 +105,16 @@ export default function SuggestedScreen() {
       )}
 
       <View style={styles.footer}>
-        <TouchableOpacity
+        <Pressable
           style={styles.btn}
           onPress={handleFinish}
           disabled={finishing}
-          activeOpacity={0.8}
         >
           {finishing ? <Skeleton.Rect width={24} height={24} borderRadius={radius.full} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleFinish}>
+        </Pressable>
+        <Pressable onPress={handleFinish}>
           <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </SafeAreaView>
   );

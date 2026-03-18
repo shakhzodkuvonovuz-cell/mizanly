@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -144,7 +144,7 @@ export default function GreenScreenEditorScreen() {
                 entering={FadeInUp.delay(index * 30).duration(300)}
                 style={styles.colorGridItem}
               >
-                <TouchableOpacity
+                <Pressable
                   style={[
                     styles.colorCircle,
                     { backgroundColor: color.color },
@@ -155,7 +155,7 @@ export default function GreenScreenEditorScreen() {
                   {selectedBackground === color.name && (
                     <Icon name="check" size="xs" color="#FFF" />
                   )}
-                </TouchableOpacity>
+                </Pressable>
                 <Text style={styles.colorName}>{color.name}</Text>
               </Animated.View>
             ))}
@@ -171,7 +171,7 @@ export default function GreenScreenEditorScreen() {
                 entering={FadeInUp.delay(index * 30).duration(300)}
                 style={styles.gradientGridItem}
               >
-                <TouchableOpacity
+                <Pressable
                   style={[
                     styles.gradientPreview,
                     selectedGradient === gradient.name && styles.gradientPreviewActive
@@ -190,7 +190,7 @@ export default function GreenScreenEditorScreen() {
                       </View>
                     )}
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
                 <Text style={styles.gradientName}>{gradient.name}</Text>
               </Animated.View>
             ))}
@@ -206,7 +206,7 @@ export default function GreenScreenEditorScreen() {
                 entering={FadeInUp.delay(index * 30).duration(300)}
                 style={styles.imageGridItem}
               >
-                <TouchableOpacity
+                <Pressable
                   style={styles.imageCard}
                   onPress={() => setSelectedBackground(image.name)}
                 >
@@ -217,7 +217,7 @@ export default function GreenScreenEditorScreen() {
                     <Icon name="image" size="md" color={colors.text.tertiary} />
                   </LinearGradient>
                   <Text style={styles.imageName}>{image.name}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             ))}
           </View>
@@ -232,7 +232,7 @@ export default function GreenScreenEditorScreen() {
                 entering={FadeInUp.delay(index * 30).duration(300)}
                 style={styles.videoGridItem}
               >
-                <TouchableOpacity
+                <Pressable
                   style={styles.videoCard}
                   onPress={() => setSelectedBackground(video.name)}
                 >
@@ -245,7 +245,7 @@ export default function GreenScreenEditorScreen() {
                     </View>
                   </LinearGradient>
                   <Text style={styles.videoName}>{video.name}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             ))}
           </View>
@@ -254,7 +254,7 @@ export default function GreenScreenEditorScreen() {
       case 'custom':
         return (
           <View style={styles.customContainer}>
-            <TouchableOpacity style={styles.uploadButton}>
+            <Pressable style={styles.uploadButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
@@ -268,9 +268,9 @@ export default function GreenScreenEditorScreen() {
                 <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadImage')}</Text>
                 <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.imageFormats')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity style={styles.uploadButton}>
+            <Pressable style={styles.uploadButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
                 style={[styles.uploadButtonGradient, styles.uploadButtonDashed]}
@@ -284,7 +284,7 @@ export default function GreenScreenEditorScreen() {
                 <Text style={styles.uploadButtonText}>{t('screens.greenScreen.uploadVideo')}</Text>
                 <Text style={styles.uploadButtonSubtext}>{t('screens.greenScreen.videoFormats')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             <View style={styles.recentSection}>
               <Text style={styles.recentTitle}>{t('screens.greenScreen.recentUploads')}</Text>
@@ -354,7 +354,7 @@ export default function GreenScreenEditorScreen() {
                   />
 
                   {/* Record Button Overlay */}
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -367,7 +367,7 @@ export default function GreenScreenEditorScreen() {
                     >
                       <Icon name="video" size="md" color="#FFF" />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </LinearGradient>
               ) : (
                 <LinearGradient
@@ -383,7 +383,7 @@ export default function GreenScreenEditorScreen() {
                   />
 
                   {/* Record Button Overlay */}
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -396,7 +396,7 @@ export default function GreenScreenEditorScreen() {
                     >
                       <Icon name="video" size="md" color="#FFF" />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </LinearGradient>
               )}
             </View>
@@ -411,7 +411,7 @@ export default function GreenScreenEditorScreen() {
               contentContainerStyle={styles.categoryContent}
             >
               {categories.map((category) => (
-                <TouchableOpacity
+                <Pressable
                   key={category.id}
                   style={styles.categoryButton}
                   onPress={() => setSelectedCategory(category.id)}
@@ -430,7 +430,7 @@ export default function GreenScreenEditorScreen() {
                       {category.label}
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
           </Animated.View>
@@ -513,17 +513,17 @@ export default function GreenScreenEditorScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.applyButton} onPress={() => router.push('/camera' as never)}>
+            </Pressable>
+            <Pressable style={styles.applyButton} onPress={() => router.push('/camera' as never)}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}
               >
                 <Text style={styles.applyButtonText}>{t('screens.greenScreen.applyAndRecord')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
         </View>
       </SafeAreaView>

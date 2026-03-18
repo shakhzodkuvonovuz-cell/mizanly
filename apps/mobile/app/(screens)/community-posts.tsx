@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   FlatList, TextInput, Alert, KeyboardAvoidingView, Platform, Image as RNImage, ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -71,7 +71,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
           style={styles.postCardGradient}
         >
       <View style={styles.postHeader}>
-        <TouchableOpacity style={styles.postUser} onPress={handlePressUser}>
+        <Pressable style={styles.postUser} onPress={handlePressUser}>
           <Avatar
             uri={post.user.avatarUrl}
             name={post.user.displayName}
@@ -86,7 +86,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
               {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
             </Text>
           </View>
-        </TouchableOpacity>
+        </Pressable>
         {post.isPinned && (
           <View style={styles.pinBadge}>
             <Icon name="map-pin" size="xs" color={colors.emerald} />
@@ -110,7 +110,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
       )}
 
       <View style={styles.postActions}>
-        <TouchableOpacity style={styles.postAction} onPress={handleLike}>
+        <Pressable style={styles.postAction} onPress={handleLike}>
           <Icon
             name={liked ? 'heart-filled' : 'heart'}
             size="sm"
@@ -119,14 +119,14 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
           <Text style={[styles.postActionCount, liked && styles.likedCount]}>
             {likeCount}
           </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.postAction}>
+        </Pressable>
+        <Pressable style={styles.postAction}>
           <Icon name="message-circle" size="sm" color={colors.text.secondary} />
           <Text style={styles.postActionCount}>{post.commentsCount}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.postAction}>
+        </Pressable>
+        <Pressable style={styles.postAction}>
           <Icon name="share" size="sm" color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
         </LinearGradient>
       </Pressable>
@@ -346,7 +346,7 @@ export default function CommunityPostsScreen() {
                     multiline
                     maxLength={POST_MAX_LENGTH}
                   />
-                  <TouchableOpacity
+                  <Pressable
                     style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
                     onPress={handleCreatePost}
                     disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}
@@ -361,7 +361,7 @@ export default function CommunityPostsScreen() {
                         <Icon name="send" size="sm" color={colors.emerald} />
                       </LinearGradient>
                     )}
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </LinearGradient>
             </Animated.View>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -41,7 +41,7 @@ export default function LocalBoardsScreen() {
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <TouchableOpacity style={styles.boardCard} activeOpacity={0.7} onPress={() => haptic.light()}>
+      <Pressable style={styles.boardCard} onPress={() => haptic.light()}>
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}
@@ -69,7 +69,7 @@ export default function LocalBoardsScreen() {
             </View>
           </View>
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 

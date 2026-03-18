@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   FlatList, Dimensions, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
@@ -33,9 +33,9 @@ type Tab = 'posts' | 'threads' | 'reels' | 'videos';
 
 function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.85}
+
       style={styles.gridItem}
       accessibilityRole="button"
       accessibilityLabel="View post"
@@ -56,16 +56,16 @@ function PostGrid({ post, onPress }: { post: Post; onPress: () => void }) {
           <Icon name="layers" size={12} color="#fff" />
         </View>
       )}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
   const hasThumbnail = reel.thumbnailUrl != null;
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.85}
+
       style={styles.gridItem}
       accessibilityRole="button"
       accessibilityLabel="View reel"
@@ -84,16 +84,16 @@ function ReelGrid({ reel, onPress }: { reel: Reel; onPress: () => void }) {
       <View style={styles.playOverlay}>
         <Icon name="play" size={16} color="#fff" />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
 function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
   const hasThumbnail = video.thumbnailUrl != null;
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={onPress}
-      activeOpacity={0.85}
+
       style={styles.videoRow}
       accessibilityRole="button"
       accessibilityLabel={`View video: ${video.title}`}
@@ -114,7 +114,7 @@ function VideoRow({ video, onPress }: { video: Video; onPress: () => void }) {
         <Text style={styles.videoChannel}>{video.channel?.name ?? 'Unknown'}</Text>
         <Text style={styles.videoDuration}>{formatDuration(video.duration)}</Text>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

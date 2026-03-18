@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, RefreshControl } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, RefreshControl } from 'react-native';
+import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -20,9 +20,9 @@ import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import Animated from 'react-native-reanimated';
-import { Pressable } from 'react-native';
 import type { Video, VideoCategory } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -59,14 +59,8 @@ const CategoryChip = memo(function CategoryChip({ cat, isActive, onPress }: Cate
   );
 });
 
-const CATEGORIES: { key: VideoCategory | 'all'; label: string }[] = [
-  { key: 'all', label: 'All' },
-  { key: 'QURAN', label: 'Islamic' },
-  { key: 'EDUCATION', label: 'Education' },
-  { key: 'VLOG', label: 'Lifestyle' },
-  { key: 'TECH', label: 'Tech' },
-  { key: 'ENTERTAINMENT', label: 'Entertainment' },
-];
+// Category keys — labels resolved inside component via t()
+const CATEGORY_KEYS: (VideoCategory | 'all')[] = ['all', 'QURAN', 'EDUCATION', 'VLOG', 'TECH', 'ENTERTAINMENT'];
 
 interface VideoCardProps {
   item: Video;
@@ -88,9 +82,8 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
   const hasWatchProgress = watchProgress > 0 && watchProgress < 1;
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={styles.videoCard}
-      activeOpacity={0.8}
       onPress={() => onPress(video)}
     >
       {/* Thumbnail */}
@@ -122,7 +115,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
 
       {/* Info row */}
       <View style={styles.infoRow}>
-        <TouchableOpacity
+        <Pressable
           style={styles.channelAvatar}
           onPress={() => onChannelPress(video.channel.handle)}
           hitSlop={8}
@@ -133,7 +126,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             size="sm"
             showRing={false}
           />
-        </TouchableOpacity>
+        </Pressable>
         <View style={styles.videoDetails}>
           <Text style={styles.videoTitle} numberOfLines={2}>
             {video.title}
@@ -148,15 +141,15 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             {video.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           style={styles.moreButton}
           onPress={() => onMorePress(video)}
           hitSlop={8}
         >
           <Icon name="more-horizontal" size="sm" color={colors.text.secondary} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 });
 
@@ -165,6 +158,7 @@ export default function MinbarScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const [selectedCategory, setSelectedCategory] = useState<VideoCategory | 'all'>('all');
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -172,7 +166,12 @@ export default function MinbarScreen() {
   const setUnreadNotifications = useStore((s) => s.setUnreadNotifications);
   const unreadNotifications = useStore((s) => s.unreadNotifications);
 
-  const feedRef = useRef<any>(null);
+  const CATEGORIES = CATEGORY_KEYS.map((key) => ({
+    key,
+    label: key === 'all' ? t('minbar.categoryAll') : key === 'QURAN' ? t('minbar.categoryIslamic') : key === 'EDUCATION' ? t('minbar.categoryEducation') : key === 'VLOG' ? t('minbar.categoryLifestyle') : key === 'TECH' ? t('minbar.categoryTech') : t('minbar.categoryEntertainment'),
+  }));
+
+  const feedRef = useRef<FlashListRef<Video>>(null);
   useScrollToTop(feedRef);
 
   useEffect(() => {
@@ -264,9 +263,9 @@ export default function MinbarScreen() {
       {continueWatchingQuery.data?.length ? (
         <View style={styles.continueSection}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.continueTitle}>Continue Watching</Text>
+            <Text style={styles.continueTitle}>{t('minbar.continueWatching')}</Text>
             <Pressable onPress={() => router.push('/(screens)/watch-history')} hitSlop={8}>
-              <Text style={styles.seeAllText}>See all</Text>
+              <Text style={styles.seeAllText}>{t('common.seeMore')}</Text>
             </Pressable>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.continueScroll}>
@@ -298,8 +297,8 @@ export default function MinbarScreen() {
       {/* Feed type toggle */}
       <TabSelector
         tabs={[
-          { key: 'home', label: 'Home' },
-          { key: 'subscriptions', label: 'Subscriptions' },
+          { key: 'home', label: t('minbar.home') },
+          { key: 'subscriptions', label: t('minbar.subscriptions') },
         ]}
         activeKey={feedType}
         onTabChange={(key) => setFeedType(key as 'home' | 'subscriptions')}
@@ -332,9 +331,9 @@ export default function MinbarScreen() {
       return (
         <EmptyState
           icon="users"
-          title="No subscribed videos"
-          subtitle="Subscribe to channels to see their videos here"
-          actionLabel="Explore Channels"
+          title={t('minbar.noSubscribedVideos')}
+          subtitle={t('minbar.subscribeToSeeVideos')}
+          actionLabel={t('minbar.exploreChannels')}
           onAction={() => router.push('/(screens)/channels' as never)}
         />
       );
@@ -357,9 +356,9 @@ export default function MinbarScreen() {
     ) : (
       <EmptyState
         icon="video"
-        title="No videos yet"
-        subtitle="Be the first to upload a long video"
-        actionLabel="Upload"
+        title={t('minbar.noVideosYet')}
+        subtitle={t('minbar.beFirstToUpload')}
+        actionLabel={t('common.upload')}
         onAction={() => router.push('/(screens)/create-video')}
       />
     );
@@ -386,9 +385,9 @@ export default function MinbarScreen() {
             onPressIn={searchPress.onPressIn}
             onPressOut={searchPress.onPressOut}
             style={searchPress.animatedStyle}
-            accessibilityLabel="Search"
+            accessibilityLabel={t('common.search')}
             accessibilityRole="button"
-            accessibilityHint="Search for videos and channels"
+            accessibilityHint={t('accessibility.searchHint')}
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
@@ -398,9 +397,9 @@ export default function MinbarScreen() {
             onPressIn={watchLaterPress.onPressIn}
             onPressOut={watchLaterPress.onPressOut}
             style={watchLaterPress.animatedStyle}
-            accessibilityLabel="Watch Later"
+            accessibilityLabel={t('minbar.watchLater')}
             accessibilityRole="button"
-            accessibilityHint="View your watch later list"
+            accessibilityHint={t('accessibility.watchLaterHint')}
           >
             <Icon name="clock" size="sm" color={colors.text.primary} />
           </AnimatedPressable>
@@ -414,9 +413,9 @@ export default function MinbarScreen() {
             onPressIn={bellPress.onPressIn}
             onPressOut={bellPress.onPressOut}
             style={bellPress.animatedStyle}
-            accessibilityLabel="Notifications"
+            accessibilityLabel={t('accessibility.notifications')}
             accessibilityRole="button"
-            accessibilityHint="View your notifications"
+            accessibilityHint={t('accessibility.notificationsHint')}
           >
             <View>
               <Icon name="bell" size="sm" color={colors.text.primary} />
@@ -442,13 +441,15 @@ export default function MinbarScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
+        estimatedItemSize={350}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
       <BottomSheet
         visible={!!selectedVideoId}
         onClose={() => setSelectedVideoId(null)}
       >
         <BottomSheetItem
-          label="Report"
+          label={t('common.report')}
           icon={<Icon name="flag" size="sm" color={colors.text.primary} />}
           onPress={() => {
             setSelectedVideoId(null);
@@ -456,14 +457,14 @@ export default function MinbarScreen() {
           }}
         />
         <BottomSheetItem
-          label="Save to Watch Later"
+          label={t('minbar.saveToWatchLater')}
           icon={<Icon name="clock" size="sm" color={colors.text.primary} />}
           onPress={() => {
             if (selectedVideoId) handleSaveToWatchLater(selectedVideoId);
           }}
         />
         <BottomSheetItem
-          label="Not interested"
+          label={t('minbar.notInterested')}
           icon={<Icon name="eye-off" size="sm" color={colors.text.primary} />}
           onPress={() => setSelectedVideoId(null)}
         />

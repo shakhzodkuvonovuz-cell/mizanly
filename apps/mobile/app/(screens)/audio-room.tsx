@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
   Alert,
 } from 'react-native';
@@ -230,9 +230,9 @@ export default function AudioRoomScreen() {
         <GlassHeader title={t('tabs.audioRooms')} onBack={() => router.back()} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.base }}>
           <Text style={{ color: colors.error, fontSize: fontSize.md, marginBottom: spacing.md }}>{error}</Text>
-          <TouchableOpacity onPress={fetchData}>
+          <Pressable onPress={fetchData}>
             <Text style={{ color: colors.emerald }}>{t('common.retry')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
     );
@@ -432,17 +432,17 @@ export default function AudioRoomScreen() {
                     <Text style={styles.raisedHandTime}>Raised {hand.raisedAgo}</Text>
                   </View>
                   <View style={styles.raisedHandActions}>
-                    <TouchableOpacity activeOpacity={0.8} onPress={() => handleAcceptHand(hand.userId)}>
+                    <Pressable onPress={() => handleAcceptHand(hand.userId)}>
                       <LinearGradient
                         colors={[colors.emerald, colors.emeraldDark]}
                         style={styles.acceptButton}
                       >
                         <Text style={styles.acceptText}>{t('common.accept')}</Text>
                       </LinearGradient>
-                    </TouchableOpacity>
-                    <TouchableOpacity activeOpacity={0.8}>
+                    </Pressable>
+                    <Pressable>
                       <Text style={styles.declineText}>{t('common.decline')}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                 </Animated.View>
               ))}
@@ -464,10 +464,10 @@ export default function AudioRoomScreen() {
             style={styles.controlsBar}
           >
             {/* Mic Toggle */}
-            <TouchableOpacity
+            <Pressable
               style={styles.controlButton}
               onPress={handleToggleMic}
-              activeOpacity={0.8}
+             
             >
               <LinearGradient
                 colors={isMicOn ? [colors.emerald, colors.emeraldDark] : [colors.error, colors.error]}
@@ -475,13 +475,13 @@ export default function AudioRoomScreen() {
               >
                 <Icon name={isMicOn ? 'mic' : 'volume-x'} size="md" color={colors.text.primary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Raise Hand */}
-            <TouchableOpacity
+            <Pressable
               style={styles.controlButton}
               onPress={handleToggleHand}
-              activeOpacity={0.8}
+             
             >
               <LinearGradient
                 colors={isHandRaised ? [colors.gold, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
@@ -489,33 +489,33 @@ export default function AudioRoomScreen() {
               >
                 <Icon name="edit" size="md" color={isHandRaised ? colors.dark.bg : colors.text.primary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Reactions */}
-            <TouchableOpacity style={styles.controlButton} activeOpacity={0.8}>
+            <Pressable style={styles.controlButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                 style={styles.controlButtonInner}
               >
                 <Icon name="smile" size="md" color={colors.text.primary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Leave */}
-            <TouchableOpacity style={styles.controlButton} onPress={handleLeave} activeOpacity={0.8}>
+            <Pressable style={styles.controlButton} onPress={handleLeave}>
               <LinearGradient
                 colors={[colors.error, colors.error]}
                 style={styles.controlButtonInner}
               >
                 <Icon name="log-out" size="md" color={colors.text.primary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
 
           {/* End Room (Host Only - Mock) */}
-          <TouchableOpacity style={styles.endRoomButton} activeOpacity={0.8}>
+          <Pressable style={styles.endRoomButton}>
             <Text style={styles.endRoomText}>End Room</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </SafeAreaView>
   

@@ -9,13 +9,13 @@ import {
   Image,
   Dimensions,
   ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { LinearGradient } from 'expo-linear-gradient';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
@@ -92,7 +92,7 @@ function TrendingHashtags({ hashtags }: { hashtags: TrendingHashtag[] }) {
   );
 }
 
-function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: CategoryKey; label: string; emoji: string }[] }) {
+function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; onSelect: (c: CategoryKey) => void; categories: { key: CategoryKey; label: string; icon: IconName }[] }) {
   return (
     <View style={styles.categoriesSection}>
       <ScrollView
@@ -113,7 +113,7 @@ function CategoryPills({ active, onSelect, categories }: { active: CategoryKey; 
               accessibilityRole="button"
               accessibilityLabel={`Filter by ${cat.label}`}
             >
-              <Text style={styles.categoryEmoji}>{cat.emoji}</Text>
+              <Icon name={cat.icon} size={14} color={isActive ? '#fff' : colors.text.primary} />
               <Text style={[styles.categoryText, isActive && styles.categoryTextActive]}>
                 {cat.label}
               </Text>
@@ -290,15 +290,15 @@ export default function DiscoverScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CategoryKey>('all');
 
-  const CATEGORIES: { key: CategoryKey; label: string; emoji: string }[] = [
-    { key: 'all', label: t('discover.all'), emoji: '🌟' },
-    { key: 'trending', label: t('discover.trending'), emoji: '🔥' },
-    { key: 'food', label: t('discover.categories.food'), emoji: '🍽️' },
-    { key: 'fashion', label: t('discover.categories.fashion'), emoji: '👗' },
-    { key: 'sports', label: t('discover.categories.sports'), emoji: '⚽' },
-    { key: 'tech', label: t('discover.categories.tech'), emoji: '💻' },
-    { key: 'islamic', label: t('discover.categories.islamic'), emoji: '🕌' },
-    { key: 'art', label: t('discover.categories.art'), emoji: '🎨' },
+  const CATEGORIES: { key: CategoryKey; label: string; icon: IconName }[] = [
+    { key: 'all', label: t('discover.all'), icon: 'star' },
+    { key: 'trending', label: t('discover.trending'), icon: 'trending-up' },
+    { key: 'food', label: t('discover.categories.food'), icon: 'heart' },
+    { key: 'fashion', label: t('discover.categories.fashion'), icon: 'layers' },
+    { key: 'sports', label: t('discover.categories.sports'), icon: 'flag' },
+    { key: 'tech', label: t('discover.categories.tech'), icon: 'globe' },
+    { key: 'islamic', label: t('discover.categories.islamic'), icon: 'book-open' },
+    { key: 'art', label: t('discover.categories.art'), icon: 'pencil' },
   ];
 
   // Fetch trending hashtags
@@ -496,9 +496,6 @@ const styles = StyleSheet.create({
   },
   categoryPillActive: {
     backgroundColor: colors.emerald,
-  },
-  categoryEmoji: {
-    fontSize: 14,
   },
   categoryText: {
     fontSize: fontSize.sm,

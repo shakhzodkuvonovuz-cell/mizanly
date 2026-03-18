@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
@@ -163,14 +163,14 @@ function ThreadPart({
                     style={styles.mediaCardGradient}
                   >
                     <Image source={{ uri: item.uri }} style={styles.thumbImgEnhanced} contentFit="cover" />
-                    <TouchableOpacity style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
+                    <Pressable style={styles.removeThumb} onPress={() => onRemoveMedia(mi)} hitSlop={4}>
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
                         style={styles.removeThumbGradient}
                       >
                         <Icon name="x" size={10} color="#fff" />
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   </LinearGradient>
                 </Animated.View>
               ))}
@@ -179,16 +179,16 @@ function ThreadPart({
 
           {/* Premium gradient toolbar */}
           <View style={styles.partToolbar}>
-            <TouchableOpacity onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
+            <Pressable onPress={onAddMedia} disabled={part.media.length >= 4} hitSlop={8}>
               <LinearGradient
                 colors={part.media.length >= 4 ? ['rgba(110,119,129,0.2)', 'rgba(110,119,129,0.1)'] : ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, part.media.length >= 4 && styles.toolbarBtnDisabled]}
               >
                 <Icon name="image" size="sm" color={part.media.length >= 4 ? colors.text.tertiary : colors.emerald} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
                   setShowAutocomplete(false);
@@ -208,9 +208,9 @@ function ThreadPart({
               >
                 <Icon name="hash" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'hashtag' ? colors.emerald : colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
                   setShowAutocomplete(false);
@@ -230,17 +230,17 @@ function ThreadPart({
               >
                 <Icon name="at-sign" size="sm" color={autocomplete.partIndex === index && autocomplete.type === 'mention' ? colors.emerald : colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             {onTogglePoll && (
-              <TouchableOpacity onPress={onTogglePoll} hitSlop={8}>
+              <Pressable onPress={onTogglePoll} hitSlop={8}>
                 <LinearGradient
                   colors={hasPoll ? [colors.active.emerald10, 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.3)', 'rgba(45,53,72,0.1)']}
                   style={styles.toolbarBtnGradient}
                 >
                   <Icon name="bar-chart-2" size="sm" color={hasPoll ? colors.emerald : colors.text.secondary} />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             )}
 
             <View style={styles.toolbarSpacer} />
@@ -443,9 +443,9 @@ export default function CreateThreadScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={handleBack} hitSlop={8}>
+          <Pressable onPress={handleBack} hitSlop={8}>
             <Icon name="x" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.headerTitle}>{t('majlis.newThread')}</Text>
           <GradientButton
             label={t('common.post')}
@@ -458,7 +458,7 @@ export default function CreateThreadScreen() {
 
         {/* Visibility bar */}
         <View style={styles.visBar}>
-          <TouchableOpacity
+          <Pressable
             style={styles.visPill}
             onPress={() => setShowVisibility((v) => !v)}
           >
@@ -472,13 +472,13 @@ export default function CreateThreadScreen() {
               </Text>
               <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
             </View>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {showVisibility && (
           <View style={styles.visMenu}>
             {VISIBILITY_KEYS.map((opt) => (
-              <TouchableOpacity
+              <Pressable
                 key={opt.value}
                 style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
                 onPress={() => {
@@ -490,7 +490,7 @@ export default function CreateThreadScreen() {
                 <Icon name={opt.iconName} size="sm" color={visibility === opt.value ? colors.emerald : colors.text.secondary} />
                 <Text style={[styles.visOptionText, visibility === opt.value && styles.visOptionTextActive]}>{t(opt.labelKey)}</Text>
                 {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
-              </TouchableOpacity>
+              </Pressable>
             ))}
           </View>
         )}
@@ -513,10 +513,10 @@ export default function CreateThreadScreen() {
           ) : circles.length === 0 ? (
             <View style={styles.emptyCircles}>
               <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
                 <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.emerald} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ) : (
             circles.map((c) => (
@@ -572,14 +572,14 @@ export default function CreateThreadScreen() {
                       <Icon name="bar-chart-2" size="sm" color="#0D1117" />
                     </LinearGradient>
                     <Text style={styles.pollFormTitle}>{t('compose.poll')}</Text>
-                    <TouchableOpacity onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                    <Pressable onPress={() => setPoll(null)} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
                       <LinearGradient
                         colors={['rgba(248,81,73,0.9)', 'rgba(200,60,50,0.9)']}
                         style={styles.pollRemoveBtn}
                       >
                         <Icon name="x" size={14} color="#fff" />
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
                   <TextInput
                     style={styles.pollQuestion}
@@ -605,24 +605,24 @@ export default function CreateThreadScreen() {
                         maxLength={80}
                       />
                       {poll.options.length > 2 && (
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
                           hitSlop={8}
                         >
                           <Icon name="x" size={14} color={colors.text.tertiary} />
-                        </TouchableOpacity>
+                        </Pressable>
                       )}
                     </View>
                   ))}
                   {poll.options.length < 4 && (
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.pollAddOption}
                       onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
                     >
                       <Text style={styles.pollAddOptionText}>{t('compose.addOption')}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.pollAllowMultiple}
                     onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
                   >
@@ -630,7 +630,7 @@ export default function CreateThreadScreen() {
                       {poll.allowMultiple && <Icon name="check" size={12} color="#fff" />}
                     </View>
                     <Text style={styles.pollAllowMultipleText}>{t('compose.allowMultipleAnswers')}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </LinearGradient>
               )}
             </View>
@@ -638,7 +638,7 @@ export default function CreateThreadScreen() {
 
           {/* Premium Add thread part */}
           {parts.length < 10 && (
-            <TouchableOpacity style={styles.addPartBtn} onPress={addPart}>
+            <Pressable style={styles.addPartBtn} onPress={addPart}>
               <LinearGradient
                 colors={[colors.active.emerald20, 'transparent']}
                 start={{ x: 0, y: 0 }}
@@ -659,7 +659,7 @@ export default function CreateThreadScreen() {
               >
                 <Text style={styles.addPartText}>{t('compose.addToThread')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           )}
           <View style={{ height: 80 }} />
         </ScrollView>

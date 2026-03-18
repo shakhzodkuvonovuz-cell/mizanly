@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
+  ,
   FlatList,
   Image,
   TextInput,
   SafeAreaView,
   RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -207,7 +207,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
           <Text style={styles.featuredDescription}>{item.description}</Text>
           <Text style={styles.featuredCount}>{item.stickerCount} stickers</Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.featuredAction,
             item.isOwned && styles.featuredActionAdded,
@@ -221,9 +221,9 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             size="sm"
             color={item.isOwned ? colors.emerald : colors.text.primary}
           />
-        </TouchableOpacity>
+        </Pressable>
       </View>
-      <TouchableOpacity style={styles.featuredPreview} onPress={() => openPackDetail(item.id)}>
+      <Pressable style={styles.featuredPreview} onPress={() => openPackDetail(item.id)}>
         {item.previewUrls.map((url, idx) => (
           <Image
             key={idx}
@@ -232,7 +232,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             resizeMode="contain"
           />
         ))}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 
@@ -245,7 +245,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
           <Text style={styles.packDescription}>{item.description}</Text>
           <Text style={styles.packCount}>{item.stickerCount} stickers</Text>
         </View>
-        <TouchableOpacity
+        <Pressable
           style={[
             styles.packAction,
             item.isOwned && styles.packActionAdded,
@@ -262,9 +262,9 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
           <Text style={styles.packActionText}>
             {item.isOwned ? 'Added' : 'Add'}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
-      <TouchableOpacity style={styles.packPreview} onPress={() => openPackDetail(item.id)}>
+      <Pressable style={styles.packPreview} onPress={() => openPackDetail(item.id)}>
         {item.previewUrls.map((url, idx) => (
           <Image
             key={idx}
@@ -273,7 +273,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
             resizeMode="contain"
           />
         ))}
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 
@@ -282,14 +282,14 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity
+          <Pressable
             onPress={onClose}
             accessibilityLabel="Close"
             accessibilityRole="button"
             style={styles.backButton}
           >
             <Icon name="arrow-left" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.headerTitle}>Sticker Packs</Text>
           <View style={styles.headerSpacer} />
         </View>
@@ -309,9 +309,9 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Pressable onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
         </View>
@@ -393,7 +393,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                   <Text style={styles.sheetDescription}>{selectedPack.description}</Text>
                   <Text style={styles.sheetCount}>{selectedPack.stickers.length} stickers</Text>
                 </View>
-                <TouchableOpacity
+                <Pressable
                   style={[
                     styles.sheetAction,
                     ownedPackIds.has(selectedPack.id) && styles.sheetActionAdded,
@@ -408,7 +408,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                   <Text style={styles.sheetActionText}>
                     {ownedPackIds.has(selectedPack.id) ? 'Added' : 'Add'}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
               <FlatList
             removeClippedSubviews={true}

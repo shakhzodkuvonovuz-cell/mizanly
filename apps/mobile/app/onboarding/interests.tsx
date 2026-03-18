@@ -1,30 +1,30 @@
 import { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView,
-} from 'react-native';
+  View, Text, Pressable, StyleSheet, ScrollView,
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 
-const INTERESTS = [
-  { id: 'quran', label: 'onboarding.interests.quran', emoji: '📖' },
-  { id: 'fiqh', label: 'onboarding.interests.fiqh', emoji: '⚖️' },
-  { id: 'history', label: 'onboarding.interests.history', emoji: '🕌' },
-  { id: 'family', label: 'onboarding.interests.family', emoji: '👨‍👩‍👧' },
-  { id: 'health', label: 'onboarding.interests.health', emoji: '🌿' },
-  { id: 'business', label: 'onboarding.interests.business', emoji: '💼' },
-  { id: 'tech', label: 'onboarding.interests.tech', emoji: '💻' },
-  { id: 'arts', label: 'onboarding.interests.arts', emoji: '🎨' },
-  { id: 'travel', label: 'onboarding.interests.travel', emoji: '✈️' },
-  { id: 'education', label: 'onboarding.interests.education', emoji: '📚' },
-  { id: 'social', label: 'onboarding.interests.social', emoji: '🤝' },
-  { id: 'sports', label: 'onboarding.interests.sports', emoji: '⚽' },
+const INTERESTS: { id: string; label: string; icon: IconName }[] = [
+  { id: 'quran', label: 'onboarding.interests.quran', icon: 'book-open' },
+  { id: 'fiqh', label: 'onboarding.interests.fiqh', icon: 'shield' },
+  { id: 'history', label: 'onboarding.interests.history', icon: 'clock' },
+  { id: 'family', label: 'onboarding.interests.family', icon: 'users' },
+  { id: 'health', label: 'onboarding.interests.health', icon: 'heart' },
+  { id: 'business', label: 'onboarding.interests.business', icon: 'briefcase' },
+  { id: 'tech', label: 'onboarding.interests.tech', icon: 'globe' },
+  { id: 'arts', label: 'onboarding.interests.arts', icon: 'pencil' },
+  { id: 'travel', label: 'onboarding.interests.travel', icon: 'map-pin' },
+  { id: 'education', label: 'onboarding.interests.education', icon: 'file-text' },
+  { id: 'social', label: 'onboarding.interests.social', icon: 'smile' },
+  { id: 'sports', label: 'onboarding.interests.sports', icon: 'trending-up' },
 ];
 
 export default function InterestsScreen() {
@@ -76,15 +76,14 @@ export default function InterestsScreen() {
         {INTERESTS.map((item) => {
           const on = selected.has(item.id);
           return (
-            <TouchableOpacity
+            <Pressable
               key={item.id}
               style={[styles.chip, on && styles.chipOn]}
               onPress={() => toggle(item.id)}
-              activeOpacity={0.7}
             >
-              <Text style={styles.chipEmoji}>{item.emoji}</Text>
+              <Icon name={item.icon} size="sm" color={on ? colors.emerald : colors.text.secondary} />
               <Text style={[styles.chipLabel, on && styles.chipLabelOn]}>{t(item.label)}</Text>
-            </TouchableOpacity>
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -133,7 +132,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgElevated,
   },
   chipOn: { borderColor: colors.emerald, backgroundColor: `${colors.emerald}20` },
-  chipEmoji: { fontSize: 18 },
   chipLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
   chipLabelOn: { color: colors.emerald, fontWeight: '600' },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, gap: spacing.md },

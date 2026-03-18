@@ -5,10 +5,10 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   ScrollView,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
@@ -55,13 +55,12 @@ function ActionButton({
   const haptic = useHaptic();
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={() => {
         haptic.light();
         onPress();
       }}
       style={styles.actionButton}
-      activeOpacity={0.8}
     >
       <LinearGradient
         colors={isActive ? [activeColor, colors.goldLight] : ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
@@ -74,7 +73,7 @@ function ActionButton({
         />
       </LinearGradient>
       <Text style={styles.actionLabel}>{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -89,7 +88,7 @@ function PreviousHadithCard({
 }) {
   return (
     <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+      <Pressable onPress={onPress}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           style={styles.previousCard}
@@ -109,7 +108,7 @@ function PreviousHadithCard({
             </View>
           )}
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

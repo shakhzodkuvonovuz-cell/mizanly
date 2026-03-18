@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  TouchableOpacity,
+  Pressable,
   RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -270,10 +270,9 @@ export default function QuranRoomScreen() {
           )}
 
           {/* Translation toggle */}
-          <TouchableOpacity
+          <Pressable
             onPress={handleToggleTranslation}
             style={styles.toggleRow}
-            activeOpacity={0.7}
           >
             <Icon name="globe" size="sm" color={colors.text.secondary} />
             <Text style={styles.toggleText}>{t('quranRoom.showTranslation')}</Text>
@@ -283,7 +282,7 @@ export default function QuranRoomScreen() {
                 showTranslation && styles.toggleActive,
               ]}
             />
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Reciter indicator */}
           {roomState?.reciterId && (
@@ -325,13 +324,12 @@ export default function QuranRoomScreen() {
 
         {/* Host FAB */}
         {roomState?.hostId === currentUserId && (
-          <TouchableOpacity
+          <Pressable
             style={styles.hostFab}
             onPress={() => {
               haptic.light();
               setShowHostControls(true);
             }}
-            activeOpacity={0.8}
           >
             <LinearGradient
               colors={[colors.emerald, '#065f3e']}
@@ -341,7 +339,7 @@ export default function QuranRoomScreen() {
             >
               <Icon name="sliders" size="md" color="#fff" />
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
     </ScreenErrorBoundary>

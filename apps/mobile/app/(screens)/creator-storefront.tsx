@@ -8,7 +8,7 @@ import {
   Image,
   RefreshControl,
   Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';

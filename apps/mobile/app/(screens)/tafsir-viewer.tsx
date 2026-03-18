@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Share, RefreshControl,
-} from 'react-native';
+  View, Text, StyleSheet, Pressable, ScrollView, Share, RefreshControl,
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -192,13 +192,13 @@ export default function TafsirViewerScreen() {
             <Text style={styles.sourcesTitle}>
               {t('tafsir.source')} ({filteredSources.length})
             </Text>
-            <TouchableOpacity
+            <Pressable
               style={styles.filterButton}
               onPress={() => setShowSourceFilter(true)}
             >
               <Icon name="filter" size="sm" color={colors.emerald} />
               <Text style={styles.filterButtonText}>{t('tafsir.filterSources')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Tafsir Cards */}
@@ -246,7 +246,7 @@ export default function TafsirViewerScreen() {
 
           {/* Share Button */}
           <Animated.View entering={FadeInUp.delay(400).duration(500)} style={styles.shareSection}>
-            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
+            <Pressable style={styles.shareButton} onPress={handleShare}>
               <LinearGradient
                 colors={[colors.emerald, colors.gold]}
                 style={styles.shareButtonGradient}
@@ -254,7 +254,7 @@ export default function TafsirViewerScreen() {
                 <Icon name="share" size="sm" color="#fff" />
                 <Text style={styles.shareButtonText}>{t('tafsir.share')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </ScrollView>
 

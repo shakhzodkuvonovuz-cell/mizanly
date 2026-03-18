@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -50,25 +50,25 @@ function ContactRow({
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.row}
       >
-        <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+        <Pressable onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
           <Avatar uri={user.avatarUrl} name={user.displayName} size="md" />
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={styles.info}>
-          <TouchableOpacity onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
+          <Pressable onPress={() => router.push(`/(screens)/profile/${user.username}`)}>
             <View style={styles.nameRow}>
               <Text style={styles.name} numberOfLines={1}>{user.displayName}</Text>
               {user.isVerified && <VerifiedBadge size={13} />}
             </View>
             <Text style={styles.username}>@{user.username}</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         <View style={styles.actionCol}>
           {user.isFollowing ? (
-            <TouchableOpacity onPress={onToggleFollow} disabled={followLoading} style={styles.followingBtn}>
+            <Pressable onPress={onToggleFollow} disabled={followLoading} style={styles.followingBtn}>
               <Text style={styles.followingText}>{t('contactSync.following')}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ) : (
             <GradientButton
               label={t('contactSync.follow')}

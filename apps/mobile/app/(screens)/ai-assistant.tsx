@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  TouchableOpacity, Pressable, ActivityIndicator, Clipboard,
+  Pressable, ActivityIndicator, Clipboard,
 } from 'react-native';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -144,7 +144,7 @@ export default function AiAssistantScreen() {
 
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.generateSection}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleGenerate}
               disabled={isLoading || (!input.trim() && activeTab !== 'ideas')}
               style={[styles.generateBtn, (isLoading || (!input.trim() && activeTab !== 'ideas')) && { opacity: 0.5 }]}
@@ -163,7 +163,7 @@ export default function AiAssistantScreen() {
                   </>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Results: Captions */}
@@ -175,10 +175,9 @@ export default function AiAssistantScreen() {
                   key={i}
                   entering={FadeInUp.delay(i * 80).duration(300)}
                 >
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.captionCard}
                     onPress={() => handleCopyCaption(suggestion.caption, i)}
-                    activeOpacity={0.7}
                   >
                     <View style={styles.captionHeader}>
                       <View style={[styles.toneBadge, { backgroundColor: (TONE_COLORS[suggestion.tone] || colors.emerald) + '20' }]}>
@@ -193,7 +192,7 @@ export default function AiAssistantScreen() {
                       />
                     </View>
                     <Text style={styles.captionText}>{suggestion.caption}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </Animated.View>
               ))}
             </View>
@@ -204,20 +203,20 @@ export default function AiAssistantScreen() {
             <Animated.View entering={FadeIn.duration(300)} style={styles.results}>
               <View style={styles.hashtagHeader}>
                 <Text style={styles.resultsTitle}>{t('ai.suggestions')}</Text>
-                <TouchableOpacity onPress={handleCopyHashtags} style={styles.copyAllBtn}>
+                <Pressable onPress={handleCopyHashtags} style={styles.copyAllBtn}>
                   <Icon name="layers" size="xs" color={colors.emerald} />
                   <Text style={styles.copyAllText}>{t('ai.copyAll')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
               <View style={styles.hashtagGrid}>
                 {hashtags.map((tag, i) => (
                   <Animated.View key={tag} entering={FadeInUp.delay(i * 50).duration(200)}>
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.hashtagChip}
                       onPress={() => { Clipboard.setString(`#${tag}`); haptic.light(); }}
                     >
                       <Text style={styles.hashtagText}>#{tag}</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </Animated.View>
                 ))}
               </View>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet,
   ScrollView, Switch, Alert, Linking, Pressable,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -93,10 +93,9 @@ function Row({
   } : undefined;
 
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.row, { flexDirection: rtlFlexRow(isRTL) }, isLast && styles.rowLast]}
       onPress={handlePress}
-      activeOpacity={handlePress ? 0.7 : 1}
       disabled={!handlePress && !onToggle}
     >
       {icon ? (
@@ -122,7 +121,7 @@ function Row({
           <Icon name={rtlChevron(isRTL, 'forward')} size="sm" color={colors.text.tertiary} />
         </View>
       ) : null}
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -676,7 +675,7 @@ export default function SettingsScreen() {
           </LinearGradient>
 
           {/* Premium Sign Out Button */}
-          <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+          <Pressable style={styles.signOutButton} onPress={handleSignOut}>
             <LinearGradient
               colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
               start={{ x: 0, y: 0 }}
@@ -686,7 +685,7 @@ export default function SettingsScreen() {
               <Icon name="log-out" size="sm" color={colors.error} />
               <Text style={styles.signOutLabel}>{t('settings.signOut')}</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
 
           {/* About Section */}
           <SectionHeader title={t('settings.about')} icon="info" />

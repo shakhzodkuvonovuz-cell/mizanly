@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useMemo, memo } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, RefreshControl } from 'react-native';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
@@ -255,6 +255,8 @@ export default function MajlisScreen() {
           renderItem={renderItem}
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
+          estimatedItemSize={200}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         />
       </Animated.View>
 

@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Switch, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -290,7 +290,7 @@ export default function AccountSwitcherScreen() {
                             <Text style={styles.unreadBadgeText}>{account.unreadCount}</Text>
                           </View>
                         )}
-                        <TouchableOpacity
+                        <Pressable
                           style={styles.switchButton}
                           onPress={() => handleSwitchAccount(account)}
                           disabled={switching}
@@ -301,7 +301,7 @@ export default function AccountSwitcherScreen() {
                           >
                             <Text style={styles.switchButtonText}>{t('screens.accountSwitcher.switchButton')}</Text>
                           </LinearGradient>
-                        </TouchableOpacity>
+                        </Pressable>
                       </View>
                     </View>
                   </LinearGradient>
@@ -321,7 +321,7 @@ export default function AccountSwitcherScreen() {
 
           {/* Add Account Section */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-            <TouchableOpacity style={styles.addAccountCard} onPress={handleAddAccount}>
+            <Pressable style={styles.addAccountCard} onPress={handleAddAccount}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
                 style={[styles.addAccountGradient, styles.addAccountDashed]}
@@ -332,7 +332,7 @@ export default function AccountSwitcherScreen() {
                 <Text style={styles.addAccountText}>{t('screens.accountSwitcher.addAccount')}</Text>
                 <Text style={styles.addAccountSubtext}>{t('screens.accountSwitcher.addAccountSubtext')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Account Management Section */}
@@ -356,16 +356,16 @@ export default function AccountSwitcherScreen() {
                 </View>
 
                 {/* Manage Accounts Row */}
-                <TouchableOpacity style={styles.managementRow}>
+                <Pressable style={styles.managementRow}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="users" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
                   </View>
                   <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Default Account Row */}
-                <TouchableOpacity style={styles.managementRow}>
+                <Pressable style={styles.managementRow}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="user" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
@@ -376,7 +376,7 @@ export default function AccountSwitcherScreen() {
                     </Text>
                     <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
                   </View>
-                </TouchableOpacity>
+                </Pressable>
 
                 {/* Auto-switch Toggle */}
                 <View style={styles.toggleRow}>
@@ -414,9 +414,9 @@ export default function AccountSwitcherScreen() {
                   <Text style={styles.securityText}>
                     {t('screens.accountSwitcher.securityText')}
                   </Text>
-                  <TouchableOpacity onPress={handleSignOutAll}>
+                  <Pressable onPress={handleSignOutAll}>
                     <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               </LinearGradient>
             </View>

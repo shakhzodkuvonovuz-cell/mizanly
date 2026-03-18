@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  View, Text, StyleSheet, TextInput, Pressable,
   ScrollView, Platform, Alert, Dimensions,
-} from 'react-native';
+, Pressable } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
@@ -234,9 +234,9 @@ export default function CreatePostScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} hitSlop={8}>
+          <Pressable onPress={() => router.back()} hitSlop={8}>
             <Icon name="x" size="md" color={colors.text.primary} />
-          </TouchableOpacity>
+          </Pressable>
           <Text style={styles.headerTitle}>{t('saf.newPost')}</Text>
           <GradientButton
             label={t('common.share')}
@@ -252,9 +252,9 @@ export default function CreatePostScreen() {
           <View style={styles.draftBanner}>
             <Icon name="clock" size="sm" color={colors.gold} />
             <Text style={styles.draftBannerText}>{t('compose.draftRestored')}</Text>
-            <TouchableOpacity onPress={() => setShowDraftBanner(false)} hitSlop={8}>
+            <Pressable onPress={() => setShowDraftBanner(false)} hitSlop={8}>
               <Icon name="x" size="xs" color={colors.text.secondary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
 
@@ -269,7 +269,7 @@ export default function CreatePostScreen() {
             <View>
               <Text style={styles.userName}>{user?.fullName ?? user?.username}</Text>
               {/* Visibility picker */}
-              <TouchableOpacity
+              <Pressable
                 style={styles.visibilityPill}
                 onPress={() => setShowVisibility((v) => !v)}
               >
@@ -278,14 +278,14 @@ export default function CreatePostScreen() {
                   <Text style={styles.visibilityPillText}>{pillText}</Text>
                   <Icon name="chevron-down" size={12} color={colors.text.tertiary} />
                 </View>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
 
           {showVisibility && (
             <View style={styles.visibilityMenu}>
               {VISIBILITY_KEYS.map((opt) => (
-                <TouchableOpacity
+                <Pressable
                   key={opt.value}
                   style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
                   onPress={() => {
@@ -299,14 +299,14 @@ export default function CreatePostScreen() {
                     {t(opt.labelKey)}
                   </Text>
                   {visibility === opt.value && <Icon name="check" size="sm" color={colors.emerald} />}
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           )}
 
           {/* Circle picker — shown when CIRCLE visibility is active */}
           {visibility === 'CIRCLE' && (
-            <TouchableOpacity
+            <Pressable
               style={styles.circlePill}
               onPress={() => setShowCirclePicker(true)}
             >
@@ -316,7 +316,7 @@ export default function CreatePostScreen() {
                   : t('compose.chooseCircle')}
               </Text>
               <Icon name="chevron-right" size="sm" color={colors.emerald} />
-            </TouchableOpacity>
+            </Pressable>
           )}
 
           {/* Caption input */}
@@ -389,7 +389,7 @@ export default function CreatePostScreen() {
                         <Icon name="play" size={12} color="#fff" />
                       </LinearGradient>
                     )}
-                    <TouchableOpacity
+                    <Pressable
                       style={styles.removeMedia}
                       onPress={() => removeMedia(idx)}
                       hitSlop={4}
@@ -400,19 +400,19 @@ export default function CreatePostScreen() {
                       >
                         <Icon name="x" size={12} color="#fff" />
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   </LinearGradient>
                 </Animated.View>
               ))}
               {media.length < 10 && (
-                <TouchableOpacity style={styles.addMoreMedia} onPress={pickMedia}>
+                <Pressable style={styles.addMoreMedia} onPress={pickMedia}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                     style={styles.addMoreMediaGradient}
                   >
                     <Icon name="plus" size="md" color={colors.emerald} />
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </ScrollView>
           )}
@@ -436,10 +436,10 @@ export default function CreatePostScreen() {
           ) : circles.length === 0 ? (
             <View style={styles.emptyCircles}>
               <Text style={styles.emptyCirclesText}>{t('compose.noCirclesYet')}</Text>
-              <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
+              <Pressable style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }} onPress={() => { setShowCirclePicker(false); router.push('/(screens)/circles'); }}>
                 <Text style={styles.emptyCirclesLink}>{t('compose.createCircle')}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.emerald} />
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ) : (
             circles.map((c) => (
@@ -470,9 +470,9 @@ export default function CreatePostScreen() {
           <View style={styles.locationPill}>
             <Icon name="map-pin" size="xs" color={colors.emerald} />
             <Text style={styles.locationPillText}>{location.name}</Text>
-            <TouchableOpacity onPress={() => setLocation(null)} hitSlop={8}>
+            <Pressable onPress={() => setLocation(null)} hitSlop={8}>
               <Icon name="x" size="xs" color={colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
         )}
 
@@ -522,7 +522,7 @@ export default function CreatePostScreen() {
           style={styles.toolbarGradient}
         >
           <View style={styles.toolbar}>
-            <TouchableOpacity onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
+            <Pressable onPress={pickMedia} hitSlop={8} style={styles.toolbarBtn}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
                 style={[styles.toolbarBtnGradient, media.length > 0 && styles.toolbarBtnGradientActive]}
@@ -534,9 +534,9 @@ export default function CreatePostScreen() {
                   </View>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => setShowLocationPicker(true)}
@@ -547,9 +547,9 @@ export default function CreatePostScreen() {
               >
                 <Icon name="map-pin" size="md" color={location ? colors.emerald : colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
@@ -565,9 +565,9 @@ export default function CreatePostScreen() {
               >
                 <Icon name="hash" size="md" color={showAutocomplete && autocompleteType === 'hashtag' ? colors.emerald : colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
-            <TouchableOpacity
+            <Pressable
               hitSlop={8}
               style={styles.toolbarBtn}
               onPress={() => {
@@ -583,7 +583,7 @@ export default function CreatePostScreen() {
               >
                 <Icon name="at-sign" size="md" color={showAutocomplete && autocompleteType === 'mention' ? colors.emerald : colors.text.secondary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
 
             <Pressable
               style={styles.toolbarBtn}

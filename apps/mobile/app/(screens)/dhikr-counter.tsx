@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
   Share,
   Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -55,7 +55,7 @@ function PhraseButton({
 }) {
   const { t } = useTranslation();
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
+    <Pressable onPress={onPress}>
       <LinearGradient
         colors={
           isSelected
@@ -73,7 +73,7 @@ function PhraseButton({
         <Text style={styles.phraseArabic}>{phrase.arabic}</Text>
         <Text style={styles.phraseMeaning}>{t(`screens.dhikrCounter.phraseMeaning.${phrase.id}`)}</Text>
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -291,7 +291,7 @@ export default function DhikrCounterScreen() {
 
           {/* Counter Circle */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.counterContainer}>
-            <TouchableOpacity onPress={handleTap} activeOpacity={0.9}>
+            <Pressable onPress={handleTap}>
               <Animated.View style={counterAnimatedStyle}>
                 {/* Outer Ring Gradient */}
                 <LinearGradient
@@ -327,17 +327,17 @@ export default function DhikrCounterScreen() {
                   </Animated.View>
                 )}
               </Animated.View>
-            </TouchableOpacity>
+            </Pressable>
 
             {/* Reset Button */}
-            <TouchableOpacity onPress={handleReset} style={styles.resetButton} activeOpacity={0.8}>
+            <Pressable onPress={handleReset} style={styles.resetButton}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                 style={styles.resetButtonGradient}
               >
                 <Icon name="circle" size="xs" color={colors.text.tertiary} />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Progress Card */}
@@ -375,7 +375,7 @@ export default function DhikrCounterScreen() {
           {/* Action Buttons Row */}
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.actionRow}>
-              <TouchableOpacity onPress={handleShareProgress} activeOpacity={0.8} style={styles.actionButtonWrapper}>
+              <Pressable onPress={handleShareProgress} style={styles.actionButtonWrapper}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
                   style={styles.actionButton}
@@ -383,10 +383,10 @@ export default function DhikrCounterScreen() {
                   <Icon name="share" size="sm" color={colors.emerald} />
                   <Text style={styles.actionButtonText}>{t('dhikr.shareProgress')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
-              <TouchableOpacity
+              </Pressable>
+              <Pressable
                 onPress={() => router.push('/(screens)/dhikr-challenges' as never)}
-                activeOpacity={0.8}
+
                 style={styles.actionButtonWrapper}
               >
                 <LinearGradient
@@ -396,7 +396,7 @@ export default function DhikrCounterScreen() {
                   <Icon name="users" size="sm" color={colors.gold} />
                   <Text style={styles.actionButtonText}>{t('dhikr.challenges')}</Text>
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Animated.View>
 

@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, TextInput, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,11 +58,10 @@ function CreateSheet({
       {/* Emoji picker */}
       <View style={styles.emojiRow}>
         {EMOJIS.map((e) => (
-          <TouchableOpacity
+          <Pressable
             key={e}
             style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
             onPress={() => setEmoji(e)}
-            activeOpacity={0.8}
           >
             <LinearGradient
               colors={emoji === e ? ['rgba(10,123,79,0.3)', 'rgba(200,150,62,0.2)'] : ['transparent', 'transparent']}
@@ -70,7 +69,7 @@ function CreateSheet({
             >
               <Text style={styles.emojiText}>{e}</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -85,11 +84,10 @@ function CreateSheet({
         autoFocus
       />
 
-      <TouchableOpacity
+      <Pressable
         style={[styles.createBtnWrapper, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
         onPress={() => createMutation.mutate()}
         disabled={!name.trim() || createMutation.isPending}
-        activeOpacity={0.8}
       >
         <LinearGradient
           colors={!name.trim() || createMutation.isPending ? ['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)'] : [colors.emerald, colors.gold]}
@@ -101,7 +99,7 @@ function CreateSheet({
             <Text style={styles.createBtnText}>{t('screens.circles.createCircleButton')}</Text>
           )}
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </BottomSheet>
   );
 }
@@ -221,7 +219,7 @@ export default function CirclesScreen() {
                       </Text>
                     </View>
                   </View>
-                  <TouchableOpacity
+                  <Pressable
                     hitSlop={8}
                     onPress={() => handleDelete(item)}
                     style={styles.deleteBtn}
@@ -232,7 +230,7 @@ export default function CirclesScreen() {
                     >
                       <Icon name="trash" size="sm" color={colors.error} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </LinearGradient>
               </Animated.View>
             )}

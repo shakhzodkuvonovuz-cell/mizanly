@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet,
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useQuery, useMutation, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
@@ -460,7 +460,7 @@ export default function ProfileScreen() {
         <Text style={[styles.handle, { textAlign: rtlTextAlign(isRTL) }]}>@{profile.username}</Text>
         {profile.bio ? <RichText text={profile.bio} style={styles.bio} /> : null}
         {profile.website ? (
-          <TouchableOpacity
+          <Pressable
             style={[styles.websiteRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => {
               const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
@@ -471,10 +471,10 @@ export default function ProfileScreen() {
           >
             <Icon name="link" size={13} color={colors.emerald} />
             <Text style={styles.websiteLink}>{profile.website}</Text>
-          </TouchableOpacity>
+          </Pressable>
         ) : null}
         {profile.channel && (
-          <TouchableOpacity
+          <Pressable
             style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => router.push(`/(screens)/channel/${profile.channel!.handle}`)}
             accessibilityLabel={t('profile.viewChannelAccessibility')}
@@ -482,7 +482,7 @@ export default function ProfileScreen() {
           >
             <Icon name="video" size={13} color={colors.emerald} />
             <Text style={styles.channelText}>{t('profile.viewChannel')}</Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
         {profile.profileLinks && profile.profileLinks.length > 0 && (
           <View style={styles.profileLinksSection}>
@@ -517,10 +517,9 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingHorizontal: spacing.base, gap: spacing.md }}
         >
           {highlights.map((album) => (
-            <TouchableOpacity
+            <Pressable
               key={album.id}
               style={styles.highlightItem}
-              activeOpacity={0.75}
               onPress={() => handleHighlightPress(album.id)}
               disabled={loadingHighlightId !== null}
               accessibilityLabel={t('profile.viewHighlight', { title: album.title })}
@@ -536,7 +535,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
               <Text style={styles.highlightLabel} numberOfLines={1}>{album.title}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
       )}

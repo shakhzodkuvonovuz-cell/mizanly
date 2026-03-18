@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -74,12 +74,12 @@ export default function WaqfScreen() {
             <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
           </View>
 
-          <TouchableOpacity style={styles.contributeBtn} onPress={() => haptic.light()}>
+          <Pressable style={styles.contributeBtn} onPress={() => haptic.light()}>
             <LinearGradient colors={[colors.gold, '#D4A94F']} style={styles.contributeBtnGradient}>
               <Icon name="heart" size="sm" color="#FFF" />
               <Text style={styles.contributeBtnText}>Contribute</Text>
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </Animated.View>
     );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, Alert, Switch, Platform, KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -228,7 +228,7 @@ export default function EditProfileScreen() {
 
         <ScrollView style={[styles.body, { paddingTop: HEADER_HEIGHT }]} keyboardShouldPersistTaps="handled">
           {/* Cover photo with premium gradient overlay */}
-          <TouchableOpacity onPress={pickCover} activeOpacity={0.9}>
+          <Pressable onPress={pickCover}>
             {currentCover ? (
               <Animated.View entering={FadeIn.duration(400)}>
                 <Image source={{ uri: currentCover }} style={styles.cover} contentFit="cover" />
@@ -242,7 +242,7 @@ export default function EditProfileScreen() {
                     style={styles.coverEditBadge}
                   >
                     <Icon name="camera" size="sm" color="#fff" />
-                    <Text style={styles.coverEditText}>Change Cover</Text>
+                    <Text style={styles.coverEditText}>{{t('editProfile.changeCover')}}</Text>
                   </LinearGradient>
                 </View>
               </Animated.View>
@@ -260,16 +260,16 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="camera" size="lg" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.coverPlaceholderText}>Add cover photo</Text>
-                  <Text style={styles.coverPlaceholderSubtext}>Tap to upload</Text>
+                  <Text style={styles.coverPlaceholderText}>{t('editProfile.addCoverPhoto')}</Text>
+                  <Text style={styles.coverPlaceholderSubtext}>{t('editProfile.tapToUpload')}</Text>
                 </View>
               </LinearGradient>
             )}
-          </TouchableOpacity>
+          </Pressable>
 
           {/* Avatar with glassmorphism overlay */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.avatarWrap}>
-            <TouchableOpacity onPress={pickAvatar} activeOpacity={0.9}>
+            <Pressable onPress={pickAvatar}>
               <View style={styles.avatarContainer}>
                 <Avatar uri={currentAvatar} name={displayName || me?.displayName} size="2xl" />
                 <LinearGradient
@@ -279,7 +279,7 @@ export default function EditProfileScreen() {
                   <Icon name="camera" size="sm" color="#fff" />
                 </LinearGradient>
               </View>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Form fields with glassmorphism cards */}
@@ -296,7 +296,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="user" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>Display Name</Text>
+                  <Text style={styles.label}>{t('editProfile.displayName')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'displayName' && styles.inputFocused]}
@@ -324,7 +324,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="at-sign" size="xs" color={colors.text.tertiary} />
                   </LinearGradient>
-                  <Text style={styles.label}>Username</Text>
+                  <Text style={styles.label}>{t('editProfile.username')}</Text>
                 </View>
                 <Text style={styles.usernameText}>@{me?.username}</Text>
               </View>
@@ -343,7 +343,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="edit" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>Bio</Text>
+                  <Text style={styles.label}>{t('editProfile.bio')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, styles.multiline, focusedField === 'bio' && styles.inputFocused]}
@@ -374,7 +374,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="globe" size="xs" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.label}>Website</Text>
+                  <Text style={styles.label}>{t('editProfile.website')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'website' && styles.inputFocused]}
@@ -404,7 +404,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="map-pin" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>Location</Text>
+                  <Text style={styles.label}>{t('editProfile.location')}</Text>
                 </View>
                 <View style={styles.iconInputRow}>
                   <Icon name="map-pin" size="sm" color={colors.text.tertiary} />
@@ -435,7 +435,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="user" size="xs" color={colors.gold} />
                   </LinearGradient>
-                  <Text style={styles.label}>Pronouns</Text>
+                  <Text style={styles.label}>{t('editProfile.pronouns')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'pronouns' && styles.inputFocused]}
@@ -463,7 +463,7 @@ export default function EditProfileScreen() {
                   >
                     <Icon name="clock" size="xs" color={colors.emerald} />
                   </LinearGradient>
-                  <Text style={styles.label}>Birthday</Text>
+                  <Text style={styles.label}>{t('editProfile.birthday')}</Text>
                 </View>
                 <TextInput
                   style={[styles.input, focusedField === 'birthday' && styles.inputFocused]}
@@ -492,14 +492,13 @@ export default function EditProfileScreen() {
                     >
                       <Icon name="lock" size="xs" color={colors.emerald} />
                     </LinearGradient>
-                    <Text style={styles.label}>Private Account</Text>
+                    <Text style={styles.label}>{t('editProfile.privateAccount')}</Text>
                   </View>
-                  <Text style={styles.fieldHint}>Only approved followers see your posts</Text>
+                  <Text style={styles.fieldHint}>{t('editProfile.privateAccountHint')}</Text>
                 </View>
-                <TouchableOpacity
+                <Pressable
                   style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
                   onPress={() => setIsPrivate(!isPrivate)}
-                  activeOpacity={0.9}
                 >
                   <View style={[styles.toggleThumb, isPrivate && styles.toggleThumbActive]}>
                     <LinearGradient
@@ -507,7 +506,7 @@ export default function EditProfileScreen() {
                       style={styles.toggleThumbGradient}
                     />
                   </View>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </LinearGradient>
 
@@ -525,7 +524,7 @@ export default function EditProfileScreen() {
                     >
                       <Icon name="link" size="xs" color={colors.gold} />
                     </LinearGradient>
-                    <Text style={styles.label}>Profile Links</Text>
+                    <Text style={styles.label}>{t('editProfile.profileLinks')}</Text>
                   </View>
                   <View style={styles.linksCountBadge}>
                     <Text style={styles.linksCount}>{links.length}/5</Text>
@@ -554,14 +553,14 @@ export default function EditProfileScreen() {
                           <Text style={styles.linkTitle} numberOfLines={1}>{link.title}</Text>
                           <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
                         </View>
-                        <TouchableOpacity
+                        <Pressable
                           hitSlop={8}
                           onPress={() => deleteLinkMutation.mutate(link.id)}
                           disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
                           style={styles.linkDeleteBtn}
                         >
                           <Icon name="x" size="sm" color={colors.text.tertiary} />
-                        </TouchableOpacity>
+                        </Pressable>
                       </LinearGradient>
                     </Animated.View>
                   ))
@@ -591,10 +590,10 @@ export default function EditProfileScreen() {
                       maxLength={200}
                     />
                     <View style={styles.addLinkActions}>
-                      <TouchableOpacity onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
+                      <Pressable onPress={() => { setShowAddLink(false); setNewLinkTitle(''); setNewLinkUrl(''); }}>
                         <Text style={styles.addLinkCancel}>Cancel</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      </Pressable>
+                      <Pressable
                         style={[
                           styles.addLinkSave,
                           (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,
@@ -607,19 +606,19 @@ export default function EditProfileScreen() {
                         ) : (
                           <Text style={styles.addLinkSaveText}>Add</Text>
                         )}
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </LinearGradient>
                 ) : links.length < 5 ? (
-                  <TouchableOpacity style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
+                  <Pressable style={styles.addLinkBtn} onPress={() => setShowAddLink(true)}>
                     <LinearGradient
                       colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']}
                       style={styles.addLinkBtnGradient}
                     >
                       <Icon name="plus" size="sm" color={colors.emerald} />
-                      <Text style={styles.addLinkBtnText}>Add a link</Text>
+                      <Text style={styles.addLinkBtnText}>{t('editProfile.addLink')}</Text>
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 ) : null}
               </View>
             </LinearGradient>

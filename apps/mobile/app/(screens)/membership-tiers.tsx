@@ -5,7 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Dimensions,
   Alert,
@@ -90,12 +90,12 @@ function TierCard({
           </View>
 
           {/* Toggle */}
-          <TouchableOpacity
+          <Pressable
             onPress={() => {
               haptic.light();
               onToggle();
             }}
-            activeOpacity={0.8}
+           
           >
             <LinearGradient
               colors={tier.isActive ? [colors.emerald, colors.emeraldDark] : [colors.dark.surface, colors.dark.bgCard]}
@@ -108,7 +108,7 @@ function TierCard({
                 ]}
               />
             </LinearGradient>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {/* Members Badge */}
@@ -131,9 +131,9 @@ function TierCard({
         </View>
 
         {/* Edit Button */}
-        <TouchableOpacity
+        <Pressable
           onPress={() => haptic.light()}
-          activeOpacity={0.8}
+         
           style={styles.editButton}
         >
           <LinearGradient
@@ -143,7 +143,7 @@ function TierCard({
             <Icon name="pencil" size="xs" color={colors.text.secondary} />
             <Text style={styles.editButtonText}>{t('monetization.editTier')}</Text>
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </LinearGradient>
     </Animated.View>
   );
@@ -298,12 +298,12 @@ export default function MembershipTiersScreen() {
                 {/* Create New Tier Button / Form */}
                 {!isCreating ? (
                   <Animated.View entering={FadeInUp.delay(tiers.length * 100 + 100).duration(400)}>
-                    <TouchableOpacity
+                    <Pressable
                       onPress={() => {
                         haptic.light();
                         setIsCreating(true);
                       }}
-                      activeOpacity={0.8}
+                     
                     >
                       <LinearGradient
                         colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.1)']}
@@ -312,7 +312,7 @@ export default function MembershipTiersScreen() {
                         <Icon name="circle-plus" size="lg" color={colors.text.tertiary} />
                         <Text style={styles.createButtonText}>{t('monetization.addMembershipTier')}</Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   </Animated.View>
                 ) : (
                   <Animated.View entering={FadeInUp.duration(400)}>
@@ -377,9 +377,9 @@ export default function MembershipTiersScreen() {
 
                       {/* Form Buttons */}
                       <View style={styles.formButtonRow}>
-                        <TouchableOpacity
+                        <Pressable
                           onPress={() => setIsCreating(false)}
-                          activeOpacity={0.8}
+                         
                           style={styles.cancelButton}
                         >
                           <LinearGradient
@@ -388,11 +388,11 @@ export default function MembershipTiersScreen() {
                           >
                             <Text style={styles.cancelButtonText}>Cancel</Text>
                           </LinearGradient>
-                        </TouchableOpacity>
+                        </Pressable>
 
-                        <TouchableOpacity
+                        <Pressable
                           onPress={handleCreateTier}
-                          activeOpacity={0.8}
+                         
                           style={styles.createTierButton}
                         >
                           <LinearGradient
@@ -401,7 +401,7 @@ export default function MembershipTiersScreen() {
                           >
                             <Text style={styles.createTierButtonText}>Create</Text>
                           </LinearGradient>
-                        </TouchableOpacity>
+                        </Pressable>
                       </View>
                     </LinearGradient>
                   </Animated.View>

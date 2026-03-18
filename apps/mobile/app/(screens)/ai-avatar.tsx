@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
+  View, Text, StyleSheet, ScrollView, Pressable,
   FlatList, RefreshControl, ActivityIndicator,
 } from 'react-native';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';
@@ -62,9 +62,9 @@ export default function AiAvatarScreen() {
             {item.style}
           </Text>
         </View>
-        <TouchableOpacity style={styles.setProfileBtn} onPress={() => haptic.light()}>
+        <Pressable style={styles.setProfileBtn} onPress={() => haptic.light()}>
           <Text style={styles.setProfileText}>{t('ai.avatar.setProfile')}</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
     </Animated.View>
   );
@@ -95,7 +95,7 @@ export default function AiAvatarScreen() {
             <Text style={styles.sectionTitle}>{t('ai.avatar.selectStyle')}</Text>
             <View style={styles.styleGrid}>
               {STYLES.map((style) => (
-                <TouchableOpacity
+                <Pressable
                   key={style.id}
                   onPress={() => { setSelectedStyle(style.id); haptic.light(); }}
                   style={[styles.styleCard, selectedStyle === style.id && { borderColor: style.color }]}
@@ -106,14 +106,14 @@ export default function AiAvatarScreen() {
                   <Text style={[styles.styleLabel, selectedStyle === style.id && { color: style.color }]}>
                     {t(style.label)}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </Animated.View>
 
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.generateSection}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => generateMutation.mutate()}
               disabled={generateMutation.isPending || !user?.avatarUrl}
               style={[styles.generateBtn, (generateMutation.isPending || !user?.avatarUrl) && { opacity: 0.5 }]}
@@ -128,7 +128,7 @@ export default function AiAvatarScreen() {
                   </>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Gallery */}

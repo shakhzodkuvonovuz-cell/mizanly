@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
-  TouchableOpacity, Dimensions, Alert,
-} from 'react-native';
+  Dimensions, Alert,
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -37,7 +37,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
   const { t } = useTranslation();
   // For now, no cover thumbnail; we could later fetch first item's image
   return (
-    <TouchableOpacity onPress={onPress} onLongPress={onLongPress} activeOpacity={0.85} style={styles.folderCard}>
+    <Pressable onPress={onPress} onLongPress={onLongPress} style={styles.folderCard}>
       <View style={styles.folderIcon}>
         <Icon name="bookmark" size="xl" color={colors.gold} />
       </View>
@@ -45,7 +45,7 @@ function FolderCard({ folder, onPress, onLongPress }: FolderCardProps) {
       <Text style={styles.folderCount}>
         {t('screens.bookmarkFolders.itemsCount', { count: itemCount })}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 

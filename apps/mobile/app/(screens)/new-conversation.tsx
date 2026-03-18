@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   TextInput, FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -136,11 +136,10 @@ export default function NewConversationScreen() {
             }
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInUp.delay(index * 80).duration(400)}>
-                <TouchableOpacity
+                <Pressable
                   style={styles.userRow}
                   onPress={() => dmMutation.mutate(item.id)}
                   disabled={dmMutation.isPending}
-                  activeOpacity={0.7}
                   accessibilityLabel={t('messages.chatWith', { name: item.displayName })}
                   accessibilityRole="button"
                 >
@@ -162,7 +161,7 @@ export default function NewConversationScreen() {
                       <Icon name="mail" size="xs" color={colors.emerald} />
                     </LinearGradient>
                   )}
-                </TouchableOpacity>
+                </Pressable>
               </Animated.View>
             )}
             ListEmptyComponent={() =>

@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,10 +68,10 @@ function PinPad({
 
       <View style={styles.numPad}>
         {digits.map((d, i) => (
-          <TouchableOpacity
+          <Pressable
             key={i}
             style={[styles.numKey, d === '' && styles.numKeyEmpty]}
-            activeOpacity={d === '' ? 1 : 0.6}
+
             onPress={() => {
               if (d === 'del') handleDelete();
               else if (d !== '') handleDigit(d);
@@ -83,7 +83,7 @@ function PinPad({
             ) : (
               <Text style={styles.numKeyText}>{d}</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
     </Animated.View>
@@ -104,16 +104,16 @@ function AgeRatingSelector({
   return (
     <View style={styles.ageRatingRow}>
       {AGE_RATINGS.map((r) => (
-        <TouchableOpacity
+        <Pressable
           key={r}
           style={[styles.ageRatingChip, value === r && styles.ageRatingChipActive]}
           onPress={() => { haptic.light(); onChange(r); }}
-          activeOpacity={0.7}
+
         >
           <Text style={[styles.ageRatingText, value === r && styles.ageRatingTextActive]}>
             {r}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </View>
   );
@@ -140,16 +140,16 @@ function DmRestrictionSelector({
   return (
     <View style={styles.ageRatingRow}>
       {DM_OPTIONS.map((opt) => (
-        <TouchableOpacity
+        <Pressable
           key={opt}
           style={[styles.dmChip, value === opt && styles.ageRatingChipActive]}
           onPress={() => { haptic.light(); onChange(opt); }}
-          activeOpacity={0.7}
+
         >
           <Text style={[styles.ageRatingText, value === opt && styles.ageRatingTextActive]}>
             {labels[opt]}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       ))}
     </View>
   );
@@ -168,16 +168,16 @@ function ToggleRow({
   const haptic = useHaptic();
   const { isRTL } = useTranslation();
   return (
-    <TouchableOpacity
+    <Pressable
       style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={() => { haptic.light(); onToggle(!value); }}
-      activeOpacity={0.7}
+
     >
       <Text style={[styles.toggleLabel, { textAlign: rtlTextAlign(isRTL) }]}>{label}</Text>
       <View style={[styles.toggleTrack, value && styles.toggleTrackActive]}>
         <View style={[styles.toggleThumb, value && styles.toggleThumbActive]} />
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -293,10 +293,10 @@ function ChildCard({
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.childCard}
       >
-        <TouchableOpacity
+        <Pressable
           style={[styles.childHeader, { flexDirection: rtlFlexRow(isRTL) }]}
           onPress={() => { haptic.selection(); setExpanded(!expanded); }}
-          activeOpacity={0.7}
+
         >
           <Avatar
             uri={control.child?.avatarUrl ?? null}
@@ -316,7 +316,7 @@ function ChildCard({
             size="sm"
             color={colors.text.tertiary}
           />
-        </TouchableOpacity>
+        </Pressable>
 
         {expanded && (
           <Animated.View entering={FadeInDown.duration(300)} style={styles.controlsBody}>
@@ -371,27 +371,27 @@ function ChildCard({
 
             {/* Manage actions */}
             <View style={styles.manageActions}>
-              <TouchableOpacity
+              <Pressable
                 style={[styles.manageBtn, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onChangePin(control.childUserId)}
-                activeOpacity={0.7}
+
               >
                 <Icon name="lock" size="sm" color={colors.gold} />
                 <Text style={[styles.manageBtnText, rtlMargin(isRTL, spacing.sm, 0)]}>
                   {t('parentalControls.changePin')}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 style={[styles.manageBtn, styles.manageBtnDanger, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onUnlink(control.childUserId)}
-                activeOpacity={0.7}
+
               >
                 <Icon name="x" size="sm" color={colors.error} />
                 <Text style={[styles.manageBtnText, styles.manageBtnTextDanger, rtlMargin(isRTL, spacing.sm, 0)]}>
                   {t('parentalControls.unlinkAccount')}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Animated.View>
         )}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet,
   FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';

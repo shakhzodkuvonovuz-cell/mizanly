@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -185,24 +185,24 @@ function DownloadItem({
         {/* Action button */}
         <View style={styles.itemAction}>
           {item.status === 'downloading' && (
-            <TouchableOpacity onPress={() => onAction(item, 'pause')} style={styles.actionBtn}>
+            <Pressable onPress={() => onAction(item, 'pause')} style={styles.actionBtn}>
               <Icon name="clock" size="sm" color={colors.text.secondary} />
-            </TouchableOpacity>
+            </Pressable>
           )}
           {item.status === 'paused' && (
-            <TouchableOpacity onPress={() => onAction(item, 'resume')} style={styles.actionBtn}>
+            <Pressable onPress={() => onAction(item, 'resume')} style={styles.actionBtn}>
               <Icon name="play" size="sm" color={colors.emerald} />
-            </TouchableOpacity>
+            </Pressable>
           )}
           {item.status === 'failed' && (
-            <TouchableOpacity onPress={() => onAction(item, 'retry')} style={styles.actionBtn}>
+            <Pressable onPress={() => onAction(item, 'retry')} style={styles.actionBtn}>
               <Icon name="loader" size="sm" color={colors.gold} />
-            </TouchableOpacity>
+            </Pressable>
           )}
           {item.status === 'complete' && (
-            <TouchableOpacity onPress={() => onAction(item, 'delete')} style={styles.actionBtn}>
+            <Pressable onPress={() => onAction(item, 'delete')} style={styles.actionBtn}>
               <Icon name="trash" size="sm" color={colors.error} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </Pressable>

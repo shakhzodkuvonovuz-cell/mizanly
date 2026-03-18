@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl,
+  View, Text, StyleSheet, Pressable, FlatList, RefreshControl,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -32,7 +32,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
   const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
+      <Pressable onPress={onPress}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           style={styles.row}
@@ -59,7 +59,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
             />
           )}
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

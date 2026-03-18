@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, Pressable,
+  View, Text, StyleSheet, Pressable,
   TextInput, FlatList, RefreshControl, Alert, ScrollView,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -153,7 +153,7 @@ export default function CreateGroupScreen() {
           {/* Avatar picker */}
           <View style={styles.section}>
             <Text style={styles.label}>{t('groups.groupAvatarOptional')}</Text>
-            <TouchableOpacity style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
+            <Pressable style={styles.avatarPicker} onPress={pickAvatar} accessibilityLabel={t('groups.chooseGroupAvatar')} accessibilityRole="button">
               {avatarUri ? (
                 <Avatar uri={avatarUri} name={groupName || t('common.group')} size="2xl" />
               ) : (
@@ -164,8 +164,8 @@ export default function CreateGroupScreen() {
               <View style={styles.avatarOverlay}>
                 <Icon name="edit" size={16} color={colors.text.primary} />
               </View>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               onPress={() => setAvatarUri(undefined)}
               disabled={createMutation.isPending}
               style={styles.skipBtn}
@@ -175,7 +175,7 @@ export default function CreateGroupScreen() {
               <Text style={[styles.skipText, createMutation.isPending && styles.skipDisabled]}>
                 {t('common.skipForNow')}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Selected members chips */}
@@ -241,11 +241,11 @@ export default function CreateGroupScreen() {
                 removeClippedSubviews={true}
                 refreshControl={<RefreshControl refreshing={searchQuery.isFetching} onRefresh={() => searchQuery.refetch()} tintColor={colors.emerald} />}
                 renderItem={({ item }) => (
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.userRow}
                     onPress={() => handleAddMember(item)}
                     disabled={createMutation.isPending}
-                    activeOpacity={0.7}
+
                     accessibilityLabel={t('groups.addMember', { name: item.displayName })}
                     accessibilityRole="button"
                   >
@@ -258,7 +258,7 @@ export default function CreateGroupScreen() {
                       <Text style={styles.handle}>@{item.username}</Text>
                     </View>
                     <Icon name="plus" size="sm" color={colors.emerald} />
-                  </TouchableOpacity>
+                  </Pressable>
                 )}
                 ListEmptyComponent={() =>
                   debouncedQuery.trim().length >= 2 ? (

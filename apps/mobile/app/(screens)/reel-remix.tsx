@@ -1,8 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, Pressable, TextInput,
   Dimensions, Alert, ScrollView, RefreshControl,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -356,18 +356,18 @@ export default function ReelRemixScreen() {
                   />
                   <View style={styles.captionFooter}>
                     <View style={styles.captionTools}>
-                      <TouchableOpacity
+                      <Pressable
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('hashtag')}
                       >
                         <Icon name="hash" size="sm" color={colors.emerald} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
+                      </Pressable>
+                      <Pressable
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('mention')}
                       >
                         <Icon name="at-sign" size="sm" color={colors.gold} />
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                     <CharCountRing current={caption.length} max={MAX_CAPTION} size={28} />
                   </View>
@@ -536,7 +536,7 @@ export default function ReelRemixScreen() {
                 { key: 'side' as LayoutMode, label: t('remix.layoutSide'), icon: 'layers' as const },
                 { key: 'full' as LayoutMode, label: t('remix.layoutFull'), icon: 'image' as const },
               ]).map((opt) => (
-                <TouchableOpacity
+                <Pressable
                   key={opt.key}
                   style={styles.layoutBtn}
                   onPress={() => handleLayoutChange(opt.key)}
@@ -560,7 +560,7 @@ export default function ReelRemixScreen() {
                       {opt.label}
                     </Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </View>
           </Animated.View>
@@ -614,17 +614,17 @@ export default function ReelRemixScreen() {
           <Animated.View entering={FadeInDown.delay(200).duration(400)}>
             <View style={styles.controlsRow}>
               {/* Camera flip */}
-              <TouchableOpacity style={styles.controlBtn} onPress={toggleCamera}>
+              <Pressable style={styles.controlBtn} onPress={toggleCamera}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlBtnGradient}
                 >
                   <Icon name="camera" size="md" color={colors.text.secondary} />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Record button */}
-              <TouchableOpacity style={styles.recordButtonOuter} onPress={toggleRecording}>
+              <Pressable style={styles.recordButtonOuter} onPress={toggleRecording}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -641,10 +641,10 @@ export default function ReelRemixScreen() {
                     />
                   )}
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
 
               {/* Flash toggle */}
-              <TouchableOpacity style={styles.controlBtn} onPress={toggleFlash}>
+              <Pressable style={styles.controlBtn} onPress={toggleFlash}>
                 <LinearGradient
                   colors={flashOn
                     ? ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)']
@@ -658,7 +658,7 @@ export default function ReelRemixScreen() {
                     color={flashOn ? colors.gold : colors.text.secondary}
                   />
                 </LinearGradient>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </Animated.View>
 

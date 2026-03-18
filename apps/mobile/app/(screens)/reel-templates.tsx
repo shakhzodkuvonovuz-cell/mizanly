@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList,
+  View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl, Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -155,10 +155,9 @@ export default function ReelTemplatesScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(300)}>
-        <TouchableOpacity
+        <Pressable
           style={[styles.cardContainer, isSelected && styles.cardContainerSelected]}
           onPress={() => handleCardPress(item)}
-          activeOpacity={0.8}
         >
           {/* Thumbnail */}
           <View style={styles.cardImageWrap}>
@@ -245,7 +244,7 @@ export default function ReelTemplatesScreen() {
               </View>
             </Animated.View>
           )}
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   }, [selectedTemplate, handleCardPress, handleUseTemplate, t]);

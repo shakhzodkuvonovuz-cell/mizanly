@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, Pressable, TextInput,
   ScrollView, Alert, Platform,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -120,7 +120,7 @@ export default function CreateBroadcastScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.avatarSection}
             >
-              <TouchableOpacity onPress={pickAvatar} activeOpacity={0.8}>
+              <Pressable onPress={pickAvatar}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
                 ) : (
@@ -132,7 +132,7 @@ export default function CreateBroadcastScreen() {
                     <Text style={styles.avatarPlaceholderText}>{t('createBroadcast.avatarPlaceholder')}</Text>
                   </LinearGradient>
                 )}
-              </TouchableOpacity>
+              </Pressable>
               <Text style={styles.avatarHint}>{t('createBroadcast.avatarHint')}</Text>
             </LinearGradient>
           </Animated.View>

@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -155,12 +155,11 @@ function GoalItem({
 
   return (
     <Animated.View entering={FadeInUp.delay(200 + index * 60).duration(300)}>
-      <TouchableOpacity
+      <Pressable
         onPress={() => {
           haptic.light();
           onToggle();
         }}
-        activeOpacity={0.8}
         style={styles.goalItem}
       >
         <LinearGradient
@@ -199,7 +198,7 @@ function GoalItem({
             )}
           </View>
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

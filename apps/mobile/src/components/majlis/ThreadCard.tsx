@@ -1,5 +1,5 @@
 import { useState, useEffect, memo } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Share } from 'react-native';
+import { View, Text, StyleSheet, Alert, Share , Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -170,10 +170,10 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
   return (
     <Animated.View entering={FadeInUp.duration(400).springify()}>
-    <TouchableOpacity
+    <Pressable
       style={styles.card}
       onPress={() => router.push(`/(screens)/thread/${thread.id}`)}
-      activeOpacity={0.95}
+     
     >
       {/* Repost header */}
       {thread.repostOf && (
@@ -186,15 +186,15 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
       <View style={styles.cardInner}>
         {/* Avatar column */}
         <View style={styles.left}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
-            activeOpacity={0.8}
+           
             accessibilityLabel={`View ${thread.user.displayName}'s profile`}
             accessibilityRole="button"
             accessibilityHint="Open user profile"
           >
             <Avatar uri={thread.user.avatarUrl} name={thread.user.displayName} size="md" />
-          </TouchableOpacity>
+          </Pressable>
           {thread.repliesCount > 0 && (
             <LinearGradient
               colors={[colors.emerald, 'transparent']}
@@ -207,10 +207,10 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
         <View style={styles.right}>
           {/* User + time */}
           <View style={styles.topRow}>
-            <TouchableOpacity
+            <Pressable
               style={styles.userInfo}
               onPress={() => router.push(`/(screens)/profile/${thread.user.username}`)}
-              activeOpacity={0.8}
+             
               accessibilityLabel={`View ${thread.user.displayName}'s profile`}
               accessibilityRole="button"
               accessibilityHint="Open user profile"
@@ -221,9 +221,9 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               {thread.replyPermission && thread.replyPermission !== 'everyone' && (
                 <Icon name="lock" size="xs" color={colors.text.tertiary} />
               )}
-            </TouchableOpacity>
+            </Pressable>
             <Text style={styles.time}>{timeAgo}</Text>
-            <TouchableOpacity
+            <Pressable
               hitSlop={8}
               onPress={() => { haptic.light(); setShowMenu(true); }}
               accessibilityLabel="More options"
@@ -231,7 +231,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               accessibilityHint="Open thread options menu"
             >
               <Icon name="more-horizontal" size="xs" color={colors.text.tertiary} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {/* Content */}
@@ -278,7 +278,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                   );
                 }
                 return (
-                  <TouchableOpacity
+                  <Pressable
                     key={opt.id}
                     style={styles.pollOptionBtn}
                     onPress={() => {
@@ -288,13 +288,13 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
                       }
                     }}
                     disabled={!viewerId || votePollMutation.isPending}
-                    activeOpacity={0.7}
+                   
                     accessibilityLabel={`Vote for ${opt.text}`}
                     accessibilityRole="button"
                     accessibilityHint="Select this poll option"
                   >
                     <Text style={styles.pollOptionText}>{opt.text}</Text>
-                  </TouchableOpacity>
+                  </Pressable>
                 );
               })}
               <Text style={styles.pollMeta}>
@@ -405,7 +405,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
           </>
         )}
       </BottomSheet>
-    </TouchableOpacity>
+    </Pressable>
     </Animated.View>
   );
 });

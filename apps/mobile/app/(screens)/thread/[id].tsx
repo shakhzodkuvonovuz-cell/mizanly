@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, Pressable,
+  View, Text, StyleSheet, TextInput, Pressable,
   KeyboardAvoidingView, Platform, FlatList, RefreshControl, Alert,
-} from 'react-native';
+, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -98,7 +98,7 @@ function ReplyRow({
           />
         )}
         <View style={[styles.replyActions, { flexDirection: rtlFlexRow(isRTL) }]}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => onReply(reply.id, reply.user.username)}
             style={styles.replyAction}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -109,8 +109,8 @@ function ReplyRow({
             {(reply._count?.replies ?? 0) > 0 && (
               <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity
+          </Pressable>
+          <Pressable
             style={styles.replyAction}
             onPress={handleLike}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -128,9 +128,9 @@ function ReplyRow({
                 {likeCount}
               </Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
           {isOwn && (
-            <TouchableOpacity
+            <Pressable
               style={styles.replyAction}
               onPress={handleDelete}
               disabled={deleteMutation.isPending}
@@ -139,7 +139,7 @@ function ReplyRow({
               accessibilityRole="button"
             >
               <Icon name="trash" size={20} color={colors.error} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
       </View>
@@ -237,7 +237,7 @@ export default function ThreadDetailScreen() {
 
   const listEmpty = useMemo(() => (
     !repliesQuery.isLoading && threadQuery.data ? (
-      <EmptyState icon="message-circle" title="Join the conversation" subtitle="Be the first to share your perspective" />
+      <EmptyState icon="message-circle" title={t('majlis.joinConversation')} subtitle={t('majlis.beFirstToShare')} />
     ) : null
   ), [repliesQuery.isLoading, threadQuery.data]);
 
@@ -305,12 +305,12 @@ export default function ThreadDetailScreen() {
             {replyTo && (
               <View style={[styles.replyBanner, { flexDirection: rtlFlexRow(isRTL) }]}>
                 <Text style={[styles.replyBannerText, { textAlign: rtlTextAlign(isRTL) }]}>
-                  Replying to @{replyTo.username}
+                  {t('saf.replyingTo', { username: replyTo.username })}
                 </Text>
                 <Pressable
                   onPress={() => setReplyTo(null)}
                   hitSlop={8}
-                  accessibilityLabel="Cancel reply to user"
+                  accessibilityLabel={t('accessibility.cancelReply')}
                   accessibilityRole="button"
                 >
                   <Icon name="x" size="xs" color={colors.text.secondary} />
@@ -318,32 +318,32 @@ export default function ThreadDetailScreen() {
               </View>
             )}
             <View style={[styles.inputRow, { flexDirection: rtlFlexRow(isRTL) }]}>
-              <Avatar uri={user.imageUrl} name={user.fullName ?? 'Me'} size="sm" />
+              <Avatar uri={user.imageUrl} name={user.fullName ?? t('common.me')} size="sm" />
               <TextInput
                 ref={inputRef}
                 style={styles.input}
-                placeholder={replyTo ? `Reply to @${replyTo.username}…` : 'Write a reply…'}
+                placeholder={replyTo ? t('saf.replyToUser', { username: replyTo.username }) : t('majlis.writeReply')}
                 placeholderTextColor={colors.text.tertiary}
                 value={replyText}
                 onChangeText={setReplyText}
                 multiline
                 maxLength={500}
-                accessibilityLabel="Reply input field"
+                accessibilityLabel={t('accessibility.replyInput')}
               />
-              <TouchableOpacity
+              <Pressable
                 onPress={() => canSend && sendMutation.mutate()}
                 disabled={!canSend}
-                accessibilityLabel="Send reply"
+                accessibilityLabel={t('accessibility.sendComment')}
                 accessibilityRole="button"
               >
                 {sendMutation.isPending ? (
                   <Icon name="loader" size="sm" color={colors.emerald} />
                 ) : (
                   <Text style={[styles.sendBtn, !canSend && styles.sendBtnDisabled]}>
-                    Reply
+                    {t('common.reply')}
                   </Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         )}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView,
+  View, Text, StyleSheet, Pressable, TextInput, ScrollView,
   Alert, Switch, Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -165,7 +165,7 @@ export default function GoLiveScreen() {
               style={styles.inputCard}
             >
               <Text style={styles.inputLabel}>Stream Type</Text>
-              <TouchableOpacity
+              <Pressable
                 style={styles.typeSelector}
                 onPress={() => setShowLiveTypePicker(true)}
               >
@@ -177,7 +177,7 @@ export default function GoLiveScreen() {
                 </LinearGradient>
                 <Text style={styles.typeSelectorText}>{selectedLiveType.label}</Text>
                 <Icon name="chevron-right" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 
@@ -204,7 +204,7 @@ export default function GoLiveScreen() {
               </View>
 
               {isScheduled && scheduleDate && (
-                <TouchableOpacity
+                <Pressable
                   style={styles.scheduleDisplay}
                   onPress={() => setShowDatePicker(true)}
                 >
@@ -224,7 +224,7 @@ export default function GoLiveScreen() {
                     })}
                   </Text>
                   <Icon name="edit" size="sm" color={colors.text.tertiary} />
-                </TouchableOpacity>
+                </Pressable>
               )}
             </LinearGradient>
           </Animated.View>

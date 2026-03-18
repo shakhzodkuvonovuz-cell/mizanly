@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, RefreshControl,
+  View, Text, StyleSheet, Pressable, FlatList, Alert, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient, useQueries } from '@tanstack/react-query';
@@ -128,11 +128,10 @@ export default function SaveToPlaylistScreen() {
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
-        <TouchableOpacity
+        <Pressable
           style={styles.row}
           onPress={() => togglePlaylist(item)}
           disabled={isLoading || inclusionLoading}
-          activeOpacity={0.8}
         >
           <LinearGradient
             colors={isInPlaylist ? ['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)'] : ['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
@@ -168,7 +167,7 @@ export default function SaveToPlaylistScreen() {
               </LinearGradient>
             )}
           </LinearGradient>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
     );
   };

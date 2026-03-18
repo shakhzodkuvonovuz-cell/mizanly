@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, Pressable, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
@@ -182,7 +182,7 @@ export default function StitchCreateScreen() {
                 <Text style={styles.durationLabel}>Use first:</Text>
                 <View style={styles.durationButtons}>
                   {DURATION_OPTIONS.map((duration) => (
-                    <TouchableOpacity
+                    <Pressable
                       key={duration}
                       style={styles.durationButton}
                       onPress={() => setSelectedDuration(duration)}
@@ -201,7 +201,7 @@ export default function StitchCreateScreen() {
                           {duration}s
                         </Text>
                       </LinearGradient>
-                    </TouchableOpacity>
+                    </Pressable>
                   ))}
                 </View>
 
@@ -237,7 +237,7 @@ export default function StitchCreateScreen() {
                       key={transition.id}
                       entering={FadeInUp.delay(index * 50).duration(300)}
                     >
-                      <TouchableOpacity
+                      <Pressable
                         style={styles.transitionButton}
                         onPress={() => setSelectedTransition(transition.id)}
                       >
@@ -260,7 +260,7 @@ export default function StitchCreateScreen() {
                             {transition.name}
                           </Text>
                         </LinearGradient>
-                      </TouchableOpacity>
+                      </Pressable>
                     </Animated.View>
                   ))}
                 </ScrollView>
@@ -304,17 +304,17 @@ export default function StitchCreateScreen() {
                 {/* Recording Controls */}
                 <View style={styles.recordingControls}>
                   {/* Flip Camera */}
-                  <TouchableOpacity style={styles.controlButtonSmall} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
+                  <Pressable style={styles.controlButtonSmall} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlButtonGradientSmall}
                     >
                       <Icon name="repeat" size="sm" color={colors.text.secondary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
                   {/* Record Button */}
-                  <TouchableOpacity style={styles.recordButtonSmall} onPress={handleRecord}>
+                  <Pressable style={styles.recordButtonSmall} onPress={handleRecord}>
                     <LinearGradient
                       colors={isRecording
                         ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -331,10 +331,10 @@ export default function StitchCreateScreen() {
                         />
                       )}
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
 
                   {/* Flash Toggle */}
-                  <TouchableOpacity
+                  <Pressable
                     style={styles.controlButtonSmall}
                     onPress={() => setFlashOn(!flashOn)}
                   >
@@ -347,7 +347,7 @@ export default function StitchCreateScreen() {
                     >
                       <Icon name="sun" size="sm" color={flashOn ? colors.gold : colors.text.secondary} />
                     </LinearGradient>
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
 
                 {/* Timer Display */}
@@ -421,7 +421,7 @@ export default function StitchCreateScreen() {
                 </View>
 
                 {/* Play Preview Button */}
-                <TouchableOpacity
+                <Pressable
                   style={styles.playPreviewButton}
                   onPress={() => setShowPreview(true)}
                 >
@@ -432,7 +432,7 @@ export default function StitchCreateScreen() {
                     <Icon name="play" size="sm" color="#FFF" />
                     <Text style={styles.playPreviewText}>Play Preview</Text>
                   </LinearGradient>
-                </TouchableOpacity>
+                </Pressable>
               </LinearGradient>
             </View>
           </Animated.View>
@@ -447,10 +447,10 @@ export default function StitchCreateScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <TouchableOpacity style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.nextButton} onPress={() => router.push('/create-reel')}>
+            </Pressable>
+            <Pressable style={styles.nextButton} onPress={() => router.push('/create-reel')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}
@@ -458,7 +458,7 @@ export default function StitchCreateScreen() {
                 <Text style={styles.nextButtonText}>Next</Text>
                 <Icon name="chevron-right" size="sm" color="#FFF" />
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </LinearGradient>
         </View>
       </SafeAreaView>

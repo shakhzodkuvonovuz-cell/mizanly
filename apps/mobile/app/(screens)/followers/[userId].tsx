@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity,
+  View, Text, StyleSheet, Pressable,
   FlatList, RefreshControl,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -33,7 +33,7 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
 
   return (
     <Animated.View entering={FadeInUp.delay(index * 20).duration(300)}>
-      <TouchableOpacity onPress={onPress} activeOpacity={0.8} accessibilityLabel={t('screens.followers.viewProfile', { name: user.displayName })} accessibilityRole="link">
+      <Pressable onPress={onPress} accessibilityLabel={t('screens.followers.viewProfile', { name: user.displayName })} accessibilityRole="link">
         <LinearGradient
           colors={user.isFollowing ? ['rgba(10,123,79,0.08)', 'rgba(10,123,79,0.02)'] : ['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
           style={styles.row}
@@ -55,7 +55,7 @@ function UserRow({ user, isMe, onPress, onFollow, index = 0 }: {
             />
           )}
         </LinearGradient>
-      </TouchableOpacity>
+      </Pressable>
     </Animated.View>
   );
 }

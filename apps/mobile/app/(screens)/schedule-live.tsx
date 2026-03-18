@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView,
+  View, Text, StyleSheet, Pressable, TextInput, ScrollView,
   Alert, Platform, Image as RNImage,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -238,12 +238,12 @@ export default function ScheduleLiveScreen() {
               {thumbnail ? (
                 <View style={styles.thumbnailPreview}>
                   <Image source={{ uri: thumbnail.uri }} style={styles.thumbnailImage} contentFit="cover" />
-                  <TouchableOpacity style={styles.removeThumbnail} onPress={removeThumbnail}>
+                  <Pressable style={styles.removeThumbnail} onPress={removeThumbnail}>
                     <Icon name="x" size={12} color="#fff" />
-                  </TouchableOpacity>
+                  </Pressable>
                 </View>
               ) : (
-                <TouchableOpacity style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
+                <Pressable style={styles.thumbnailPlaceholder} onPress={pickThumbnail}>
                   <LinearGradient
                     colors={['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
                     style={styles.thumbnailIconBg}
@@ -252,7 +252,7 @@ export default function ScheduleLiveScreen() {
                   </LinearGradient>
                   <Text style={styles.thumbnailPlaceholderText}>{t('screens.schedule-live.addThumbnail')}</Text>
                   <Text style={styles.thumbnailHint}>{t('screens.schedule-live.thumbnailHint')}</Text>
-                </TouchableOpacity>
+                </Pressable>
               )}
             </LinearGradient>
           </Animated.View>
@@ -264,7 +264,7 @@ export default function ScheduleLiveScreen() {
               style={styles.inputCard}
             >
               <Text style={styles.inputLabel}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
-              <TouchableOpacity
+              <Pressable
                 style={styles.dateSelector}
                 onPress={() => setShowDatePicker(true)}
               >
@@ -276,7 +276,7 @@ export default function ScheduleLiveScreen() {
                 </LinearGradient>
                 <Text style={styles.dateSelectorText}>{formattedDate}</Text>
                 <Icon name="edit" size="sm" color={colors.text.tertiary} />
-              </TouchableOpacity>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 
@@ -298,7 +298,7 @@ export default function ScheduleLiveScreen() {
             <Text style={styles.pickerLabel}>{t('screens.schedule-live.day')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {dayOptions.map((day, idx) => (
-                <TouchableOpacity
+                <Pressable
                   key={idx}
                   style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
                   onPress={() => setSelectedDayIndex(idx)}
@@ -306,7 +306,7 @@ export default function ScheduleLiveScreen() {
                   <Text style={[styles.pickerChipText, selectedDayIndex === idx && styles.pickerChipTextActive]}>
                     {day.label}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
           </View>
@@ -316,7 +316,7 @@ export default function ScheduleLiveScreen() {
             <Text style={styles.pickerLabel}>{t('screens.schedule-live.hour')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {HOURS.map((hour) => (
-                <TouchableOpacity
+                <Pressable
                   key={hour}
                   style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
                   onPress={() => setSelectedHour(hour)}
@@ -324,7 +324,7 @@ export default function ScheduleLiveScreen() {
                   <Text style={[styles.pickerChipText, selectedHour === hour && styles.pickerChipTextActive]}>
                     {hour.toString().padStart(2, '0')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
           </View>
@@ -334,7 +334,7 @@ export default function ScheduleLiveScreen() {
             <Text style={styles.pickerLabel}>{t('screens.schedule-live.minute')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {MINUTES.map((minute) => (
-                <TouchableOpacity
+                <Pressable
                   key={minute}
                   style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
                   onPress={() => setSelectedMinute(minute)}
@@ -342,7 +342,7 @@ export default function ScheduleLiveScreen() {
                   <Text style={[styles.pickerChipText, selectedMinute === minute && styles.pickerChipTextActive]}>
                     {minute.toString().padStart(2, '0')}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
           </View>

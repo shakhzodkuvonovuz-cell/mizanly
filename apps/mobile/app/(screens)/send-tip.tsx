@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
+  Pressable,
   TextInput,
   Dimensions,
   Alert,
@@ -46,7 +46,7 @@ function AmountButton({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.8} style={styles.amountButton}>
+    <Pressable onPress={onPress} style={styles.amountButton}>
       <LinearGradient
         colors={
           isSelected
@@ -70,7 +70,7 @@ function AmountButton({
           ${amount}
         </Text>
       </LinearGradient>
-    </TouchableOpacity>
+    </Pressable>
   );
 }
 
@@ -209,14 +209,14 @@ export default function SendTipScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.doneButtonContainer}>
-            <TouchableOpacity onPress={handleDone} activeOpacity={0.8}>
+            <Pressable onPress={handleDone}>
               <LinearGradient
                 colors={[colors.emerald, colors.emeraldDark]}
                 style={styles.doneButton}
               >
                 <Text style={styles.doneButtonText}>{t('common.done')}</Text>
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
         </View>
       </SafeAreaView>
@@ -394,10 +394,10 @@ export default function SendTipScreen() {
 
           {/* Send Tip Button */}
           <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-            <TouchableOpacity
+            <Pressable
               onPress={handleSendTip}
               disabled={tipAmount <= 0 || isSending}
-              activeOpacity={0.8}
+             
             >
               <LinearGradient
                 colors={[colors.emerald, colors.goldLight]}
@@ -417,7 +417,7 @@ export default function SendTipScreen() {
                   </>
                 )}
               </LinearGradient>
-            </TouchableOpacity>
+            </Pressable>
           </Animated.View>
 
           {/* Bottom spacing */}
