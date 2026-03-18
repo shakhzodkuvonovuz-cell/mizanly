@@ -8,13 +8,14 @@
 - [x] Add Sentry crash reporting to mobile app
 - [x] Switch from `prisma db push` to `prisma migrate` (baseline created)
 - [ ] Add FCM/APNs push notification delivery
-- [ ] Wire 13 screens with mock handlers to real APIs (schedule-post, bookmark-folders, share-receive, storage-management, zakat-calculator, islamic-calendar, ramadan-mode, duet-create, stitch-create, location-picker, quran-room, eid-cards)
+- [ ] Wire 13 screens with mock handlers to real APIs
 
 ## P1 — HIGH (Required for production quality)
 
-- [ ] Add BullMQ job queue for async tasks (XP, moderation, notifications)
-- [ ] Move WebSocket presence/rooms to Redis (horizontal scaling)
-- [ ] Add Redis caching to top 20 hot endpoints
+- [x] Add AsyncJobService for reliable background jobs with retry + logging
+- [x] Eliminate all 22 fire-and-forget .catch(() => {}) patterns
+- [x] Move WebSocket presence from in-memory to Redis (horizontal scaling)
+- [x] Add Redis caching utilities + cache trending hashtags (5min) + recommended channels (10min)
 - [ ] Write missing controller tests (51 controllers)
 - [ ] Add image optimization pipeline (resize, WebP, blur hash)
 
