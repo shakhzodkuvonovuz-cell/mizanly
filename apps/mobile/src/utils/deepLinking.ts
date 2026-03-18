@@ -200,7 +200,6 @@ export function navigateToDeepLink(url: string): boolean {
 
     case 'event':
       if (params.id) {
-        // TODO: Create event-detail screen
         router.push(`/(screens)/event-detail/${params.id}` as never);
       } else {
         router.push('/(screens)/events' as never);
