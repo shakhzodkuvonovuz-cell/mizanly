@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
+import { getResponsiveImageUrls } from '../../common/utils/image';
 
 type UploadFolder = 'avatars' | 'covers' | 'posts' | 'stories' | 'messages' | 'reels' | 'videos' | 'thumbnails' | 'misc';
 
@@ -93,12 +94,17 @@ export class UploadService {
 
     const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn });
 
+    const publicUrl = `${this.publicUrl}/${key}`;
+    const isImage = ALLOWED_IMAGE_TYPES.includes(contentType);
+
     return {
       uploadUrl,
       key,
-      publicUrl: `${this.publicUrl}/${key}`,
+      publicUrl,
       expiresIn,
       maxFileSize: effectiveMaxSize,
+      // Include optimized variants for images (uses Cloudflare Image Resizing)
+      ...(isImage ? { variants: getResponsiveImageUrls(publicUrl) } : {}),
     };
   }
 
