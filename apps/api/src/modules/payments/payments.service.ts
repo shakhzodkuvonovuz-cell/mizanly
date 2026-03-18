@@ -5,6 +5,7 @@ import {
   Logger,
   Inject,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import Stripe from 'stripe';
 import Redis from 'ioredis';
@@ -17,8 +18,9 @@ export class PaymentsService {
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
+    private configService: ConfigService,
   ) {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
+    const secretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (!secretKey) {
       this.logger.warn('STRIPE_SECRET_KEY environment variable is not set');
     }

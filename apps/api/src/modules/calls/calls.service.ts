@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { CallStatus, CallType, CallParticipant } from '@prisma/client';
 
@@ -16,7 +17,10 @@ interface CallSessionWithParticipants {
 
 @Injectable()
 export class CallsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
 
   async initiate(userId: string, targetUserId: string, callType: CallType) {
     if (userId === targetUserId) {
@@ -159,9 +163,9 @@ export class CallsService {
       { urls: 'stun:stun1.l.google.com:19302' },
     ];
 
-    const turnUrl = process.env.TURN_SERVER_URL;
-    const turnUsername = process.env.TURN_USERNAME;
-    const turnCredential = process.env.TURN_CREDENTIAL;
+    const turnUrl = this.config.get<string>('TURN_SERVER_URL');
+    const turnUsername = this.config.get<string>('TURN_USERNAME');
+    const turnCredential = this.config.get<string>('TURN_CREDENTIAL');
 
     if (turnUrl && turnUsername && turnCredential) {
       iceServers.push({

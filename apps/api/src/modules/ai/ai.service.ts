@@ -1,4 +1,5 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 
 // AI response interfaces
@@ -32,8 +33,11 @@ export class AiService {
   private readonly apiKey: string | undefined;
   private readonly apiAvailable: boolean;
 
-  constructor(private prisma: PrismaService) {
-    this.apiKey = process.env.ANTHROPIC_API_KEY;
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {
+    this.apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
     this.apiAvailable = !!this.apiKey;
     if (!this.apiAvailable) {
       this.logger.warn('ANTHROPIC_API_KEY not set — AI features will use fallback responses');
@@ -309,7 +313,7 @@ Only respond with the summary, nothing else.`;
   // ── Video Caption Generation (Whisper) ──────────────────
 
   async generateVideoCaptions(videoId: string, audioUrl: string, language = 'en'): Promise<string> {
-    const whisperKey = process.env.OPENAI_API_KEY;
+    const whisperKey = this.config.get<string>('OPENAI_API_KEY');
 
     if (!whisperKey) {
       this.logger.warn('OPENAI_API_KEY not set — video captions unavailable');
