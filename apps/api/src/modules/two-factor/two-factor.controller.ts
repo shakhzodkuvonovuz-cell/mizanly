@@ -106,7 +106,7 @@ export class TwoFactorController {
   }
 
   @Post('validate')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Validate TOTP code during login' })
   @ApiResponse({ status: 200, description: 'Returns validation result' })
   async validate(@Body() dto: ValidateDto) {
@@ -140,7 +140,7 @@ export class TwoFactorController {
   }
 
   @Post('backup')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Use a backup code for authentication' })
   @ApiResponse({ status: 200, description: 'Backup code accepted' })
   @ApiResponse({ status: 400, description: 'Invalid backup code' })

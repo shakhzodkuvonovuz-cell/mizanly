@@ -124,3 +124,24 @@
 | 54 | Security & infrastructure (4 features) | PENDING |
 | 55 | Platform & ecosystem (6 features) | PENDING |
 | 56 | Validation & hardening | PENDING |
+| -- | **Codebase Audit** (TS errors + security review) | **DONE** |
+
+## CODEBASE AUDIT (2026-03-18)
+
+### TypeScript Errors: 1,653 → 0
+- API: 231 → 0 (prisma generate, bcrypt→crypto, exported interfaces)
+- Mobile: 1,422 → 0 (theme aliases, GlassHeader/EmptyState/GradientButton props, tsconfig module, api.ts unwrapping, type declarations, 137 screen fixes)
+
+### Backend Security Fixes Applied
+- Race condition in XP awards (atomic increment)
+- Race condition in order creation (transactional stock check)
+- Order status state machine validation
+- Zakat donation transaction + amount validation
+- Webhook rate limiting + content validation
+
+### Critical Bugs Found & Being Fixed
+- Posts: Route ordering, self-notifications, reply notification target
+- Messages: Route ordering, 5 missing auth checks, banned member bypass
+- 2FA: Missing rate limiting on validate/backup endpoints
+- Gamification: Streak type validation, XP reward cap, division by zero
+- Commerce: Price validation, contribution validation

@@ -65,6 +65,14 @@ export class PostsController {
     return this.postsService.getFeed(userId, type, cursor);
   }
 
+  @Get('archived')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get archived posts (cursor paginated)' })
+  getArchived(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.postsService.getArchived(userId, cursor);
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   @UseGuards(ClerkAuthGuard)
@@ -157,6 +165,7 @@ export class PostsController {
   }
 
   @Get(':id/comments')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get top-level comments (cursor paginated)' })
   getComments(@Param('id') id: string, @Query('cursor') cursor?: string) {
     return this.postsService.getComments(id, cursor);
@@ -174,7 +183,20 @@ export class PostsController {
     return this.postsService.addComment(id, userId, dto);
   }
 
+  @Get(':id/comments/hidden')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get hidden comments on your post (author only)' })
+  getHiddenComments(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.postsService.getHiddenComments(id, userId, cursor);
+  }
+
   @Get(':id/comments/:commentId/replies')
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get replies to a comment' })
   getCommentReplies(
     @Param('commentId') commentId: string,
@@ -274,14 +296,6 @@ export class PostsController {
     return this.postsService.unarchivePost(id, userId);
   }
 
-  @Get('archived')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get archived posts (cursor paginated)' })
-  getArchived(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
-    return this.postsService.getArchived(userId, cursor);
-  }
-
   @Post(':id/comments/:commentId/pin')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -333,18 +347,6 @@ export class PostsController {
     @CurrentUser('id') userId: string,
   ) {
     return this.postsService.unhideComment(commentId, userId);
-  }
-
-  @Get(':id/comments/hidden')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get hidden comments on your post (author only)' })
-  getHiddenComments(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.postsService.getHiddenComments(id, userId, cursor);
   }
 
   @Get(':id/share-link')

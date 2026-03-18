@@ -137,8 +137,20 @@ export class MessagesController {
 
   @Get('conversations')
   @ApiOperation({ summary: 'Get all conversations for current user' })
-  getConversations(@CurrentUser('id') userId: string) {
-    return this.messagesService.getConversations(userId);
+  getConversations(
+    @CurrentUser('id') userId: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.messagesService.getConversations(userId, limit ? parseInt(limit, 10) : undefined);
+  }
+
+  @Get('conversations/archived')
+  @ApiOperation({ summary: 'Get archived conversations' })
+  async getArchivedConversations(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.messagesService.getArchivedConversations(userId, cursor);
   }
 
   @Get('conversations/:id')
@@ -342,15 +354,6 @@ export class MessagesController {
     @CurrentUser('id') userId: string,
   ) {
     return this.messagesService.unarchiveConversationForUser(id, userId);
-  }
-
-  @Get('conversations/archived')
-  @ApiOperation({ summary: 'Get archived conversations' })
-  async getArchivedConversations(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-  ) {
-    return this.messagesService.getArchivedConversations(userId, cursor);
   }
 
   @Post('messages/scheduled')

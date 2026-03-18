@@ -100,11 +100,12 @@ export class GamificationService {
     }
     const nextLevelXP = getXPForNextLevel(xp.level);
     const currentLevelXP = LEVEL_THRESHOLDS[xp.level - 1] || 0;
+    const denominator = nextLevelXP - currentLevelXP;
     return {
       ...xp,
       nextLevelXP,
       currentLevelXP,
-      progressToNext: (xp.totalXP - currentLevelXP) / (nextLevelXP - currentLevelXP),
+      progressToNext: denominator > 0 ? (xp.totalXP - currentLevelXP) / denominator : 1.0,
     };
   }
 
@@ -273,6 +274,9 @@ export class GamificationService {
     challengeType: string; category: string; targetCount: number;
     xpReward?: number; startDate: string; endDate: string;
   }) {
+    if (dto.xpReward && dto.xpReward > 500) {
+      throw new BadRequestException('XP reward cannot exceed 500');
+    }
     return this.prisma.challenge.create({
       data: {
         ...dto,

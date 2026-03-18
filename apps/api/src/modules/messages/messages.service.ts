@@ -71,13 +71,14 @@ const MESSAGE_SELECT = {
 export class MessagesService {
   constructor(private prisma: PrismaService, private pushTrigger: PushTriggerService) {}
 
-  async getConversations(userId: string) {
+  async getConversations(userId: string, limit = 50) {
     const memberships = await this.prisma.conversationMember.findMany({
       where: { userId },
       include: {
         conversation: { select: CONVERSATION_SELECT },
       },
       orderBy: { conversation: { lastMessageAt: 'desc' } },
+      take: limit,
     });
 
     return memberships.map((m) => ({
@@ -349,6 +350,9 @@ export class MessagesService {
   }
 
   async removeReaction(messageId: string, userId: string, emoji: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    await this.requireMembership(message.conversationId, userId);
     await this.prisma.messageReaction.deleteMany({
       where: { messageId, userId, emoji },
     });
@@ -360,6 +364,7 @@ export class MessagesService {
       where: { conversationId_userId: { conversationId, userId } },
     });
     if (!member) throw new ForbiddenException('Not a member of this conversation');
+    if (member.isBanned) throw new ForbiddenException('You are banned from this conversation');
     return member;
   }
 
@@ -377,8 +382,9 @@ export class MessagesService {
   }
 
   async forwardMessage(messageId: string, userId: string, targetConversationIds: string[]) {
-    const original = await this.prisma.message.findUnique({ where: { id: messageId }, select: { content: true, messageType: true, mediaUrl: true, mediaType: true, voiceDuration: true, fileName: true, fileSize: true } });
+    const original = await this.prisma.message.findUnique({ where: { id: messageId }, select: { conversationId: true, content: true, messageType: true, mediaUrl: true, mediaType: true, voiceDuration: true, fileName: true, fileSize: true } });
     if (!original) throw new NotFoundException('Message not found');
+    await this.requireMembership(original.conversationId, userId);
     const results = [];
     for (const convId of targetConversationIds) {
       await this.requireMembership(convId, userId);
@@ -392,6 +398,9 @@ export class MessagesService {
   }
 
   async markDelivered(messageId: string, userId: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    await this.requireMembership(message.conversationId, userId);
     return this.prisma.message.update({ where: { id: messageId }, data: { deliveredAt: new Date() } });
   }
 
@@ -523,6 +532,12 @@ export class MessagesService {
   async pinMessage(conversationId: string, messageId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
 
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.conversationId !== conversationId) {
+      throw new BadRequestException('Message does not belong to this conversation');
+    }
+
     // Max 3 pinned per conversation
     const pinnedCount = await this.prisma.message.count({
       where: { conversationId, isPinned: true, isDeleted: false },
@@ -539,6 +554,13 @@ export class MessagesService {
 
   async unpinMessage(conversationId: string, messageId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
+
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+    if (message.conversationId !== conversationId) {
+      throw new BadRequestException('Message does not belong to this conversation');
+    }
+
     return this.prisma.message.update({
       where: { id: messageId },
       data: { isPinned: false, pinnedAt: null, pinnedById: null },

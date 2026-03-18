@@ -15,7 +15,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
-import { Prisma, PostType, PostVisibility, ReactionType, ReportReason } from '@prisma/client';
+import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 
@@ -449,17 +449,19 @@ export class PostsService {
             data: { likesCount: { increment: 1 } },
           }),
         ]);
-        // Notify post owner
-        try {
-          const notification = await this.notifications.create({
-            userId: post.userId, actorId: userId,
-            type: 'LIKE', postId,
-          });
-          if (notification) {
-            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+        // Notify post owner (skip if reacting to own post)
+        if (post.userId !== userId) {
+          try {
+            const notification = await this.notifications.create({
+              userId: post.userId, actorId: userId,
+              type: 'LIKE', postId,
+            });
+            if (notification) {
+              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+            }
+          } catch (err) {
+            this.logger.error('Failed to create notification', err);
           }
-        } catch (err) {
-          this.logger.error('Failed to create notification', err);
         }
       } catch (err: unknown) {
         if (err instanceof Error && 'code' in err && (err as { code: string }).code === 'P2002') {
@@ -631,16 +633,36 @@ export class PostsService {
         data: { commentsCount: { increment: 1 } },
       }),
     ]);
-    // Notify post owner
+    // Notify: reply goes to parent comment author; top-level comment goes to post owner
     try {
-      const notification = await this.notifications.create({
-        userId: post.userId, actorId: userId,
-        type: dto.parentId ? 'REPLY' : 'COMMENT',
-        postId, commentId: comment.id,
-        body: dto.content.substring(0, 100),
-      });
-      if (notification) {
-        this.pushTrigger.triggerPush(notification.id).catch(() => {});
+      if (dto.parentId) {
+        // It's a reply — notify the parent comment's author
+        const parentComment = await this.prisma.comment.findUnique({
+          where: { id: dto.parentId },
+          select: { userId: true },
+        });
+        if (parentComment && parentComment.userId !== userId) {
+          const notification = await this.notifications.create({
+            userId: parentComment.userId, actorId: userId,
+            type: 'REPLY',
+            postId, commentId: comment.id,
+            body: dto.content.substring(0, 100),
+          });
+          if (notification) {
+            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+          }
+        }
+      } else if (post.userId !== userId) {
+        // Top-level comment — notify post owner (skip self-notification)
+        const notification = await this.notifications.create({
+          userId: post.userId, actorId: userId,
+          type: 'COMMENT',
+          postId, commentId: comment.id,
+          body: dto.content.substring(0, 100),
+        });
+        if (notification) {
+          this.pushTrigger.triggerPush(notification.id).catch(() => {});
+        }
       }
     } catch (err) {
       this.logger.error('Failed to create notification', err);
@@ -899,7 +921,7 @@ export class PostsService {
           mediaWidth: post.mediaWidth,
           mediaHeight: post.mediaHeight,
           postType: post.postType,
-          space: space as any,
+          space: space as ContentSpace,
           hashtags: post.hashtags,
           mentions: post.mentions,
         },

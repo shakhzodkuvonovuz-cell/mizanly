@@ -1,6 +1,6 @@
 import {
   Controller, Post, Get, Patch, Delete,
-  Body, Param, Query, UseGuards,
+  Body, Param, Query, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -27,6 +27,10 @@ export class GamificationController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Update streak' })
   updateStreak(@CurrentUser('id') userId: string, @Param('type') type: string) {
+    const VALID_STREAK_TYPES = ['posting', 'engagement', 'quran', 'dhikr', 'learning'];
+    if (!VALID_STREAK_TYPES.includes(type)) {
+      throw new BadRequestException(`Invalid streak type. Must be one of: ${VALID_STREAK_TYPES.join(', ')}`);
+    }
     return this.gamificationService.updateStreak(userId, type);
   }
 

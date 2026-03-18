@@ -14,6 +14,9 @@ export class CommerceService {
     images: string[]; category: string; isHalal?: boolean; isMuslimOwned?: boolean;
     stock?: number; tags?: string[]; location?: string; shippingInfo?: string; halalCertUrl?: string;
   }) {
+    if (dto.price <= 0) {
+      throw new BadRequestException('Price must be positive');
+    }
     return this.prisma.product.create({
       data: { sellerId: userId, ...dto, currency: dto.currency || 'USD', stock: dto.stock || 1 },
       include: { seller: { select: USER_SELECT } },
@@ -262,6 +265,9 @@ export class CommerceService {
   }
 
   async contributeTreasury(userId: string, treasuryId: string, amount: number) {
+    if (!amount || amount <= 0 || amount > 1_000_000) {
+      throw new BadRequestException('Invalid contribution amount');
+    }
     const treasury = await this.prisma.communityTreasury.findUnique({ where: { id: treasuryId } });
     if (!treasury || treasury.status !== 'active') throw new NotFoundException();
 
