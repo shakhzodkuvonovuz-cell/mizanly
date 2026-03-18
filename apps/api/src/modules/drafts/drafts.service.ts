@@ -1,14 +1,22 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
+const VALID_SPACES: string[] = Object.values(ContentSpace);
 
 @Injectable()
 export class DraftsService {
   constructor(private prisma: PrismaService) {}
 
   async getDrafts(userId: string, space?: string) {
-    const where: Record<string, unknown> = { userId };
-    if (space) where.space = space as ContentSpace;
+    const where: Prisma.DraftPostWhereInput = { userId };
+    if (space) {
+      if (!VALID_SPACES.includes(space)) {
+        throw new BadRequestException(`Invalid space: ${space}`);
+      }
+      where.space = space as ContentSpace;
+    }
 
     return this.prisma.draftPost.findMany({
       where,
@@ -25,11 +33,14 @@ export class DraftsService {
   }
 
   async saveDraft(userId: string, space: string = 'SAF', data: Record<string, unknown>) {
+    if (!VALID_SPACES.includes(space)) {
+      throw new BadRequestException(`Invalid space: ${space}`);
+    }
     return this.prisma.draftPost.create({
       data: {
         userId,
         space: space as ContentSpace,
-        data: data as object,
+        data: data as Prisma.InputJsonValue,
       },
     });
   }
@@ -41,7 +52,7 @@ export class DraftsService {
 
     return this.prisma.draftPost.update({
       where: { id: draftId },
-      data: { data: data as object },
+      data: { data: data as Prisma.InputJsonValue },
     });
   }
 

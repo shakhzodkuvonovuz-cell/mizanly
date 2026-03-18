@@ -19,21 +19,18 @@ export interface ScheduledItem {
 
 export type ScheduledContent = Post | Thread | Reel | Video;
 
+type ContentModel = 'post' | 'thread' | 'reel' | 'video';
+
 @Injectable()
 export class SchedulingService {
   constructor(private prisma: PrismaService) {}
 
-  private getModel(type: string): keyof PrismaService {
-    const map: Record<string, keyof PrismaService> = {
-      post: 'post',
-      thread: 'thread',
-      reel: 'reel',
-      video: 'video',
-    };
-    if (!(type in map)) {
+  private getModel(type: string): ContentModel {
+    const validModels: ContentModel[] = ['post', 'thread', 'reel', 'video'];
+    if (!validModels.includes(type as ContentModel)) {
       throw new BadRequestException('Invalid content type');
     }
-    return map[type];
+    return type as ContentModel;
   }
 
   async getScheduled(userId: string): Promise<ScheduledItem[]> {
@@ -173,7 +170,7 @@ export class SchedulingService {
   }
 
   // Helper methods for type-safe dynamic access
-  private async findContent(model: keyof PrismaService, id: string): Promise<{ userId: string } | null> {
+  private async findContent(model: ContentModel, id: string): Promise<{ userId: string } | null> {
     switch (model) {
       case 'post':
         return this.prisma.post.findUnique({ where: { id } });
@@ -189,7 +186,7 @@ export class SchedulingService {
   }
 
   private async updateContent(
-    model: keyof PrismaService,
+    model: ContentModel,
     id: string,
     data: { scheduledAt: Date | null }
   ): Promise<ScheduledContent> {

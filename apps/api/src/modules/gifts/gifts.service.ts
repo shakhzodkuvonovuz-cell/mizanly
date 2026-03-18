@@ -61,8 +61,8 @@ export class GiftsService {
   }
 
   async purchaseCoins(userId: string, amount: number) {
-    if (amount <= 0) {
-      throw new BadRequestException('Amount must be positive');
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new BadRequestException('Amount must be a positive integer');
     }
 
     const balance = await this.prisma.coinBalance.upsert({
@@ -201,6 +201,10 @@ export class GiftsService {
   }
 
   async cashout(userId: string, diamonds: number): Promise<CashoutResult> {
+    if (!Number.isInteger(diamonds) || diamonds <= 0) {
+      throw new BadRequestException('Diamonds must be a positive integer');
+    }
+
     if (diamonds < MIN_CASHOUT_DIAMONDS) {
       throw new BadRequestException(
         `Minimum cashout is ${MIN_CASHOUT_DIAMONDS} diamonds`,
@@ -218,20 +222,24 @@ export class GiftsService {
     const usdCents = Math.floor(diamonds / DIAMONDS_PER_USD_CENT);
     const usdAmount = usdCents / 100;
 
-    await this.prisma.$transaction([
-      this.prisma.coinBalance.update({
-        where: { userId },
-        data: { diamonds: { decrement: diamonds } },
-      }),
-      this.prisma.coinTransaction.create({
-        data: {
-          userId,
-          type: 'cashout',
-          amount: -diamonds,
-          description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)}`,
-        },
-      }),
-    ]);
+    // Use conditional update to prevent going negative in a race condition
+    const updated = await this.prisma.coinBalance.updateMany({
+      where: { userId, diamonds: { gte: diamonds } },
+      data: { diamonds: { decrement: diamonds } },
+    });
+
+    if (updated.count === 0) {
+      throw new BadRequestException('Insufficient diamonds');
+    }
+
+    await this.prisma.coinTransaction.create({
+      data: {
+        userId,
+        type: 'cashout',
+        amount: -diamonds,
+        description: `Cashed out ${diamonds} diamonds for $${usdAmount.toFixed(2)}`,
+      },
+    });
 
     return {
       diamondsDeducted: diamonds,

@@ -137,6 +137,7 @@ export class FeedTransparencyService {
     query: string,
     cursor?: string,
     limit = 20,
+    userId?: string,
   ): Promise<EnhancedSearchResult> {
     const keywords = query
       .toLowerCase()
@@ -144,6 +145,30 @@ export class FeedTransparencyService {
       .filter((w) => w.length > 2);
     if (keywords.length === 0) {
       return { data: [], meta: { cursor: null, hasMore: false } };
+    }
+
+    // Build exclusion list from blocks and mutes if user is authenticated
+    let excludedUserIds: string[] = [];
+    if (userId) {
+      const [blocks, mutes] = await Promise.all([
+        this.prisma.block.findMany({
+          where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+          select: { blockerId: true, blockedId: true },
+        }),
+        this.prisma.mute.findMany({
+          where: { userId },
+          select: { mutedId: true },
+        }),
+      ]);
+      const blockedIds = new Set<string>();
+      for (const b of blocks) {
+        if (b.blockerId === userId) blockedIds.add(b.blockedId);
+        else blockedIds.add(b.blockerId);
+      }
+      for (const m of mutes) {
+        blockedIds.add(m.mutedId);
+      }
+      excludedUserIds = Array.from(blockedIds);
     }
 
     const take = limit + 1;
@@ -154,6 +179,9 @@ export class FeedTransparencyService {
         OR: keywords.map((kw) => ({
           content: { contains: kw, mode: 'insensitive' as const },
         })),
+        ...(excludedUserIds.length > 0
+          ? { userId: { notIn: excludedUserIds } }
+          : {}),
       },
       select: ENHANCED_POST_SELECT,
       take,
