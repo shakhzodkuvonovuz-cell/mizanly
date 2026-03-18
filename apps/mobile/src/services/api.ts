@@ -250,7 +250,7 @@ export const usersApi = {
   getLikedPosts: (cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/users/me/liked-posts${qs({ cursor })}`),
   exportData: () =>
-    api.get<Record<string, unknown>>('/users/me/export-data'),
+    api.get<{ profile: User; posts: unknown[]; threads: unknown[]; stories: unknown[]; messages: { count: number; data: unknown[] }; following: string[]; exportedAt: string }>('/users/me/export-data'),
   requestAccountDeletion: () =>
     api.post('/users/me/delete-account'),
   cancelAccountDeletion: () =>
@@ -1153,7 +1153,7 @@ export const parentalApi = {
     api.get('/parental-controls/children'),
   getParent: () =>
     api.get('/parental-controls/parent'),
-  updateControls: (childId: string, dto: Record<string, unknown>) =>
+  updateControls: (childId: string, dto: { restrictedMode?: boolean; maxAgeRating?: string; dailyLimitMinutes?: number | null; dmRestriction?: string; canGoLive?: boolean; canPost?: boolean; canComment?: boolean }) =>
     api.patch(`/parental-controls/${childId}`, dto),
   verifyPin: (childId: string, pin: string) =>
     api.post(`/parental-controls/${childId}/pin`, { pin }),
@@ -1236,13 +1236,13 @@ export const gamificationApi = {
   unfollowSeries: (id: string) => api.delete(`/series/${id}/follow`),
   // Profile Customization
   getProfileCustomization: () => api.get('/profile-customization'),
-  updateProfileCustomization: (dto: Record<string, unknown>) => api.patch('/profile-customization', dto),
+  updateProfileCustomization: (dto: { theme?: string; accentColor?: string; fontStyle?: string; badgeId?: string; frameId?: string; titleId?: string }) => api.patch('/profile-customization', dto),
 };
 
 // ── Commerce ──
 export const commerceApi = {
   // Products
-  createProduct: (dto: Record<string, unknown>) => api.post('/products', dto),
+  createProduct: (dto: { title: string; description: string; price: number; images: string[]; category: string; isHalal?: boolean; isMuslimOwned?: boolean; stock?: number; tags?: string[]; location?: string }) => api.post('/products', dto),
   getProducts: (params?: { cursor?: string; category?: string; search?: string }) => api.get(`/products${qs(params || {})}`),
   getProduct: (id: string) => api.get(`/products/${id}`),
   reviewProduct: (id: string, rating: number, comment?: string) => api.post(`/products/${id}/review`, { rating, comment }),
@@ -1251,7 +1251,7 @@ export const commerceApi = {
   getMyOrders: (cursor?: string) => api.get(`/orders/me${qs({ cursor })}`),
   updateOrderStatus: (id: string, status: string) => api.patch(`/orders/${id}/status`, { status }),
   // Businesses
-  createBusiness: (dto: Record<string, unknown>) => api.post('/businesses', dto),
+  createBusiness: (dto: { name: string; category: string; description?: string; address?: string; lat?: number; lng?: number; phone?: string; website?: string }) => api.post('/businesses', dto),
   getBusinesses: (params?: { cursor?: string; category?: string; lat?: number; lng?: number }) => api.get(`/businesses${qs(params || {})}`),
   reviewBusiness: (id: string, rating: number, comment?: string) => api.post(`/businesses/${id}/review`, { rating, comment }),
   // Zakat
