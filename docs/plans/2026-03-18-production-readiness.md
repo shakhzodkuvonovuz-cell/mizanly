@@ -15,16 +15,16 @@
 - [x] Add AsyncJobService for reliable background jobs with retry + logging
 - [x] Eliminate all 22 fire-and-forget .catch(() => {}) patterns
 - [x] Move WebSocket presence from in-memory to Redis (horizontal scaling)
-- [x] Add Redis caching utilities + cache trending hashtags (5min) + recommended channels (10min)
+- [x] Add Redis caching utilities + cache hot endpoints
+- [x] Add image optimization pipeline (Cloudflare Image Resizing + presets)
 - [ ] Write missing controller tests (51 controllers)
-- [ ] Add image optimization pipeline (resize, WebP, blur hash)
 
 ## P2 — MEDIUM (Differentiates good from great)
 
+- [x] Feature flags system (Redis-backed, percentage rollout, admin API)
+- [x] Analytics pipeline (event tracking, real-time counters, Redis buffer)
 - [ ] Offline caching for feeds and messages
 - [ ] E2E tests (Maestro or Detox)
-- [ ] Analytics pipeline (PostHog or similar)
-- [ ] Feature flags system
 - [ ] Search tuning (Meilisearch synonyms, ranking)
 - [ ] Mobile performance monitoring
 
