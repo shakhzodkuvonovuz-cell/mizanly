@@ -13,6 +13,8 @@ import { SendBroadcastDto } from './dto/send-broadcast.dto';
 export class BroadcastController {
   constructor(private broadcast: BroadcastService) {}
 
+  // ── Static routes first (before any :id / :slug wildcard) ──
+
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -36,6 +38,36 @@ export class BroadcastController {
   async myChannels(@CurrentUser('id') userId: string) {
     return this.broadcast.getMyChannels(userId);
   }
+
+  // ── Static "messages/" routes before :id wildcard ──
+
+  @Patch('messages/:messageId/pin')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Pin message' })
+  async pinMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
+    return this.broadcast.pinMessage(messageId, userId);
+  }
+
+  @Delete('messages/:messageId/pin')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Unpin message' })
+  async unpinMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
+    return this.broadcast.unpinMessage(messageId, userId);
+  }
+
+  @Delete('messages/:messageId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Delete message' })
+  async deleteMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
+    return this.broadcast.deleteMessage(messageId, userId);
+  }
+
+  // ── Wildcard :slug / :id routes ──
 
   @Get(':slug')
   @UseGuards(OptionalClerkAuthGuard)
@@ -108,32 +140,6 @@ export class BroadcastController {
   @ApiOperation({ summary: 'Get pinned messages' })
   async getPinned(@Param('id') id: string) {
     return this.broadcast.getPinnedMessages(id);
-  }
-
-  @Patch('messages/:messageId/pin')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Pin message' })
-  async pinMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
-    return this.broadcast.pinMessage(messageId, userId);
-  }
-
-  @Delete('messages/:messageId/pin')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Unpin message' })
-  async unpinMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
-    return this.broadcast.unpinMessage(messageId, userId);
-  }
-
-  @Delete('messages/:messageId')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete message' })
-  async deleteMessage(@Param('messageId') messageId: string, @CurrentUser('id') userId: string) {
-    return this.broadcast.deleteMessage(messageId, userId);
   }
 
   @Patch(':id/mute')

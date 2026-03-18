@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 import { CreatePlaylistDto } from './dto/create-playlist.dto';
 import { UpdatePlaylistDto } from './dto/update-playlist.dto';
 import { AddCollaboratorDto } from './dto/collaborator.dto';
@@ -208,7 +209,13 @@ export class PlaylistsService {
     return { deleted: true };
   }
 
-  async addItem(playlistId: string, videoId: string, userId: string) {
+  private async requireOwnerOrEditor(playlistId: string, userId: string): Promise<{
+    id: string;
+    channelId: string;
+    isCollaborative: boolean;
+    videosCount: number;
+    channel: { userId: string };
+  }> {
     const playlist = await this.prisma.playlist.findUnique({
       where: { id: playlistId },
       include: { channel: { select: { userId: true } } },
@@ -220,61 +227,106 @@ export class PlaylistsService {
       const collaborator = await this.prisma.playlistCollaborator.findUnique({
         where: { playlistId_userId: { playlistId, userId } },
       });
-      const isEditor = collaborator?.role === 'editor';
-      if (!isEditor) throw new ForbiddenException('Not your playlist');
+      if (collaborator?.role !== 'editor') {
+        throw new ForbiddenException('Not authorized to modify this playlist');
+      }
     }
+    return playlist;
+  }
 
-    const maxPosition = await this.prisma.playlistItem.aggregate({
-      where: { playlistId },
-      _max: { position: true },
-    });
+  async addItem(playlistId: string, videoId: string, userId: string) {
+    await this.requireOwnerOrEditor(playlistId, userId);
 
-    const [item] = await this.prisma.$transaction([
-      this.prisma.playlistItem.create({
-        data: {
-          playlistId,
-          videoId,
-          position: (maxPosition._max.position ?? -1) + 1,
-        },
-        select: {
-          id: true,
-          position: true,
-          createdAt: true,
-          video: {
-            select: {
-              id: true,
-              title: true,
-              thumbnailUrl: true,
-              duration: true,
-              viewsCount: true,
-              createdAt: true,
-              channel: {
-                select: {
-                  id: true,
-                  handle: true,
-                  name: true,
-                  avatarUrl: true,
+    // Use a transaction with idempotency: handle P2002 duplicate
+    try {
+      const maxPosition = await this.prisma.playlistItem.aggregate({
+        where: { playlistId },
+        _max: { position: true },
+      });
+
+      const [item] = await this.prisma.$transaction([
+        this.prisma.playlistItem.create({
+          data: {
+            playlistId,
+            videoId,
+            position: (maxPosition._max.position ?? -1) + 1,
+          },
+          select: {
+            id: true,
+            position: true,
+            createdAt: true,
+            video: {
+              select: {
+                id: true,
+                title: true,
+                thumbnailUrl: true,
+                duration: true,
+                viewsCount: true,
+                createdAt: true,
+                channel: {
+                  select: {
+                    id: true,
+                    handle: true,
+                    name: true,
+                    avatarUrl: true,
+                  },
                 },
               },
             },
           },
-        },
-      }),
-      this.prisma.playlist.update({
-        where: { id: playlistId },
-        data: { videosCount: { increment: 1 } },
-      }),
-    ]);
-    return item;
+        }),
+        this.prisma.playlist.update({
+          where: { id: playlistId },
+          data: { videosCount: { increment: 1 } },
+        }),
+      ]);
+      return item;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Video already in playlist — return the existing item (idempotent)
+        const existing = await this.prisma.playlistItem.findUnique({
+          where: { playlistId_videoId: { playlistId, videoId } },
+          select: {
+            id: true,
+            position: true,
+            createdAt: true,
+            video: {
+              select: {
+                id: true,
+                title: true,
+                thumbnailUrl: true,
+                duration: true,
+                viewsCount: true,
+                createdAt: true,
+                channel: {
+                  select: {
+                    id: true,
+                    handle: true,
+                    name: true,
+                    avatarUrl: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+        if (!existing) throw new NotFoundException('Playlist item not found');
+        return existing;
+      }
+      throw error;
+    }
   }
 
   async removeItem(playlistId: string, videoId: string, userId: string) {
-    const playlist = await this.prisma.playlist.findUnique({
-      where: { id: playlistId },
-      include: { channel: { select: { userId: true } } },
+    await this.requireOwnerOrEditor(playlistId, userId);
+
+    // Check item exists before deleting — avoid decrementing count for nonexistent items
+    const item = await this.prisma.playlistItem.findUnique({
+      where: { playlistId_videoId: { playlistId, videoId } },
     });
-    if (!playlist) throw new NotFoundException('Playlist not found');
-    if (playlist.channel.userId !== userId) throw new ForbiddenException('Not your playlist');
+    if (!item) {
+      throw new NotFoundException('Video not in playlist');
+    }
 
     await this.prisma.$transaction([
       this.prisma.playlistItem.delete({
@@ -326,24 +378,37 @@ export class PlaylistsService {
     const targetUser = await this.prisma.user.findUnique({ where: { id: dto.userId } });
     if (!targetUser) throw new NotFoundException('User not found');
 
-    const existing = await this.prisma.playlistCollaborator.findUnique({
-      where: { playlistId_userId: { playlistId, userId: dto.userId } },
-    });
-    if (existing) throw new BadRequestException('User is already a collaborator');
-
-    return this.prisma.playlistCollaborator.create({
-      data: {
-        playlistId,
-        userId: dto.userId,
-        role: dto.role ?? 'editor',
-        addedById: userId,
-      },
-      include: {
-        user: {
-          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+    // Idempotent: handle P2002 by returning existing collaborator
+    try {
+      return await this.prisma.playlistCollaborator.create({
+        data: {
+          playlistId,
+          userId: dto.userId,
+          role: dto.role ?? 'editor',
+          addedById: userId,
         },
-      },
-    });
+        include: {
+          user: {
+            select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+          },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Already a collaborator — return existing
+        const existing = await this.prisma.playlistCollaborator.findUnique({
+          where: { playlistId_userId: { playlistId, userId: dto.userId } },
+          include: {
+            user: {
+              select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+            },
+          },
+        });
+        if (!existing) throw new NotFoundException('Collaborator not found');
+        return existing;
+      }
+      throw error;
+    }
   }
 
   async removeCollaborator(playlistId: string, userId: string, collaboratorUserId: string) {
@@ -357,14 +422,16 @@ export class PlaylistsService {
     const isSelf = userId === collaboratorUserId;
     if (!isOwner && !isSelf) throw new ForbiddenException('Not allowed');
 
-    const collaborator = await this.prisma.playlistCollaborator.findUnique({
-      where: { playlistId_userId: { playlistId, userId: collaboratorUserId } },
-    });
-    if (!collaborator) throw new NotFoundException('Collaborator not found');
-
-    await this.prisma.playlistCollaborator.delete({
-      where: { playlistId_userId: { playlistId, userId: collaboratorUserId } },
-    });
+    try {
+      await this.prisma.playlistCollaborator.delete({
+        where: { playlistId_userId: { playlistId, userId: collaboratorUserId } },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Collaborator not found');
+      }
+      throw error;
+    }
     return { removed: true };
   }
 

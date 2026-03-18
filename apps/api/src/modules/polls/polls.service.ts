@@ -6,6 +6,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class PollsService {
@@ -44,25 +45,26 @@ export class PollsService {
       percentage: poll.totalVotes > 0 ? (option.votesCount / poll.totalVotes) * 100 : 0,
     }));
 
-    let userVotedOptionId: string | undefined;
+    let userVotedOptionIds: string[] = [];
     if (userId) {
-      const vote = await this.prisma.pollVote.findFirst({
+      const votes = await this.prisma.pollVote.findMany({
         where: {
           userId,
           option: {
             pollId: poll.id,
           },
         },
+        select: { optionId: true },
       });
-      if (vote) {
-        userVotedOptionId = vote.optionId;
-      }
+      userVotedOptionIds = votes.map((v) => v.optionId);
     }
 
     return {
       ...poll,
       options: optionsWithPercent,
-      userVotedOptionId,
+      userVotedOptionId: userVotedOptionIds[0] ?? undefined,
+      userVotedOptionIds,
+      isExpired: poll.endsAt ? new Date(poll.endsAt) < new Date() : false,
     };
   }
 
@@ -81,6 +83,11 @@ export class PollsService {
       throw new NotFoundException('Poll not found');
     }
 
+    // Prevent voting on expired polls
+    if (poll.endsAt && new Date(poll.endsAt) < new Date()) {
+      throw new BadRequestException('This poll has expired');
+    }
+
     if (poll.options.length === 0) {
       throw new BadRequestException('Invalid option');
     }
@@ -95,35 +102,54 @@ export class PollsService {
       },
     });
 
+    // For single-choice polls, prevent multiple votes entirely
+    // For multi-choice polls, prevent voting on the same option twice
     if (existingVote) {
-      throw new ConflictException('You have already voted in this poll');
+      if (!poll.allowMultiple) {
+        throw new ConflictException('You have already voted in this poll');
+      }
+      // For multi-choice: check if they already voted on THIS specific option
+      const existingVoteOnOption = await this.prisma.pollVote.findUnique({
+        where: { userId_optionId: { userId, optionId } },
+      });
+      if (existingVoteOnOption) {
+        throw new ConflictException('You have already voted for this option');
+      }
     }
 
-    // Use transaction to increment votes
-    await this.prisma.$transaction([
-      this.prisma.pollVote.create({
-        data: {
-          userId,
-          optionId,
-        },
-      }),
-      this.prisma.pollOption.update({
-        where: { id: optionId },
-        data: {
-          votesCount: {
-            increment: 1,
+    // Use transaction to create vote and increment counts atomically.
+    // Handle P2002 in case of race condition on the unique constraint.
+    try {
+      await this.prisma.$transaction([
+        this.prisma.pollVote.create({
+          data: {
+            userId,
+            optionId,
           },
-        },
-      }),
-      this.prisma.poll.update({
-        where: { id: pollId },
-        data: {
-          totalVotes: {
-            increment: 1,
+        }),
+        this.prisma.pollOption.update({
+          where: { id: optionId },
+          data: {
+            votesCount: {
+              increment: 1,
+            },
           },
-        },
-      }),
-    ]);
+        }),
+        this.prisma.poll.update({
+          where: { id: pollId },
+          data: {
+            totalVotes: {
+              increment: 1,
+            },
+          },
+        }),
+      ]);
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('You have already voted in this poll');
+      }
+      throw error;
+    }
 
     return { success: true };
   }
@@ -189,15 +215,9 @@ export class PollsService {
     }
 
     const limit = 20;
-    let cursorObj;
-    if (cursor) {
-      if (cursor.includes('_')) {
-        const [userId] = cursor.split('_');
-        cursorObj = { userId, optionId };
-      } else {
-        cursorObj = { userId: cursor, optionId };
-      }
-    }
+    const cursorObj = cursor
+      ? { userId_optionId: { userId: cursor, optionId } }
+      : undefined;
     const votes = await this.prisma.pollVote.findMany({
       where: { optionId },
       include: {
@@ -213,7 +233,7 @@ export class PollsService {
       take: limit + 1,
       ...(cursorObj
         ? {
-            cursor: { userId_optionId: cursorObj },
+            cursor: cursorObj,
             skip: 1,
           }
         : {}),

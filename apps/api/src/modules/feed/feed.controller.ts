@@ -72,11 +72,12 @@ export class FeedController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async enhancedSearch(
+    @CurrentUser('id') userId: string | undefined,
     @Query('q') q: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
-    return this.transparency.enhancedSearch(q, cursor, parsedLimit);
+    return this.transparency.enhancedSearch(q, cursor, parsedLimit, userId);
   }
 }

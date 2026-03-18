@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -182,7 +183,7 @@ export class AudioRoomsService {
 
     // Delete all participants (cascade)
     // Update room status
-    const [_, updated] = await this.prisma.$transaction([
+    const [, updated] = await this.prisma.$transaction([
       this.prisma.audioRoomParticipant.deleteMany({ where: { roomId: id } }),
       this.prisma.audioRoom.update({
         where: { id },
@@ -211,25 +212,23 @@ export class AudioRoomsService {
       throw new BadRequestException('Room is not live');
     }
 
-    // Check if already participant
-    const existing = await this.prisma.audioRoomParticipant.findUnique({
-      where: { roomId_userId: { roomId: id, userId } },
-    });
-
-    if (existing) {
-      throw new BadRequestException('Already joined this room');
+    // Create participant — handle P2002 (unique constraint) for idempotent join
+    try {
+      await this.prisma.audioRoomParticipant.create({
+        data: {
+          roomId: id,
+          userId,
+          role: AudioRoomRole.LISTENER,
+          isMuted: true,
+          handRaised: false,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Already joined this room');
+      }
+      throw error;
     }
-
-    // Create participant
-    await this.prisma.audioRoomParticipant.create({
-      data: {
-        roomId: id,
-        userId,
-        role: AudioRoomRole.LISTENER,
-        isMuted: true,
-        handRaised: false,
-      },
-    });
 
     // Return updated room
     return this.prisma.audioRoom.findUnique({

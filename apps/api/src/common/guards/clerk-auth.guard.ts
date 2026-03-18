@@ -45,7 +45,7 @@ export class ClerkAuthGuard implements CanActivate {
     }
   }
 
-  private extractToken(request: any): string | undefined {
+  private extractToken(request: { headers: { authorization?: string } }): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
     return type === 'Bearer' ? token : undefined;
   }

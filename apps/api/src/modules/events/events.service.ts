@@ -53,22 +53,12 @@ export class EventsService {
       },
     });
 
-    // Add counts for each status
-    const goingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'going' },
-    });
-    const maybeCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'maybe' },
-    });
-    const notGoingCount = await this.prisma.eventRSVP.count({
-      where: { eventId: event.id, status: 'not_going' },
-    });
-
+    // New event — all counts are 0
     return {
       ...event,
-      goingCount,
-      maybeCount,
-      notGoingCount,
+      goingCount: 0,
+      maybeCount: 0,
+      notGoingCount: 0,
     };
   }
 
@@ -89,9 +79,6 @@ export class EventsService {
       if (!userId) {
         where.privacy = 'public';
       }
-      // If user logged in, show public + private events they own or have RSVP'd to
-      // For simplicity, we'll still only show public events for now
-      // Could be enhanced later
     }
 
     if (eventType) {
@@ -124,26 +111,34 @@ export class EventsService {
     const hasMore = events.length > limit;
     const items = hasMore ? events.slice(0, limit) : events;
 
-    // Fetch counts for each event
-    const itemsWithCounts = await Promise.all(
-      items.map(async (event) => {
-        const goingCount = await this.prisma.eventRSVP.count({
-          where: { eventId: event.id, status: 'going' },
-        });
-        const maybeCount = await this.prisma.eventRSVP.count({
-          where: { eventId: event.id, status: 'maybe' },
-        });
-        const notGoingCount = await this.prisma.eventRSVP.count({
-          where: { eventId: event.id, status: 'not_going' },
-        });
-        return {
-          ...event,
-          goingCount,
-          maybeCount,
-          notGoingCount,
-        };
-      }),
-    );
+    // Batch-fetch RSVP counts per status for all events in one go
+    const eventIds = items.map(e => e.id);
+    const rsvpCounts = await this.prisma.eventRSVP.groupBy({
+      by: ['eventId', 'status'],
+      where: { eventId: { in: eventIds } },
+      _count: { id: true },
+    });
+
+    const countsMap = new Map<string, { going: number; maybe: number; not_going: number }>();
+    for (const row of rsvpCounts) {
+      if (!countsMap.has(row.eventId)) {
+        countsMap.set(row.eventId, { going: 0, maybe: 0, not_going: 0 });
+      }
+      const entry = countsMap.get(row.eventId)!;
+      if (row.status === 'going') entry.going = row._count.id;
+      else if (row.status === 'maybe') entry.maybe = row._count.id;
+      else if (row.status === 'not_going') entry.not_going = row._count.id;
+    }
+
+    const itemsWithCounts = items.map(event => {
+      const counts = countsMap.get(event.id) ?? { going: 0, maybe: 0, not_going: 0 };
+      return {
+        ...event,
+        goingCount: counts.going,
+        maybeCount: counts.maybe,
+        notGoingCount: counts.not_going,
+      };
+    });
 
     return {
       data: itemsWithCounts,
@@ -220,7 +215,7 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
     if (event.userId !== userId) {
-      throw new ForbiddenException('You are not the owner of this event');
+      throw new ForbiddenException('Only the organizer can edit this event');
     }
 
     const data: Prisma.EventUpdateInput = {};
@@ -288,7 +283,7 @@ export class EventsService {
       throw new NotFoundException('Event not found');
     }
     if (event.userId !== userId) {
-      throw new ForbiddenException('You are not the owner of this event');
+      throw new ForbiddenException('Only the organizer can delete this event');
     }
 
     await this.prisma.event.delete({ where: { id } });
@@ -298,10 +293,17 @@ export class EventsService {
   async rsvpToEvent(userId: string, eventId: string, status: 'going' | 'maybe' | 'not_going') {
     const event = await this.prisma.event.findUnique({
       where: { id: eventId },
-      select: { id: true, privacy: true, userId: true },
+      select: { id: true, privacy: true, userId: true, startDate: true, endDate: true },
     });
     if (!event) {
       throw new NotFoundException('Event not found');
+    }
+
+    // Block RSVP to past events
+    const now = new Date();
+    const eventEnd = event.endDate ? new Date(event.endDate) : new Date(event.startDate);
+    if (eventEnd < now) {
+      throw new BadRequestException('Cannot RSVP to a past event');
     }
 
     // If private event, only owner and possibly invited users can RSVP
@@ -309,15 +311,12 @@ export class EventsService {
       throw new ForbiddenException('You are not invited to this private event');
     }
 
-    const existing = await this.prisma.eventRSVP.findUnique({
-      where: { eventId_userId: { eventId, userId } },
-    });
-
-    if (existing) {
-      // Update status
-      const updated = await this.prisma.eventRSVP.update({
+    // Upsert handles idempotency — no race condition between find and create
+    try {
+      const rsvp = await this.prisma.eventRSVP.upsert({
         where: { eventId_userId: { eventId, userId } },
-        data: { status },
+        update: { status },
+        create: { eventId, userId, status },
         include: {
           user: {
             select: {
@@ -330,41 +329,41 @@ export class EventsService {
           },
         },
       });
-      return updated;
-    } else {
-      // Create new RSVP
-      const created = await this.prisma.eventRSVP.create({
-        data: {
-          eventId,
-          userId,
-          status,
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatarUrl: true,
-              isVerified: true,
+      return rsvp;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        // Concurrent duplicate — retry as update
+        return this.prisma.eventRSVP.update({
+          where: { eventId_userId: { eventId, userId } },
+          data: { status },
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                displayName: true,
+                avatarUrl: true,
+                isVerified: true,
+              },
             },
           },
-        },
-      });
-      return created;
+        });
+      }
+      throw error;
     }
   }
 
   async removeRsvp(userId: string, eventId: string) {
-    const rsvp = await this.prisma.eventRSVP.findUnique({
-      where: { eventId_userId: { eventId, userId } },
-    });
-    if (!rsvp) {
-      throw new NotFoundException('RSVP not found');
+    try {
+      await this.prisma.eventRSVP.delete({
+        where: { eventId_userId: { eventId, userId } },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('RSVP not found');
+      }
+      throw error;
     }
-    await this.prisma.eventRSVP.delete({
-      where: { eventId_userId: { eventId, userId } },
-    });
     return { success: true };
   }
 

@@ -6,7 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HashtagsService } from './hashtags.service';
 
 @ApiTags('Hashtags')
-@Controller('api/v1/hashtags')
+@Controller('hashtags')
 export class HashtagsController {
   constructor(private service: HashtagsService) {}
 

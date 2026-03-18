@@ -20,7 +20,7 @@ import { AddToWatchLaterDto } from './dto/add-to-watch-later.dto';
 @ApiTags('Watch History')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
-@Controller('api/v1/watch-history')
+@Controller('watch-history')
 export class WatchHistoryController {
   constructor(private service: WatchHistoryService) {}
 

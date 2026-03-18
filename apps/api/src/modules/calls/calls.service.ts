@@ -1,12 +1,28 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { CallStatus, CallType } from '@prisma/client';
+import { CallStatus, CallType, CallParticipant } from '@prisma/client';
+
+interface CallSessionWithParticipants {
+  id: string;
+  callType: CallType;
+  status: CallStatus;
+  startedAt: Date | null;
+  endedAt: Date | null;
+  duration: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+  participants: CallParticipant[];
+}
 
 @Injectable()
 export class CallsService {
   constructor(private prisma: PrismaService) {}
 
-  async initiate(userId: string, targetUserId: string, callType: string) {
+  async initiate(userId: string, targetUserId: string, callType: CallType) {
+    if (userId === targetUserId) {
+      throw new BadRequestException('Cannot call yourself');
+    }
+
     // Check no active call for either user
     const activeCall = await this.prisma.callParticipant.findFirst({
       where: {
@@ -19,7 +35,7 @@ export class CallsService {
 
     const session = await this.prisma.callSession.create({
       data: {
-        callType: callType as CallType,
+        callType,
         status: CallStatus.RINGING,
         participants: {
           createMany: {
@@ -41,8 +57,8 @@ export class CallsService {
 
   async answer(sessionId: string, userId: string) {
     const session = await this.getSession(sessionId);
-    if (session.status !== CallStatus.RINGING) throw new BadRequestException('Call is not ringing');
     this.requireParticipant(session.participants, userId);
+    if (session.status !== CallStatus.RINGING) throw new BadRequestException('Call is not ringing');
 
     return this.prisma.callSession.update({
       where: { id: sessionId },
@@ -61,8 +77,8 @@ export class CallsService {
 
   async decline(sessionId: string, userId: string) {
     const session = await this.getSession(sessionId);
-    if (session.status !== CallStatus.RINGING) throw new BadRequestException('Call is not ringing');
     this.requireParticipant(session.participants, userId);
+    if (session.status !== CallStatus.RINGING) throw new BadRequestException('Call is not ringing');
 
     return this.prisma.callSession.update({
       where: { id: sessionId },
@@ -73,7 +89,11 @@ export class CallsService {
   async end(sessionId: string, userId: string) {
     const session = await this.getSession(sessionId);
     this.requireParticipant(session.participants, userId);
-    if (session.status === CallStatus.ENDED) return session;
+
+    // Only RINGING or ACTIVE calls can be ended
+    if (session.status !== CallStatus.RINGING && session.status !== CallStatus.ACTIVE) {
+      return session;
+    }
 
     const now = new Date();
     const duration = session.startedAt ? Math.floor((now.getTime() - session.startedAt.getTime()) / 1000) : 0;
@@ -154,7 +174,7 @@ export class CallsService {
     return { iceServers };
   }
 
-  private async getSession(sessionId: string) {
+  private async getSession(sessionId: string): Promise<CallSessionWithParticipants> {
     const session = await this.prisma.callSession.findUnique({
       where: { id: sessionId },
       include: { participants: true },
@@ -163,7 +183,7 @@ export class CallsService {
     return session;
   }
 
-  private requireParticipant(participants: { userId: string }[], userId: string) {
+  private requireParticipant(participants: Pick<CallParticipant, 'userId'>[], userId: string) {
     if (!participants.some(p => p.userId === userId)) {
       throw new ForbiddenException('Not a participant in this call');
     }

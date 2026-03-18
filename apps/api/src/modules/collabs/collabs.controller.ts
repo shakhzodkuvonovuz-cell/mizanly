@@ -12,6 +12,24 @@ import { InviteCollabDto } from './dto/invite-collab.dto';
 export class CollabsController {
   constructor(private collabs: CollabsService) {}
 
+  @Get('pending')
+  @ApiOperation({ summary: 'Get my pending collab invites' })
+  async pending(@CurrentUser('id') userId: string) {
+    return this.collabs.getMyPending(userId);
+  }
+
+  @Get('accepted')
+  @ApiOperation({ summary: 'Get my accepted collabs' })
+  async accepted(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
+    return this.collabs.getAcceptedCollabs(userId, cursor);
+  }
+
+  @Get('post/:postId')
+  @ApiOperation({ summary: 'Get collaborators on a post' })
+  async postCollabs(@Param('postId') postId: string) {
+    return this.collabs.getPostCollabs(postId);
+  }
+
   @Post('invite')
   @ApiOperation({ summary: 'Invite collaborator to post' })
   async invite(@CurrentUser('id') userId: string, @Body() dto: InviteCollabDto) {
@@ -37,23 +55,5 @@ export class CollabsController {
   @ApiOperation({ summary: 'Remove collaboration' })
   async remove(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.collabs.remove(id, userId);
-  }
-
-  @Get('pending')
-  @ApiOperation({ summary: 'Get my pending collab invites' })
-  async pending(@CurrentUser('id') userId: string) {
-    return this.collabs.getMyPending(userId);
-  }
-
-  @Get('accepted')
-  @ApiOperation({ summary: 'Get my accepted collabs' })
-  async accepted(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
-    return this.collabs.getAcceptedCollabs(userId, cursor);
-  }
-
-  @Get('post/:postId')
-  @ApiOperation({ summary: 'Get collaborators on a post' })
-  async postCollabs(@Param('postId') postId: string) {
-    return this.collabs.getPostCollabs(postId);
   }
 }

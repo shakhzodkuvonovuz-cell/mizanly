@@ -42,9 +42,9 @@ export class AudioRoomsController {
   list(
     @CurrentUser('id') viewerId?: string,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit = 20,
+    @Query('limit') limit?: string,
   ) {
-    return this.audioRoomsService.list(viewerId, cursor, limit);
+    return this.audioRoomsService.list(viewerId, cursor, limit ? parseInt(limit, 10) : 20);
   }
 
   @Get(':id')
@@ -133,8 +133,8 @@ export class AudioRoomsController {
     @CurrentUser('id') viewerId?: string,
     @Query('role') role?: AudioRoomRole,
     @Query('cursor') cursor?: string,
-    @Query('limit') limit = 50,
+    @Query('limit') limit?: string,
   ) {
-    return this.audioRoomsService.listParticipants(id, viewerId, role, cursor, limit);
+    return this.audioRoomsService.listParticipants(id, viewerId, role, cursor, limit ? parseInt(limit, 10) : 50);
   }
 }

@@ -64,8 +64,8 @@ export class ChannelPostsController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Like post' })
-  async like(@Param('id') id: string) {
-    return this.channelPosts.like(id);
+  async like(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.channelPosts.like(id, userId);
   }
 
   @Delete(':id/like')
@@ -73,7 +73,7 @@ export class ChannelPostsController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Unlike post' })
-  async unlike(@Param('id') id: string) {
-    return this.channelPosts.unlike(id);
+  async unlike(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.channelPosts.unlike(id, userId);
   }
 }

@@ -29,6 +29,7 @@ export class PlaylistsController {
     return this.playlistsService.create(userId, dto);
   }
 
+  // Static / compound routes BEFORE parameterized :id routes
   @Get('channel/:channelId')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get playlists by channel' })
@@ -39,13 +40,7 @@ export class PlaylistsController {
     return this.playlistsService.getByChannel(channelId, cursor);
   }
 
-  @Get(':id')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get playlist by ID' })
-  getById(@Param('id') id: string) {
-    return this.playlistsService.getById(id);
-  }
-
+  // Compound :id sub-routes before simple :id
   @Get(':id/items')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get playlist items (cursor paginated)' })
@@ -56,27 +51,11 @@ export class PlaylistsController {
     return this.playlistsService.getItems(id, cursor);
   }
 
-  @Patch(':id')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update playlist details' })
-  update(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-    @Body() dto: UpdatePlaylistDto,
-  ) {
-    return this.playlistsService.update(id, userId, dto);
-  }
-
-  @Delete(':id')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a playlist' })
-  delete(
-    @Param('id') id: string,
-    @CurrentUser('id') userId: string,
-  ) {
-    return this.playlistsService.delete(id, userId);
+  @Get(':id/collaborators')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'List collaborators of a playlist' })
+  getCollaborators(@Param('id') id: string) {
+    return this.playlistsService.getCollaborators(id);
   }
 
   @Post(':id/items/:videoId')
@@ -138,13 +117,6 @@ export class PlaylistsController {
     return this.playlistsService.removeCollaborator(id, currentUserId, collaboratorUserId);
   }
 
-  @Get(':id/collaborators')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'List collaborators of a playlist' })
-  getCollaborators(@Param('id') id: string) {
-    return this.playlistsService.getCollaborators(id);
-  }
-
   @Patch(':id/collaborators/:userId')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
@@ -156,5 +128,36 @@ export class PlaylistsController {
     @Body() dto: UpdateCollaboratorDto,
   ) {
     return this.playlistsService.updateCollaboratorRole(id, currentUserId, collaboratorUserId, dto.role);
+  }
+
+  // Simple :id routes LAST
+  @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get playlist by ID' })
+  getById(@Param('id') id: string) {
+    return this.playlistsService.getById(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update playlist details' })
+  update(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdatePlaylistDto,
+  ) {
+    return this.playlistsService.update(id, userId, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a playlist' })
+  delete(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.playlistsService.delete(id, userId);
   }
 }

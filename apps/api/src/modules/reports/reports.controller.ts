@@ -9,7 +9,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ModerationAction } from '@prisma/client';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
@@ -23,37 +23,50 @@ export class ReportsController {
   constructor(private service: ReportsService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Submit a report' })
   create(@CurrentUser('id') userId: string, @Body() dto: CreateReportDto) {
     return this.service.create(userId, dto);
   }
 
+  // Static routes MUST come before parameterized :id route
   @Get('mine')
+  @ApiOperation({ summary: 'Get my submitted reports' })
   getMyReports(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string) {
     return this.service.getMyReports(userId, cursor);
   }
 
   @Get('pending')
-  getPending(@Query('cursor') cursor?: string) {
-    return this.service.getPending(cursor);
+  @ApiOperation({ summary: 'Get pending reports (admin/moderator only)' })
+  getPending(@CurrentUser('id') adminId: string, @Query('cursor') cursor?: string) {
+    return this.service.getPending(adminId, cursor);
   }
 
   @Get('stats')
-  getStats() {
-    return this.service.getStats();
+  @ApiOperation({ summary: 'Get report stats (admin/moderator only)' })
+  getStats(@CurrentUser('id') adminId: string) {
+    return this.service.getStats(adminId);
   }
 
+  // Parameterized route MUST come after all static routes
   @Get(':id')
+  @ApiOperation({ summary: 'Get report by ID (own report only)' })
   getById(@CurrentUser('id') userId: string, @Param('id') id: string) {
     return this.service.getById(id, userId);
   }
 
   @Patch(':id/resolve')
-  resolve(@CurrentUser('id') adminId: string, @Param('id') id: string, @Body('actionTaken') actionTaken: ModerationAction) {
+  @ApiOperation({ summary: 'Resolve a report (admin/moderator only)' })
+  resolve(
+    @CurrentUser('id') adminId: string,
+    @Param('id') id: string,
+    @Body('actionTaken') actionTaken: ModerationAction,
+  ) {
     return this.service.resolve(id, adminId, actionTaken);
   }
 
   @Patch(':id/dismiss')
-  dismiss(@Param('id') id: string) {
-    return this.service.dismiss(id);
+  @ApiOperation({ summary: 'Dismiss a report (admin/moderator only)' })
+  dismiss(@CurrentUser('id') adminId: string, @Param('id') id: string) {
+    return this.service.dismiss(id, adminId);
   }
 }

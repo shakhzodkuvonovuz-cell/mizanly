@@ -1,13 +1,10 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
-  ForbiddenException,
-  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { Prisma, SavedPost, ThreadBookmark, VideoBookmark } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class BookmarksService {
@@ -23,52 +20,75 @@ export class BookmarksService {
     });
     if (!post) throw new NotFoundException('Post not found');
 
-    // Check if already saved
-    const existing = await this.prisma.savedPost.findUnique({
-      where: {
-        userId_postId: { userId, postId },
-      },
-    });
-    if (existing) {
-      // Update collection name if different
-      if (existing.collectionName !== collectionName) {
-        return this.prisma.savedPost.update({
-          where: { userId_postId: { userId, postId } },
-          data: { collectionName },
-        });
-      }
-      return existing; // already saved in same collection
-    }
+    // Upsert handles idempotency — no race between find and create
+    try {
+      // Try to find existing first to decide whether to increment
+      const existing = await this.prisma.savedPost.findUnique({
+        where: { userId_postId: { userId, postId } },
+      });
 
-    // Create saved post
-    const [savedPost] = await this.prisma.$transaction([
-      this.prisma.savedPost.create({
-        data: { userId, postId, collectionName },
-      }),
-      this.prisma.post.update({
-        where: { id: postId },
-        data: { savesCount: { increment: 1 } },
-      }),
-    ]);
-    return savedPost;
+      if (existing) {
+        // Already saved — update collection if different
+        if (existing.collectionName !== collectionName) {
+          return this.prisma.savedPost.update({
+            where: { userId_postId: { userId, postId } },
+            data: { collectionName },
+          });
+        }
+        return existing;
+      }
+
+      // New save — create + increment atomically
+      const [savedPost] = await this.prisma.$transaction([
+        this.prisma.savedPost.create({
+          data: { userId, postId, collectionName },
+        }),
+        this.prisma.post.update({
+          where: { id: postId },
+          data: { savesCount: { increment: 1 } },
+        }),
+      ]);
+      return savedPost;
+    } catch (error) {
+      // P2002: concurrent duplicate — another request already saved
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existing = await this.prisma.savedPost.findUnique({
+          where: { userId_postId: { userId, postId } },
+        });
+        return existing;
+      }
+      throw error;
+    }
   }
 
   // Unsave a post
   async unsavePost(userId: string, postId: string) {
-    const saved = await this.prisma.savedPost.findUnique({
-      where: { userId_postId: { userId, postId } },
-    });
-    if (!saved) throw new NotFoundException('Post not saved');
-
-    await this.prisma.$transaction([
-      this.prisma.savedPost.delete({
-        where: { userId_postId: { userId, postId } },
-      }),
-      this.prisma.post.update({
-        where: { id: postId },
-        data: { savesCount: { decrement: 1 } },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.savedPost.delete({
+          where: { userId_postId: { userId, postId } },
+        });
+        // Decrement but never go below 0
+        await tx.post.update({
+          where: { id: postId },
+          data: {
+            savesCount: {
+              decrement: 1,
+            },
+          },
+        });
+        // Clamp to 0 if it went negative
+        await tx.post.updateMany({
+          where: { id: postId, savesCount: { lt: 0 } },
+          data: { savesCount: 0 },
+        });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Post not saved');
+      }
+      throw error;
+    }
     return { success: true };
   }
 
@@ -80,26 +100,34 @@ export class BookmarksService {
     });
     if (!thread) throw new NotFoundException('Thread not found');
 
-    const existing = await this.prisma.threadBookmark.findUnique({
-      where: { userId_threadId: { userId, threadId } },
-    });
-    if (existing) return existing;
-
-    return this.prisma.threadBookmark.create({
-      data: { userId, threadId },
-    });
+    try {
+      return await this.prisma.threadBookmark.create({
+        data: { userId, threadId },
+      });
+    } catch (error) {
+      // P2002: already saved — idempotent
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existing = await this.prisma.threadBookmark.findUnique({
+          where: { userId_threadId: { userId, threadId } },
+        });
+        return existing;
+      }
+      throw error;
+    }
   }
 
   // Unsave a thread
   async unsaveThread(userId: string, threadId: string) {
-    const saved = await this.prisma.threadBookmark.findUnique({
-      where: { userId_threadId: { userId, threadId } },
-    });
-    if (!saved) throw new NotFoundException('Thread not saved');
-
-    await this.prisma.threadBookmark.delete({
-      where: { userId_threadId: { userId, threadId } },
-    });
+    try {
+      await this.prisma.threadBookmark.delete({
+        where: { userId_threadId: { userId, threadId } },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Thread not saved');
+      }
+      throw error;
+    }
     return { success: true };
   }
 
@@ -111,26 +139,52 @@ export class BookmarksService {
     });
     if (!video) throw new NotFoundException('Video not found');
 
-    const existing = await this.prisma.videoBookmark.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-    if (existing) return existing;
-
-    return this.prisma.videoBookmark.create({
-      data: { userId, videoId },
-    });
+    try {
+      const [bookmark] = await this.prisma.$transaction([
+        this.prisma.videoBookmark.create({
+          data: { userId, videoId },
+        }),
+        this.prisma.video.update({
+          where: { id: videoId },
+          data: { savesCount: { increment: 1 } },
+        }),
+      ]);
+      return bookmark;
+    } catch (error) {
+      // P2002: already saved — idempotent
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        const existing = await this.prisma.videoBookmark.findUnique({
+          where: { userId_videoId: { userId, videoId } },
+        });
+        return existing;
+      }
+      throw error;
+    }
   }
 
   // Unsave a video
   async unsaveVideo(userId: string, videoId: string) {
-    const saved = await this.prisma.videoBookmark.findUnique({
-      where: { userId_videoId: { userId, videoId } },
-    });
-    if (!saved) throw new NotFoundException('Video not saved');
-
-    await this.prisma.videoBookmark.delete({
-      where: { userId_videoId: { userId, videoId } },
-    });
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        await tx.videoBookmark.delete({
+          where: { userId_videoId: { userId, videoId } },
+        });
+        await tx.video.update({
+          where: { id: videoId },
+          data: { savesCount: { decrement: 1 } },
+        });
+        // Clamp to 0 if it went negative
+        await tx.video.updateMany({
+          where: { id: videoId, savesCount: { lt: 0 } },
+          data: { savesCount: 0 },
+        });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Video not saved');
+      }
+      throw error;
+    }
     return { success: true };
   }
 

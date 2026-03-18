@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { ChannelRole, ChannelType, MessageType } from '@prisma/client';
 
@@ -18,6 +19,7 @@ export class BroadcastService {
           description: data.description,
           avatarUrl: data.avatarUrl,
           channelType: ChannelType.BROADCAST,
+          subscribersCount: 1,
         },
       });
       await tx.channelMember.create({
@@ -60,11 +62,22 @@ export class BroadcastService {
     });
     if (existing) return existing;
 
-    const member = await this.prisma.channelMember.create({
-      data: { channelId, userId, role: ChannelRole.SUBSCRIBER },
-    });
-    await this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = "subscribersCount" + 1 WHERE id = ${channelId}`;
-    return member;
+    try {
+      const member = await this.prisma.channelMember.create({
+        data: { channelId, userId, role: ChannelRole.SUBSCRIBER },
+      });
+      await this.prisma.$executeRaw`UPDATE broadcast_channels SET "subscribersCount" = "subscribersCount" + 1 WHERE id = ${channelId}`;
+      return member;
+    } catch (err) {
+      // P2002: race condition duplicate — idempotent
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+        const member = await this.prisma.channelMember.findUnique({
+          where: { channelId_userId: { channelId, userId } },
+        });
+        return member;
+      }
+      throw err;
+    }
   }
 
   async unsubscribe(channelId: string, userId: string) {
@@ -82,8 +95,12 @@ export class BroadcastService {
   }
 
   async getSubscribers(channelId: string, cursor?: string, limit = 20) {
+    const where: Prisma.ChannelMemberWhereInput = { channelId };
+    if (cursor) {
+      where.userId = { gt: cursor };
+    }
     const members = await this.prisma.channelMember.findMany({
-      where: { channelId, ...(cursor ? { userId: { gt: cursor } } : {}) },
+      where,
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { joinedAt: 'desc' },
       take: limit + 1,
@@ -111,8 +128,12 @@ export class BroadcastService {
   }
 
   async getMessages(channelId: string, cursor?: string, limit = 30) {
+    const where: Prisma.BroadcastMessageWhereInput = { channelId };
+    if (cursor) {
+      where.id = { lt: cursor };
+    }
     const messages = await this.prisma.broadcastMessage.findMany({
-      where: { channelId, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where,
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -154,6 +175,10 @@ export class BroadcastService {
   }
 
   async muteChannel(channelId: string, userId: string, muted: boolean) {
+    const member = await this.prisma.channelMember.findUnique({
+      where: { channelId_userId: { channelId, userId } },
+    });
+    if (!member) throw new NotFoundException('Not subscribed to this channel');
     return this.prisma.channelMember.update({
       where: { channelId_userId: { channelId, userId } },
       data: { isMuted: muted },
@@ -182,6 +207,11 @@ export class BroadcastService {
 
   async promoteToAdmin(channelId: string, ownerId: string, targetUserId: string) {
     await this.requireRole(channelId, ownerId, [ChannelRole.OWNER]);
+    const target = await this.prisma.channelMember.findUnique({
+      where: { channelId_userId: { channelId, userId: targetUserId } },
+    });
+    if (!target) throw new NotFoundException('User is not a subscriber of this channel');
+    if (target.role === ChannelRole.OWNER) throw new ForbiddenException('Cannot change owner role');
     return this.prisma.channelMember.update({
       where: { channelId_userId: { channelId, userId: targetUserId } },
       data: { role: ChannelRole.ADMIN },
@@ -190,6 +220,11 @@ export class BroadcastService {
 
   async demoteFromAdmin(channelId: string, ownerId: string, targetUserId: string) {
     await this.requireRole(channelId, ownerId, [ChannelRole.OWNER]);
+    const target = await this.prisma.channelMember.findUnique({
+      where: { channelId_userId: { channelId, userId: targetUserId } },
+    });
+    if (!target) throw new NotFoundException('User is not a subscriber of this channel');
+    if (target.role === ChannelRole.OWNER) throw new ForbiddenException('Cannot change owner role');
     return this.prisma.channelMember.update({
       where: { channelId_userId: { channelId, userId: targetUserId } },
       data: { role: ChannelRole.SUBSCRIBER },
@@ -198,6 +233,11 @@ export class BroadcastService {
 
   async removeSubscriber(channelId: string, userId: string, targetUserId: string) {
     await this.requireRole(channelId, userId, [ChannelRole.OWNER, ChannelRole.ADMIN]);
+    const target = await this.prisma.channelMember.findUnique({
+      where: { channelId_userId: { channelId, userId: targetUserId } },
+    });
+    if (!target) throw new NotFoundException('User is not a subscriber of this channel');
+    if (target.role === ChannelRole.OWNER) throw new ForbiddenException('Cannot remove channel owner');
     await this.prisma.channelMember.delete({
       where: { channelId_userId: { channelId, userId: targetUserId } },
     });

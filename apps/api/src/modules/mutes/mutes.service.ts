@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class MutesService {
@@ -15,24 +16,34 @@ export class MutesService {
       throw new BadRequestException('Cannot mute yourself');
     }
 
-    const existing = await this.prisma.mute.findUnique({
-      where: { userId_mutedId: { userId, mutedId } },
+    // Verify target user exists
+    const targetUser = await this.prisma.user.findUnique({
+      where: { id: mutedId },
+      select: { id: true },
     });
-    if (existing) throw new ConflictException('Already muted');
+    if (!targetUser) throw new NotFoundException('User not found');
 
-    await this.prisma.mute.create({ data: { userId, mutedId } });
+    // Use create + P2002 handling for race-condition-safe idempotency
+    try {
+      await this.prisma.mute.create({ data: { userId, mutedId } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Already muted');
+      }
+      throw error;
+    }
     return { message: 'User muted' };
   }
 
   async unmute(userId: string, mutedId: string) {
-    const existing = await this.prisma.mute.findUnique({
-      where: { userId_mutedId: { userId, mutedId } },
+    const deleted = await this.prisma.mute.deleteMany({
+      where: { userId, mutedId },
     });
-    if (!existing) throw new NotFoundException('Mute not found');
 
-    await this.prisma.mute.delete({
-      where: { userId_mutedId: { userId, mutedId } },
-    });
+    if (deleted.count === 0) {
+      throw new NotFoundException('Mute not found');
+    }
+
     return { message: 'User unmuted' };
   }
 

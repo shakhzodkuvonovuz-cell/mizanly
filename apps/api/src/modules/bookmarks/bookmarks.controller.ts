@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { BookmarksService } from './bookmarks.service';
@@ -24,11 +24,52 @@ import { SavePostDto, MoveCollectionDto } from './dto/bookmark.dto';
 export class BookmarksController {
   constructor(private service: BookmarksService) {}
 
+  // --- Static / collection routes FIRST ---
+
+  // GET /bookmarks/collections
+  @Get('collections')
+  @ApiOperation({ summary: 'Get collections' })
+  getCollections(@CurrentUser('id') userId: string) {
+    return this.service.getCollections(userId);
+  }
+
+  // --- Posts: compound sub-routes before simple param routes ---
+
   // POST /bookmarks/posts
   @Post('posts')
   @ApiOperation({ summary: 'Save a post' })
   savePost(@CurrentUser('id') userId: string, @Body() dto: SavePostDto) {
     return this.service.savePost(userId, dto.postId, dto.collectionName);
+  }
+
+  // GET /bookmarks/posts
+  @Get('posts')
+  @ApiOperation({ summary: 'Get saved posts' })
+  getSavedPosts(
+    @CurrentUser('id') userId: string,
+    @Query('collection') collectionName?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.getSavedPosts(userId, collectionName, cursor, limit);
+  }
+
+  // GET /bookmarks/posts/:postId/status
+  @Get('posts/:postId/status')
+  @ApiOperation({ summary: 'Check if post is saved' })
+  isPostSaved(@CurrentUser('id') userId: string, @Param('postId') postId: string) {
+    return this.service.isPostSaved(userId, postId);
+  }
+
+  // PATCH /bookmarks/posts/:postId/move
+  @Patch('posts/:postId/move')
+  @ApiOperation({ summary: 'Move saved post to another collection' })
+  moveToCollection(
+    @CurrentUser('id') userId: string,
+    @Param('postId') postId: string,
+    @Body() dto: MoveCollectionDto,
+  ) {
+    return this.service.moveToCollection(userId, postId, dto.collectionName);
   }
 
   // DELETE /bookmarks/posts/:postId
@@ -37,6 +78,26 @@ export class BookmarksController {
   @ApiOperation({ summary: 'Unsave a post' })
   unsavePost(@CurrentUser('id') userId: string, @Param('postId') postId: string) {
     return this.service.unsavePost(userId, postId);
+  }
+
+  // --- Threads: compound sub-routes before simple param routes ---
+
+  // GET /bookmarks/threads
+  @Get('threads')
+  @ApiOperation({ summary: 'Get saved threads' })
+  getSavedThreads(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.getSavedThreads(userId, cursor, limit);
+  }
+
+  // GET /bookmarks/threads/:threadId/status
+  @Get('threads/:threadId/status')
+  @ApiOperation({ summary: 'Check if thread is saved' })
+  isThreadSaved(@CurrentUser('id') userId: string, @Param('threadId') threadId: string) {
+    return this.service.isThreadSaved(userId, threadId);
   }
 
   // POST /bookmarks/threads/:threadId
@@ -54,6 +115,26 @@ export class BookmarksController {
     return this.service.unsaveThread(userId, threadId);
   }
 
+  // --- Videos: compound sub-routes before simple param routes ---
+
+  // GET /bookmarks/videos
+  @Get('videos')
+  @ApiOperation({ summary: 'Get saved videos' })
+  getSavedVideos(
+    @CurrentUser('id') userId: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.service.getSavedVideos(userId, cursor, limit);
+  }
+
+  // GET /bookmarks/videos/:videoId/status
+  @Get('videos/:videoId/status')
+  @ApiOperation({ summary: 'Check if video is saved' })
+  isVideoSaved(@CurrentUser('id') userId: string, @Param('videoId') videoId: string) {
+    return this.service.isVideoSaved(userId, videoId);
+  }
+
   // POST /bookmarks/videos/:videoId
   @Post('videos/:videoId')
   @ApiOperation({ summary: 'Save a video' })
@@ -67,78 +148,5 @@ export class BookmarksController {
   @ApiOperation({ summary: 'Unsave a video' })
   unsaveVideo(@CurrentUser('id') userId: string, @Param('videoId') videoId: string) {
     return this.service.unsaveVideo(userId, videoId);
-  }
-
-  // GET /bookmarks/posts
-  @Get('posts')
-  @ApiOperation({ summary: 'Get saved posts' })
-  getSavedPosts(
-    @CurrentUser('id') userId: string,
-    @Query('collection') collectionName?: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
-  ) {
-    return this.service.getSavedPosts(userId, collectionName, cursor, limit);
-  }
-
-  // GET /bookmarks/threads
-  @Get('threads')
-  @ApiOperation({ summary: 'Get saved threads' })
-  getSavedThreads(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
-  ) {
-    return this.service.getSavedThreads(userId, cursor, limit);
-  }
-
-  // GET /bookmarks/videos
-  @Get('videos')
-  @ApiOperation({ summary: 'Get saved videos' })
-  getSavedVideos(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: number,
-  ) {
-    return this.service.getSavedVideos(userId, cursor, limit);
-  }
-
-  // GET /bookmarks/collections
-  @Get('collections')
-  @ApiOperation({ summary: 'Get collections' })
-  getCollections(@CurrentUser('id') userId: string) {
-    return this.service.getCollections(userId);
-  }
-
-  // PATCH /bookmarks/posts/:postId/move
-  @Patch('posts/:postId/move')
-  @ApiOperation({ summary: 'Move saved post to another collection' })
-  moveToCollection(
-    @CurrentUser('id') userId: string,
-    @Param('postId') postId: string,
-    @Body() dto: MoveCollectionDto,
-  ) {
-    return this.service.moveToCollection(userId, postId, dto.collectionName);
-  }
-
-  // GET /bookmarks/posts/:postId/status
-  @Get('posts/:postId/status')
-  @ApiOperation({ summary: 'Check if post is saved' })
-  isPostSaved(@CurrentUser('id') userId: string, @Param('postId') postId: string) {
-    return this.service.isPostSaved(userId, postId);
-  }
-
-  // GET /bookmarks/threads/:threadId/status
-  @Get('threads/:threadId/status')
-  @ApiOperation({ summary: 'Check if thread is saved' })
-  isThreadSaved(@CurrentUser('id') userId: string, @Param('threadId') threadId: string) {
-    return this.service.isThreadSaved(userId, threadId);
-  }
-
-  // GET /bookmarks/videos/:videoId/status
-  @Get('videos/:videoId/status')
-  @ApiOperation({ summary: 'Check if video is saved' })
-  isVideoSaved(@CurrentUser('id') userId: string, @Param('videoId') videoId: string) {
-    return this.service.isVideoSaved(userId, videoId);
   }
 }

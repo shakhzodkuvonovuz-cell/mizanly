@@ -45,23 +45,39 @@ export class ChannelPostsService {
 
   async pin(postId: string, userId: string) {
     const post = await this.getById(postId);
-    if (post.userId !== userId) throw new ForbiddenException();
+    // Allow pin by post author or channel owner
+    if (post.userId !== userId) {
+      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId } });
+      if (!channel || channel.userId !== userId) throw new ForbiddenException('Only channel owner or post author can pin');
+    }
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: true } });
   }
 
   async unpin(postId: string, userId: string) {
     const post = await this.getById(postId);
-    if (post.userId !== userId) throw new ForbiddenException();
+    // Allow unpin by post author or channel owner
+    if (post.userId !== userId) {
+      const channel = await this.prisma.channel.findUnique({ where: { id: post.channelId } });
+      if (!channel || channel.userId !== userId) throw new ForbiddenException('Only channel owner or post author can unpin');
+    }
     return this.prisma.channelPost.update({ where: { id: postId }, data: { isPinned: false } });
   }
 
-  async like(postId: string) {
-    await this.prisma.$executeRaw`UPDATE channel_posts SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`;
+  async like(postId: string, _userId: string) {
+    // Verify post exists before incrementing
+    const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Community post not found');
+
+    await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = "likesCount" + 1 WHERE id = ${postId}`;
     return { liked: true };
   }
 
-  async unlike(postId: string) {
-    await this.prisma.$executeRaw`UPDATE channel_posts SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`;
+  async unlike(postId: string, _userId: string) {
+    // Verify post exists before decrementing
+    const post = await this.prisma.channelPost.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Community post not found');
+
+    await this.prisma.$executeRaw`UPDATE "channel_posts" SET "likesCount" = GREATEST("likesCount" - 1, 0) WHERE id = ${postId}`;
     return { unliked: true };
   }
 }

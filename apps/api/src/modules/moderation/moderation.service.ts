@@ -6,7 +6,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ReportReason, ReportStatus, ModerationAction } from '@prisma/client';
+import { Prisma, ReportReason, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { checkText, TextCheckResult } from './word-filter';
 
 export interface CheckTextDto {
@@ -53,7 +53,6 @@ export class ModerationService {
 
       // Auto-action on high severity: hide content immediately (simulate)
       if (result.severity === 'high') {
-        // In a real system, we would hide the content and notify user
         this.logger.warn(`High severity content flagged from user ${userId}, auto-action recommended`);
       }
     }
@@ -61,10 +60,9 @@ export class ModerationService {
     return result;
   }
 
-  async checkImage(userId: string, dto: CheckImageDto): Promise<{ safe: boolean; categories?: string[] }> {
+  async checkImage(_userId: string, _dto: CheckImageDto): Promise<{ safe: boolean; categories?: string[] }> {
     // Placeholder for image moderation
     // In production, integrate with AWS Rekognition, Google Vision, etc.
-    // For now, return safe: true
     return { safe: true };
   }
 
@@ -109,19 +107,19 @@ export class ModerationService {
   }
 
   async getQueue(adminId: string, cursor?: string) {
-    // Verify admin
-    await this.verifyAdmin(adminId);
+    await this.verifyAdminOrModerator(adminId);
 
     const limit = 20;
+    const where: Prisma.ReportWhereInput = { status: 'PENDING' };
     const reports = await this.prisma.report.findMany({
-      where: { status: 'PENDING' },
+      where,
       include: {
         reporter: { select: { id: true, displayName: true } },
         reportedUser: { select: { id: true, displayName: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
-      cursor: cursor ? { id: cursor } : undefined,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = reports.length > limit;
@@ -135,7 +133,7 @@ export class ModerationService {
   }
 
   async review(adminId: string, reportId: string, action: 'approve' | 'remove' | 'warn', note?: string) {
-    await this.verifyAdmin(adminId);
+    await this.verifyAdminOrModerator(adminId);
 
     const report = await this.prisma.report.findUnique({
       where: { id: reportId },
@@ -154,29 +152,63 @@ export class ModerationService {
       case 'remove':
         status = 'RESOLVED';
         actionTaken = 'CONTENT_REMOVED';
-        // In real system, would hide content and possibly notify user
         break;
       case 'warn':
         status = 'RESOLVED';
         actionTaken = 'WARNING';
-        // Send warning to user
         break;
     }
 
-    await this.prisma.report.update({
-      where: { id: reportId },
-      data: {
-        status,
-        reviewedById: adminId,
-        reviewedAt: new Date(),
-        actionTaken,
-        moderatorNotes: note,
-      },
+    // Use a transaction to update report + soft-delete content + create moderation log atomically
+    await this.prisma.$transaction(async (tx) => {
+      await tx.report.update({
+        where: { id: reportId },
+        data: {
+          status,
+          reviewedById: adminId,
+          reviewedAt: new Date(),
+          actionTaken,
+          moderatorNotes: note,
+        },
+      });
+
+      // Soft-delete content when action is 'remove'
+      if (action === 'remove') {
+        if (report.reportedPostId) {
+          await tx.post.update({
+            where: { id: report.reportedPostId },
+            data: { isRemoved: true, removedReason: note ?? 'Removed by moderator', removedAt: new Date() },
+          });
+        }
+        if (report.reportedCommentId) {
+          await tx.comment.update({
+            where: { id: report.reportedCommentId },
+            data: { isRemoved: true },
+          });
+        }
+      }
+
+      // Create moderation log for non-dismiss actions
+      if (action !== 'approve') {
+        await tx.moderationLog.create({
+          data: {
+            moderatorId: adminId,
+            action: actionTaken,
+            targetUserId: report.reportedUserId,
+            targetPostId: report.reportedPostId,
+            targetCommentId: report.reportedCommentId,
+            targetMessageId: report.reportedMessageId,
+            reportId: report.id,
+            reason: `Report ${reportId}: ${report.reason}`,
+            explanation: note ?? `Resolved report ${reportId} with action: ${actionTaken}`,
+          },
+        });
+      }
     });
   }
 
   async getStats(adminId: string) {
-    await this.verifyAdmin(adminId);
+    await this.verifyAdminOrModerator(adminId);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -231,7 +263,7 @@ export class ModerationService {
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
-      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = logs.length > limit;
@@ -254,7 +286,7 @@ export class ModerationService {
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
-      ...(cursor && { cursor: { id: cursor }, skip: 1 }),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = logs.length > limit;
@@ -286,13 +318,18 @@ export class ModerationService {
     });
   }
 
-  private async verifyAdmin(userId: string) {
+  /** Verify the user is an ADMIN or MODERATOR */
+  private async verifyAdminOrModerator(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
     });
-    if (!user || user.role !== 'ADMIN') {
-      throw new ForbiddenException('Admin access required');
+    if (!user) {
+      throw new ForbiddenException('Admin or moderator access required');
+    }
+    const allowedRoles: UserRole[] = ['ADMIN', 'MODERATOR'];
+    if (!allowedRoles.includes(user.role)) {
+      throw new ForbiddenException('Admin or moderator access required');
     }
   }
 

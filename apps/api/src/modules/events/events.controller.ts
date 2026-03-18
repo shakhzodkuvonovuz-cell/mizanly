@@ -10,9 +10,6 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
-  NotFoundException,
-  ForbiddenException,
-  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiOkResponse, ApiCreatedResponse, ApiNoContentResponse, ApiProperty } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -41,12 +38,12 @@ export class CreateEventDto {
 
   @ApiProperty({ description: 'Start date and time (ISO 8601)', required: true })
   @IsISO8601()
-  startDate: Date;
+  startDate: string;
 
   @ApiProperty({ description: 'End date and time (ISO 8601)', required: false })
   @IsOptional()
   @IsISO8601()
-  endDate?: Date;
+  endDate?: string;
 
   @ApiProperty({ description: 'Physical location address', maxLength: 500, required: false })
   @IsOptional()
@@ -106,12 +103,12 @@ export class UpdateEventDto {
   @ApiProperty({ description: 'Start date and time (ISO 8601)', required: false })
   @IsOptional()
   @IsISO8601()
-  startDate?: Date;
+  startDate?: string;
 
   @ApiProperty({ description: 'End date and time (ISO 8601)', required: false })
   @IsOptional()
   @IsISO8601()
-  endDate?: Date;
+  endDate?: string;
 
   @ApiProperty({ description: 'Physical location address', maxLength: 500, required: false })
   @IsOptional()
@@ -187,43 +184,7 @@ export class EventsController {
     return this.service.listEvents(userId, cursor, limit, privacy, eventType);
   }
 
-  // GET /events/:id
-  @Get(':id')
-  @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Get event details' })
-  @ApiOkResponse({ description: 'Event details' })
-  getEvent(@CurrentUser('id') userId: string | null, @Param('id') id: string) {
-    return this.service.getEvent(id, userId);
-  }
-
-  // PATCH /events/:id
-  @Patch(':id')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Update event (owner only)' })
-  @ApiOkResponse({ description: 'Event updated' })
-  updateEvent(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-    @Body() dto: UpdateEventDto,
-  ) {
-    return this.service.updateEvent(userId, id, dto);
-  }
-
-  // DELETE /events/:id
-  @Delete(':id')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Delete event (owner only)' })
-  @ApiNoContentResponse({ description: 'Event deleted' })
-  async deleteEvent(@CurrentUser('id') userId: string, @Param('id') id: string) {
-    await this.service.deleteEvent(userId, id);
-    return null;
-  }
-
+  // Compound :id routes BEFORE simple :id route
   // POST /events/:id/rsvp
   @Post(':id/rsvp')
   @UseGuards(ClerkAuthGuard)
@@ -264,5 +225,42 @@ export class EventsController {
     @Query('status') status?: string,
   ) {
     return this.service.listAttendees(eventId, cursor, limit, status);
+  }
+
+  // GET /events/:id — simple param route LAST
+  @Get(':id')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get event details' })
+  @ApiOkResponse({ description: 'Event details' })
+  getEvent(@CurrentUser('id') userId: string | null, @Param('id') id: string) {
+    return this.service.getEvent(id, userId);
+  }
+
+  // PATCH /events/:id
+  @Patch(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Update event (organizer only)' })
+  @ApiOkResponse({ description: 'Event updated' })
+  updateEvent(
+    @CurrentUser('id') userId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateEventDto,
+  ) {
+    return this.service.updateEvent(userId, id, dto);
+  }
+
+  // DELETE /events/:id
+  @Delete(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Delete event (organizer only)' })
+  @ApiNoContentResponse({ description: 'Event deleted' })
+  async deleteEvent(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    await this.service.deleteEvent(userId, id);
+    return null;
   }
 }
