@@ -347,6 +347,7 @@ export default function CommunityPostsScreen() {
                     maxLength={POST_MAX_LENGTH}
                   />
                   <Pressable
+                    accessibilityRole="button"
                     style={[styles.composeButton, !composeText.trim() && selectedMediaList.length === 0 && styles.composeButtonDisabled]}
                     onPress={handleCreatePost}
                     disabled={!composeText.trim() && selectedMediaList.length === 0 || createMutation.isPending}

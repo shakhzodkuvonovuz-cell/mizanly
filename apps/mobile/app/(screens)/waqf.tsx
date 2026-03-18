@@ -76,7 +76,7 @@ export default function WaqfScreen() {
             <Text style={styles.percentText}>{Math.round(progress * 100)}%</Text>
           </View>
 
-          <Pressable style={styles.contributeBtn} onPress={() => haptic.light()}>
+          <Pressable accessibilityRole="button" style={styles.contributeBtn} onPress={() => haptic.light()}>
             <LinearGradient colors={[colors.gold, '#D4A94F']} style={styles.contributeBtnGradient}>
               <Icon name="heart" size="sm" color="#FFF" />
               <Text style={styles.contributeBtnText}>Contribute</Text>

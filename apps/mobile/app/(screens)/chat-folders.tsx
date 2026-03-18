@@ -78,6 +78,7 @@ export default function ChatFoldersScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
         <Pressable
+          accessibilityRole="button"
           style={styles.folderCard}
           onLongPress={() => { setMenuFolder(item); haptic.light(); }}
         >
@@ -135,6 +136,7 @@ export default function ChatFoldersScreen() {
             <View style={styles.iconGrid}>
               {FOLDER_ICONS.map((icon, i) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={icon}
                   style={[styles.iconOption, selectedIcon === i && { borderColor: FOLDER_COLORS[i] }]}
                   onPress={() => { setSelectedIcon(i); haptic.light(); }}
@@ -149,6 +151,7 @@ export default function ChatFoldersScreen() {
                 <Text style={styles.cancelText}>Cancel</Text>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.createBtn, !newName.trim() && { opacity: 0.5 }]}
                 onPress={() => newName.trim() && createMutation.mutate()}
                 disabled={!newName.trim() || createMutation.isPending}

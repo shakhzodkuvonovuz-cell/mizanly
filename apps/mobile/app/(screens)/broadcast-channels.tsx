@@ -148,7 +148,7 @@ export default function BroadcastChannelsScreen() {
 
   const renderChannelItem = useCallback(({ item, index }: { item: BroadcastChannelWithSubscription; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
-      <Pressable onPress={() => handleChannelPress(item)}>
+      <Pressable accessibilityRole="button" onPress={() => handleChannelPress(item)}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
           style={styles.channelCard}
@@ -172,7 +172,7 @@ export default function BroadcastChannelsScreen() {
               </Text>
             </LinearGradient>
           </View>
-          <Pressable onPress={(e) => {
+          <Pressable accessibilityRole="button" onPress={(e) => {
             handleSubscribe(item);
           }}>
             <LinearGradient
@@ -284,7 +284,7 @@ export default function BroadcastChannelsScreen() {
               returnKeyType="search"
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} style={styles.clearButton}>
+              <Pressable accessibilityRole="button" onPress={() => setSearchQuery('')} style={styles.clearButton}>
                 <Icon name="x" size="sm" color={colors.text.secondary} />
               </Pressable>
             )}

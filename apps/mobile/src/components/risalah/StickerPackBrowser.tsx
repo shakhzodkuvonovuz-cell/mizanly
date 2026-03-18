@@ -394,6 +394,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
                   <Text style={styles.sheetCount}>{selectedPack.stickers.length} stickers</Text>
                 </View>
                 <Pressable
+                  accessibilityRole="button"
                   style={[
                     styles.sheetAction,
                     ownedPackIds.has(selectedPack.id) && styles.sheetActionAdded,

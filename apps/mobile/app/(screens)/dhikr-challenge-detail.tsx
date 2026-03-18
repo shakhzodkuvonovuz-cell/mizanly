@@ -221,6 +221,7 @@ export default function DhikrChallengeDetailScreen() {
             ) : (
               <View style={styles.contributeSection}>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={handleContributeTap}
                  
                   style={styles.contributeCounter}
@@ -247,6 +248,7 @@ export default function DhikrChallengeDetailScreen() {
                     icon="send"
                   />
                   <Pressable
+                    accessibilityRole="button"
                     onPress={() => {
                       setShowContribute(false);
                       setContributeCount(0);

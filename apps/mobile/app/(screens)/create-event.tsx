@@ -169,6 +169,7 @@ export default function CreateEventScreen() {
         {/* Cover Image Section */}
         <Animated.View entering={FadeInUp.duration(400)}>
           <Pressable
+            accessibilityRole="button"
             style={[styles.coverContainer, hasCover && styles.coverHasImage]}
             onPress={() => setHasCover(!hasCover)}
                      >
@@ -360,6 +361,7 @@ export default function CreateEventScreen() {
                 const eventTypeLabel = type === 'in-person' ? t('events.inPerson') : type === 'online' ? t('events.online') : t('events.hybrid');
                 return (
                   <Pressable
+                    accessibilityRole="button"
                     key={type}
                     style={styles.pillButton}
                     onPress={() => setEventType(type)}
@@ -408,6 +410,7 @@ export default function CreateEventScreen() {
                 const privacyLabel = type === 'public' ? t('events.public') : type === 'members' ? t('events.members') : t('events.inviteOnly');
                 return (
                     <Pressable
+                      accessibilityRole="button"
                       key={type}
                       style={styles.pillButton}
                       onPress={() => setPrivacy(type)}
@@ -481,6 +484,7 @@ export default function CreateEventScreen() {
             ) : (
               communities.map((community, index) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={community.id}
                   style={[
                     styles.communityRow,

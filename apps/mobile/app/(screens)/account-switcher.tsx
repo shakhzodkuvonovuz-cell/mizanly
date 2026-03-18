@@ -290,7 +290,7 @@ export default function AccountSwitcherScreen() {
                             <Text style={styles.unreadBadgeText}>{account.unreadCount}</Text>
                           </View>
                         )}
-                        <Pressable
+                        <Pressable accessibilityRole="button" accessibilityRole="button"
                           style={styles.switchButton}
                           onPress={() => handleSwitchAccount(account)}
                           disabled={switching}
@@ -321,7 +321,7 @@ export default function AccountSwitcherScreen() {
 
           {/* Add Account Section */}
           <Animated.View entering={FadeInUp.delay(200).duration(400)}>
-            <Pressable style={styles.addAccountCard} onPress={handleAddAccount}>
+            <Pressable accessibilityRole="button" style={styles.addAccountCard} onPress={handleAddAccount}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.2)', 'rgba(28,35,51,0.1)']}
                 style={[styles.addAccountGradient, styles.addAccountDashed]}
@@ -356,7 +356,7 @@ export default function AccountSwitcherScreen() {
                 </View>
 
                 {/* Manage Accounts Row */}
-                <Pressable style={styles.managementRow}>
+                <Pressable accessibilityRole="button" style={styles.managementRow}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="users" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.manageAccounts')}</Text>
@@ -365,7 +365,7 @@ export default function AccountSwitcherScreen() {
                 </Pressable>
 
                 {/* Default Account Row */}
-                <Pressable style={styles.managementRow}>
+                <Pressable accessibilityRole="button" style={styles.managementRow}>
                   <View style={styles.managementRowLeft}>
                     <Icon name="user" size="sm" color={colors.text.secondary} />
                     <Text style={styles.managementRowText}>{t('screens.accountSwitcher.defaultAccount')}</Text>
@@ -414,7 +414,7 @@ export default function AccountSwitcherScreen() {
                   <Text style={styles.securityText}>
                     {t('screens.accountSwitcher.securityText')}
                   </Text>
-                  <Pressable onPress={handleSignOutAll}>
+                  <Pressable accessibilityRole="button" onPress={handleSignOutAll}>
                     <Text style={styles.signOutAllText}>{t('screens.accountSwitcher.signOutAll')}</Text>
                   </Pressable>
                 </View>

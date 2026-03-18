@@ -166,6 +166,7 @@ export default function GoLiveScreen() {
             >
               <Text style={styles.inputLabel}>Stream Type</Text>
               <Pressable
+                accessibilityRole="button"
                 style={styles.typeSelector}
                 onPress={() => setShowLiveTypePicker(true)}
               >
@@ -205,6 +206,7 @@ export default function GoLiveScreen() {
 
               {isScheduled && scheduleDate && (
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.scheduleDisplay}
                   onPress={() => setShowDatePicker(true)}
                 >

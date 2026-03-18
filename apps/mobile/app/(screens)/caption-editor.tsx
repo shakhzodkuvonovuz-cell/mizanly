@@ -202,6 +202,7 @@ export default function CaptionEditorScreen() {
               </Text>
             </LinearGradient>
             <Pressable
+              accessibilityRole="button"
               style={styles.deleteButton}
               onPress={() => handleDeleteCaption(item.id)}
             >
@@ -347,6 +348,7 @@ export default function CaptionEditorScreen() {
                 {/* Playback Controls */}
                 <View style={styles.playbackControls}>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.controlCircle}
                     onPress={() => setCurrentTime(Math.max(0, currentTime - 5))}
                   >
@@ -359,6 +361,7 @@ export default function CaptionEditorScreen() {
                   </Pressable>
 
                   <Pressable
+                    accessibilityRole="button"
                     style={[styles.controlCircle, styles.playCircle]}
                     onPress={() => setIsPlaying(!isPlaying)}
                   >
@@ -371,6 +374,7 @@ export default function CaptionEditorScreen() {
                   </Pressable>
 
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.controlCircle}
                     onPress={() => setCurrentTime(Math.min(90, currentTime + 5))}
                   >
@@ -445,6 +449,7 @@ export default function CaptionEditorScreen() {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.selectorScroll}>
                   {FONT_OPTIONS.map((font) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={font}
                       style={styles.selectorButton}
                       onPress={() => setSelectedFont(font)}
@@ -472,6 +477,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.selectorRow}>
                   {SIZE_OPTIONS.map((size) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={size}
                       style={styles.selectorButton}
                       onPress={() => setSelectedSize(size)}
@@ -499,6 +505,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.selectorRow}>
                   {POSITION_OPTIONS.map((position) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={position}
                       style={styles.selectorButton}
                       onPress={() => setSelectedPosition(position)}
@@ -526,6 +533,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.selectorRow}>
                   {BACKGROUND_OPTIONS.map((bg) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={bg}
                       style={styles.selectorButton}
                       onPress={() => setSelectedBackground(bg)}
@@ -553,6 +561,7 @@ export default function CaptionEditorScreen() {
                 <View style={styles.colorRow}>
                   {TEXT_COLORS.map((color) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={color}
                       style={[
                         styles.colorCircle,
@@ -578,6 +587,7 @@ export default function CaptionEditorScreen() {
             style={styles.bottomBarGradient}
           >
             <Pressable
+              accessibilityRole="button"
               style={styles.autoGenButton}
               onPress={handleAutoGenerate}
               disabled={generateMutation.isPending}
@@ -601,6 +611,7 @@ export default function CaptionEditorScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               style={styles.saveButton}
               onPress={handleSave}
               disabled={saveMutation.isPending}

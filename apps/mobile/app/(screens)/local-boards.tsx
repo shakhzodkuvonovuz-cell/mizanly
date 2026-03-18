@@ -41,7 +41,7 @@ export default function LocalBoardsScreen() {
 
   const renderBoard = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
-      <Pressable style={styles.boardCard} onPress={() => haptic.light()}>
+      <Pressable accessibilityRole="button" style={styles.boardCard} onPress={() => haptic.light()}>
         <LinearGradient
           colors={['rgba(10,123,79,0.08)', 'transparent']}
           style={styles.boardGradient}

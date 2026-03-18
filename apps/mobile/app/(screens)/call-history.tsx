@@ -88,6 +88,7 @@ export default function CallHistoryScreen() {
           style={styles.row}
         >
           <Pressable
+            accessibilityRole="button"
             style={styles.rowInner}
             onPress={() => router.push(`/(screens)/profile/${otherUser.username}` as never)}
           >
@@ -116,6 +117,7 @@ export default function CallHistoryScreen() {
             </View>
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             hitSlop={8}
             onPress={() => router.push(`/(screens)/call/${item.id}` as never)}
           >

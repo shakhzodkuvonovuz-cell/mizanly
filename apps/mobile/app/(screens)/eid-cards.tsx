@@ -57,6 +57,7 @@ export default function EidCardsScreen() {
           <View style={styles.grid}>
             {occasions.map((occ) => (
               <Pressable
+                accessibilityRole="button"
                 key={occ.id}
                 onPress={() => handleOccasionPress(occ.id)}
                 style={styles.card}

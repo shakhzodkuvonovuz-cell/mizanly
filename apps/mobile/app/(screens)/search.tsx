@@ -723,6 +723,7 @@ export default function SearchScreen() {
               <View style={styles.trendingChips}>
                 {trending.map((item, i) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={i}
                     style={styles.trendingChip}
                     onPress={() => {

@@ -189,6 +189,7 @@ function ThreadPart({
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'hashtag') {
                   setShowAutocomplete(false);
@@ -211,6 +212,7 @@ function ThreadPart({
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               onPress={() => {
                 if (autocomplete.partIndex === index && autocomplete.type === 'mention') {
                   setShowAutocomplete(false);
@@ -459,6 +461,7 @@ export default function CreateThreadScreen() {
         {/* Visibility bar */}
         <View style={styles.visBar}>
           <Pressable
+            accessibilityRole="button"
             style={styles.visPill}
             onPress={() => setShowVisibility((v) => !v)}
           >
@@ -479,6 +482,7 @@ export default function CreateThreadScreen() {
           <View style={styles.visMenu}>
             {VISIBILITY_KEYS.map((opt) => (
               <Pressable
+                accessibilityRole="button"
                 key={opt.value}
                 style={[styles.visOption, visibility === opt.value && styles.visOptionActive]}
                 onPress={() => {
@@ -606,6 +610,7 @@ export default function CreateThreadScreen() {
                       />
                       {poll.options.length > 2 && (
                         <Pressable
+                          accessibilityRole="button"
                           onPress={() => setPoll((p) => p ? { ...p, options: p.options.filter((_, i) => i !== oi) } : p)}
                           hitSlop={8}
                         >
@@ -616,6 +621,7 @@ export default function CreateThreadScreen() {
                   ))}
                   {poll.options.length < 4 && (
                     <Pressable
+                      accessibilityRole="button"
                       style={styles.pollAddOption}
                       onPress={() => setPoll((p) => p ? { ...p, options: [...p.options, ''] } : p)}
                     >
@@ -623,6 +629,7 @@ export default function CreateThreadScreen() {
                     </Pressable>
                   )}
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.pollAllowMultiple}
                     onPress={() => setPoll((p) => p ? { ...p, allowMultiple: !p.allowMultiple } : p)}
                   >

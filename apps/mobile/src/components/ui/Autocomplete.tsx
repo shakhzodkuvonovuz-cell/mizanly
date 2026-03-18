@@ -141,6 +141,7 @@ export function Autocomplete({ visible, type, query, onSelect, onClose }: Autoco
           </Text>
           {type === 'hashtag' && (
             <Pressable
+              accessibilityRole="button"
               style={styles.createTag}
               onPress={() => {
                 onSelect(`#${query.replace(/^#/, '')}`);

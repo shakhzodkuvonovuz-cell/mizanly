@@ -265,6 +265,7 @@ export default function ScheduleLiveScreen() {
             >
               <Text style={styles.inputLabel}>{t('screens.schedule-live.scheduleTimeLabel')}</Text>
               <Pressable
+                accessibilityRole="button"
                 style={styles.dateSelector}
                 onPress={() => setShowDatePicker(true)}
               >
@@ -299,6 +300,7 @@ export default function ScheduleLiveScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {dayOptions.map((day, idx) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={idx}
                   style={[styles.pickerChip, selectedDayIndex === idx && styles.pickerChipActive]}
                   onPress={() => setSelectedDayIndex(idx)}
@@ -317,6 +319,7 @@ export default function ScheduleLiveScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {HOURS.map((hour) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={hour}
                   style={[styles.pickerChip, selectedHour === hour && styles.pickerChipActive]}
                   onPress={() => setSelectedHour(hour)}
@@ -335,6 +338,7 @@ export default function ScheduleLiveScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pickerRow}>
               {MINUTES.map((minute) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={minute}
                   style={[styles.pickerChip, selectedMinute === minute && styles.pickerChipActive]}
                   onPress={() => setSelectedMinute(minute)}

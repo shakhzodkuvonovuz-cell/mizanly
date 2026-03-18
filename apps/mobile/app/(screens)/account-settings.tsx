@@ -40,6 +40,7 @@ function Row({
   } : undefined;
   return (
     <Pressable
+      accessibilityRole="button"
       style={styles.row}
       onPress={handlePress}
 

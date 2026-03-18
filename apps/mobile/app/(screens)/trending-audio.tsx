@@ -87,6 +87,7 @@ export default function TrendingAudioScreen() {
         </View>
 
         <Pressable
+          accessibilityRole="button"
           style={styles.useButton}
           onPress={() => {
             haptic.light();

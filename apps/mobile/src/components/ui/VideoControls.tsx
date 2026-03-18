@@ -177,6 +177,7 @@ export function VideoControls({
         <View style={styles.topIcons}>
           {onMinimize && (
             <Pressable
+              accessibilityRole="button"
               onPress={onMinimize}
               style={styles.iconButton}
               accessibilityLabel="Minimize player"
@@ -186,6 +187,7 @@ export function VideoControls({
           )}
           {onFullscreen && (
             <Pressable
+              accessibilityRole="button"
               onPress={onFullscreen}
               style={styles.iconButton}
               accessibilityLabel="Enter fullscreen"
@@ -199,6 +201,7 @@ export function VideoControls({
       {/* Center play/skip buttons */}
       <View style={styles.centerRow}>
         <Pressable
+          accessibilityRole="button"
           onPress={handleSkipBackward}
           style={styles.skipButton}
           accessibilityLabel="Skip back 10 seconds"
@@ -206,6 +209,7 @@ export function VideoControls({
           <Icon name="rewind" size="xl" color={colors.text.primary} />
         </Pressable>
         <Pressable
+          accessibilityRole="button"
           onPress={handlePlayPause}
           style={styles.playButton}
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}
@@ -213,6 +217,7 @@ export function VideoControls({
           <Icon name={isPlaying ? 'pause' : 'play'} size={48} color={colors.text.primary} />
         </Pressable>
         <Pressable
+          accessibilityRole="button"
           onPress={handleSkipForward}
           style={styles.skipButton}
           accessibilityLabel="Skip forward 10 seconds"
@@ -224,6 +229,7 @@ export function VideoControls({
       {/* Bottom bar */}
       <View style={styles.bottomBar}>
         <Pressable
+          accessibilityRole="button"
           onPress={() => setQualitySheetVisible(true)}
           style={styles.iconButton}
           accessibilityLabel={`Quality: ${quality}`}
@@ -233,6 +239,7 @@ export function VideoControls({
         </Pressable>
 
         <Pressable
+          accessibilityRole="button"
           onPress={() => setSpeedSheetVisible(true)}
           style={styles.iconButton}
           accessibilityLabel={`Speed: ${speed}x`}
@@ -242,6 +249,7 @@ export function VideoControls({
         </Pressable>
 
         <Pressable
+          accessibilityRole="button"
           onPress={handleVolumeButtonPress}
           style={styles.iconButton}
           accessibilityLabel={volume === 0 ? 'Unmute' : 'Mute'}
@@ -260,6 +268,7 @@ export function VideoControls({
           <View style={[styles.seekBarProgress, { width: `${progress * 100}%` }]} />
         </View>
         <Pressable
+          accessibilityRole="button"
           style={StyleSheet.absoluteFill}
           onPress={(e) => {
             const { locationX } = e.nativeEvent;

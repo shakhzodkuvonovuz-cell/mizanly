@@ -419,6 +419,7 @@ export default function ConversationInfoScreen() {
               )}
               {!isGroup && (
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.actionRow}
                   onPress={() => {
                     const other = convo?.members.find((m) => m.user.id !== user?.id);
@@ -477,6 +478,7 @@ export default function ConversationInfoScreen() {
               />
             </View>
             <Pressable
+              accessibilityRole="button"
               style={[styles.sheetButton, !newGroupName.trim() && styles.sheetButtonDisabled]}
               onPress={handleUpdateGroupName}
               disabled={!newGroupName.trim() || updateGroupMutation.isPending}
@@ -516,6 +518,7 @@ export default function ConversationInfoScreen() {
                         {member.displayName}
                       </Text>
                       <Pressable
+                        accessibilityRole="button"
                         onPress={() => setSelectedNewMembers(prev => prev.filter(m => m.id !== member.id))}
                         hitSlop={4}
                         style={styles.chipRemove}
@@ -564,6 +567,7 @@ export default function ConversationInfoScreen() {
                 refreshControl={<RefreshControl refreshing={memberSearchQuery.isFetching} onRefresh={() => memberSearchQuery.refetch()} tintColor={colors.emerald} />}
                 renderItem={({ item }) => (
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.userRow}
                     onPress={() => setSelectedNewMembers(prev => [...prev, item])}
                     disabled={addMembersMutation.isPending}
@@ -596,6 +600,7 @@ export default function ConversationInfoScreen() {
 
             {/* Add button */}
             <Pressable
+              accessibilityRole="button"
               style={[styles.sheetButton, selectedNewMembers.length === 0 && styles.sheetButtonDisabled]}
               onPress={handleAddSelectedMembers}
               disabled={selectedNewMembers.length === 0 || addMembersMutation.isPending}

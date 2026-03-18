@@ -179,6 +179,7 @@ function ChatLockContent() {
         {locked && (
           <Animated.View entering={FadeInUp.delay(400).duration(400)} style={styles.removeLockContainer}>
             <Pressable
+              accessibilityRole="button"
               onPress={handleRemoveLock}
               disabled={toggling}
               style={({ pressed }) => [

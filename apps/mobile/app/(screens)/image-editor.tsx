@@ -79,6 +79,7 @@ export default function ImageEditorScreen() {
       <View style={styles.aspectRow}>
         {ASPECT_RATIOS.map((ar) => (
           <Pressable
+            accessibilityRole="button"
             key={ar.value}
             style={[styles.aspectButton, aspectRatio === ar.value && styles.aspectButtonActive]}
             onPress={() => setAspectRatio(ar.value)}
@@ -120,6 +121,7 @@ export default function ImageEditorScreen() {
       >
         {FILTERS.map((filter, index) => (
           <Pressable
+            accessibilityRole="button"
             key={filter.id}
             style={[styles.filterItem, selectedFilter === filter.id && styles.filterItemActive]}
             onPress={() => setSelectedFilter(filter.id)}
@@ -232,6 +234,7 @@ export default function ImageEditorScreen() {
           <View style={styles.tabBar}>
             {(['crop', 'filter', 'adjust'] as EditTab[]).map((tab) => (
               <Pressable
+                accessibilityRole="button"
                 key={tab}
                 style={[styles.tab, activeTab === tab && styles.tabActive]}
                 onPress={() => setActiveTab(tab)}

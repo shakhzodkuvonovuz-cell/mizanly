@@ -165,6 +165,7 @@ function HajjCompanionContent() {
                 {t('hajj.year')}: {currentYear}
               </Text>
               <Pressable
+                accessibilityRole="button"
                 style={styles.startButton}
                 onPress={() => createMutation.mutate(currentYear)}
 
@@ -243,6 +244,7 @@ function HajjCompanionContent() {
                 entering={FadeInUp.delay(index * 80).duration(300)}
               >
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.stepRow}
   
                   onPress={() =>
@@ -310,6 +312,7 @@ function HajjCompanionContent() {
         {/* Action buttons */}
         <View style={styles.actions}>
           <Pressable
+            accessibilityRole="button"
             style={styles.shareButton}
             onPress={handleShare}
           >
@@ -320,6 +323,7 @@ function HajjCompanionContent() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             style={styles.resetButton}
             onPress={() => setShowResetSheet(true)}
           >

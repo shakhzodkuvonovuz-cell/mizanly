@@ -112,6 +112,7 @@ export function PremiereCountdown({
 
       <View style={styles.actions}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.reminderBtn, isReminderSet && { borderColor: colors.gold }]}
           onPress={() => {
             haptic.light();

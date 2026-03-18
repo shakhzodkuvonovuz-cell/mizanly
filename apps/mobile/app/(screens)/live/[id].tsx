@@ -669,6 +669,7 @@ export default function LiveViewerScreen() {
             <View style={styles.reactionBar}>
               {['🔥', '❤️', '👏', '😂', '😮'].map((emoji) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={emoji}
                   style={styles.reactionButton}
                   onPress={() => addFloatingReaction(emoji)}
@@ -689,6 +690,7 @@ export default function LiveViewerScreen() {
               multiline
             />
             <Pressable
+              accessibilityRole="button"
               style={[styles.sendButton, !chatMessage.trim() && styles.sendButtonDisabled]}
               onPress={handleSendChat}
               disabled={!chatMessage.trim()}

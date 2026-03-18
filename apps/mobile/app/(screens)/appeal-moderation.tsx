@@ -199,6 +199,7 @@ export default function AppealModerationScreen() {
             <Text style={styles.reasonLabel}>{t('appealModeration.reasonLabel')}</Text>
             {APPEAL_REASONS.map((reason, index) => (
               <Pressable
+                accessibilityRole="button"
                 key={reason.id}
                 style={[
                   styles.reasonRow,
@@ -417,6 +418,7 @@ export default function AppealModerationScreen() {
           <Text style={styles.cancelText}>{t('common.cancel')}</Text>
         </Pressable>
         <Pressable
+          accessibilityRole="button"
           disabled={isSubmitDisabled || submitAppealMutation.isPending}
          
           onPress={() => submitAppealMutation.mutate()}

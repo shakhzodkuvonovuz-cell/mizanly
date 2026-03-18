@@ -94,6 +94,7 @@ export default function QrCodeScreen() {
 
           <Animated.View entering={FadeInUp.delay(300).duration(400)} style={styles.buttons}>
             <Pressable
+              accessibilityRole="button"
               style={styles.button}
               onPress={handleShare}
               disabled={loading}
@@ -108,6 +109,7 @@ export default function QrCodeScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               style={styles.button}
               onPress={handleSave}
               disabled={loading}

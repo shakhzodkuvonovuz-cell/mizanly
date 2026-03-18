@@ -503,6 +503,7 @@ export default function PrayerTimesScreen() {
 
           {/* Calculation Method */}
           <Pressable
+            accessibilityRole="button"
             style={styles.methodSelector}
             onPress={() => setShowMethodPicker(true)}
           >

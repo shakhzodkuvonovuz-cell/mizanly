@@ -34,6 +34,7 @@ const GRID_ITEM = (SCREEN_W - 2) / 3;
 function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.gridItem, pressed && { opacity: 0.85 }]}
     >

@@ -156,6 +156,7 @@ function GoalItem({
   return (
     <Animated.View entering={FadeInUp.delay(200 + index * 60).duration(300)}>
       <Pressable
+        accessibilityRole="button"
         onPress={() => {
           haptic.light();
           onToggle();

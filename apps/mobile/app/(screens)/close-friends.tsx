@@ -60,6 +60,7 @@ function UserRow({ user, isMe, isCloseFriend, onToggle, onPress, disabled, index
             <View style={styles.actions}>
               {isCloseFriend && (
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => onToggle(user.id, false)}
                   hitSlop={8}
                   style={styles.removeBtn}

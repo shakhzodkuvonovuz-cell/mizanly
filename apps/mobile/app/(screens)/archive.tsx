@@ -105,6 +105,7 @@ export default function ArchiveScreen() {
   const renderGridItem = useCallback(({ item }: { item: Story }) => {
     return (
       <Pressable
+        accessibilityRole="button"
         style={styles.gridItem as ViewStyle}
         onPress={() => handleStoryPress(item)}
         onLongPress={() => handleStoryLongPress(item)}

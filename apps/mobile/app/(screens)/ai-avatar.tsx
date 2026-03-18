@@ -96,6 +96,7 @@ export default function AiAvatarScreen() {
             <View style={styles.styleGrid}>
               {STYLES.map((style) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={style.id}
                   onPress={() => { setSelectedStyle(style.id); haptic.light(); }}
                   style={[styles.styleCard, selectedStyle === style.id && { borderColor: style.color }]}
@@ -114,6 +115,7 @@ export default function AiAvatarScreen() {
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.generateSection}>
             <Pressable
+              accessibilityRole="button"
               onPress={() => generateMutation.mutate()}
               disabled={generateMutation.isPending || !user?.avatarUrl}
               style={[styles.generateBtn, (generateMutation.isPending || !user?.avatarUrl) && { opacity: 0.5 }]}

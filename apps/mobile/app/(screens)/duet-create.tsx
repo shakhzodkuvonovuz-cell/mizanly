@@ -298,7 +298,7 @@ export default function DuetCreateScreen() {
                   { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
                   { id: 'react', icon: 'user' as IconName, label: 'React' },
                 ].map((layout) => (
-                  <Pressable
+                  <Pressable accessibilityRole="button" accessibilityRole="button"
                     key={layout.id}
                     style={styles.layoutButton}
                     onPress={() => setLayoutMode(layout.id as LayoutMode)}
@@ -358,7 +358,7 @@ export default function DuetCreateScreen() {
           <Animated.View entering={FadeInUp.delay(250).duration(400)}>
             <View style={styles.controlsContainer}>
               {/* Flip Camera */}
-              <Pressable style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
+              <Pressable accessibilityRole="button" style={styles.controlButton} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                 <LinearGradient
                   colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                   style={styles.controlButtonGradient}
@@ -368,7 +368,7 @@ export default function DuetCreateScreen() {
               </Pressable>
 
               {/* Record Button */}
-              <Pressable style={styles.recordButton} onPress={handleRecord}>
+              <Pressable accessibilityRole="button" style={styles.recordButton} onPress={handleRecord}>
                 <LinearGradient
                   colors={isRecording
                     ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -388,7 +388,7 @@ export default function DuetCreateScreen() {
               </Pressable>
 
               {/* Flash Toggle */}
-              <Pressable
+              <Pressable accessibilityRole="button" accessibilityRole="button"
                 style={styles.controlButton}
                 onPress={() => setFlashOn(!flashOn)}
               >
@@ -426,7 +426,7 @@ export default function DuetCreateScreen() {
                     </LinearGradient>
                   </View>
                   <Text style={styles.audioTitle}>Audio Settings</Text>
-                  <Pressable
+                  <Pressable accessibilityRole="button" accessibilityRole="button"
                     style={[styles.muteButton, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
@@ -460,7 +460,7 @@ export default function DuetCreateScreen() {
 
           {/* Next Button */}
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-            <Pressable
+            <Pressable accessibilityRole="button" accessibilityRole="button"
               style={styles.nextButton}
               onPress={() => router.push('/create-reel')}
             >

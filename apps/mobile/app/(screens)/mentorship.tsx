@@ -63,6 +63,7 @@ export default function MentorshipScreen() {
   const renderMentor = ({ item, index }: { item: Record<string, unknown>; index: number }) => (
     <Animated.View entering={FadeInUp.delay(index * 60).duration(300)}>
       <Pressable
+        accessibilityRole="button"
         style={styles.mentorCard}
 
         onPress={() => {
@@ -123,6 +124,7 @@ export default function MentorshipScreen() {
         <View style={styles.tabs}>
           {(['find', 'mine'] as const).map(tab => (
             <Pressable
+              accessibilityRole="button"
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}

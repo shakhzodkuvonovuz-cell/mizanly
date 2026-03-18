@@ -148,6 +148,7 @@ export default function CreateClipScreen() {
           {/* Submit */}
           <Animated.View entering={FadeInDown.delay(250).duration(300)} style={styles.submitSection}>
             <Pressable
+              accessibilityRole="button"
               onPress={() => createMutation.mutate()}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}

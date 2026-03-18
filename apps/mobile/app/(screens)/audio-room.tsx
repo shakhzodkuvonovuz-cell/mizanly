@@ -465,6 +465,7 @@ export default function AudioRoomScreen() {
           >
             {/* Mic Toggle */}
             <Pressable
+              accessibilityRole="button"
               style={styles.controlButton}
               onPress={handleToggleMic}
              
@@ -479,6 +480,7 @@ export default function AudioRoomScreen() {
 
             {/* Raise Hand */}
             <Pressable
+              accessibilityRole="button"
               style={styles.controlButton}
               onPress={handleToggleHand}
              

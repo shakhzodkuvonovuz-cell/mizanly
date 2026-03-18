@@ -129,6 +129,7 @@ export default function VoicePostCreateScreen() {
           {/* Record button */}
           <Animated.View style={[styles.recordSection, pulseStyle]}>
             <Pressable
+              accessibilityRole="button"
               style={[styles.recordButton, isRecording && styles.recordButtonActive]}
               onPress={isRecording ? stopRecording : startRecording}
 
@@ -149,6 +150,7 @@ export default function VoicePostCreateScreen() {
           {recordingUri && !isRecording && (
             <Animated.View entering={FadeInUp.duration(300)} style={styles.postSection}>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.postBtn, postMutation.isPending && { opacity: 0.5 }]}
                 onPress={() => postMutation.mutate()}
                 disabled={postMutation.isPending}

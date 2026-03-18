@@ -94,6 +94,7 @@ function Row({
 
   return (
     <Pressable
+      accessibilityRole="button"
       style={[styles.row, { flexDirection: rtlFlexRow(isRTL) }, isLast && styles.rowLast]}
       onPress={handlePress}
       disabled={!handlePress && !onToggle}

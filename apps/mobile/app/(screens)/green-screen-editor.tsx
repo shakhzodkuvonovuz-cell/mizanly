@@ -145,6 +145,7 @@ export default function GreenScreenEditorScreen() {
                 style={styles.colorGridItem}
               >
                 <Pressable
+                  accessibilityRole="button"
                   style={[
                     styles.colorCircle,
                     { backgroundColor: color.color },
@@ -172,6 +173,7 @@ export default function GreenScreenEditorScreen() {
                 style={styles.gradientGridItem}
               >
                 <Pressable
+                  accessibilityRole="button"
                   style={[
                     styles.gradientPreview,
                     selectedGradient === gradient.name && styles.gradientPreviewActive
@@ -207,6 +209,7 @@ export default function GreenScreenEditorScreen() {
                 style={styles.imageGridItem}
               >
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.imageCard}
                   onPress={() => setSelectedBackground(image.name)}
                 >
@@ -233,6 +236,7 @@ export default function GreenScreenEditorScreen() {
                 style={styles.videoGridItem}
               >
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.videoCard}
                   onPress={() => setSelectedBackground(video.name)}
                 >
@@ -355,6 +359,7 @@ export default function GreenScreenEditorScreen() {
 
                   {/* Record Button Overlay */}
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -384,6 +389,7 @@ export default function GreenScreenEditorScreen() {
 
                   {/* Record Button Overlay */}
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.recordOverlayButton}
                     onPress={handleRecord}
                   >
@@ -412,6 +418,7 @@ export default function GreenScreenEditorScreen() {
             >
               {categories.map((category) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={category.id}
                   style={styles.categoryButton}
                   onPress={() => setSelectedCategory(category.id)}

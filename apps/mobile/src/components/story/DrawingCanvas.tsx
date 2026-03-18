@@ -331,6 +331,7 @@ export function DrawingCanvas({
       <View style={[styles.topToolbar, { paddingTop: insets.top + spacing.sm }]}>
         <View style={styles.topLeft}>
           <Pressable
+            accessibilityRole="button"
             onPress={handleUndo}
             style={({ pressed }) => [
               styles.toolbarButton,
@@ -347,6 +348,7 @@ export function DrawingCanvas({
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             onPress={handleClear}
             style={({ pressed }) => [
               styles.toolbarButton,
@@ -365,6 +367,7 @@ export function DrawingCanvas({
 
         <View style={styles.topRight}>
           <Pressable
+            accessibilityRole="button"
             onPress={handleClose}
             style={({ pressed }) => [styles.toolbarButton, pressed && styles.toolbarButtonPressed]}
             hitSlop={8}
@@ -373,6 +376,7 @@ export function DrawingCanvas({
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             onPress={handleDone}
             style={({ pressed }) => [styles.doneButton, pressed && styles.doneButtonPressed]}
             hitSlop={8}
@@ -415,6 +419,7 @@ export function DrawingCanvas({
             const isActive = activeColor === color;
             return (
               <Pressable
+                accessibilityRole="button"
                 key={color}
                 onPress={() => setActiveColor(color)}
                 hitSlop={4}
@@ -438,6 +443,7 @@ export function DrawingCanvas({
             const isActive = sizeIndex === index;
             return (
               <Pressable
+                accessibilityRole="button"
                 key={step.label}
                 onPress={() => setSizeIndex(index)}
                 style={[
@@ -472,6 +478,7 @@ export function DrawingCanvas({
             const isActive = activeTool === tool;
             return (
               <Pressable
+                accessibilityRole="button"
                 key={tool}
                 onPress={() => setActiveTool(tool)}
                 style={[

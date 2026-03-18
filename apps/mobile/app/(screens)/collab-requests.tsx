@@ -154,6 +154,7 @@ export default function CollabRequestsScreen() {
                 style={styles.actionBtn}
               >
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => confirmAccept(item)}
                   disabled={acceptMutation.isPending && acceptMutation.variables === item.id}
                 >
@@ -165,6 +166,7 @@ export default function CollabRequestsScreen() {
                 style={styles.actionBtn}
               >
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => confirmDecline(item)}
                   disabled={declineMutation.isPending && declineMutation.variables === item.id}
                 >
@@ -209,6 +211,7 @@ export default function CollabRequestsScreen() {
               <Text style={styles.metaText}>{new Date(post.createdAt).toLocaleDateString()}</Text>
             </View>
             <Pressable
+              accessibilityRole="button"
               style={styles.removeBtn}
               onPress={() => confirmRemove(item)}
               disabled={removeMutation.isPending && removeMutation.variables === item.id}

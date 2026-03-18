@@ -93,6 +93,7 @@ export default function VideoPremiereScreen() {
             <View style={styles.themeRow}>
               {THEMES.map(theme => (
                 <Pressable
+                  accessibilityRole="button"
                   key={theme.id}
                   onPress={() => { setSelectedTheme(theme.id); haptic.light(); }}
                   style={[styles.themeCard, selectedTheme === theme.id && styles.themeCardActive]}
@@ -114,6 +115,7 @@ export default function VideoPremiereScreen() {
               <Text style={styles.toggleHint}>{t('premiere.enableChatHint')}</Text>
             </View>
             <Pressable
+              accessibilityRole="button"
               onPress={() => { setChatEnabled(!chatEnabled); haptic.light(); }}
               style={[styles.toggleBtn, chatEnabled && styles.toggleBtnActive]}
             >
@@ -124,6 +126,7 @@ export default function VideoPremiereScreen() {
           {/* Submit */}
           <Animated.View entering={FadeInDown.delay(300).duration(300)} style={styles.submitSection}>
             <Pressable
+              accessibilityRole="button"
               onPress={() => createMutation.mutate()}
               disabled={!isValid || createMutation.isPending}
               style={[styles.submitBtn, (!isValid || createMutation.isPending) && { opacity: 0.5 }]}

@@ -107,6 +107,7 @@ export default function AiAssistantScreen() {
           <Animated.View entering={FadeInUp.duration(300)} style={styles.tabRow}>
             {TABS.map((tab) => (
               <Pressable
+                accessibilityRole="button"
                 key={tab.id}
                 onPress={() => { setActiveTab(tab.id); haptic.light(); }}
                 style={[styles.tab, activeTab === tab.id && styles.tabActive]}
@@ -145,6 +146,7 @@ export default function AiAssistantScreen() {
           {/* Generate button */}
           <Animated.View entering={FadeInUp.delay(150).duration(300)} style={styles.generateSection}>
             <Pressable
+              accessibilityRole="button"
               onPress={handleGenerate}
               disabled={isLoading || (!input.trim() && activeTab !== 'ideas')}
               style={[styles.generateBtn, (isLoading || (!input.trim() && activeTab !== 'ideas')) && { opacity: 0.5 }]}
@@ -176,6 +178,7 @@ export default function AiAssistantScreen() {
                   entering={FadeInUp.delay(i * 80).duration(300)}
                 >
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.captionCard}
                     onPress={() => handleCopyCaption(suggestion.caption, i)}
                   >
@@ -212,6 +215,7 @@ export default function AiAssistantScreen() {
                 {hashtags.map((tag, i) => (
                   <Animated.View key={tag} entering={FadeInUp.delay(i * 50).duration(200)}>
                     <Pressable
+                      accessibilityRole="button"
                       style={styles.hashtagChip}
                       onPress={() => { Clipboard.setString(`#${tag}`); haptic.light(); }}
                     >

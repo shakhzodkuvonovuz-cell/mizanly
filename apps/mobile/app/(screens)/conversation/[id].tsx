@@ -1741,6 +1741,7 @@ export default function ConversationScreen() {
           <View style={styles.reactionGrid}>
             {['❤️', '👍', '😂', '😮', '😢', '🤲'].map((emoji) => (
               <Pressable
+                accessibilityRole="button"
                 key={emoji}
                 style={styles.reactionButton}
                 onPress={() => {

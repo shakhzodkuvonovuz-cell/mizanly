@@ -182,7 +182,7 @@ export default function StitchCreateScreen() {
                 <Text style={styles.durationLabel}>Use first:</Text>
                 <View style={styles.durationButtons}>
                   {DURATION_OPTIONS.map((duration) => (
-                    <Pressable
+                    <Pressable accessibilityRole="button" accessibilityRole="button"
                       key={duration}
                       style={styles.durationButton}
                       onPress={() => setSelectedDuration(duration)}
@@ -237,7 +237,7 @@ export default function StitchCreateScreen() {
                       key={transition.id}
                       entering={FadeInUp.delay(index * 50).duration(300)}
                     >
-                      <Pressable
+                      <Pressable accessibilityRole="button" accessibilityRole="button"
                         style={styles.transitionButton}
                         onPress={() => setSelectedTransition(transition.id)}
                       >
@@ -304,7 +304,7 @@ export default function StitchCreateScreen() {
                 {/* Recording Controls */}
                 <View style={styles.recordingControls}>
                   {/* Flip Camera */}
-                  <Pressable style={styles.controlButtonSmall} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
+                  <Pressable accessibilityRole="button" style={styles.controlButtonSmall} onPress={() => setFacing(f => f === 'front' ? 'back' : 'front')}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.4)']}
                       style={styles.controlButtonGradientSmall}
@@ -314,7 +314,7 @@ export default function StitchCreateScreen() {
                   </Pressable>
 
                   {/* Record Button */}
-                  <Pressable style={styles.recordButtonSmall} onPress={handleRecord}>
+                  <Pressable accessibilityRole="button" style={styles.recordButtonSmall} onPress={handleRecord}>
                     <LinearGradient
                       colors={isRecording
                         ? ['rgba(248,81,73,0.9)', 'rgba(220,60,50,0.95)']
@@ -334,7 +334,7 @@ export default function StitchCreateScreen() {
                   </Pressable>
 
                   {/* Flash Toggle */}
-                  <Pressable
+                  <Pressable accessibilityRole="button" accessibilityRole="button"
                     style={styles.controlButtonSmall}
                     onPress={() => setFlashOn(!flashOn)}
                   >
@@ -421,7 +421,7 @@ export default function StitchCreateScreen() {
                 </View>
 
                 {/* Play Preview Button */}
-                <Pressable
+                <Pressable accessibilityRole="button" accessibilityRole="button"
                   style={styles.playPreviewButton}
                   onPress={() => setShowPreview(true)}
                 >
@@ -447,10 +447,10 @@ export default function StitchCreateScreen() {
             colors={['rgba(13,17,23,0.95)', 'rgba(13,17,23,1)']}
             style={styles.bottomBarGradient}
           >
-            <Pressable style={styles.cancelButton} onPress={() => router.back()}>
+            <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </Pressable>
-            <Pressable style={styles.nextButton} onPress={() => router.push('/create-reel')}>
+            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => router.push('/create-reel')}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}

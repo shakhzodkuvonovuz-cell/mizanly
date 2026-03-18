@@ -129,6 +129,7 @@ export default function SaveToPlaylistScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>
         <Pressable
+          accessibilityRole="button"
           style={styles.row}
           onPress={() => togglePlaylist(item)}
           disabled={isLoading || inclusionLoading}

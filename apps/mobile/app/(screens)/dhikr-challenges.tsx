@@ -225,6 +225,7 @@ export default function DhikrChallengesScreen() {
 
         {/* FAB */}
         <Pressable
+          accessibilityRole="button"
           onPress={() => {
             haptic.light();
             setShowCreateSheet(true);
@@ -259,6 +260,7 @@ export default function DhikrChallengesScreen() {
 
             <Text style={styles.inputLabel}>{t('dhikr.phrase')}</Text>
             <Pressable
+              accessibilityRole="button"
               onPress={() => setShowPhraseSheet(true)}
 
               style={styles.pickerButton}

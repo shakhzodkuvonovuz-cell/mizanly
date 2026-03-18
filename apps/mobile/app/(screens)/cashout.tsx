@@ -276,6 +276,7 @@ function CashoutContent() {
               accessibilityLabel={t('cashout.amountInput', 'Enter diamond amount')}
             />
             <Pressable
+              accessibilityRole="button"
               onPress={handleMax}
               style={({ pressed }) => [
                 styles.maxButton,
@@ -302,6 +303,7 @@ function CashoutContent() {
           </Text>
 
           <Pressable
+            accessibilityRole="button"
             onPress={() => setPayoutSpeed('instant')}
             style={({ pressed }) => [
               styles.speedOption,
@@ -328,6 +330,7 @@ function CashoutContent() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             onPress={() => setPayoutSpeed('standard')}
             style={({ pressed }) => [
               styles.speedOption,
@@ -364,6 +367,7 @@ function CashoutContent() {
             </Text>
             {paymentMethods.map((method) => (
               <Pressable
+                accessibilityRole="button"
                 key={method.id}
                 onPress={() => setSelectedMethodId(method.id)}
                 style={({ pressed }) => [

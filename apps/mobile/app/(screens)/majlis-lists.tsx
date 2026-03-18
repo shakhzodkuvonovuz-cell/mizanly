@@ -126,6 +126,7 @@ export default function MajlisListsScreen() {
             </LinearGradient>
           </View>
           <Pressable
+            accessibilityRole="button"
             hitSlop={8}
             onPress={() => confirmDelete(item.id, item.name)}
           >

@@ -91,6 +91,7 @@ function TierCard({
 
           {/* Toggle */}
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
               haptic.light();
               onToggle();
@@ -132,6 +133,7 @@ function TierCard({
 
         {/* Edit Button */}
         <Pressable
+          accessibilityRole="button"
           onPress={() => haptic.light()}
          
           style={styles.editButton}
@@ -299,6 +301,7 @@ export default function MembershipTiersScreen() {
                 {!isCreating ? (
                   <Animated.View entering={FadeInUp.delay(tiers.length * 100 + 100).duration(400)}>
                     <Pressable
+                      accessibilityRole="button"
                       onPress={() => {
                         haptic.light();
                         setIsCreating(true);
@@ -378,6 +381,7 @@ export default function MembershipTiersScreen() {
                       {/* Form Buttons */}
                       <View style={styles.formButtonRow}>
                         <Pressable
+                          accessibilityRole="button"
                           onPress={() => setIsCreating(false)}
                          
                           style={styles.cancelButton}
@@ -391,6 +395,7 @@ export default function MembershipTiersScreen() {
                         </Pressable>
 
                         <Pressable
+                          accessibilityRole="button"
                           onPress={handleCreateTier}
                          
                           style={styles.createTierButton}

@@ -149,6 +149,7 @@ export default function CameraScreen() {
           <View style={styles.topControlsRow}>
             {/* Close Button */}
             <Pressable
+              accessibilityRole="button"
               style={styles.controlPill}
               onPress={() => router.back()}
             >
@@ -157,6 +158,7 @@ export default function CameraScreen() {
 
             {/* Flash Toggle */}
             <Pressable
+              accessibilityRole="button"
               style={[styles.controlPill, flashOn && styles.controlPillActive]}
               onPress={() => setFlashOn(!flashOn)}
             >
@@ -165,6 +167,7 @@ export default function CameraScreen() {
 
             {/* Camera Flip */}
             <Pressable
+              accessibilityRole="button"
               style={styles.controlPill}
               onPress={() => setIsFrontCamera(!isFrontCamera)}
             >
@@ -187,6 +190,7 @@ export default function CameraScreen() {
           <View style={styles.modeSelector}>
             {(['photo', 'video', 'story'] as CameraMode[]).map((m) => (
               <Pressable
+                accessibilityRole="button"
                 key={m}
                 style={[styles.modePill, mode === m && styles.modePillActive]}
                 onPress={() => setMode(m)}
@@ -213,6 +217,7 @@ export default function CameraScreen() {
             {/* Capture Button */}
             <Animated.View style={[styles.captureButtonOuter, pulseStyle]}>
               <Pressable
+                accessibilityRole="button"
                 onPress={handleCapturePress}
                
                 style={styles.captureButtonTouch}

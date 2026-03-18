@@ -45,7 +45,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.card}
       >
-        <Pressable onPress={onPress}>
+        <Pressable accessibilityRole="button" onPress={onPress}>
           <View style={styles.coverWrap}>
             {coverImage ? (
               <Image source={{ uri: coverImage }} style={styles.cover} contentFit="cover" />
@@ -64,7 +64,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
               {pack.stickers?.length || 0} {t('screens.sticker-browser.stickers')} • {pack.downloadCount || 0} {t('screens.sticker-browser.downloads')}
             </Text>
           </View>
-          <Pressable onPress={handleToggle}>
+          <Pressable accessibilityRole="button" onPress={handleToggle}>
             <LinearGradient
               colors={isAdded ? ['rgba(10,123,79,0.3)', 'rgba(10,123,79,0.1)'] : ['rgba(10,123,79,0.2)', 'rgba(200,150,62,0.1)']}
               style={[styles.addButton, isAdded && styles.addedButton]}
@@ -158,7 +158,7 @@ export default function StickerBrowserScreen() {
         <Text style={styles.sectionTitle}>{t('screens.sticker-browser.featuredPacks')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.featuredScroll}>
           {featuredData.map((pack) => (
-            <Pressable key={pack.id} style={styles.featuredCard} onPress={() => setSelectedPack(pack)}>
+            <Pressable accessibilityRole="button" key={pack.id} style={styles.featuredCard} onPress={() => setSelectedPack(pack)}>
               {pack.coverUrl ? (
                 <Image source={{ uri: pack.coverUrl }} style={styles.featuredCover} contentFit="cover" />
               ) : (
@@ -224,7 +224,7 @@ export default function StickerBrowserScreen() {
               autoCorrect={false}
             />
             {searchQuery.length > 0 && (
-              <Pressable hitSlop={8} onPress={() => setSearchQuery('')}>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setSearchQuery('')}>
                 <Icon name="x" size="xs" color={colors.text.secondary} />
               </Pressable>
             )}

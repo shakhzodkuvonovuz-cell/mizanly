@@ -185,6 +185,7 @@ function DonateScreenContent() {
       <View style={styles.amountGrid}>
         {PRESET_AMOUNTS.map((amt) => (
           <Pressable
+            accessibilityRole="button"
             key={amt}
             style={[
               styles.amountChip,
@@ -223,6 +224,7 @@ function DonateScreenContent() {
       <View style={styles.currencyRow}>
         {CURRENCIES.map((cur) => (
           <Pressable
+            accessibilityRole="button"
             key={cur}
             style={[styles.currencyPill, currency === cur && styles.currencyPillActive]}
             onPress={() => setCurrency(cur)}

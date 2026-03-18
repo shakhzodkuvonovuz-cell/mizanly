@@ -219,6 +219,7 @@ export default function TwoFactorVerifyScreen() {
 
             {/* Mode Toggle */}
             <Pressable
+              accessibilityRole="button"
               style={styles.modeToggle}
               onPress={() => {
                 setMode(mode === 'code' ? 'backup' : 'code');
@@ -237,6 +238,7 @@ export default function TwoFactorVerifyScreen() {
 
             {/* Verify Button */}
             <Pressable
+              accessibilityRole="button"
               style={styles.verifyButton}
               onPress={handleVerify}
               disabled={loading || (mode === 'code' && verificationCode.some(d => d === '')) || (mode === 'backup' && backupCode.length !== 6)}
@@ -261,6 +263,7 @@ export default function TwoFactorVerifyScreen() {
 
             {/* Lost Access Link */}
             <Pressable
+              accessibilityRole="button"
               style={styles.lostAccessLink}
               onPress={() =>
                 Alert.alert(

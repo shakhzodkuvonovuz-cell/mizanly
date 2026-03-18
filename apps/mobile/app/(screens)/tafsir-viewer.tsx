@@ -193,6 +193,7 @@ export default function TafsirViewerScreen() {
               {t('tafsir.source')} ({filteredSources.length})
             </Text>
             <Pressable
+              accessibilityRole="button"
               style={styles.filterButton}
               onPress={() => setShowSourceFilter(true)}
             >

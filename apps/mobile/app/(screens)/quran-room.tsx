@@ -271,6 +271,7 @@ export default function QuranRoomScreen() {
 
           {/* Translation toggle */}
           <Pressable
+            accessibilityRole="button"
             onPress={handleToggleTranslation}
             style={styles.toggleRow}
           >
@@ -325,6 +326,7 @@ export default function QuranRoomScreen() {
         {/* Host FAB */}
         {roomState?.hostId === currentUserId && (
           <Pressable
+            accessibilityRole="button"
             style={styles.hostFab}
             onPress={() => {
               haptic.light();

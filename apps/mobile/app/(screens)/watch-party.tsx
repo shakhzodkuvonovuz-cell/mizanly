@@ -145,6 +145,7 @@ export default function WatchPartyScreen() {
               placeholderTextColor={colors.text.tertiary}
             />
             <Pressable
+              accessibilityRole="button"
               style={[styles.createBtn, (!newTitle || !newVideoId) && { opacity: 0.5 }]}
               onPress={() => createMutation.mutate()}
               disabled={!newTitle || !newVideoId || createMutation.isPending}

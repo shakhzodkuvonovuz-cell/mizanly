@@ -129,6 +129,7 @@ export function LocationPicker({ visible, onClose, onSelect }: LocationPickerPro
         </View>
 
         <Pressable
+          accessibilityRole="button"
           style={styles.currentLocation}
           onPress={handleCurrentLocation}
         >

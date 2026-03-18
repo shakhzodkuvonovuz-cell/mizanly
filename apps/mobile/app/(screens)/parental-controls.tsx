@@ -69,6 +69,7 @@ function PinPad({
       <View style={styles.numPad}>
         {digits.map((d, i) => (
           <Pressable
+            accessibilityRole="button"
             key={i}
             style={[styles.numKey, d === '' && styles.numKeyEmpty]}
 
@@ -105,6 +106,7 @@ function AgeRatingSelector({
     <View style={styles.ageRatingRow}>
       {AGE_RATINGS.map((r) => (
         <Pressable
+          accessibilityRole="button"
           key={r}
           style={[styles.ageRatingChip, value === r && styles.ageRatingChipActive]}
           onPress={() => { haptic.light(); onChange(r); }}
@@ -141,6 +143,7 @@ function DmRestrictionSelector({
     <View style={styles.ageRatingRow}>
       {DM_OPTIONS.map((opt) => (
         <Pressable
+          accessibilityRole="button"
           key={opt}
           style={[styles.dmChip, value === opt && styles.ageRatingChipActive]}
           onPress={() => { haptic.light(); onChange(opt); }}
@@ -169,6 +172,7 @@ function ToggleRow({
   const { isRTL } = useTranslation();
   return (
     <Pressable
+      accessibilityRole="button"
       style={[styles.toggleRow, { flexDirection: rtlFlexRow(isRTL) }]}
       onPress={() => { haptic.light(); onToggle(!value); }}
 
@@ -294,6 +298,7 @@ function ChildCard({
         style={styles.childCard}
       >
         <Pressable
+          accessibilityRole="button"
           style={[styles.childHeader, { flexDirection: rtlFlexRow(isRTL) }]}
           onPress={() => { haptic.selection(); setExpanded(!expanded); }}
 
@@ -372,6 +377,7 @@ function ChildCard({
             {/* Manage actions */}
             <View style={styles.manageActions}>
               <Pressable
+                accessibilityRole="button"
                 style={[styles.manageBtn, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onChangePin(control.childUserId)}
 
@@ -383,6 +389,7 @@ function ChildCard({
               </Pressable>
 
               <Pressable
+                accessibilityRole="button"
                 style={[styles.manageBtn, styles.manageBtnDanger, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => onUnlink(control.childUserId)}
 

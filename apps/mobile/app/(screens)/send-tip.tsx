@@ -395,6 +395,7 @@ export default function SendTipScreen() {
           {/* Send Tip Button */}
           <Animated.View entering={FadeInUp.delay(400).duration(400)}>
             <Pressable
+              accessibilityRole="button"
               onPress={handleSendTip}
               disabled={tipAmount <= 0 || isSending}
              

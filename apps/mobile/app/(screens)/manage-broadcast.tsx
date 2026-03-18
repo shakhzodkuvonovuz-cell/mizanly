@@ -149,6 +149,7 @@ export default function ManageBroadcastScreen() {
           <Text style={styles.username} numberOfLines={1}>@{item.username}</Text>
         </View>
         <Pressable
+          accessibilityRole="button"
           onPress={() => handleAction(item)}
         >
           <LinearGradient

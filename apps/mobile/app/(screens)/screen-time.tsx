@@ -282,6 +282,7 @@ export default function ScreenTimeScreen() {
             {t('screenTime.dailyLimit')}
           </Text>
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
               haptic.light();
               setLimitSheetVisible(true);
@@ -317,6 +318,7 @@ export default function ScreenTimeScreen() {
 
           {/* Take a Break Reminder */}
           <Pressable
+            accessibilityRole="button"
             onPress={() => {
               haptic.light();
               setTakeBreakEnabled(!takeBreakEnabled);

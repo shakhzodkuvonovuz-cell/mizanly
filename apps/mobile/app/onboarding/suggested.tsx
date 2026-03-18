@@ -90,7 +90,7 @@ export default function SuggestedScreen() {
                   <Text style={styles.handle}>@{item.username}</Text>
                   {item.bio ? <Text style={styles.bio} numberOfLines={1}>{item.bio}</Text> : null}
                 </View>
-                <Pressable
+                <Pressable accessibilityRole="button" accessibilityRole="button"
                   style={[styles.followBtn, isFollowing && styles.followingBtn]}
                   onPress={() => handleFollow(item.id)}
                 >
@@ -105,14 +105,14 @@ export default function SuggestedScreen() {
       )}
 
       <View style={styles.footer}>
-        <Pressable
+        <Pressable accessibilityRole="button" accessibilityRole="button"
           style={styles.btn}
           onPress={handleFinish}
           disabled={finishing}
         >
           {finishing ? <Skeleton.Rect width={24} height={24} borderRadius={radius.full} /> : <Text style={styles.btnText}>{t('onboarding.suggested.getStarted')}</Text>}
         </Pressable>
-        <Pressable onPress={handleFinish}>
+        <Pressable accessibilityRole="button" onPress={handleFinish}>
           <Text style={styles.skip}>{t('onboarding.suggested.skipForNow')}</Text>
         </Pressable>
       </View>

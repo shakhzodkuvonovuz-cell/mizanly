@@ -119,6 +119,7 @@ export default function FatwaQAScreen() {
         <View style={styles.tabs}>
           {(['browse', 'ask'] as const).map(tab => (
             <Pressable
+              accessibilityRole="button"
               key={tab}
               style={[styles.tab, activeTab === tab && styles.tabActive]}
               onPress={() => { setActiveTab(tab); haptic.light(); }}
@@ -137,6 +138,7 @@ export default function FatwaQAScreen() {
             <View style={styles.filterRow}>
               {MADHABS.map(m => (
                 <Pressable
+                  accessibilityRole="button"
                   key={m.id}
                   style={[styles.filterChip, selectedMadhab === m.id && styles.filterChipActive]}
                   onPress={() => { setSelectedMadhab(m.id); haptic.light(); }}
@@ -195,6 +197,7 @@ export default function FatwaQAScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               style={[styles.submitBtn, (!question.trim() || askMutation.isPending) && { opacity: 0.5 }]}
               onPress={() => askMutation.mutate()}
               disabled={!question.trim() || askMutation.isPending}

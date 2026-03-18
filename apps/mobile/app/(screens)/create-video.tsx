@@ -368,6 +368,7 @@ export default function CreateVideoScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                 {thumbnailOptions.map((frame, index) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={index}
                     onPress={() => { setThumbnailUri(frame); setCustomThumbnail(false); }}
                     style={[
@@ -379,6 +380,7 @@ export default function CreateVideoScreen() {
                   </Pressable>
                 ))}
                 <Pressable
+                  accessibilityRole="button"
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
                       mediaTypes: ['images'],
@@ -433,6 +435,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.categoryField')}</Text>
             <Pressable
+              accessibilityRole="button"
               style={styles.pickerButton}
               onPress={() => setShowCategorySheet(true)}
             >
@@ -476,6 +479,7 @@ export default function CreateVideoScreen() {
             <View style={styles.field}>
               <Text style={styles.fieldLabel}>{t('createVideo.channelField')}</Text>
               <Pressable
+                accessibilityRole="button"
                 style={styles.pickerButton}
                 onPress={() => setShowChannelSheet(true)}
               >
@@ -489,6 +493,7 @@ export default function CreateVideoScreen() {
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.visibilityField')}</Text>
             <Pressable
+              accessibilityRole="button"
               style={styles.pickerButton}
               onPress={() => setShowVisibilitySheet(true)}
             >
@@ -507,6 +512,7 @@ export default function CreateVideoScreen() {
                 <Text style={styles.toggleSubtitle}>{t('createVideo.normalizeAudioDesc')}</Text>
               </View>
               <Pressable
+                accessibilityRole="button"
                 onPress={() => setNormalizeAudio(!normalizeAudio)}
                 style={[styles.toggle, normalizeAudio && styles.toggleActive]}
               >

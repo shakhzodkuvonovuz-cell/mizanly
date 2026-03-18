@@ -163,6 +163,7 @@ export default function BookmarkFoldersScreen() {
 
         {/* FAB */}
         <Pressable
+          accessibilityRole="button"
           style={styles.fab}
           onPress={() => setCreateSheetVisible(true)}
           hitSlop={8}

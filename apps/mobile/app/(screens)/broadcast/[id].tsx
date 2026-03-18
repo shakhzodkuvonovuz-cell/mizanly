@@ -176,6 +176,7 @@ export default function BroadcastChannelScreen() {
         style={styles.messageCard}
       >
         <Pressable
+          accessibilityRole="button"
           style={styles.messageInner}
           onLongPress={() => handleMessageLongPress(item)}
           delayLongPress={400}
@@ -315,6 +316,7 @@ export default function BroadcastChannelScreen() {
                 editable={!sending}
               />
               <Pressable
+                accessibilityRole="button"
                 style={[styles.sendButton, (!newMessage.trim() || sending) && styles.sendButtonDisabled]}
                 onPress={handleSendMessage}
                 disabled={!newMessage.trim() || sending}

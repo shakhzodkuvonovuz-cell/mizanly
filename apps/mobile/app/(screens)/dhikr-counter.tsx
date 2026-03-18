@@ -385,6 +385,7 @@ export default function DhikrCounterScreen() {
                 </LinearGradient>
               </Pressable>
               <Pressable
+                accessibilityRole="button"
                 onPress={() => router.push('/(screens)/dhikr-challenges' as never)}
 
                 style={styles.actionButtonWrapper}

@@ -120,6 +120,7 @@ function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
 
         {/* Directions Button */}
         <Pressable
+          accessibilityRole="button"
           onPress={() => haptic.light()}
          
           style={styles.directionsButton}

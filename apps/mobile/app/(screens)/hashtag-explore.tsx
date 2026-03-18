@@ -66,6 +66,7 @@ export default function HashtagExploreScreen() {
         style={styles.row}
       >
         <Pressable
+          accessibilityRole="button"
           style={styles.rowInner}
           onPress={() => router.push(`/(screens)/search-results?q=${encodeURIComponent('#' + item.name)}` as never)}
         >

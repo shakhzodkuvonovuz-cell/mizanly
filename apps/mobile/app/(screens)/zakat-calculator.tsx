@@ -319,7 +319,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Next Button */}
                 <Animated.View entering={FadeInUp.delay(400).duration(400)}>
-                  <Pressable onPress={goNext}>
+                  <Pressable accessibilityRole="button" onPress={goNext}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.nextButton}
@@ -380,7 +380,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Buttons */}
                 <View style={styles.buttonRow}>
-                  <Pressable onPress={goBack} style={styles.backButton}>
+                  <Pressable accessibilityRole="button" onPress={goBack} style={styles.backButton}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.backButtonGradient}
@@ -390,7 +390,7 @@ export default function ZakatCalculatorScreen() {
                     </LinearGradient>
                   </Pressable>
 
-                  <Pressable onPress={goNext} style={styles.calculateButton}>
+                  <Pressable accessibilityRole="button" onPress={goNext} style={styles.calculateButton}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.calculateButtonGradient}
@@ -472,7 +472,7 @@ export default function ZakatCalculatorScreen() {
 
                 {/* Action Buttons */}
                 <View style={styles.buttonRow}>
-                  <Pressable onPress={reset} style={styles.actionButtonHalf}>
+                  <Pressable accessibilityRole="button" onPress={reset} style={styles.actionButtonHalf}>
                     <LinearGradient
                       colors={['rgba(45,53,72,0.6)', 'rgba(28,35,51,0.3)']}
                       style={styles.actionButtonHalfGradient}
@@ -482,7 +482,7 @@ export default function ZakatCalculatorScreen() {
                     </LinearGradient>
                   </Pressable>
 
-                  <Pressable onPress={() => {}} style={styles.actionButtonHalf}>
+                  <Pressable accessibilityRole="button" onPress={() => {}} style={styles.actionButtonHalf}>
                     <LinearGradient
                       colors={[colors.emerald, colors.emeraldDark]}
                       style={styles.actionButtonHalfGradient}

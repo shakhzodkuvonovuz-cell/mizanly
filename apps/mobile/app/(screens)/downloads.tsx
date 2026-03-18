@@ -93,6 +93,7 @@ function FilterChips({
         const isActive = tab === active;
         return (
           <Pressable
+            accessibilityRole="button"
             key={tab}
             onPress={() => { haptic.light(); onChange(tab); }}
             style={[styles.chip, isActive && styles.chipActive]}
@@ -133,6 +134,7 @@ function DownloadItem({
   return (
     <Animated.View entering={FadeInUp.delay(index * 40).duration(350)}>
       <Pressable
+        accessibilityRole="button"
         style={styles.downloadItem}
         onLongPress={() => onLongPress(item)}
         delayLongPress={400}

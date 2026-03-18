@@ -77,6 +77,7 @@ export default function InterestsScreen() {
           const on = selected.has(item.id);
           return (
             <Pressable
+              accessibilityRole="button"
               key={item.id}
               style={[styles.chip, on && styles.chipOn]}
               onPress={() => toggle(item.id)}

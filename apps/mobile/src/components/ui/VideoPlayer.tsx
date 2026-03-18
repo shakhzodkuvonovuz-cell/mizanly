@@ -306,6 +306,7 @@ export function VideoPlayer({
                   )}
                 </View>
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.seekBarTouchable}
                   onPress={(e) => {
                     const { locationX } = e.nativeEvent;

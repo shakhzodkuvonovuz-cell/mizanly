@@ -318,6 +318,7 @@ export default function CreateReelScreen() {
               </View>
 
               <Pressable
+                accessibilityRole="button"
                 style={styles.removeVideoButton}
                 onPress={removeVideo}
                 hitSlop={8}
@@ -352,6 +353,7 @@ export default function CreateReelScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
                 {thumbnailOptions.map((frame, index) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={index}
                     onPress={() => { setThumbnailUri(frame); setCustomThumbnail(false); }}
                     style={[
@@ -363,6 +365,7 @@ export default function CreateReelScreen() {
                   </Pressable>
                 ))}
                 <Pressable
+                  accessibilityRole="button"
                   onPress={async () => {
                     const result = await ImagePicker.launchImageLibraryAsync({
                       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -425,6 +428,7 @@ export default function CreateReelScreen() {
               style={styles.toolbarCard}
             >
               <Pressable
+                accessibilityRole="button"
                 style={styles.toolbarButton}
                 onPress={() => handleToolbarPress('hashtag')}
               >
@@ -438,6 +442,7 @@ export default function CreateReelScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityRole="button"
                 style={styles.toolbarButton}
                 onPress={() => handleToolbarPress('mention')}
               >
@@ -532,6 +537,7 @@ export default function CreateReelScreen() {
               <Text style={styles.toggleSubtitle}>{t('createReel.normalizeAudioDesc')}</Text>
             </View>
             <Pressable
+              accessibilityRole="button"
               onPress={() => setNormalizeAudio(!normalizeAudio)}
               style={[styles.toggle, normalizeAudio && styles.toggleActive]}
             >

@@ -120,7 +120,7 @@ export default function CreateBroadcastScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.avatarSection}
             >
-              <Pressable onPress={pickAvatar}>
+              <Pressable accessibilityRole="button" onPress={pickAvatar}>
                 {avatarUri ? (
                   <Image source={{ uri: avatarUri }} style={styles.avatarImage} contentFit="cover" />
                 ) : (

@@ -128,6 +128,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           <Text style={styles.commentText}>{item.content}</Text>
           <View style={styles.commentActions}>
             <Pressable
+              accessibilityRole="button"
               style={styles.commentAction}
               onPress={() => handleLikeComment(item.id)}
               hitSlop={8}
@@ -140,6 +141,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
               </Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               style={styles.commentAction}
               onPress={() => setReplyTo(item)}
               hitSlop={8}
@@ -233,6 +235,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
           />
           <Animated.View style={sendPress.animatedStyle}>
             <Pressable
+              accessibilityRole="button"
               style={[styles.sendButton, newComment.trim().length === 0 && styles.sendButtonDisabled]}
               onPress={handleSubmit}
               onPressIn={sendPress.onPressIn}

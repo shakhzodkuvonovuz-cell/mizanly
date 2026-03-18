@@ -42,12 +42,12 @@ function RequestRow({
         colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
         style={styles.row}
       >
-        <Pressable onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
+        <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
           <Avatar uri={follower.avatarUrl} name={follower.displayName} size="md" />
         </Pressable>
 
         <View style={styles.info}>
-          <Pressable onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
+          <Pressable accessibilityRole="button" onPress={() => router.push(`/(screens)/profile/${follower.username}`)}>
             <Text style={styles.name}>{follower.displayName}</Text>
             <Text style={styles.username}>@{follower.username}</Text>
             {follower.bio ? (
@@ -61,7 +61,7 @@ function RequestRow({
             <Skeleton.Circle size={32} />
           ) : (
             <>
-              <Pressable onPress={onAccept}>
+              <Pressable accessibilityRole="button" onPress={onAccept}>
                 <LinearGradient
                   colors={['rgba(10,123,79,0.4)', 'rgba(10,123,79,0.2)']}
                   style={styles.acceptBtn}
@@ -69,7 +69,7 @@ function RequestRow({
                   <Text style={styles.acceptText}>{t('screens.followRequests.confirm')}</Text>
                 </LinearGradient>
               </Pressable>
-              <Pressable onPress={onDecline}>
+              <Pressable accessibilityRole="button" onPress={onDecline}>
                 <LinearGradient
                   colors={['rgba(248,81,73,0.2)', 'rgba(248,81,73,0.1)']}
                   style={styles.declineBtn}

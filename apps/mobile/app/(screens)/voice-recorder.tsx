@@ -192,6 +192,7 @@ export default function VoiceRecorderScreen() {
               </View>
 
               <Pressable
+                accessibilityRole="button"
                 style={s.recordButtonWrap}
                 onPress={isRecording ? stop : isPlaying ? stopPlay : isRecorded ? play : start}
               >

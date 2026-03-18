@@ -497,6 +497,7 @@ export default function EditProfileScreen() {
                   <Text style={styles.fieldHint}>{t('editProfile.privateAccountHint')}</Text>
                 </View>
                 <Pressable
+                  accessibilityRole="button"
                   style={[styles.toggleTrack, isPrivate && styles.toggleTrackActive]}
                   onPress={() => setIsPrivate(!isPrivate)}
                 >
@@ -554,6 +555,7 @@ export default function EditProfileScreen() {
                           <Text style={styles.linkUrl} numberOfLines={1}>{link.url}</Text>
                         </View>
                         <Pressable
+                          accessibilityRole="button"
                           hitSlop={8}
                           onPress={() => deleteLinkMutation.mutate(link.id)}
                           disabled={deleteLinkMutation.isPending && deleteLinkMutation.variables === link.id}
@@ -594,6 +596,7 @@ export default function EditProfileScreen() {
                         <Text style={styles.addLinkCancel}>Cancel</Text>
                       </Pressable>
                       <Pressable
+                        accessibilityRole="button"
                         style={[
                           styles.addLinkSave,
                           (!newLinkTitle.trim() || !newLinkUrl.trim() || addLinkMutation.isPending) && styles.addLinkSaveDisabled,

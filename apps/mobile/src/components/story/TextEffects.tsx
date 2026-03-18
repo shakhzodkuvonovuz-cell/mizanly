@@ -365,6 +365,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
             <Text style={styles.headerBtnText}>{t('common.cancel')}</Text>
           </Pressable>
           <Pressable
+            accessibilityRole="button"
             onPress={handleDone}
             hitSlop={12}
             style={[styles.headerBtn, !text.trim() && styles.headerBtnDisabled]}
@@ -418,6 +419,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
               const isSelected = preset.id === selectedStyle;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={preset.id}
                   onPress={() => setSelectedStyle(preset.id)}
                   style={[
@@ -449,6 +451,7 @@ export function TextEffects({ visible, onClose, onAdd }: TextEffectsProps) {
               const isSelected = clr === selectedColor;
               return (
                 <Pressable
+                  accessibilityRole="button"
                   key={clr}
                   onPress={() => setSelectedColor(clr)}
                   style={[

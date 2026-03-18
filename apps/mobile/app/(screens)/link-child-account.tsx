@@ -124,6 +124,7 @@ export default function LinkChildAccountScreen() {
         <View style={styles.numPad}>
           {digits.map((d, i) => (
             <Pressable
+              accessibilityRole="button"
               key={i}
               style={[styles.numKey, d === '' && styles.numKeyEmpty]}
 
@@ -265,6 +266,7 @@ export default function LinkChildAccountScreen() {
             }
             renderItem={({ item }) => (
               <Pressable
+                accessibilityRole="button"
                 style={[styles.userRow, { flexDirection: rtlFlexRow(isRTL) }]}
                 onPress={() => handleSelectUser(item)}
 

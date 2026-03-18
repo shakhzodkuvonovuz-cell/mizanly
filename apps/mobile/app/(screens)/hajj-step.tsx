@@ -199,6 +199,7 @@ function HajjStepContent() {
           <Text style={styles.sectionTitle}>{t('hajj.duas')}</Text>
           {step.duas.map((dua, duaIndex) => (
             <Pressable
+              accessibilityRole="button"
               key={duaIndex}
               style={styles.duaCard}
               onPress={() =>
@@ -230,6 +231,7 @@ function HajjStepContent() {
           <Text style={styles.sectionTitle}>{t('hajj.checklist')}</Text>
           {step.checklist.map((item, idx) => (
             <Pressable
+              accessibilityRole="button"
               key={idx}
               style={styles.checkItem}
               onPress={() => toggleCheckItem(idx)}
@@ -261,6 +263,7 @@ function HajjStepContent() {
         {isCurrent && (
           <Animated.View entering={FadeInUp.delay(300).duration(300)}>
             <Pressable
+              accessibilityRole="button"
               style={styles.completeButton}
               onPress={handleMarkComplete}
 

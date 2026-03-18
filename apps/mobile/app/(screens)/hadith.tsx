@@ -56,6 +56,7 @@ function ActionButton({
 
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={() => {
         haptic.light();
         onPress();

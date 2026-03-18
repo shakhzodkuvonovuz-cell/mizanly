@@ -248,6 +248,7 @@ export default function AudioLibraryScreen() {
           contentContainerStyle={styles.categoriesContainer}
         >
           <Pressable
+            accessibilityRole="button"
             style={[styles.categoryPill, favoritesOnly && styles.categoryPillActive]}
             onPress={() => setFavoritesOnly(!favoritesOnly)}
           >
@@ -256,6 +257,7 @@ export default function AudioLibraryScreen() {
           </Pressable>
           {CATEGORIES.map((category) => (
             <Pressable
+              accessibilityRole="button"
               key={category}
               style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
               onPress={() => setActiveCategory(category)}
@@ -352,6 +354,7 @@ export default function AudioLibraryScreen() {
                   onPress={handleUseSound}
                 />
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => setSelectedTrack(null)}
                   style={styles.selectedTrackCancel}
                 >

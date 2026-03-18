@@ -119,6 +119,7 @@ function CommunityCard({
 
             {/* Join Button */}
             <Pressable
+              accessibilityRole="button"
               style={[styles.joinButton, community.isJoined && styles.joinButtonJoined]}
               onPress={() => onJoin(community.id)}
             >
@@ -276,6 +277,7 @@ export default function CommunitiesScreen() {
         {/* Tabs */}
         <View style={styles.tabsContainer}>
           <Pressable
+            accessibilityRole="button"
             style={[styles.tab, activeTab === 'discover' && styles.tabActive]}
             onPress={() => setActiveTab('discover')}
           >
@@ -289,6 +291,7 @@ export default function CommunitiesScreen() {
           </Pressable>
 
           <Pressable
+            accessibilityRole="button"
             style={[styles.tab, activeTab === 'joined' && styles.tabActive]}
             onPress={() => setActiveTab('joined')}
           >
@@ -313,6 +316,7 @@ export default function CommunitiesScreen() {
           >
             {CATEGORIES.map((category) => (
               <Pressable
+                accessibilityRole="button"
                 key={category}
                 style={[styles.categoryPill, activeCategory === category && styles.categoryPillActive]}
                 onPress={() => setActiveCategory(category)}

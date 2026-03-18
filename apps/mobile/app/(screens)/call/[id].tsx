@@ -291,6 +291,7 @@ export default function CallScreen() {
               <>
                 {/* Decline Button */}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.controlButton}
                   onPress={handleDecline}
                   disabled={declineMutation.isPending}
@@ -311,6 +312,7 @@ export default function CallScreen() {
 
                 {/* Answer Button */}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.controlButton}
                   onPress={handleAnswer}
                   disabled={answerMutation.isPending}
@@ -333,6 +335,7 @@ export default function CallScreen() {
               <>
                 {/* Mute Button */}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.controlButton}
                   onPress={toggleMute}
 
@@ -348,6 +351,7 @@ export default function CallScreen() {
 
                 {/* Speaker Button */}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.controlButton}
                   onPress={toggleSpeaker}
 
@@ -364,6 +368,7 @@ export default function CallScreen() {
                 {/* Flip Camera Button */}
                 {isVideo && (
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.controlButton}
                     onPress={toggleCamera}
 
@@ -380,6 +385,7 @@ export default function CallScreen() {
 
                 {/* End Call Button */}
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.controlButton}
                   onPress={handleEndCall}
                   disabled={endCallMutation.isPending}

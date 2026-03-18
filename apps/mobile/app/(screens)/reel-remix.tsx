@@ -357,12 +357,14 @@ export default function ReelRemixScreen() {
                   <View style={styles.captionFooter}>
                     <View style={styles.captionTools}>
                       <Pressable
+                        accessibilityRole="button"
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('hashtag')}
                       >
                         <Icon name="hash" size="sm" color={colors.emerald} />
                       </Pressable>
                       <Pressable
+                        accessibilityRole="button"
                         style={styles.captionToolBtn}
                         onPress={() => setShowAutocomplete('mention')}
                       >
@@ -537,6 +539,7 @@ export default function ReelRemixScreen() {
                 { key: 'full' as LayoutMode, label: t('remix.layoutFull'), icon: 'image' as const },
               ]).map((opt) => (
                 <Pressable
+                  accessibilityRole="button"
                   key={opt.key}
                   style={styles.layoutBtn}
                   onPress={() => handleLayoutChange(opt.key)}

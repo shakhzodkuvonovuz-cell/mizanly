@@ -228,6 +228,7 @@ export default function TwoFactorSetupScreen() {
               </Text>
 
               <Pressable
+                accessibilityRole="button"
                 style={styles.appPickerButton}
                 onPress={() => setShowAppPicker(true)}
               >
@@ -246,6 +247,7 @@ export default function TwoFactorSetupScreen() {
               </Pressable>
 
               <Pressable
+                accessibilityRole="button"
                 style={styles.nextButton}
                 onPress={() => setActiveStep('qr')}
               >
@@ -318,6 +320,7 @@ export default function TwoFactorSetupScreen() {
                 </View>
 
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.nextButton}
                   onPress={() => setActiveStep('verify')}
                 >
@@ -377,6 +380,7 @@ export default function TwoFactorSetupScreen() {
                 </View>
 
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.nextButton}
                   onPress={handleEnable2FA}
                   disabled={isEnabling || verificationCode.some(d => d === '')}
@@ -423,6 +427,7 @@ export default function TwoFactorSetupScreen() {
                 <View style={styles.backupGrid}>
                   {backupCodes.map((code, idx) => (
                     <Pressable
+                      accessibilityRole="button"
                       key={idx}
                       onPress={() => copyBackupCode(code)}
                     >
@@ -449,6 +454,7 @@ export default function TwoFactorSetupScreen() {
 
                 <View style={styles.backupActions}>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.backupActionButton}
                     onPress={copyAllBackupCodes}
                   >
@@ -462,6 +468,7 @@ export default function TwoFactorSetupScreen() {
                   </Pressable>
 
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.backupActionButton}
                     onPress={downloadBackupCodes}
                   >
@@ -476,6 +483,7 @@ export default function TwoFactorSetupScreen() {
                 </View>
 
                 <Pressable
+                  accessibilityRole="button"
                   style={styles.nextButton}
                   onPress={() => router.back()}
                 >

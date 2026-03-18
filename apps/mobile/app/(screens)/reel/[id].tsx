@@ -100,6 +100,7 @@ function CommentRow({
         </View>
       </View>
       <Pressable
+          accessibilityRole="button"
           onPress={() => { viewerId && handleLikeComment(); }}
           disabled={!viewerId}
           hitSlop={8}
@@ -501,6 +502,7 @@ export default function ReelDetailScreen() {
                   maxLength={500}
                 />
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => canSend && sendMutation.mutate()}
                   disabled={!canSend}
                 >

@@ -122,6 +122,7 @@ export default function ChatThemePickerScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
 
@@ -155,6 +156,7 @@ export default function ChatThemePickerScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.colorItem, { width: itemWidth }]}
           onPress={() => setSelectedTheme(item.id)}
 
@@ -184,6 +186,7 @@ export default function ChatThemePickerScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.patternItem, isSelected && styles.patternItemSelected]}
           onPress={() => setSelectedTheme(item.id)}
 
@@ -212,6 +215,7 @@ export default function ChatThemePickerScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 60).duration(400)}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.photoItem, isUpload && styles.photoItemUpload, isSelected && styles.photoItemSelected]}
           onPress={() => !isUpload && setSelectedTheme(item.id)}
 
@@ -305,6 +309,7 @@ export default function ChatThemePickerScreen() {
             return (
                 <Animated.View key={tab.id} entering={FadeInUp.delay(index * 80).duration(400)}>
                   <Pressable
+                    accessibilityRole="button"
                     style={[styles.tab, isActive && styles.tabActive]}
                     onPress={() => setActiveTab(tab.id)}
 

@@ -225,6 +225,7 @@ export default function QuietModeScreen() {
                     {t('quietMode.startTime')}
                   </Text>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowStartPicker(true); }}
                   >
@@ -238,6 +239,7 @@ export default function QuietModeScreen() {
                     {t('quietMode.endTime')}
                   </Text>
                   <Pressable
+                    accessibilityRole="button"
                     style={styles.timeButton}
                     onPress={() => { haptic.selection(); setShowEndPicker(true); }}
                   >

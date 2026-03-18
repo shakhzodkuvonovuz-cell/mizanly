@@ -331,6 +331,7 @@ export default function MediaSettingsScreen() {
               <View style={styles.sectionCard}>
                 {(['wifi', 'always', 'never'] as const).map((option) => (
                   <Pressable
+                    accessibilityRole="button"
                     key={option}
                     style={[styles.settingRow, { flexDirection: rtlFlexRow(isRTL) }]}
                     onPress={() => {

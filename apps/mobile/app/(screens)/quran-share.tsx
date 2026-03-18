@@ -184,6 +184,7 @@ export default function QuranShareScreen() {
           {/* Surah Selector */}
           <Animated.View entering={FadeInUp.duration(500)}>
             <Pressable
+              accessibilityRole="button"
               style={styles.surahSelector}
               onPress={() => setShowSurahPicker(true)}
             >
@@ -213,6 +214,7 @@ export default function QuranShareScreen() {
           {/* Verse Navigation */}
           <Animated.View entering={FadeInUp.delay(100).duration(500)} style={styles.verseNav}>
             <Pressable
+              accessibilityRole="button"
               style={styles.navButton}
               onPress={handlePrevVerse}
               disabled={currentVerse === 1}
@@ -233,6 +235,7 @@ export default function QuranShareScreen() {
             </LinearGradient>
 
             <Pressable
+              accessibilityRole="button"
               style={styles.navButton}
               onPress={handleNextVerse}
               disabled={currentVerse === currentSurah.verses}
@@ -311,6 +314,7 @@ export default function QuranShareScreen() {
 
                     {/* Tafsir Button */}
                     <Pressable
+                      accessibilityRole="button"
                       onPress={() => router.push(`/(screens)/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as never)}
                       style={styles.tafsirButton}
                     >
@@ -332,6 +336,7 @@ export default function QuranShareScreen() {
           {/* Share Options */}
           <Animated.View entering={FadeInUp.delay(300).duration(500)} style={styles.shareOptions}>
             <Pressable
+              accessibilityRole="button"
               style={styles.shareButton}
               onPress={() => setShowShareOptions(true)}
             >
@@ -345,6 +350,7 @@ export default function QuranShareScreen() {
             </Pressable>
 
             <Pressable
+              accessibilityRole="button"
               style={styles.copyButton}
               onPress={handleCopyText}
             >

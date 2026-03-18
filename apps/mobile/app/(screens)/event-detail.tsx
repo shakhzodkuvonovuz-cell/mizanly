@@ -322,6 +322,7 @@ export default function EventDetailScreen() {
 
                 return (
                     <Pressable
+                      accessibilityRole="button"
                       key={status}
                       style={styles_result.button}
                       onPress={() => handleRsvp(status)}

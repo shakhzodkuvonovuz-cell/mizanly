@@ -59,6 +59,7 @@ function CreateSheet({
       <View style={styles.emojiRow}>
         {EMOJIS.map((e) => (
           <Pressable
+            accessibilityRole="button"
             key={e}
             style={[styles.emojiBtn, emoji === e && styles.emojiBtnActive]}
             onPress={() => setEmoji(e)}
@@ -85,6 +86,7 @@ function CreateSheet({
       />
 
       <Pressable
+        accessibilityRole="button"
         style={[styles.createBtnWrapper, (!name.trim() || createMutation.isPending) && styles.createBtnDisabled]}
         onPress={() => createMutation.mutate()}
         disabled={!name.trim() || createMutation.isPending}
@@ -220,6 +222,7 @@ export default function CirclesScreen() {
                     </View>
                   </View>
                   <Pressable
+                    accessibilityRole="button"
                     hitSlop={8}
                     onPress={() => handleDelete(item)}
                     style={styles.deleteBtn}

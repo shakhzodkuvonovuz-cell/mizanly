@@ -187,6 +187,7 @@ function CrossPostContent() {
             const isSelected = selectedSpaces.has(space.key);
             return (
               <Pressable
+                accessibilityRole="button"
                 key={space.key}
                 style={[
                   styles.spaceOption,

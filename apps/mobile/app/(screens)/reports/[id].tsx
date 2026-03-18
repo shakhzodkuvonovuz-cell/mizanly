@@ -156,6 +156,7 @@ export default function ReportScreen() {
             {REASONS.map((reason, index) => (
               <Animated.View key={reason.value} entering={FadeInUp.delay(100 + index * 40).duration(400)}>
                 <Pressable
+                  accessibilityRole="button"
                   style={[styles.reasonItem, selectedReason === reason.value && styles.reasonItemSelected]}
                   onPress={() => setSelectedReason(reason.value)}
                 >

@@ -99,6 +99,7 @@ export default function SavedMessagesScreen() {
     return (
       <Animated.View entering={FadeInUp.delay(index * 40).duration(250)} exiting={SlideOutRight.duration(200)}>
         <Pressable
+          accessibilityRole="button"
           style={[styles.messageCard, isPinned && styles.messageCardPinned]}
           onLongPress={() => { setMenuItem(item); haptic.light(); }}
         >
@@ -213,6 +214,7 @@ export default function SavedMessagesScreen() {
             maxLength={5000}
           />
           <Pressable
+            accessibilityRole="button"
             style={[styles.sendBtn, !newMessage.trim() && { opacity: 0.3 }]}
             onPress={() => newMessage.trim() && saveMutation.mutate()}
             disabled={!newMessage.trim() || saveMutation.isPending}

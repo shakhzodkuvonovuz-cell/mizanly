@@ -386,6 +386,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
         <Animated.View entering={FadeInUp.delay(150)} style={styles.trailerContainer}>
           <Text style={styles.trailerSectionTitle}>{t('channelTrailer.title')}</Text>
           <Pressable
+            accessibilityRole="button"
             style={styles.trailerCard}
            
             onPress={() => router.push(`/(screens)/video/${channel.trailerVideo!.id}`)}
@@ -669,6 +670,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               const secs = Math.floor(item.duration % 60);
               return (
                 <Pressable
+                  accessibilityRole="button"
                   style={[styles.trailerPickerItem, isCurrentTrailer && styles.trailerPickerItemActive]}
                  
                   onPress={() => {

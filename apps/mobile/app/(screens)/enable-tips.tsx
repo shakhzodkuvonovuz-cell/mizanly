@@ -52,6 +52,7 @@ function CustomToggle({
         {description && <Text style={styles.toggleDescription}>{description}</Text>}
       </View>
       <Pressable
+        accessibilityRole="button"
         onPress={() => {
           haptic.light();
           onValueChange(!value);
@@ -191,6 +192,7 @@ export default function EnableTipsScreen() {
               <View style={styles.mainToggleRow}>
                 <Text style={styles.mainToggleLabel}>{isEnabled ? t('screens.enableTips.enabled') : t('screens.enableTips.disabled')}</Text>
                 <Pressable
+                  accessibilityRole="button"
                   onPress={() => {
                     haptic.medium();
                     setIsEnabled(!isEnabled);
@@ -236,6 +238,7 @@ export default function EnableTipsScreen() {
                   <View style={styles.presetRow}>
                     {PRESET_AMOUNTS.map(amount => (
                       <Pressable
+                        accessibilityRole="button"
                         key={amount}
                         onPress={() => {
                           haptic.light();
@@ -380,6 +383,7 @@ export default function EnableTipsScreen() {
                   </View>
 
                   <Pressable
+                    accessibilityRole="button"
                     onPress={handleConnectPayment}
             
                     style={styles.connectButton}
