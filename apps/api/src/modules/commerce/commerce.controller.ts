@@ -8,6 +8,11 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CommerceService } from './commerce.service';
+import {
+  CreateProductDto, ReviewDto, CreateOrderDto, UpdateOrderStatusDto,
+  CreateBusinessDto, CreateZakatFundDto, DonateZakatDto,
+  CreateTreasuryDto, ContributeTreasuryDto, SubscribePremiumDto,
+} from './dto/commerce.dto';
 
 @ApiTags('Commerce')
 @Controller()
@@ -20,11 +25,7 @@ export class CommerceController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create product listing' })
-  createProduct(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description: string; price: number; images: string[];
-    category: string; isHalal?: boolean; isMuslimOwned?: boolean;
-    stock?: number; tags?: string[]; location?: string;
-  }) {
+  createProduct(@CurrentUser('id') userId: string, @Body() dto: CreateProductDto) {
     return this.commerceService.createProduct(userId, dto);
   }
 
@@ -48,8 +49,7 @@ export class CommerceController {
   @Post('products/:id/review')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Review product' })
-  reviewProduct(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { rating: number; comment?: string }) {
+  reviewProduct(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ReviewDto) {
     return this.commerceService.reviewProduct(userId, id, dto.rating, dto.comment);
   }
 
@@ -58,9 +58,7 @@ export class CommerceController {
   @Post('orders')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create order' })
-  createOrder(@CurrentUser('id') userId: string, @Body() dto: {
-    productId: string; quantity?: number; installments?: number; shippingAddress?: string;
-  }) {
+  createOrder(@CurrentUser('id') userId: string, @Body() dto: CreateOrderDto) {
     return this.commerceService.createOrder(userId, dto);
   }
 
@@ -74,8 +72,7 @@ export class CommerceController {
   @Patch('orders/:id/status')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Update order status (seller)' })
-  updateOrderStatus(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { status: string }) {
+  updateOrderStatus(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
     return this.commerceService.updateOrderStatus(id, userId, dto.status);
   }
 
@@ -85,10 +82,7 @@ export class CommerceController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Register halal business' })
-  createBusiness(@CurrentUser('id') userId: string, @Body() dto: {
-    name: string; description?: string; category: string;
-    address?: string; lat?: number; lng?: number; phone?: string; website?: string;
-  }) {
+  createBusiness(@CurrentUser('id') userId: string, @Body() dto: CreateBusinessDto) {
     return this.commerceService.createBusiness(userId, dto);
   }
 
@@ -108,8 +102,7 @@ export class CommerceController {
   @Post('businesses/:id/review')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Review business' })
-  reviewBusiness(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { rating: number; comment?: string }) {
+  reviewBusiness(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ReviewDto) {
     return this.commerceService.reviewBusiness(userId, id, dto.rating, dto.comment);
   }
 
@@ -118,9 +111,7 @@ export class CommerceController {
   @Post('zakat/funds')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create zakat fund' })
-  createZakatFund(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description: string; goalAmount: number; category: string;
-  }) {
+  createZakatFund(@CurrentUser('id') userId: string, @Body() dto: CreateZakatFundDto) {
     return this.commerceService.createZakatFund(userId, dto);
   }
 
@@ -134,8 +125,7 @@ export class CommerceController {
   @Post('zakat/funds/:id/donate')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Donate to zakat fund' })
-  donateZakat(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { amount: number; isAnonymous?: boolean }) {
+  donateZakat(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: DonateZakatDto) {
     return this.commerceService.donateZakat(userId, id, dto);
   }
 
@@ -144,17 +134,14 @@ export class CommerceController {
   @Post('treasury')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create community treasury' })
-  createTreasury(@CurrentUser('id') userId: string, @Body() dto: {
-    circleId: string; title: string; description?: string; goalAmount: number;
-  }) {
+  createTreasury(@CurrentUser('id') userId: string, @Body() dto: CreateTreasuryDto) {
     return this.commerceService.createTreasury(userId, dto.circleId, dto);
   }
 
   @Post('treasury/:id/contribute')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Contribute to treasury' })
-  contributeTreasury(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { amount: number }) {
+  contributeTreasury(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ContributeTreasuryDto) {
     return this.commerceService.contributeTreasury(userId, id, dto.amount);
   }
 
@@ -170,7 +157,7 @@ export class CommerceController {
   @Post('premium/subscribe')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Subscribe to premium' })
-  subscribePremium(@CurrentUser('id') userId: string, @Body() dto: { plan: string }) {
+  subscribePremium(@CurrentUser('id') userId: string, @Body() dto: SubscribePremiumDto) {
     return this.commerceService.subscribePremium(userId, dto.plan);
   }
 

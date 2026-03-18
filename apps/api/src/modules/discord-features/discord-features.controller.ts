@@ -8,6 +8,10 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { DiscordFeaturesService } from './discord-features.service';
+import {
+  CreateForumThreadDto, ForumReplyDto, CreateWebhookDto,
+  ExecuteWebhookDto, CreateStageSessionDto, InviteSpeakerDto,
+} from './dto/discord-features.dto';
 
 @ApiTags('Discord Features')
 @Controller()
@@ -20,7 +24,7 @@ export class DiscordFeaturesController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create forum thread' })
   createForumThread(@CurrentUser('id') userId: string, @Param('circleId') circleId: string,
-    @Body() dto: { title: string; content: string; tags?: string[] }) {
+    @Body() dto: CreateForumThreadDto) {
     return this.service.createForumThread(userId, circleId, dto);
   }
 
@@ -42,7 +46,7 @@ export class DiscordFeaturesController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Reply to forum thread' })
   replyToForumThread(@CurrentUser('id') userId: string, @Param('threadId') threadId: string,
-    @Body() dto: { content: string }) {
+    @Body() dto: ForumReplyDto) {
     return this.service.replyToForumThread(userId, threadId, dto.content);
   }
 
@@ -74,7 +78,7 @@ export class DiscordFeaturesController {
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create webhook' })
   createWebhook(@CurrentUser('id') userId: string, @Param('circleId') circleId: string,
-    @Body() dto: { name: string; avatarUrl?: string; targetChannelId?: string }) {
+    @Body() dto: CreateWebhookDto) {
     return this.service.createWebhook(userId, circleId, dto);
   }
 
@@ -95,7 +99,7 @@ export class DiscordFeaturesController {
   @Post('webhooks/:token/execute')
   @Throttle({ default: { limit: 30, ttl: 60000 } })
   @ApiOperation({ summary: 'Execute webhook (external)' })
-  executeWebhook(@Param('token') token: string, @Body() dto: { content: string; username?: string }) {
+  executeWebhook(@Param('token') token: string, @Body() dto: ExecuteWebhookDto) {
     return this.service.executeWebhook(token, dto);
   }
 
@@ -105,7 +109,7 @@ export class DiscordFeaturesController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create stage session' })
   createStageSession(@CurrentUser('id') userId: string, @Param('circleId') circleId: string,
-    @Body() dto: { title: string; scheduledAt?: string }) {
+    @Body() dto: CreateStageSessionDto) {
     return this.service.createStageSession(userId, circleId, dto);
   }
 
@@ -127,7 +131,7 @@ export class DiscordFeaturesController {
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Invite speaker to stage' })
   inviteSpeaker(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { speakerId: string }) {
+    @Body() dto: InviteSpeakerDto) {
     return this.service.inviteSpeaker(id, userId, dto.speakerId);
   }
 

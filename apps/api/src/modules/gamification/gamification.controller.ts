@@ -3,42 +3,47 @@ import {
   Body, Param, Query, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { GamificationService } from './gamification.service';
+import {
+  CreateChallengeDto, UpdateProgressDto, CreateSeriesDto,
+  AddEpisodeDto, UpdateProfileCustomizationDto,
+} from './dto/gamification.dto';
+
+const VALID_STREAK_TYPES = ['posting', 'engagement', 'quran', 'dhikr', 'learning'];
 
 @ApiTags('Gamification')
 @Controller()
 export class GamificationController {
   constructor(private gamificationService: GamificationService) {}
 
-  // ── Streaks ─────────────────────────────────────────────
+  // ── Streaks ───────────────────────────────────────────
 
   @Get('streaks')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Get user streaks' })
+  @ApiOperation({ summary: 'Get all streaks' })
   getStreaks(@CurrentUser('id') userId: string) {
     return this.gamificationService.getStreaks(userId);
   }
 
   @Post('streaks/:type')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Update streak' })
+  @ApiOperation({ summary: 'Update streak for today' })
   updateStreak(@CurrentUser('id') userId: string, @Param('type') type: string) {
-    const VALID_STREAK_TYPES = ['posting', 'engagement', 'quran', 'dhikr', 'learning'];
     if (!VALID_STREAK_TYPES.includes(type)) {
       throw new BadRequestException(`Invalid streak type. Must be one of: ${VALID_STREAK_TYPES.join(', ')}`);
     }
     return this.gamificationService.updateStreak(userId, type);
   }
 
-  // ── XP & Levels ─────────────────────────────────────────
+  // ── XP & Levels ───────────────────────────────────────
 
   @Get('xp')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Get user XP and level' })
+  @ApiOperation({ summary: 'Get XP and level info' })
   getXP(@CurrentUser('id') userId: string) {
     return this.gamificationService.getXP(userId);
   }
@@ -46,54 +51,42 @@ export class GamificationController {
   @Get('xp/history')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Get XP history' })
-  getXPHistory(
-    @CurrentUser('id') userId: string,
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-  ) {
+  getXPHistory(@CurrentUser('id') userId: string, @Query('cursor') cursor?: string, @Query('limit') limit?: string) {
     return this.gamificationService.getXPHistory(userId, cursor, limit ? parseInt(limit) : undefined);
   }
 
-  // ── Achievements ────────────────────────────────────────
+  // ── Achievements ──────────────────────────────────────
 
   @Get('achievements')
   @UseGuards(ClerkAuthGuard)
-  @ApiOperation({ summary: 'Get all achievements with unlock status' })
+  @ApiOperation({ summary: 'Get achievements' })
   getAchievements(@CurrentUser('id') userId: string) {
     return this.gamificationService.getAchievements(userId);
   }
 
-  // ── Leaderboards ────────────────────────────────────────
+  // ── Leaderboard ───────────────────────────────────────
 
-  @Get('leaderboard/:type')
+  @Get('leaderboard')
   @UseGuards(OptionalClerkAuthGuard)
   @ApiOperation({ summary: 'Get leaderboard' })
-  getLeaderboard(@Param('type') type: string, @Query('limit') limit?: string) {
+  getLeaderboard(@Query('type') type = 'xp', @Query('limit') limit?: string) {
     return this.gamificationService.getLeaderboard(type, limit ? parseInt(limit) : undefined);
   }
 
-  // ── Challenges ──────────────────────────────────────────
+  // ── Challenges ────────────────────────────────────────
 
   @Get('challenges')
   @UseGuards(OptionalClerkAuthGuard)
-  @ApiOperation({ summary: 'Discover challenges' })
-  getChallenges(
-    @Query('cursor') cursor?: string,
-    @Query('limit') limit?: string,
-    @Query('category') category?: string,
-  ) {
-    return this.gamificationService.getChallenges(cursor, limit ? parseInt(limit) : undefined, category);
+  @ApiOperation({ summary: 'Browse challenges' })
+  getChallenges(@Query('cursor') cursor?: string, @Query('limit') limit?: string) {
+    return this.gamificationService.getChallenges(cursor, limit ? parseInt(limit) : undefined);
   }
 
   @Post('challenges')
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create challenge' })
-  createChallenge(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description: string; coverUrl?: string;
-    challengeType: string; category: string; targetCount: number;
-    xpReward?: number; startDate: string; endDate: string;
-  }) {
+  createChallenge(@CurrentUser('id') userId: string, @Body() dto: CreateChallengeDto) {
     return this.gamificationService.createChallenge(userId, dto);
   }
 
@@ -107,11 +100,7 @@ export class GamificationController {
   @Patch('challenges/:id/progress')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Update challenge progress' })
-  updateProgress(
-    @CurrentUser('id') userId: string,
-    @Param('id') id: string,
-    @Body() dto: { progress: number },
-  ) {
+  updateProgress(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateProgressDto) {
     return this.gamificationService.updateChallengeProgress(userId, id, dto.progress);
   }
 
@@ -128,9 +117,7 @@ export class GamificationController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create series' })
-  createSeries(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description?: string; coverUrl?: string; category: string;
-  }) {
+  createSeries(@CurrentUser('id') userId: string, @Body() dto: CreateSeriesDto) {
     return this.gamificationService.createSeries(userId, dto);
   }
 
@@ -155,9 +142,7 @@ export class GamificationController {
   @Post('series/:id/episodes')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Add episode to series' })
-  addEpisode(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: {
-    title: string; postId?: string; reelId?: string; videoId?: string;
-  }) {
+  addEpisode(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: AddEpisodeDto) {
     return this.gamificationService.addEpisode(userId, id, dto);
   }
 
@@ -187,11 +172,7 @@ export class GamificationController {
   @Patch('profile-customization')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Update profile customization' })
-  updateProfileCustomization(@CurrentUser('id') userId: string, @Body() dto: {
-    accentColor?: string; layoutStyle?: string; backgroundUrl?: string;
-    backgroundMusic?: string; showBadges?: boolean; showLevel?: boolean;
-    showStreak?: boolean; bioFont?: string;
-  }) {
+  updateProfileCustomization(@CurrentUser('id') userId: string, @Body() dto: UpdateProfileCustomizationDto) {
     return this.gamificationService.updateProfileCustomization(userId, dto);
   }
 }

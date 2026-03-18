@@ -22,6 +22,7 @@ import { CreateVideoCommentDto } from './dto/create-video-comment.dto';
 import { ReportDto } from './dto/report.dto';
 import { VideoProgressDto } from './dto/video-progress.dto';
 import { SetEndScreensDto } from './dto/end-screen.dto';
+import { CreatePremiereDto } from './dto/premiere.dto';
 
 @ApiTags('Videos (Minbar)')
 @Controller('videos')
@@ -252,7 +253,7 @@ export class VideosController {
   createPremiere(
     @CurrentUser('id') userId: string,
     @Param('id') id: string,
-    @Body() dto: { scheduledAt: string; chatEnabled?: boolean; countdownTheme?: string; trailerUrl?: string },
+    @Body() dto: CreatePremiereDto,
   ) {
     return this.videosService.createPremiere(id, userId, dto);
   }

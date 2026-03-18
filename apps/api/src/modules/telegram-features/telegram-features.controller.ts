@@ -7,6 +7,11 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { TelegramFeaturesService } from './telegram-features.service';
+import {
+  SaveMessageDto, ReorderChatFoldersDto, CreateChatFolderDto, UpdateChatFolderDto,
+  SetSlowModeDto, CreateTopicDto, UpdateTopicDto,
+  CreateEmojiPackDto, AddEmojiDto,
+} from './dto/telegram-features.dto';
 
 @ApiTags('Telegram Features')
 @Controller()
@@ -16,7 +21,6 @@ export class TelegramFeaturesController {
   constructor(private service: TelegramFeaturesService) {}
 
   // ── Saved Messages ──────────────────────────────────────
-  // Static routes MUST be above :id wildcard routes
 
   @Get('saved-messages/search')
   @ApiOperation({ summary: 'Search saved messages' })
@@ -32,10 +36,7 @@ export class TelegramFeaturesController {
 
   @Post('saved-messages')
   @ApiOperation({ summary: 'Save a message' })
-  saveMessage(@CurrentUser('id') userId: string, @Body() dto: {
-    content?: string; mediaUrl?: string; mediaType?: string;
-    forwardedFromType?: string; forwardedFromId?: string;
-  }) {
+  saveMessage(@CurrentUser('id') userId: string, @Body() dto: SaveMessageDto) {
     return this.service.saveMessage(userId, dto);
   }
 
@@ -52,11 +53,10 @@ export class TelegramFeaturesController {
   }
 
   // ── Chat Folders ────────────────────────────────────────
-  // Static routes (reorder) MUST be above :id wildcard routes
 
   @Patch('chat-folders/reorder')
   @ApiOperation({ summary: 'Reorder chat folders' })
-  reorderChatFolders(@CurrentUser('id') userId: string, @Body() dto: { folderIds: string[] }) {
+  reorderChatFolders(@CurrentUser('id') userId: string, @Body() dto: ReorderChatFoldersDto) {
     return this.service.reorderChatFolders(userId, dto.folderIds);
   }
 
@@ -69,19 +69,13 @@ export class TelegramFeaturesController {
   @Post('chat-folders')
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create chat folder' })
-  createChatFolder(@CurrentUser('id') userId: string, @Body() dto: {
-    name: string; icon?: string; conversationIds?: string[];
-    includeGroups?: boolean; includeChannels?: boolean;
-  }) {
+  createChatFolder(@CurrentUser('id') userId: string, @Body() dto: CreateChatFolderDto) {
     return this.service.createChatFolder(userId, dto);
   }
 
   @Patch('chat-folders/:id')
   @ApiOperation({ summary: 'Update chat folder' })
-  updateChatFolder(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: {
-    name?: string; icon?: string; conversationIds?: string[];
-    includeGroups?: boolean; includeChannels?: boolean;
-  }) {
+  updateChatFolder(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateChatFolderDto) {
     return this.service.updateChatFolder(userId, id, dto);
   }
 
@@ -95,11 +89,7 @@ export class TelegramFeaturesController {
 
   @Patch('conversations/:id/slow-mode')
   @ApiOperation({ summary: 'Set slow mode on group' })
-  setSlowMode(
-    @CurrentUser('id') userId: string,
-    @Param('id') conversationId: string,
-    @Body() dto: { seconds: number },
-  ) {
+  setSlowMode(@CurrentUser('id') userId: string, @Param('id') conversationId: string, @Body() dto: SetSlowModeDto) {
     return this.service.setSlowMode(conversationId, userId, dto.seconds);
   }
 
@@ -107,11 +97,7 @@ export class TelegramFeaturesController {
 
   @Get('conversations/:id/admin-log')
   @ApiOperation({ summary: 'Get admin event log' })
-  getAdminLog(
-    @CurrentUser('id') userId: string,
-    @Param('id') conversationId: string,
-    @Query('cursor') cursor?: string,
-  ) {
+  getAdminLog(@CurrentUser('id') userId: string, @Param('id') conversationId: string, @Query('cursor') cursor?: string) {
     return this.service.getAdminLog(conversationId, userId, cursor);
   }
 
@@ -119,8 +105,7 @@ export class TelegramFeaturesController {
 
   @Post('conversations/:id/topics')
   @ApiOperation({ summary: 'Create topic in group' })
-  createTopic(@CurrentUser('id') userId: string, @Param('id') conversationId: string,
-    @Body() dto: { name: string; iconColor?: string }) {
+  createTopic(@CurrentUser('id') userId: string, @Param('id') conversationId: string, @Body() dto: CreateTopicDto) {
     return this.service.createTopic(conversationId, userId, dto);
   }
 
@@ -132,8 +117,7 @@ export class TelegramFeaturesController {
 
   @Patch('topics/:id')
   @ApiOperation({ summary: 'Update topic' })
-  updateTopic(@CurrentUser('id') userId: string, @Param('id') id: string,
-    @Body() dto: { name?: string; iconColor?: string; isPinned?: boolean; isClosed?: boolean }) {
+  updateTopic(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: UpdateTopicDto) {
     return this.service.updateTopic(id, userId, dto);
   }
 
@@ -144,7 +128,6 @@ export class TelegramFeaturesController {
   }
 
   // ── Custom Emoji Packs ──────────────────────────────────
-  // Static routes (me) MUST be above :id wildcard routes
 
   @Get('emoji-packs/me')
   @ApiOperation({ summary: 'Get my emoji packs' })
@@ -155,14 +138,13 @@ export class TelegramFeaturesController {
   @Post('emoji-packs')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create emoji pack' })
-  createEmojiPack(@CurrentUser('id') userId: string, @Body() dto: { name: string; description?: string }) {
+  createEmojiPack(@CurrentUser('id') userId: string, @Body() dto: CreateEmojiPackDto) {
     return this.service.createEmojiPack(userId, dto);
   }
 
   @Post('emoji-packs/:id/emojis')
   @ApiOperation({ summary: 'Add emoji to pack' })
-  addEmoji(@CurrentUser('id') userId: string, @Param('id') packId: string,
-    @Body() dto: { shortcode: string; imageUrl: string; isAnimated?: boolean }) {
+  addEmoji(@CurrentUser('id') userId: string, @Param('id') packId: string, @Body() dto: AddEmojiDto) {
     return this.service.addEmojiToPack(packId, userId, dto);
   }
 

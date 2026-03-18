@@ -8,6 +8,12 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CommunityService } from './community.service';
+import {
+  CreateBoardDto, RequestMentorshipDto, RespondMentorshipDto,
+  CreateStudyCircleDto, AskFatwaDto, AnswerFatwaDto,
+  CreateOpportunityDto, CreateEventDto, CreateVoicePostDto,
+  CreateWatchPartyDto, CreateCollectionDto, CreateWaqfDto, KindnessCheckDto,
+} from './dto/community.dto';
 
 @ApiTags('Community')
 @Controller()
@@ -19,7 +25,7 @@ export class CommunityController {
   @Post('boards')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create local board' })
-  createBoard(@CurrentUser('id') userId: string, @Body() dto: { name: string; description?: string; city: string; country: string }) {
+  createBoard(@CurrentUser('id') userId: string, @Body() dto: CreateBoardDto) {
     return this.communityService.createBoard(userId, dto);
   }
 
@@ -35,14 +41,14 @@ export class CommunityController {
   @Post('mentorship/request')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Request mentorship' })
-  requestMentorship(@CurrentUser('id') userId: string, @Body() dto: { mentorId: string; topic: string; notes?: string }) {
+  requestMentorship(@CurrentUser('id') userId: string, @Body() dto: RequestMentorshipDto) {
     return this.communityService.requestMentorship(userId, dto);
   }
 
   @Patch('mentorship/:menteeId/respond')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Accept/decline mentorship' })
-  respondMentorship(@CurrentUser('id') userId: string, @Param('menteeId') menteeId: string, @Body() dto: { accept: boolean }) {
+  respondMentorship(@CurrentUser('id') userId: string, @Param('menteeId') menteeId: string, @Body() dto: RespondMentorshipDto) {
     return this.communityService.respondMentorship(userId, menteeId, dto.accept);
   }
 
@@ -58,7 +64,7 @@ export class CommunityController {
   @Post('study-circles')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create study circle' })
-  createStudyCircle(@CurrentUser('id') userId: string, @Body() dto: { title: string; description?: string; topic: string; schedule?: string }) {
+  createStudyCircle(@CurrentUser('id') userId: string, @Body() dto: CreateStudyCircleDto) {
     return this.communityService.createStudyCircle(userId, dto);
   }
 
@@ -75,7 +81,7 @@ export class CommunityController {
   @UseGuards(ClerkAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Ask fatwa question' })
-  askFatwa(@CurrentUser('id') userId: string, @Body() dto: { question: string; madhab?: string; language?: string }) {
+  askFatwa(@CurrentUser('id') userId: string, @Body() dto: AskFatwaDto) {
     return this.communityService.askFatwa(userId, dto);
   }
 
@@ -89,7 +95,7 @@ export class CommunityController {
   @Post('fatwa/:id/answer')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Answer fatwa (scholar)' })
-  answerFatwa(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: { answer: string }) {
+  answerFatwa(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: AnswerFatwaDto) {
     return this.communityService.answerFatwa(userId, id, dto.answer);
   }
 
@@ -98,9 +104,7 @@ export class CommunityController {
   @Post('volunteer')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create volunteer opportunity' })
-  createOpportunity(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description: string; category: string; location?: string; date?: string; spotsTotal?: number;
-  }) {
+  createOpportunity(@CurrentUser('id') userId: string, @Body() dto: CreateOpportunityDto) {
     return this.communityService.createOpportunity(userId, dto);
   }
 
@@ -116,10 +120,7 @@ export class CommunityController {
   @Post('events')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create Islamic event' })
-  createEvent(@CurrentUser('id') userId: string, @Body() dto: {
-    title: string; description?: string; eventType: string;
-    location?: string; startDate: string; endDate?: string; isOnline?: boolean; coverUrl?: string;
-  }) {
+  createEvent(@CurrentUser('id') userId: string, @Body() dto: CreateEventDto) {
     return this.communityService.createEvent(userId, dto);
   }
 
@@ -144,7 +145,7 @@ export class CommunityController {
   @Post('voice-posts')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create voice post' })
-  createVoicePost(@CurrentUser('id') userId: string, @Body() dto: { audioUrl: string; duration: number; transcript?: string }) {
+  createVoicePost(@CurrentUser('id') userId: string, @Body() dto: CreateVoicePostDto) {
     return this.communityService.createVoicePost(userId, dto);
   }
 
@@ -160,7 +161,7 @@ export class CommunityController {
   @Post('watch-parties')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create watch party' })
-  createWatchParty(@CurrentUser('id') userId: string, @Body() dto: { videoId: string; title: string }) {
+  createWatchParty(@CurrentUser('id') userId: string, @Body() dto: CreateWatchPartyDto) {
     return this.communityService.createWatchParty(userId, dto);
   }
 
@@ -176,7 +177,7 @@ export class CommunityController {
   @Post('collections')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create shared collection' })
-  createCollection(@CurrentUser('id') userId: string, @Body() dto: { name: string; description?: string; isPublic?: boolean }) {
+  createCollection(@CurrentUser('id') userId: string, @Body() dto: CreateCollectionDto) {
     return this.communityService.createCollection(userId, dto);
   }
 
@@ -192,7 +193,7 @@ export class CommunityController {
   @Post('waqf')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Create waqf fund' })
-  createWaqf(@CurrentUser('id') userId: string, @Body() dto: { title: string; description: string; goalAmount: number }) {
+  createWaqf(@CurrentUser('id') userId: string, @Body() dto: CreateWaqfDto) {
     return this.communityService.createWaqf(userId, dto);
   }
 
@@ -208,7 +209,7 @@ export class CommunityController {
   @Post('kindness-check')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Check if comment needs kindness rephrase' })
-  checkKindness(@Body() dto: { text: string }) {
+  checkKindness(@Body() dto: KindnessCheckDto) {
     return this.communityService.checkKindness(dto.text);
   }
 
