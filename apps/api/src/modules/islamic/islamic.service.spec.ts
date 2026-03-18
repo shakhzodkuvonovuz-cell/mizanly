@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { IslamicService } from './islamic.service';
+import { PrismaService } from '../../config/prisma.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 
@@ -54,7 +55,23 @@ describe('IslamicService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        ...globalMockProviders,IslamicService],
+        ...globalMockProviders,
+        IslamicService,
+        {
+          provide: PrismaService,
+          useValue: {
+            hajjProgress: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() },
+            dhikrSession: { create: jest.fn(), findMany: jest.fn() },
+            donation: { create: jest.fn(), findMany: jest.fn() },
+            donationCampaign: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+            quranReadingPlan: { findUnique: jest.fn(), create: jest.fn(), update: jest.fn(), upsert: jest.fn() },
+            quranReadingProgress: { create: jest.fn(), findMany: jest.fn() },
+            dhikrChallenge: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn() },
+            dhikrChallengeParticipant: { create: jest.fn(), findUnique: jest.fn(), update: jest.fn() },
+            prayerNotificationSetting: { findUnique: jest.fn(), upsert: jest.fn() },
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<IslamicService>(IslamicService);
