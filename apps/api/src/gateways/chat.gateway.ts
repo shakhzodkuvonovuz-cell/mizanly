@@ -199,6 +199,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid typing data' });
       return;
     }
+    await this.messagesService.requireMembership(dto.conversationId, client.data.userId);
     client.to(`conversation:${dto.conversationId}`).emit('user_typing', {
       userId: client.data.userId,
       isTyping: dto.isTyping,

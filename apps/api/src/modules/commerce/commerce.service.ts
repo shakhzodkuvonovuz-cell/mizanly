@@ -52,9 +52,22 @@ export class CommerceService {
 
   async reviewProduct(userId: string, productId: string, rating: number, comment?: string) {
     if (rating < 1 || rating > 5) throw new BadRequestException('Rating must be 1-5');
-    const review = await this.prisma.productReview.create({
-      data: { productId, userId, rating, comment },
-    });
+
+    const product = await this.prisma.product.findUnique({ where: { id: productId } });
+    if (!product) throw new NotFoundException('Product not found');
+
+    let review;
+    try {
+      review = await this.prisma.productReview.create({
+        data: { productId, userId, rating, comment },
+      });
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        throw new ConflictException('Already reviewed this product');
+      }
+      throw err;
+    }
+
     // Update average rating
     const agg = await this.prisma.productReview.aggregate({ where: { productId }, _avg: { rating: true }, _count: true });
     await this.prisma.product.update({
@@ -188,9 +201,22 @@ export class CommerceService {
 
   async reviewBusiness(userId: string, businessId: string, rating: number, comment?: string) {
     if (rating < 1 || rating > 5) throw new BadRequestException('Rating must be 1-5');
-    const review = await this.prisma.businessReview.create({
-      data: { businessId, userId, rating, comment },
-    });
+
+    const business = await this.prisma.halalBusiness.findUnique({ where: { id: businessId } });
+    if (!business) throw new NotFoundException('Business not found');
+
+    let review;
+    try {
+      review = await this.prisma.businessReview.create({
+        data: { businessId, userId, rating, comment },
+      });
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        throw new ConflictException('Already reviewed this business');
+      }
+      throw err;
+    }
+
     const agg = await this.prisma.businessReview.aggregate({ where: { businessId }, _avg: { rating: true }, _count: true });
     await this.prisma.halalBusiness.update({
       where: { id: businessId },

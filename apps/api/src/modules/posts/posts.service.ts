@@ -162,10 +162,14 @@ export class PostsService {
       ...mutes.map((m) => m.mutedId),
     ];
 
-    const where: any = {
+    // Bug fix: compute visible IDs upfront to avoid in+notIn conflict
+    const excludedSet = new Set(excludedIds);
+    const visibleUserIds = [userId, ...followingIds.filter(id => !excludedSet.has(id))];
+
+    const where: Prisma.PostWhereInput = {
       isRemoved: false,
       scheduledAt: null,
-      userId: { in: [userId, ...followingIds], ...(excludedIds.length ? { notIn: excludedIds } : {}) },
+      userId: { in: visibleUserIds },
     };
 
     const posts = await this.prisma.post.findMany({
@@ -188,15 +192,25 @@ export class PostsService {
   }
 
   private async getChronologicalFeed(userId: string, cursor?: string, limit = 20) {
-    const followingIds = await this.prisma.follow.findMany({
-      where: { followerId: userId },
-      select: { followingId: true },
-    });
-    const followIds = followingIds.map(f => f.followingId);
+    const [followingResult, blocks, mutes] = await Promise.all([
+      this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
+      }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+    ]);
+    const followIds = followingResult.map(f => f.followingId);
+    const excludedIds = [
+      ...blocks.map((b) => b.blockedId),
+      ...mutes.map((m) => m.mutedId),
+    ];
+    const excludedSet = new Set(excludedIds);
+    const visibleUserIds = [userId, ...followIds.filter(id => !excludedSet.has(id))];
 
     const posts = await this.prisma.post.findMany({
       where: {
-        userId: { in: [...followIds, userId] },
+        userId: { in: visibleUserIds },
         isRemoved: false,
       },
       select: POST_SELECT,
@@ -215,11 +229,20 @@ export class PostsService {
   }
 
   private async getFavoritesFeed(userId: string, cursor?: string, limit = 20) {
-    const circleMembers = await this.prisma.circleMember.findMany({
-      where: { circle: { ownerId: userId } },
-      select: { userId: true },
-    });
-    const favoriteIds = circleMembers.map(m => m.userId);
+    const [circleMembers, blocks, mutes] = await Promise.all([
+      this.prisma.circleMember.findMany({
+        where: { circle: { ownerId: userId } },
+        select: { userId: true },
+      }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+    ]);
+    const excludedIds = [
+      ...blocks.map((b) => b.blockedId),
+      ...mutes.map((m) => m.mutedId),
+    ];
+    const excludedSet = new Set(excludedIds);
+    const favoriteIds = circleMembers.map(m => m.userId).filter(id => !excludedSet.has(id));
     if (favoriteIds.length === 0) return { data: [], meta: { cursor: null, hasMore: false } };
 
     const posts = await this.prisma.post.findMany({
@@ -242,7 +265,7 @@ export class PostsService {
     };
   }
 
-  private async enrichPostsForUser(posts: any[], userId: string) {
+  private async enrichPostsForUser<T extends { id: string }>(posts: T[], userId: string) {
     if (!posts.length) return posts;
     const postIds = posts.map((p) => p.id);
     const [reactions, saves] = await Promise.all([
@@ -265,22 +288,24 @@ export class PostsService {
   }
 
   async create(userId: string, dto: CreatePostDto) {
-    // Parse and upsert hashtags
+    // Parse hashtags (upserts happen inside transaction below)
     const hashtagNames = extractHashtags(dto.content ?? '');
-    if (hashtagNames.length > 0) {
-      await Promise.all(
-        hashtagNames.map((name) =>
-          this.prisma.hashtag.upsert({
-            where: { name },
-            create: { name, postsCount: 1 },
-            update: { postsCount: { increment: 1 } },
-          }),
-        ),
-      );
-    }
 
-    const [post] = await this.prisma.$transaction([
-      this.prisma.post.create({
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Upsert hashtags inside transaction so counts stay consistent if post creation fails
+      if (hashtagNames.length > 0) {
+        await Promise.all(
+          hashtagNames.map((name) =>
+            tx.hashtag.upsert({
+              where: { name },
+              create: { name, postsCount: 1 },
+              update: { postsCount: { increment: 1 } },
+            }),
+          ),
+        );
+      }
+
+      const post = await tx.post.create({
         data: {
           userId,
           postType: dto.postType as PostType,
@@ -302,12 +327,17 @@ export class PostsService {
           commentsDisabled: dto.commentsDisabled ?? false,
         },
         select: POST_SELECT,
-      }),
-      this.prisma.user.update({
+      });
+
+      await tx.user.update({
         where: { id: userId },
         data: { postsCount: { increment: 1 } },
-      }),
-    ]);
+      });
+
+      return post;
+    });
+
+    const post = result;
     // Mention notifications
     if (dto.mentions?.length) {
       const [mentionedUsers, actor] = await Promise.all([
@@ -711,17 +741,24 @@ export class PostsService {
       where: { userId_commentId: { userId, commentId } },
     });
 
-    if (existing) throw new ConflictException('Already reacted');
+    if (existing) throw new ConflictException('Already liked');
 
-    await this.prisma.$transaction([
-      this.prisma.commentReaction.create({
-        data: { userId, commentId, reaction: 'LIKE' },
-      }),
-      this.prisma.comment.update({
-        where: { id: commentId },
-        data: { likesCount: { increment: 1 } },
-      }),
-    ]);
+    try {
+      await this.prisma.$transaction([
+        this.prisma.commentReaction.create({
+          data: { userId, commentId, reaction: 'LIKE' },
+        }),
+        this.prisma.comment.update({
+          where: { id: commentId },
+          data: { likesCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Already liked');
+      }
+      throw error;
+    }
     return { liked: true };
   }
 
@@ -741,6 +778,9 @@ export class PostsService {
   }
 
   async report(postId: string, userId: string, reason: string) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found');
+
     const reasonMap: Record<string, string> = {
       SPAM: 'SPAM', MISINFORMATION: 'MISINFORMATION',
       INAPPROPRIATE: 'OTHER', HATE_SPEECH: 'HATE_SPEECH',

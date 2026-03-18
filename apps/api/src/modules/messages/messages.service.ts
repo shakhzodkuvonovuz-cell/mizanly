@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
-import { MessageType, Notification } from '@prisma/client';
+import { MessageType } from '@prisma/client';
 
 const CONVERSATION_SELECT = {
   id: true,
@@ -141,34 +141,37 @@ export class MessagesService {
       throw new BadRequestException('Message must have content or media');
     }
 
-    const message = await this.prisma.message.create({
-      data: {
-        conversationId,
-        senderId,
-        content: data.content,
-        messageType: (data.messageType as MessageType) ?? 'TEXT',
-        mediaUrl: data.mediaUrl,
-        mediaType: data.mediaType,
-        replyToId: data.replyToId,
-      },
-      select: MESSAGE_SELECT,
-    });
+    // Atomic: message create + conversation update + unread increment
+    const message = await this.prisma.$transaction(async (tx) => {
+      const msg = await tx.message.create({
+        data: {
+          conversationId,
+          senderId,
+          content: data.content,
+          messageType: (data.messageType as MessageType) ?? 'TEXT',
+          mediaUrl: data.mediaUrl,
+          mediaType: data.mediaType,
+          replyToId: data.replyToId,
+        },
+        select: MESSAGE_SELECT,
+      });
 
-    // Update conversation preview + increment unread for other members
-    await this.prisma.$transaction([
-      this.prisma.conversation.update({
+      await tx.conversation.update({
         where: { id: conversationId },
         data: {
           lastMessageAt: new Date(),
           lastMessageText: data.content?.slice(0, 100) ?? null,
           lastMessageById: senderId,
         },
-      }),
-      this.prisma.conversationMember.updateMany({
+      });
+
+      await tx.conversationMember.updateMany({
         where: { conversationId, userId: { not: senderId } },
         data: { unreadCount: { increment: 1 } },
-      }),
-    ]);
+      });
+
+      return msg;
+    });
 
     return message;
   }
@@ -200,6 +203,7 @@ export class MessagesService {
     const updated = await this.prisma.message.update({
       where: { id: messageId },
       data: { content, editedAt: new Date() },
+      select: MESSAGE_SELECT,
     });
     return { message: updated };
   }
@@ -207,6 +211,10 @@ export class MessagesService {
 
   async createDM(userId: string, targetUserId: string) {
     if (userId === targetUserId) throw new BadRequestException('Cannot DM yourself');
+
+    // Verify target user exists
+    const target = await this.prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true } });
+    if (!target) throw new NotFoundException('User not found');
 
     // Check if either user has blocked the other
     const block = await this.prisma.block.findFirst({
@@ -219,28 +227,30 @@ export class MessagesService {
     });
     if (block) throw new ForbiddenException('Cannot message this user');
 
-    // Check if DM already exists
-    const existing = await this.prisma.conversation.findFirst({
-      where: {
-        isGroup: false,
-        AND: [
-          { members: { some: { userId } } },
-          { members: { some: { userId: targetUserId } } },
-        ],
-      },
-      select: CONVERSATION_SELECT,
-    });
-    if (existing) return existing;
-
-    return this.prisma.conversation.create({
-      data: {
-        isGroup: false,
-        createdById: userId,
-        members: {
-          create: [{ userId }, { userId: targetUserId }],
+    // Atomic: check + create to prevent duplicate DMs from concurrent calls
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.conversation.findFirst({
+        where: {
+          isGroup: false,
+          AND: [
+            { members: { some: { userId } } },
+            { members: { some: { userId: targetUserId } } },
+          ],
         },
-      },
-      select: CONVERSATION_SELECT,
+        select: CONVERSATION_SELECT,
+      });
+      if (existing) return existing;
+
+      return tx.conversation.create({
+        data: {
+          isGroup: false,
+          createdById: userId,
+          members: {
+            create: [{ userId }, { userId: targetUserId }],
+          },
+        },
+        select: CONVERSATION_SELECT,
+      });
     });
   }
 
@@ -248,6 +258,17 @@ export class MessagesService {
     if (!groupName?.trim()) throw new BadRequestException('Group name is required');
 
     const allMemberIds = Array.from(new Set([userId, ...memberIds]));
+
+    // Validate all member IDs correspond to real users
+    const existingUsers = await this.prisma.user.findMany({
+      where: { id: { in: allMemberIds } },
+      select: { id: true },
+    });
+    const existingIds = new Set(existingUsers.map((u) => u.id));
+    const invalidIds = allMemberIds.filter((id) => !existingIds.has(id));
+    if (invalidIds.length > 0) {
+      throw new BadRequestException(`Invalid user IDs: ${invalidIds.join(', ')}`);
+    }
 
     return this.prisma.conversation.create({
       data: {
@@ -303,6 +324,13 @@ export class MessagesService {
 
   async leaveGroup(conversationId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
+
+    const convo = await this.prisma.conversation.findUnique({ where: { id: conversationId } });
+    if (!convo) throw new NotFoundException('Conversation not found');
+    if (convo.createdById === userId) {
+      throw new BadRequestException('Group owner cannot leave. Transfer ownership first.');
+    }
+
     await this.prisma.conversationMember.delete({
       where: { conversationId_userId: { conversationId, userId } },
     });
@@ -369,6 +397,7 @@ export class MessagesService {
   }
 
   async searchMessages(conversationId: string, userId: string, query: string, cursor?: string, limit = 20) {
+    if (!query?.trim()) throw new BadRequestException('Search query is required');
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
       where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },

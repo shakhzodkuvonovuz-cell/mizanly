@@ -50,8 +50,9 @@ export class GamificationService {
   }
 
   async updateStreak(userId: string, streakType: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use UTC date string for timezone-safe comparison
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const today = new Date(todayStr + 'T00:00:00.000Z');
 
     const streak = await this.prisma.userStreak.findUnique({
       where: { userId_streakType: { userId, streakType } },
@@ -63,25 +64,38 @@ export class GamificationService {
       });
     }
 
-    const lastActive = new Date(streak.lastActiveDate);
-    lastActive.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((today.getTime() - lastActive.getTime()) / (1000 * 60 * 60 * 24));
+    // Normalize to UTC date strings for reliable comparison
+    const lastActiveStr = streak.lastActiveDate.toISOString().slice(0, 10);
+    if (lastActiveStr === todayStr) return streak; // Already counted today
 
-    if (diffDays === 0) return streak; // Already counted today
+    const lastActiveDate = new Date(lastActiveStr + 'T00:00:00.000Z');
+    const diffMs = today.getTime() - lastActiveDate.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+
     if (diffDays === 1) {
-      // Continue streak
-      const newCurrent = streak.currentDays + 1;
-      const newLongest = Math.max(newCurrent, streak.longestDays);
-
-      // Award XP for milestone streaks
-      if (newCurrent === 7) await this.awardXP(userId, 'streak_milestone_7');
-      if (newCurrent === 30) await this.awardXP(userId, 'streak_milestone_30');
-      if (newCurrent === 100) await this.awardXP(userId, 'streak_milestone_100');
-
-      return this.prisma.userStreak.update({
+      // Continue streak — use atomic increment to prevent race conditions
+      const updated = await this.prisma.userStreak.update({
         where: { userId_streakType: { userId, streakType } },
-        data: { currentDays: newCurrent, longestDays: newLongest, lastActiveDate: today },
+        data: {
+          currentDays: { increment: 1 },
+          lastActiveDate: today,
+        },
       });
+
+      // Update longestDays if needed
+      if (updated.currentDays > updated.longestDays) {
+        await this.prisma.userStreak.update({
+          where: { userId_streakType: { userId, streakType } },
+          data: { longestDays: updated.currentDays },
+        });
+      }
+
+      // Award XP for milestone streaks (fire-and-forget)
+      if (updated.currentDays === 7) this.awardXP(userId, 'streak_milestone_7').catch(() => {});
+      if (updated.currentDays === 30) this.awardXP(userId, 'streak_milestone_30').catch(() => {});
+      if (updated.currentDays === 100) this.awardXP(userId, 'streak_milestone_100').catch(() => {});
+
+      return updated;
     }
 
     // Streak broken — reset
@@ -179,14 +193,17 @@ export class GamificationService {
     const achievement = await this.prisma.achievement.findUnique({ where: { key: achievementKey } });
     if (!achievement) return null;
 
-    const existing = await this.prisma.userAchievement.findUnique({
-      where: { userId_achievementId: { userId, achievementId: achievement.id } },
-    });
-    if (existing) return null; // Already unlocked
-
-    await this.prisma.userAchievement.create({
-      data: { userId, achievementId: achievement.id },
-    });
+    try {
+      await this.prisma.userAchievement.create({
+        data: { userId, achievementId: achievement.id },
+      });
+    } catch (err: unknown) {
+      // Handle duplicate unlock (race condition or retry)
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        return null; // Already unlocked
+      }
+      throw err;
+    }
 
     if (achievement.xpReward > 0) {
       await this.awardXP(userId, 'achievement_unlocked', achievement.xpReward);
@@ -296,12 +313,20 @@ export class GamificationService {
     }
 
     try {
-      await this.prisma.challengeParticipant.create({
-        data: { challengeId, userId },
-      });
-      await this.prisma.$executeRaw`UPDATE challenges SET "participantCount" = "participantCount" + 1 WHERE id = ${challengeId}`;
-    } catch {
-      throw new ConflictException('Already joined');
+      await this.prisma.$transaction([
+        this.prisma.challengeParticipant.create({
+          data: { challengeId, userId },
+        }),
+        this.prisma.challenge.update({
+          where: { id: challengeId },
+          data: { participantCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        throw new ConflictException('Already joined');
+      }
+      throw err;
     }
 
     return { success: true };
@@ -404,19 +429,32 @@ export class GamificationService {
 
   async followSeries(userId: string, seriesId: string) {
     try {
-      await this.prisma.seriesFollower.create({ data: { seriesId, userId } });
-      await this.prisma.$executeRaw`UPDATE series SET "followersCount" = "followersCount" + 1 WHERE id = ${seriesId}`;
-    } catch {
-      throw new ConflictException('Already following');
+      await this.prisma.$transaction([
+        this.prisma.seriesFollower.create({ data: { seriesId, userId } }),
+        this.prisma.series.update({
+          where: { id: seriesId },
+          data: { followersCount: { increment: 1 } },
+        }),
+      ]);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2002') {
+        throw new ConflictException('Already following');
+      }
+      throw err;
     }
     return { success: true };
   }
 
   async unfollowSeries(userId: string, seriesId: string) {
-    await this.prisma.seriesFollower.delete({
-      where: { seriesId_userId: { seriesId, userId } },
-    });
-    await this.prisma.$executeRaw`UPDATE series SET "followersCount" = GREATEST("followersCount" - 1, 0) WHERE id = ${seriesId}`;
+    await this.prisma.$transaction([
+      this.prisma.seriesFollower.delete({
+        where: { seriesId_userId: { seriesId, userId } },
+      }),
+      this.prisma.series.update({
+        where: { id: seriesId },
+        data: { followersCount: { decrement: 1 } },
+      }),
+    ]);
     return { success: true };
   }
 
