@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class StickersService {
@@ -59,9 +60,17 @@ export class StickersService {
   }
 
   async removeFromCollection(userId: string, packId: string) {
-    await this.prisma.userStickerPack.delete({
-      where: { userId_packId: { userId, packId } },
-    }).catch(() => {});
+    try {
+      await this.prisma.userStickerPack.delete({
+        where: { userId_packId: { userId, packId } },
+      });
+    } catch (error) {
+      // P2025: record not found — idempotent, treat as already removed
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        return { removed: true };
+      }
+      throw error;
+    }
     return { removed: true };
   }
 
@@ -88,7 +97,14 @@ export class StickersService {
   }
 
   async deletePack(packId: string) {
-    await this.prisma.stickerPack.delete({ where: { id: packId } });
+    try {
+      await this.prisma.stickerPack.delete({ where: { id: packId } });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Sticker pack not found');
+      }
+      throw error;
+    }
     return { deleted: true };
   }
 }

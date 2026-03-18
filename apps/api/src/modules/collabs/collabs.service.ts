@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { CollabStatus } from '@prisma/client';
+import { CollabStatus, Prisma } from '@prisma/client';
 
 @Injectable()
 export class CollabsService {
