@@ -4,10 +4,11 @@
 
 ## P0 — CRITICAL (Blocks launch)
 
-- [ ] Global ValidationPipe + convert 54 inline body DTOs to proper validated classes
-- [ ] Add Sentry crash reporting to mobile app
+- [x] Global ValidationPipe + convert 54 inline body DTOs to proper validated classes
+- [x] Add Sentry crash reporting to mobile app
+- [x] Switch from `prisma db push` to `prisma migrate` (baseline created)
 - [ ] Add FCM/APNs push notification delivery
-- [ ] Wire remaining unwired screens to real APIs (audit which 48 are truly broken)
+- [ ] Wire 13 screens with mock handlers to real APIs (schedule-post, bookmark-folders, share-receive, storage-management, zakat-calculator, islamic-calendar, ramadan-mode, duet-create, stitch-create, location-picker, quran-room, eid-cards)
 
 ## P1 — HIGH (Required for production quality)
 
@@ -16,7 +17,6 @@
 - [ ] Add Redis caching to top 20 hot endpoints
 - [ ] Write missing controller tests (51 controllers)
 - [ ] Add image optimization pipeline (resize, WebP, blur hash)
-- [ ] Switch from `prisma db push` to `prisma migrate`
 
 ## P2 — MEDIUM (Differentiates good from great)
 
