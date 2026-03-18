@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { DevicesService } from '../devices/devices.service';
+import { PushTriggerService } from './push-trigger.service';
 import { NotificationsService } from './notifications.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -9,6 +10,7 @@ describe('NotificationsService', () => {
   let service: NotificationsService;
   let prisma: any;
   let devices: any;
+  let pushTrigger: any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -41,6 +43,7 @@ describe('NotificationsService', () => {
     service = module.get<NotificationsService>(NotificationsService);
     prisma = module.get(PrismaService);
     devices = module.get(DevicesService);
+    pushTrigger = module.get(PushTriggerService);
   });
 
   describe('getNotifications', () => {
@@ -307,7 +310,7 @@ describe('NotificationsService', () => {
       expect(prisma.notification.create).not.toHaveBeenCalled();
     });
 
-    it('should send push notification when title/body provided', async () => {
+    it('should trigger push notification after creating notification', async () => {
       const params = {
         userId: 'user-123',
         actorId: 'actor-456',
@@ -322,42 +325,34 @@ describe('NotificationsService', () => {
         createdAt: new Date(),
       };
       prisma.notification.create.mockResolvedValue(mockNotification);
-      devices.getActiveTokensForUser.mockResolvedValue(['token-1', 'token-2']);
-      global.fetch = jest.fn().mockResolvedValue({ ok: true });
 
       await service.create(params);
 
-      expect(devices.getActiveTokensForUser).toHaveBeenCalledWith('user-123');
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://exp.host/--/api/v2/push/send',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify([
-            {
-              to: 'token-1',
-              title: params.title,
-              body: params.body,
-              data: {
-                notificationId: mockNotification.id,
-                type: params.type,
-              },
-            },
-            {
-              to: 'token-2',
-              title: params.title,
-              body: params.body,
-              data: {
-                notificationId: mockNotification.id,
-                type: params.type,
-              },
-            },
-          ]),
-        },
-      );
+      expect(pushTrigger.triggerPush).toHaveBeenCalledWith('notif-1');
     });
 
-    it('should not send push notification if no tokens', async () => {
+    it('should still create notification even without title/body', async () => {
+      const params = {
+        userId: 'user-123',
+        actorId: 'actor-456',
+        type: 'LIKE',
+      };
+      const mockNotification = {
+        id: 'notif-1',
+        ...params,
+        isRead: false,
+        createdAt: new Date(),
+      };
+      prisma.notification.create.mockResolvedValue(mockNotification);
+
+      const result = await service.create(params);
+
+      expect(prisma.notification.create).toHaveBeenCalled();
+      expect(result).toEqual(mockNotification);
+      expect(pushTrigger.triggerPush).toHaveBeenCalledWith('notif-1');
+    });
+
+    it('should handle push trigger error gracefully', async () => {
       const params = {
         userId: 'user-123',
         actorId: 'actor-456',
@@ -372,62 +367,15 @@ describe('NotificationsService', () => {
         createdAt: new Date(),
       };
       prisma.notification.create.mockResolvedValue(mockNotification);
-      devices.getActiveTokensForUser.mockResolvedValue([]);
-      global.fetch = jest.fn();
-
-      await service.create(params);
-
-      expect(devices.getActiveTokensForUser).toHaveBeenCalledWith('user-123');
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    it('should not send push notification if no title or body', async () => {
-      const params = {
-        userId: 'user-123',
-        actorId: 'actor-456',
-        type: 'LIKE',
-      };
-      const mockNotification = {
-        id: 'notif-1',
-        ...params,
-        isRead: false,
-        createdAt: new Date(),
-      };
-      prisma.notification.create.mockResolvedValue(mockNotification);
-      devices.getActiveTokensForUser.mockResolvedValue(['token-1']);
-      global.fetch = jest.fn();
-
-      await service.create(params);
-
-      expect(devices.getActiveTokensForUser).not.toHaveBeenCalled();
-      expect(global.fetch).not.toHaveBeenCalled();
-    });
-
-    it('should handle push notification error gracefully', async () => {
-      const params = {
-        userId: 'user-123',
-        actorId: 'actor-456',
-        type: 'LIKE',
-        title: 'New like',
-        body: 'Someone liked your post',
-      };
-      const mockNotification = {
-        id: 'notif-1',
-        ...params,
-        isRead: false,
-        createdAt: new Date(),
-      };
-      prisma.notification.create.mockResolvedValue(mockNotification);
-      devices.getActiveTokensForUser.mockResolvedValue(['token-1']);
-      global.fetch = jest.fn().mockRejectedValue(new Error('Network error'));
+      pushTrigger.triggerPush.mockRejectedValue(new Error('Push failed'));
       const loggerSpy = jest.spyOn(Logger.prototype, 'error').mockImplementation();
 
       await service.create(params);
-      // Wait for any pending promises (push notification sending)
+      // Wait for the .catch() handler on the non-blocking triggerPush
       await new Promise(setImmediate);
 
       expect(loggerSpy).toHaveBeenCalledWith(
-        'Failed to send push notification',
+        'Push trigger failed',
         expect.any(Error),
       );
       loggerSpy.mockRestore();

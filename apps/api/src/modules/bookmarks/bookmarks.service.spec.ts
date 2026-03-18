@@ -46,6 +46,8 @@ describe('BookmarksService', () => {
             },
             video: {
               findUnique: jest.fn(),
+              update: jest.fn(),
+              updateMany: jest.fn(),
             },
           },
         },
@@ -65,7 +67,7 @@ describe('BookmarksService', () => {
       prisma.post.findUnique.mockResolvedValue({ id: postId });
       prisma.savedPost.findUnique.mockResolvedValue(null);
       prisma.savedPost.create.mockResolvedValue({ userId, postId, collectionName });
-      prisma.$transaction.mockImplementation((ops) => Promise.all(ops));
+      prisma.$transaction.mockImplementation((ops: Promise<unknown>[]) => Promise.all(ops));
 
       const result = await service.savePost(userId, postId, collectionName);
       expect(result).toEqual({ userId, postId, collectionName });
@@ -100,7 +102,7 @@ describe('BookmarksService', () => {
         where: { userId_postId: { userId, postId } },
         data: { collectionName },
       });
-      expect(result.collectionName).toBe(collectionName);
+      expect(result!.collectionName).toBe(collectionName);
     });
   });
 
@@ -108,22 +110,31 @@ describe('BookmarksService', () => {
     const userId = 'user1';
     const postId = 'post1';
 
-    it('should unsave a post', async () => {
-      prisma.savedPost.findUnique.mockResolvedValue({ userId, postId });
-      prisma.$transaction.mockImplementation((ops) => Promise.all(ops));
+    it('should unsave a post via interactive transaction', async () => {
+      const mockTx = {
+        savedPost: { delete: jest.fn().mockResolvedValue({}) },
+        post: {
+          update: jest.fn().mockResolvedValue({}),
+          updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        },
+      };
+      (prisma.$transaction as jest.Mock).mockImplementation((fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx));
 
       await service.unsavePost(userId, postId);
-      expect(prisma.savedPost.delete).toHaveBeenCalledWith({
+      expect(mockTx.savedPost.delete).toHaveBeenCalledWith({
         where: { userId_postId: { userId, postId } },
       });
-      expect(prisma.post.update).toHaveBeenCalledWith({
+      expect(mockTx.post.update).toHaveBeenCalledWith({
         where: { id: postId },
         data: { savesCount: { decrement: 1 } },
       });
     });
 
-    it('should throw NotFoundException if post not saved', async () => {
-      prisma.savedPost.findUnique.mockResolvedValue(null);
+    it('should throw NotFoundException if post not saved (P2025)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      (prisma.$transaction as jest.Mock).mockRejectedValue(
+        new PrismaClientKnownRequestError('Not found', { code: 'P2025', clientVersion: '0' }),
+      );
 
       await expect(service.unsavePost(userId, postId))
         .rejects.toThrow(NotFoundException);
@@ -168,13 +179,13 @@ describe('BookmarksService', () => {
     const userId = 'user1';
     const videoId = 'video1';
 
-    it('should save a video', async () => {
+    it('should save a video via batch transaction', async () => {
       prisma.video.findUnique.mockResolvedValue({ id: videoId });
-      prisma.videoBookmark.findUnique.mockResolvedValue(null);
-      prisma.videoBookmark.create.mockResolvedValue({ userId, videoId });
+      const mockBookmark = { userId, videoId };
+      (prisma.$transaction as jest.Mock).mockResolvedValue([mockBookmark, {}]);
 
       const result = await service.saveVideo(userId, videoId);
-      expect(result).toEqual({ userId, videoId });
+      expect(result).toEqual(mockBookmark);
     });
 
     it('should throw NotFoundException if video not found', async () => {
@@ -189,10 +200,18 @@ describe('BookmarksService', () => {
     const userId = 'user1';
     const videoId = 'video1';
 
-    it('should unsave a video', async () => {
-      prisma.videoBookmark.findUnique.mockResolvedValue({ userId, videoId });
+    it('should unsave a video via interactive transaction', async () => {
+      const mockTx = {
+        videoBookmark: { delete: jest.fn().mockResolvedValue({}) },
+        video: {
+          update: jest.fn().mockResolvedValue({}),
+          updateMany: jest.fn().mockResolvedValue({ count: 0 }),
+        },
+      };
+      (prisma.$transaction as jest.Mock).mockImplementation((fn: (tx: typeof mockTx) => Promise<void>) => fn(mockTx));
+
       await service.unsaveVideo(userId, videoId);
-      expect(prisma.videoBookmark.delete).toHaveBeenCalledWith({
+      expect(mockTx.videoBookmark.delete).toHaveBeenCalledWith({
         where: { userId_videoId: { userId, videoId } },
       });
     });
@@ -261,7 +280,7 @@ describe('BookmarksService', () => {
       prisma.savedPost.update.mockResolvedValue({ userId, postId, collectionName });
 
       const result = await service.moveToCollection(userId, postId, collectionName);
-      expect(result.collectionName).toBe(collectionName);
+      expect(result!.collectionName).toBe(collectionName);
     });
 
     it('should throw NotFoundException if saved post not found', async () => {

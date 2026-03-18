@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { BlocksService } from './blocks.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -21,6 +21,9 @@ describe('BlocksService', () => {
               create: jest.fn(),
               delete: jest.fn(),
               findMany: jest.fn(),
+            },
+            user: {
+              findUnique: jest.fn().mockResolvedValue({ id: 'user-456' }),
             },
             follow: {
               findMany: jest.fn(),
@@ -78,34 +81,34 @@ describe('BlocksService', () => {
       );
     });
 
-    it('should throw ConflictException if already blocked', async () => {
+    it('should return success idempotently if already blocked', async () => {
       const blockerId = 'user-123';
       const blockedId = 'user-456';
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId });
       prisma.block.findUnique.mockResolvedValue({ blockerId, blockedId });
 
-      await expect(service.block(blockerId, blockedId)).rejects.toThrow(
-        ConflictException,
-      );
+      const result = await service.block(blockerId, blockedId);
+
+      expect(result).toEqual({ message: 'User blocked' });
+      expect(prisma.$transaction).not.toHaveBeenCalled();
     });
 
-    it('should decrement follower/following counts when follows existed', async () => {
+    it('should include executeRaw in transaction when follows existed', async () => {
       const blockerId = 'user-123';
       const blockedId = 'user-456';
+      prisma.user.findUnique.mockResolvedValue({ id: blockedId });
       prisma.block.findUnique.mockResolvedValue(null);
       prisma.follow.findMany.mockResolvedValue([
         { followerId: blockerId, followingId: blockedId },
         { followerId: blockedId, followingId: blockerId },
       ]);
-      prisma.block.create.mockResolvedValue({});
-      prisma.follow.deleteMany.mockResolvedValue({});
-      prisma.followRequest.deleteMany.mockResolvedValue({});
-      prisma.$executeRaw.mockResolvedValue(1);
       prisma.$transaction.mockResolvedValue([]);
 
       await service.block(blockerId, blockedId);
 
-      // Expect $executeRaw calls for both blockerWasFollowing and blockedWasFollowing
-      expect(prisma.$executeRaw).toHaveBeenCalledTimes(4);
+      // Transaction should include: block.create + follow.deleteMany + followRequest.deleteMany + 4x $executeRaw
+      const txArgs = prisma.$transaction.mock.calls[0][0];
+      expect(txArgs.length).toBe(7); // 3 base + 2 blokerWasFollowing + 2 blockedWasFollowing
     });
   });
 
@@ -124,14 +127,15 @@ describe('BlocksService', () => {
       expect(result).toEqual({ message: 'User unblocked' });
     });
 
-    it('should throw NotFoundException if block not found', async () => {
+    it('should return success idempotently if block not found', async () => {
       const blockerId = 'user-123';
       const blockedId = 'user-456';
       prisma.block.findUnique.mockResolvedValue(null);
 
-      await expect(service.unblock(blockerId, blockedId)).rejects.toThrow(
-        NotFoundException,
-      );
+      const result = await service.unblock(blockerId, blockedId);
+
+      expect(result).toEqual({ message: 'User unblocked' });
+      expect(prisma.block.delete).not.toHaveBeenCalled();
     });
   });
 

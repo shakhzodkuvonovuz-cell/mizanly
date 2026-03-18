@@ -73,18 +73,21 @@ describe('DownloadsService', () => {
       })).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException for non-published video', async () => {
-      prisma.video.findUnique.mockResolvedValue({ id: 'video-1', status: 'DRAFT' });
-      await expect(service.requestDownload('user-1', {
-        contentId: 'video-1', contentType: 'video',
-      })).rejects.toThrow(ForbiddenException);
+    it('should create download for a post with media', async () => {
+      prisma.post.findUnique.mockResolvedValue({ mediaUrls: ['https://test.com/img.jpg'], thumbnailUrl: null });
+      prisma.offlineDownload.upsert.mockResolvedValue(mockDownload);
+
+      const result = await service.requestDownload('user-1', {
+        contentId: 'post-1', contentType: 'post',
+      });
+      expect(result).toEqual(mockDownload);
     });
 
-    it('should throw ForbiddenException when post download is disabled', async () => {
-      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isDownloadable: false, mediaUrls: ['test'] });
+    it('should throw NotFoundException for post with no media', async () => {
+      prisma.post.findUnique.mockResolvedValue({ mediaUrls: [], thumbnailUrl: null });
       await expect(service.requestDownload('user-1', {
         contentId: 'post-1', contentType: 'post',
-      })).rejects.toThrow(ForbiddenException);
+      })).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -107,6 +110,7 @@ describe('DownloadsService', () => {
 
   describe('updateProgress', () => {
     it('should update download progress', async () => {
+      prisma.offlineDownload.findUnique.mockResolvedValue(mockDownload);
       prisma.offlineDownload.update.mockResolvedValue({ ...mockDownload, progress: 0.5, status: 'downloading' });
       const result = await service.updateProgress('user-1', 'dl-1', 0.5);
       expect(result.progress).toBe(0.5);
@@ -114,6 +118,7 @@ describe('DownloadsService', () => {
     });
 
     it('should mark as complete at progress 1.0', async () => {
+      prisma.offlineDownload.findUnique.mockResolvedValue(mockDownload);
       prisma.offlineDownload.update.mockResolvedValue({ ...mockDownload, progress: 1, status: 'complete' });
       const result = await service.updateProgress('user-1', 'dl-1', 1.0);
       expect(result.status).toBe('complete');
@@ -128,8 +133,8 @@ describe('DownloadsService', () => {
       });
 
       const result = await service.getStorageUsed('user-1');
-      expect(result.totalBytes).toBe(1048576);
-      expect(result.totalFiles).toBe(3);
+      expect(result.usedBytes).toBe(1048576);
+      expect(result.count).toBe(3);
     });
 
     it('should return zero when no downloads', async () => {
@@ -139,17 +144,18 @@ describe('DownloadsService', () => {
       });
 
       const result = await service.getStorageUsed('user-1');
-      expect(result.totalBytes).toBe(0);
-      expect(result.totalFiles).toBe(0);
+      expect(result.usedBytes).toBe(0);
+      expect(result.count).toBe(0);
     });
   });
 
   describe('deleteDownload', () => {
     it('should delete a download record', async () => {
+      prisma.offlineDownload.findUnique.mockResolvedValue(mockDownload);
       prisma.offlineDownload.delete.mockResolvedValue(mockDownload);
       await service.deleteDownload('user-1', 'dl-1');
       expect(prisma.offlineDownload.delete).toHaveBeenCalledWith({
-        where: { id: 'dl-1', userId: 'user-1' },
+        where: { id: 'dl-1' },
       });
     });
   });

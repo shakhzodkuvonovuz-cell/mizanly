@@ -51,7 +51,7 @@ describe('DevicesService', () => {
       expect(prisma.device.upsert).toHaveBeenCalledWith({
         where: { pushToken },
         create: { userId, pushToken, platform, deviceId, isActive: true },
-        update: { userId, platform, deviceId, isActive: true },
+        update: { userId, platform, deviceId, isActive: true, updatedAt: expect.any(Date) },
       });
       expect(result).toEqual(mockDevice);
     });
@@ -67,7 +67,7 @@ describe('DevicesService', () => {
       expect(prisma.device.upsert).toHaveBeenCalledWith({
         where: { pushToken },
         create: { userId, pushToken, platform, deviceId: undefined, isActive: true },
-        update: { userId, platform, deviceId: undefined, isActive: true },
+        update: { userId, platform, deviceId: undefined, isActive: true, updatedAt: expect.any(Date) },
       });
     });
   });

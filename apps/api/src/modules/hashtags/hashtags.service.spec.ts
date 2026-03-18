@@ -57,7 +57,8 @@ describe('HashtagsService', () => {
         {
           provide: 'REDIS',
           useValue: {
-            get: jest.fn(),
+            get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockResolvedValue('OK'),
             setex: jest.fn(),
             del: jest.fn(),
           },
