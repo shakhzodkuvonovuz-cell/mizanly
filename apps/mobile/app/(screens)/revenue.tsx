@@ -89,12 +89,12 @@ function RevenueContent() {
         revenueApi.getOverview(),
         revenueApi.getTransactions(),
       ]);
-      const overviewData = overviewRes as unknown as { data: RevenueOverview };
-      const txData = txRes as unknown as { data: { data: Transaction[]; meta: { cursor?: string; hasMore: boolean } } };
-      setOverview(overviewData.data);
-      setTransactions(txData.data.data);
-      setCursor(txData.data.meta.cursor);
-      setHasMore(txData.data.meta.hasMore);
+      // API client already unwraps envelope
+      setOverview(overviewRes as RevenueOverview);
+      const txPage = txRes as { data: Transaction[]; meta: { cursor?: string; hasMore: boolean } };
+      setTransactions(txPage.data);
+      setCursor(txPage.meta.cursor);
+      setHasMore(txPage.meta.hasMore);
     } catch {
       // Keep existing data on error
     } finally {
@@ -116,10 +116,10 @@ function RevenueContent() {
     if (!hasMore || !cursor) return;
     try {
       const res = await revenueApi.getTransactions(cursor);
-      const txData = res as unknown as { data: { data: Transaction[]; meta: { cursor?: string; hasMore: boolean } } };
-      setTransactions((prev) => [...prev, ...txData.data.data]);
-      setCursor(txData.data.meta.cursor);
-      setHasMore(txData.data.meta.hasMore);
+      const txPage = res as { data: Transaction[]; meta: { cursor?: string; hasMore: boolean } };
+      setTransactions((prev) => [...prev, ...txPage.data]);
+      setCursor(txPage.meta.cursor);
+      setHasMore(txPage.meta.hasMore);
     } catch {
       // Ignore load more errors
     }

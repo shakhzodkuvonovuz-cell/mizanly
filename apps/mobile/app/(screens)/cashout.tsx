@@ -89,12 +89,11 @@ function CashoutContent() {
           walletApi.getBalance(),
           walletApi.getPaymentMethods(),
         ]);
-        const balData = balRes as unknown as { data: WalletBalance };
-        const methodsData = methodsRes as unknown as { data: PaymentMethod[] };
         if (!cancelled) {
-          setBalance(balData.data);
-          setPaymentMethods(methodsData.data);
-          const defaultMethod = methodsData.data.find((m) => m.isDefault);
+          setBalance(balRes as WalletBalance);
+          const methods = methodsRes as PaymentMethod[];
+          setPaymentMethods(methods);
+          const defaultMethod = methods.find((m) => m.isDefault);
           if (defaultMethod) setSelectedMethodId(defaultMethod.id);
         }
       } catch {

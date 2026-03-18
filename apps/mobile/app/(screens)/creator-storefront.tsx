@@ -68,12 +68,13 @@ function CreatorStorefrontContent() {
         api.get(`/storefront/${userId}/products`),
         api.get(`/users/${userId}`),
       ]);
-      const productsData = productsRes as unknown as { data: StorefrontProduct[] };
-      const profileData = profileRes as unknown as { data: CreatorProfile & { isMe?: boolean } };
-      setProducts(Array.isArray(productsData.data) ? productsData.data : []);
-      if (profileData.data) {
-        setCreator(profileData.data);
-        setIsOwnProfile(!!profileData.data.isMe);
+      // API client already unwraps the response envelope
+      const products = Array.isArray(productsRes) ? productsRes as StorefrontProduct[] : [];
+      const profile = profileRes as CreatorProfile & { isMe?: boolean };
+      setProducts(products);
+      if (profile) {
+        setCreator(profile);
+        setIsOwnProfile(!!profile.isMe);
       }
     } catch {
       // Keep existing data on error

@@ -579,7 +579,7 @@ export default function CreateStoryScreen() {
             position: 'absolute' as const,
             left: spacing.base,
             right: spacing.base,
-            top: '40%' as unknown as number,
+            top: SCREEN_H * 0.4,
           }, { alignItems: te.alignment === 'left' ? 'flex-start' : te.alignment === 'right' ? 'flex-end' : 'center' }]}>
             <Text style={{
               color: te.color,

@@ -31,9 +31,14 @@ function StatusPrivacyContent() {
       try {
         const settings = await settingsApi.get();
         if (!cancelled) {
-          const data = settings as unknown as Record<string, unknown>;
-          if (data.lastSeenPrivacy) setLastSeen(data.lastSeenPrivacy as LastSeenOption);
-          if (data.onlineStatusPrivacy) setOnlineStatus(data.onlineStatusPrivacy as OnlineStatusOption);
+          const data = settings as {
+            lastSeenPrivacy?: LastSeenOption;
+            onlineStatusPrivacy?: OnlineStatusOption;
+            readReceipts?: boolean;
+            typingIndicators?: boolean;
+          };
+          if (data.lastSeenPrivacy) setLastSeen(data.lastSeenPrivacy);
+          if (data.onlineStatusPrivacy) setOnlineStatus(data.onlineStatusPrivacy);
           if (typeof data.readReceipts === 'boolean') setReadReceipts(data.readReceipts);
           if (typeof data.typingIndicators === 'boolean') setTypingIndicators(data.typingIndicators);
         }

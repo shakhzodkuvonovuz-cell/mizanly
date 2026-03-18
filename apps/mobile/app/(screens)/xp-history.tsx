@@ -111,7 +111,7 @@ function LevelBadge({ xpData, isRTL }: { xpData: XPData; isRTL: boolean }) {
               colors={[colors.gold, colors.emerald]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
-              style={[styles.progressBarFill, { width: `${Math.min(progress * 100, 100)}%` as unknown as number }]}
+              style={[styles.progressBarFill, { width: `${Math.min(progress * 100, 100)}%` }]}
             />
           </View>
           <Text style={styles.progressLabel}>

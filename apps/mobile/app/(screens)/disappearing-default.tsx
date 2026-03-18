@@ -33,7 +33,7 @@ function DisappearingDefaultContent() {
     async function loadSettings() {
       try {
         const settings = await settingsApi.get();
-        const data = settings as unknown as Record<string, unknown>;
+        const data = settings as { disappearingMessageTimer?: number };
         if (!cancelled && typeof data.disappearingMessageTimer === 'number') {
           const match = TIMER_VALUES.find((v) => v.seconds === data.disappearingMessageTimer);
           if (match) setSelected(match.key);

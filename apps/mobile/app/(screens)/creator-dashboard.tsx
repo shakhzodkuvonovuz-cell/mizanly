@@ -138,12 +138,12 @@ function CreatorDashboardContent() {
         },
       ]);
 
-      const content = contentRes as Record<string, unknown>;
-      setTopPosts((content.topPosts as TopPost[]) ?? []);
-      setBestTimes((content.bestTimes as BestTimeSlot[]) ?? []);
+      const content = contentRes as { topPosts?: TopPost[]; bestTimes?: BestTimeSlot[] };
+      setTopPosts(content.topPosts ?? []);
+      setBestTimes(content.bestTimes ?? []);
 
-      setAudienceData(audienceRes as unknown as AudienceData);
-      setRevenueData(revenueRes as unknown as RevenueData);
+      setAudienceData(audienceRes as AudienceData);
+      setRevenueData(revenueRes as RevenueData);
     } catch {
       // Show empty state on failure
     } finally {

@@ -777,7 +777,8 @@ export default function ConversationScreen() {
     sender: user ? { id: user.id, displayName: user.fullName || user.username, avatarUrl: user.imageUrl, username: user.username } : { id: 'pending', displayName: 'You', avatarUrl: '', username: 'pending' },
     messageType: 'TEXT',
     replyToId: p.replyToId,
-  } as unknown as Message))];
+  isForwarded: false, isDeleted: false,
+  } as Message))];
   const filteredMessages = searchQuery.trim()
     ? combinedMessages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
     : combinedMessages;

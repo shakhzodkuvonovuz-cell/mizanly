@@ -33,7 +33,7 @@ function ChatExportContent() {
       try {
         const result = await chatExportApi.getStats(conversationId);
         if (!cancelled) {
-          setStats(result as unknown as ChatExportStats);
+          setStats(result as ChatExportStats);
         }
       } catch {
         if (!cancelled) {
@@ -58,7 +58,7 @@ function ChatExportContent() {
         format,
         includeMedia,
       });
-      const exportData = result as unknown as { url: string; filename: string };
+      const exportData = result as { url: string; filename: string };
       await Share.share({
         url: exportData.url,
         title: exportData.filename,

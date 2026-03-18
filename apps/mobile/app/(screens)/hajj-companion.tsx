@@ -92,13 +92,7 @@ function HajjCompanionContent() {
   }, [guideQuery.data]);
 
   const progress: HajjProgress | null = useMemo(() => {
-    const raw = progressQuery.data;
-    if (!raw) return null;
-    const rawObj = raw as unknown as Record<string, unknown>;
-    if ('data' in rawObj && rawObj.data !== undefined) {
-      return rawObj.data as HajjProgress | null;
-    }
-    return raw as unknown as HajjProgress;
+    return (progressQuery.data as HajjProgress | null) ?? null;
   }, [progressQuery.data]);
 
   const currentStep = progress?.currentStep ?? 0;

@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   layoutPressable: {
-    width: '47%' as unknown as number,
+    flexBasis: '46%',
     flexGrow: 1,
   },
   layoutCard: {
@@ -511,7 +511,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   fontPressable: {
-    width: '47%' as unknown as number,
+    flexBasis: '46%',
     flexGrow: 1,
   },
   fontCard: {
