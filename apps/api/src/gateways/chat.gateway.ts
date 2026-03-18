@@ -44,7 +44,9 @@ import {
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ChatGateway.name);
-  private onlineUsers = new Map<string, Set<string>>(); // userId → Set<socketId>
+  // Presence tracking via Redis (supports horizontal scaling)
+  // Key: presence:{userId} → Set of socketIds, TTL 5 minutes (auto-cleanup stale connections)
+  private readonly PRESENCE_TTL = 300; // 5 minutes
   private quranRooms = new Map<string, {
     hostId: string;
     currentSurah: number;
@@ -59,6 +61,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private config: ConfigService,
     @Inject('REDIS') private redis: Redis,
   ) {}
+
+  /** Get all socket IDs for a user from Redis presence */
+  private async getUserSockets(userId: string): Promise<string[]> {
+    return this.redis.smembers(`presence:${userId}`);
+  }
 
   private async checkRateLimit(userId: string): Promise<boolean> {
     const key = `ws:ratelimit:${userId}`;
@@ -91,12 +98,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       // Attach user id to socket data for later handlers
       client.data.userId = user.id;
 
-      // Track user as online
+      // Track user as online via Redis (scales across instances)
       const userId = client.data.userId;
-      if (!this.onlineUsers.has(userId)) {
-        this.onlineUsers.set(userId, new Set());
-      }
-      this.onlineUsers.get(userId)!.add(client.id);
+      const presenceKey = `presence:${userId}`;
+      await this.redis.sadd(presenceKey, client.id);
+      await this.redis.expire(presenceKey, this.PRESENCE_TTL);
 
       // Broadcast to all connected clients that this user is online
       this.server.emit('user_online', { userId, isOnline: true });
@@ -107,19 +113,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  handleDisconnect(client: Socket) {
+  async handleDisconnect(client: Socket) {
     const userId = client.data.userId;
-    if (userId && this.onlineUsers.has(userId)) {
-      this.onlineUsers.get(userId)!.delete(client.id);
-      if (this.onlineUsers.get(userId)!.size === 0) {
-        this.onlineUsers.delete(userId);
-        // User fully offline — update lastSeenAt
-        this.prisma.user.update({
-          where: { id: userId },
-          data: { lastSeenAt: new Date() },
-        }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
-        this.server.emit('user_offline', { userId, isOnline: false, lastSeenAt: new Date().toISOString() });
-      }
+    if (!userId) return;
+
+    const presenceKey = `presence:${userId}`;
+    await this.redis.srem(presenceKey, client.id);
+    const remaining = await this.redis.scard(presenceKey);
+
+    if (remaining === 0) {
+      // User fully offline — clean up and update lastSeenAt
+      await this.redis.del(presenceKey);
+      this.prisma.user.update({
+        where: { id: userId },
+        data: { lastSeenAt: new Date() },
+      }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
+      this.server.emit('user_offline', { userId, isOnline: false, lastSeenAt: new Date().toISOString() });
     }
   }
 
@@ -230,9 +239,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { userIds: string[] },
   ) {
-    const statuses = data.userIds.map(id => ({
+    // Cap at 100 user IDs to prevent abuse
+    const userIds = (data.userIds || []).slice(0, 100);
+    const pipeline = this.redis.pipeline();
+    for (const id of userIds) {
+      pipeline.scard(`presence:${id}`);
+    }
+    const results = await pipeline.exec();
+    const statuses = userIds.map((id, i) => ({
       userId: id,
-      isOnline: this.onlineUsers.has(id),
+      isOnline: (results?.[i]?.[1] as number) > 0,
     }));
     client.emit('online_status', statuses);
   }
@@ -246,8 +262,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_initiate data' });
       return;
     }
-    const targetSockets = this.onlineUsers.get(dto.targetUserId);
-    if (targetSockets) {
+    const targetSockets = await this.getUserSockets(dto.targetUserId);
+    if (targetSockets.length > 0) {
       for (const socketId of targetSockets) {
         this.server.to(socketId).emit('incoming_call', { sessionId: dto.sessionId, callType: dto.callType, callerId: client.data.userId });
       }
@@ -263,8 +279,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_answer data' });
       return;
     }
-    const callerSockets = this.onlineUsers.get(dto.callerId);
-    if (callerSockets) { for (const s of callerSockets) { this.server.to(s).emit('call_answered', { sessionId: dto.sessionId, answeredBy: client.data.userId }); } }
+    const callerSockets = await this.getUserSockets(dto.callerId);
+    if (callerSockets.length > 0) { for (const s of callerSockets) { this.server.to(s).emit('call_answered', { sessionId: dto.sessionId, answeredBy: client.data.userId }); } }
   }
 
   @SubscribeMessage('call_reject')
@@ -276,8 +292,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_reject data' });
       return;
     }
-    const callerSockets = this.onlineUsers.get(dto.callerId);
-    if (callerSockets) { for (const s of callerSockets) { this.server.to(s).emit('call_rejected', { sessionId: dto.sessionId, rejectedBy: client.data.userId }); } }
+    const callerSockets = await this.getUserSockets(dto.callerId);
+    if (callerSockets.length > 0) { for (const s of callerSockets) { this.server.to(s).emit('call_rejected', { sessionId: dto.sessionId, rejectedBy: client.data.userId }); } }
   }
 
   @SubscribeMessage('call_end')
@@ -290,8 +306,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       return;
     }
     for (const pid of dto.participants) {
-      const sockets = this.onlineUsers.get(pid);
-      if (sockets) { for (const s of sockets) { this.server.to(s).emit('call_ended', { sessionId: dto.sessionId, endedBy: client.data.userId }); } }
+      const sockets = await this.getUserSockets(pid);
+      for (const s of sockets) { this.server.to(s).emit('call_ended', { sessionId: dto.sessionId, endedBy: client.data.userId }); }
     }
   }
 
@@ -310,8 +326,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: 'Invalid call_signal data' });
       return;
     }
-    const targetSockets = this.onlineUsers.get(dto.targetUserId);
-    if (targetSockets) { for (const s of targetSockets) { this.server.to(s).emit('call_signal', { fromUserId: client.data.userId, signal: dto.signal }); } }
+    const targetSockets = await this.getUserSockets(dto.targetUserId);
+    if (targetSockets.length > 0) { for (const s of targetSockets) { this.server.to(s).emit('call_signal', { fromUserId: client.data.userId, signal: dto.signal }); } }
   }
 
   @SubscribeMessage('message_delivered')
