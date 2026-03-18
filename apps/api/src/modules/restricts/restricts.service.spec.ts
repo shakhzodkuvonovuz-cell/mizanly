@@ -1,0 +1,87 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException, ConflictException, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../../config/prisma.service';
+import { RestrictsService } from './restricts.service';
+import { globalMockProviders } from '../../common/test/mock-providers';
+
+describe('RestrictsService', () => {
+  let service: RestrictsService;
+  let prisma: any;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ...globalMockProviders,
+        RestrictsService,
+        {
+          provide: PrismaService,
+          useValue: {
+            restrict: { create: jest.fn(), delete: jest.fn(), findMany: jest.fn(), findUnique: jest.fn() },
+            user: { findUnique: jest.fn().mockResolvedValue({ id: 'target' }), findMany: jest.fn().mockResolvedValue([]) },
+          },
+        },
+      ],
+    }).compile();
+    service = module.get(RestrictsService);
+    prisma = module.get(PrismaService) as any;
+  });
+
+  describe('restrict', () => {
+    it('should create a restrict record', async () => {
+      prisma.restrict.create.mockResolvedValue({ restricterId: 'u1', restrictedId: 'u2' });
+      const result = await service.restrict('u1', 'u2');
+      expect(result.restricterId).toBe('u1');
+    });
+
+    it('should throw BadRequestException when restricting self', async () => {
+      await expect(service.restrict('u1', 'u1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when target not found', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.restrict('u1', 'u2')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException on duplicate (P2002)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      prisma.restrict.create.mockRejectedValue(new PrismaClientKnownRequestError('', { code: 'P2002', clientVersion: '0' }));
+      await expect(service.restrict('u1', 'u2')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('unrestrict', () => {
+    it('should delete restrict record', async () => {
+      prisma.restrict.delete.mockResolvedValue({});
+      await service.unrestrict('u1', 'u2');
+      expect(prisma.restrict.delete).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if not found (P2025)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
+      prisma.restrict.delete.mockRejectedValue(new PrismaClientKnownRequestError('', { code: 'P2025', clientVersion: '0' }));
+      await expect(service.unrestrict('u1', 'u2')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getRestrictedList', () => {
+    it('should return paginated list', async () => {
+      prisma.restrict.findMany.mockResolvedValue([{ restrictedId: 'u2' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'u2', username: 'user2' }]);
+      const result = await service.getRestrictedList('u1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('isRestricted', () => {
+    it('should return true when restricted', async () => {
+      prisma.restrict.findUnique.mockResolvedValue({ id: 'r1' });
+      expect(await service.isRestricted('u1', 'u2')).toBe(true);
+    });
+
+    it('should return false when not restricted', async () => {
+      prisma.restrict.findUnique.mockResolvedValue(null);
+      expect(await service.isRestricted('u1', 'u2')).toBe(false);
+    });
+  });
+});
