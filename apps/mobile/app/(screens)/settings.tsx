@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClerk } from '@clerk/clerk-expo';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -318,13 +318,13 @@ export default function SettingsScreen() {
             <Row
               label={t('downloads.title')}
               icon={<Icon name="layers" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/downloads')}
+              onPress={() => router.push('/(screens)/downloads' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('nasheed.settingsLabel')}
               icon={<Icon name="mic" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/nasheed-mode')}
+              onPress={() => router.push('/(screens)/nasheed-mode' as never)}
               isLast
             />
           </LinearGradient>
@@ -403,14 +403,14 @@ export default function SettingsScreen() {
             <Row
               label={t('biometric.settingsLabel')}
               icon={<Icon name="lock" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/biometric-lock')}
+              onPress={() => router.push('/(screens)/biometric-lock' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('parentalControls.settingsLabel')}
               icon={<Icon name="users" size="sm" color={colors.gold} />}
               hint={t('parentalControls.settingsHint')}
-              onPress={() => router.push('/(screens)/parental-controls')}
+              onPress={() => router.push('/(screens)/parental-controls' as never)}
               isLast
             />
           </LinearGradient>
@@ -480,14 +480,14 @@ export default function SettingsScreen() {
               label={t('quietMode.settingsLabel')}
               icon={<Icon name="volume-x" size="sm" color={colors.emerald} />}
               hint={t('quietMode.settingsHint')}
-              onPress={() => router.push('/(screens)/quiet-mode')}
+              onPress={() => router.push('/(screens)/quiet-mode' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('screenTime.settingsLabel')}
               icon={<Icon name="clock" size="sm" color={colors.gold} />}
               hint={t('screenTime.settingsHint')}
-              onPress={() => router.push('/(screens)/screen-time')}
+              onPress={() => router.push('/(screens)/screen-time' as never)}
               isLast
             />
           </LinearGradient>
@@ -560,13 +560,13 @@ export default function SettingsScreen() {
             <Row
               label={t('ai.title')}
               icon={<Icon name="loader" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/ai-assistant')}
+              onPress={() => router.push('/(screens)/ai-assistant' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('ai.avatar.title')}
               icon={<Icon name="user" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/ai-avatar')}
+              onPress={() => router.push('/(screens)/ai-avatar' as never)}
             />
           </LinearGradient>
 
@@ -609,37 +609,37 @@ export default function SettingsScreen() {
             <Row
               label={t('gamification.settingsStreaks')}
               icon={<Icon name="trending-up" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/streaks')}
+              onPress={() => router.push('/(screens)/streaks' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsAchievements')}
               icon={<Icon name="check-circle" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/achievements')}
+              onPress={() => router.push('/(screens)/achievements' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsLeaderboard')}
               icon={<Icon name="bar-chart-2" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/leaderboard')}
+              onPress={() => router.push('/(screens)/leaderboard' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsChallenges')}
               icon={<Icon name="flag" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/challenges')}
+              onPress={() => router.push('/(screens)/challenges' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsXPHistory')}
               icon={<Icon name="star" size="sm" color={colors.emerald} />}
-              onPress={() => router.push('/(screens)/xp-history')}
+              onPress={() => router.push('/(screens)/xp-history' as never)}
             />
             <View style={styles.divider} />
             <Row
               label={t('gamification.settingsProfile')}
               icon={<Icon name="user" size="sm" color={colors.gold} />}
-              onPress={() => router.push('/(screens)/profile-customization')}
+              onPress={() => router.push('/(screens)/profile-customization' as never)}
               isLast
             />
           </LinearGradient>
@@ -731,46 +731,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   bodyContent: { paddingBottom: 60 },
 
-  sectionHeader: {
-    color: colors.text.secondary, fontSize: fontSize.xs, fontWeight: '600',
-    textTransform: 'uppercase', letterSpacing: 0.8,
-    paddingHorizontal: spacing.base, paddingTop: spacing.xl, paddingBottom: spacing.sm,
-    borderLeftWidth: 3, borderLeftColor: colors.emerald, paddingLeft: spacing.sm,
-    marginLeft: spacing.base,
-  },
-  card: {
-    backgroundColor: colors.dark.bgCard, borderRadius: radius.lg,
-    borderWidth: 0.5, borderColor: colors.dark.border,
-    overflow: 'hidden', marginHorizontal: spacing.base, marginBottom: spacing.md,
-  },
-
-  row: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-  },
-  rowIcon: { marginRight: spacing.sm },
-  rowText: { flex: 1, marginRight: spacing.md },
-  rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
-  rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
-  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm },
-  destructive: { color: '#FF453A' },
-  divider: { height: 0.5, backgroundColor: colors.dark.border, marginLeft: spacing.base },
-
-  signOutButton: {
-    borderWidth: 1.5, borderColor: colors.error, borderRadius: radius.md,
-    padding: spacing.md, flexDirection: 'row', alignItems: 'center',
-    justifyContent: 'center', gap: spacing.sm,
-    marginHorizontal: spacing.base, marginTop: spacing.xl,
-  },
-  signOutLabel: {
-    color: colors.error, fontSize: fontSize.base, fontWeight: '600',
-  },
-
-  version: {
-    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,
-  },
-
-  // Premium Section Header
+  // Section Header
   sectionHeaderContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -799,7 +760,58 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
   },
 
-  // Premium Toggle Switch
+  // Card
+  card: {
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(45,53,72,0.3)',
+    overflow: 'hidden',
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.md,
+  },
+
+  // Row
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+  },
+  rowLast: {
+    borderBottomWidth: 0,
+  },
+  rowIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowIconSpacer: {
+    width: 32,
+  },
+  rowText: { flex: 1, marginRight: spacing.md },
+  rowLabel: { color: colors.text.primary, fontSize: fontSize.base },
+  rowHint: { color: colors.text.tertiary, fontSize: fontSize.xs, marginTop: 2 },
+  rowRightText: { color: colors.text.tertiary, fontSize: fontSize.sm },
+  rowChevron: {
+    width: 28,
+    height: 28,
+    borderRadius: radius.sm,
+    backgroundColor: 'rgba(45,53,72,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  destructive: { color: '#FF453A' },
+
+  // Divider
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(45,53,72,0.5)',
+    marginLeft: spacing.base + 40,
+  },
+
+  // Toggle Switch
   toggleTrack: {
     width: 50,
     height: 28,
@@ -824,53 +836,16 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
 
-  // Premium Card
-  card: {
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(45,53,72,0.3)',
-    overflow: 'hidden',
-    marginHorizontal: spacing.base,
-    marginBottom: spacing.md,
+  // Sign Out
+  signOutButton: {
+    borderWidth: 1.5, borderColor: colors.error, borderRadius: radius.md,
+    padding: spacing.md, flexDirection: 'row', alignItems: 'center',
+    justifyContent: 'center', gap: spacing.sm,
+    marginHorizontal: spacing.base, marginTop: spacing.xl,
   },
-
-  // Premium Row
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
+  signOutLabel: {
+    color: colors.error, fontSize: fontSize.base, fontWeight: '600',
   },
-  rowLast: {
-    borderBottomWidth: 0,
-  },
-  rowIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowIconSpacer: {
-    width: 32,
-  },
-  rowChevron: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.sm,
-    backgroundColor: 'rgba(45,53,72,0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Divider
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(45,53,72,0.5)',
-    marginLeft: spacing.base + 40,
-  },
-
-  // Premium Sign Out
   signOutGradient: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -880,5 +855,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: 'rgba(248,81,73,0.3)',
+  },
+
+  version: {
+    color: colors.text.tertiary, fontSize: fontSize.xs, textAlign: 'center', marginTop: spacing.xl,
   },
 });

@@ -58,7 +58,7 @@ export default function QuranShareScreen() {
     queryKey: ['quran-surahs'],
     queryFn: async () => {
       const res = await islamicApi.listSurahs();
-      return (res as { data: QuranSurah[] }).data;
+      return Array.isArray(res) ? res as QuranSurah[] : [];
     },
   });
 
@@ -80,7 +80,7 @@ export default function QuranShareScreen() {
     queryKey: ['quran-verse', selectedSurahNumber, currentVerse],
     queryFn: async () => {
       const res = await islamicApi.getVerse(selectedSurahNumber, currentVerse);
-      return (res as { data: QuranVerse }).data;
+      return res as QuranVerse;
     },
     enabled: !!selectedSurahNumber,
   });
@@ -311,7 +311,7 @@ export default function QuranShareScreen() {
 
                     {/* Tafsir Button */}
                     <TouchableOpacity
-                      onPress={() => router.push(`/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}`)}
+                      onPress={() => router.push(`/tafsir-viewer?surah=${selectedSurahNumber}&verse=${currentVerse}` as `/${string}`)}
                       style={styles.tafsirButton}
                     >
                       <Icon name="book-open" size="sm" color={colors.gold} />

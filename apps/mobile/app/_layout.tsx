@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
+import type { AuthenticateResult } from 'expo-local-authentication';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useFonts } from 'expo-font';
 import { PlayfairDisplay_700Bold } from "@expo-google-fonts/playfair-display";
@@ -202,9 +203,9 @@ function ShareIntentHandler() {
       const params = parsed.queryParams ?? {};
       if (params.sharedText || params.sharedImage || params.sharedVideo || params.sharedUrl) {
         router.push({
-          pathname: '/(screens)/share-receive',
+          pathname: '/(screens)/share-receive' as never,
           params: params as Record<string, string>,
-        });
+        } as never);
       }
     };
 

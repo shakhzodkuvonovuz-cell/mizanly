@@ -36,16 +36,16 @@ export default function FatwaQAScreen() {
   const [askMadhab, setAskMadhab] = useState('any');
   const [madhabSheetOpen, setMadhabSheetOpen] = useState(false);
 
-  const questionsQuery = useInfiniteQuery({
+  const questionsQuery = useInfiniteQuery<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>({
     queryKey: ['fatwa-questions', selectedMadhab],
     queryFn: async ({ pageParam }) => {
       const params = new URLSearchParams();
-      if (pageParam) params.set('cursor', pageParam);
+      if (pageParam) params.set('cursor', pageParam as string);
       if (selectedMadhab !== 'any') params.set('madhab', selectedMadhab);
       const res = await fetch(`${API_BASE}/fatwa?${params}`);
       return res.json();
     },
-    getNextPageParam: (lastPage: { meta?: { cursor: string | null; hasMore: boolean } }) =>
+    getNextPageParam: (lastPage) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
     initialPageParam: undefined as string | undefined,
     enabled: activeTab === 'browse',
@@ -68,7 +68,7 @@ export default function FatwaQAScreen() {
     },
   });
 
-  const questions = questionsQuery.data?.pages.flatMap((p: { data?: Array<Record<string, unknown>> }) => p.data || []) || [];
+  const questions = questionsQuery.data?.pages.flatMap((p) => p.data || []) || [];
 
   const renderQuestion = ({ item, index }: { item: Record<string, unknown>; index: number }) => {
     const asker = item.asker as Record<string, unknown> | undefined;

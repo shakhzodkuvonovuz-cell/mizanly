@@ -22,7 +22,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
-interface GradientButtonProps {
+export interface GradientButtonProps {
   label: string;
   onPress: () => void;
   variant?: ButtonVariant;
@@ -33,6 +33,7 @@ interface GradientButtonProps {
   size?: ButtonSize;
   accessibilityLabel?: string;
   accessibilityRole?: string;
+  style?: import('react-native').StyleProp<import('react-native').ViewStyle>;
 }
 
 const sizeConfig: Record<ButtonSize, {
@@ -70,6 +71,7 @@ export function GradientButton({
   disabled = false,
   fullWidth = false,
   size = 'md',
+  style: containerStyle,
 }: GradientButtonProps) {
   const haptic = useHaptic();
   const scale = useSharedValue(1);
@@ -138,6 +140,7 @@ export function GradientButton({
           animatedStyle,
           fullWidth && styles.fullWidth,
           isDisabled && styles.disabled,
+          containerStyle,
         ]}
         accessibilityRole="button"
         accessibilityLabel={label}

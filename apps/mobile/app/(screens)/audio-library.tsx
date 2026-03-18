@@ -139,7 +139,7 @@ function AudioCard({
           <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
           <View style={styles.trackMeta}>
             <Text style={styles.trackDuration}>{track.duration}</Text>
-            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
+            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} uses</Text>
           </View>
         </View>
 
@@ -149,10 +149,9 @@ function AudioCard({
             <Icon name={track.isFavorite ? 'heart-filled' : 'heart'} size="sm" color={track.isFavorite ? colors.like : colors.text.tertiary} />
           </TouchableOpacity>
           <GradientButton
-            label={t('audioLibrary.use')}
+            label="Use"
             size="sm"
             onPress={onSelect}
-            style={styles.useButton}
           />
         </View>
       </LinearGradient>
@@ -300,9 +299,6 @@ export default function AudioLibraryScreen() {
               />
             )
           }
-          refreshControl={
-            <RefreshControl tintColor={colors.emerald} refreshing={isRefetching} onRefresh={() => refetch()} />
-          }
           showsVerticalScrollIndicator={false}
         />
 
@@ -354,7 +350,6 @@ export default function AudioLibraryScreen() {
                 <GradientButton
                   label={t('audioLibrary.useThisSound')}
                   onPress={handleUseSound}
-                  style={styles.selectedTrackButton}
                 />
                 <TouchableOpacity
                   onPress={() => setSelectedTrack(null)}

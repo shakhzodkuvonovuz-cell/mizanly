@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Camera, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -20,7 +20,7 @@ export default function QRScannerScreen() {
   const insets = useSafeAreaInsets();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const cameraRef = useRef<Camera>(null);
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     if (permission && !permission.granted && !permission.canAskAgain) {
@@ -106,12 +106,12 @@ export default function QRScannerScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
         />
 
-        <Camera
+        <CameraView
           ref={cameraRef}
           style={styles.camera}
-          type="back"
-          barCodeScannerSettings={{
-            barCodeTypes: ['qr'],
+          facing="back"
+          barcodeScannerSettings={{
+            barcodeTypes: ['qr'],
           }}
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         >
@@ -142,7 +142,7 @@ export default function QRScannerScreen() {
               </View>
             )}
           </View>
-        </Camera>
+        </CameraView>
 
         <View style={styles.footer}>
           <GradientButton label={t('common.close')} onPress={() => router.back()} variant="secondary" />

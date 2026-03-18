@@ -134,15 +134,15 @@ export default function HadithScreen() {
         islamicApi.listHadiths(),
       ]);
       const dailyHadith: Hadith = {
-        id: dailyResp.data.id.toString(),
-        arabic: dailyResp.data.arabic,
-        english: dailyResp.data.english,
-        source: dailyResp.data.source,
-        narrator: dailyResp.data.narrator,
+        id: dailyResp.id.toString(),
+        arabic: dailyResp.arabic,
+        english: dailyResp.english,
+        source: dailyResp.source,
+        narrator: dailyResp.narrator,
         date: '',
-        isBookmarked: bookmarkedIds.has(dailyResp.data.id.toString()),
+        isBookmarked: bookmarkedIds.has(dailyResp.id.toString()),
       };
-      const listHadiths: Hadith[] = listResp.data.data.map((h: ApiHadith) => ({
+      const listHadiths: Hadith[] = (Array.isArray(listResp) ? listResp : []).map((h: ApiHadith) => ({
         id: h.id.toString(),
         arabic: h.arabic,
         english: h.english,

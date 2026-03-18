@@ -50,7 +50,7 @@ function CommentRow({
 }) {
   const haptic = useHaptic();
   const { t } = useTranslation();
-  const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
+  const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
   const isOwn = !!viewerId && comment.user.id === viewerId;
@@ -59,8 +59,8 @@ function CommentRow({
   const handleLikeComment = () => {
     // Optimistic-only — no backend endpoint for reel comment likes yet
     haptic.medium();
-    setLocalLiked((p) => !p);
-    setLocalLikes((p) => (localLiked ? p - 1 : p + 1));
+    setLocalLiked((p: boolean) => !p);
+    setLocalLikes((p: number) => (localLiked ? p - 1 : p + 1));
   };
 
   const deleteMutation = useMutation({
@@ -82,7 +82,7 @@ function CommentRow({
       <View style={styles.commentBody}>
         <View style={styles.commentBubble}>
           <Text style={styles.commentUser}>{comment.user.displayName}</Text>
-          <RichText content={comment.content} />
+          <RichText text={comment.content} />
         </View>
         <View style={styles.commentMeta}>
           <Text style={styles.commentTime}>{timeAgo}</Text>
@@ -128,7 +128,7 @@ export default function ReelDetailScreen() {
   const [commentText, setCommentText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const { animatedStyle, handlePressIn, handlePressOut } = useAnimatedPress();
+  const { animatedStyle, onPressIn, onPressOut } = useAnimatedPress();
 
   // Clear mode state
   const [clearMode, setClearMode] = useState(false);
@@ -339,7 +339,7 @@ export default function ReelDetailScreen() {
 
             {reelQuery.data.caption && (
               <Text style={styles.reelCaption}>
-                <RichText content={reelQuery.data.caption} />
+                <RichText text={reelQuery.data.caption} />
               </Text>
             )}
 

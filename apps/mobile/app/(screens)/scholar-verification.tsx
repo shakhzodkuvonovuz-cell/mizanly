@@ -147,7 +147,7 @@ function ScholarVerificationContent() {
   const fetchStatus = useCallback(async () => {
     try {
       const res = await islamicApi.getScholarVerificationStatus();
-      setVerification(res.data);
+      setVerification(res ?? null);
     } catch {
       // no existing application
     } finally {
@@ -195,7 +195,7 @@ function ScholarVerificationContent() {
         madhab,
         documentUrls,
       });
-      setVerification(res.data);
+      setVerification(res ?? null);
       haptic.success();
     } catch {
       Alert.alert(t('common.error'), t('scholar.alreadyApplied'));
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     borderColor: colors.dark.border,
   },
   sectionTitle: {
-    fontFamily: fonts.headingSemiBold,
+    fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.lg,
     color: colors.text.primary,
     marginBottom: spacing.lg,
@@ -622,7 +622,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   badgePreviewName: {
-    fontFamily: fonts.headingSemiBold,
+    fontFamily: fonts.bodySemiBold,
     fontSize: fontSize.md,
     color: colors.gold,
     marginBottom: spacing.xs,

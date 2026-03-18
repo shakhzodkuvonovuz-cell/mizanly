@@ -44,6 +44,7 @@ const formatViews = (n: number) => {
 };
 
 function VideoCard({ item, onPress, index }: { item: WatchHistoryItem; onPress: () => void; index: number }) {
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <TouchableOpacity

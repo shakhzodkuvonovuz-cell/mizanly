@@ -95,7 +95,7 @@ export function GiftOverlay({ giftType, senderName, coinValue, visible, onDone }
 
   if (!visible) return null;
 
-  const iconName = GIFT_ICONS[giftType] ?? 'heart';
+  const iconName = (GIFT_ICONS[giftType] ?? 'heart') as React.ComponentProps<typeof Icon>['name'];
 
   return (
     <View style={styles.overlay} pointerEvents="none">

@@ -2,9 +2,9 @@ import { View, I18nManager } from 'react-native';
 import { colors, iconSize as iconSizes } from '@/theme';
 import {
   Heart, MessageCircle, Bookmark, Send, Search, Home,
-  Play, MoreHorizontal, Share2, CheckCircle, ArrowLeft,
+  Play, MoreHorizontal, Share2, CheckCircle, ArrowLeft, ArrowRight,
   Plus, Camera, ImageIcon, Mic, Phone, Video, Settings,
-  Bell, User, Users, Globe, Lock, Flag, Trash2, Pencil,
+  Bell, User, Users, UserPlus, Globe, Lock, Flag, Trash2, Pencil,
   X, ChevronRight, ChevronLeft, ChevronDown, Repeat2, Eye, EyeOff,
   VolumeX, Mail, Hash, TrendingUp, MapPin, Link, Clock,
   Check, CheckCheck, Paperclip, Smile, AtSign, Filter,
@@ -13,6 +13,7 @@ import {
   Sun, Circle, Droplet, SlidersHorizontal,
   Moon, Star, Gift, BookOpen, Calculator, Calendar,
   Scissors, Type, LayoutGrid,
+  Radio, Info, FileText, Shield, Download, ThumbsDown,
   type LucideProps,
 } from 'lucide-react-native';
 import type { ComponentType } from 'react';
@@ -31,7 +32,8 @@ export type IconName =
   | 'maximize' | 'music'
   | 'sun' | 'circle' | 'droplet' | 'sliders'
   | 'moon' | 'star' | 'gift' | 'book-open' | 'calculator' | 'calendar'
-  | 'scissors' | 'type' | 'layout';
+  | 'scissors' | 'type' | 'layout'
+  | 'arrow-right' | 'user-plus' | 'radio' | 'info' | 'file-text' | 'shield' | 'download' | 'thumbs-down';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -120,6 +122,14 @@ const iconMap: Record<IconName, ComponentType<LucideProps>> = {
   'scissors': Scissors,
   'type': Type,
   'layout': LayoutGrid,
+  'arrow-right': ArrowRight,
+  'user-plus': UserPlus,
+  'radio': Radio,
+  'info': Info,
+  'file-text': FileText,
+  'shield': Shield,
+  'download': Download,
+  'thumbs-down': ThumbsDown,
 };
 
 const filledIcons: Set<IconName> = new Set(['heart-filled', 'bookmark-filled']);

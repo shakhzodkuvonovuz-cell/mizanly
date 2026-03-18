@@ -373,73 +373,73 @@ export const reelsApi = {
 // ── Channels (Minbar) ──
 export const channelsApi = {
   create: (data: { handle: string; name: string; description?: string }) =>
-    api.post<Channel>('/channels', data).then(r => r.data),
+    api.post<Channel>('/channels', data),
   getByHandle: (handle: string) =>
-    api.get<Channel>(`/channels/${handle}`).then(r => r.data),
+    api.get<Channel>(`/channels/${handle}`),
   update: (handle: string, data: Partial<Channel>) =>
-    api.patch<Channel>(`/channels/${handle}`, data).then(r => r.data),
+    api.patch<Channel>(`/channels/${handle}`, data),
   delete: (handle: string) =>
-    api.delete(`/channels/${handle}`).then(r => r.data),
+    api.delete(`/channels/${handle}`),
   subscribe: (handle: string) =>
-    api.post(`/channels/${handle}/subscribe`).then(r => r.data),
+    api.post(`/channels/${handle}/subscribe`),
   unsubscribe: (handle: string) =>
-    api.delete(`/channels/${handle}/subscribe`).then(r => r.data),
+    api.delete(`/channels/${handle}/subscribe`),
   getVideos: (handle: string, cursor?: string) =>
-    api.get<PaginatedResponse<Video>>(`/channels/${handle}/videos${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<Video>>(`/channels/${handle}/videos${qs({ cursor })}`),
   getMyChannels: () =>
-    api.get<Channel[]>('/channels/me/channels').then(r => r.data),
+    api.get<Channel[]>('/channels/me/channels'),
   getAnalytics: (channelId: string) =>
-    api.get<{ views: number; subscribers: number; videos: number; recentSubscribers: number[] }>(`/channels/${channelId}/analytics`).then(r => r.data),
+    api.get<{ views: number; subscribers: number; videos: number; recentSubscribers: number[] }>(`/channels/${channelId}/analytics`),
   getSubscribers: (channelId: string, cursor?: string) =>
-    api.get<PaginatedResponse<User>>(`/channels/${channelId}/subscribers${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<User>>(`/channels/${channelId}/subscribers${qs({ cursor })}`),
   getRecommended: (limit?: number) =>
-    api.get<Channel[]>(`/channels/recommended${qs({ limit })}`).then(r => r.data),
+    api.get<Channel[]>(`/channels/recommended${qs({ limit })}`),
   setTrailer: (handle: string, videoId: string) =>
-    api.put(`/channels/${handle}/trailer`, { videoId }).then(r => r.data),
+    api.put(`/channels/${handle}/trailer`, { videoId }),
   removeTrailer: (handle: string) =>
-    api.delete(`/channels/${handle}/trailer`).then(r => r.data),
+    api.delete(`/channels/${handle}/trailer`),
 };
 
 // ── Videos (Minbar) ──
 export const videosApi = {
   getFeed: (category?: string, cursor?: string) =>
-    api.get<PaginatedResponse<Video>>(`/videos/feed${qs({ category, cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<Video>>(`/videos/feed${qs({ category, cursor })}`),
   getById: (id: string) =>
-    api.get<Video>(`/videos/${id}`).then(r => r.data),
+    api.get<Video>(`/videos/${id}`),
   create: (data: CreateVideoData) =>
-    api.post<Video>('/videos', data).then(r => r.data),
+    api.post<Video>('/videos', data),
   update: (id: string, data: Partial<Video>) =>
-    api.patch<Video>(`/videos/${id}`, data).then(r => r.data),
+    api.patch<Video>(`/videos/${id}`, data),
   delete: (id: string) =>
-    api.delete(`/videos/${id}`).then(r => r.data),
+    api.delete(`/videos/${id}`),
   like: (id: string) =>
-    api.post(`/videos/${id}/like`).then(r => r.data),
+    api.post(`/videos/${id}/like`),
   dislike: (id: string) =>
-    api.post(`/videos/${id}/dislike`).then(r => r.data),
+    api.post(`/videos/${id}/dislike`),
   removeReaction: (id: string) =>
-    api.delete(`/videos/${id}/reaction`).then(r => r.data),
+    api.delete(`/videos/${id}/reaction`),
   comment: (id: string, content: string, parentId?: string) =>
-    api.post(`/videos/${id}/comment`, { content, parentId }).then(r => r.data),
+    api.post(`/videos/${id}/comment`, { content, parentId }),
   getComments: (id: string, cursor?: string) =>
-    api.get<PaginatedResponse<VideoComment>>(`/videos/${id}/comments${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<VideoComment>>(`/videos/${id}/comments${qs({ cursor })}`),
   bookmark: (id: string) =>
-    api.post(`/videos/${id}/bookmark`).then(r => r.data),
+    api.post(`/videos/${id}/bookmark`),
   unbookmark: (id: string) =>
-    api.delete(`/videos/${id}/bookmark`).then(r => r.data),
+    api.delete(`/videos/${id}/bookmark`),
   view: (id: string) =>
-    api.post(`/videos/${id}/view`).then(r => r.data),
+    api.post(`/videos/${id}/view`),
   updateProgress: (id: string, progress: number, completed: boolean) =>
-    api.patch(`/videos/${id}/progress`, { progress, completed }).then(r => r.data),
+    api.patch(`/videos/${id}/progress`, { progress, completed }),
   report: (id: string, reason: string) =>
-    api.post(`/videos/${id}/report`, { reason }).then(r => r.data),
+    api.post(`/videos/${id}/report`, { reason }),
   getRecommended: (videoId: string, limit?: number) =>
-    api.get<Video[]>(`/videos/${videoId}/recommended${qs({ limit })}`).then(r => r.data),
+    api.get<Video[]>(`/videos/${videoId}/recommended${qs({ limit })}`),
   getCommentReplies: (commentId: string, cursor?: string) =>
-    api.get<PaginatedResponse<VideoComment>>(`/videos/comments/${commentId}/replies${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<VideoComment>>(`/videos/comments/${commentId}/replies${qs({ cursor })}`),
   recordProgress: (videoId: string, progress: number) =>
-    api.patch(`/videos/${videoId}/progress`, { progress, completed: false }).then(r => r.data),
+    api.patch(`/videos/${videoId}/progress`, { progress, completed: false }),
   getShareLink: (id: string) =>
-    api.get<{ url: string }>(`/videos/${id}/share-link`).then(r => r.data),
+    api.get<{ url: string }>(`/videos/${id}/share-link`),
   // Premiere
   createPremiere: (id: string, dto: { scheduledAt: string; chatEnabled?: boolean; countdownTheme?: string }) =>
     api.post(`/videos/${id}/premiere`, dto),
@@ -455,40 +455,40 @@ export const videosApi = {
     api.get(`/videos/${id}/premiere/viewers`),
   // End Screens
   setEndScreens: (id: string, items: Array<{ type: string; targetId?: string; label: string; url?: string; position: string; showAtSeconds: number }>) =>
-    api.put<EndScreen[]>(`/videos/${id}/end-screens`, { items }).then(r => r.data),
+    api.put<EndScreen[]>(`/videos/${id}/end-screens`, { items }),
   getEndScreens: (id: string) =>
-    api.get<EndScreen[]>(`/videos/${id}/end-screens`).then(r => r.data),
+    api.get<EndScreen[]>(`/videos/${id}/end-screens`),
   deleteEndScreens: (id: string) =>
-    api.delete(`/videos/${id}/end-screens`).then(r => r.data),
+    api.delete(`/videos/${id}/end-screens`),
 };
 // ── Playlists (Minbar) ──
 export const playlistsApi = {
   create: (data: { channelId: string; title: string; description?: string; isPublic?: boolean }) =>
-    api.post<Playlist>('/playlists', data).then(r => r.data),
+    api.post<Playlist>('/playlists', data),
   getById: (id: string) =>
-    api.get<Playlist>(`/playlists/${id}`).then(r => r.data),
+    api.get<Playlist>(`/playlists/${id}`),
   getByChannel: (channelId: string, cursor?: string) =>
-    api.get<PaginatedResponse<Playlist>>(`/playlists/channel/${channelId}${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<Playlist>>(`/playlists/channel/${channelId}${qs({ cursor })}`),
   getItems: (id: string, cursor?: string) =>
-    api.get<PaginatedResponse<PlaylistItem>>(`/playlists/${id}/items${qs({ cursor })}`).then(r => r.data),
+    api.get<PaginatedResponse<PlaylistItem>>(`/playlists/${id}/items${qs({ cursor })}`),
   update: (id: string, data: Partial<Playlist>) =>
-    api.patch<Playlist>(`/playlists/${id}`, data).then(r => r.data),
+    api.patch<Playlist>(`/playlists/${id}`, data),
   delete: (id: string) =>
-    api.delete(`/playlists/${id}`).then(r => r.data),
+    api.delete(`/playlists/${id}`),
   addItem: (id: string, videoId: string) =>
-    api.post(`/playlists/${id}/items/${videoId}`).then(r => r.data),
+    api.post(`/playlists/${id}/items/${videoId}`),
   removeItem: (id: string, videoId: string) =>
-    api.delete(`/playlists/${id}/items/${videoId}`).then(r => r.data),
+    api.delete(`/playlists/${id}/items/${videoId}`),
   toggleCollaborative: (id: string) =>
-    api.post(`/playlists/${id}/collaborative`).then(r => r.data),
+    api.post(`/playlists/${id}/collaborative`),
   getCollaborators: (id: string) =>
-    api.get<{ data: PlaylistCollaborator[] }>(`/playlists/${id}/collaborators`).then(r => r.data),
+    api.get<{ data: PlaylistCollaborator[] }>(`/playlists/${id}/collaborators`),
   addCollaborator: (id: string, userId: string, role?: string) =>
-    api.post<PlaylistCollaborator>(`/playlists/${id}/collaborators`, { userId, role }).then(r => r.data),
+    api.post<PlaylistCollaborator>(`/playlists/${id}/collaborators`, { userId, role }),
   removeCollaborator: (id: string, userId: string) =>
-    api.delete(`/playlists/${id}/collaborators/${userId}`).then(r => r.data),
+    api.delete(`/playlists/${id}/collaborators/${userId}`),
   updateCollaboratorRole: (id: string, userId: string, role: string) =>
-    api.patch<PlaylistCollaborator>(`/playlists/${id}/collaborators/${userId}`, { role }).then(r => r.data),
+    api.patch<PlaylistCollaborator>(`/playlists/${id}/collaborators/${userId}`, { role }),
 };
 
 // ── Threads (Majlis) ──
@@ -880,6 +880,14 @@ export const liveApi = {
     api.get<LiveParticipant[]>(`/live/${id}/participants`),
   getHostSessions: (userId: string) =>
     api.get<LiveSession[]>(`/live/host/${userId}`),
+  lowerHand: (id: string) =>
+    api.post(`/live/${id}/lower-hand`),
+  sendChat: (id: string, message: string) =>
+    api.post(`/live/${id}/chat`, { message }),
+  inviteSpeaker: (id: string, participantId: string) =>
+    api.post(`/live/${id}/invite-speaker/${participantId}`),
+  removeParticipant: (id: string, participantId: string) =>
+    api.delete(`/live/${id}/participants/${participantId}`),
 };
 
 // ── Calls ──
@@ -897,7 +905,7 @@ export const callsApi = {
   getActiveCall: () =>
     api.get<CallSession | null>('/calls/active'),
   getIceServers: () =>
-    api.get<{ iceServers: { urls: string; username?: string; credential?: string }[] }>('/calls/ice-servers').then(r => r.data),
+    api.get<{ iceServers: { urls: string; username?: string; credential?: string }[] }>('/calls/ice-servers'),
 };
 
 // ── Stickers ──

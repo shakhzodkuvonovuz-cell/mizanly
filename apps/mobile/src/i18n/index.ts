@@ -1,9 +1,12 @@
 import i18next from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import * as Localization from 'expo-localization';
+import { getLocales } from 'expo-localization';
 
 import en from './en.json';
 import ar from './ar.json';
+
+// Get locale from expo-localization (locale was removed in newer versions; use getLocales())
+const deviceLocale = getLocales()[0]?.languageTag ?? 'en';
 
 // Configure i18next
 i18next
@@ -13,21 +16,15 @@ i18next
       en: { translation: en },
       ar: { translation: ar },
     },
-    lng: Localization.locale.startsWith('ar') ? 'ar' : 'en',
+    lng: deviceLocale.startsWith('ar') ? 'ar' : 'en',
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false, // React already escapes values
     },
-    compatibilityJSON: 'v3', // For older React Native versions
-    nsSeparator: false, // Disable namespace separator (we use flat keys)
+    compatibilityJSON: 'v4',
     keySeparator: '.', // Use dot notation for nested keys
     returnNull: false,
     returnEmptyString: false,
-    returnObjects: true,
-    parseMissingKeyHandler: (key: string) => {
-      console.warn(`Missing translation key: ${key}`);
-      return key;
-    },
   });
 
 export default i18next;

@@ -29,6 +29,7 @@ function UserRow({ user, isMe, isFollowing, onToggleFollow, onPress, index }: {
   onPress: () => void;
   index: number;
 }) {
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <TouchableOpacity onPress={onPress} activeOpacity={0.7}>

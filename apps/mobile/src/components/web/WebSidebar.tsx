@@ -53,7 +53,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   };
 
   const handleNav = (route: string) => {
-    router.push(route as `/${string}`);
+    router.push(route as never);
   };
 
   const renderNavItem = (item: NavItem) => {

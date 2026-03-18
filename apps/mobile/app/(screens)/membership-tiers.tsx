@@ -30,21 +30,26 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 const { width } = Dimensions.get('window');
 
 
-const TIER_COLORS = {
+const TIER_COLORS: Record<string, { gradient: readonly [string, string]; iconBg: readonly [string, string]; color: string }> = {
   bronze: {
-    gradient: ['rgba(205,127,50,0.3)', 'rgba(205,127,50,0.15)'] as const,
-    iconBg: ['rgba(205,127,50,0.4)', 'rgba(205,127,50,0.2)'] as const,
+    gradient: ['rgba(205,127,50,0.3)', 'rgba(205,127,50,0.15)'],
+    iconBg: ['rgba(205,127,50,0.4)', 'rgba(205,127,50,0.2)'],
     color: '#CD7F32',
   },
   silver: {
-    gradient: ['rgba(192,192,192,0.3)', 'rgba(192,192,192,0.15)'] as const,
-    iconBg: ['rgba(192,192,192,0.4)', 'rgba(192,192,192,0.2)'] as const,
+    gradient: ['rgba(192,192,192,0.3)', 'rgba(192,192,192,0.15)'],
+    iconBg: ['rgba(192,192,192,0.4)', 'rgba(192,192,192,0.2)'],
     color: '#C0C0C0',
   },
   gold: {
-    gradient: ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.15)'] as const,
-    iconBg: ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)'] as const,
+    gradient: ['rgba(200,150,62,0.3)', 'rgba(200,150,62,0.15)'],
+    iconBg: ['rgba(200,150,62,0.4)', 'rgba(200,150,62,0.2)'],
     color: colors.gold,
+  },
+  platinum: {
+    gradient: ['rgba(229,228,226,0.3)', 'rgba(229,228,226,0.15)'],
+    iconBg: ['rgba(229,228,226,0.4)', 'rgba(229,228,226,0.2)'],
+    color: '#E5E4E2',
   },
 };
 
@@ -163,10 +168,10 @@ export default function MembershipTiersScreen() {
       setError(null);
       // First get current user
       const userResponse = await usersApi.getMe();
-      setCurrentUser(userResponse.data);
+      setCurrentUser(userResponse);
       // Then get tiers for this user
-      const tiersResponse = await monetizationApi.getUserTiers(userResponse.data.id);
-      setTiers(tiersResponse.data);
+      const tiersResponse = await monetizationApi.getUserTiers(userResponse.id);
+      setTiers(Array.isArray(tiersResponse) ? tiersResponse : []);
     } catch (err) {
       setError(t('monetization.errors.failedToLoadTiers'));
     } finally {
@@ -252,7 +257,7 @@ export default function MembershipTiersScreen() {
             <Skeleton.Rect width="100%" height={200} borderRadius={radius.lg} style={{ marginTop: spacing.md }} />
           </View>
         ) : error ? (
-          <EmptyState icon="alert-circle" title={t('monetization.errors.unableToLoadTiers')} subtitle={error} actionLabel={t('common.retry')} onAction={fetchData} />
+          <EmptyState icon="slash" title={t('monetization.errors.unableToLoadTiers')} subtitle={error} actionLabel={t('common.retry')} onAction={fetchData} />
         ) : (
           <FlatList
             data={tiers}

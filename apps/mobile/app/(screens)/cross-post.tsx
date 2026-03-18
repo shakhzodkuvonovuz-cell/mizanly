@@ -100,8 +100,7 @@ function CrossPostContent() {
       <View style={styles.container}>
         <GlassHeader
           title={t('crossPost.title')}
-          leftIcon={<Icon name="arrow-left" size="md" color={colors.text.primary} />}
-          onLeftPress={() => router.back()}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <View style={styles.content}>
           <Skeleton.PostCard />
@@ -123,8 +122,7 @@ function CrossPostContent() {
       <View style={styles.container}>
         <GlassHeader
           title={t('crossPost.title')}
-          leftIcon={<Icon name="arrow-left" size="md" color={colors.text.primary} />}
-          onLeftPress={() => router.back()}
+          leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
         />
         <EmptyState
           icon="slash"
@@ -312,7 +310,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: colors.text.primary,
     fontSize: fontSize.md,
-    fontFamily: fonts?.semiBold || undefined,
+    fontFamily: fonts?.semibold || undefined,
     marginBottom: spacing.md,
   },
   spaceOption: {

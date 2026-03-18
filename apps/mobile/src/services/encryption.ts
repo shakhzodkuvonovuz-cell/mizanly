@@ -3,6 +3,7 @@
 // Private key stored in expo-secure-store (biometric-protected on device)
 
 import nacl from 'tweetnacl';
+import type { BoxKeyPair } from 'tweetnacl';
 import naclUtil from 'tweetnacl-util';
 import * as SecureStore from 'expo-secure-store';
 import { encryptionApi } from './encryptionApi';
@@ -12,7 +13,7 @@ const PRIVATE_KEY_STORE_KEY = 'mizanly_e2e_private_key';
 const CONV_KEYS_STORE_KEY = 'mizanly_conversation_keys';
 
 class EncryptionService {
-  private keyPair: nacl.BoxKeyPair | null = null;
+  private keyPair: BoxKeyPair | null = null;
   private conversationKeys: Map<string, Uint8Array> = new Map();
   private initialized = false;
 
@@ -72,7 +73,7 @@ class EncryptionService {
     if (!this.keyPair) return '';
     // Simple fingerprint: first 24 hex chars of public key
     const hex = Array.from(this.keyPair.publicKey)
-      .map(b => b.toString(16).padStart(2, '0'))
+      .map((b: number) => b.toString(16).padStart(2, '0'))
       .join('');
     // Format as groups of 4: "XXXX XXXX XXXX XXXX XXXX XXXX"
     return hex.slice(0, 24).match(/.{4}/g)?.join(' ') ?? hex.slice(0, 24);
@@ -88,7 +89,7 @@ class EncryptionService {
 
       // 2. Fetch public keys for all members
       const response = await encryptionApi.getBulkKeys(memberUserIds);
-      const memberKeys = response.data;
+      const memberKeys = response;
       if (!memberKeys || memberKeys.length === 0) return false;
 
       // 3. For each member, encrypt the conversation key with their public key
@@ -142,7 +143,7 @@ class EncryptionService {
     try {
       // Fetch envelope from server
       const response = await encryptionApi.getEnvelope(conversationId);
-      const envelope = response.data;
+      const envelope = response;
       if (!envelope) return null;
 
       // Find who sent us this envelope — we need their public key
@@ -210,7 +211,7 @@ class EncryptionService {
     try {
       const conversationKey = nacl.randomBytes(32);
       const response = await encryptionApi.getBulkKeys(memberUserIds);
-      const memberKeys = response.data;
+      const memberKeys = response;
       if (!memberKeys || memberKeys.length === 0) return false;
 
       const envelopes: { userId: string; encryptedKey: string; nonce: string }[] = [];

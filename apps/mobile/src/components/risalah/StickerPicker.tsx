@@ -192,12 +192,12 @@ export function StickerPicker({ visible, onClose, onStickerSelect }: StickerPick
 
         {/* Tab selector */}
         <TabSelector
-          options={[
-            { label: 'Recent', value: 'recent' },
-            { label: 'My Packs', value: 'myPacks' },
+          tabs={[
+            { key: 'recent', label: 'Recent' },
+            { key: 'myPacks', label: 'My Packs' },
           ]}
-          value={activeTab}
-          onChange={setActiveTab}
+          activeKey={activeTab}
+          onTabChange={(key) => setActiveTab(key as 'recent' | 'myPacks')}
           style={styles.tabSelector}
         />
 

@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -29,7 +29,7 @@ const COIN_PACKAGES = [
   { coins: 5000, price: '$49.99' },
 ] as const;
 
-const DEFAULT_GIFTS: Array<{ type: string; name: string; coins: number; icon: string }> = [
+const DEFAULT_GIFTS: Array<{ type: string; name: string; coins: number; icon: IconName }> = [
   { type: 'rose', name: 'Rose', coins: 1, icon: 'heart' },
   { type: 'heart', name: 'Heart', coins: 5, icon: 'heart-filled' },
   { type: 'star', name: 'Star', coins: 10, icon: 'trending-up' },
@@ -128,7 +128,7 @@ function GiftShopContent() {
     animation: '',
   }));
 
-  const getGiftIcon = (type: string): string => {
+  const getGiftIcon = (type: string): IconName => {
     const found = DEFAULT_GIFTS.find((g) => g.type === type);
     return found?.icon ?? 'heart';
   };
@@ -378,8 +378,8 @@ function GiftShopContent() {
         <View style={styles.tabWrap}>
           <TabSelector
             tabs={tabs}
-            activeTab={activeTab}
-            onTabChange={(key) => setActiveTab(key as TabKey)}
+            activeKey={activeTab}
+            onTabChange={(key: string) => setActiveTab(key as TabKey)}
           />
         </View>
 

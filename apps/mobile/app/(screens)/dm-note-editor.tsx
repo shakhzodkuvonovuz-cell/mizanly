@@ -143,7 +143,7 @@ export default function DMNoteEditorScreen() {
                   style={styles.inputCard}
                 >
                   <View style={styles.inputHeader}>
-                    <Icon name="edit-3" size="sm" color={colors.emerald} />
+                    <Icon name="edit" size="sm" color={colors.emerald} />
                     <Text style={styles.inputLabel}>{t('dmNotes.placeholder')}</Text>
                     <CharCountRing current={content.length} max={MAX_LENGTH} />
                   </View>
@@ -215,7 +215,7 @@ export default function DMNoteEditorScreen() {
                       disabled={deleteMutation.isPending}
                       loading={deleteMutation.isPending}
                       fullWidth
-                      icon="trash-2"
+                      icon="trash"
                     />
                   )}
                 </View>
@@ -226,7 +226,7 @@ export default function DMNoteEditorScreen() {
                     colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                     style={styles.currentNoteCard}
                   >
-                    <Icon name="info" size="sm" color={colors.text.secondary} />
+                    <Icon name="check-circle" size="sm" color={colors.text.secondary} />
                     <Text style={styles.currentNoteText}>
                       {t('dmNotes.currentNote')}
                     </Text>
@@ -236,7 +236,7 @@ export default function DMNoteEditorScreen() {
                 {!existingNote && !isLoading && (
                   <View style={styles.emptyWrap}>
                     <EmptyState
-                      icon="edit-3"
+                      icon="edit"
                       title={t('dmNotes.noNote')}
                     />
                   </View>

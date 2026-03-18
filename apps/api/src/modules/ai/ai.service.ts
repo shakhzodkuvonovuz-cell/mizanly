@@ -2,12 +2,12 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 // AI response interfaces
-interface CaptionSuggestion {
+export interface CaptionSuggestion {
   caption: string;
   tone: string; // casual | professional | funny | inspirational
 }
 
-interface ModerationResult {
+export interface ModerationResult {
   safe: boolean;
   flags: string[];
   confidence: number;
@@ -15,12 +15,12 @@ interface ModerationResult {
   category: string | null; // inappropriate | offensive | spam | misinformation | un-islamic
 }
 
-interface SmartReply {
+export interface SmartReply {
   text: string;
   tone: string; // friendly | formal | emoji | brief
 }
 
-interface SpaceRouting {
+export interface SpaceRouting {
   recommendedSpace: 'SAF' | 'MAJLIS' | 'BAKRA' | 'MINBAR';
   confidence: number;
   reason: string;

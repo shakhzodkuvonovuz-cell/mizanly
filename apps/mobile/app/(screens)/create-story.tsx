@@ -291,8 +291,8 @@ export default function CreateStoryScreen() {
     mutationFn: async () => {
       let mediaUrl = '';
       if (mediaUri) {
-        const upload = await uploadApi.getPresignedUrl(mediaType === 'video' ? 'video/mp4' : 'image/jpeg');
-        await uploadApi.uploadToPresignedUrl(upload.url, mediaUri);
+        const upload = await uploadApi.getPresignUrl(mediaType === 'video' ? 'video/mp4' : 'image/jpeg', 'stories');
+        mediaUrl = upload.publicUrl;
         mediaUrl = upload.publicUrl;
       }
       return storiesApi.create({
@@ -802,11 +802,11 @@ export default function CreateStoryScreen() {
                   {mediaUri && (
                     <View style={{ flex: 1 }}>
                       <Image source={{ uri: mediaUri }} style={{ width: 40, height: 40 }} contentFit="cover" />
-                      <View style={[StyleSheet.absoluteFill, f.style]} />
+                      <View style={[StyleSheet.absoluteFill, f.style as Record<string, unknown>]} />
                     </View>
                   )}
                   {!mediaUri && (
-                    <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={[{ flex: 1 }, f.style]} />
+                    <LinearGradient colors={BG_GRADIENTS[bgGradientIndex]} style={[{ flex: 1 }, f.style as Record<string, unknown>]} />
                   )}
                 </View>
                 <Text style={{

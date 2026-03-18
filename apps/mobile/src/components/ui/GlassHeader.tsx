@@ -6,9 +6,11 @@ import {
   StyleSheet,
   Platform,
 } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { WebSafeBlurView } from '@/components/ui/WebSafeBlurView';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import { colors, fonts, fontSize, spacing, radius } from '@/theme';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import { useHaptic } from '@/hooks/useHaptic';
@@ -24,12 +26,17 @@ interface HeaderAction {
   badge?: number;
 }
 
-interface GlassHeaderProps {
+export interface GlassHeaderProps {
   title?: string;
   titleComponent?: React.ReactNode;
   leftAction?: HeaderAction;
+  rightAction?: HeaderAction;
   rightActions?: HeaderAction[];
   borderless?: boolean;
+  showBackButton?: boolean;
+  showBack?: boolean;
+  onBack?: () => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction) {
@@ -71,10 +78,28 @@ export function GlassHeader({
   title,
   titleComponent,
   leftAction,
+  rightAction,
   rightActions,
   borderless = false,
+  showBackButton = false,
+  showBack = false,
+  onBack,
+  style,
 }: GlassHeaderProps) {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+
+  // Resolve left action: explicit leftAction > showBackButton/showBack
+  const resolvedLeftAction = leftAction ?? (
+    (showBackButton || showBack) ? {
+      icon: 'arrow-left',
+      onPress: onBack ?? (() => router.back()),
+      accessibilityLabel: 'Go back',
+    } : undefined
+  );
+
+  // Merge singular rightAction into rightActions array
+  const resolvedRightActions = rightActions ?? (rightAction ? [rightAction] : undefined);
 
   const headerContent = (
     <View
@@ -86,8 +111,8 @@ export function GlassHeader({
     >
       <View style={styles.row}>
         <View style={styles.left}>
-          {leftAction ? (
-            <HeaderButton {...leftAction} />
+          {resolvedLeftAction ? (
+            <HeaderButton {...resolvedLeftAction} />
           ) : (
             <View style={styles.spacer} />
           )}
@@ -104,8 +129,8 @@ export function GlassHeader({
         </View>
 
         <View style={styles.right}>
-          {rightActions && rightActions.length > 0 ? (
-            rightActions.map((action, index) => (
+          {resolvedRightActions && resolvedRightActions.length > 0 ? (
+            resolvedRightActions.map((action, index) => (
               <HeaderButton key={`header-action-${index}`} {...action} />
             ))
           ) : (
@@ -118,14 +143,14 @@ export function GlassHeader({
 
   if (Platform.OS === 'ios' || Platform.OS === 'web') {
     return (
-      <WebSafeBlurView intensity={60} tint="dark" style={styles.container}>
+      <WebSafeBlurView intensity={60} tint="dark" style={[styles.container, style]}>
         {headerContent}
       </WebSafeBlurView>
     );
   }
 
   return (
-    <View style={[styles.container, styles.androidBg]}>
+    <View style={[styles.container, styles.androidBg, style]}>
       {headerContent}
     </View>
   );

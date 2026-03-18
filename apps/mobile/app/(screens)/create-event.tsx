@@ -75,7 +75,8 @@ export default function CreateEventScreen() {
       setCommunitiesLoading(true);
       try {
         const response = await communitiesApi.list();
-        setCommunities(response.data.data);
+        const items = Array.isArray(response) ? response : (response as { data?: Community[] }).data ?? [];
+        setCommunities(items);
       } catch (err) {
         // Silently fail - communities optional for event creation
         console.error('Failed to fetch communities:', err);
@@ -112,7 +113,8 @@ export default function CreateEventScreen() {
         communityId: selectedCommunity || undefined,
       };
       const response = await eventsApi.create(dto);
-      router.push(`/(screens)/event-detail?id=${response.data.id}`);
+      const eventId = (response as { id?: string }).id ?? '';
+      router.push(`/(screens)/event-detail?id=${eventId}` as `/${string}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : t('events.createFailed');
       setError(message);
@@ -478,7 +480,6 @@ export default function CreateEventScreen() {
                 icon="users"
                 title={t('events.noCommunities')}
                 subtitle={t('events.joinCommunitiesToPost')}
-                size="sm"
               />
             ) : (
               communities.map((community, index) => (

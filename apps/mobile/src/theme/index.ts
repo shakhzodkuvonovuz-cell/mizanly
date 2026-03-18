@@ -86,6 +86,11 @@ export const fonts = {
   arabic: 'NotoNaskhArabic',
   arabicBold: 'NotoNaskhArabic-Bold',
   mono: 'JetBrainsMono',
+  // Aliases for convenience
+  regular: 'DMSans',
+  medium: 'DMSans-Medium',
+  semibold: 'DMSans-SemiBold',
+  bold: 'DMSans-Bold',
 } as const;
 
 export const fontWeight = {
@@ -114,6 +119,7 @@ export const spacing = {
   base: 16,
   lg: 20,
   xl: 24,
+  xxl: 32,
   '2xl': 32,
   '3xl': 40,
   '4xl': 48,

@@ -87,11 +87,11 @@ export default function CameraScreen() {
 
   const animatedRecordRingStyle = useAnimatedStyle(() => ({
     transform: [{
-      rotate: interpolate(
+      rotate: `${interpolate(
         recordProgress.value,
         [0, 1],
-        ['0deg', '360deg']
-      ),
+        [0, 360]
+      )}deg`,
     }],
   }));
 
@@ -174,7 +174,7 @@ export default function CameraScreen() {
 
           {/* Recording Timer */}
           {isRecording && (
-            <Animated.View entering={FadeIn} style={styles.timerContainer}>
+            <Animated.View style={styles.timerContainer}>
               <View style={styles.recordingDot} />
               <Text style={styles.timerText}>{formatTime(recordingTime)}</Text>
             </Animated.View>
@@ -252,11 +252,7 @@ export default function CameraScreen() {
   );
 }
 
-const FadeIn = {
-  from: { opacity: 0 },
-  to: { opacity: 1 },
-  duration: 200,
-};
+// FadeIn is imported from reanimated; removed unused custom constant
 
 const styles = StyleSheet.create({
   container: {
@@ -292,9 +288,9 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   gridLineVertical: {
-    position: 'absolute',
-    left: '33.33%',
-    right: '33.33%',
+    position: 'absolute' as const,
+    left: screenWidth / 3,
+    width: screenWidth / 3,
     top: 0,
     bottom: 0,
     borderLeftWidth: 0.5,
@@ -302,9 +298,9 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.15)',
   },
   gridLineHorizontal: {
-    position: 'absolute',
-    top: '33.33%',
-    bottom: '33.33%',
+    position: 'absolute' as const,
+    top: screenHeight / 3,
+    height: screenHeight / 3,
     left: 0,
     right: 0,
     borderTopWidth: 0.5,

@@ -445,7 +445,7 @@ export default function VideoEditorScreen() {
             style={styles.toolsScroll}
             contentContainerStyle={styles.toolsContent}
           >
-            {([
+            {[
               { id: 'trim', icon: 'scissors' as IconName, label: t('videoEditor.trim') },
               { id: 'speed', icon: 'fast-forward' as IconName, label: t('videoEditor.speed') },
               { id: 'filters', icon: 'sliders' as IconName, label: t('videoEditor.filters') },

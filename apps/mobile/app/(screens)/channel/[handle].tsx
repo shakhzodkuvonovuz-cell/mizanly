@@ -42,6 +42,7 @@ type Tab = 'videos' | 'playlists' | 'about';
 function VideoCard({ video }: { video: Video }) {
   const router = useRouter();
   const haptic = useHaptic();
+  const { t } = useTranslation();
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
   const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -84,7 +85,7 @@ function VideoCard({ video }: { video: Video }) {
         </TouchableOpacity>
         <View style={styles.videoDetails}>
           <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
-          <Text style={styles.channelName} numberOfLines={1}>{video.channel.name}</Text>
+          <Text style={styles.videoCardChannelName} numberOfLines={1}>{video.channel.name}</Text>
           <Text style={styles.videoStats} numberOfLines={1}>
             {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
@@ -99,6 +100,7 @@ function VideoCard({ video }: { video: Video }) {
 
 // Featured Video Card Component
   function FeaturedVideoCard({ video, onPress }: { video: Video; onPress: () => void }) {
+    const { t } = useTranslation();
     const durationMinutes = Math.floor(video.duration / 60);
     const durationSeconds = Math.floor(video.duration % 60);
     const durationText = `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
@@ -259,15 +261,15 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
 
   const handleCopyLink = async () => {
     haptic.light();
-    await Clipboard.setStringAsync(`mizanly://channel/${channel.handle}`);
+    await Clipboard.setStringAsync(`mizanly://channel/${channel?.handle ?? handle}`);
     Alert.alert('Copied', 'Channel link copied to clipboard');
   };
 
   const handleNativeShare = async () => {
     haptic.light();
     await Share.share({
-      message: `Check out ${channel.name} on Mizanly`,
-      url: `mizanly://channel/${channel.handle}`,
+      message: `Check out ${channel?.name ?? handle} on Mizanly`,
+      url: `mizanly://channel/${channel?.handle ?? handle}`,
     });
   };
 
@@ -510,10 +512,10 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
           </View>
         </View>
 
-        <FlatList
+        <FlatList<Video | Playlist>
           data={activeTab === 'videos' ? regularVideos : activeTab === 'playlists' ? playlists : []}
           keyExtractor={(item) => item.id}
-          renderItem={activeTab === 'videos' ? renderVideoItem : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item} /> : undefined}
+          renderItem={activeTab === 'videos' ? ({ item }) => <VideoCard video={item as Video} /> : activeTab === 'playlists' ? ({ item }) => <PlaylistCard playlist={item as Playlist} /> : undefined}
           ListHeaderComponent={ListHeader}
           removeClippedSubviews={true}
           ListEmptyComponent={
@@ -524,12 +526,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
                 </View>
               ) : (
-                <EmptyState
-                  icon="video"
-                  title={t('channel.noVideosYet')}
-                  subtitle={t('channel.noVideosSubtitle')}
-                  style={styles.emptyState}
-                />
+                <View style={styles.emptyState}>
+                  <EmptyState
+                    icon="video"
+                    title={t('channel.noVideosYet')}
+                    subtitle={t('channel.noVideosSubtitle')}
+                  />
+                </View>
               )
             ) : activeTab === 'playlists' ? (
               playlistsQuery.isLoading ? (
@@ -538,12 +541,13 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                   <Skeleton.Rect width="100%" height={60} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
                 </View>
               ) : (
-                <EmptyState
-                  icon="layers"
-                  title={t('channel.noPlaylistsYet')}
-                  subtitle={t('channel.noPlaylistsSubtitle')}
-                  style={styles.emptyState}
-                />
+                <View style={styles.emptyState}>
+                  <EmptyState
+                    icon="layers"
+                    title={t('channel.noPlaylistsYet')}
+                    subtitle={t('channel.noPlaylistsSubtitle')}
+                  />
+                </View>
               )
             ) : (
               <View style={styles.aboutTab}>
@@ -917,7 +921,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 2,
   },
-  channelName: {
+  videoCardChannelName: {
     color: colors.text.secondary,
     fontSize: fontSize.sm,
     marginBottom: 2,

@@ -22,14 +22,14 @@ export function useWebKeyboardShortcuts(): void {
       // Ctrl+K → search
       if (isCtrl && e.key === 'k') {
         e.preventDefault();
-        router.push('/(screens)/search' as `/${string}`);
+        router.push('/(screens)/search' as never);
         return;
       }
 
       // Ctrl+N → new post
       if (isCtrl && e.key === 'n') {
         e.preventDefault();
-        router.push('/(screens)/create-post' as `/${string}`);
+        router.push('/(screens)/create-post' as never);
         return;
       }
 

@@ -3,6 +3,7 @@ export interface User {
   id: string;
   username: string;
   displayName: string;
+  name?: string;
   bio?: string;
   avatarUrl?: string;
   coverUrl?: string;
@@ -10,11 +11,16 @@ export interface User {
   isVerified: boolean;
   isPrivate: boolean;
   isDeactivated?: boolean;
+  isCreator?: boolean;
+  followersCount?: number;
+  followingCount?: number;
+  postsCount?: number;
   createdAt: string;
   _count?: { followers: number; following: number; posts: number; threads: number };
   isFollowing?: boolean;
   isFollowedBy?: boolean;
   channel?: Channel;
+  profileLinks?: ProfileLink[];
 }
 
 // ── Saf: Posts ──
@@ -275,7 +281,7 @@ export interface Video {
   publishedAt?: string;
   createdAt: string;
   user: Pick<User, 'id' | 'username' | 'displayName' | 'avatarUrl' | 'isVerified'>;
-  channel: Pick<Channel, 'id' | 'handle' | 'name' | 'avatarUrl' | 'isVerified'>;
+  channel: Pick<Channel, 'id' | 'handle' | 'name' | 'avatarUrl' | 'isVerified' | 'subscribersCount'>;
   isLiked?: boolean;
   isDisliked?: boolean;
   isBookmarked?: boolean;
@@ -432,6 +438,7 @@ export interface Comment {
   id: string;
   content: string;
   likesCount: number;
+  isLiked?: boolean;
   isPinned: boolean;
   createdAt: string;
   user: User;
@@ -466,9 +473,12 @@ export interface SearchResults {
   people?: User[];
   threads?: Thread[];
   posts?: Post[];
+  reels?: Reel[];
   hashtags?: { id: string; name: string; postsCount: number }[];
   videos?: Video[];
   channels?: Channel[];
+  meta?: { cursor: string | null; hasMore: boolean };
+  data?: SearchResults;
 }
 
 // ── Circles ──
@@ -672,6 +682,8 @@ export interface LiveSession {
   description?: string;
   thumbnailUrl?: string;
   status: 'scheduled' | 'live' | 'ended' | 'cancelled';
+  liveType?: 'VIDEO' | 'AUDIO';
+  videoUrl?: string;
   scheduledAt?: string;
   startedAt?: string;
   endedAt?: string;
@@ -680,6 +692,8 @@ export interface LiveSession {
   recordingUrl?: string;
   userId: string;
   user?: User;
+  isHost?: boolean;
+  isJoined?: boolean;
   createdAt: string;
 }
 
@@ -767,6 +781,7 @@ export interface AudioTrack {
   audioUrl: string;
   duration: number;
   usageCount: number;
+  playsCount?: number;
   isTrending: boolean;
   genre?: string;
   userId: string;

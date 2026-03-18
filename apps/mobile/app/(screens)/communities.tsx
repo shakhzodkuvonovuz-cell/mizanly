@@ -112,7 +112,7 @@ function CommunityCard({
               </View>
               {category && (
                 <View style={styles.categoryBadge}>
-                  <Text style={styles.categoryText}>{t(`screens.communities.category.${category.toLowerCase()}`)}</Text>
+                  <Text style={styles.cardCategoryText}>{t(`screens.communities.category.${category.toLowerCase()}`)}</Text>
                 </View>
               )}
             </View>
@@ -561,7 +561,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: radius.sm,
   },
-  categoryText: {
+  cardCategoryText: {
     color: colors.emerald,
     fontSize: fontSize.xs,
     fontWeight: '500',

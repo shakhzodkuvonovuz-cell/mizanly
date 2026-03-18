@@ -218,7 +218,7 @@ export default function ProfileScreen() {
 
   const likedPostsQuery = useInfiniteQuery({
     queryKey: ['liked-posts', username],
-    queryFn: ({ pageParam }) => postsApi.getLiked({ cursor: pageParam as string | undefined }),
+    queryFn: ({ pageParam }) => usersApi.getLikedPosts(pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.meta?.hasMore ? lastPage.meta.cursor : undefined,
     enabled: isOwnProfile && activeTab === 'liked',

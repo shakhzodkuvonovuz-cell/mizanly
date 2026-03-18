@@ -89,7 +89,7 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
     queryKey: ['audioTracks', 'search', debouncedQuery],
     queryFn: async () => {
       const res = await audioTracksApi.search(debouncedQuery);
-      return res.data as AudioTrack[];
+      return res as AudioTrack[];
     },
     enabled: debouncedQuery.length > 0,
   });
@@ -99,7 +99,7 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
     queryKey: ['audioTracks', 'trending'],
     queryFn: async () => {
       const res = await audioTracksApi.getTrending();
-      return res.data as AudioTrack[];
+      return res as AudioTrack[];
     },
     enabled: visible && debouncedQuery.length === 0 && genre === 'all',
   });
@@ -109,7 +109,7 @@ export function MusicPicker({ visible, onClose, onSelect }: MusicPickerProps) {
     queryKey: ['audioTracks', 'genre', genre],
     queryFn: async () => {
       const res = await audioTracksApi.getByGenre(genre);
-      return res.data as AudioTrack[];
+      return res as AudioTrack[];
     },
     enabled: visible && debouncedQuery.length === 0 && genre !== 'all',
   });

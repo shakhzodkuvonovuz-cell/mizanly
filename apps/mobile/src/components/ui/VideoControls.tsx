@@ -320,7 +320,7 @@ export function VideoControls({
 
 const styles = StyleSheet.create({
   controlsContainer: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'space-between',
     padding: spacing.base,
   },

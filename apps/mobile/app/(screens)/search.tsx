@@ -28,6 +28,10 @@ const SEARCH_TAB_KEYS = ['people', 'hashtags', 'posts', 'threads', 'reels', 'vid
 
 type SearchTab = typeof SEARCH_TAB_KEYS[number];
 
+type SearchListItem =
+  | { type: 'user'; data: User }
+  | { type: 'hashtag'; data: { id: string; name: string; postsCount: number } };
+
 function UserRow({ user, onPress }: { user: User; onPress: () => void }) {
   const { t, isRTL } = useTranslation();
   return (
@@ -192,59 +196,59 @@ export default function SearchScreen() {
 
   const postsQuery = useInfiniteQuery({
     queryKey: ['search-posts', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'posts', pageParam),
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'posts', pageParam as string | undefined),
     enabled: !!debouncedQuery && activeTab === 'posts',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const threadsQuery = useInfiniteQuery({
     queryKey: ['search-threads', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'threads', pageParam),
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'threads', pageParam as string | undefined),
     enabled: !!debouncedQuery && activeTab === 'threads',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const reelsQuery = useInfiniteQuery({
     queryKey: ['search-reels', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'reels', pageParam),
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'reels', pageParam as string | undefined),
     enabled: !!debouncedQuery && activeTab === 'reels',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const videosQuery = useInfiniteQuery({
     queryKey: ['search-videos', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'videos', pageParam),
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'videos', pageParam as string | undefined),
     enabled: !!debouncedQuery && activeTab === 'videos',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const channelsQuery = useInfiniteQuery({
     queryKey: ['search-channels', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'channels', pageParam),
+    queryFn: ({ pageParam }) => searchApi.search(debouncedQuery, 'channels', pageParam as string | undefined),
     enabled: !!debouncedQuery && activeTab === 'channels',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const showExplore = query.length === 0 && !isFocused;
   const exploreQuery = useInfiniteQuery({
     queryKey: ['explore'],
-    queryFn: ({ pageParam }) => postsApi.getFeed('foryou', pageParam),
+    queryFn: ({ pageParam }) => postsApi.getFeed('foryou', pageParam as string | undefined),
     enabled: showExplore,
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
-  const explorePosts = exploreQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const posts = postsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const threads = threadsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const reels = reelsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const videos = videosQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const channels = channelsQuery.data?.pages.flatMap(p => p.data) ?? [];
+  const explorePosts = exploreQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const posts = postsQuery.data?.pages.flatMap((p) => p.posts ?? []) ?? [];
+  const threads = threadsQuery.data?.pages.flatMap((p) => p.threads ?? []) ?? [];
+  const reels: Reel[] = reelsQuery.data?.pages.flatMap((p) => p.reels ?? []) ?? [];
+  const videos: Video[] = videosQuery.data?.pages.flatMap((p) => p.videos ?? []) ?? [];
+  const channels: Channel[] = channelsQuery.data?.pages.flatMap((p) => p.channels ?? []) ?? [];
   const people: User[] = searchQuery.data?.people ?? [];
   const hashtags = searchQuery.data?.hashtags ?? [];
   const trending: TrendingHashtag[] = trendingQuery.data ?? [];
@@ -558,12 +562,12 @@ export default function SearchScreen() {
             }
             </>
           ) : (
-            <FlatList
+            <FlatList<SearchListItem>
           removeClippedSubviews={true}
               data={
                 activeTab === 'people'
-                  ? people.map((p) => ({ type: 'user' as const, data: p }))
-                  : hashtags.map((h) => ({ type: 'hashtag' as const, data: h }))
+                  ? people.map((p): SearchListItem => ({ type: 'user', data: p }))
+                  : hashtags.map((h): SearchListItem => ({ type: 'hashtag', data: h }))
               }
               keyExtractor={(item, i) => item.type === 'user' ? item.data.id : `ht-${i}`}
               renderItem={({ item }) => {

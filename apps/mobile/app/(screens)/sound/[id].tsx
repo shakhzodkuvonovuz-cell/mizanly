@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity,
-  FlatList, Pressable, Dimensions,
+  FlatList, Pressable, Dimensions, RefreshControl,
+  type ViewStyle, type ImageStyle,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RefreshControl } from 'react-native-gesture-handler';
 import { Image as ExpoImage } from 'expo-image';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,8 +23,10 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 const GRID_COLUMNS = 3;
 const GRID_GAP = spacing.xs;
-const ITEM_SIZE = (100 / GRID_COLUMNS) + '%';
+const ITEM_SIZE = `${100 / GRID_COLUMNS}%` as const;
 const COVER_SIZE = Dimensions.get('window').width * 0.6;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const GRID_ITEM_WIDTH = Math.floor((SCREEN_WIDTH - GRID_GAP * 2) / GRID_COLUMNS);
 
 export default function SoundScreen() {
   const { t, isRTL } = useTranslation();
@@ -84,11 +86,11 @@ export default function SoundScreen() {
 
   const renderGridItem = useCallback(({ item, index }: { item: Reel; index: number }) => {
     return (
-      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem}>
+      <Animated.View entering={FadeInUp.delay(index * 50).duration(400)} style={styles.gridItem as ViewStyle}>
         <Pressable onPress={() => handleReelPress(item)}>
           <ExpoImage
             source={{ uri: item.thumbnailUrl || item.videoUrl }}
-            style={styles.thumbnail}
+            style={styles.thumbnail as ImageStyle}
             contentFit="cover"
             transition={200}
           />
@@ -186,7 +188,7 @@ export default function SoundScreen() {
                   {track.coverUrl ? (
                     <ExpoImage
                       source={{ uri: track.coverUrl }}
-                      style={styles.cover}
+                      style={styles.cover as ImageStyle}
                       contentFit="cover"
                       transition={200}
                     />
@@ -234,7 +236,7 @@ export default function SoundScreen() {
                 <GradientButton
                   label={t('screens.sound.useSound')}
                   onPress={handleUseSound}
-                  style={styles.useButton}
+                  style={styles.useButton as ViewStyle}
                 />
               </LinearGradient>
             </Animated.View>
@@ -251,7 +253,7 @@ export default function SoundScreen() {
                 icon="video"
                 title={t('screens.sound.noReels')}
                 subtitle={t('screens.sound.noReelsSubtitle')}
-                style={styles.emptyState}
+                style={styles.emptyState as ViewStyle}
               />
             )
           }
@@ -359,7 +361,7 @@ const styles = StyleSheet.create({
     marginBottom: GRID_GAP,
   },
   gridItem: {
-    width: ITEM_SIZE,
+    flex: 1,
     aspectRatio: 0.75,
     borderRadius: radius.sm,
     overflow: 'hidden',

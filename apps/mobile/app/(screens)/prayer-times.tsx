@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Icon } from '@/components/ui/Icon';
+import { Icon, type IconName } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -24,12 +24,12 @@ const { width: screenWidth } = Dimensions.get('window');
 
 const PRAYER_NAMES = ['Fajr', 'Sunrise', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
 const PRAYER_ARABIC = ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء'];
-const PRAYER_ICONS = ['moon', 'sun', 'sun', 'sun', 'sun', 'moon'] as const;
+const PRAYER_ICONS: readonly IconName[] = ['moon', 'sun', 'sun', 'sun', 'sun', 'moon'];
 
 interface Prayer {
   name: string;
   arabic: string;
-  icon: string;
+  icon: IconName;
   time: string;
 }
 
@@ -115,6 +115,7 @@ function PrayerCard({
   isNext: boolean;
   index: number;
 }) {
+  const { t } = useTranslation();
   const pulseAnim = useSharedValue(1);
 
   if (isCurrent) {
@@ -232,7 +233,7 @@ export default function PrayerTimesScreen() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['prayer-notification-settings'] }),
   });
 
-  const settings = notifSettings?.data;
+  const settings = notifSettings;
 
   const prayerList = useMemo(() => {
     if (!prayerTimes) return [];
@@ -269,10 +270,10 @@ export default function PrayerTimesScreen() {
         islamicApi.getPrayerTimes(lat, lng, calculationMethod),
         islamicApi.getPrayerMethods(),
       ]);
-      setPrayerTimes(timesResp.data);
-      setPrayerMethods(methodsResp.data);
+      setPrayerTimes(timesResp);
+      setPrayerMethods(methodsResp);
       // compute current prayer index based on current time
-      const prayerList = getPrayerList(timesResp.data);
+      const prayerList = getPrayerList(timesResp);
       const currentIndex = getCurrentPrayerIndex(prayerList);
       setCurrentPrayerIndex(currentIndex);
     } catch (err) {
@@ -424,7 +425,7 @@ export default function PrayerTimesScreen() {
 
           {/* Qibla Compass */}
           <Animated.View entering={FadeInUp.delay(200).duration(500)} style={styles.qiblaContainer}>
-            <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/qibla-compass')}>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => router.push('/(screens)/qibla-compass' as never)}>
               <LinearGradient
                 colors={['rgba(45,53,72,0.3)', 'rgba(28,35,51,0.15)']}
                 style={styles.qiblaCard}

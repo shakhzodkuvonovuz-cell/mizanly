@@ -144,12 +144,12 @@ function ProfileCustomizationScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['profile-customization'],
     queryFn: async () => {
-      const res = await gamificationApi.getProfileCustomization();
-      return res.data as ProfileCustomization;
+      const res = await gamificationApi.getProfileCustomization() as { data?: ProfileCustomization } & ProfileCustomization;
+      return (res.data ?? res) as ProfileCustomization;
     },
   });
 
-  const [accentColor, setAccentColor] = useState(colors.emerald);
+  const [accentColor, setAccentColor] = useState<string>(colors.emerald);
   const [layoutStyle, setLayoutStyle] = useState('default');
   const [bioFont, setBioFont] = useState('default');
   const [showBadges, setShowBadges] = useState(true);

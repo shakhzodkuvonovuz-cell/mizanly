@@ -72,7 +72,7 @@ function HajjCompanionContent() {
 
   const resetMutation = useMutation({
     mutationFn: () => {
-      const progress = progressQuery.data?.data ?? progressQuery.data;
+      const progress = progressQuery.data;
       if (!progress) return Promise.resolve(null);
       return islamicApi.updateHajjProgress(progress.id, {
         currentStep: 0,
@@ -94,10 +94,11 @@ function HajjCompanionContent() {
   const progress: HajjProgress | null = useMemo(() => {
     const raw = progressQuery.data;
     if (!raw) return null;
-    if ('data' in (raw as Record<string, unknown>) && (raw as Record<string, unknown>).data !== undefined) {
-      return (raw as Record<string, unknown>).data as HajjProgress | null;
+    const rawObj = raw as Record<string, unknown>;
+    if ('data' in rawObj && rawObj.data !== undefined) {
+      return rawObj.data as HajjProgress | null;
     }
-    return raw as HajjProgress;
+    return raw as unknown as HajjProgress;
   }, [progressQuery.data]);
 
   const currentStep = progress?.currentStep ?? 0;
@@ -252,7 +253,7 @@ function HajjCompanionContent() {
                   activeOpacity={0.7}
                   onPress={() =>
                     router.push({
-                      pathname: '/(screens)/hajj-step',
+                      pathname: '/(screens)/hajj-step' as `/${string}`,
                       params: { step: step.step },
                     })
                   }

@@ -42,8 +42,8 @@ export default function CallHistoryScreen() {
   } = useInfiniteQuery({
     queryKey: ['call-history'],
     queryFn: ({ pageParam }) => callsApi.getHistory(pageParam as string | undefined),
-    getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
-    initialPageParam: undefined,
+    getNextPageParam: (lastPage: { meta: { hasMore: boolean; cursor: string | null } }) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const onRefresh = useCallback(async () => {
@@ -53,7 +53,7 @@ export default function CallHistoryScreen() {
     setRefreshing(false);
   }, [refetch, haptic]);
 
-  const calls = data?.pages.flatMap((page) => page.data) ?? [];
+  const calls = data?.pages.flatMap((page: { data: CallSession[] }) => page.data) ?? [];
 
   const renderItem = ({ item, index }: { item: CallSession; index: number }) => {
     const isCaller = item.callerId === myUserId;
@@ -71,14 +71,15 @@ export default function CallHistoryScreen() {
       durationText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
-    const statusMap = {
+    const statusMap: Record<string, string> = {
       missed: t('calls.missed'),
       declined: t('calls.declined'),
       ringing: t('calls.ringing'),
+      active: t('calls.ringing'),
       connected: t('calls.connected'),
       ended: durationText,
     };
-    let statusText = statusMap[item.status] || item.status;
+    const statusText = statusMap[item.status] || item.status;
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>

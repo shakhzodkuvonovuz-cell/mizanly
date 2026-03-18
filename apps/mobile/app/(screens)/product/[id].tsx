@@ -197,8 +197,8 @@ function ProductDetailScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      const res = await commerceApi.getProduct(id);
-      return res.data as ProductDetail;
+      const res = await commerceApi.getProduct(id) as { data?: ProductDetail } & ProductDetail;
+      return (res.data ?? res) as ProductDetail;
     },
     enabled: !!id,
   });

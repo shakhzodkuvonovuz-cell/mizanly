@@ -37,8 +37,8 @@ export default function MyReportsScreen() {
   } = useInfiniteQuery({
     queryKey: ['my-reports'],
     queryFn: ({ pageParam }) => reportsApi.getMine(pageParam as string | undefined),
-    getNextPageParam: (lastPage) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
-    initialPageParam: undefined,
+    getNextPageParam: (lastPage: { meta: { hasMore: boolean; cursor: string | null } }) => lastPage.meta.hasMore ? lastPage.meta.cursor : undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const onRefresh = useCallback(async () => {
@@ -48,12 +48,12 @@ export default function MyReportsScreen() {
     setRefreshing(false);
   }, [refetch, haptic]);
 
-  const reports = data?.pages.flatMap((page) => page.data) ?? [];
+  const reports = data?.pages.flatMap((page: { data: Report[] }) => page.data) ?? [];
 
   const getStatusColor = (status: ReportStatus) => {
     switch (status) {
       case 'PENDING': return colors.gold;
-      case 'REVIEWING': return colors.brand;
+      case 'REVIEWING': return colors.emerald;
       case 'RESOLVED': return colors.emerald;
       case 'DISMISSED': return colors.text.tertiary;
       default: return colors.text.tertiary;

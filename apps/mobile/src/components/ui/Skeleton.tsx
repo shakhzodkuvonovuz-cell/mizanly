@@ -69,7 +69,7 @@ function Circle({ size = 40, style }: { size?: number; style?: object }) {
 }
 
 function Rect({ width = '100%', height = 16, borderRadius: br = radius.sm, style }: {
-  width?: number | string;
+  width?: DimensionValue;
   height?: number;
   borderRadius?: number;
   style?: object;
@@ -77,7 +77,7 @@ function Rect({ width = '100%', height = 16, borderRadius: br = radius.sm, style
   return <ShimmerBase width={width} height={height} borderRadius={br} style={style} />;
 }
 
-function TextLine({ width = '100%', style }: { width?: number | string; style?: object }) {
+function TextLine({ width = '100%', style }: { width?: DimensionValue; style?: object }) {
   return <ShimmerBase width={width} height={14} borderRadius={4} style={style} />;
 }
 

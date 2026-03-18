@@ -69,6 +69,23 @@ export default function LiveViewerScreen() {
   const [chatMessage, setChatMessage] = useState('');
   const [floatingReactions, setFloatingReactions] = useState<FloatingReaction[]>([]);
 
+  // Fetch live stream
+  const liveQuery = useQuery({
+    queryKey: ['live', id],
+    queryFn: () => liveApi.getById(id),
+    enabled: !!id,
+  });
+
+  // Fetch participants
+  const participantsQuery = useQuery({
+    queryKey: ['live-participants', id],
+    queryFn: () => liveApi.getParticipants(id),
+    enabled: !!id,
+  });
+
+  const live = liveQuery.data;
+  const participants = (participantsQuery.data ?? []) as unknown as LiveParticipant[];
+
   // Animated values for visual effects
   const pulseAnim = useSharedValue(1);
   const viewerCountAnim = useSharedValue(1);
@@ -97,23 +114,23 @@ export default function LiveViewerScreen() {
 
   // Floating reactions animation
   const addFloatingReaction = (emoji: string) => {
-    const id = Date.now().toString();
+    const reactionId = Date.now().toString();
     const startX = Math.random() * (SCREEN_WIDTH - 100) + 50;
-    setFloatingReactions(prev => [...prev, { id, emoji, startX }]);
+    setFloatingReactions(prev => [...prev, { id: reactionId, emoji, startX }]);
     setTimeout(() => {
-      setFloatingReactions(prev => prev.filter(r => r.id !== id));
+      setFloatingReactions(prev => prev.filter(r => r.id !== reactionId));
     }, 3000);
   };
 
   // Viewer count bump animation
   useEffect(() => {
-    if (live?.viewerCount) {
+    if (live?.viewersCount) {
       viewerCountAnim.value = withSequence(
         withSpring(1.2, { damping: 8, stiffness: 300 }),
         withSpring(1, { damping: 12, stiffness: 200 })
       );
     }
-  }, [live?.viewerCount]);
+  }, [live?.viewersCount]);
 
   const pulseStyle = useAnimatedStyle(() => ({
     opacity: interpolate(pulseAnim.value, [1, 1.5], [1, 0.5], Extrapolation.CLAMP),
@@ -123,23 +140,6 @@ export default function LiveViewerScreen() {
   const viewerCountStyle = useAnimatedStyle(() => ({
     transform: [{ scale: viewerCountAnim.value }],
   }));
-
-  // Fetch live stream
-  const liveQuery = useQuery({
-    queryKey: ['live', id],
-    queryFn: () => liveApi.getById(id),
-    enabled: !!id,
-  });
-
-  // Fetch participants
-  const participantsQuery = useQuery({
-    queryKey: ['live-participants', id],
-    queryFn: () => liveApi.getParticipants(id).then(res => res.data),
-    enabled: !!id,
-  });
-
-  const live = liveQuery.data;
-  const participants = participantsQuery.data ?? [];
 
   // Join live stream on mount if not already joined
   const joinMutation = useMutation({
@@ -199,7 +199,7 @@ export default function LiveViewerScreen() {
   });
 
   const handleRaiseHand = () => {
-    const participant = participants.find(p => p.userId === user?.id);
+    const participant = participants.find((p: LiveParticipant) => p.userId === user?.id);
     if (participant?.raisedHand) {
       lowerHandMutation.mutate();
     } else {
@@ -348,7 +348,7 @@ export default function LiveViewerScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.back') }}
         />
         <View style={{ paddingTop: insets.top + 44 }}>
-          <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} />
+          <Skeleton.Rect width="100%" height={Math.round(SCREEN_WIDTH * 9 / 16)} borderRadius={0} />
           <View style={styles.skeletonContent}>
             <Skeleton.Rect width="80%" height={24} borderRadius={radius.sm} />
             <Skeleton.Rect width="40%" height={16} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
@@ -400,10 +400,10 @@ export default function LiveViewerScreen() {
     );
   }
 
-  const hostParticipant = participants.find(p => p.role === 'HOST');
-  const speakers = participants.filter(p => p.role === 'SPEAKER');
-  const listeners = participants.filter(p => p.role === 'LISTENER');
-  const raisedHands = participants.filter(p => p.raisedHand);
+  const hostParticipant = participants.find((p: LiveParticipant) => p.role === 'HOST');
+  const speakers = participants.filter((p: LiveParticipant) => p.role === 'SPEAKER');
+  const listeners = participants.filter((p: LiveParticipant) => p.role === 'LISTENER');
+  const raisedHands = participants.filter((p: LiveParticipant) => p.raisedHand);
 
   return (
     <ScreenErrorBoundary>
@@ -441,7 +441,7 @@ export default function LiveViewerScreen() {
           </View>
           <Animated.View style={[styles.viewerCountBadge, viewerCountStyle]}>
             <Icon name="eye" size={12} color="#fff" />
-            <Text style={styles.viewerCountText}>{(live?.viewerCount || 0).toLocaleString()}</Text>
+            <Text style={styles.viewerCountText}>{(live?.viewersCount || 0).toLocaleString()}</Text>
           </Animated.View>
         </Animated.View>
 
@@ -503,7 +503,7 @@ export default function LiveViewerScreen() {
             <View style={styles.liveStats}>
               <Icon name="eye" size="xs" color={colors.gold} />
               <Text style={styles.liveStatsTextGold}>
-                {live.viewerCount.toLocaleString()} {t('screens.live.watching')}
+                {live.viewersCount.toLocaleString()} {t('screens.live.watching')}
               </Text>
               <Text style={styles.liveStatsDot}>•</Text>
               <Text style={styles.liveStatsText}>
@@ -546,12 +546,12 @@ export default function LiveViewerScreen() {
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.actionButton} onPress={handleRaiseHand}>
                 <Icon
-                  name={participants.find(p => p.userId === user?.id)?.raisedHand ? 'hand' : 'hand'}
+                  name={participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? 'user' : 'user'}
                   size="md"
-                  color={participants.find(p => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
+                  color={participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? colors.emerald : colors.text.primary}
                 />
                 <Text style={styles.actionLabel}>
-                  {participants.find(p => p.userId === user?.id)?.raisedHand ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
+                  {participants.find((p: LiveParticipant) => p.userId === user?.id)?.raisedHand ? t('screens.live.lowerHand') : t('screens.live.raiseHand')}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionButton} onPress={() => setShowChat(true)}>
@@ -569,7 +569,7 @@ export default function LiveViewerScreen() {
               <View style={styles.speakersSection}>
                 <Text style={styles.sectionTitle}>{t('screens.live.speakers')} ({speakers.length})</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                  {speakers.map((p) => (
+                  {speakers.map((p: LiveParticipant) => (
                     <View key={p.id} style={styles.avatarWrap}>
                       <Avatar uri={p.user.avatarUrl} name={p.user.username} size="xl" />
                       <Text style={styles.avatarName}>{p.user.username}</Text>
@@ -584,7 +584,7 @@ export default function LiveViewerScreen() {
               <View style={styles.raisedHandsSection}>
                 <Text style={styles.sectionTitle}>{t('screens.live.raisedHands')} ({raisedHands.length})</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.avatarsScroll}>
-                  {raisedHands.map((p) => (
+                  {raisedHands.map((p: LiveParticipant) => (
                     <View key={p.id} style={styles.avatarWrap}>
                       <Avatar uri={p.user.avatarUrl} name={p.user.username} size="lg" />
                       <Text style={styles.avatarName}>{p.user.username}</Text>

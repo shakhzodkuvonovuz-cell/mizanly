@@ -858,7 +858,7 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1, color: colors.text.primary, fontSize: fontSize.base,
   },
-  loader: {
+  searchLoader: {
     marginVertical: spacing.xl,
     gap: spacing.sm,
   },

@@ -124,7 +124,7 @@ export default function SaveToPlaylistScreen() {
   const renderPlaylistItem = ({ item, index }: { item: Playlist; index: number }) => {
     const isLoading = loadingPlaylistIds.has(item.id);
     const isInPlaylist = inPlaylistMap[item.id] || false;
-    const inclusionLoading = inclusionQueries.find(q => q.data !== undefined && q.queryKey[1] === item.id)?.isLoading;
+    const inclusionLoading = inclusionQueries[index]?.isLoading;
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 30).duration(300)}>

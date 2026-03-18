@@ -187,8 +187,9 @@ function AchievementsScreen() {
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['achievements'],
     queryFn: async () => {
-      const res = await gamificationApi.getAchievements();
-      return res.data as { achievements: Achievement[] };
+      const res = await gamificationApi.getAchievements() as { data?: { achievements: Achievement[] }; achievements?: Achievement[] };
+      const inner = res.data ?? res;
+      return inner as { achievements: Achievement[] };
     },
   });
 

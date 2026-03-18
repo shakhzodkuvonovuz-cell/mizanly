@@ -89,8 +89,8 @@ export default function AudioRoomScreen() {
         audioRoomsApi.getById(id),
         audioRoomsApi.listParticipants(id),
       ]);
-      setRoom(roomRes.data);
-      setParticipants(participantsRes.data.data);
+      setRoom(roomRes);
+      setParticipants(participantsRes.data);
     } catch (err) {
       setError(t('audioRoom.failedToLoad'));
       Alert.alert(t('common.error'), t('audioRoom.failedToLoad'));
@@ -108,7 +108,7 @@ export default function AudioRoomScreen() {
   useEffect(() => {
     if (!id || !room || room.status !== 'live') return;
     const interval = setInterval(() => {
-      audioRoomsApi.listParticipants(id).then(res => setParticipants(res.data.data));
+      audioRoomsApi.listParticipants(id).then(res => setParticipants(res.data));
     }, 10000);
     return () => clearInterval(interval);
   }, [id, room]);
@@ -248,11 +248,7 @@ export default function AudioRoomScreen() {
         <GlassHeader
           title={t('tabs.audioRooms')}
           onBack={() => router.back()}
-          rightAction={
-            <TouchableOpacity style={styles.menuButton} activeOpacity={0.8}>
-              <Icon name="more-horizontal" size="md" color={colors.text.primary} />
-            </TouchableOpacity>
-          }
+          rightAction={{ icon: 'more-horizontal', onPress: () => {} }}
         />
 
         <ScrollView

@@ -50,7 +50,7 @@ export const islamicApi = {
     api.get<Mosque[]>(`/islamic/mosques${qs({ lat, lng, radius })}`),
 
   calculateZakat: (input: ZakatCalculationInput) =>
-    api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(input)}`),
+    api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(input as unknown as Record<string, string | number | boolean | undefined>)}`),
 
   getRamadanInfo: (year?: number, lat?: number, lng?: number) =>
     api.get<RamadanInfo>(`/islamic/ramadan${qs({ year, lat, lng })}`),

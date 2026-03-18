@@ -111,21 +111,24 @@ export default function VideoDetailScreen() {
   }, [id]);
 
   // Back handler: when user presses back while video is playing, shrink to mini player
+  // Using a ref to avoid "used before declaration" issue with the video variable
+  const videoDataRef = useRef<VideoType | undefined>(undefined);
   const handleBack = useCallback(() => {
-    if (isPlaying && video) {
+    const currentVideo = videoDataRef.current;
+    if (isPlaying && currentVideo) {
       const store = useStore.getState();
       store.setMiniPlayerVideo({
-        id: video.id,
-        title: video.title,
-        channelName: video.channel?.name || '',
-        thumbnailUri: video.thumbnailUrl || undefined,
-        videoUrl: video.hlsUrl || video.videoUrl,
+        id: currentVideo.id,
+        title: currentVideo.title,
+        channelName: currentVideo.channel?.name || '',
+        thumbnailUri: currentVideo.thumbnailUrl || undefined,
+        videoUrl: currentVideo.hlsUrl || currentVideo.videoUrl,
       });
       store.setMiniPlayerPlaying(true);
       store.setMiniPlayerProgress(progressRef.current);
     }
     router.back();
-  }, [isPlaying, video, router]);
+  }, [isPlaying, router]);
 
   // Animated scroll value for parallax effect
   const scrollY = useSharedValue(0);
@@ -158,6 +161,7 @@ export default function VideoDetailScreen() {
   });
 
   const video = videoQuery.data;
+  videoDataRef.current = video;
   const comments = commentsQuery.data ?? [];
 
   // Set duration when video loads
@@ -212,7 +216,10 @@ export default function VideoDetailScreen() {
   });
 
   const subscribeMutation = useMutation({
-    mutationFn: () => video?.channel && (video.isSubscribed ? channelsApi.unsubscribe(video.channel.handle) : channelsApi.subscribe(video.channel.handle)),
+    mutationFn: async () => {
+      if (!video?.channel) return;
+      return video.isSubscribed ? channelsApi.unsubscribe(video.channel.handle) : channelsApi.subscribe(video.channel.handle);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['video', id] }),
   });
 
@@ -485,7 +492,7 @@ export default function VideoDetailScreen() {
         <GlassHeader
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
         />
-        <Skeleton.Rect width="100%" aspectRatio={16/9} borderRadius={0} style={{ marginTop: 88 }} />
+        <Skeleton.Rect width="100%" height={Math.round(SCREEN_WIDTH * 9 / 16)} borderRadius={0} style={{ marginTop: 88 }} />
         <View style={styles.skeletonContent}>
           <Skeleton.Rect width="80%" height={24} borderRadius={radius.sm} />
           <Skeleton.Rect width="40%" height={16} borderRadius={radius.sm} style={{ marginTop: spacing.sm }} />
@@ -873,8 +880,6 @@ export default function VideoDetailScreen() {
               setShowMenu(false);
               router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
             }}
-            accessibilityLabel={t('video.saveToPlaylist')}
-            accessibilityRole="button"
           />
         </BottomSheet>
       </View>

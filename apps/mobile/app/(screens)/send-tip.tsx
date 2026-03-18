@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -120,7 +120,7 @@ export default function SendTipScreen() {
     try {
       setError(null);
       const response = await usersApi.getProfile(username);
-      setCreator(response.data);
+      setCreator(response);
     } catch (err) {
       setError(t('monetization.errors.failedToLoadCreatorInfo'));
     } finally {
@@ -290,7 +290,7 @@ export default function SendTipScreen() {
                   {creator?.isVerified && <VerifiedBadge size={13} />}
                 </View>
                 <Text style={styles.creatorUsername}>{creator?.username}</Text>
-                <Text style={styles.followerCount}>{t('profile.followersCount', { count: formattedFollowers })}</Text>
+                <Text style={styles.followerCount}>{formattedFollowers} followers</Text>
               </View>
             </LinearGradient>
           </Animated.View>

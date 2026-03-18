@@ -80,7 +80,7 @@ export default function CaptionEditorScreen() {
     queryFn: async () => {
       if (!videoId) return [];
       const res = await subtitlesApi.list(videoId);
-      return (res as { data: SubtitleTrack[] }).data ?? [];
+      return Array.isArray(res) ? res : [];
     },
     enabled: !!videoId,
   });

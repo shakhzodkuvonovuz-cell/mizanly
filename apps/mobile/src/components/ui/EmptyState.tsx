@@ -1,23 +1,26 @@
 import { View, Text, StyleSheet } from 'react-native';
+import type { StyleProp, ViewStyle } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { Icon } from './Icon';
 import { GradientButton } from './GradientButton';
 import { useEntranceAnimation } from '@/hooks/useEntranceAnimation';
 import { colors, spacing, fontSize, radius } from '@/theme';
 
-interface EmptyStateProps {
+export interface EmptyStateProps {
   icon?: React.ComponentProps<typeof Icon>['name'];
   title: string;
   subtitle?: string;
   actionLabel?: string;
   onAction?: () => void;
+  style?: StyleProp<ViewStyle>;
+  size?: 'sm' | 'md' | 'lg';
 }
 
-export function EmptyState({ icon, title, subtitle, actionLabel, onAction }: EmptyStateProps) {
+export function EmptyState({ icon, title, subtitle, actionLabel, onAction, style }: EmptyStateProps) {
   const { animatedStyle: entranceStyle } = useEntranceAnimation();
 
   return (
-    <Animated.View style={[styles.container, entranceStyle]}>
+    <Animated.View style={[styles.container, entranceStyle, style]}>
       {icon && (
         <View style={styles.iconWrap}>
           <Icon name={icon} size="xl" color={colors.text.tertiary} />

@@ -19,7 +19,7 @@ import { ThreadCard } from '@/components/majlis/ThreadCard';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
-import { searchApi, hashtagsApi, usersApi } from '@/services/api';
+import { searchApi, hashtagsApi, followsApi } from '@/services/api';
 import type { User, Post, Thread, Reel } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -138,43 +138,42 @@ export default function SearchResultsScreen() {
   // Separate endpoints for each content type (added by Agent 10)
   const postsQuery = useInfiniteQuery({
     queryKey: ['search-posts', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.searchPosts(debouncedQuery, pageParam),
+    queryFn: ({ pageParam }) => searchApi.searchPosts(debouncedQuery, pageParam as string | undefined),
     enabled: debouncedQuery.trim().length >= 2 && activeTab === 'posts',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const threadsQuery = useInfiniteQuery({
     queryKey: ['search-threads', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.searchThreads(debouncedQuery, pageParam),
+    queryFn: ({ pageParam }) => searchApi.searchThreads(debouncedQuery, pageParam as string | undefined),
     enabled: debouncedQuery.trim().length >= 2 && activeTab === 'threads',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
   const reelsQuery = useInfiniteQuery({
     queryKey: ['search-reels', debouncedQuery],
-    queryFn: ({ pageParam }) => searchApi.searchReels(debouncedQuery, pageParam),
+    queryFn: ({ pageParam }) => searchApi.searchReels(debouncedQuery, pageParam as string | undefined),
     enabled: debouncedQuery.trim().length >= 2 && activeTab === 'reels',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
+    getNextPageParam: (last) => last.meta?.cursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
   });
 
-  // Hashtags search (using hashtagsApi.search from Agent 2)
-  const hashtagsQuery = useInfiniteQuery({
+  // Hashtags search — hashtagsApi.search returns HashtagInfo[] (not paginated)
+  // Use a regular query since this endpoint doesn't support pagination
+  const hashtagsQuery = useQuery({
     queryKey: ['search-hashtags', debouncedQuery],
-    queryFn: ({ pageParam }) => hashtagsApi.search(debouncedQuery, pageParam),
+    queryFn: () => hashtagsApi.search(debouncedQuery),
     enabled: debouncedQuery.trim().length >= 2 && activeTab === 'hashtags',
-    getNextPageParam: (last) => last.meta?.cursor,
-    initialPageParam: undefined,
   });
 
   const people: User[] = combinedSearchQuery.data?.people ?? [];
   const hashtagsFromCombined = combinedSearchQuery.data?.hashtags ?? [];
-  const posts = postsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const threads = threadsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const reels = reelsQuery.data?.pages.flatMap(p => p.data) ?? [];
-  const hashtags = hashtagsQuery.data?.pages.flatMap(p => p.data) ?? hashtagsFromCombined;
+  const posts = postsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const threads = threadsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const reels = reelsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const hashtags: Hashtag[] = (hashtagsQuery.data ?? hashtagsFromCombined) as Hashtag[];
 
   const isLoading = {
     people: combinedSearchQuery.isLoading,
@@ -188,14 +187,14 @@ export default function SearchResultsScreen() {
     posts: postsQuery.isFetchingNextPage,
     threads: threadsQuery.isFetchingNextPage,
     reels: reelsQuery.isFetchingNextPage,
-    hashtags: hashtagsQuery.isFetchingNextPage,
+    hashtags: false,
   };
 
   const hasNextPage = {
     posts: postsQuery.hasNextPage,
     threads: threadsQuery.hasNextPage,
     reels: reelsQuery.hasNextPage,
-    hashtags: hashtagsQuery.hasNextPage,
+    hashtags: false,
   };
 
   const handleFetchNextPage = () => {
@@ -209,17 +208,16 @@ export default function SearchResultsScreen() {
       case 'reels':
         if (reelsQuery.hasNextPage && !reelsQuery.isFetchingNextPage) reelsQuery.fetchNextPage();
         break;
-      case 'hashtags':
-        if (hashtagsQuery.hasNextPage && !hashtagsQuery.isFetchingNextPage) hashtagsQuery.fetchNextPage();
-        break;
     }
   };
 
   const handleRefresh = () => {
     switch (activeTab) {
       case 'people':
-      case 'hashtags':
         combinedSearchQuery.refetch();
+        break;
+      case 'hashtags':
+        hashtagsQuery.refetch();
         break;
       case 'posts':
         postsQuery.refetch();
@@ -254,7 +252,7 @@ export default function SearchResultsScreen() {
   const queryClient = useQueryClient();
   const followMutation = useMutation({
     mutationFn: ({ userId, follow }: { userId: string; follow: boolean }) =>
-      follow ? usersApi.follow(userId) : usersApi.unfollow(userId),
+      follow ? followsApi.follow(userId) : followsApi.unfollow(userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['search', debouncedQuery] });
     },

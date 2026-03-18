@@ -264,8 +264,8 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
                 }
                 setIsTranslating(true);
                 try {
-                  const result = await aiApi.translate(post.content, 'en', post.id, 'post');
-                  setTranslatedText(typeof result === 'string' ? result : (result as { translatedText?: string })?.translatedText || post.content);
+                  const result = await aiApi.translate(post.content ?? '', 'en', post.id, 'post');
+                  setTranslatedText(typeof result === 'string' ? result : ((result as { translatedText?: string })?.translatedText ?? (post.content ?? null)));
                 } catch {
                   // Translation failed silently
                 } finally {

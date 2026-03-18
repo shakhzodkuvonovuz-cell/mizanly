@@ -36,7 +36,6 @@ export async function registerForPushNotifications(): Promise<string | null> {
           allowAlert: true,
           allowBadge: true,
           allowSound: true,
-          allowAnnouncements: true,
         },
       });
       finalStatus = status;
@@ -53,8 +52,8 @@ export async function registerForPushNotifications(): Promise<string | null> {
         name: 'Mizanly',
         importance: Notifications.AndroidImportance.MAX,
         vibrationPattern: [0, 250, 250, 250],
-        sound: true,
-        lights: true,
+        sound: 'default',
+        enableLights: true,
       });
     }
 
@@ -139,9 +138,9 @@ export async function configurePushChannels(): Promise<void> {
       await Notifications.setNotificationChannelAsync(channel.id, {
         name: channel.name,
         importance: Notifications.AndroidImportance[channel.importance.toUpperCase() as keyof typeof Notifications.AndroidImportance],
-        vibrationPattern: channel.vibrationPattern,
-        sound: channel.sound,
-        lights: channel.lights,
+        vibrationPattern: channel.vibrationPattern ?? undefined,
+        sound: channel.sound ? 'default' : null,
+        enableLights: channel.lights ?? false,
       });
     }
 
@@ -175,9 +174,12 @@ export async function schedulePrayerNotification(
         body: `${prayerName} prayer is in 5 minutes. Prepare for Salah.`,
         data: { type: 'prayer', prayerName, time: time.toISOString() },
         sound: customSound ? `${customSound}.wav` : true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: trigger,
         channelId: 'islamic',
       },
-      trigger,
     });
 
     if (__DEV__) console.log(`Prayer notification scheduled for ${prayerName} at ${trigger}`);
@@ -222,9 +224,12 @@ export async function scheduleRamadanNotification(
         ...messages[type],
         data: { type: 'ramadan', ramadanType: type, time: time.toISOString() },
         sound: true,
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: trigger,
         channelId: 'islamic',
       },
-      trigger,
     });
 
     if (__DEV__) console.log(`Ramadan ${type} notification scheduled at ${trigger}`);
@@ -263,7 +268,7 @@ export async function cancelAllScheduledNotifications(): Promise<void> {
  * Get all scheduled notifications
  */
 export async function getAllScheduledNotifications(): Promise<
-  Array<{ id: string; content: unknown; trigger: unknown }>
+  Array<{ identifier: string; content: unknown; trigger: unknown }>
 > {
   try {
     const Notifications = await import('expo-notifications');

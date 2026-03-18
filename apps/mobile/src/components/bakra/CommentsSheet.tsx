@@ -19,6 +19,10 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 
+interface ReelComment extends Comment {
+  parentId?: string;
+}
+
 interface CommentsSheetProps {
   reel: Reel;
   visible: boolean;
@@ -30,7 +34,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const queryClient = useQueryClient();
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const [newComment, setNewComment] = useState('');
-  const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [replyTo, setReplyTo] = useState<ReelComment | null>(null);
   const inputRef = useRef<TextInput>(null);
 
   const commentsQuery = useInfiniteQuery({
@@ -53,7 +57,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
     },
   });
 
-  const comments: Comment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
+  const comments: ReelComment[] = commentsQuery.data?.pages.flatMap((p) => p.data) ?? [];
 
   const handleSubmit = () => {
     const trimmed = newComment.trim();
@@ -81,7 +85,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
     );
   };
 
-  const renderComment = ({ item }: { item: Comment }) => {
+  const renderComment = ({ item }: { item: ReelComment }) => {
     const likeAnimStyle = useAnimatedStyle(() => ({
       transform: [{ scale: getLikeScale(item.id).value }],
     }));

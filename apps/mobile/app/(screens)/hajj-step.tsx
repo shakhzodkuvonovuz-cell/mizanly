@@ -49,10 +49,11 @@ function HajjStepContent() {
   const progress: HajjProgress | null = useMemo(() => {
     const raw = progressQuery.data;
     if (!raw) return null;
-    if ('data' in (raw as Record<string, unknown>) && (raw as Record<string, unknown>).data !== undefined) {
-      return (raw as Record<string, unknown>).data as HajjProgress | null;
+    const rawObj = raw as Record<string, unknown>;
+    if ('data' in rawObj && rawObj.data !== undefined) {
+      return rawObj.data as HajjProgress | null;
     }
-    return raw as HajjProgress;
+    return raw as unknown as HajjProgress;
   }, [progressQuery.data]);
 
   const step = guide[stepIndex] ?? null;

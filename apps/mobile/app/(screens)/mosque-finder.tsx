@@ -46,7 +46,7 @@ const FACILITY_ICONS: Record<string, IconName> = {
   wudu: 'droplet',
   school: 'book-open',
   library: 'book-open',
-  cafe: 'coffee',
+  cafe: 'circle',
 };
 
 const FACILITY_LABELS: Record<string, string> = {
@@ -70,6 +70,7 @@ function FacilityBadge({ facility }: { facility: string }) {
 }
 
 function MosqueCard({ mosque, index }: { mosque: Mosque; index: number }) {
+  const { t } = useTranslation();
   const haptic = useHaptic();
 
   return (
@@ -162,7 +163,7 @@ export default function MosqueFinderScreen() {
       const lng = location.coords.longitude;
       setUserLocation({ lat, lng });
       const response = await islamicApi.getMosques(lat, lng, 10); // radius 10km
-      const apiMosques = response.data;
+      const apiMosques = Array.isArray(response) ? response : [];
       const mappedMosques: Mosque[] = apiMosques.map((m: ApiMosque) => ({
         id: m.id,
         name: m.name,

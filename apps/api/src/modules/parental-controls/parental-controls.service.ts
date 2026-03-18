@@ -5,10 +5,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import * as bcrypt from 'bcrypt';
+import { randomBytes, scrypt, timingSafeEqual } from 'crypto';
+import { promisify } from 'util';
 import { UpdateParentalControlDto } from './dto/parental-control.dto';
 
-const SALT_ROUNDS = 10;
+const scryptAsync = promisify(scrypt);
+const KEY_LENGTH = 64;
+
+async function hashPin(pin: string): Promise<string> {
+  const salt = randomBytes(16).toString('hex');
+  const derived = (await scryptAsync(pin, salt, KEY_LENGTH)) as Buffer;
+  return `${salt}:${derived.toString('hex')}`;
+}
+
+async function verifyPin(pin: string, stored: string): Promise<boolean> {
+  const [salt, hash] = stored.split(':');
+  const derived = (await scryptAsync(pin, salt, KEY_LENGTH)) as Buffer;
+  const storedBuf = Buffer.from(hash, 'hex');
+  return timingSafeEqual(derived, storedBuf);
+}
 
 @Injectable()
 export class ParentalControlsService {
@@ -45,7 +60,7 @@ export class ParentalControlsService {
       throw new BadRequestException('This account is already linked as a child');
     }
 
-    const hashedPin = await bcrypt.hash(dto.pin, SALT_ROUNDS);
+    const hashedPin = await hashPin(dto.pin);
 
     const [control] = await this.prisma.$transaction([
       this.prisma.parentalControl.create({
@@ -72,7 +87,7 @@ export class ParentalControlsService {
       throw new NotFoundException('Parental control link not found');
     }
 
-    const pinValid = await bcrypt.compare(pin, control.pin);
+    const pinValid = await verifyPin(pin, control.pin);
     if (!pinValid) {
       throw new ForbiddenException('Invalid PIN');
     }
@@ -167,7 +182,7 @@ export class ParentalControlsService {
       throw new NotFoundException('Parental control link not found');
     }
 
-    const isValid = await bcrypt.compare(pin, control.pin);
+    const isValid = await verifyPin(pin, control.pin);
     return { valid: isValid };
   }
 
@@ -180,7 +195,7 @@ export class ParentalControlsService {
       throw new NotFoundException('No parental controls found');
     }
 
-    const isValid = await bcrypt.compare(pin, controls[0].pin);
+    const isValid = await verifyPin(pin, controls[0].pin);
     return { valid: isValid };
   }
 
@@ -197,12 +212,12 @@ export class ParentalControlsService {
       throw new NotFoundException('Parental control link not found');
     }
 
-    const pinValid = await bcrypt.compare(currentPin, control.pin);
+    const pinValid = await verifyPin(currentPin, control.pin);
     if (!pinValid) {
       throw new ForbiddenException('Invalid current PIN');
     }
 
-    const hashedPin = await bcrypt.hash(newPin, SALT_ROUNDS);
+    const hashedPin = await hashPin(newPin);
 
     return this.prisma.parentalControl.update({
       where: { id: control.id },

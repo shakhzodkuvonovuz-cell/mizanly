@@ -50,7 +50,7 @@ function CommentRow({
 }) {
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
-  const [localLiked, setLocalLiked] = useState(comment.isLiked ?? false);
+  const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
@@ -78,12 +78,12 @@ function CommentRow({
         ? postsApi.unlikeComment(postId, comment.id)
         : postsApi.likeComment(postId, comment.id),
     onMutate: () => {
-      setLocalLiked((p) => !p);
-      setLocalLikes((p) => (localLiked ? p - 1 : p + 1));
+      setLocalLiked((p: boolean) => !p);
+      setLocalLikes((p: number) => (localLiked ? p - 1 : p + 1));
     },
     onError: () => {
-      setLocalLiked((p) => !p);
-      setLocalLikes((p) => (localLiked ? p + 1 : p - 1));
+      setLocalLiked((p: boolean) => !p);
+      setLocalLikes((p: number) => (localLiked ? p + 1 : p - 1));
     },
   });
 
@@ -150,7 +150,7 @@ function CommentRow({
               maxLength={500}
             />
           ) : (
-            <RichText content={comment.content} />
+            <RichText text={comment.content} />
           )}
         </View>
         {editing ? (
@@ -351,7 +351,7 @@ export default function PostDetailScreen() {
               comment={item}
               postId={id}
               viewerId={user?.id}
-              postAuthorId={postQuery.data?.userId}
+              postAuthorId={postQuery.data?.user?.id}
               onReply={handleReply}
               onDeleted={() => {
                 queryClient.invalidateQueries({ queryKey: ['post-comments', id] });
