@@ -372,18 +372,19 @@ export class PostsService {
 
     // AI moderation: check content asynchronously (flag for review, don't block)
     if (dto.content) {
-      this.ai.moderateContent(dto.content, 'post').then(result => {
-        if (!result.safe) {
-          this.logger.warn(`Post ${post.id} flagged by AI moderation: ${result.flags.join(', ')}`);
-          // Auto-flag for human review if confidence is high
-          if (result.confidence > 0.8) {
-            this.prisma.post.update({
-              where: { id: post.id },
-              data: { isSensitive: true },
-            }).catch(() => {});
+      this.jobs.enqueue('ai-moderate:post', () =>
+        this.ai.moderateContent(dto.content || '', 'post').then(result => {
+          if (!result.safe) {
+            this.logger.warn(`Post ${post.id} flagged by AI moderation: ${result.flags.join(', ')}`);
+            if (result.confidence > 0.8) {
+              return this.prisma.post.update({
+                where: { id: post.id },
+                data: { isSensitive: true },
+              });
+            }
           }
-        }
-      }).catch(() => {});
+        }),
+      );
     }
 
     // Invalidate for-you feed cache for the author

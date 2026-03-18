@@ -16,6 +16,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { GamificationService } from '../gamification/gamification.service';
+import { AsyncJobService } from '../../common/services/async-jobs.service';
 
 const VIDEO_SELECT = {
   id: true,
@@ -74,6 +75,7 @@ export class VideosService {
     private notifications: NotificationsService,
     private stream: StreamService,
     private gamification: GamificationService,
+    private jobs: AsyncJobService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -147,12 +149,12 @@ export class VideosService {
         this.prisma.video.update({
           where: { id: video[0].id },
           data: { status: 'PUBLISHED' },
-        }).catch(() => {});
+        }).catch((e) => this.logger.error('Failed to update video status', e));
       });
 
     // Gamification: award XP + update streak
-    this.gamification.awardXP(userId, 'video_created').catch(() => {});
-    this.gamification.updateStreak(userId, 'posting').catch(() => {});
+    this.jobs.enqueue('award-xp:video_created', () => this.gamification.awardXP(userId, 'video_created'));
+    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
 
     return {
       ...video[0],

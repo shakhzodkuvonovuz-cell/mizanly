@@ -1,4 +1,4 @@
-import { Inject } from '@nestjs/common';
+import { Inject, Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -43,6 +43,7 @@ import {
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer() server: Server;
+  private readonly logger = new Logger(ChatGateway.name);
   private onlineUsers = new Map<string, Set<string>>(); // userId → Set<socketId>
   private quranRooms = new Map<string, {
     hostId: string;
@@ -116,7 +117,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.prisma.user.update({
           where: { id: userId },
           data: { lastSeenAt: new Date() },
-        }).catch(() => {}); // Non-critical, fire-and-forget
+        }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
         this.server.emit('user_offline', { userId, isOnline: false, lastSeenAt: new Date().toISOString() });
       }
     }
@@ -316,7 +317,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message_delivered')
   async handleMessageDelivered(@ConnectedSocket() client: Socket, @MessageBody() data: { messageId: string; conversationId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
-    this.prisma.message.update({ where: { id: data.messageId }, data: { deliveredAt: new Date() } }).catch(() => {});
+    this.prisma.message.update({ where: { id: data.messageId }, data: { deliveredAt: new Date() } }).catch((e) => this.logger.error('Failed to update delivery', e));
     this.server.to(`conversation:${data.conversationId}`).emit('delivery_receipt', { messageId: data.messageId, deliveredAt: new Date().toISOString(), deliveredTo: client.data.userId });
   }
 

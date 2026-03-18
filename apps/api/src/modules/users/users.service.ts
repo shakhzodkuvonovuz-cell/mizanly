@@ -56,7 +56,7 @@ export class UsersService {
     this.prisma.user.update({
       where: { id: userId },
       data: { lastSeenAt: new Date() },
-    }).catch(() => {}); // Non-critical, fire-and-forget
+    }).catch((e) => this.logger.error('Failed to update lastSeenAt', e));
   }
 
   async getMe(userId: string) {

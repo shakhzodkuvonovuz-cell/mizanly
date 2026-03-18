@@ -15,6 +15,7 @@ import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { GamificationService } from '../gamification/gamification.service';
+import { AsyncJobService } from '../../common/services/async-jobs.service';
 
 const REEL_SELECT = {
   id: true,
@@ -63,6 +64,7 @@ export class ReelsService {
     private notifications: NotificationsService,
     private stream: StreamService,
     private gamification: GamificationService,
+    private jobs: AsyncJobService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
@@ -141,12 +143,12 @@ export class ReelsService {
         this.prisma.reel.update({
           where: { id: reel.id },
           data: { status: 'READY' },
-        }).catch(() => {});
+        }).catch((e) => this.logger.error('Failed to update reel status', e));
       });
 
     // Gamification: award XP + update streak
-    this.gamification.awardXP(userId, 'reel_created').catch(() => {});
-    this.gamification.updateStreak(userId, 'posting').catch(() => {});
+    this.jobs.enqueue('award-xp:reel_created', () => this.gamification.awardXP(userId, 'reel_created'));
+    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
 
     return {
       ...reel,

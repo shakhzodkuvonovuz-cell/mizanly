@@ -127,8 +127,8 @@ export class NotificationsService {
       },
     });
 
-    // Fire push notification (non-blocking)
-    this.pushTrigger.triggerPush(notification.id).catch(() => {});
+    // Fire push notification (non-blocking, logged on failure)
+    this.pushTrigger.triggerPush(notification.id).catch((e) => this.logger.error('Push trigger failed', e));
 
     return notification;
   }

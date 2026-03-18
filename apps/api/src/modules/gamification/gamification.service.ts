@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 
 // XP rewards for different actions
@@ -38,6 +38,7 @@ function getXPForNextLevel(level: number): number {
 
 @Injectable()
 export class GamificationService {
+  private readonly logger = new Logger(GamificationService.name);
   constructor(private prisma: PrismaService) {}
 
   // ── Streaks ─────────────────────────────────────────────
@@ -90,10 +91,10 @@ export class GamificationService {
         });
       }
 
-      // Award XP for milestone streaks (fire-and-forget)
-      if (updated.currentDays === 7) this.awardXP(userId, 'streak_milestone_7').catch(() => {});
-      if (updated.currentDays === 30) this.awardXP(userId, 'streak_milestone_30').catch(() => {});
-      if (updated.currentDays === 100) this.awardXP(userId, 'streak_milestone_100').catch(() => {});
+      // Award XP for milestone streaks (async, non-blocking)
+      if (updated.currentDays === 7) this.awardXP(userId, 'streak_milestone_7').catch((e) => this.logger.error('Streak XP award failed', e));
+      if (updated.currentDays === 30) this.awardXP(userId, 'streak_milestone_30').catch((e) => this.logger.error('Streak XP award failed', e));
+      if (updated.currentDays === 100) this.awardXP(userId, 'streak_milestone_100').catch((e) => this.logger.error('Streak XP award failed', e));
 
       return updated;
     }

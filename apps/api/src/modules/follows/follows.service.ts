@@ -9,6 +9,7 @@ import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
+import { AsyncJobService } from '../../common/services/async-jobs.service';
 
 @Injectable()
 export class FollowsService {
@@ -17,6 +18,7 @@ export class FollowsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
+    private jobs: AsyncJobService,
   ) {}
 
   async follow(currentUserId: string, targetUserId: string) {
@@ -80,7 +82,7 @@ export class FollowsService {
         })
           .then((notification: Notification | null) => {
             if (notification) {
-              this.pushTrigger.triggerPush(notification.id).catch(() => {});
+              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
             }
           })
           .catch((err) => this.logger.error('Failed to create notification', err));
@@ -118,7 +120,7 @@ export class FollowsService {
       })
         .then((notification: Notification | null) => {
           if (notification) {
-            this.pushTrigger.triggerPush(notification.id).catch(() => {});
+            this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
           }
         })
         .catch((err) => this.logger.error('Failed to create notification', err));
@@ -334,7 +336,7 @@ export class FollowsService {
     })
       .then((notification: Notification | null) => {
         if (notification) {
-          this.pushTrigger.triggerPush(notification.id).catch(() => {});
+          this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
         }
       })
       .catch((err) => this.logger.error('Failed to create notification', err));
