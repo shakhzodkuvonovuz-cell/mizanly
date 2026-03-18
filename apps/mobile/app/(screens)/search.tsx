@@ -3,7 +3,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   FlatList, RefreshControl, Image,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';

@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
   TextInput, Keyboard,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, { FadeInUp, FadeIn, FadeOut, SlideOutRight } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';

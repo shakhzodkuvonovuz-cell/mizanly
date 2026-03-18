@@ -9,7 +9,8 @@ import {
   RefreshControl,
   Dimensions,
   Image,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown, FadeInRight } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

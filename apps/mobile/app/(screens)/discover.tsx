@@ -9,7 +9,8 @@ import {
   Image,
   Dimensions,
   ScrollView,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';

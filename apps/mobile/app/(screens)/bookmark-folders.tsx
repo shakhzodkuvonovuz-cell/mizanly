@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
   Dimensions, Alert,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';

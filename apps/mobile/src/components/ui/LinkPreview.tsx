@@ -7,7 +7,8 @@ import {
   Linking,
   Image,
   Dimensions,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from './Icon';

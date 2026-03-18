@@ -6,7 +6,6 @@ import {
   FlatList,
   RefreshControl,
   Pressable,
-, Pressable } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';

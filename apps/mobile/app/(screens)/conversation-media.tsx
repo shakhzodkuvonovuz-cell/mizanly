@@ -2,7 +2,8 @@ import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList,
   RefreshControl, Linking,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';

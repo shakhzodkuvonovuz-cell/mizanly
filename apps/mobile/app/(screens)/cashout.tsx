@@ -7,7 +7,8 @@ import {
   Pressable,
   ScrollView,
   Alert,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeIn,

@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, FlatList, RefreshControl, ScrollView,
-, Pressable } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';

@@ -7,7 +7,8 @@ import {
   TextInput,
   Pressable,
   Platform,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';

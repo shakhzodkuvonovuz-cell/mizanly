@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, ScrollView, Dimensions, RefreshControl,
-, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp, FadeIn } from 'react-native-reanimated';

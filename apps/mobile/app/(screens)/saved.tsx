@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Dimensions, RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';

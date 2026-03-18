@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, Alert,
   KeyboardAvoidingView, Platform, ScrollView,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';

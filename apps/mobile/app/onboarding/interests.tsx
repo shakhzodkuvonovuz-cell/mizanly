@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   View, Text, Pressable, StyleSheet, ScrollView,
-, Pressable } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';

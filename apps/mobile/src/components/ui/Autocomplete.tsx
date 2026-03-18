@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
   FlatList, Keyboard,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { Avatar } from './Avatar';
 import { Icon } from './Icon';

@@ -6,7 +6,6 @@ import {
   ScrollView,
   Switch,
   Pressable,
-, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';

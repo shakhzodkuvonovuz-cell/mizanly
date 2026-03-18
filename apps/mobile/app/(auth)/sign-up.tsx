@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, ScrollView,
-, Pressable } from 'react-native';
+  KeyboardAvoidingView, Platform, ScrollView, Keyboard,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignUp } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -170,6 +170,19 @@ export default function SignUpScreen() {
               disabled={code.length < 6}
               fullWidth
             />
+
+            <Pressable
+              accessibilityRole="button"
+              onPress={async () => {
+                try {
+                  await signUp?.prepareEmailAddressVerification({ strategy: 'email_code' });
+                } catch {}
+              }}
+              style={styles.resendBtn}
+              hitSlop={8}
+            >
+              <Text style={styles.resendText}>{t('auth.resendCode')}</Text>
+            </Pressable>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -438,5 +451,14 @@ const styles = StyleSheet.create({
     fontSize: fontSize.xs,
     textAlign: 'center',
     marginTop: spacing.xs,
+  },
+  resendBtn: {
+    marginTop: spacing.lg,
+    alignSelf: 'center',
+  },
+  resendText: {
+    color: colors.gold,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
   },
 });

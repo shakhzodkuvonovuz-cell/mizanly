@@ -7,7 +7,8 @@ import {
   Pressable,
   Alert,
   ScrollView,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

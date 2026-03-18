@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Animated, { FadeInUp } from 'react-native-reanimated';

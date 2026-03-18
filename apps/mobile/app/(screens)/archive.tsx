@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react';
 import {
   View, StyleSheet, FlatList, Alert, Pressable, type ViewStyle, type ImageStyle,
-, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Image } from 'expo-image';

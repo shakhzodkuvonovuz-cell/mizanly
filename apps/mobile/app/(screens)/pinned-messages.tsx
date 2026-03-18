@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {
   View, Text, StyleSheet, FlatList, RefreshControl, Pressable,
-, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { SafeAreaView } from 'react-native-safe-area-context';

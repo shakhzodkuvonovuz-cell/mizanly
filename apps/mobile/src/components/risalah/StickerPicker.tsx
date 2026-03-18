@@ -10,7 +10,8 @@ import {
   Dimensions,
   TextInput,
   RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { Icon } from '@/components/ui/Icon';
 import { TabSelector } from '@/components/ui/TabSelector';

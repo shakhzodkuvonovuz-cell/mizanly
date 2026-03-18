@@ -7,7 +7,8 @@ import {
   Pressable,
   Platform,
   useWindowDimensions,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

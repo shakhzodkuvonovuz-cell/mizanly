@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable,
-  KeyboardAvoidingView, Platform, AccessibilityInfo,
-, Pressable } from 'react-native';
+  KeyboardAvoidingView, Platform, Keyboard, AccessibilityInfo,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSignIn } from '@clerk/clerk-expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,6 +70,7 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Pressable style={{ flex: 1 }} onPress={Keyboard.dismiss} accessible={false}>
       <KeyboardAvoidingView
         style={styles.inner}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -207,6 +208,7 @@ export default function SignInScreen() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      </Pressable>
     </SafeAreaView>
   );
 }

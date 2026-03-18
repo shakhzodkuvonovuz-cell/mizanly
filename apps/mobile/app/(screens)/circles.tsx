@@ -2,7 +2,8 @@ import { useState } from 'react';
 import {
   View, Text, StyleSheet, Pressable,
   FlatList, Alert, TextInput, RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

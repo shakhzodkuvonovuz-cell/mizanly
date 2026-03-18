@@ -6,7 +6,8 @@ import {
   ,
   Image,
   Platform,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

@@ -2,7 +2,8 @@ import { useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, Pressable, Image,
   RefreshControl, FlatList,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

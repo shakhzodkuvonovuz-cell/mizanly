@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, Pressable,
   Dimensions, TextInput, Platform,
   KeyboardAvoidingView, Alert, FlatList, RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,

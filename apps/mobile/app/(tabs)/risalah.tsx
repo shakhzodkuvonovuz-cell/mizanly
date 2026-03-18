@@ -96,9 +96,19 @@ const ConversationRow = memo(function ConversationRow({
         </View>
         <View style={[styles.chatBottomRow, { flexDirection: rtlFlexRow(isRTL) }]}>
           {isTyping ? (
-            <Text style={styles.typingText} numberOfLines={1}>
-              {t('risalah.typing')}
-            </Text>
+            <View style={styles.typingContainer}>
+              <Text style={styles.typingText}>{t('risalah.typing')}</Text>
+              <View style={styles.typingDots}>
+                {[0, 1, 2].map((i) => (
+                  <Animated.View
+                    key={i}
+                    style={[styles.typingDot, {
+                      opacity: 0.4,
+                    }]}
+                  />
+                ))}
+              </View>
+            </View>
           ) : (
             <Text
               style={[styles.chatPreview, hasUnread && styles.chatPreviewUnread]}
@@ -443,11 +453,27 @@ const styles = StyleSheet.create({
   },
   chatPreview: { color: colors.text.tertiary, fontSize: fontSize.sm, flex: 1 },
   chatPreviewUnread: { color: colors.text.secondary },
+  typingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    flex: 1,
+  },
   typingText: {
     color: colors.emerald,
     fontSize: fontSize.sm,
-    flex: 1,
     fontStyle: 'italic',
+  },
+  typingDots: {
+    flexDirection: 'row',
+    gap: 3,
+    alignItems: 'center',
+  },
+  typingDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.emerald,
   },
   filterChipRow: {
     flexDirection: 'row',

@@ -1,7 +1,6 @@
 import { useCallback, useState, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, SectionList, RefreshControl,
-, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

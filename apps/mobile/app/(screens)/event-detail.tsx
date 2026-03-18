@@ -7,7 +7,8 @@ import {
   RefreshControl,
   Pressable,
   Dimensions,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';

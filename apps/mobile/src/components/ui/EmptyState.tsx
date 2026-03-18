@@ -40,7 +40,7 @@ export function EmptyState({ icon, title, subtitle, actionLabel, onAction, style
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    paddingTop: 80,
+    paddingTop: spacing['4xl'],
     paddingHorizontal: spacing.xl,
     gap: spacing.sm,
   },

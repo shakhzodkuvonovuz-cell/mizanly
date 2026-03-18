@@ -137,6 +137,7 @@ function CreateButton() {
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const haptic = useHaptic();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
   const { isDesktop, isTablet } = useResponsive();
@@ -171,6 +172,7 @@ export default function TabLayout() {
       >
         <Tabs.Screen
           name="saf"
+          listeners={{ tabPress: () => haptic.light() }}
           options={{
             title: t('tabs.saf'),
             tabBarAccessibilityLabel: t('tabs.accessibility.homeFeed'),
@@ -179,6 +181,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="bakra"
+          listeners={{ tabPress: () => haptic.light() }}
           options={{
             title: t('tabs.bakra'),
             tabBarAccessibilityLabel: t('tabs.accessibility.shortVideos'),
@@ -187,6 +190,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="minbar"
+          listeners={{ tabPress: () => haptic.light() }}
           options={{
             title: t('tabs.minbar'),
             tabBarAccessibilityLabel: t('tabs.accessibility.videos'),
@@ -202,6 +206,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="majlis"
+          listeners={{ tabPress: () => haptic.light() }}
           options={{
             title: t('tabs.majlis'),
             tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
@@ -210,6 +215,7 @@ export default function TabLayout() {
         />
         <Tabs.Screen
           name="risalah"
+          listeners={{ tabPress: () => haptic.light() }}
           options={{
             title: t('tabs.risalah'),
             tabBarAccessibilityLabel: t('tabs.accessibility.messages'),

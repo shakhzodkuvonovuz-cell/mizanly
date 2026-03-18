@@ -9,7 +9,8 @@ import {
   TextInput,
   SafeAreaView,
   RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { Icon } from '@/components/ui/Icon';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';

@@ -6,7 +6,8 @@ import {
   ,
   Pressable,
   Dimensions,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { Image } from 'expo-image';
 import { Video, AVPlaybackStatus, ResizeMode, Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';

@@ -2,7 +2,8 @@ import { useState, useCallback, useEffect } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
   FlatList, Alert,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { Icon } from './Icon';
 import { BottomSheet, BottomSheetItem } from './BottomSheet';
 import { Skeleton } from './Skeleton';

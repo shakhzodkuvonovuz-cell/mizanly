@@ -2,7 +2,8 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation, RefreshControl,
-, Pressable } from 'react-native';
+  Pressable,
+} from 'react-native';
 import { Swipeable, PanGestureHandler } from "react-native-gesture-handler";
 import Animated, {
   useSharedValue,
