@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
@@ -257,12 +258,12 @@ export class CommunitiesService {
       throw new NotFoundException('Community not found');
     }
 
-    // Check if already member
+    // Idempotent: if already a member, return gracefully
     const existing = await this.prisma.circleMember.findUnique({
       where: { circleId_userId: { circleId: id, userId } },
     });
     if (existing) {
-      throw new BadRequestException('Already a member');
+      throw new ConflictException('Already a member');
     }
 
     // Handle privacy
@@ -306,7 +307,7 @@ export class CommunitiesService {
       where: { circleId_userId: { circleId: id, userId } },
     });
     if (!member) {
-      throw new BadRequestException('Not a member');
+      throw new ConflictException('Not a member');
     }
 
     await this.prisma.$transaction([

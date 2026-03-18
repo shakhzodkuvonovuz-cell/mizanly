@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 const USER_SELECT = { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true };
 
@@ -32,14 +33,27 @@ export class CommunityService {
 
   async requestMentorship(menteeId: string, dto: { mentorId: string; topic: string; notes?: string }) {
     if (menteeId === dto.mentorId) throw new BadRequestException('Cannot mentor yourself');
-    return this.prisma.mentorship.create({
-      data: { menteeId, mentorId: dto.mentorId, topic: dto.topic, notes: dto.notes },
-    });
+
+    // Check if mentor user exists
+    const mentor = await this.prisma.user.findUnique({ where: { id: dto.mentorId }, select: { id: true } });
+    if (!mentor) throw new NotFoundException('Mentor not found');
+
+    try {
+      return await this.prisma.mentorship.create({
+        data: { menteeId, mentorId: dto.mentorId, topic: dto.topic, notes: dto.notes },
+      });
+    } catch (e) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        throw new ConflictException('Mentorship request already exists');
+      }
+      throw e;
+    }
   }
 
   async respondMentorship(mentorId: string, menteeId: string, accept: boolean) {
     const m = await this.prisma.mentorship.findUnique({ where: { mentorId_menteeId: { mentorId, menteeId } } });
-    if (!m) throw new NotFoundException();
+    if (!m) throw new NotFoundException('Mentorship request not found');
+    if (m.status !== 'pending') throw new BadRequestException('Mentorship request is no longer pending');
     return this.prisma.mentorship.update({
       where: { mentorId_menteeId: { mentorId, menteeId } },
       data: { status: accept ? 'active' : 'cancelled', startedAt: accept ? new Date() : undefined },
@@ -99,7 +113,8 @@ export class CommunityService {
 
   async answerFatwa(scholarId: string, questionId: string, answer: string) {
     const q = await this.prisma.fatwaQuestion.findUnique({ where: { id: questionId } });
-    if (!q) throw new NotFoundException();
+    if (!q) throw new NotFoundException('Fatwa question not found');
+    if (q.status === 'answered') throw new ConflictException('Question already answered');
     return this.prisma.fatwaQuestion.update({
       where: { id: questionId },
       data: { status: 'answered', answerId: answer, answeredBy: scholarId, answeredAt: new Date() },
@@ -207,6 +222,11 @@ export class CommunityService {
   // ── Watch Parties ───────────────────────────────────────
 
   async createWatchParty(userId: string, dto: { videoId: string; title: string }) {
+    // Verify video exists
+    const video = await this.prisma.video.findUnique({ where: { id: dto.videoId }, select: { id: true, status: true } });
+    if (!video) throw new NotFoundException('Video not found');
+    if (video.status !== 'PUBLISHED') throw new BadRequestException('Video is not available');
+
     return this.prisma.watchParty.create({
       data: { hostId: userId, ...dto },
     });

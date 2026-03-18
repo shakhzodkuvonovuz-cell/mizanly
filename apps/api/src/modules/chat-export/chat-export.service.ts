@@ -104,7 +104,7 @@ export class ChatExportService {
           id: msg.id,
           content: msg.content,
           messageType: msg.messageType,
-          mediaUrl: includeMedia ? (msg as ExportedMessage).mediaUrl : null,
+          mediaUrl: includeMedia ? ((msg as Record<string, unknown>).mediaUrl as string | null) ?? null : null,
           createdAt: msg.createdAt,
           sender: msg.sender,
         });

@@ -20,8 +20,8 @@ export class MonetizationService {
 
   async sendTip(senderId: string, receiverId: string, amount: number, message?: string) {
     // Validate amount
-    if (amount <= 0) {
-      throw new BadRequestException('Tip amount must be positive');
+    if (amount <= 0 || amount > 10000) {
+      throw new BadRequestException('Tip amount must be between $0.01 and $10,000');
     }
     if (senderId === receiverId) {
       throw new BadRequestException('Cannot tip yourself');
@@ -164,8 +164,8 @@ export class MonetizationService {
   }
 
   async createTier(userId: string, name: string, price: number, benefits: string[], level?: string) {
-    if (price <= 0) {
-      throw new BadRequestException('Price must be positive');
+    if (price <= 0 || price > 10000) {
+      throw new BadRequestException('Price must be between $0.01 and $10,000');
     }
     if (!name.trim()) {
       throw new BadRequestException('Tier name is required');
@@ -204,8 +204,8 @@ export class MonetizationService {
     }
 
     // Validate price if provided
-    if (dto.price !== undefined && dto.price <= 0) {
-      throw new BadRequestException('Price must be positive');
+    if (dto.price !== undefined && (dto.price <= 0 || dto.price > 10000)) {
+      throw new BadRequestException('Price must be between $0.01 and $10,000');
     }
 
     const updated = await this.prisma.membershipTier.update({

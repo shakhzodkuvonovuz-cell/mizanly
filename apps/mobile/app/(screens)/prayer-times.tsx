@@ -49,9 +49,9 @@ function timeStringToDate(timeStr: string): Date {
   return date;
 }
 
-function getPrayerList(prayerTimes: any): Prayer[] {
+function getPrayerList(prayerTimes: Record<string, string | Record<string, string>>): Prayer[] {
   // prayerTimes may be flat fields or have timings object
-  const timings = prayerTimes?.timings || prayerTimes;
+  const timings = (prayerTimes?.timings || prayerTimes) as Record<string, string>;
   return PRAYER_NAMES.map((name, index) => ({
     name,
     arabic: PRAYER_ARABIC[index],
@@ -237,7 +237,7 @@ export default function PrayerTimesScreen() {
 
   const prayerList = useMemo(() => {
     if (!prayerTimes) return [];
-    return getPrayerList(prayerTimes);
+    return getPrayerList(prayerTimes as unknown as Record<string, string | Record<string, string>>);
   }, [prayerTimes]);
 
   useEffect(() => {
@@ -273,7 +273,7 @@ export default function PrayerTimesScreen() {
       setPrayerTimes(timesResp);
       setPrayerMethods(methodsResp);
       // compute current prayer index based on current time
-      const prayerList = getPrayerList(timesResp);
+      const prayerList = getPrayerList(timesResp as unknown as Record<string, string | Record<string, string>>);
       const currentIndex = getCurrentPrayerIndex(prayerList);
       setCurrentPrayerIndex(currentIndex);
     } catch (err) {

@@ -30,6 +30,11 @@ export class ReelTemplatesService {
       throw new BadRequestException('At least one segment is required');
     }
     for (const segment of data.segments) {
+      if (segment.startMs < 0 || segment.endMs < 0) {
+        throw new BadRequestException(
+          'Segment times must be non-negative',
+        );
+      }
       if (segment.startMs >= segment.endMs) {
         throw new BadRequestException(
           'Each segment startMs must be less than endMs',
@@ -48,14 +53,14 @@ export class ReelTemplatesService {
   }
 
   async browse(cursor?: string, limit = 20, trending = false) {
-    const take = Math.min(limit, 50);
+    const take = Math.min(Math.max(limit, 1), 50);
 
     const templates = await this.prisma.reelTemplate.findMany({
-      where: cursor ? { id: { lt: cursor } } : undefined,
       orderBy: trending
         ? { useCount: 'desc' }
         : { createdAt: 'desc' },
       take: take + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
     const hasMore = templates.length > take;

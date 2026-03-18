@@ -83,8 +83,9 @@ export default function SignUpScreen() {
       await signUp.create({ emailAddress: email, password });
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Sign up failed');
+    } catch (err: unknown) {
+      const e = err as { errors?: Array<{ message?: string }>; message?: string };
+      setError(e.errors?.[0]?.message || 'Sign up failed');
     } finally {
       setLoading(false);
     }
@@ -100,8 +101,9 @@ export default function SignUpScreen() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
       }
-    } catch (err: any) {
-      setError(err.errors?.[0]?.message || 'Verification failed');
+    } catch (err: unknown) {
+      const e = err as { errors?: Array<{ message?: string }>; message?: string };
+      setError(e.errors?.[0]?.message || 'Verification failed');
     } finally {
       setLoading(false);
     }

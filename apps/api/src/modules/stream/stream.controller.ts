@@ -37,7 +37,11 @@ export class StreamController {
     },
     @Headers('webhook-signature') signature?: string,
   ) {
-    if (this.webhookSecret && signature) {
+    // If a webhook secret is configured, always require and verify the signature
+    if (this.webhookSecret) {
+      if (!signature) {
+        throw new UnauthorizedException('Missing webhook signature');
+      }
       this.verifySignature(JSON.stringify(body), signature);
     }
 

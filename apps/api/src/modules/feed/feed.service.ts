@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ContentSpace } from '@prisma/client';
+import { ContentSpace, Prisma } from '@prisma/client';
 
 @Injectable()
 export class FeedService {
   constructor(private prisma: PrismaService) {}
 
-  async logInteraction(userId: string, data: { postId: string; space: string; viewed?: boolean; viewDurationMs?: number; completionRate?: number; liked?: boolean; commented?: boolean; shared?: boolean; saved?: boolean }) {
+  async logInteraction(userId: string, data: { postId: string; space: string; viewed?: boolean; viewDurationMs?: number; completionRate?: number | null; liked?: boolean; commented?: boolean; shared?: boolean; saved?: boolean }) {
     // Find existing interaction
     const existing = await this.prisma.feedInteraction.findFirst({
       where: { userId, postId: data.postId },
@@ -66,7 +66,15 @@ export class FeedService {
   }
 
   async undismiss(userId: string, contentId: string, contentType: string) {
-    await this.prisma.feedDismissal.delete({ where: { userId_contentId_contentType: { userId, contentId, contentType } } }).catch(() => {});
+    try {
+      await this.prisma.feedDismissal.delete({ where: { userId_contentId_contentType: { userId, contentId, contentType } } });
+    } catch (error) {
+      // P2025: record not found — idempotent, treat as already undismissed
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        return { undismissed: true };
+      }
+      throw error;
+    }
     return { undismissed: true };
   }
 
@@ -84,11 +92,11 @@ export class FeedService {
    * Build Prisma where-clause additions based on the user's content filter settings.
    * Callers can spread these into their existing `where` object.
    */
-  async buildContentFilterWhere(userId: string): Promise<Record<string, unknown>> {
+  async buildContentFilterWhere(userId: string): Promise<Prisma.JsonObject> {
     const contentFilter = await this.getContentFilter(userId);
     if (!contentFilter) return {};
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.JsonObject = {};
 
     if (contentFilter.hideMusic) {
       // Exclude posts with audio tracks

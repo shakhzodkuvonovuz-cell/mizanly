@@ -7,6 +7,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ChatExportService } from './chat-export.service';
@@ -20,12 +21,12 @@ interface GenerateExportBody {
 
 @ApiTags('Chat Export (Risalah)')
 @Controller('chat-export')
+@UseGuards(ClerkAuthGuard)
+@ApiBearerAuth()
 export class ChatExportController {
   constructor(private chatExportService: ChatExportService) {}
 
   @Post(':convId')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Generate a chat history export' })
   generateExport(
@@ -33,17 +34,19 @@ export class ChatExportController {
     @CurrentUser('id') userId: string,
     @Body() body: GenerateExportBody,
   ) {
+    if (!body.format || !['json', 'text'].includes(body.format)) {
+      throw new BadRequestException('format must be "json" or "text"');
+    }
+
     return this.chatExportService.generateExport(
       convId,
       userId,
       body.format,
-      body.includeMedia,
+      body.includeMedia ?? false,
     );
   }
 
   @Get(':convId/stats')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get conversation statistics for export preview' })
   getConversationStats(
     @Param('convId') convId: string,

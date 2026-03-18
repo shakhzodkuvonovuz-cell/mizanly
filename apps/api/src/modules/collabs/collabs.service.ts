@@ -13,18 +13,21 @@ export class CollabsService {
     if (!post) throw new NotFoundException('Post not found');
     if (post.userId !== userId) throw new ForbiddenException('Only post owner can invite collaborators');
 
-    const existing = await this.prisma.postCollab.findUnique({
-      where: { postId_userId: { postId, userId: targetUserId } },
-    });
-    if (existing) throw new ConflictException('User already invited');
-
-    return this.prisma.postCollab.create({
-      data: { postId, userId: targetUserId, status: CollabStatus.PENDING },
-      include: {
-        user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
-        post: { select: { id: true, content: true } },
-      },
-    });
+    // Use create + P2002 handling for race-condition-safe idempotency
+    try {
+      return await this.prisma.postCollab.create({
+        data: { postId, userId: targetUserId, status: CollabStatus.PENDING },
+        include: {
+          user: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
+          post: { select: { id: true, content: true } },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('User already invited');
+      }
+      throw error;
+    }
   }
 
   async accept(collabId: string, userId: string) {
@@ -50,8 +53,13 @@ export class CollabsService {
 
   async remove(collabId: string, userId: string) {
     const collab = await this.getCollab(collabId);
-    const post = await this.prisma.post.findUnique({ where: { id: collab.postId } });
-    if (collab.userId !== userId && post?.userId !== userId) throw new ForbiddenException();
+    // Allow removal by the invited user OR the post owner
+    if (collab.userId !== userId) {
+      const post = await this.prisma.post.findUnique({ where: { id: collab.postId } });
+      if (!post || post.userId !== userId) {
+        throw new ForbiddenException('Only the invited user or post owner can remove a collaboration');
+      }
+    }
 
     await this.prisma.postCollab.delete({ where: { id: collabId } });
     return { removed: true };

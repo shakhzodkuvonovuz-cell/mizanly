@@ -135,7 +135,7 @@ export default function VideoDetailScreen() {
   const headerOpacity = useSharedValue(1);
 
   // Like burst animation handler
-  const handleVideoDoubleTap = (e: any) => {
+  const handleVideoDoubleTap = (e: { nativeEvent: { locationX: number; locationY: number } }) => {
     const { locationX, locationY } = e.nativeEvent;
     const id = Date.now().toString();
     setLikeBursts(prev => [...prev, { id, x: locationX, y: locationY }]);

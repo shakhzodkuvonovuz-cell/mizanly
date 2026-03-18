@@ -18,6 +18,17 @@ interface PlaybackUrls {
   qualities: string[];
 }
 
+/** Cloudflare Stream API response shape */
+interface CfStreamResponse {
+  success: boolean;
+  errors?: Array<{ code: number; message: string }>;
+  result?: {
+    uid: string;
+    playback?: { hls?: string; dash?: string };
+    input?: { width?: number; height?: number };
+  };
+}
+
 @Injectable()
 export class StreamService {
   private readonly logger = new Logger(StreamService.name);
@@ -34,7 +45,7 @@ export class StreamService {
     this.baseUrl = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream`;
   }
 
-  private headers() {
+  private headers(): Record<string, string> {
     return {
       Authorization: `Bearer ${this.apiToken}`,
       'Content-Type': 'application/json',
@@ -54,7 +65,7 @@ export class StreamService {
       }),
     });
 
-    const data = await response.json();
+    const data: CfStreamResponse = await response.json();
     if (!response.ok || !data.success) {
       this.logger.error('Cloudflare Stream upload failed', data.errors);
       throw new InternalServerErrorException(
@@ -62,7 +73,7 @@ export class StreamService {
       );
     }
 
-    return data.result.uid;
+    return data.result!.uid;
   }
 
   async getPlaybackUrls(streamId: string): Promise<PlaybackUrls> {
@@ -71,8 +82,8 @@ export class StreamService {
       headers: this.headers(),
     });
 
-    const data = await response.json();
-    if (!response.ok || !data.success) {
+    const data: CfStreamResponse = await response.json();
+    if (!response.ok || !data.success || !data.result) {
       this.logger.error('Failed to get Stream playback URLs', data.errors);
       throw new InternalServerErrorException('Failed to get Stream status');
     }

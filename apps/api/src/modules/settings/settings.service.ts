@@ -104,6 +104,9 @@ export class SettingsService {
   }
 
   async logScreenTime(userId: string, seconds: number) {
+    if (seconds <= 0 || seconds > 86400) {
+      throw new BadRequestException('Seconds must be between 1 and 86,400 (24 hours)');
+    }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -147,6 +150,9 @@ export class SettingsService {
   }
 
   async setScreenTimeLimit(userId: string, limitMinutes: number | null) {
+    if (limitMinutes !== null && (limitMinutes <= 0 || limitMinutes > 1440)) {
+      throw new BadRequestException('Limit must be between 1 and 1,440 minutes (24 hours)');
+    }
     return this.prisma.userSettings.upsert({
       where: { userId },
       create: { userId, screenTimeLimitMinutes: limitMinutes },

@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
 import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
@@ -165,7 +166,6 @@ export class IslamicService {
     // For simplicity, we'll compute approximate timings based on solar calculations.
     // This is a placeholder implementation; real implementation would use proper astronomy formulas.
     const methodObj = this.prayerMethods.find(m => m.id === method) || this.prayerMethods[0];
-    const baseTime = new Date(`${date}T12:00:00Z`); // solar noon UTC
 
     // Mock timings (in reality, compute based on latitude, longitude, date, and method)
     const timings = {
@@ -292,6 +292,9 @@ export class IslamicService {
   }
 
   calculateZakat(params: ZakatCalculationRequest): ZakatCalculationResponse {
+    if (params.cash < 0 || params.gold < 0 || params.silver < 0 || params.investments < 0 || params.debts < 0) {
+      throw new BadRequestException('All values must be non-negative');
+    }
     const goldPricePerGram = 68; // USD per gram
     const silverPricePerGram = 0.82; // USD per gram
     const goldValue = params.gold * goldPricePerGram;
@@ -411,13 +414,14 @@ export class IslamicService {
   }
 
   async getReadingPlanHistory(userId: string, cursor?: string, limit = 20) {
+    const take = Math.min(Math.max(limit, 1), 50);
     const plans = await this.prisma.quranReadingPlan.findMany({
       where: { userId, isComplete: true },
       orderBy: { createdAt: 'desc' },
-      take: limit + 1,
+      take: take + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    const hasMore = plans.length > limit;
+    const hasMore = plans.length > take;
     if (hasMore) plans.pop();
     return { data: plans, meta: { hasMore, cursor: plans[plans.length - 1]?.id } };
   }
@@ -450,13 +454,14 @@ export class IslamicService {
   }
 
   async listCampaigns(cursor?: string, limit = 20) {
+    const take = Math.min(Math.max(limit, 1), 50);
     const campaigns = await this.prisma.charityCampaign.findMany({
       where: { isActive: true },
       orderBy: { createdAt: 'desc' },
-      take: limit + 1,
+      take: take + 1,
       ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
-    const hasMore = campaigns.length > limit;
+    const hasMore = campaigns.length > take;
     if (hasMore) campaigns.pop();
     return { data: campaigns, meta: { hasMore, cursor: campaigns[campaigns.length - 1]?.id } };
   }
@@ -470,6 +475,13 @@ export class IslamicService {
   }
 
   async createDonation(userId: string, dto: CreateDonationDto) {
+    if (dto.amount <= 0 || dto.amount > 1000000) {
+      throw new BadRequestException('Donation amount must be between $0.01 and $1,000,000');
+    }
+    if (dto.campaignId) {
+      const campaign = await this.prisma.charityCampaign.findUnique({ where: { id: dto.campaignId } });
+      if (!campaign) throw new NotFoundException('Campaign not found');
+    }
     const donation = await this.prisma.charityDonation.create({
       data: {
         userId,
@@ -517,9 +529,16 @@ export class IslamicService {
   }
 
   async createHajjProgress(userId: string, dto: CreateHajjProgressDto) {
-    return this.prisma.hajjProgress.create({
-      data: { userId, year: dto.year },
-    });
+    try {
+      return await this.prisma.hajjProgress.create({
+        data: { userId, year: dto.year },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Hajj progress already exists for this year');
+      }
+      throw error;
+    }
   }
 
   async updateHajjProgress(userId: string, progressId: string, dto: UpdateHajjProgressDto) {
@@ -597,6 +616,12 @@ export class IslamicService {
   // ── Dhikr Social ──
 
   async saveDhikrSession(userId: string, dto: SaveDhikrSessionDto) {
+    if (dto.count <= 0 || dto.count > 100000) {
+      throw new BadRequestException('Count must be between 1 and 100,000');
+    }
+    if (dto.target !== undefined && (dto.target <= 0 || dto.target > 100000)) {
+      throw new BadRequestException('Target must be between 1 and 100,000');
+    }
     return this.prisma.dhikrSession.create({
       data: {
         userId,
@@ -743,19 +768,28 @@ export class IslamicService {
   }
 
   async joinChallenge(userId: string, challengeId: string) {
-    const existing = await this.prisma.dhikrChallengeParticipant.findUnique({
-      where: { userId_challengeId: { userId, challengeId } },
-    });
-    if (existing) throw new BadRequestException('Already joined');
+    const challenge = await this.prisma.dhikrChallenge.findUnique({ where: { id: challengeId } });
+    if (!challenge) throw new NotFoundException('Challenge not found');
 
-    await this.prisma.dhikrChallengeParticipant.create({
-      data: { userId, challengeId },
-    });
+    try {
+      await this.prisma.dhikrChallengeParticipant.create({
+        data: { userId, challengeId },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Already joined this challenge');
+      }
+      throw error;
+    }
     await this.prisma.$executeRaw`UPDATE "dhikr_challenges" SET "participantCount" = "participantCount" + 1 WHERE id = ${challengeId}`;
     return { joined: true };
   }
 
   async contributeToChallenge(userId: string, challengeId: string, count: number) {
+    if (!count || count <= 0 || count > 100000) {
+      throw new BadRequestException('Count must be between 1 and 100,000');
+    }
+
     const participant = await this.prisma.dhikrChallengeParticipant.findUnique({
       where: { userId_challengeId: { userId, challengeId } },
     });

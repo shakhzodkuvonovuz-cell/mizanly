@@ -54,9 +54,10 @@ export default function SignInScreen() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Sign in error:', JSON.stringify(err, null, 2));
-      setError(err.errors?.[0]?.longMessage || err.errors?.[0]?.message || err.message || 'Sign in failed');
+      const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
+      setError(e.errors?.[0]?.longMessage || e.errors?.[0]?.message || e.message || 'Sign in failed');
     } finally {
       setLoading(false);
     }

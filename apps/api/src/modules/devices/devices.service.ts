@@ -58,8 +58,10 @@ export class DevicesService {
         this.logger.log(`Cleaned up ${result.count} stale device tokens older than ${olderThanDays} days`);
       }
       return result.count;
-    } catch (error) {
-      this.logger.error(`Failed to clean up stale tokens: ${error.message}`, error.stack);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error(`Failed to clean up stale tokens: ${message}`, stack);
       return 0;
     }
   }

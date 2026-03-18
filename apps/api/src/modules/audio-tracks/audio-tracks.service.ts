@@ -1,11 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AudioTracksService {
   constructor(private prisma: PrismaService) {}
 
-  async create(data: { title: string; artist: string; duration: number; audioUrl: string; coverUrl?: string; isOriginal?: boolean }) {
+  async create(userId: string, data: { title: string; artist: string; duration: number; audioUrl: string; coverUrl?: string; isOriginal?: boolean }) {
+    // Check for duplicate title+artist to prevent accidental re-uploads
+    const existing = await this.prisma.audioTrack.findFirst({
+      where: { title: data.title, artist: data.artist },
+    });
+    if (existing) throw new ConflictException('Audio track with this title and artist already exists');
+
     return this.prisma.audioTrack.create({ data: { ...data, isOriginal: data.isOriginal ?? false } });
   }
 
@@ -28,8 +35,15 @@ export class AudioTracksService {
   }
 
   async getReelsUsingTrack(trackId: string, cursor?: string, limit = 20) {
+    // Verify track exists
+    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
+    if (!track) throw new NotFoundException('Audio track not found');
+
+    const where: Prisma.ReelWhereInput = { audioTrackId: trackId, isRemoved: false };
+    if (cursor) where.id = { lt: cursor };
+
     const reels = await this.prisma.reel.findMany({
-      where: { audioTrackId: trackId, isRemoved: false, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where,
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { viewsCount: 'desc' },
       take: limit + 1,
@@ -43,7 +57,19 @@ export class AudioTracksService {
     await this.prisma.$executeRaw`UPDATE audio_tracks SET "reelsCount" = "reelsCount" + 1 WHERE id = ${trackId}`;
   }
 
-  async delete(trackId: string) {
+  async decrementUsage(trackId: string) {
+    await this.prisma.$executeRaw`UPDATE audio_tracks SET "reelsCount" = GREATEST("reelsCount" - 1, 0) WHERE id = ${trackId}`;
+  }
+
+  async delete(trackId: string, userId: string) {
+    const track = await this.prisma.audioTrack.findUnique({ where: { id: trackId } });
+    if (!track) throw new NotFoundException('Audio track not found');
+
+    // Only allow deletion if no reels are using this track
+    if (track.reelsCount > 0) {
+      throw new ForbiddenException('Cannot delete track that is in use by reels');
+    }
+
     await this.prisma.audioTrack.delete({ where: { id: trackId } });
     return { deleted: true };
   }

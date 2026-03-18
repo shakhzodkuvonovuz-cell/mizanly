@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 
 @Injectable()
@@ -9,17 +10,38 @@ export class RestrictsService {
     if (restricterId === restrictedId) {
       throw new BadRequestException('Cannot restrict yourself');
     }
-    return this.prisma.restrict.create({
-      data: { restricterId, restrictedId },
-    });
+
+    // Verify target user exists
+    const targetUser = await this.prisma.user.findUnique({ where: { id: restrictedId } });
+    if (!targetUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    try {
+      return await this.prisma.restrict.create({
+        data: { restricterId, restrictedId },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('User is already restricted');
+      }
+      throw error;
+    }
   }
 
   async unrestrict(restricterId: string, restrictedId: string) {
-    return this.prisma.restrict.delete({
-      where: {
-        restricterId_restrictedId: { restricterId, restrictedId },
-      },
-    });
+    try {
+      return await this.prisma.restrict.delete({
+        where: {
+          restricterId_restrictedId: { restricterId, restrictedId },
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundException('Restriction not found');
+      }
+      throw error;
+    }
   }
 
   async getRestrictedList(userId: string, cursor?: string, limit = 20) {

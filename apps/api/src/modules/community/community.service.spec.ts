@@ -23,6 +23,7 @@ describe('CommunityService', () => {
             userReputation: { findUnique: jest.fn(), create: jest.fn(), upsert: jest.fn(), update: jest.fn() },
             voicePost: { create: jest.fn(), findMany: jest.fn() },
             watchParty: { create: jest.fn(), findMany: jest.fn() },
+            video: { findUnique: jest.fn() },
             sharedCollection: { create: jest.fn(), findMany: jest.fn() },
             waqfFund: { create: jest.fn(), findMany: jest.fn() },
             user: { findUnique: jest.fn() },
@@ -40,6 +41,7 @@ describe('CommunityService', () => {
 
   describe('requestMentorship', () => {
     it('should create a mentorship request', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'mentor-1' });
       prisma.mentorship.create.mockResolvedValue({
         mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending', topic: 'quran',
       });
@@ -55,7 +57,7 @@ describe('CommunityService', () => {
 
   describe('respondMentorship', () => {
     it('should accept mentorship', async () => {
-      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1' });
+      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending' });
       prisma.mentorship.update.mockResolvedValue({ status: 'active', startedAt: new Date() });
 
       const result = await service.respondMentorship('mentor-1', 'mentee-1', true);
@@ -63,7 +65,7 @@ describe('CommunityService', () => {
     });
 
     it('should decline mentorship', async () => {
-      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1' });
+      prisma.mentorship.findUnique.mockResolvedValue({ mentorId: 'mentor-1', menteeId: 'mentee-1', status: 'pending' });
       prisma.mentorship.update.mockResolvedValue({ status: 'cancelled' });
 
       const result = await service.respondMentorship('mentor-1', 'mentee-1', false);

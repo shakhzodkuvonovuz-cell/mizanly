@@ -42,13 +42,13 @@ class UpdateTierDto {
 
 @ApiTags('Monetization')
 @Controller('monetization')
-@UseGuards(ClerkAuthGuard)
-@ApiBearerAuth()
 export class MonetizationController {
   constructor(private monetizationService: MonetizationService) {}
 
   // === Tips ===
   @Post('tips')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Send a tip to another user' })
   @ApiResponse({ status: 201, description: 'Tip sent successfully' })
@@ -61,6 +61,8 @@ export class MonetizationController {
   }
 
   @Get('tips/sent')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List tips sent by the current user' })
   @ApiResponse({ status: 200, description: 'Paginated list of sent tips' })
   getSentTips(
@@ -71,6 +73,8 @@ export class MonetizationController {
   }
 
   @Get('tips/received')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List tips received by the current user' })
   @ApiResponse({ status: 200, description: 'Paginated list of received tips' })
   getReceivedTips(
@@ -81,6 +85,8 @@ export class MonetizationController {
   }
 
   @Get('tips/stats')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get tip statistics for the current user' })
   @ApiResponse({ status: 200, description: 'Tip stats' })
   getTipStats(@CurrentUser('id') userId: string) {
@@ -89,6 +95,8 @@ export class MonetizationController {
 
   // === Membership Tiers ===
   @Post('tiers')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a membership tier' })
   @ApiResponse({ status: 201, description: 'Tier created successfully' })
@@ -108,6 +116,8 @@ export class MonetizationController {
   }
 
   @Patch('tiers/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Update a membership tier (owner only)' })
   @ApiResponse({ status: 200, description: 'Tier updated successfully' })
@@ -121,6 +131,8 @@ export class MonetizationController {
   }
 
   @Delete('tiers/:id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Delete a membership tier (owner only)' })
   @ApiResponse({ status: 200, description: 'Tier deleted successfully' })
@@ -133,6 +145,8 @@ export class MonetizationController {
   }
 
   @Patch('tiers/:id/toggle')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Toggle tier active/inactive (owner only)' })
   @ApiResponse({ status: 200, description: 'Tier toggled successfully' })
@@ -146,6 +160,8 @@ export class MonetizationController {
 
   // === Subscriptions ===
   @Post('subscribe/:tierId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Subscribe to a membership tier' })
   @ApiResponse({ status: 201, description: 'Subscribed successfully' })
@@ -157,6 +173,8 @@ export class MonetizationController {
   }
 
   @Delete('subscribe/:tierId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @ApiOperation({ summary: 'Unsubscribe from a membership tier' })
   @ApiResponse({ status: 200, description: 'Unsubscribed successfully' })
@@ -168,6 +186,8 @@ export class MonetizationController {
   }
 
   @Get('subscribers')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List subscribers to your tiers' })
   @ApiResponse({ status: 200, description: 'Paginated list of subscribers' })
   getSubscribers(

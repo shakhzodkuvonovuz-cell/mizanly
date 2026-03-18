@@ -486,7 +486,7 @@ export default function ProfileScreen() {
         )}
         {profile.profileLinks && profile.profileLinks.length > 0 && (
           <View style={styles.profileLinksSection}>
-            {profile.profileLinks.map((link: any) => (
+            {profile.profileLinks.map((link: { id: string; title: string; url: string }) => (
               <Pressable
                 key={link.id}
                 style={[styles.profileLinkRow, { flexDirection: rtlFlexRow(isRTL) }]}

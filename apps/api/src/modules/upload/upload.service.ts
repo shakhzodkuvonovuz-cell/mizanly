@@ -10,6 +10,32 @@ const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif
 const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 const ALLOWED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/mp4'];
 
+/** Default max file sizes per folder (in bytes) */
+const FOLDER_MAX_SIZE: Record<UploadFolder, number> = {
+  avatars: 5 * 1024 * 1024,       // 5 MB
+  covers: 10 * 1024 * 1024,       // 10 MB
+  posts: 50 * 1024 * 1024,        // 50 MB
+  stories: 50 * 1024 * 1024,      // 50 MB
+  messages: 50 * 1024 * 1024,     // 50 MB
+  reels: 100 * 1024 * 1024,       // 100 MB
+  videos: 100 * 1024 * 1024,      // 100 MB
+  thumbnails: 5 * 1024 * 1024,    // 5 MB
+  misc: 20 * 1024 * 1024,         // 20 MB
+};
+
+/** Allowed content types per folder */
+const FOLDER_ALLOWED_TYPES: Record<UploadFolder, string[]> = {
+  avatars: ALLOWED_IMAGE_TYPES,
+  covers: ALLOWED_IMAGE_TYPES,
+  thumbnails: ALLOWED_IMAGE_TYPES,
+  posts: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES],
+  stories: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES],
+  messages: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES, ...ALLOWED_AUDIO_TYPES],
+  reels: ALLOWED_VIDEO_TYPES,
+  videos: ALLOWED_VIDEO_TYPES,
+  misc: [...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES, ...ALLOWED_AUDIO_TYPES],
+};
+
 @Injectable()
 export class UploadService {
   private s3: S3Client;
@@ -36,7 +62,24 @@ export class UploadService {
     expiresIn = 300,
     maxFileSize?: number,
   ) {
+    // Validate content type is allowed globally
     this.validateContentType(contentType);
+
+    // Validate content type is allowed for the specific folder
+    const folderAllowed = FOLDER_ALLOWED_TYPES[folder];
+    if (!folderAllowed.includes(contentType)) {
+      throw new BadRequestException(
+        `Content type ${contentType} is not allowed for folder "${folder}". Allowed: ${folderAllowed.join(', ')}`,
+      );
+    }
+
+    // Enforce folder-specific max size if caller didn't provide one
+    const effectiveMaxSize = maxFileSize ?? FOLDER_MAX_SIZE[folder];
+    if (maxFileSize && maxFileSize > FOLDER_MAX_SIZE[folder]) {
+      throw new BadRequestException(
+        `Max file size for "${folder}" is ${FOLDER_MAX_SIZE[folder]} bytes (${Math.round(FOLDER_MAX_SIZE[folder] / 1024 / 1024)} MB)`,
+      );
+    }
 
     const ext = this.getExtension(contentType);
     const key = `${folder}/${userId}/${uuidv4()}.${ext}`;
@@ -45,7 +88,7 @@ export class UploadService {
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
-      ...(maxFileSize ? { ContentLength: maxFileSize } : {}),
+      ContentLength: effectiveMaxSize,
     });
 
     const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn });
@@ -55,6 +98,7 @@ export class UploadService {
       key,
       publicUrl: `${this.publicUrl}/${key}`,
       expiresIn,
+      maxFileSize: effectiveMaxSize,
     };
   }
 

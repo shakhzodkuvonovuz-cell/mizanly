@@ -37,8 +37,8 @@ describe('AudioTracksController', () => {
       const dto = { title: 'Track', artist: 'Artist', duration: 180, audioUrl: 'url' };
       const expected = { id: 'track-1' };
       mockService.create.mockResolvedValue(expected);
-      const result = await controller.create(dto as any);
-      expect(service.create).toHaveBeenCalledWith(dto);
+      const result = await controller.create('user-1', dto as any);
+      expect(service.create).toHaveBeenCalledWith('user-1', dto);
       expect(result).toEqual(expected);
     });
   });
@@ -86,8 +86,8 @@ describe('AudioTracksController', () => {
   describe('delete', () => {
     it('should call service.delete', async () => {
       mockService.delete.mockResolvedValue({ deleted: true });
-      await controller.delete('track-1');
-      expect(service.delete).toHaveBeenCalledWith('track-1');
+      await controller.delete('user-1', 'track-1');
+      expect(service.delete).toHaveBeenCalledWith('track-1', 'user-1');
     });
   });
 });

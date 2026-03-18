@@ -41,6 +41,21 @@ export class VideoRepliesService {
       throw new BadRequestException('commentType must be "post" or "reel"');
     }
 
+    if (!mediaUrl || !mediaUrl.trim()) {
+      throw new BadRequestException('mediaUrl is required');
+    }
+
+    // Validate URL format
+    try {
+      new URL(mediaUrl);
+    } catch {
+      throw new BadRequestException('mediaUrl must be a valid URL');
+    }
+
+    if (duration !== undefined && (duration < 0 || duration > 300)) {
+      throw new BadRequestException('duration must be between 0 and 300 seconds');
+    }
+
     // Verify the target comment exists
     if (commentType === 'post') {
       const comment = await this.prisma.comment.findUnique({

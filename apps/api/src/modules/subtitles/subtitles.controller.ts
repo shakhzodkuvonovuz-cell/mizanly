@@ -18,8 +18,6 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Subtitles')
 @Controller('videos/:videoId/subtitles')
-@UseGuards(ClerkAuthGuard)
-@ApiBearerAuth()
 export class SubtitlesController {
   constructor(private subtitlesService: SubtitlesService) {}
 
@@ -34,6 +32,8 @@ export class SubtitlesController {
   }
 
   @Post()
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload subtitle track' })
   createTrack(
     @Param('videoId') videoId: string,
@@ -44,6 +44,8 @@ export class SubtitlesController {
   }
 
   @Delete(':id')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Delete subtitle track' })
   deleteTrack(

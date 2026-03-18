@@ -14,7 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { playlistsApi } from '@/services/api';
-import type { Playlist } from '@/types';
+import type { Playlist, PaginatedResponse } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -50,11 +50,11 @@ export default function ChannelPlaylistsScreen() {
     queryKey: ['channel-playlists', channelId],
     queryFn: ({ pageParam }) => playlistsApi.getByChannel(channelId, pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last: any) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    getNextPageParam: (last: PaginatedResponse<Playlist>) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!channelId,
   });
 
-  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p: any) => p.data) ?? [];
+  const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p: PaginatedResponse<Playlist>) => p.data) ?? [];
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
