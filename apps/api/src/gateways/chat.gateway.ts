@@ -49,13 +49,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private readonly PRESENCE_TTL = 300; // 5 minutes
   private readonly HEARTBEAT_INTERVAL = 120_000; // 2 minutes
   private heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>(); // socketId → timer
-  private quranRooms = new Map<string, {
-    hostId: string;
-    currentSurah: number;
-    currentVerse: number;
-    reciterId: string | null;
-    participants: Set<string>; // socket IDs
-  }>();
+  // Quran rooms stored in Redis (supports horizontal scaling)
+  // Hash: quran:room:{roomId} → { hostId, currentSurah, currentVerse, reciterId }
+  // Set:  quran:room:{roomId}:participants → socket IDs
+  private readonly QURAN_ROOM_TTL = 3600; // 1 hour auto-cleanup
 
   constructor(
     private messagesService: MessagesService,
@@ -67,6 +64,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   /** Get all socket IDs for a user from Redis presence */
   private async getUserSockets(userId: string): Promise<string[]> {
     return this.redis.smembers(`presence:${userId}`);
+  }
+
+  // ── Quran Room Redis Helpers ──
+
+  private quranRoomKey(roomId: string) { return `quran:room:${roomId}`; }
+  private quranParticipantsKey(roomId: string) { return `quran:room:${roomId}:participants`; }
+
+  private async getQuranRoom(roomId: string) {
+    const data = await this.redis.hgetall(this.quranRoomKey(roomId));
+    if (!data || !data.hostId) return null;
+    return {
+      hostId: data.hostId,
+      currentSurah: parseInt(data.currentSurah || '1', 10),
+      currentVerse: parseInt(data.currentVerse || '1', 10),
+      reciterId: data.reciterId || null,
+    };
+  }
+
+  private async getQuranParticipantCount(roomId: string): Promise<number> {
+    return this.redis.scard(this.quranParticipantsKey(roomId));
   }
 
   private async checkRateLimit(userId: string): Promise<boolean> {
@@ -372,29 +389,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = client.data.userId;
     const { roomId } = dto;
 
-    // Create room if doesn't exist (first joiner is host)
-    if (!this.quranRooms.has(roomId)) {
-      this.quranRooms.set(roomId, {
-        hostId: userId,
-        currentSurah: 1,
-        currentVerse: 1,
-        reciterId: null,
-        participants: new Set(),
-      });
+    // Create room in Redis if doesn't exist (first joiner is host)
+    const roomKey = this.quranRoomKey(roomId);
+    const exists = await this.redis.exists(roomKey);
+    if (!exists) {
+      await this.redis.hmset(roomKey, { hostId: userId, currentSurah: '1', currentVerse: '1', reciterId: '' });
+      await this.redis.expire(roomKey, this.QURAN_ROOM_TTL);
     }
 
-    const room = this.quranRooms.get(roomId)!;
-    room.participants.add(client.id);
+    // Add participant
+    const partKey = this.quranParticipantsKey(roomId);
+    await this.redis.sadd(partKey, client.id);
+    await this.redis.expire(partKey, this.QURAN_ROOM_TTL);
     client.join(`quran:${roomId}`);
 
-    // Broadcast updated participant list
+    // Broadcast updated state
+    const room = await this.getQuranRoom(roomId);
+    const count = await this.getQuranParticipantCount(roomId);
     this.server.to(`quran:${roomId}`).emit('quran_room_update', {
       roomId,
-      hostId: room.hostId,
-      currentSurah: room.currentSurah,
-      currentVerse: room.currentVerse,
-      reciterId: room.reciterId,
-      participantCount: room.participants.size,
+      hostId: room?.hostId,
+      currentSurah: room?.currentSurah,
+      currentVerse: room?.currentVerse,
+      reciterId: room?.reciterId,
+      participantCount: count,
     });
   }
 
@@ -412,25 +430,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const { roomId } = dto;
-    const room = this.quranRooms.get(roomId);
-    if (!room) return;
-
-    room.participants.delete(client.id);
+    const partKey = this.quranParticipantsKey(roomId);
+    await this.redis.srem(partKey, client.id);
     client.leave(`quran:${roomId}`);
 
     // Clean up empty rooms
-    if (room.participants.size === 0) {
-      this.quranRooms.delete(roomId);
+    const remaining = await this.redis.scard(partKey);
+    if (remaining === 0) {
+      await this.redis.del(this.quranRoomKey(roomId), partKey);
       return;
     }
 
+    const room = await this.getQuranRoom(roomId);
     this.server.to(`quran:${roomId}`).emit('quran_room_update', {
       roomId,
-      hostId: room.hostId,
-      currentSurah: room.currentSurah,
-      currentVerse: room.currentVerse,
-      reciterId: room.reciterId,
-      participantCount: room.participants.size,
+      hostId: room?.hostId,
+      currentSurah: room?.currentSurah,
+      currentVerse: room?.currentVerse,
+      reciterId: room?.reciterId,
+      participantCount: remaining,
     });
   }
 
@@ -448,11 +466,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const userId = client.data.userId;
-    const room = this.quranRooms.get(dto.roomId);
+    const room = await this.getQuranRoom(dto.roomId);
     if (!room || room.hostId !== userId) return; // Only host can sync
 
-    room.currentSurah = dto.surahNumber;
-    room.currentVerse = dto.verseNumber;
+    await this.redis.hmset(this.quranRoomKey(dto.roomId), {
+      currentSurah: String(dto.surahNumber),
+      currentVerse: String(dto.verseNumber),
+    });
 
     this.server.to(`quran:${dto.roomId}`).emit('quran_verse_changed', {
       surahNumber: dto.surahNumber,
@@ -474,10 +494,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     const userId = client.data.userId;
-    const room = this.quranRooms.get(dto.roomId);
+    const room = await this.getQuranRoom(dto.roomId);
     if (!room || room.hostId !== userId) return; // Only host
 
-    room.reciterId = dto.reciterId;
+    await this.redis.hset(this.quranRoomKey(dto.roomId), 'reciterId', dto.reciterId);
 
     this.server.to(`quran:${dto.roomId}`).emit('quran_reciter_updated', {
       reciterId: dto.reciterId,
