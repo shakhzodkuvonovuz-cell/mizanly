@@ -19,6 +19,7 @@ import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSp
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { AnalyticsService } from '../../common/services/analytics.service';
 
 const POST_SELECT = {
   id: true,
@@ -67,6 +68,7 @@ export class PostsService {
     private gamification: GamificationService,
     private ai: AiService,
     private jobs: AsyncJobService,
+    private analytics: AnalyticsService,
   ) {}
 
   async getFeed(
@@ -386,6 +388,14 @@ export class PostsService {
         }),
       );
     }
+
+    // Track analytics
+    this.analytics.track('post_created', userId, {
+      postType: post.postType,
+      hasMedia: post.mediaUrls.length > 0,
+      visibility: post.visibility,
+    });
+    this.analytics.increment('posts:daily');
 
     // Invalidate for-you feed cache for the author
     await this.redis.del(`feed:foryou:${userId}:first`);

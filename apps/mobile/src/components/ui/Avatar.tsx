@@ -7,6 +7,7 @@ import Animated, {
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
+import { imagePresets } from '@/utils/image';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
@@ -37,6 +38,8 @@ export function Avatar({
 }: AvatarProps) {
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
+  // Use CDN-optimized image sized to the avatar dimension
+  const optimizedUri = uri ? imagePresets.avatar(uri, dim <= 64 ? 'sm' : dim <= 128 ? 'md' : 'lg') : undefined;
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -86,7 +89,7 @@ export function Avatar({
             >
               {uri ? (
                 <Image
-                  source={{ uri }}
+                  source={{ uri: optimizedUri }}
                   style={[styles.img, { width: innerDim, height: innerDim, borderRadius: radius.full }]}
                   contentFit="cover"
                 />
@@ -122,7 +125,7 @@ export function Avatar({
           >
             {uri ? (
               <Image
-                source={{ uri }}
+                source={{ uri: optimizedUri }}
                 style={[
                   styles.img,
                   {

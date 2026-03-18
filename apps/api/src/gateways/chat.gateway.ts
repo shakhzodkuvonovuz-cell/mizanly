@@ -47,6 +47,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   // Presence tracking via Redis (supports horizontal scaling)
   // Key: presence:{userId} → Set of socketIds, TTL 5 minutes (auto-cleanup stale connections)
   private readonly PRESENCE_TTL = 300; // 5 minutes
+  private readonly HEARTBEAT_INTERVAL = 120_000; // 2 minutes
+  private heartbeatTimers = new Map<string, ReturnType<typeof setInterval>>(); // socketId → timer
   private quranRooms = new Map<string, {
     hostId: string;
     currentSurah: number;
@@ -104,6 +106,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await this.redis.sadd(presenceKey, client.id);
       await this.redis.expire(presenceKey, this.PRESENCE_TTL);
 
+      // Start heartbeat to keep presence alive while connected
+      const timer = setInterval(async () => {
+        try {
+          await this.redis.expire(presenceKey, this.PRESENCE_TTL);
+        } catch {
+          // Redis unavailable — presence will expire naturally
+        }
+      }, this.HEARTBEAT_INTERVAL);
+      this.heartbeatTimers.set(client.id, timer);
+
       // Broadcast to all connected clients that this user is online
       this.server.emit('user_online', { userId, isOnline: true });
 
@@ -114,6 +126,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   async handleDisconnect(client: Socket) {
+    // Stop heartbeat for this socket
+    const timer = this.heartbeatTimers.get(client.id);
+    if (timer) {
+      clearInterval(timer);
+      this.heartbeatTimers.delete(client.id);
+    }
+
     const userId = client.data.userId;
     if (!userId) return;
 

@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { AnalyticsService } from '../../common/services/analytics.service';
 
 @Injectable()
 export class FollowsService {
@@ -19,6 +20,7 @@ export class FollowsService {
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
     private jobs: AsyncJobService,
+    private analytics: AnalyticsService,
   ) {}
 
   async follow(currentUserId: string, targetUserId: string) {
@@ -125,6 +127,8 @@ export class FollowsService {
         })
         .catch((err) => this.logger.error('Failed to create notification', err));
 
+      this.analytics.track('user_followed', currentUserId, { targetUserId });
+      this.analytics.increment('follows:daily');
       return { type: 'follow', follow };
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {

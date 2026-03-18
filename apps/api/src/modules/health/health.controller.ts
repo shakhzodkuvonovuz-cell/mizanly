@@ -1,8 +1,11 @@
-import { Controller, Get, Inject } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { FeatureFlagsService } from '../../common/services/feature-flags.service';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Health')
 @Controller('health')
@@ -11,6 +14,7 @@ export class HealthController {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private jobs: AsyncJobService,
+    private flags: FeatureFlagsService,
   ) {}
 
   @Get()
@@ -53,5 +57,21 @@ export class HealthController {
         rssMB: Math.round(process.memoryUsage().rss / 1024 / 1024),
       },
     };
+  }
+
+  @Get('config')
+  @UseGuards(OptionalClerkAuthGuard)
+  @ApiOperation({ summary: 'Get client configuration (feature flags for mobile app)' })
+  async getConfig(@CurrentUser('id') userId?: string) {
+    const allFlags = await this.flags.getAllFlags();
+    // For percentage-based flags, resolve per-user
+    const resolved: Record<string, boolean> = {};
+    for (const [key, value] of Object.entries(allFlags)) {
+      if (value === 'true') resolved[key] = true;
+      else if (value === 'false') resolved[key] = false;
+      else if (userId) resolved[key] = await this.flags.isEnabledForUser(key, userId);
+      else resolved[key] = false; // Anonymous users don't get percentage rollouts
+    }
+    return { flags: resolved };
   }
 }
