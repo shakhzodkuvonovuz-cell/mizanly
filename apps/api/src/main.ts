@@ -60,12 +60,26 @@ async function bootstrap() {
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Mizanly API')
-      .setDescription('Backend API for the Mizanly social platform')
-      .setVersion('0.1.0')
+      .setDescription(
+        'Backend API for the Mizanly social platform.\n\n' +
+        '**Authentication:** Bearer token (Clerk JWT) in Authorization header.\n\n' +
+        '**Pagination:** Cursor-based — pass `cursor` from response `meta.cursor` to get the next page.\n\n' +
+        '**Rate Limiting:** 100 requests/minute per IP (default). Some endpoints have stricter limits.\n\n' +
+        '**Response Format:** All responses wrapped in `{ success, data, timestamp }` envelope.'
+      )
+      .setVersion('1.0.0')
       .addBearerAuth()
+      .addServer(process.env.API_URL || 'http://localhost:3000', 'API Server')
       .build();
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
+    SwaggerModule.setup('docs', app, document, {
+      customSiteTitle: 'Mizanly API Docs',
+      swaggerOptions: {
+        persistAuthorization: true,
+        filter: true,
+        displayRequestDuration: true,
+      },
+    });
   }
 
   app.enableShutdownHooks();
