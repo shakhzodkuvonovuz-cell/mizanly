@@ -160,7 +160,7 @@ describe('MessagesController', () => {
   describe('createDM', () => {
     it('should call service.createDM with userId, targetUserId', async () => {
       mockService.createDM.mockResolvedValue({ id: 'conv-1' });
-      await controller.createDM('user-1', 'user-2');
+      await controller.createDM('user-1', { targetUserId: 'user-2' } as any);
       expect(mockService.createDM).toHaveBeenCalledWith('user-1', 'user-2');
     });
   });

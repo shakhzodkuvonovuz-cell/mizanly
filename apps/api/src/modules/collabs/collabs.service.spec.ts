@@ -38,9 +38,12 @@ describe('CollabsService', () => {
       await expect(service.invite('user1', 'post1', 'user2')).rejects.toThrow(ForbiddenException);
     });
 
-    it('rejects duplicate invite', async () => {
+    it('rejects duplicate invite (P2002)', async () => {
+      const { PrismaClientKnownRequestError } = require('@prisma/client/runtime/library');
       prisma.post.findUnique.mockResolvedValue({ id: 'post1', userId: 'user1' });
-      prisma.postCollab.findUnique.mockResolvedValue({ id: 'existing' });
+      prisma.postCollab.create.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique', { code: 'P2002', clientVersion: '0' }),
+      );
       await expect(service.invite('user1', 'post1', 'user2')).rejects.toThrow(ConflictException);
     });
   });

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FeedController } from './feed.controller';
 import { FeedService } from './feed.service';
+import { FeedTransparencyService } from './feed-transparency.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FeedController', () => {
@@ -23,6 +24,7 @@ describe('FeedController', () => {
       providers: [
         ...globalMockProviders,
         { provide: FeedService, useValue: mockService },
+        { provide: FeedTransparencyService, useValue: { explainFeed: jest.fn() } },
       ],
     }).compile();
 

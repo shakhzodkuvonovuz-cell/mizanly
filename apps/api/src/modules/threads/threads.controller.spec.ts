@@ -197,7 +197,7 @@ describe('ThreadsController', () => {
     it('should call service.getUserThreads with username and cursor', async () => {
       mockService.getUserThreads.mockResolvedValue({ data: [] });
       await controller.getUserThreads('username', 'cursor-1');
-      expect(mockService.getUserThreads).toHaveBeenCalledWith('username', 'cursor-1');
+      expect(mockService.getUserThreads).toHaveBeenCalledWith('username', 'cursor-1', 20, undefined);
     });
   });
 

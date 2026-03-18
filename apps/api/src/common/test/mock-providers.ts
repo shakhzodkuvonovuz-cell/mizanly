@@ -1,3 +1,5 @@
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../../config/prisma.service';
 import { AsyncJobService } from '../services/async-jobs.service';
 import { AnalyticsService } from '../services/analytics.service';
 import { FeatureFlagsService } from '../services/feature-flags.service';
@@ -118,8 +120,32 @@ export const mockFeatureFlagsService = {
   },
 };
 
+export const mockPrismaService = {
+  provide: PrismaService,
+  useValue: {
+    user: { findUnique: jest.fn().mockResolvedValue(null), findMany: jest.fn().mockResolvedValue([]) },
+  },
+};
+
+export const mockConfigService = {
+  provide: ConfigService,
+  useValue: {
+    get: jest.fn().mockImplementation((key: string) => {
+      const config: Record<string, string> = {
+        CLERK_SECRET_KEY: 'test_secret_key',
+        CLERK_PUBLISHABLE_KEY: 'test_pub_key',
+        MEILISEARCH_HOST: 'http://localhost:7700',
+        MEILISEARCH_API_KEY: 'test_key',
+      };
+      return config[key] ?? null;
+    }),
+  },
+};
+
 /** All global service mocks — add to providers array */
 export const globalMockProviders = [
+  mockPrismaService,
+  mockConfigService,
   mockRedis,
   mockPushTriggerService,
   mockPushService,

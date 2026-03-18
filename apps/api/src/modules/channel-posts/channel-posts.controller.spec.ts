@@ -94,16 +94,16 @@ describe('ChannelPostsController', () => {
   describe('like', () => {
     it('should call service.like', async () => {
       mockService.like.mockResolvedValue({ liked: true });
-      await controller.like('post-1');
-      expect(service.like).toHaveBeenCalledWith('post-1');
+      await controller.like('post-1', 'user-1');
+      expect(service.like).toHaveBeenCalledWith('post-1', 'user-1');
     });
   });
 
   describe('unlike', () => {
     it('should call service.unlike', async () => {
       mockService.unlike.mockResolvedValue({ unliked: true });
-      await controller.unlike('post-1');
-      expect(service.unlike).toHaveBeenCalledWith('post-1');
+      await controller.unlike('post-1', 'user-1');
+      expect(service.unlike).toHaveBeenCalledWith('post-1', 'user-1');
     });
   });
 });

@@ -371,9 +371,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { likesCount: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('post-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('post-19');
     });
 
     it('should respect limit parameter', async () => {
@@ -393,8 +393,8 @@ describe('SearchService', () => {
         take: limit + 1,
         orderBy: { likesCount: 'desc' },
       });
-      expect(result.data).toHaveLength(limit);
-      expect(result.meta.hasMore).toBe(true);
+      expect((result as any).data).toHaveLength(limit);
+      expect((result as any).meta.hasMore).toBe(true);
     });
 
     it('should support cursor pagination for threads', async () => {
@@ -433,9 +433,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { likesCount: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('thread-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('thread-19');
     });
 
     it('should support cursor pagination for videos', async () => {
@@ -488,9 +488,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { viewsCount: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('video-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('video-19');
     });
 
     it('should support cursor pagination for channels', async () => {
@@ -534,9 +534,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { subscribersCount: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('channel-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('channel-19');
     });
 
     it('should support cursor pagination for reels', async () => {
@@ -577,9 +577,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('reel-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('reel-19');
     });
   });
 
@@ -704,9 +704,9 @@ describe('SearchService', () => {
         skip: 1,
         orderBy: { createdAt: 'desc' },
       });
-      expect(result.data).toHaveLength(20);
-      expect(result.meta.hasMore).toBe(true);
-      expect(result.meta.cursor).toBe('post-19');
+      expect((result as any).data).toHaveLength(20);
+      expect((result as any).meta.hasMore).toBe(true);
+      expect((result as any).meta.cursor).toBe('post-19');
       expect(result.hashtag).toEqual(mockHashtag);
     });
   });
