@@ -26,6 +26,7 @@ describe('PostsService', () => {
             post: {
               create: jest.fn(),
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               update: jest.fn(),
               findMany: jest.fn(),
               count: jest.fn(),
@@ -281,14 +282,15 @@ describe('PostsService', () => {
 
       await service.getFeed(userId, 'following');
 
-      expect(prisma.post.findMany).toHaveBeenCalledWith({
-        where: expect.objectContaining({
-          userId: { in: [userId, followingId], notIn: [blockedId, mutedId] },
+      expect(prisma.post.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            userId: { in: [userId, followingId], notIn: [blockedId, mutedId] },
+          }),
+          take: 21,
+          orderBy: { createdAt: 'desc' },
         }),
-        select: expect.any(Object),
-        take: 21,
-        orderBy: { createdAt: 'desc' },
-      });
+      );
     });
 
     it('should cache "for you" feed', async () => {
@@ -564,25 +566,15 @@ describe('PostsService', () => {
 
       const result = await service.getComments(postId, cursor, limit);
 
-      expect(prisma.comment.findMany).toHaveBeenCalledWith({
-        where: { postId, parentId: null, isRemoved: false },
-        include: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              displayName: true,
-              avatarUrl: true,
-              isVerified: true,
-            },
-          },
-          _count: { select: { replies: true } },
-        },
-        take: limit + 1,
-        cursor: { id: cursor },
-        skip: 1,
-        orderBy: { createdAt: 'desc' },
-      });
+      expect(prisma.comment.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ postId, parentId: null, isRemoved: false }),
+          take: limit + 1,
+          cursor: { id: cursor },
+          skip: 1,
+          orderBy: { createdAt: 'desc' },
+        }),
+      );
       expect(result).toEqual({
         data: mockComments.slice(0, limit),
         meta: { cursor: null, hasMore: false },

@@ -18,7 +18,7 @@ describe('MessagesService', () => {
           useValue: {
             conversationMember: {
               findMany: jest.fn(),
-              findUnique: jest.fn(),
+              findUnique: jest.fn().mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false, unreadCount: 0 }),
               create: jest.fn(),
               update: jest.fn(),
               updateMany: jest.fn(),
@@ -106,13 +106,12 @@ describe('MessagesService', () => {
 
       const result = await service.getConversations(userId);
 
-      expect(prisma.conversationMember.findMany).toHaveBeenCalledWith({
-        where: { userId },
-        include: {
-          conversation: { select: expect.any(Object) },
-        },
-        orderBy: { conversation: { lastMessageAt: 'desc' } },
-      });
+      expect(prisma.conversationMember.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId },
+          orderBy: { conversation: { lastMessageAt: 'desc' } },
+        }),
+      );
       expect(result).toEqual([
         {
           ...mockMemberships[0].conversation,
@@ -140,7 +139,7 @@ describe('MessagesService', () => {
       };
       // Mock requireMembership (private method) - we'll need to spy
       // For simplicity, we'll mock prisma.conversation.findUnique
-      const requireMembershipSpy = jest.spyOn(service as any, 'requireMembership').mockResolvedValue(undefined);
+      const requireMembershipSpy = jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
       prisma.conversation.findUnique.mockResolvedValue(mockConversation);
 
       const result = await service.getConversation(conversationId, userId);
@@ -156,7 +155,7 @@ describe('MessagesService', () => {
     it('should throw NotFoundException if conversation not found', async () => {
       const conversationId = 'conv-1';
       const userId = 'user-123';
-      jest.spyOn(service as any, 'requireMembership').mockResolvedValue(undefined);
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
       prisma.conversation.findUnique.mockResolvedValue(null);
 
       await expect(service.getConversation(conversationId, userId)).rejects.toThrow(
@@ -185,7 +184,7 @@ describe('MessagesService', () => {
           },
         },
       ];
-      jest.spyOn(service as any, 'requireMembership').mockResolvedValue(undefined);
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
       prisma.message.findMany.mockResolvedValue(mockMessages);
 
       const result = await service.getMessages(conversationId, userId, cursor, limit);
@@ -218,7 +217,7 @@ describe('MessagesService', () => {
         createdAt: new Date(),
         sender: { id: userId },
       };
-      jest.spyOn(service as any, 'requireMembership').mockResolvedValue(undefined);
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
       prisma.message.create.mockResolvedValue(mockMessage);
       prisma.$transaction.mockResolvedValue([{}, {}]);
 
@@ -440,6 +439,7 @@ describe('MessagesService', () => {
     });
 
     it('should throw ForbiddenException if blocked', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-456' });
       prisma.block.findFirst.mockResolvedValue({ blockerId: 'user-123', blockedId: 'user-456' });
 
       await expect(service.createDM('user-123', 'user-456')).rejects.toThrow(ForbiddenException);

@@ -63,7 +63,7 @@ describe('MessagesController', () => {
     it('should call service.getConversations with userId', async () => {
       mockService.getConversations.mockResolvedValue([]);
       await controller.getConversations('user-1');
-      expect(mockService.getConversations).toHaveBeenCalledWith('user-1');
+      expect(mockService.getConversations).toHaveBeenCalledWith('user-1', undefined);
     });
   });
 
@@ -144,7 +144,7 @@ describe('MessagesController', () => {
   describe('mute', () => {
     it('should call service.muteConversation with conversationId, userId, muted', async () => {
       mockService.muteConversation.mockResolvedValue({ muted: true });
-      await controller.mute('conv-1', 'user-1', true);
+      await controller.mute('conv-1', 'user-1', { muted: true } as any);
       expect(mockService.muteConversation).toHaveBeenCalledWith('conv-1', 'user-1', true);
     });
   });
@@ -152,7 +152,7 @@ describe('MessagesController', () => {
   describe('archive', () => {
     it('should call service.archiveConversation with conversationId, userId, archived', async () => {
       mockService.archiveConversation.mockResolvedValue({ archived: true });
-      await controller.archive('conv-1', 'user-1', true);
+      await controller.archive('conv-1', 'user-1', { archived: true } as any);
       expect(mockService.archiveConversation).toHaveBeenCalledWith('conv-1', 'user-1', true);
     });
   });
