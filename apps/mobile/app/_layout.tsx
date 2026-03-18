@@ -25,10 +25,14 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
+import { initSentry, setSentryUser } from '@/config/sentry';
 
 // Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
 // Most React Native flex layouts auto-mirror when this is enabled.
 I18nManager.allowRTL(true);
+
+// Initialize Sentry crash reporting (no-op if package not installed or no DSN)
+initSentry();
 
 // Keep the splash screen visible until fonts are loaded
 SplashScreen.preventAutoHideAsync();
@@ -86,6 +90,13 @@ function AuthGuard() {
 
   // Register push notification token once signed in
   usePushNotifications(!!isSignedIn);
+
+  // Set Sentry user context when signed in
+  useEffect(() => {
+    if (isSignedIn && user?.id) {
+      setSentryUser(user.id, user.username ?? undefined);
+    }
+  }, [isSignedIn, user?.id, user?.username]);
 
   useEffect(() => {
     if (!isLoaded) return;

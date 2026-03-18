@@ -2,6 +2,7 @@ import { Component, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { Icon } from '@/components/ui/Icon';
+import { captureException } from '@/config/sentry';
 
 interface Props {
   children: ReactNode;
@@ -17,6 +18,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    captureException(error, { componentStack: info.componentStack ?? 'unknown' });
   }
 
   handleReset = () => {
