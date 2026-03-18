@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Delete,
   Param,
   Query,
   Patch,
@@ -16,13 +17,17 @@ import { ResolveReportDto } from './dto/resolve-report.dto';
 import { BanUserDto } from './dto/ban-user.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { FeatureFlagsService } from '../../common/services/feature-flags.service';
 
 @ApiTags('Admin')
 @Controller('admin')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
 export class AdminController {
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private featureFlags: FeatureFlagsService,
+  ) {}
 
   @Get('reports')
   @ApiOperation({ summary: 'Get paginated reports (filter by status)' })
@@ -78,5 +83,25 @@ export class AdminController {
     @Param('id') targetId: string,
   ) {
     return this.adminService.unbanUser(adminId, targetId);
+  }
+
+  // ── Feature Flags ───────────────────────────────────────
+
+  @Get('flags')
+  @ApiOperation({ summary: 'Get all feature flags' })
+  getFlags() {
+    return this.featureFlags.getAllFlags();
+  }
+
+  @Patch('flags/:name')
+  @ApiOperation({ summary: 'Set a feature flag (true/false/percentage)' })
+  setFlag(@Param('name') name: string, @Body('value') value: string) {
+    return this.featureFlags.setFlag(name, value);
+  }
+
+  @Delete('flags/:name')
+  @ApiOperation({ summary: 'Delete a feature flag' })
+  deleteFlag(@Param('name') name: string) {
+    return this.featureFlags.deleteFlag(name);
   }
 }
