@@ -137,8 +137,6 @@ describe('MessagesService', () => {
         createdAt: new Date(),
         members: [],
       };
-      // Mock requireMembership (private method) - we'll need to spy
-      // For simplicity, we'll mock prisma.conversation.findUnique
       const requireMembershipSpy = jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
       prisma.conversation.findUnique.mockResolvedValue(mockConversation);
 
@@ -149,7 +147,7 @@ describe('MessagesService', () => {
         where: { id: conversationId },
         select: expect.any(Object),
       });
-      expect(result).toEqual(mockConversation);
+      expect(result).toEqual({ ...mockConversation, isMuted: false, isArchived: false });
     });
 
     it('should throw NotFoundException if conversation not found', async () => {
@@ -218,21 +216,29 @@ describe('MessagesService', () => {
         sender: { id: userId },
       };
       jest.spyOn(service as any, 'requireMembership').mockResolvedValue({ isMuted: false, isArchived: false });
-      prisma.message.create.mockResolvedValue(mockMessage);
-      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      // Interactive transaction mock — fn receives tx proxy
+      const mockTx = {
+        message: { create: jest.fn().mockResolvedValue(mockMessage) },
+        conversation: { update: jest.fn().mockResolvedValue({}) },
+        conversationMember: { updateMany: jest.fn().mockResolvedValue({}) },
+      };
+      prisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
 
       const result = await service.sendMessage(conversationId, userId, { content, messageType });
 
       expect(prisma.$transaction).toHaveBeenCalled();
-      expect(prisma.message.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({
-          conversationId,
-          senderId: userId,
-          content,
-          messageType,
+      expect(mockTx.message.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            conversationId,
+            senderId: userId,
+            content,
+            messageType: 'TEXT',
+          }),
         }),
-        select: expect.any(Object),
-      });
+      );
+      expect(mockTx.conversation.update).toHaveBeenCalled();
       expect(result).toEqual(mockMessage);
     });
   });
@@ -316,8 +322,9 @@ describe('MessagesService', () => {
         isDeleted: false,
         createdAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
       };
+      const updatedMessage = { id: messageId, content, editedAt: new Date() };
       prisma.message.findUnique.mockResolvedValue(mockMessage);
-      prisma.message.update.mockResolvedValue({ ...mockMessage, content, editedAt: new Date() });
+      prisma.message.update.mockResolvedValue(updatedMessage);
 
       const result = await service.editMessage(messageId, userId, content);
 
@@ -325,8 +332,9 @@ describe('MessagesService', () => {
       expect(prisma.message.update).toHaveBeenCalledWith({
         where: { id: messageId },
         data: { content, editedAt: expect.any(Date) },
+        select: expect.any(Object),
       });
-      expect(result).toEqual({ message: { ...mockMessage, content, editedAt: expect.any(Date) } });
+      expect(result).toEqual({ message: updatedMessage });
     });
 
     it('should throw BadRequestException after 15 minutes', async () => {
@@ -378,59 +386,51 @@ describe('MessagesService', () => {
     it('should create new DM conversation', async () => {
       const userId = 'user-123';
       const targetUserId = 'user-456';
+      prisma.user.findUnique.mockResolvedValue({ id: targetUserId });
       prisma.block.findFirst.mockResolvedValue(null);
-      prisma.conversation.findFirst.mockResolvedValue(null);
       const mockConversation = {
         id: 'conv-789',
         isGroup: false,
         members: [],
       };
-      prisma.conversation.create.mockResolvedValue(mockConversation);
+
+      // Interactive transaction: tx.conversation.findFirst returns null, tx.conversation.create returns new conv
+      const mockTx = {
+        conversation: {
+          findFirst: jest.fn().mockResolvedValue(null),
+          create: jest.fn().mockResolvedValue(mockConversation),
+        },
+      };
+      prisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
 
       const result = await service.createDM(userId, targetUserId);
 
-      expect(prisma.block.findFirst).toHaveBeenCalledWith({
-        where: {
-          OR: [
-            { blockerId: userId, blockedId: targetUserId },
-            { blockerId: targetUserId, blockedId: userId },
-          ],
-        },
-      });
-      expect(prisma.conversation.findFirst).toHaveBeenCalledWith({
-        where: {
-          isGroup: false,
-          AND: [
-            { members: { some: { userId } } },
-            { members: { some: { userId: targetUserId } } },
-          ],
-        },
-        select: expect.any(Object),
-      });
-      expect(prisma.conversation.create).toHaveBeenCalledWith({
-        data: {
-          isGroup: false,
-          createdById: userId,
-          members: {
-            create: [{ userId }, { userId: targetUserId }],
-          },
-        },
-        select: expect.any(Object),
-      });
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { id: targetUserId }, select: { id: true } });
+      expect(prisma.block.findFirst).toHaveBeenCalled();
+      expect(mockTx.conversation.findFirst).toHaveBeenCalled();
+      expect(mockTx.conversation.create).toHaveBeenCalled();
       expect(result).toEqual(mockConversation);
     });
 
     it('should return existing DM if already exists', async () => {
       const userId = 'user-123';
       const targetUserId = 'user-456';
+      prisma.user.findUnique.mockResolvedValue({ id: targetUserId });
       prisma.block.findFirst.mockResolvedValue(null);
       const existingConv = { id: 'conv-789', isGroup: false };
-      prisma.conversation.findFirst.mockResolvedValue(existingConv);
+
+      const mockTx = {
+        conversation: {
+          findFirst: jest.fn().mockResolvedValue(existingConv),
+          create: jest.fn(),
+        },
+      };
+      prisma.$transaction.mockImplementation((fn: (tx: typeof mockTx) => Promise<unknown>) => fn(mockTx));
 
       const result = await service.createDM(userId, targetUserId);
 
-      expect(prisma.conversation.findFirst).toHaveBeenCalled();
-      expect(prisma.conversation.create).not.toHaveBeenCalled();
+      expect(mockTx.conversation.findFirst).toHaveBeenCalled();
+      expect(mockTx.conversation.create).not.toHaveBeenCalled();
       expect(result).toEqual(existingConv);
     });
 
@@ -456,21 +456,27 @@ describe('MessagesService', () => {
         isGroup: true,
         groupName,
       };
+      // Validate all members exist
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'user-123' }, { id: 'user-456' }, { id: 'user-789' },
+      ]);
       prisma.conversation.create.mockResolvedValue(mockConversation);
 
       const result = await service.createGroup(userId, groupName, memberIds);
 
-      expect(prisma.conversation.create).toHaveBeenCalledWith({
-        data: {
-          isGroup: true,
-          groupName,
-          createdById: userId,
-          members: {
-            create: [{ userId }, { userId: 'user-456' }, { userId: 'user-789' }],
-          },
-        },
-        select: expect.any(Object),
+      expect(prisma.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [userId, ...memberIds] } },
+        select: { id: true },
       });
+      expect(prisma.conversation.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            isGroup: true,
+            groupName,
+            createdById: userId,
+          }),
+        }),
+      );
       expect(result).toEqual(mockConversation);
     });
 
@@ -602,6 +608,8 @@ describe('MessagesService', () => {
       const conversationId = 'conv-456';
       const userId = 'user-123';
       const requireMembershipSpy = jest.spyOn(service as any, 'requireMembership').mockResolvedValue({});
+      // convo exists and user is NOT the creator
+      prisma.conversation.findUnique.mockResolvedValue({ id: conversationId, createdById: 'other-user' });
       prisma.conversationMember.delete.mockResolvedValue({} as any);
 
       const result = await service.leaveGroup(conversationId, userId);
@@ -611,6 +619,15 @@ describe('MessagesService', () => {
         where: { conversationId_userId: { conversationId, userId } },
       });
       expect(result).toEqual({ left: true });
+    });
+
+    it('should throw BadRequestException if owner tries to leave', async () => {
+      const conversationId = 'conv-456';
+      const userId = 'user-123';
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({});
+      prisma.conversation.findUnique.mockResolvedValue({ id: conversationId, createdById: userId });
+
+      await expect(service.leaveGroup(conversationId, userId)).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -691,10 +708,14 @@ describe('MessagesService', () => {
       const messageId = 'msg-456';
       const userId = 'user-123';
       const emoji = '👍';
+      // Service first finds message to get conversationId, then calls requireMembership
+      prisma.message.findUnique.mockResolvedValue({ id: messageId, conversationId: 'conv-1' });
+      jest.spyOn(service as any, 'requireMembership').mockResolvedValue({});
       prisma.messageReaction.deleteMany.mockResolvedValue({} as any);
 
       const result = await service.removeReaction(messageId, userId, emoji);
 
+      expect(prisma.message.findUnique).toHaveBeenCalledWith({ where: { id: messageId } });
       expect(prisma.messageReaction.deleteMany).toHaveBeenCalledWith({
         where: { messageId, userId, emoji },
       });

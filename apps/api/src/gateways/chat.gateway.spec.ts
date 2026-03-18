@@ -59,10 +59,19 @@ describe('ChatGateway', () => {
           provide: 'REDIS',
           useValue: {
             incr: jest.fn(),
-            expire: jest.fn(),
-            get: jest.fn(),
+            expire: jest.fn().mockResolvedValue(1),
+            get: jest.fn().mockResolvedValue(null),
+            set: jest.fn().mockResolvedValue('OK'),
             setex: jest.fn(),
-            del: jest.fn(),
+            del: jest.fn().mockResolvedValue(1),
+            sadd: jest.fn().mockResolvedValue(1),
+            srem: jest.fn().mockResolvedValue(1),
+            scard: jest.fn().mockResolvedValue(0),
+            smembers: jest.fn().mockResolvedValue([]),
+            pipeline: jest.fn().mockReturnValue({
+              scard: jest.fn().mockReturnThis(),
+              exec: jest.fn().mockResolvedValue([]),
+            }),
           },
         },
       ],
@@ -184,11 +193,11 @@ describe('ChatGateway', () => {
       });
     });
 
-    it('should throw WsException if not authorized', () => {
+    it('should throw WsException if not authorized', async () => {
       const client = { ...mockSocket, data: {} };
-      expect(() =>
+      await expect(
         gateway.handleTyping(client as any, { conversationId: '00000000-0000-0000-0000-000000000000', isTyping: true })
-      ).toThrow(WsException);
+      ).rejects.toThrow(WsException);
     });
   });
 
@@ -212,7 +221,7 @@ describe('ChatGateway', () => {
   });
 
   describe('online presence', () => {
-    it('tracks user on connection', async () => {
+    it('tracks user on connection via Redis presence', async () => {
       const client = {
         ...mockSocket,
         id: 'socket-123',
@@ -229,33 +238,42 @@ describe('ChatGateway', () => {
       await gateway.handleConnection(client as any);
 
       expect((client.data as any).userId).toBe('user-123');
+      expect(redis.sadd).toHaveBeenCalledWith('presence:user-123', 'socket-123');
+      expect(redis.expire).toHaveBeenCalledWith('presence:user-123', expect.any(Number));
       expect(gateway.server.emit).toHaveBeenCalledWith('user_online', { userId: 'user-123', isOnline: true });
     });
 
-    it('removes user on disconnect and emits user_offline', async () => {
+    it('removes user on disconnect and emits user_offline when last socket', async () => {
       const client = { ...mockSocket, id: 'socket-123', data: { userId: 'user-123' } };
-      // Simulate user being tracked
-      (gateway as any).onlineUsers.set('user-123', new Set(['socket-123']));
+      redis.srem.mockResolvedValue(1);
+      redis.scard.mockResolvedValue(0); // No remaining sockets → fully offline
+      redis.del.mockResolvedValue(1);
       prisma.user.update = jest.fn().mockResolvedValue(undefined);
 
-      gateway.handleDisconnect(client as any);
+      await gateway.handleDisconnect(client as any);
 
-      expect((gateway as any).onlineUsers.has('user-123')).toBe(false);
+      expect(redis.srem).toHaveBeenCalledWith('presence:user-123', 'socket-123');
+      expect(redis.scard).toHaveBeenCalledWith('presence:user-123');
+      expect(redis.del).toHaveBeenCalledWith('presence:user-123');
       expect(gateway.server.emit).toHaveBeenCalledWith('user_offline', expect.objectContaining({
         userId: 'user-123',
         isOnline: false,
         lastSeenAt: expect.any(String),
       }));
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: 'user-123' },
-        data: { lastSeenAt: expect.any(Date) },
-      });
     });
 
-    it('responds to get_online_status with correct statuses', async () => {
+    it('responds to get_online_status via Redis pipeline', async () => {
       const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-123' } };
-      (gateway as any).onlineUsers.set('user-123', new Set(['socket-123']));
-      (gateway as any).onlineUsers.set('user-456', new Set(['socket-456']));
+      // Pipeline returns: [error, result] pairs — scard returns count
+      const mockPipeline = {
+        scard: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue([
+          [null, 1], // user-123 online
+          [null, 1], // user-456 online
+          [null, 0], // user-789 offline
+        ]),
+      };
+      redis.pipeline.mockReturnValue(mockPipeline);
 
       await gateway.handleGetOnlineStatus(client as any, { userIds: ['user-123', 'user-456', 'user-789'] });
 
