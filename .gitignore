@@ -32,8 +32,7 @@ npm-debug.log*
 # Testing
 coverage/
 
-# Prisma
-apps/api/prisma/migrations/
+# Prisma (migrations should be tracked for safe deployments)
 
 # Expo
 apps/mobile/.expo/
