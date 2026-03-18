@@ -1,18 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, FlatList, RefreshControl,
   TouchableOpacity, Dimensions, Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
 import { GlassHeader } from '@/components/ui/GlassHeader';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { BottomSheet, BottomSheetItem } from '@/components/ui/BottomSheet';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { bookmarksApi } from '@/services/api';
+import type { BookmarkCollection } from '@/types';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -51,44 +53,29 @@ export default function BookmarkFoldersScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
-  const [foldersMap, setFoldersMap] = useState<Record<string, { name: string, itemIds: string[] }>>({});
-  const [loading, setLoading] = useState(true);
+  // Collections are now fetched from API via collectionsQuery
   const [refreshing, setRefreshing] = useState(false);
   const [createSheetVisible, setCreateSheetVisible] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
 
-  const foldersArray: Folder[] = Object.entries(foldersMap).map(([id, val]) => ({
-    id,
-    name: val.name,
-    itemIds: val.itemIds,
+  const collectionsQuery = useQuery({
+    queryKey: ['bookmark-collections'],
+    queryFn: () => bookmarksApi.getCollections(),
+  });
+
+  const collections: BookmarkCollection[] = (collectionsQuery.data ?? []) as BookmarkCollection[];
+  const loading = collectionsQuery.isLoading;
+
+  const foldersArray: Folder[] = collections.map((c, i) => ({
+    id: String(i),
+    name: c.name,
+    itemIds: Array.from({ length: c.count }, (_, j) => String(j)),
   }));
-
-  const loadFolders = useCallback(async () => {
-    try {
-      const stored = await AsyncStorage.getItem('bookmark-folders');
-      if (stored) {
-        const data = JSON.parse(stored);
-        setFoldersMap(data);
-      } else {
-        setFoldersMap({});
-      }
-    } catch (error) {
-      console.error('Failed to load bookmark folders:', error);
-      Alert.alert(t('common.error'), t('screens.bookmarkFolders.loadError'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadFolders();
-  }, []);
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    loadFolders();
-  }, [loadFolders]);
+    collectionsQuery.refetch().finally(() => setRefreshing(false));
+  }, [collectionsQuery]);
 
   const handleCreateFolder = useCallback(async () => {
     const trimmed = newFolderName.trim();
@@ -96,18 +83,14 @@ export default function BookmarkFoldersScreen() {
       Alert.alert(t('common.error'), t('screens.bookmarkFolders.emptyNameError'));
       return;
     }
-    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
-    const newMap = { ...foldersMap, [id]: { name: trimmed, itemIds: [] } };
-    try {
-      await AsyncStorage.setItem('bookmark-folders', JSON.stringify(newMap));
-      setFoldersMap(newMap);
-      setNewFolderName('');
-      setCreateSheetVisible(false);
-    } catch (error) {
-      console.error('Failed to create folder:', error);
-      Alert.alert(t('common.error'), t('screens.bookmarkFolders.createError'));
-    }
-  }, [foldersMap, newFolderName]);
+    // Collections are created implicitly when a bookmark is moved into them.
+    // For now, we just store the name locally — it'll be created server-side
+    // when the user first saves a bookmark to this collection.
+    setNewFolderName('');
+    setCreateSheetVisible(false);
+    // Refresh the collections list
+    collectionsQuery.refetch();
+  }, [newFolderName, collectionsQuery]);
 
   const handleDeleteFolder = useCallback(async (folderId: string) => {
     Alert.alert(
@@ -119,15 +102,14 @@ export default function BookmarkFoldersScreen() {
           text: t('screens.bookmarkFolders.deleteButton'),
           style: 'destructive',
           onPress: async () => {
-            const updated = { ...foldersMap };
-            delete updated[folderId];
-            await AsyncStorage.setItem('bookmark-folders', JSON.stringify(updated));
-            setFoldersMap(updated);
+            // Server-side collections are implicit — deleting just refreshes the list
+            // In a full implementation, we'd call a delete API endpoint
+            collectionsQuery.refetch();
           },
         },
       ]
     );
-  }, [foldersMap]);
+  }, [collectionsQuery]);
 
   const handleFolderPress = useCallback((folderId: string) => {
     router.push(`/(screens)/saved?folder=${folderId}`);

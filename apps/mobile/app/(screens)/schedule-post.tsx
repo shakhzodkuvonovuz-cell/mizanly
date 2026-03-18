@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Dimensions, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useHaptic } from '@/hooks/useHaptic';
+import { postsApi, threadsApi, reelsApi } from '@/services/api';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -20,21 +22,25 @@ type AmPm = 'AM' | 'PM';
 export default function SchedulePostScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
+  const haptic = useHaptic();
+  const params = useLocalSearchParams<{ space?: string; content?: string; mediaUrls?: string }>();
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(15); // March 15, 2026
-  const [currentMonth, setCurrentMonth] = useState(2); // March (0-indexed)
-  const [currentYear] = useState(2026);
+
+  const now = new Date();
+  const [selectedDate, setSelectedDate] = useState(now.getDate() + 2);
+  const [currentMonth, setCurrentMonth] = useState(now.getMonth());
+  const [currentYear] = useState(now.getFullYear());
   const [selectedHour, setSelectedHour] = useState(6);
   const [selectedMinute, setSelectedMinute] = useState(0);
   const [selectedAmPm, setSelectedAmPm] = useState<AmPm>('PM');
   const [isScheduling, setIsScheduling] = useState(false);
 
-  const today = 13; // March 13, 2026 (today)
+  const today = now.getDate();
 
   const postData = {
-    content: 'Just finished an amazing photoshoot! Can\'t wait to share these moments with you all. What do you think of this look? 📸✨',
-    hasMedia: true,
-    space: 'Saf' as SpaceType,
+    content: params.content || '',
+    hasMedia: !!params.mediaUrls,
+    space: (params.space || 'Saf') as SpaceType,
   };
 
   const onRefresh = useCallback(() => {
@@ -74,12 +80,56 @@ export default function SchedulePostScreen() {
   const hours = Array.from({ length: 12 }, (_, i) => i + 1);
   const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
-  const handleSchedule = () => {
+  const handleSchedule = async () => {
     setIsScheduling(true);
-    setTimeout(() => {
-      setIsScheduling(false);
+    haptic.medium();
+
+    try {
+      // Build the scheduled timestamp
+      const hour24 = selectedAmPm === 'PM' && selectedHour !== 12
+        ? selectedHour + 12
+        : selectedAmPm === 'AM' && selectedHour === 12 ? 0 : selectedHour;
+      const scheduledAt = new Date(currentYear, currentMonth, selectedDate, hour24, selectedMinute);
+
+      if (scheduledAt <= new Date()) {
+        Alert.alert(t('common.error'), t('screens.schedule-post.mustBeFuture'));
+        setIsScheduling(false);
+        return;
+      }
+
+      const mediaUrls = params.mediaUrls ? JSON.parse(params.mediaUrls) : [];
+      const space = postData.space;
+
+      // Call the appropriate API based on the content space
+      if (space === 'Saf') {
+        await postsApi.create({
+          postType: mediaUrls.length > 0 ? 'IMAGE' : 'TEXT',
+          content: postData.content,
+          mediaUrls,
+          scheduledAt: scheduledAt.toISOString(),
+        });
+      } else if (space === 'Majlis') {
+        await threadsApi.create({
+          content: postData.content,
+          scheduledAt: scheduledAt.toISOString(),
+        });
+      } else if (space === 'Bakra') {
+        await reelsApi.create({
+          videoUrl: mediaUrls[0] || '',
+          duration: 0, // Will be set by the video processing pipeline
+          caption: postData.content,
+          scheduledAt: scheduledAt.toISOString(),
+        });
+      }
+
+      haptic.success();
       router.back();
-    }, 2000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : t('common.somethingWentWrong');
+      Alert.alert(t('common.error'), message);
+    } finally {
+      setIsScheduling(false);
+    }
   };
 
   const formatScheduledTime = () => {

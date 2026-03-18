@@ -39,6 +39,7 @@ type CreatePostPayload = {
   hashtags?: string[];
   hideLikesCount?: boolean;
   commentsDisabled?: boolean;
+  scheduledAt?: string;
 };
 
 type CreateStoryPayload = {
@@ -72,6 +73,7 @@ type CreateThreadPayload = {
   pollOptions?: string[];
   pollDuration?: number;
   poll?: { question: string; options: (string | { text: string; position: number })[]; duration?: number; allowMultiple?: boolean };
+  scheduledAt?: string;
 };
 
 type CreateReelPayload = {
@@ -85,6 +87,7 @@ type CreateReelPayload = {
   isDuet?: boolean;
   isStitch?: boolean;
   normalizeAudio?: boolean;
+  scheduledAt?: string;
 };
 
 type CreateVideoData = {
