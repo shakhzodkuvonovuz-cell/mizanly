@@ -373,4 +373,47 @@ export class CommunitiesService {
       timestamp: new Date().toISOString(),
     };
   }
+
+  // ── Role Management ────────────────────────────────
+
+  async createRole(communityId: string, userId: string, data: {
+    name: string; color?: string;
+    canSendMessages?: boolean; canPostMedia?: boolean; canInvite?: boolean;
+    canKick?: boolean; canBan?: boolean; canManageRoles?: boolean;
+    canManageChannels?: boolean; canSpeak?: boolean;
+  }) {
+    await this.requireAdmin(communityId, userId);
+    const maxPosition = await this.prisma.communityRole.count({ where: { communityId } });
+    return this.prisma.communityRole.create({
+      data: { communityId, position: maxPosition, ...data },
+    });
+  }
+
+  async updateRole(roleId: string, userId: string, data: Record<string, unknown>) {
+    const role = await this.prisma.communityRole.findUnique({ where: { id: roleId } });
+    if (!role) throw new NotFoundException('Role not found');
+    await this.requireAdmin(role.communityId, userId);
+    return this.prisma.communityRole.update({ where: { id: roleId }, data });
+  }
+
+  async deleteRole(roleId: string, userId: string) {
+    const role = await this.prisma.communityRole.findUnique({ where: { id: roleId } });
+    if (!role) throw new NotFoundException('Role not found');
+    await this.requireAdmin(role.communityId, userId);
+    return this.prisma.communityRole.delete({ where: { id: roleId } });
+  }
+
+  async listRoles(communityId: string) {
+    return this.prisma.communityRole.findMany({
+      where: { communityId },
+      orderBy: { position: 'asc' },
+    });
+  }
+
+  private async requireAdmin(communityId: string, userId: string) {
+    const community = await this.prisma.community.findUnique({ where: { id: communityId } });
+    if (!community) throw new NotFoundException('Community not found');
+    if (community.ownerId !== userId) throw new ForbiddenException('Only the owner can manage roles');
+    return community;
+  }
 }
