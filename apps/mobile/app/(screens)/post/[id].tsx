@@ -29,6 +29,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { postsApi } from '@/services/api';
 import type { Comment } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTTS } from '@/hooks/useTTS';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlBorderStart } from '@/utils/rtl';
 
@@ -223,6 +224,7 @@ export default function PostDetailScreen() {
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const sendPress = useAnimatedPress({ scaleTo: 0.85 });
   const { t, isRTL } = useTranslation();
+  const tts = useTTS();
 
   const postQuery = useQuery({
     queryKey: ['post', id],
@@ -282,10 +284,35 @@ export default function PostDetailScreen() {
     );
   }
 
+  const handleListen = useCallback(() => {
+    if (!postQuery.data) return;
+    const content = postQuery.data.content;
+    if (content && content.length > 50) {
+      const title = postQuery.data.user?.displayName
+        ? `@${postQuery.data.user.username}`
+        : t('saf.post');
+      tts.speak(content, title);
+    }
+  }, [postQuery.data, tts, t]);
+
+  const showListenButton = postQuery.data?.content && postQuery.data.content.length > 100;
+
   const listHeader = useMemo(() => (
     postQuery.data ? (
       <View>
         <PostCard post={postQuery.data} viewerId={user?.id} />
+        {showListenButton && (
+          <Pressable
+            onPress={handleListen}
+            style={[styles.listenButton, { flexDirection: rtlFlexRow(isRTL) }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={t('tts.listen')}
+            accessibilityRole="button"
+          >
+            <Icon name="volume-x" size={16} color={colors.emerald} />
+            <Text style={styles.listenText}>{t('tts.listen')}</Text>
+          </Pressable>
+        )}
         <View style={styles.commentsHeader}>
           <Text style={[styles.commentsTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('saf.comments', { count: postQuery.data.commentsCount })}
@@ -297,7 +324,7 @@ export default function PostDetailScreen() {
         <Skeleton.PostCard />
       </View>
     ) : null
-  ), [postQuery.data, postQuery.isLoading, user?.id]);
+  ), [postQuery.data, postQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t]);
 
   const listEmpty = useMemo(() => (
     !commentsQuery.isLoading && postQuery.data ? (
@@ -420,6 +447,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   headerSpacer: { height: 100 },
   loader: { marginTop: 60 },
+  listenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  listenText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
   commentsHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,

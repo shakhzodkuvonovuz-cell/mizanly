@@ -885,7 +885,7 @@ analytics.questionsRemaining: "{{count}} questions remaining this hour"
 
 ---
 
-### [ ] Task 15: AI Read-Aloud for Content
+### [x] Task 15: AI Read-Aloud for Content — Done: useTTS hook with expo-speech, TTSMiniPlayer, Listen buttons on threads/posts, language detection, Quran bypass, speed control, i18n 8 langs
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/thread/[id].tsx` — thread detail (long text content)

@@ -21,6 +21,8 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { threadsApi } from '@/services/api';
 import type { ThreadReply } from '@/types';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useTTS } from '@/hooks/useTTS';
+import { useHaptic } from '@/hooks/useHaptic';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 
@@ -157,6 +159,8 @@ export default function ThreadDetailScreen() {
   const [replyText, setReplyText] = useState('');
   const [replyTo, setReplyTo] = useState<{ id: string; username: string } | null>(null);
   const { t, isRTL } = useTranslation();
+  const tts = useTTS();
+  const haptic = useHaptic();
 
   const threadQuery = useQuery({
     queryKey: ['thread', id],
@@ -219,10 +223,36 @@ export default function ThreadDetailScreen() {
     );
   }
 
+  const handleListen = useCallback(() => {
+    if (!threadQuery.data) return;
+    haptic.light();
+    const content = threadQuery.data.content;
+    if (content && content.length > 50) {
+      const title = threadQuery.data.user?.displayName
+        ? `@${threadQuery.data.user.username}`
+        : t('majlis.thread');
+      tts.speak(content, title);
+    }
+  }, [threadQuery.data, haptic, tts, t]);
+
+  const showListenButton = threadQuery.data?.content && threadQuery.data.content.length > 100;
+
   const listHeader = useMemo(() => (
     threadQuery.data ? (
       <View>
         <ThreadCard thread={threadQuery.data} viewerId={user?.id} />
+        {showListenButton && (
+          <Pressable
+            onPress={handleListen}
+            style={[styles.listenButton, { flexDirection: rtlFlexRow(isRTL) }]}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            accessibilityLabel={t('tts.listen')}
+            accessibilityRole="button"
+          >
+            <Icon name="volume-x" size={16} color={colors.emerald} />
+            <Text style={styles.listenText}>{t('tts.listen')}</Text>
+          </Pressable>
+        )}
         <View style={styles.repliesHeader}>
           <Text style={[styles.repliesTitle, { textAlign: rtlTextAlign(isRTL) }]}>
             {t('majlis.replies', { count: threadQuery.data.repliesCount })}
@@ -234,7 +264,7 @@ export default function ThreadDetailScreen() {
         <Skeleton.ThreadCard />
       </View>
     ) : null
-  ), [threadQuery.data, threadQuery.isLoading, user?.id]);
+  ), [threadQuery.data, threadQuery.isLoading, user?.id, showListenButton, handleListen, isRTL, t]);
 
   const listEmpty = useMemo(() => (
     !repliesQuery.isLoading && threadQuery.data ? (
@@ -357,6 +387,18 @@ export default function ThreadDetailScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.dark.bg },
   loader: { marginTop: 60 },
+  listenButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+  },
+  listenText: {
+    color: colors.emerald,
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+  },
   repliesHeader: {
     paddingHorizontal: spacing.base, paddingVertical: spacing.md,
     borderTopWidth: 0.5, borderTopColor: colors.dark.border,

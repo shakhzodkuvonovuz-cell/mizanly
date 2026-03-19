@@ -2871,5 +2871,14 @@
     "exportProgress": "Mengekspor {{percent}}%",
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
+  },
+  "tts": {
+    "listen": "Dengarkan",
+    "listening": "Mendengarkan...",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "stop": "Berhenti",
+    "speed": "Kecepatan",
+    "readingAloud": "Membaca dengan suara keras"
   }
 }

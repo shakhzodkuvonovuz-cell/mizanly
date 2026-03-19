@@ -2871,5 +2871,14 @@
     "exportProgress": "Exportation {{percent}}%",
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
+  },
+  "tts": {
+    "listen": "Écouter",
+    "listening": "Écoute en cours...",
+    "pause": "Pause",
+    "resume": "Reprendre",
+    "stop": "Arrêter",
+    "speed": "Vitesse",
+    "readingAloud": "Lecture à voix haute"
   }
 }

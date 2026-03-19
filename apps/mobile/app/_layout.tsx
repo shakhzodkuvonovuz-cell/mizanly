@@ -24,6 +24,7 @@ import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { Icon } from '@/components/ui/Icon';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { MiniPlayer } from '@/components/ui/MiniPlayer';
+import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
 import { initSentry, setSentryUser } from '@/config/sentry';
@@ -283,6 +284,7 @@ export default function RootLayout() {
                 <Stack.Screen name="(screens)" />
               </Stack>
               <MiniPlayer />
+              <TTSMiniPlayer />
             </QueryClientProvider>
           </ClerkLoaded>
         </ClerkProvider>

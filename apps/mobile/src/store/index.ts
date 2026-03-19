@@ -133,6 +133,17 @@ interface AppState {
   storyViewerData: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null;
   setStoryViewerData: (data: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null) => void;
 
+  // TTS (Text-to-Speech)
+  ttsText: string | null;
+  ttsTitle: string | null;
+  ttsPlaying: boolean;
+  ttsSpeed: number;
+  setTTSText: (text: string | null) => void;
+  setTTSTitle: (title: string | null) => void;
+  setTTSPlaying: (playing: boolean) => void;
+  setTTSSpeed: (speed: number) => void;
+  stopTTS: () => void;
+
   logout: () => void;
 }
 
@@ -286,6 +297,17 @@ export const useStore = create<AppState>()(
       storyViewerData: null,
       setStoryViewerData: (storyViewerData) => set({ storyViewerData }),
 
+      // TTS (Text-to-Speech)
+      ttsText: null,
+      ttsTitle: null,
+      ttsPlaying: false,
+      ttsSpeed: 1,
+      setTTSText: (ttsText) => set({ ttsText }),
+      setTTSTitle: (ttsTitle) => set({ ttsTitle }),
+      setTTSPlaying: (ttsPlaying) => set({ ttsPlaying }),
+      setTTSSpeed: (ttsSpeed) => set({ ttsSpeed }),
+      stopTTS: () => set({ ttsText: null, ttsTitle: null, ttsPlaying: false }),
+
       // Auth actions
       logout: () => set({
         user: null,
@@ -309,6 +331,10 @@ export const useStore = create<AppState>()(
         downloadQueue: [],
         isChildAccount: false,
         parentalRestrictions: null,
+        ttsText: null,
+        ttsTitle: null,
+        ttsPlaying: false,
+        ttsSpeed: 1,
       }),
     }),
     {
@@ -363,3 +389,5 @@ export const usePiPVideoId = () => useStore((s) => s.pipVideoId);
 export const useAmbientModeEnabled = () => useStore((s) => s.ambientModeEnabled);
 export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
 export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);
+export const useTTSActive = () => useStore((s) => !!s.ttsText);
+export const useTTSPlaying = () => useStore((s) => s.ttsPlaying);
