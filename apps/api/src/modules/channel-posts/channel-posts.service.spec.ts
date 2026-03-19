@@ -81,8 +81,11 @@ describe('ChannelPostsService', () => {
 
   describe('delete', () => {
     it('should delete post by owner', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
-      prisma.channelPost.findUnique.mockResolvedValue({ id: 'cp1', channelId: 'ch1' });
+      prisma.channelPost.findUnique.mockResolvedValue({
+        id: 'cp1', channelId: 'ch1', userId: 'user1',
+        user: { id: 'user1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false },
+        channel: { id: 'ch1', handle: 'ch1', name: 'Channel 1' },
+      });
       prisma.channelPost.delete.mockResolvedValue({ id: 'cp1' });
       if (typeof service.delete === 'function') {
         await service.delete('cp1', 'user1');
@@ -93,6 +96,11 @@ describe('ChannelPostsService', () => {
 
   describe('pin/unpin', () => {
     it('should pin a post', async () => {
+      prisma.channelPost.findUnique.mockResolvedValue({
+        id: 'cp1', channelId: 'ch1', userId: 'user1',
+        user: { id: 'user1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false },
+        channel: { id: 'ch1', handle: 'ch1', name: 'Channel 1' },
+      });
       prisma.channelPost.update.mockResolvedValue({ id: 'cp1', isPinned: true });
       if (typeof (service as any).pin === 'function') {
         const result = await (service as any).pin('cp1', 'user1');

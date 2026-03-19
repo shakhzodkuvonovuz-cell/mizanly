@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSafetyService } from './content-safety.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -12,6 +13,8 @@ describe('ContentSafetyService', () => {
       providers: [
         ...globalMockProviders,
         ContentSafetyService,
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('test-key') } },
+        { provide: 'REDIS', useValue: { get: jest.fn().mockResolvedValue('0'), set: jest.fn(), incr: jest.fn() } },
         {
           provide: PrismaService,
           useValue: {
@@ -103,8 +106,10 @@ describe('ContentSafetyService', () => {
   describe('forward limit check', () => {
     it('should detect forwarded message abuse', async () => {
       if (typeof (service as any).checkForwardLimit === 'function') {
-        const result = await (service as any).checkForwardLimit('msg-1', 10);
-        expect(typeof result).toBe('boolean');
+        const result = await (service as any).checkForwardLimit('msg-1');
+        expect(result).toHaveProperty('allowed');
+        expect(result).toHaveProperty('forwardCount');
+        expect(result).toHaveProperty('maxForwards');
       }
     });
   });

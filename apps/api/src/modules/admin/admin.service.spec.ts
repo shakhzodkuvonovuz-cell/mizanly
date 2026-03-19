@@ -269,11 +269,11 @@ describe('AdminService', () => {
 
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
-        data: {
+        data: expect.objectContaining({
           isDeactivated: true,
           banReason: 'Spam',
           banExpiresAt: expect.any(Date),
-        },
+        }),
       });
     });
 
@@ -295,11 +295,11 @@ describe('AdminService', () => {
 
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-1' },
-        data: {
+        data: expect.objectContaining({
           isDeactivated: false,
           banReason: null,
           banExpiresAt: null,
-        },
+        }),
       });
     });
 

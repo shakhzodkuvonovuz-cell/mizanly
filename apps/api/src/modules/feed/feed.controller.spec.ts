@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FeedController } from './feed.controller';
 import { FeedService } from './feed.service';
 import { FeedTransparencyService } from './feed-transparency.service';
+import { PersonalizedFeedService } from './personalized-feed.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('FeedController', () => {
@@ -17,12 +18,23 @@ describe('FeedController', () => {
     logInteraction: jest.fn(),
     undismiss: jest.fn(),
     getDismissed: jest.fn().mockResolvedValue([]),
+    getTrendingFeed: jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } }),
+    getFeaturedFeed: jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } }),
+    getSuggestedUsers: jest.fn().mockResolvedValue([]),
+    featurePost: jest.fn().mockResolvedValue({ id: 'p1', isFeatured: true }),
+    getNearbyContent: jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } }),
   };
 
   const mockTransparency = {
     explainPost: jest.fn().mockResolvedValue({ reasons: ['Popular post'] }),
+    explainThread: jest.fn().mockResolvedValue({ reasons: ['Trending'] }),
     explainFeed: jest.fn(),
-    enhancedSearch: jest.fn(),
+    enhancedSearch: jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } }),
+  };
+
+  const mockPersonalizedFeed = {
+    getPersonalizedFeed: jest.fn().mockResolvedValue({ data: [], meta: { hasMore: false } }),
+    trackSessionSignal: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -32,6 +44,7 @@ describe('FeedController', () => {
         ...globalMockProviders,
         { provide: FeedService, useValue: mockService },
         { provide: FeedTransparencyService, useValue: mockTransparency },
+        { provide: PersonalizedFeedService, useValue: mockPersonalizedFeed },
       ],
     }).compile();
 

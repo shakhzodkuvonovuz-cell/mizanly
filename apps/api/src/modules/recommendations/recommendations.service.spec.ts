@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RecommendationsService } from './recommendations.service';
 import { PrismaService } from '../../config/prisma.service';
+import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { PostVisibility, ReelStatus } from '@prisma/client';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
@@ -9,10 +10,17 @@ describe('RecommendationsService', () => {
   let prisma: any;
 
   beforeEach(async () => {
+    const mockEmbeddingsService = {
+      getUserInterestVector: jest.fn().mockResolvedValue(null),
+      findSimilarByVector: jest.fn().mockResolvedValue([]),
+      generateEmbedding: jest.fn().mockResolvedValue(null),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ...globalMockProviders,
         RecommendationsService,
+        { provide: EmbeddingsService, useValue: mockEmbeddingsService },
         {
           provide: PrismaService,
           useValue: {
@@ -36,6 +44,12 @@ describe('RecommendationsService', () => {
             },
             channel: {
               findMany: jest.fn(),
+            },
+            thread: {
+              findMany: jest.fn(),
+            },
+            feedInteraction: {
+              findMany: jest.fn().mockResolvedValue([]),
             },
           },
         },

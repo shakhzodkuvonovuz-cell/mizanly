@@ -84,16 +84,16 @@ describe('CollabsService', () => {
     });
   });
 
-  describe('getCollabs', () => {
+  describe('getPostCollabs', () => {
     it('lists collabs for a post', async () => {
       prisma.postCollab.findMany.mockResolvedValue([{ id: 'c1', status: 'ACCEPTED' }]);
-      const result = await service.getCollabs('post1');
+      const result = await service.getPostCollabs('post1');
       expect(result).toHaveLength(1);
     });
 
     it('returns empty array for post with no collabs', async () => {
       prisma.postCollab.findMany.mockResolvedValue([]);
-      const result = await service.getCollabs('post1');
+      const result = await service.getPostCollabs('post1');
       expect(result).toEqual([]);
     });
   });

@@ -94,12 +94,12 @@ describe('CallsService', () => {
 
   describe('getHistory', () => {
     it('should return call history for user', async () => {
-      prisma.callSession.findMany.mockResolvedValue([
-        { id: 'c1', status: 'ENDED', duration: 120 },
+      prisma.callParticipant.findMany.mockResolvedValue([
+        { id: 'p1', userId: 'user1', session: { id: 'c1', status: 'ENDED', participants: [] } },
       ]);
       if (typeof service.getHistory === 'function') {
         const result = await service.getHistory('user1');
-        expect(result).toHaveLength(1);
+        expect(result.data).toHaveLength(1);
       }
     });
 
@@ -107,7 +107,7 @@ describe('CallsService', () => {
       prisma.callSession.findMany.mockResolvedValue([]);
       if (typeof service.getHistory === 'function') {
         const result = await service.getHistory('user1');
-        expect(result).toEqual([]);
+        expect(result.data).toEqual([]);
       }
     });
   });
