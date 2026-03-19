@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, avatar as avatarSizes, animation, radius } from '@/theme';
 import { imagePresets } from '@/utils/image';
+import { BLURHASH_AVATAR } from '@/utils/blurhash';
 
 type Size = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl';
 
@@ -21,6 +22,8 @@ interface AvatarProps {
   showStoryRing?: boolean;
   onPress?: () => void;
   accessibilityLabel?: string;
+  /** Per-content blurhash string from API. Falls back to default avatar blurhash. */
+  blurhash?: string | null;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -35,6 +38,7 @@ export function Avatar({
   showStoryRing,
   onPress,
   accessibilityLabel,
+  blurhash,
 }: AvatarProps) {
   const dim = avatarSizes[size];
   const textSize = dim * 0.4;
@@ -92,6 +96,8 @@ export function Avatar({
                   source={{ uri: optimizedUri }}
                   style={[styles.img, { width: innerDim, height: innerDim, borderRadius: radius.full }]}
                   contentFit="cover"
+                  placeholder={{ blurhash: blurhash ?? BLURHASH_AVATAR }}
+                  transition={300}
                 />
               ) : (
                 <Text style={[styles.fallback, { fontSize: textSize }]}>

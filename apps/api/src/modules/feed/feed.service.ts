@@ -24,6 +24,7 @@ const FEED_POST_SELECT = {
   commentsDisabled: true,
   isSensitive: true,
   isFeatured: true,
+  blurhash: true,
   isRemoved: true,
   createdAt: true,
   updatedAt: true,

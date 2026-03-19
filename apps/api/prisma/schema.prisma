@@ -227,17 +227,19 @@ enum CollabStatus {
 // ============================================================
 
 model User {
-  id          String  @id @default(cuid())
-  clerkId     String  @unique
-  email       String  @unique
-  username    String  @unique
-  displayName String
-  bio         String  @default("") @db.VarChar(500)
-  avatarUrl   String?
-  coverUrl    String?
-  website     String?
-  location    String?
-  phone       String?
+  id             String  @id @default(cuid())
+  clerkId        String  @unique
+  email          String  @unique
+  username       String  @unique
+  displayName    String
+  bio            String  @default("") @db.VarChar(500)
+  avatarUrl      String?
+  avatarBlurhash String?
+  coverUrl       String?
+  coverBlurhash  String?
+  website        String?
+  location       String?
+  phone          String?
 
   followersCount Int @default(0)
   followingCount Int @default(0)
@@ -488,6 +490,7 @@ model Post {
   isDownloadable   Boolean        @default(true)
   isFeatured       Boolean        @default(false)
   featuredAt       DateTime?
+  blurhash         String?
 
   isRemoved        Boolean           @default(false)
   removedReason    String?
@@ -533,6 +536,7 @@ model Story {
   highlightAlbumId String?
   highlightAlbum   StoryHighlightAlbum?   @relation(fields: [highlightAlbumId], references: [id], onDelete: SetNull)
   stickerData      Json?
+  blurhash         String?
   closeFriendsOnly Boolean                @default(false)
   subscribersOnly  Boolean                @default(false)
   isArchived       Boolean                @default(false)
@@ -595,6 +599,7 @@ model Reel {
   isPhotoCarousel Boolean           @default(false)
   carouselUrls    String[]          @default([])
   scheduledAt     DateTime?
+  blurhash        String?
   likesCount      Int               @default(0)
   commentsCount   Int               @default(0)
   sharesCount     Int               @default(0)
@@ -801,6 +806,7 @@ model Video {
   isLooping         Boolean            @default(false)
   normalizeAudio    Boolean            @default(false)
   thumbnailUrl      String?
+  blurhash          String?
   duration          Float
   width             Int?
   height            Int?
