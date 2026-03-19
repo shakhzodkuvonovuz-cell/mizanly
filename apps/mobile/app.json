@@ -37,6 +37,7 @@
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ]
     },
+    "jsEngine": "hermes",
     "web": {
       "bundler": "metro",
       "output": "single",
