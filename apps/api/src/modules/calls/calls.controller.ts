@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Param, Body, UseGuards, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -8,6 +9,7 @@ import { InitiateCallDto } from './dto/initiate-call.dto';
 @ApiTags('Calls')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('calls')
 export class CallsController {
   constructor(private calls: CallsService) {}

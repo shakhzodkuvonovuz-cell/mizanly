@@ -119,7 +119,7 @@ export class FeedService {
     const posts = await this.prisma.post.findMany({
       where: {
         locationName: { not: null },
-        isArchived: false,
+        isRemoved: false,
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
       },
       select: {

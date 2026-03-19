@@ -274,6 +274,9 @@ const ReelItem = memo(function ReelItem({
                       haptic.medium();
                     }
                   }}
+                  hitSlop={12}
+                  accessibilityLabel={item.user?.isFollowing ? t('common.following') : t('common.follow')}
+                  accessibilityRole="button"
                   style={{
                     position: 'absolute',
                     bottom: -6, alignSelf: 'center',
@@ -516,17 +519,37 @@ export default function BakraScreen() {
     }
   }, [currentIndex, reels]);
 
+  const queryClient = useQueryClient();
   const likeInFlight = useRef(false);
   const handleLike = async (reel: Reel) => {
     if (likeInFlight.current) return;
     likeInFlight.current = true;
     haptic.light();
+
+    // Optimistic update: immediately toggle like state in cache
+    queryClient.setQueryData(['reels-feed'], (old: typeof feedQuery.data) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          data: page.data.map((r: Reel) =>
+            r.id === reel.id
+              ? { ...r, isLiked: !reel.isLiked, likesCount: reel.isLiked ? r.likesCount - 1 : r.likesCount + 1 }
+              : r
+          ),
+        })),
+      };
+    });
+
     try {
       if (reel.isLiked) {
         await reelsApi.unlike(reel.id);
       } else {
         await reelsApi.like(reel.id);
       }
+    } catch {
+      // Revert on error
       feedQuery.refetch();
     } finally {
       likeInFlight.current = false;
@@ -538,12 +561,28 @@ export default function BakraScreen() {
     if (bookmarkInFlight.current) return;
     bookmarkInFlight.current = true;
     haptic.light();
+
+    // Optimistic update
+    queryClient.setQueryData(['reels-feed'], (old: typeof feedQuery.data) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          data: page.data.map((r: Reel) =>
+            r.id === reel.id ? { ...r, isBookmarked: !reel.isBookmarked } : r
+          ),
+        })),
+      };
+    });
+
     try {
       if (reel.isBookmarked) {
         await reelsApi.unbookmark(reel.id);
       } else {
         await reelsApi.bookmark(reel.id);
       }
+    } catch {
       feedQuery.refetch();
     } finally {
       bookmarkInFlight.current = false;

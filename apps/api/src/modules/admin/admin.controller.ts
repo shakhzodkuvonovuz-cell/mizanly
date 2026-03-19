@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
 
 @ApiTags('Admin')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('admin')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

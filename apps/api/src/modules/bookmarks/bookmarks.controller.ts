@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ import { SavePostDto, MoveCollectionDto } from './dto/bookmark.dto';
 @ApiTags('Bookmarks')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('api/v1/bookmarks')
 export class BookmarksController {
   constructor(private service: BookmarksService) {}

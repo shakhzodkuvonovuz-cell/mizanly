@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -86,6 +87,7 @@ class RamadanInfoQueryDto {
 }
 
 @ApiTags('Islamic')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('islamic')
 @UseGuards(OptionalClerkAuthGuard)
 export class IslamicController {

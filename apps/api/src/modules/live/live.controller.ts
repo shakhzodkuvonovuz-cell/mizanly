@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -7,6 +8,7 @@ import { LiveService } from './live.service';
 import { CreateLiveDto } from './dto/create-live.dto';
 
 @ApiTags('Live Sessions')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('live')
 export class LiveController {
   constructor(private live: LiveService) {}

@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Post,
@@ -15,6 +16,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Follows')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('follows')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

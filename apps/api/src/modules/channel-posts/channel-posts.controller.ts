@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Patch, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -7,6 +8,7 @@ import { ChannelPostsService } from './channel-posts.service';
 import { CreateChannelPostDto } from './dto/create-channel-post.dto';
 
 @ApiTags('Channel Community Posts')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('channel-posts')
 export class ChannelPostsController {
   constructor(private channelPosts: ChannelPostsService) {}

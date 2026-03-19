@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Post,
@@ -23,6 +24,7 @@ import {
 } from './dto/parental-control.dto';
 
 @ApiTags('Parental Controls')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('parental-controls')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

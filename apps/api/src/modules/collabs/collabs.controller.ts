@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -8,6 +9,7 @@ import { InviteCollabDto } from './dto/invite-collab.dto';
 @ApiTags('Post Collaborations')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 @Controller('collabs')
 export class CollabsController {
   constructor(private collabs: CollabsService) {}
