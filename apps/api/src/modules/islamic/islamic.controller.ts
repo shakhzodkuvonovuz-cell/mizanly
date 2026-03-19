@@ -434,6 +434,27 @@ export class IslamicController {
   }
 
   // ============================================================
+  // PRAYER TIME AWARENESS
+  // ============================================================
+
+  @Get('prayer-times/current-window')
+  @ApiOperation({ summary: 'Get current prayer window and minutes until next prayer' })
+  @ApiQuery({ name: 'fajr', required: true, type: String })
+  @ApiQuery({ name: 'dhuhr', required: true, type: String })
+  @ApiQuery({ name: 'asr', required: true, type: String })
+  @ApiQuery({ name: 'maghrib', required: true, type: String })
+  @ApiQuery({ name: 'isha', required: true, type: String })
+  async getCurrentPrayerWindow(
+    @Query('fajr') fajr: string,
+    @Query('dhuhr') dhuhr: string,
+    @Query('asr') asr: string,
+    @Query('maghrib') maghrib: string,
+    @Query('isha') isha: string,
+  ) {
+    return this.islamicService.getCurrentPrayerWindow({ fajr, dhuhr, asr, maghrib, isha });
+  }
+
+  // ============================================================
   // FASTING TRACKER
   // ============================================================
 

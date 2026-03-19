@@ -2871,6 +2871,18 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "prayer": {
+    "timeFor": "{{prayer}} vakti geldi",
+    "in15Min": "{{prayer}} 15 dakika sonra",
+    "prayFirst": "Ara ver ve namaz kıl",
+    "prayFirstTitle": "Namaz Vakti",
+    "jummahMubarak": "Hayırlı Cumalar!",
+    "findMosque": "Yakınında cami bul",
+    "kahfReminder": "Bugün Kehf Suresi'ni okumayı unutma",
+    "afterPrayerAdhkar": "{{prayer}} sonrası tesbihat",
+    "configurePrayers": "Namaz Bildirimleri",
+    "enableNotification": "{{prayer}} bildirimini etkinleştir"
+  },
   "hifz": {
     "title": "Kur'an Ezberleme",
     "progress": "İlerleme",

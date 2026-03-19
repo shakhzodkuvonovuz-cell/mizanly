@@ -2871,6 +2871,18 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "prayer": {
+    "timeFor": "حان وقت {{prayer}}",
+    "in15Min": "{{prayer}} بعد 15 دقيقة",
+    "prayFirst": "خذ استراحة وصلِّ",
+    "prayFirstTitle": "وقت الصلاة",
+    "jummahMubarak": "جمعة مباركة!",
+    "findMosque": "ابحث عن مسجد قريب",
+    "kahfReminder": "لا تنسَ قراءة سورة الكهف اليوم",
+    "afterPrayerAdhkar": "أذكار بعد {{prayer}}",
+    "configurePrayers": "إشعارات الصلاة",
+    "enableNotification": "تفعيل إشعار {{prayer}}"
+  },
   "hifz": {
     "title": "حفظ القرآن",
     "progress": "التقدم",

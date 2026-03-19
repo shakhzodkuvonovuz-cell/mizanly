@@ -2871,6 +2871,18 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "prayer": {
+    "timeFor": "It's time for {{prayer}}",
+    "in15Min": "{{prayer}} in 15 minutes",
+    "prayFirst": "Take a break and pray",
+    "prayFirstTitle": "Prayer Time",
+    "jummahMubarak": "Jummah Mubarak!",
+    "findMosque": "Find a mosque near you",
+    "kahfReminder": "Don't forget Surah Al-Kahf today",
+    "afterPrayerAdhkar": "After {{prayer}} Adhkar",
+    "configurePrayers": "Prayer Notifications",
+    "enableNotification": "Enable {{prayer}} notification"
+  },
   "hifz": {
     "title": "Quran Memorization",
     "progress": "Progress",

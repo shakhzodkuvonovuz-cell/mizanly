@@ -1056,6 +1056,49 @@ export class IslamicService {
     return this.namesOfAllah.find((n) => n.number === num);
   }
 
+  // ============================================================
+  // PRAYER TIME WINDOW
+  // ============================================================
+
+  getCurrentPrayerWindow(prayerTimings: Record<string, string>): {
+    currentPrayer: string;
+    nextPrayer: string;
+    minutesUntilNext: number;
+  } {
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    const prayerMinutes: { name: string; minutes: number }[] = [];
+
+    for (const prayer of prayers) {
+      const timeStr = prayerTimings[prayer];
+      if (!timeStr) continue;
+      const [h, m] = timeStr.split(':').map(Number);
+      prayerMinutes.push({ name: prayer, minutes: h * 60 + m });
+    }
+
+    if (prayerMinutes.length === 0) {
+      return { currentPrayer: 'unknown', nextPrayer: 'fajr', minutesUntilNext: 0 };
+    }
+
+    // Find current and next prayer
+    let currentPrayer = prayerMinutes[prayerMinutes.length - 1].name; // default: last prayer (isha)
+    let nextPrayer = prayerMinutes[0].name; // default: first prayer (fajr)
+    let minutesUntilNext = (prayerMinutes[0].minutes + 1440 - currentMinutes) % 1440;
+
+    for (let i = 0; i < prayerMinutes.length; i++) {
+      if (currentMinutes >= prayerMinutes[i].minutes) {
+        currentPrayer = prayerMinutes[i].name;
+        const nextIdx = (i + 1) % prayerMinutes.length;
+        nextPrayer = prayerMinutes[nextIdx].name;
+        minutesUntilNext = (prayerMinutes[nextIdx].minutes + 1440 - currentMinutes) % 1440;
+      }
+    }
+
+    return { currentPrayer, nextPrayer, minutesUntilNext };
+  }
+
   getDailyNameOfAllah(): NameOfAllah {
     const daysSinceEpoch = Math.floor(Date.now() / 86400000);
     const index = daysSinceEpoch % 99;

@@ -2871,6 +2871,18 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "prayer": {
+    "timeFor": "{{prayer}} এর সময় হয়েছে",
+    "in15Min": "{{prayer}} ১৫ মিনিট পর",
+    "prayFirst": "বিরতি নিন এবং নামাজ পড়ুন",
+    "prayFirstTitle": "নামাজের সময়",
+    "jummahMubarak": "জুমা মুবারক!",
+    "findMosque": "কাছের মসজিদ খুঁজুন",
+    "kahfReminder": "আজ সূরা কাহফ পড়তে ভুলবেন না",
+    "afterPrayerAdhkar": "{{prayer}} এর পর যিকির",
+    "configurePrayers": "নামাজের বিজ্ঞপ্তি",
+    "enableNotification": "{{prayer}} বিজ্ঞপ্তি সক্রিয় করুন"
+  },
   "hifz": {
     "title": "কুরআন হিফজ",
     "progress": "অগ্রগতি",

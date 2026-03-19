@@ -2871,6 +2871,18 @@
     "noVideo": "Tiada video dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "prayer": {
+    "timeFor": "Waktu {{prayer}} telah tiba",
+    "in15Min": "{{prayer}} 15 minit lagi",
+    "prayFirst": "Berehat seketika dan solat",
+    "prayFirstTitle": "Waktu Solat",
+    "jummahMubarak": "Jumaat Mubarakah!",
+    "findMosque": "Cari masjid berdekatan",
+    "kahfReminder": "Jangan lupa baca Surah Al-Kahfi hari ini",
+    "afterPrayerAdhkar": "Zikir selepas {{prayer}}",
+    "configurePrayers": "Notifikasi Solat",
+    "enableNotification": "Aktifkan notifikasi {{prayer}}"
+  },
   "hifz": {
     "title": "Hafazan Al-Quran",
     "progress": "Kemajuan",

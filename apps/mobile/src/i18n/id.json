@@ -2872,6 +2872,18 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "prayer": {
+    "timeFor": "Waktunya {{prayer}}",
+    "in15Min": "{{prayer}} 15 menit lagi",
+    "prayFirst": "Istirahat sejenak dan shalat",
+    "prayFirstTitle": "Waktu Shalat",
+    "jummahMubarak": "Jumat Berkah!",
+    "findMosque": "Temukan masjid terdekat",
+    "kahfReminder": "Jangan lupa baca Surah Al-Kahfi hari ini",
+    "afterPrayerAdhkar": "Dzikir setelah {{prayer}}",
+    "configurePrayers": "Notifikasi Shalat",
+    "enableNotification": "Aktifkan notifikasi {{prayer}}"
+  },
   "hifz": {
     "title": "Hafalan Al-Quran",
     "progress": "Kemajuan",

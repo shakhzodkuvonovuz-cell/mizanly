@@ -2872,6 +2872,18 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "prayer": {
+    "timeFor": "C'est l'heure de {{prayer}}",
+    "in15Min": "{{prayer}} dans 15 minutes",
+    "prayFirst": "Faites une pause et priez",
+    "prayFirstTitle": "Heure de prière",
+    "jummahMubarak": "Jummah Mubarak !",
+    "findMosque": "Trouvez une mosquée près de vous",
+    "kahfReminder": "N'oubliez pas Sourate Al-Kahf aujourd'hui",
+    "afterPrayerAdhkar": "Adhkar après {{prayer}}",
+    "configurePrayers": "Notifications de prière",
+    "enableNotification": "Activer la notification {{prayer}}"
+  },
   "hifz": {
     "title": "Mémorisation du Coran",
     "progress": "Progression",

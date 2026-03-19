@@ -1385,7 +1385,7 @@ hifz.findStudyPartner: "Find Study Partner"
 
 ---
 
-### [ ] Task 23: Prayer-Time-Aware Smart Features
+### [x] Task 23: Prayer-Time-Aware Smart Features — Done: current-window endpoint, prayer DND, pray-first nudge, Jummah reminder, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/islamic/islamic.service.ts`

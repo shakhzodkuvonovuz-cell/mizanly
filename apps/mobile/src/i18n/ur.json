@@ -2872,6 +2872,18 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "prayer": {
+    "timeFor": "{{prayer}} کا وقت ہو گیا",
+    "in15Min": "{{prayer}} 15 منٹ بعد",
+    "prayFirst": "وقفہ لیں اور نماز پڑھیں",
+    "prayFirstTitle": "نماز کا وقت",
+    "jummahMubarak": "جمعہ مبارک!",
+    "findMosque": "قریبی مسجد تلاش کریں",
+    "kahfReminder": "آج سورۃ الکہف پڑھنا نہ بھولیں",
+    "afterPrayerAdhkar": "{{prayer}} کے بعد اذکار",
+    "configurePrayers": "نماز کی اطلاعات",
+    "enableNotification": "{{prayer}} کی اطلاع فعال کریں"
+  },
   "hifz": {
     "title": "حفظ قرآن",
     "progress": "پیش رفت",
