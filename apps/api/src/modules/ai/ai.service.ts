@@ -371,6 +371,67 @@ Only respond with the summary, nothing else.`;
     }
   }
 
+  // ── Voice Message Transcription ──────────────────────────
+
+  /**
+   * Transcribe a voice message using Whisper API.
+   * Updates the message's transcription field in the database.
+   * Returns the transcription text or null on failure.
+   */
+  async transcribeVoiceMessage(messageId: string, audioUrl: string): Promise<string | null> {
+    const whisperKey = this.config.get<string>('OPENAI_API_KEY');
+
+    if (!whisperKey) {
+      this.logger.debug('OPENAI_API_KEY not set — voice transcription skipped');
+      return null;
+    }
+
+    try {
+      const audioResponse = await fetch(audioUrl);
+      if (!audioResponse.ok) {
+        this.logger.warn(`Failed to fetch voice message audio: ${audioResponse.status}`);
+        return null;
+      }
+
+      const audioBlob = await audioResponse.blob();
+
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'voice.m4a');
+      formData.append('model', 'whisper-1');
+      formData.append('response_format', 'text');
+      // No language specified — Whisper auto-detects
+      // Supports: Arabic, English, Turkish, Urdu, Bengali, French, Indonesian, Malay
+
+      const whisperResponse = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${whisperKey}` },
+        body: formData,
+      });
+
+      if (!whisperResponse.ok) {
+        this.logger.warn(`Whisper voice transcription failed: ${whisperResponse.status}`);
+        return null;
+      }
+
+      const transcription = (await whisperResponse.text()).trim();
+
+      if (!transcription) {
+        return null;
+      }
+
+      // Update message with transcription
+      await this.prisma.message.update({
+        where: { id: messageId },
+        data: { transcription },
+      });
+
+      return transcription;
+    } catch (error) {
+      this.logger.error(`Voice transcription failed for message ${messageId}`, error);
+      return null;
+    }
+  }
+
   async getVideoCaptions(videoId: string, language = 'en') {
     return this.prisma.aiCaption.findUnique({
       where: { videoId_language: { videoId, language } },

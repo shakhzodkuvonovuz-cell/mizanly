@@ -2739,6 +2739,12 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "messages": {
+    "transcription": "Transkripsi",
+    "transcribing": "Mentranskripsi...",
+    "showMore": "Tampilkan lebih banyak",
+    "showLess": "Tampilkan lebih sedikit"
+  },
   "stickers": {
     "createSticker": "Buat Stiker",
     "describeSticker": "Deskripsikan stiker Anda...",

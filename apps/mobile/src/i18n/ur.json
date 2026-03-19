@@ -2739,6 +2739,12 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "messages": {
+    "transcription": "ٹرانسکرپشن",
+    "transcribing": "ٹرانسکرپٹ ہو رہا ہے...",
+    "showMore": "مزید دکھائیں",
+    "showLess": "کم دکھائیں"
+  },
   "stickers": {
     "createSticker": "اسٹیکر بنائیں",
     "describeSticker": "اپنا اسٹیکر بیان کریں...",

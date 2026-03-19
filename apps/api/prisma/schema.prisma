@@ -1085,6 +1085,7 @@ model Message {
   isSpoiler       Boolean           @default(false)
   isSilent        Boolean           @default(false)
   isEncrypted     Boolean           @default(false)
+  transcription   String?
   encNonce        String?
   createdAt       DateTime          @default(now())
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)

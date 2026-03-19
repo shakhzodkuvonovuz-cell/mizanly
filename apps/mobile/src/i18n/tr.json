@@ -2738,6 +2738,12 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "messages": {
+    "transcription": "Transkripsiyon",
+    "transcribing": "Yazıya dönüştürülüyor...",
+    "showMore": "Daha fazla göster",
+    "showLess": "Daha az göster"
+  },
   "stickers": {
     "createSticker": "Çıkartma Oluştur",
     "describeSticker": "Çıkartmanızı tanımlayın...",

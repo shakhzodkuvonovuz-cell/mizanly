@@ -2739,6 +2739,12 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "messages": {
+    "transcription": "Transcription",
+    "transcribing": "Transcription en cours...",
+    "showMore": "Voir plus",
+    "showLess": "Voir moins"
+  },
   "stickers": {
     "createSticker": "Créer un autocollant",
     "describeSticker": "Décrivez votre autocollant...",

@@ -2738,6 +2738,12 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "messages": {
+    "transcription": "Transkripsi",
+    "transcribing": "Mentranskripsi...",
+    "showMore": "Tunjuk lebih",
+    "showLess": "Tunjuk kurang"
+  },
   "stickers": {
     "createSticker": "Cipta Pelekat",
     "describeSticker": "Huraikan pelekat anda...",

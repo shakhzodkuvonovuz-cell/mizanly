@@ -3,9 +3,11 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
+import { AiService } from '../ai/ai.service';
 import { MessageType } from '@prisma/client';
 
 const CONVERSATION_SELECT = {
@@ -45,6 +47,7 @@ const MESSAGE_SELECT = {
   isForwarded: true,
   isDeleted: true,
   editedAt: true,
+  transcription: true,
   createdAt: true,
   sender: {
     select: {
@@ -69,7 +72,13 @@ const MESSAGE_SELECT = {
 
 @Injectable()
 export class MessagesService {
-  constructor(private prisma: PrismaService, private pushTrigger: PushTriggerService) {}
+  private readonly logger = new Logger(MessagesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private pushTrigger: PushTriggerService,
+    private ai: AiService,
+  ) {}
 
   async getConversations(userId: string, limit = 50) {
     const memberships = await this.prisma.conversationMember.findMany({
@@ -176,6 +185,17 @@ export class MessagesService {
 
       return msg;
     });
+
+    // Trigger voice message transcription asynchronously
+    if (
+      message.messageType === 'VOICE' &&
+      message.mediaUrl &&
+      message.id
+    ) {
+      this.ai.transcribeVoiceMessage(message.id, message.mediaUrl).catch((err) => {
+        this.logger.warn(`Voice transcription failed for message ${message.id}: ${err?.message}`);
+      });
+    }
 
     return message;
   }

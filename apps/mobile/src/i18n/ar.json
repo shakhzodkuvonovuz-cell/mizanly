@@ -2738,6 +2738,12 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "messages": {
+    "transcription": "نسخ صوتي",
+    "transcribing": "جاري النسخ...",
+    "showMore": "عرض المزيد",
+    "showLess": "عرض أقل"
+  },
   "stickers": {
     "createSticker": "إنشاء ملصق",
     "describeSticker": "صف ملصقك...",

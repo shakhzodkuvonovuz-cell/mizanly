@@ -2738,6 +2738,12 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "messages": {
+    "transcription": "প্রতিলিপি",
+    "transcribing": "প্রতিলিপি হচ্ছে...",
+    "showMore": "আরও দেখুন",
+    "showLess": "কম দেখুন"
+  },
   "stickers": {
     "createSticker": "স্টিকার তৈরি করুন",
     "describeSticker": "আপনার স্টিকার বর্ণনা করুন...",
