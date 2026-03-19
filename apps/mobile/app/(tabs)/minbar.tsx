@@ -194,17 +194,15 @@ export default function MinbarScreen() {
   const feedQuery = useInfiniteQuery({
     queryKey: ['videos-feed', selectedCategory, feedType],
     queryFn: async ({ pageParam }) => {
-      if (feedType === 'subscriptions') {
-        return { data: [] as Video[], meta: { hasMore: false, cursor: undefined } };
-      }
-      return videosApi.getFeed(
-        selectedCategory === 'all' ? undefined : selectedCategory,
-        pageParam as string | undefined
-      );
+      // Both home and subscriptions use the videos feed endpoint;
+      // subscriptions passes 'subscriptions' as category to let the backend filter.
+      const category = feedType === 'subscriptions'
+        ? 'subscriptions'
+        : selectedCategory === 'all' ? undefined : selectedCategory;
+      return videosApi.getFeed(category, pageParam as string | undefined);
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
-    enabled: feedType === 'home',
   });
 
   const videos: Video[] = feedQuery.data?.pages.flatMap((p) => p.data) ?? [];
@@ -334,7 +332,7 @@ export default function MinbarScreen() {
           title={t('minbar.noSubscribedVideos')}
           subtitle={t('minbar.subscribeToSeeVideos')}
           actionLabel={t('minbar.exploreChannels')}
-          onAction={() => router.push('/(screens)/channels' as never)}
+          onAction={() => router.push('/(screens)/discover')}
         />
       );
     }
@@ -487,7 +485,7 @@ const styles = StyleSheet.create({
     color: colors.emerald,
     fontSize: fontSize.xl,
     fontWeight: '700',
-    fontFamily: 'PlayfairDisplay-Bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: -0.5,
   },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },

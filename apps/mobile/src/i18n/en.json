@@ -167,7 +167,11 @@
     "following": "Following",
     "followers": "Followers",
     "seeAll": "See all",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "more": "more",
+    "explore": "Explore",
+    "copyLink": "Copy Link",
+    "unlock": "Unlock"
   },
   "auth": {
     "signIn": "Sign In",
@@ -220,7 +224,14 @@
     "backupCodes": "Backup Codes",
     "generateBackupCodes": "Generate Backup Codes",
     "downloadBackupCodes": "Download Backup Codes",
-    "saveBackupCodes": "Save Backup Codes"
+    "saveBackupCodes": "Save Backup Codes",
+    "tagline": "Your balanced digital community",
+    "emailPlaceholder": "Email address",
+    "passwordPlaceholder": "Password",
+    "or": "or",
+    "resetPasswordHint": "Enter your email and we'll send you a reset code",
+    "codeSentTo": "Code sent to",
+    "passwordResetSuccess": "Password reset successfully"
   },
   "tabs": {
     "saf": "Saf",
@@ -247,7 +258,22 @@
     "hadith": "Hadith",
     "zakat": "Zakat",
     "mosques": "Mosques",
-    "ramadan": "Ramadan"
+    "ramadan": "Ramadan",
+    "createSheet": {
+      "photoOrVideoPost": "Photo or Video Post",
+      "startThread": "Start a Thread",
+      "shareStory": "Share a Story",
+      "shortVideoReel": "Short Video (Reel)",
+      "longVideo": "Long Video",
+      "goLive": "Go Live"
+    },
+    "accessibility": {
+      "homeFeed": "Home Feed",
+      "shortVideos": "Short Videos",
+      "videos": "Videos",
+      "threads": "Threads",
+      "messages": "Messages"
+    }
   },
   "saf": {
     "feed": "Feed",
@@ -338,7 +364,11 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "emptyFeed": {
+      "title": "Your feed is empty",
+      "subtitle": "Follow people to see their posts here"
+    }
   },
   "bakra": {
     "forYou": "For You",
@@ -424,7 +454,24 @@
     "beFirstToComment": "Be the first to comment",
     "questionPlaceholder": "Type your question...",
     "couldNotLoadContent": "Could not load this content",
-    "goBack": "Go Back"
+    "goBack": "Go Back",
+    "originalAudio": "Original audio",
+    "unknown": "Unknown",
+    "notInterested": "Not interested",
+    "saveToCollection": "Save to Collection",
+    "notInterestedAlert": {
+      "title": "Not Interested",
+      "message": "We'll show you less content like this"
+    },
+    "linkCopiedAlert": {
+      "title": "Link Copied",
+      "message": "Link has been copied to your clipboard"
+    },
+    "emptyFeed": {
+      "title": "No reels yet",
+      "subtitle": "Follow creators or explore to see reels",
+      "actionLabel": "Create a Reel"
+    }
   },
   "majlis": {
     "forYou": "For You",
@@ -518,11 +565,29 @@
     "loadContentError": "Could not load this thread",
     "deleteReplyTitle": "Delete Reply?",
     "deleteReplyMessage": "This reply will be permanently removed.",
-    "caughtUp": "You're all caught up"
+    "caughtUp": "You're all caught up",
+    "emptyFeed": {
+      "title": "No threads yet",
+      "subtitle": "Follow people or explore trending topics",
+      "actionLabel": "Start a Thread"
+    }
   },
   "risalah": {
     "messages": "Messages",
     "newMessage": "New Message",
+    "chats": "Chats",
+    "groups": "Groups",
+    "all": "All",
+    "unread": "Unread",
+    "noGroupsYet": "No groups yet",
+    "createGroupHint": "Create a group to chat with multiple people",
+    "yourConversations": "Your conversations",
+    "messagesHint": "Start a conversation with someone",
+    "noMessages": "No messages yet",
+    "group": "Group",
+    "chat": "Chat",
+    "archived": "Archived",
+    "newGroup": "New Group",
     "typeMessage": "Type a message...",
     "send": "Send",
     "edit": "Edit",

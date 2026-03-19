@@ -21,7 +21,7 @@ import { Gesture, GestureDetector, type TapGesture } from 'react-native-gesture-
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useStore } from '@/store';
-import { reelsApi } from '@/services/api';
+import { reelsApi, feedApi } from '@/services/api';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -37,6 +37,7 @@ import { followsApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
+import * as Clipboard from 'expo-clipboard';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -566,13 +567,23 @@ export default function BakraScreen() {
     router.push(`/(screens)/report?type=reel&id=${reel.id}`);
   };
 
-  const handleNotInterested = (reel: Reel) => {
+  const handleNotInterested = async (reel: Reel) => {
     haptic.light();
+    try {
+      await feedApi.reportNotInterested(reel.id, 'reel');
+    } catch { /* best effort */ }
     Alert.alert(t('bakra.notInterestedAlert.title'), t('bakra.notInterestedAlert.message'));
   };
 
-  const handleCopyLink = (reel: Reel) => {
+  const handleCopyLink = async (reel: Reel) => {
     haptic.light();
+    try {
+      const { url } = await reelsApi.getShareLink(reel.id);
+      await Clipboard.setStringAsync(url);
+    } catch {
+      // Fallback: copy a constructed URL
+      await Clipboard.setStringAsync(`https://mizanly.com/reel/${reel.id}`);
+    }
     Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
   };
 

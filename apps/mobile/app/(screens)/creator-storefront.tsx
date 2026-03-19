@@ -100,7 +100,7 @@ function CreatorStorefrontContent() {
 
   const handleAddProduct = useCallback(() => {
     haptic.medium();
-    router.push('/(screens)/add-product' as never);
+    router.push('/(screens)/marketplace');
   }, [haptic, router]);
 
   const formatFollowers = (count: number): string => {

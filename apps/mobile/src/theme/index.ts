@@ -77,14 +77,14 @@ export const colors = {
 } as const;
 
 export const fonts = {
-  heading: 'PlayfairDisplay',
-  headingBold: 'PlayfairDisplay-Bold',
-  body: 'DMSans',
-  bodyMedium: 'DMSans-Medium',
-  bodySemiBold: 'DMSans-SemiBold',
-  bodyBold: 'DMSans-Bold',
-  arabic: 'NotoNaskhArabic',
-  arabicBold: 'NotoNaskhArabic-Bold',
+  heading: 'PlayfairDisplay_700Bold',
+  headingBold: 'PlayfairDisplay_700Bold',
+  body: 'DMSans_400Regular',
+  bodyMedium: 'DMSans_500Medium',
+  bodySemiBold: 'DMSans_500Medium',
+  bodyBold: 'DMSans_700Bold',
+  arabic: 'NotoNaskhArabic_400Regular',
+  arabicBold: 'NotoNaskhArabic_700Bold',
   mono: 'JetBrainsMono',
   // Aliases for convenience
   regular: 'DMSans',

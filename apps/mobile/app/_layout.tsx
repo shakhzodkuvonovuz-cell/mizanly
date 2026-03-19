@@ -129,7 +129,8 @@ function AppStateHandler() {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (nextState === 'active') {
-        queryClient.invalidateQueries(); // Refetch stale queries
+        // Only refetch queries that are stale, not all queries
+        queryClient.invalidateQueries({ stale: true, refetchType: 'active' });
 
         // Sync widget data on foreground
         const storeState = useStore.getState();
@@ -148,37 +149,38 @@ function AppStateHandler() {
 }
 
 function BiometricLockOverlay() {
+  const { t } = useTranslation();
   const biometricLockEnabled = useStore((s) => s.biometricLockEnabled);
   const [isLocked, setIsLocked] = useState(false);
 
   const authenticate = useCallback(async () => {
     const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Unlock Mizanly',
-      fallbackLabel: 'Use passcode',
+      promptMessage: t('biometric.unlockPrompt'),
+      fallbackLabel: t('common.cancel'),
     });
     setIsLocked(!result.success);
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
       if (state === 'active' && biometricLockEnabled) {
         setIsLocked(true);
         const result = await LocalAuthentication.authenticateAsync({
-          promptMessage: 'Unlock Mizanly',
-          fallbackLabel: 'Use passcode',
+          promptMessage: t('biometric.unlockPrompt'),
+          fallbackLabel: t('common.cancel'),
         });
         setIsLocked(!result.success);
       }
     });
     return () => sub.remove();
-  }, [biometricLockEnabled]);
+  }, [biometricLockEnabled, t]);
 
   if (!isLocked) return null;
 
   return (
     <View style={lockStyles.overlay}>
       <Icon name="lock" size="xl" color={colors.emerald} />
-      <Text style={lockStyles.text}>Tap to unlock</Text>
+      <Text style={lockStyles.text}>{t('common.unlock')}</Text>
       <View style={lockStyles.buttonWrap}>
         <GradientButton label={t('common.unlock')} onPress={authenticate} />
       </View>

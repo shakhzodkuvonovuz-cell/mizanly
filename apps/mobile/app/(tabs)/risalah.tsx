@@ -426,7 +426,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: 'PlayfairDisplay-Bold' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: 'PlayfairDisplay_700Bold' },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',

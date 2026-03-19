@@ -210,7 +210,7 @@ export default function TabLayout() {
           options={{
             title: t('tabs.majlis'),
             tabBarAccessibilityLabel: t('tabs.accessibility.threads'),
-            tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} badge={unreadNotifications || undefined} />,
+            tabBarIcon: ({ focused }) => <TabIcon name="majlis" focused={focused} />,
           }}
         />
         <Tabs.Screen

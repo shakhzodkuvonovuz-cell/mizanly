@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
   },
-  logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: 'PlayfairDisplay-Bold' },
+  logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: 'PlayfairDisplay_700Bold' },
   footer: { paddingVertical: spacing.sm },
   fab: {
     position: 'absolute',

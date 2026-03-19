@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
   logo: {
     color: colors.emerald,
     fontSize: fontSize.xl,
-    fontFamily: 'PlayfairDisplay-Bold',
+    fontFamily: 'PlayfairDisplay_700Bold',
     letterSpacing: -1,
   },
   hijriDate: {
