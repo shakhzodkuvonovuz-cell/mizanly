@@ -2871,6 +2871,15 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "themes": {
+    "islamicCalendar": "ইসলামি ক্যালেন্ডার থিম",
+    "islamicCalendarDescription": "ইসলামি উপলক্ষে অ্যাপের চেহারা পরিবর্তন হয়",
+    "ramadan": "রমজান থিম",
+    "eid": "ঈদ উদযাপন",
+    "dhulhijjah": "জিলহজ্জ থিম",
+    "eidMubarak": "ঈদ মুবারক!",
+    "ramadanKareem": "রমজান করিম"
+  },
   "scholarQA": {
     "title": "আলেম প্রশ্নোত্তর",
     "upcoming": "আসন্ন সেশন",

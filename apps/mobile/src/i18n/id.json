@@ -2872,6 +2872,15 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "themes": {
+    "islamicCalendar": "Tema Kalender Islam",
+    "islamicCalendarDescription": "Tampilan aplikasi berubah saat hari besar Islam",
+    "ramadan": "Tema Ramadhan",
+    "eid": "Perayaan Idul Fitri",
+    "dhulhijjah": "Tema Dzulhijjah",
+    "eidMubarak": "Selamat Hari Raya!",
+    "ramadanKareem": "Ramadhan Kareem"
+  },
   "scholarQA": {
     "title": "Tanya Jawab Ulama",
     "upcoming": "Sesi Mendatang",

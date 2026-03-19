@@ -2871,6 +2871,15 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "themes": {
+    "islamicCalendar": "İslami Takvim Temaları",
+    "islamicCalendarDescription": "İslami günlerde uygulama görünümü değişir",
+    "ramadan": "Ramazan Teması",
+    "eid": "Bayram Kutlaması",
+    "dhulhijjah": "Zilhicce Teması",
+    "eidMubarak": "Bayramınız Mübarek!",
+    "ramadanKareem": "Ramazan-ı Şerif"
+  },
   "scholarQA": {
     "title": "Alim Soru-Cevap",
     "upcoming": "Yaklaşan Oturumlar",

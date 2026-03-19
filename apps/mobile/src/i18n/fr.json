@@ -2872,6 +2872,15 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "themes": {
+    "islamicCalendar": "Thèmes du calendrier islamique",
+    "islamicCalendarDescription": "L'apparence change lors des occasions islamiques",
+    "ramadan": "Thème Ramadan",
+    "eid": "Célébration de l'Aïd",
+    "dhulhijjah": "Thème Dhul Hijjah",
+    "eidMubarak": "Aïd Moubarak !",
+    "ramadanKareem": "Ramadan Kareem"
+  },
   "scholarQA": {
     "title": "Q&R Savant",
     "upcoming": "Sessions à venir",

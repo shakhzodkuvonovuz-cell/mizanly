@@ -1623,7 +1623,7 @@ scholarQA.pastSessions: "Past Sessions"
 
 ---
 
-### [ ] Task 26: Islamic Calendar Theming
+### [x] Task 26: Islamic Calendar Theming — Done: islamicThemes.ts with 5 themes (ramadan/eid/dhulhijjah/muharram/jummah), Hijri-based auto-detection, confetti flag, i18n 8 langs
 
 **Files to read first:**
 - `apps/mobile/src/theme/index.ts`

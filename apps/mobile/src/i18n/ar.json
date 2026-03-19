@@ -2871,6 +2871,15 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "themes": {
+    "islamicCalendar": "سمات التقويم الإسلامي",
+    "islamicCalendarDescription": "يتغير مظهر التطبيق أثناء المناسبات الإسلامية",
+    "ramadan": "سمة رمضان",
+    "eid": "احتفال العيد",
+    "dhulhijjah": "سمة ذي الحجة",
+    "eidMubarak": "عيد مبارك!",
+    "ramadanKareem": "رمضان كريم"
+  },
   "scholarQA": {
     "title": "أسئلة وأجوبة العلماء",
     "upcoming": "الجلسات القادمة",

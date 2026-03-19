@@ -2871,6 +2871,15 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "themes": {
+    "islamicCalendar": "Islamic Calendar Themes",
+    "islamicCalendarDescription": "App appearance changes during Islamic occasions",
+    "ramadan": "Ramadan Theme",
+    "eid": "Eid Celebration",
+    "dhulhijjah": "Dhul Hijjah Theme",
+    "eidMubarak": "Eid Mubarak!",
+    "ramadanKareem": "Ramadan Kareem"
+  },
   "scholarQA": {
     "title": "Scholar Q&A",
     "upcoming": "Upcoming Sessions",

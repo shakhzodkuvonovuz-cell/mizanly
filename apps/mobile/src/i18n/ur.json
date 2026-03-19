@@ -2872,6 +2872,15 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "themes": {
+    "islamicCalendar": "اسلامی کیلنڈر تھیمز",
+    "islamicCalendarDescription": "اسلامی مواقع کے دوران ایپ کی ظاہری شکل بدل جاتی ہے",
+    "ramadan": "رمضان تھیم",
+    "eid": "عید مبارک",
+    "dhulhijjah": "ذوالحجہ تھیم",
+    "eidMubarak": "عید مبارک!",
+    "ramadanKareem": "رمضان کریم"
+  },
   "scholarQA": {
     "title": "عالم سوال و جواب",
     "upcoming": "آنے والے سیشن",
