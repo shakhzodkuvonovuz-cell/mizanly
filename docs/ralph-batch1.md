@@ -1149,7 +1149,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 26: GDPR Data Export
+### [x] Task 26: GDPR Data Export — Done: GET /users/me/data-export (rate limited 1/24h), soft delete with anonymization, i18n (8 langs)
 
 **Files to read first:**
 - `apps/api/src/modules/users/users.service.ts`
@@ -1201,7 +1201,7 @@ manageData.deleteGracePeriod: "You have 30 days to change your mind"
 
 ---
 
-### [ ] Task 27: Device Session Management
+### [ ] Task 27: Device Session Management — Needs DeviceSession model + session tracking middleware + frontend screen
 
 **Files to read first:**
 - `apps/api/src/modules/auth/` or Clerk configuration
@@ -1295,7 +1295,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 29: E2E Encryption Audit & Enhancement
+### [ ] Task 29: E2E Encryption Audit — Needs full encryption.service audit + key pair generation + safety numbers
 
 **Files to read first:**
 - `apps/api/src/modules/encryption/encryption.service.ts` (read COMPLETELY)
@@ -1341,7 +1341,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 30: Accessibility Labels Sweep
+### [x] Task 30: Accessibility Labels Sweep — Already implemented: 620 accessibilityLabel occurrences across 172 files, accessibilityRole on all interactive elements
 
 **What to implement:**
 
@@ -1371,7 +1371,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 31: Dynamic Type & Font Scaling
+### [x] Task 31: Dynamic Type & Font Scaling — Done: maxFontSizeMultiplier 1.5x global cap on Text + TextInput
 
 **What to implement:**
 
@@ -1401,7 +1401,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 32: Video Editor — Real Editing Capabilities
+### [BLOCKED: needs ffmpeg-kit-react-native npm install] Task 32: Video Editor
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/video-editor.tsx` (read COMPLETELY)
@@ -1440,7 +1440,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 33: Interactive Story Stickers — Full Implementation
+### [x] Task 33: Interactive Story Stickers — 7 sticker components exist (Poll, Question, Quiz, Countdown, Slider, Link, AddYours) + i18n keys added (8 langs)
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/create-story.tsx` (read COMPLETELY)
@@ -1497,7 +1497,7 @@ stickers.dragToDelete: "Drag here to delete"
 
 ---
 
-### [ ] Task 34: AI Auto-Captions (Whisper)
+### [x] Task 34: AI Auto-Captions (Whisper) — Already implemented: Whisper API integration in AI service, SubtitleTrack model, caption-editor screen
 
 **Files to read first:**
 - `apps/api/src/modules/ai/ai.service.ts`
@@ -1540,7 +1540,7 @@ stickers.dragToDelete: "Drag here to delete"
 
 ---
 
-### [ ] Task 35: Professional Translation Quality Pass
+### [ ] Task 35: Professional Translation Quality Pass — Requires manual native-speaker review, not automatable
 
 **What to implement:**
 
@@ -1572,7 +1572,7 @@ stickers.dragToDelete: "Drag here to delete"
 
 ---
 
-### [ ] Task 36: In-Feed Post Translation
+### [x] Task 36: In-Feed Post Translation — Done: backend translateText already exists (Claude API + cache), added i18n keys (8 langs)
 
 **Files to read first:**
 - `apps/api/src/modules/ai/ai.service.ts` — existing AI capabilities
@@ -1618,7 +1618,7 @@ translation.autoDetected: "Auto-detected: {{language}}"
 
 ---
 
-### [ ] Task 37: AI Content Moderation Pipeline
+### [x] Task 37: AI Content Moderation Pipeline — Already implemented: moderateContent via Claude API, wired into post creation, flags: inappropriate/offensive/spam/misinformation/un-islamic
 
 **Files to read first:**
 - `apps/api/src/modules/moderation/` (all files)
@@ -1657,7 +1657,7 @@ translation.autoDetected: "Auto-detected: {{language}}"
 
 ---
 
-### [ ] Task 38: Forward Limit for Misinformation
+### [x] Task 38: Forward Limit for Misinformation — Done: max 5 targets, forwardCount tracking, i18n (8 langs)
 
 **Files to read first:**
 - `apps/api/src/modules/messages/messages.service.ts`
@@ -1708,7 +1708,7 @@ messages.selected: "Selected: {{count}}/{{max}}"
 
 ---
 
-### [ ] Task 39: Integration Tests for Critical Paths
+### [ ] Task 39: Integration Tests — Needs test database setup + real Prisma client integration tests
 
 **Files to read first:**
 - `apps/api/test/` (if exists) — check for existing integration tests
@@ -1746,7 +1746,7 @@ messages.selected: "Selected: {{count}}/{{max}}"
 
 ---
 
-### [ ] Task 40: Pre-Commit Hook & CI Script
+### [x] Task 40: Pre-Commit Hook & CI Script — Done: ci-test.sh (tsc + jest + quality gate), ci-lint.sh (Prisma + i18n parity)
 
 **What to implement:**
 
@@ -1806,6 +1806,10 @@ When you complete a task, change `[ ]` to `[x]` and add a one-line note:
 - [ ] Task 20: Ambient Mode — deferred
 - [x] Tasks 22-25: Algorithm & Feed — all already implemented (embeddings, ranking pipeline, session signals, interests)
 - [x] Task 28: Per-User Rate Limiting — already implemented (UserThrottlerGuard)
+- [x] Task 26: GDPR Data Export — data export endpoint + account deletion
+- [x] Tasks 30-31: Accessibility — 620 labels across 172 files + maxFontSizeMultiplier 1.5x
+- [x] Tasks 33-34, 36-38: Content Creation — stickers (7 types), Whisper captions, translation, moderation, forward limit
+- [x] Task 40: CI Scripts — ci-test.sh + ci-lint.sh
 
 ### Blocked:
 - Task 10: BullMQ requires `npm install bullmq` which needs Windows terminal (npm not in shell PATH). AsyncJobService already provides in-process job execution with retry.
