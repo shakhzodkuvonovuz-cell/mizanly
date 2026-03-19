@@ -86,25 +86,22 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 615 |
-| Total Lines of Code | 151,461 |
-| Mobile Code | 105,045 lines |
-| Backend Code | 46,085 lines |
-| Mobile Screens | 164 |
-| Backend Modules | 59 |
-| API Endpoints | 549 |
-| API Controllers | 61 |
-| Prisma Models | 107 |
-| Prisma Schema Lines | 2,235 |
-| Test Files | 68 |
+| Total Source Files | 737+ |
+| Total Lines of Code | 179,000+ |
+| Mobile Screens | 202 |
+| Backend Modules | 69 |
+| API Endpoints | 700+ |
+| Prisma Models | 160 |
+| Prisma Schema Lines | 3,295 |
+| Test Suites | 88 |
+| Tests Passing | 1,242 |
 | UI Components | 28 |
 | Custom Hooks | 13 |
 | Service Files | 16 |
-| Translation Keys | 2,659 (EN) / 2,551 (AR) |
-| Supported Languages | 2 (English + Arabic) |
-| Git Commits | 307+ |
-| Plan Documents | 50 |
-| Development Batches | 43 |
+| Translation Keys | ~2,500 per language |
+| Supported Languages | 3 (English + Arabic + Turkish) |
+| Git Commits | 467+ |
+| Development Batches | 71+ |
 
 ---
 
@@ -272,11 +269,28 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 - Chat lock with biometric/PIN
 - Conversation media gallery
 
-**Privacy:**
+**Privacy & Security:**
 - End-to-end encryption key exchange
 - Encryption verification screen
 - Status privacy settings
 - Disappearing message defaults
+- Spoiler text (tap-to-reveal)
+- View-once voice messages
+- Secret code chat lock
+- Member tags in group chats
+
+**Telegram Features:**
+- Saved messages (self-chat)
+- Chat folders for organization
+- Slow mode (configurable cooldown)
+- Admin action log
+- Group topics
+- Custom emoji support
+
+**Discord Features:**
+- Forum-style threads
+- Webhook integrations
+- Stage sessions (structured audio)
 
 ### Minbar (المنبر) — YouTube-Style
 
@@ -294,6 +308,48 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 - Audio rooms (Clubhouse-style)
 - Video editor with trimming and effects
 - Caption/description editor
+
+### Cross-Platform Features
+
+**AI-Powered (Tier 9)**
+- AI content assistant (caption + hashtag suggestions)
+- Auto-translate messages inline (Instagram 2026 parity)
+- AI content moderation (safety scoring)
+- Auto-generated video captions (Whisper)
+- AI avatar generator (4 styles)
+- Smart reply suggestions
+- Content summarization (TLDR)
+- Space routing (recommend best space for content)
+
+**Gamification (Tier 10)**
+- Daily streaks (posting, engagement, Quran, dhikr, learning)
+- XP & leveling system
+- Achievement badges (Common, Rare, Epic, Legendary)
+- Global leaderboards
+- Community challenges with progress tracking
+- Content series with episode management
+- Profile customization (accent color, layout, badges)
+
+**Commerce (Tier 11)**
+- Halal marketplace with product listings
+- Muslim-owned business directory
+- Zakat calculator with nisab rates
+- Waqf (endowment) fund management
+- Sadaqah/charity campaigns with Stripe
+- Creator membership tiers
+- Tip/donation system
+- Revenue tracking and cashout
+
+**Community (Tier 12)**
+- Local community boards (location-based)
+- Mentorship matching
+- Study circles
+- Fatwa Q&A
+- Volunteer opportunity board
+- Community events with RSVPs
+- Voice posts
+- Watch parties (synchronized viewing)
+- Data export (GDPR-ready)
 
 ---
 
@@ -407,7 +463,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 107 models, 2,235 lines
+│   │   │   └── schema.prisma         # 160 models, 3,295 lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -422,7 +478,7 @@ mizanly/
 │   │   │   ├── gateways/
 │   │   │   │   ├── chat.gateway.ts   # Socket.io /chat namespace
 │   │   │   │   └── dto/              # WebSocket event DTOs
-│   │   │   └── modules/              # 59 feature modules
+│   │   │   └── modules/              # 69 feature modules
 │   │   │       ├── admin/            # Admin dashboard endpoints
 │   │   │       ├── audio-rooms/      # Clubhouse-style audio rooms
 │   │   │       ├── audio-tracks/     # Music/nasheed library
@@ -502,7 +558,7 @@ mizanly/
 │       │   │   ├── risalah.tsx       # WhatsApp-style conversations
 │       │   │   ├── minbar.tsx        # YouTube-style channels
 │       │   │   └── create.tsx        # Universal create button
-│       │   └── (screens)/            # 131 detail/utility screens
+│       │   └── (screens)/            # 183 detail/utility screens
 │       │       ├── conversation/     # Chat screens (per conversation)
 │       │       ├── post/             # Post detail views
 │       │       ├── profile/          # User profile views
@@ -530,7 +586,7 @@ mizanly/
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
 │       │   ├── utils/               # Utility functions (Hijri dates, etc.)
-│       │   └── i18n/                # Translations (EN + AR)
+│       │   └── i18n/                # Translations (EN + AR + TR)
 │       ├── assets/
 │       │   └── images/              # App icon, splash, adaptive icon
 │       └── app.json                 # Expo configuration
@@ -614,11 +670,13 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ### Typography
 
-| Font | Family | Usage |
-|------|--------|-------|
-| **DM Sans** | `DMSans`, `DMSans-Medium`, `DMSans-SemiBold`, `DMSans-Bold` | Body text, UI elements |
-| **Noto Naskh Arabic** | `NotoNaskhArabic`, `NotoNaskhArabic-Bold` | Arabic text, Quran verses |
-| **Playfair Display** | `PlayfairDisplay`, `PlayfairDisplay-Bold` | Headings, display text |
+| Font | Registered Family Name | Usage |
+|------|------------------------|-------|
+| **DM Sans** | `DMSans_400Regular`, `DMSans_500Medium`, `DMSans_700Bold` | Body text, UI elements |
+| **Noto Naskh Arabic** | `NotoNaskhArabic_400Regular`, `NotoNaskhArabic_700Bold` | Arabic text, Quran verses |
+| **Playfair Display** | `PlayfairDisplay_700Bold` | Headings, logo, display text |
+
+> **Important:** Font family names must match the exact registered names from `useFonts()`, NOT the human-readable names. Use the `fonts.*` tokens from `theme/index.ts`.
 
 ### Font Sizes
 
@@ -725,7 +783,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Backend Modules
 
-All 59 NestJS modules in `apps/api/src/modules/`:
+All 69 NestJS modules in `apps/api/src/modules/`:
 
 <details>
 <summary>Click to expand full module list with descriptions</summary>
@@ -791,17 +849,26 @@ All 59 NestJS modules in `apps/api/src/modules/`:
 | `video-replies` | Video comment replies — record + attach video responses |
 | `videos` | Long-form video CRUD — comments, reactions, chapters |
 | `watch-history` | Video watch tracking — history, watch later queue |
+| `commerce` | Halal marketplace — products, orders, Islamic finance |
+| `community` | Community features — local boards, mentorship, fatwa Q&A, waqf |
+| `discord-features` | Discord parity — forum threads, webhooks, stage sessions |
+| `telegram-features` | Telegram parity — saved messages, chat folders, slow mode, admin log |
+| `downloads` | Offline content downloads |
+| `gamification` | Streaks, XP, achievements, challenges, series, profile customization |
+| `parental-controls` | Child account linking, restrictions, activity digest |
+| `clips` | Video clip creation from long-form content |
+| `ai` | AI features — captions, hashtags, translate, moderate, avatar, smart replies |
 
 </details>
 
 ---
 
-## Database Schema (107 Models)
+## Database Schema (160 Models)
 
-The Prisma schema (`apps/api/prisma/schema.prisma`) contains 107 models across 2,235 lines. Models are organized by domain:
+The Prisma schema (`apps/api/prisma/schema.prisma`) contains 160 models across 3,295 lines. Models are organized by domain:
 
 <details>
-<summary>Click to expand all 107 models grouped by domain</summary>
+<summary>Click to expand all 160 models grouped by domain</summary>
 
 ### Core Social (8 models)
 `User` `Follow` `FollowRequest` `Post` `Comment` `PostReaction` `CommentReaction` `SavedPost`
@@ -888,13 +955,14 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 ## Internationalization (i18n)
 
-Mizanly supports full bilingual operation with English and Arabic, including RTL layout support.
+Mizanly supports trilingual operation with English, Arabic, and Turkish, including full RTL layout support.
 
-| File | Lines | Description |
-|------|-------|-------------|
-| `en.json` | 2,659 | English translations |
-| `ar.json` | 2,659 | Arabic translations |
-| `index.ts` | — | i18next configuration with device locale detection |
+| File | Keys | Description |
+|------|------|-------------|
+| `en.json` | ~2,500 | English translations |
+| `ar.json` | ~2,400 | Arabic translations |
+| `tr.json` | ~2,500 | Turkish translations |
+| `index.ts` | — | i18next config with automatic device locale detection |
 
 **Implementation:**
 - Every screen uses `useTranslation()` hook
@@ -902,10 +970,12 @@ Mizanly supports full bilingual operation with English and Arabic, including RTL
 - Arabic text renders with `NotoNaskhArabic` font family
 - RTL layout automatically applied based on locale
 - Quran verses display in Arabic with parallel translation
+- Locale detection: `ar` → Arabic, `tr` → Turkish, else → English
+- Adding a language: create `xx.json`, import in `index.ts`, add to `resolveLanguage()`
 
 ---
 
-## All Screens (164 Total)
+## All Screens (202 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -932,7 +1002,7 @@ Mizanly supports full bilingual operation with English and Arabic, including RTL
 | `(tabs)/minbar.tsx` | Minbar | YouTube-style channel/video feed |
 | `(tabs)/create.tsx` | — | Universal content creation |
 
-### Detail Screens (131 top-level + 17 nested directories)
+### Detail Screens (183 top-level + 18 nested directories)
 
 **Authentication & Security**
 | Screen | Description |
@@ -1114,6 +1184,45 @@ Mizanly supports full bilingual operation with English and Arabic, including RTL
 | `my-reports.tsx` | Track submitted reports |
 | `appeal-moderation.tsx` | Appeal moderation decision |
 
+**Gamification**
+| Screen | Description |
+|--------|-------------|
+| `achievements.tsx` | Achievement badges and progress |
+| `challenges.tsx` | Community challenges browser |
+| `leaderboard.tsx` | Global leaderboard views |
+| `streaks.tsx` | Streak tracking (posting, engagement, Quran) |
+| `xp-history.tsx` | XP earning history |
+| `profile-customization.tsx` | Profile layout, accent color, badges |
+| `series-detail.tsx` | Series detail with episodes |
+| `series-discover.tsx` | Discover content series |
+
+**Commerce**
+| Screen | Description |
+|--------|-------------|
+| `marketplace.tsx` | Halal marketplace browser |
+| `product-detail.tsx` | Product detail with reviews |
+| `orders.tsx` | Order history and tracking |
+| `waqf.tsx` | Waqf endowment management |
+| `volunteer-board.tsx` | Volunteer opportunities |
+| `watch-party.tsx` | Watch parties for group viewing |
+
+**Wellbeing**
+| Screen | Description |
+|--------|-------------|
+| `screen-time.tsx` | Screen time tracking and limits |
+| `quiet-mode.tsx` | Notification pause with auto-reply |
+| `wind-down.tsx` | Meditation/breathing screen |
+| `parental-controls.tsx` | Parental control settings |
+| `link-child-account.tsx` | Link child account flow |
+
+**Downloads & Sharing**
+| Screen | Description |
+|--------|-------------|
+| `downloads.tsx` | Offline downloads manager |
+| `share-receive.tsx` | Receive shared content from other apps |
+| `cross-post.tsx` | Cross-post to multiple spaces |
+| `dm-note-editor.tsx` | DM status note editor |
+
 **Bookmarks & Saved**
 | Screen | Description |
 |--------|-------------|
@@ -1145,6 +1254,9 @@ Each contains dynamic `[id].tsx` or similar routes:
 | `reports/` | `[id].tsx` | Report detail |
 | `sound/` | `[id].tsx` | Audio track page |
 | `playlists/` | `[handle].tsx` | User's playlists |
+| `majlis-list/` | `[id].tsx` | Majlis list detail + timeline |
+| `series/` | `[id].tsx` | Series episodes viewer |
+| `product/` | `[id].tsx` | Product detail view |
 
 </details>
 
@@ -1448,23 +1560,18 @@ Additional documentation in `docs/`:
 
 ## Roadmap
 
-Full roadmap with 191 features across 13 tiers: [`docs/plans/2026-03-17-pre-production-roadmap.md`](docs/plans/2026-03-17-pre-production-roadmap.md)
+Full roadmap with 200+ features across 15 tiers:
 
 | Tier | Theme | Batches | Status |
 |------|-------|---------|--------|
-| 1 | Foundation — Auth, profiles, database, infra | 37 | Complete |
-| 2 | Video & Media Pipeline — Upload, transcode, stream | 38 | Complete |
-| 3 | Stories & Reels Parity — Full story/reel feature set | 39 | Complete |
-| 4 | Chat Parity — E2E encryption, calls, groups, broadcasts | 40 | Complete |
-| 5 | Discovery — Feed intelligence, search, recommendations | 41 | Complete |
-| 6 | Creator Economy — Dashboard, monetization, storefronts | 41 | Complete |
-| 7 | Islamic-First Moat — Prayer, Quran, Hajj, Dhikr, charity | 42 | Complete |
-| 8 | Platform & UX Parity — Contact sync, biometrics, gestures | 43A/B | In Progress |
-| 9 | AI Features — Smart recommendations, content generation | 45 | Planned |
-| 10 | Gamification — Achievements, streaks, leaderboards | 46 | Planned |
-| 11 | Commerce — In-app purchases, marketplace | 47 | Planned |
-| 12 | Community — Advanced group features, governance | 48 | Planned |
-| 13 | Testing & Hardening — E2E tests, load testing, security audit | Parallel | Ongoing |
+| 1-8 | Full Platform Parity — Instagram, TikTok, X, WhatsApp, YouTube | 1-43 | Complete |
+| 9 | AI-Powered Moat — Content assistant, auto-translate, moderation, captions, avatars | 44-45 | Complete |
+| 10 | Gamification — Streaks, achievements, XP/levels, leaderboards, challenges, series | 46-47 | Complete |
+| 11 | Commerce — Halal marketplace, business directory, Zakat, Waqf, premium | 48-49 | Complete |
+| 12 | Community — Local boards, mentorship, study circles, fatwa Q&A, volunteer, events | 50-52 | Complete |
+| 13 | Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, security | 53-64 | Complete |
+| 14 | 2026 Competitor Parity — Spoiler text, member tags, wind-down, nearby feed, chat lock | 65-71 | In Progress |
+| 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components | A1-C | Complete |
 
 ---
 
