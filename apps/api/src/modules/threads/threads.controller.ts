@@ -30,15 +30,15 @@ export class ThreadsController {
   // --- Static routes MUST be above :id param routes ---
 
   @Get('feed')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get thread feed (foryou | following | trending)' })
+  @ApiOperation({ summary: 'Get thread feed (foryou | following | trending). Supports anonymous browsing.' })
   getFeed(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: string | undefined,
     @Query('type') type?: 'foryou' | 'following' | 'trending',
     @Query('cursor') cursor?: string,
   ) {
-    return this.threadsService.getFeed(userId, type ?? 'foryou', cursor);
+    return this.threadsService.getFeed(userId ?? '', type ?? 'foryou', cursor);
   }
 
   @Get('user/:username')

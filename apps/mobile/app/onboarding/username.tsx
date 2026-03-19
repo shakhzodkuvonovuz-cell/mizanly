@@ -113,7 +113,8 @@ export default function UsernameScreen() {
     if (!isValid) return;
     setLoading(true);
     try {
-      router.push({ pathname: '/onboarding/profile', params: { username } });
+      // Skip profile step — go directly to interests (2-step onboarding)
+      router.push({ pathname: '/onboarding/interests', params: { username } });
     } finally {
       setLoading(false);
     }

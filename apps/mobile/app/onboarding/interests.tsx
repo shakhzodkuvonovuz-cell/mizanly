@@ -26,11 +26,21 @@ const INTERESTS: { id: string; label: string; icon: IconName }[] = [
   { id: 'sports', label: 'onboarding.interests.sports', icon: 'trending-up' },
 ];
 
+// Islamic madhab options (74.8)
+const MADHABS: { id: string; label: string }[] = [
+  { id: 'hanafi', label: 'onboarding.madhab.hanafi' },
+  { id: 'maliki', label: 'onboarding.madhab.maliki' },
+  { id: 'shafii', label: 'onboarding.madhab.shafii' },
+  { id: 'hanbali', label: 'onboarding.madhab.hanbali' },
+  { id: 'none', label: 'onboarding.madhab.noPreference' },
+];
+
 export default function InterestsScreen() {
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
   const { user } = useUser();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedMadhab, setSelectedMadhab] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const haptic = useHaptic();
   const { t } = useTranslation();
@@ -49,20 +59,28 @@ export default function InterestsScreen() {
     setLoading(true);
     try {
       await authApi.setInterests(Array.from(selected));
-      router.push('/onboarding/suggested');
+      if (selectedMadhab && selectedMadhab !== 'none') {
+        await authApi.updateProfile({ madhab: selectedMadhab }).catch(() => {});
+      }
     } catch {
       // continue anyway
-      router.push('/onboarding/suggested');
     } finally {
       setLoading(false);
+      // 2-step onboarding: go directly to app (skip suggested)
+      router.replace('/(tabs)/saf');
     }
+  };
+
+  const handleSkip = () => {
+    haptic.light();
+    router.replace('/(tabs)/saf');
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.progress}>
-        {[1, 2, 3, 4].map((i) => (
-          <View key={i} style={[styles.dot, i <= 3 && styles.dotActive]} />
+        {[1, 2].map((i) => (
+          <View key={i} style={[styles.dot, i <= 2 && styles.dotActive]} />
         ))}
       </View>
 
@@ -86,6 +104,24 @@ export default function InterestsScreen() {
             </Pressable>
           );
         })}
+
+        {/* Madhab selector (74.8) */}
+        <View style={styles.madhabSection}>
+          <Text style={styles.madhabTitle}>{t('onboarding.madhab.title')}</Text>
+          <Text style={styles.madhabSubtitle}>{t('onboarding.madhab.subtitle')}</Text>
+          <View style={styles.madhabRow}>
+            {MADHABS.map((m) => (
+              <Pressable
+                key={m.id}
+                accessibilityRole="button"
+                style={[styles.chip, selectedMadhab === m.id && styles.chipOn]}
+                onPress={() => { haptic.selection(); setSelectedMadhab(m.id); }}
+              >
+                <Text style={[styles.chipLabel, selectedMadhab === m.id && styles.chipLabelOn]}>{t(m.label)}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
       </ScrollView>
 
       <View style={styles.footer}>
@@ -99,6 +135,9 @@ export default function InterestsScreen() {
           disabled={selected.size < 3}
           fullWidth
         />
+        <Pressable onPress={handleSkip} style={styles.skipBtn} accessibilityRole="button">
+          <Text style={styles.skipText}>{t('common.skipForNow')}</Text>
+        </Pressable>
       </View>
     </SafeAreaView>
   );
@@ -134,6 +173,18 @@ const styles = StyleSheet.create({
   chipOn: { borderColor: colors.emerald, backgroundColor: `${colors.emerald}20` },
   chipLabel: { color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' },
   chipLabelOn: { color: colors.emerald, fontWeight: '600' },
+  madhabSection: {
+    width: '100%',
+    marginTop: spacing.xl,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.dark.border,
+  },
+  madhabTitle: { color: colors.text.primary, fontSize: fontSize.base, fontWeight: '600', marginBottom: spacing.xs },
+  madhabSubtitle: { color: colors.text.secondary, fontSize: fontSize.sm, marginBottom: spacing.md },
+  madhabRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, gap: spacing.md },
   count: { color: colors.text.secondary, fontSize: fontSize.sm, textAlign: 'center' },
+  skipBtn: { alignSelf: 'center', paddingVertical: spacing.sm },
+  skipText: { color: colors.text.secondary, fontSize: fontSize.sm },
 });

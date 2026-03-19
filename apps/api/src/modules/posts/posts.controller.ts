@@ -54,15 +54,15 @@ export class PostsController {
   constructor(private postsService: PostsService) {}
 
   @Get('feed')
-  @UseGuards(ClerkAuthGuard)
+  @UseGuards(OptionalClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get paginated feed (following | foryou | chronological | favorites)' })
+  @ApiOperation({ summary: 'Get paginated feed (following | foryou | chronological | favorites). Supports anonymous browsing.' })
   getFeed(
-    @CurrentUser('id') userId: string,
+    @CurrentUser('id') userId: string | undefined,
     @Query('type') type: 'following' | 'foryou' | 'chronological' | 'favorites' = 'following',
     @Query('cursor') cursor?: string,
   ) {
-    return this.postsService.getFeed(userId, type, cursor);
+    return this.postsService.getFeed(userId ?? '', type, cursor);
   }
 
   @Get('archived')

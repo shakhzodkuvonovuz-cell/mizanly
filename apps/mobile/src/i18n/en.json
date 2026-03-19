@@ -22,6 +22,7 @@
     "ok": "OK",
     "continue": "Continue",
     "skip": "Skip",
+    "skipForNow": "Skip for now",
     "viewAll": "View All",
     "seeMore": "See More",
     "seeLess": "See Less",
@@ -1214,6 +1215,15 @@
       "education": "Education",
       "social": "Social",
       "sports": "Sports"
+    },
+    "madhab": {
+      "title": "Your school of thought",
+      "subtitle": "Optional — helps personalize scholarly content",
+      "hanafi": "Hanafi",
+      "maliki": "Maliki",
+      "shafii": "Shafi'i",
+      "hanbali": "Hanbali",
+      "noPreference": "No preference"
     },
     "username": {
       "title": "Choose your username",
