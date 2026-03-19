@@ -20,8 +20,9 @@ import { Icon } from '@/components/ui/Icon';
 import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius, animation, shadow } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-export default function SignInScreen() {
+function SignInScreenContent() {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
   const { t } = useTranslation();
@@ -212,6 +213,14 @@ export default function SignInScreen() {
       </KeyboardAvoidingView>
       </Pressable>
     </SafeAreaView>
+  );
+}
+
+export default function SignInScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <SignInScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 

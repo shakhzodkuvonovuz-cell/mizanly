@@ -18,8 +18,9 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-export default function SignUpScreen() {
+function SignUpScreenContent() {
   const { signUp, setActive, isLoaded } = useSignUp();
   const router = useRouter();
   const { t } = useTranslation();
@@ -326,6 +327,14 @@ export default function SignUpScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+  );
+}
+
+export default function SignUpScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <SignUpScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 

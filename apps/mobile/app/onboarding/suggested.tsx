@@ -11,8 +11,9 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { useTranslation } from '@/hooks/useTranslation';
 import { authApi, followsApi } from '@/services/api';
 import type { User } from '@/types';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
-export default function SuggestedScreen() {
+function SuggestedScreenContent() {
   const router = useRouter();
   const { user } = useUser();
   const { t } = useTranslation();
@@ -117,6 +118,14 @@ export default function SuggestedScreen() {
         </Pressable>
       </View>
     </SafeAreaView>
+  );
+}
+
+export default function SuggestedScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <SuggestedScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 

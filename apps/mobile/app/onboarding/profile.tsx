@@ -17,10 +17,11 @@ import { Icon } from '@/components/ui/Icon';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { usersApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const STEP = 2; // Step 2 of 4 in onboarding
 
-export default function OnboardingProfileScreen() {
+function OnboardingProfileScreenContent() {
   const router = useRouter();
   const { user } = useUser();
   const { username } = useLocalSearchParams<{ username: string }>();
@@ -181,6 +182,14 @@ export default function OnboardingProfileScreen() {
         />
       </View>
     </View>
+  );
+}
+
+export default function OnboardingProfileScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <OnboardingProfileScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 

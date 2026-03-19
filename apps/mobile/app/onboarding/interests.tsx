@@ -10,6 +10,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const INTERESTS: { id: string; label: string; icon: IconName }[] = [
   { id: 'quran', label: 'onboarding.interests.quran', icon: 'book-open' },
@@ -35,7 +36,7 @@ const MADHABS: { id: string; label: string }[] = [
   { id: 'none', label: 'onboarding.madhab.noPreference' },
 ];
 
-export default function InterestsScreen() {
+function InterestsScreenContent() {
   const router = useRouter();
   const { username } = useLocalSearchParams<{ username: string }>();
   const { user } = useUser();
@@ -140,6 +141,14 @@ export default function InterestsScreen() {
         </Pressable>
       </View>
     </SafeAreaView>
+  );
+}
+
+export default function InterestsScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <InterestsScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 

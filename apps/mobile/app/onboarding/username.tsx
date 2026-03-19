@@ -17,6 +17,7 @@ import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
 import { authApi } from '@/services/api';
 import { useTranslation } from '@/hooks/useTranslation';
+import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -29,7 +30,7 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const USERNAME_RE = /^[a-z0-9_.]{3,30}$/;
 
-export default function UsernameScreen() {
+function UsernameScreenContent() {
   const router = useRouter();
   const { t } = useTranslation();
   const [username, setUsername] = useState('');
@@ -191,6 +192,14 @@ export default function UsernameScreen() {
         </View>
       </View>
     </SafeAreaView>
+  );
+}
+
+export default function UsernameScreen() {
+  return (
+    <ScreenErrorBoundary>
+      <UsernameScreenContent />
+    </ScreenErrorBoundary>
   );
 }
 
