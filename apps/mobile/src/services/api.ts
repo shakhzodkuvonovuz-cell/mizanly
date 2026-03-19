@@ -634,7 +634,7 @@ export const searchApi = {
   searchReels: (query: string, cursor?: string) =>
     api.get<PaginatedResponse<Reel>>(`/search/reels${qs({ q: query, cursor })}`),
   getExploreFeed: (cursor?: string) =>
-    api.get<PaginatedResponse<any>>(`/search/explore${qs({ cursor })}`),
+    api.get<PaginatedResponse<Post | Reel | Thread>>(`/search/explore${qs({ cursor })}`),
   getSearchSuggestions: (query: string, limit?: number) =>
     api.get<SearchSuggestion[]>(`/search/suggestions${qs({ q: query, limit })}`),
 };
@@ -719,9 +719,9 @@ export const settingsApi = {
   getBlockedKeywords: () => api.get<BlockedKeyword[]>('/settings/blocked-keywords'),
   addBlockedKeyword: (word: string) => api.post<BlockedKeyword>('/settings/blocked-keywords', { word }),
   deleteBlockedKeyword: (id: string) => api.delete(`/settings/blocked-keywords/${id}`),
-  getQuietMode: () => api.get<any>('/settings/quiet-mode'),
+  getQuietMode: () => api.get<{ isActive: boolean; autoReply: string | null; startTime: string | null; endTime: string | null; isScheduled: boolean }>('/settings/quiet-mode'),
   updateQuietMode: (data: { isActive?: boolean; autoReply?: string; startTime?: string; endTime?: string; isScheduled?: boolean }) =>
-    api.patch<any>('/settings/quiet-mode', data),
+    api.patch<{ isActive: boolean; autoReply: string | null; startTime: string | null; endTime: string | null; isScheduled: boolean }>('/settings/quiet-mode', data),
   logScreenTime: (seconds: number) =>
     api.post('/settings/screen-time/log', { seconds }),
   getScreenTimeStats: () =>
@@ -987,7 +987,7 @@ export const channelPostsApi = {
   delete: (channelId: string, postId: string) =>
     api.delete(`/channels/${channelId}/posts/${postId}`),
   getComments: (channelId: string, postId: string, cursor?: string) =>
-    api.get<PaginatedResponse<any>>(`/channels/${channelId}/posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Comment>>(`/channels/${channelId}/posts/${postId}/comments${cursor ? `?cursor=${cursor}` : ''}`),
   addComment: (channelId: string, postId: string, content: string) =>
     api.post(`/channels/${channelId}/posts/${postId}/comments`, { content }),
 };
@@ -1017,9 +1017,9 @@ export const feedApi = {
   dismiss: (data: { postId?: string; reelId?: string; threadId?: string; reason: string }) =>
     api.post('/feed/dismiss', data),
   getPersonalized: (cursor?: string) =>
-    api.get<PaginatedResponse<any>>(`/feed/personalized${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/personalized${cursor ? `?cursor=${cursor}` : ''}`),
   getExplore: (cursor?: string) =>
-    api.get<PaginatedResponse<any>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
+    api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
   reportNotInterested: (contentId: string, contentType: string) =>
     api.post('/feed/not-interested', { contentId, contentType }),
 };
