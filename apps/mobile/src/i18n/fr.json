@@ -2693,6 +2693,17 @@
     "suggestedForYou": "Suggestions pour vous",
     "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
   },
+  "sessions": {
+    "title": "Sessions actives",
+    "thisDevice": "Cet appareil",
+    "lastActive": "Dernière activité",
+    "logOut": "Déconnexion",
+    "logOutAll": "Déconnecter tous les autres appareils",
+    "newLogin": "Nouvelle connexion détectée",
+    "newLoginMessage": "Nouvelle connexion depuis {{location}} sur {{device}}",
+    "wasThisYou": "C'était vous ?",
+    "notYou": "Pas vous ? Sécurisez votre compte"
+  },
   "storyStickers": {
     "poll": "Sondage",
     "question": "Question",

@@ -2692,6 +2692,17 @@
     "suggestedForYou": "Sizin için önerilen",
     "followToSeeMore": "Gönderilerini akışınızda görmek için takip edin"
   },
+  "sessions": {
+    "title": "Aktif Oturumlar",
+    "thisDevice": "Bu cihaz",
+    "lastActive": "Son aktif",
+    "logOut": "Çıkış yap",
+    "logOutAll": "Diğer tüm cihazlardan çıkış yap",
+    "newLogin": "Yeni giriş algılandı",
+    "newLoginMessage": "{{device}} üzerinde {{location}} konumundan yeni giriş",
+    "wasThisYou": "Bu siz miydiniz?",
+    "notYou": "Siz değilseniz? Hesabınızı güvence altına alın"
+  },
   "storyStickers": {
     "poll": "Anket",
     "question": "Soru",

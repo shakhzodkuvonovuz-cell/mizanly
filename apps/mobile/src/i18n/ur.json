@@ -2693,6 +2693,17 @@
     "suggestedForYou": "آپ کے لیے تجویز کردہ",
     "followToSeeMore": "ان کی پوسٹس اپنی فیڈ میں دیکھنے کے لیے فالو کریں"
   },
+  "sessions": {
+    "title": "فعال سیشنز",
+    "thisDevice": "یہ آلہ",
+    "lastActive": "آخری فعالیت",
+    "logOut": "لاگ آؤٹ",
+    "logOutAll": "تمام دیگر آلات سے لاگ آؤٹ",
+    "newLogin": "نئی لاگ ان کا پتہ چلا",
+    "newLoginMessage": "{{location}} سے {{device}} پر نئی لاگ ان",
+    "wasThisYou": "کیا یہ آپ تھے؟",
+    "notYou": "آپ نہیں؟ اپنا اکاؤنٹ محفوظ کریں"
+  },
   "storyStickers": {
     "poll": "پول",
     "question": "سوال",

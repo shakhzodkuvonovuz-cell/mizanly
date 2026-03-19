@@ -2692,6 +2692,17 @@
     "suggestedForYou": "Dicadangkan untuk anda",
     "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
   },
+  "sessions": {
+    "title": "Sesi Aktif",
+    "thisDevice": "Peranti ini",
+    "lastActive": "Terakhir aktif",
+    "logOut": "Log keluar",
+    "logOutAll": "Log keluar dari semua peranti lain",
+    "newLogin": "Log masuk baharu dikesan",
+    "newLoginMessage": "Log masuk baharu dari {{location}} pada {{device}}",
+    "wasThisYou": "Adakah ini anda?",
+    "notYou": "Bukan anda? Lindungi akaun anda"
+  },
   "storyStickers": {
     "poll": "Undian",
     "question": "Soalan",

@@ -42,6 +42,67 @@ export class DevicesService {
   }
 
   /**
+   * Get all active sessions for a user (for device session management screen).
+   */
+  async getSessions(userId: string) {
+    return this.prisma.device.findMany({
+      where: { userId, isActive: true },
+      select: {
+        id: true,
+        platform: true,
+        deviceName: true,
+        os: true,
+        ipAddress: true,
+        location: true,
+        lastActiveAt: true,
+        createdAt: true,
+      },
+      orderBy: { lastActiveAt: 'desc' },
+      take: 20,
+    });
+  }
+
+  /**
+   * Log out a specific session (deactivate device).
+   */
+  async logoutSession(sessionId: string, userId: string) {
+    await this.prisma.device.updateMany({
+      where: { id: sessionId, userId },
+      data: { isActive: false },
+    });
+    return { loggedOut: true };
+  }
+
+  /**
+   * Log out all other sessions (keep current device active).
+   */
+  async logoutAllOtherSessions(userId: string, currentSessionId: string) {
+    await this.prisma.device.updateMany({
+      where: { userId, isActive: true, id: { not: currentSessionId } },
+      data: { isActive: false },
+    });
+    return { loggedOut: true };
+  }
+
+  /**
+   * Update session metadata (called on API requests to track activity).
+   */
+  async touchSession(deviceId: string, ipAddress?: string) {
+    if (!deviceId) return;
+    try {
+      await this.prisma.device.update({
+        where: { id: deviceId },
+        data: {
+          lastActiveAt: new Date(),
+          ...(ipAddress ? { ipAddress } : {}),
+        },
+      });
+    } catch {
+      // Device may not exist — ignore
+    }
+  }
+
+  /**
    * Clean up stale device tokens that have not been updated in the given number of days.
    * Tokens that haven't re-registered for a long time are likely expired.
    */

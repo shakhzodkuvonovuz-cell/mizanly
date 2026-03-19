@@ -1,4 +1,4 @@
-import { Controller, Post, Delete, Body, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 import { DevicesService } from './devices.service';
@@ -34,5 +34,29 @@ export class DevicesController {
     @Param('token') token: string,
   ) {
     return this.devicesService.unregister(token, userId);
+  }
+
+  @Get('sessions')
+  @ApiOperation({ summary: 'List active device sessions' })
+  getSessions(@CurrentUser('id') userId: string) {
+    return this.devicesService.getSessions(userId);
+  }
+
+  @Delete('sessions/:id')
+  @ApiOperation({ summary: 'Log out a specific device session' })
+  logoutSession(
+    @CurrentUser('id') userId: string,
+    @Param('id') sessionId: string,
+  ) {
+    return this.devicesService.logoutSession(sessionId, userId);
+  }
+
+  @Delete('sessions')
+  @ApiOperation({ summary: 'Log out all other device sessions' })
+  logoutAllOtherSessions(
+    @CurrentUser('id') userId: string,
+    @Body() body: { currentSessionId: string },
+  ) {
+    return this.devicesService.logoutAllOtherSessions(userId, body.currentSessionId);
   }
 }

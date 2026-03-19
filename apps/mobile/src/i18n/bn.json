@@ -2692,6 +2692,17 @@
     "suggestedForYou": "আপনার জন্য প্রস্তাবিত",
     "followToSeeMore": "তাদের পোস্ট আপনার ফিডে দেখতে অনুসরণ করুন"
   },
+  "sessions": {
+    "title": "সক্রিয় সেশন",
+    "thisDevice": "এই ডিভাইস",
+    "lastActive": "সর্বশেষ সক্রিয়",
+    "logOut": "লগ আউট",
+    "logOutAll": "অন্য সব ডিভাইস থেকে লগ আউট",
+    "newLogin": "নতুন লগইন সনাক্ত হয়েছে",
+    "newLoginMessage": "{{location}} থেকে {{device}}-এ নতুন লগইন",
+    "wasThisYou": "এটা কি আপনি ছিলেন?",
+    "notYou": "আপনি নন? আপনার অ্যাকাউন্ট সুরক্ষিত করুন"
+  },
   "storyStickers": {
     "poll": "পোল",
     "question": "প্রশ্ন",

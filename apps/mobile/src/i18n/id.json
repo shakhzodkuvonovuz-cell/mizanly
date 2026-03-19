@@ -2693,6 +2693,17 @@
     "suggestedForYou": "Disarankan untuk Anda",
     "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
   },
+  "sessions": {
+    "title": "Sesi Aktif",
+    "thisDevice": "Perangkat ini",
+    "lastActive": "Terakhir aktif",
+    "logOut": "Keluar",
+    "logOutAll": "Keluar dari semua perangkat lain",
+    "newLogin": "Login baru terdeteksi",
+    "newLoginMessage": "Login baru dari {{location}} di {{device}}",
+    "wasThisYou": "Apakah ini Anda?",
+    "notYou": "Bukan Anda? Amankan akun Anda"
+  },
   "storyStickers": {
     "poll": "Polling",
     "question": "Pertanyaan",

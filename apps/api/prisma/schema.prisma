@@ -1673,17 +1673,23 @@ model ProfileLink {
 }
 
 model Device {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform  String
-  pushToken String   @unique
-  deviceId  String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String
+  pushToken    String   @unique
+  deviceId     String?
+  deviceName   String?
+  os           String?
+  ipAddress    String?
+  location     String?
+  lastActiveAt DateTime @default(now())
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([userId])
+  @@index([userId, lastActiveAt(sort: Desc)])
   @@map("devices")
 }
 

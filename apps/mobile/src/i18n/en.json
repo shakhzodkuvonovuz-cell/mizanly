@@ -2692,6 +2692,17 @@
     "suggestedForYou": "Suggested for you",
     "followToSeeMore": "Follow to see their posts in your feed"
   },
+  "sessions": {
+    "title": "Active Sessions",
+    "thisDevice": "This device",
+    "lastActive": "Last active",
+    "logOut": "Log out",
+    "logOutAll": "Log out all other devices",
+    "newLogin": "New login detected",
+    "newLoginMessage": "New login from {{location}} on {{device}}",
+    "wasThisYou": "Was this you?",
+    "notYou": "Not you? Secure your account"
+  },
   "storyStickers": {
     "poll": "Poll",
     "question": "Question",

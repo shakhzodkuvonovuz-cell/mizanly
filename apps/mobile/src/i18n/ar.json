@@ -2692,6 +2692,17 @@
     "suggestedForYou": "مقترح لك",
     "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
   },
+  "sessions": {
+    "title": "الجلسات النشطة",
+    "thisDevice": "هذا الجهاز",
+    "lastActive": "آخر نشاط",
+    "logOut": "تسجيل الخروج",
+    "logOutAll": "تسجيل الخروج من جميع الأجهزة الأخرى",
+    "newLogin": "تم اكتشاف تسجيل دخول جديد",
+    "newLoginMessage": "تسجيل دخول جديد من {{location}} على {{device}}",
+    "wasThisYou": "هل كان هذا أنت؟",
+    "notYou": "ليس أنت؟ قم بتأمين حسابك"
+  },
   "storyStickers": {
     "poll": "استطلاع",
     "question": "سؤال",
