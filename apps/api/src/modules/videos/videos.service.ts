@@ -849,4 +849,49 @@ export class VideosService {
     await this.prisma.endScreen.deleteMany({ where: { videoId } });
     return { success: true };
   }
+
+  // ── Video Chapters ─────────────────────────────────
+
+  async getChapters(videoId: string) {
+    return this.prisma.videoChapter.findMany({
+      where: { videoId },
+      orderBy: { timestampSeconds: 'asc' },
+    });
+  }
+
+  async parseChaptersFromDescription(videoId: string, userId: string) {
+    const video = await this.prisma.video.findFirst({
+      where: { id: videoId, userId },
+      select: { description: true },
+    });
+    if (!video || !video.description) return [];
+
+    // Parse timestamps like "0:00 Introduction\n2:30 Main Topic\n1:05:30 Conclusion"
+    const pattern = /(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)/g;
+    const chapters: { title: string; timestampSeconds: number }[] = [];
+
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(video.description)) !== null) {
+      const parts = match[1].split(':').map(Number);
+      let seconds = 0;
+      if (parts.length === 3) seconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+      else if (parts.length === 2) seconds = parts[0] * 60 + parts[1];
+      chapters.push({ title: match[2].trim(), timestampSeconds: seconds });
+    }
+
+    if (chapters.length === 0) return [];
+
+    // Delete existing chapters and create new ones
+    await this.prisma.videoChapter.deleteMany({ where: { videoId } });
+    await this.prisma.videoChapter.createMany({
+      data: chapters.map((ch, i) => ({
+        videoId,
+        title: ch.title,
+        timestampSeconds: ch.timestampSeconds,
+        order: i,
+      })),
+    });
+
+    return this.getChapters(videoId);
+  }
 }

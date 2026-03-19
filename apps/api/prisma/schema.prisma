@@ -3324,17 +3324,20 @@ model ForumReply {
 }
 
 model Webhook {
-  id             String   @id @default(uuid())
-  circleId       String
-  name           String   @db.VarChar(100)
-  avatarUrl      String?
-  token          String   @unique @default(uuid())
-  targetChannelId String? // broadcast channel or conversation
-  createdById    String
-  isActive       Boolean  @default(true)
-  lastUsedAt     DateTime?
-  createdAt      DateTime @default(now())
-  creator        User     @relation("WebhookCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  id              String   @id @default(uuid())
+  circleId        String
+  name            String   @db.VarChar(100)
+  avatarUrl       String?
+  token           String   @unique @default(uuid())
+  targetChannelId String?
+  url             String?  @db.VarChar(500)
+  secret          String?  @db.VarChar(64)
+  events          String[]
+  createdById     String
+  isActive        Boolean  @default(true)
+  lastUsedAt      DateTime?
+  createdAt       DateTime @default(now())
+  creator         User     @relation("WebhookCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([circleId])
   @@map("webhooks")
 }
@@ -3397,3 +3400,62 @@ model CreatorEarning {
   @@index([userId, year])
   @@map("creator_earnings")
 }
+
+// ============================================================
+// VIEWER DEMOGRAPHICS — Aggregated analytics data
+// ============================================================
+
+model ViewerDemographic {
+  id        String   @id @default(cuid())
+  videoId   String?
+  channelId String?
+  country   String   @db.VarChar(2)
+  ageRange  String   @db.VarChar(10) // 13-17, 18-24, 25-34, 35-44, 45-54, 55+
+  gender    String   @db.VarChar(10) // male, female, other
+  source    String   @default("browse") @db.VarChar(20) // search, browse, suggested, external, direct
+  viewDate  DateTime @default(now())
+
+  @@index([videoId, viewDate])
+  @@index([channelId, viewDate])
+  @@map("viewer_demographics")
+}
+
+// ============================================================
+// VIDEO CHAPTERS — Timestamp-based chapters
+// ============================================================
+
+model VideoChapter {
+  id               String @id @default(cuid())
+  videoId          String
+  title            String @db.VarChar(200)
+  timestampSeconds Int
+  order            Int    @default(0)
+
+  @@index([videoId])
+  @@map("video_chapters")
+}
+
+// ============================================================
+// COMMUNITY ROLES — Granular permissions
+// ============================================================
+
+model CommunityRole {
+  id                String  @id @default(cuid())
+  communityId       String
+  name              String  @db.VarChar(100)
+  color             String? @db.VarChar(7)
+  position          Int     @default(0)
+  canSendMessages   Boolean @default(true)
+  canPostMedia      Boolean @default(true)
+  canInvite         Boolean @default(false)
+  canKick           Boolean @default(false)
+  canBan            Boolean @default(false)
+  canManageRoles    Boolean @default(false)
+  canManageChannels Boolean @default(false)
+  canSpeak          Boolean @default(true)
+  createdAt         DateTime @default(now())
+
+  @@index([communityId, position])
+  @@map("community_roles")
+}
+

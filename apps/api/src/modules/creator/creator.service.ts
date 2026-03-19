@@ -241,4 +241,44 @@ export class CreatorService {
       memberships: { total: membershipTotal, count: membershipIncome },
     };
   }
+
+  // ── Audience Demographics ─────────────────────────
+
+  async getAudienceDemographics(channelId: string) {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const [countries, ageRanges, genders, sources] = await Promise.all([
+      this.prisma.viewerDemographic.groupBy({
+        by: ['country'],
+        where: { channelId, viewDate: { gte: thirtyDaysAgo } },
+        _count: { country: true },
+        orderBy: { _count: { country: 'desc' } },
+        take: 10,
+      }),
+      this.prisma.viewerDemographic.groupBy({
+        by: ['ageRange'],
+        where: { channelId, viewDate: { gte: thirtyDaysAgo } },
+        _count: { ageRange: true },
+        orderBy: { _count: { ageRange: 'desc' } },
+      }),
+      this.prisma.viewerDemographic.groupBy({
+        by: ['gender'],
+        where: { channelId, viewDate: { gte: thirtyDaysAgo } },
+        _count: { gender: true },
+      }),
+      this.prisma.viewerDemographic.groupBy({
+        by: ['source'],
+        where: { channelId, viewDate: { gte: thirtyDaysAgo } },
+        _count: { source: true },
+        orderBy: { _count: { source: 'desc' } },
+      }),
+    ]);
+
+    return {
+      countries: countries.map(c => ({ country: c.country, count: c._count.country })),
+      ageRanges: ageRanges.map(a => ({ range: a.ageRange, count: a._count.ageRange })),
+      genders: genders.map(g => ({ gender: g.gender, count: g._count.gender })),
+      sources: sources.map(s => ({ source: s.source, count: s._count.source })),
+    };
+  }
 }
