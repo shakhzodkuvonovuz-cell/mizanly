@@ -1216,6 +1216,15 @@
       "social": "Sosyal",
       "sports": "Spor"
     },
+    "madhab": {
+      "title": "Mezhebiniz",
+      "subtitle": "İsteğe bağlı — ilmi içerikleri kişiselleştirmeye yardımcı olur",
+      "hanafi": "Hanefi",
+      "maliki": "Maliki",
+      "shafii": "Şafii",
+      "hanbali": "Hanbeli",
+      "noPreference": "Tercihim yok"
+    },
     "username": {
       "title": "Kullanıcı adınızı seçin",
       "subtitle": "Bu, Mizanly üzerinde sizi tanımlayacak",
