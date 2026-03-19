@@ -1159,7 +1159,13 @@
     "membershipTiers": "Membership Tiers",
     "volunteerBoard": "Volunteer Board",
     "closeFriends": "Close Friends & Circles",
-    "community": "Community"
+    "community": "Community",
+    "twoFactor": "Two-Factor Authentication",
+    "accountSwitcher": "Switch Account",
+    "contactSync": "Find Friends",
+    "statusPrivacy": "Status Privacy",
+    "storageManagement": "Storage & Data",
+    "notificationTones": "Notification Tones"
   },
   "onboarding": {
     "interests": {

@@ -881,6 +881,43 @@ export default function VideoDetailScreen() {
               router.push(`/(screens)/save-to-playlist?videoId=${video.id}`);
             }}
           />
+          <BottomSheetItem
+            label={t('clips.title')}
+            icon={<Icon name="scissors" size="sm" color={colors.text.primary} />}
+            onPress={() => {
+              setShowMenu(false);
+              router.push(`/(screens)/create-clip?videoId=${video.id}` as never);
+            }}
+          />
+          {video.userId === user?.id && (
+            <>
+              <BottomSheetItem
+                label={t('endScreens.title')}
+                icon={<Icon name="layers" size="sm" color={colors.gold} />}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push(`/(screens)/end-screen-editor?videoId=${video.id}` as never);
+                }}
+              />
+              <BottomSheetItem
+                label={t('premiere.title')}
+                icon={<Icon name="clock" size="sm" color={colors.emerald} />}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push(`/(screens)/video-premiere?videoId=${video.id}` as never);
+                }}
+              />
+            </>
+          )}
+          <BottomSheetItem
+            label={t('common.report')}
+            icon={<Icon name="flag" size="sm" color={colors.error} />}
+            onPress={() => {
+              setShowMenu(false);
+              router.push(`/(screens)/report?type=video&id=${video.id}` as never);
+            }}
+            destructive
+          />
         </BottomSheet>
       </View>
   

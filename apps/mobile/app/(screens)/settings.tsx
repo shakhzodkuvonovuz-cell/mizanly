@@ -455,6 +455,12 @@ export default function SettingsScreen() {
               icon={<Icon name="mail" size="sm" color={colors.gold} />}
               value={notifyMessages}
               onToggle={(v) => { setNotifyMessages(v); notifMutation.mutate({ notifyMessages: v }); }}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.notificationTones')}
+              icon={<Icon name="bell" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/notification-tones' as never)}
               isLast
             />
           </LinearGradient>
@@ -833,6 +839,48 @@ export default function SettingsScreen() {
               icon={<Icon name="user" size="sm" color={colors.emerald} />}
               hint={t('settings.hints.account')}
               onPress={() => router.push('/(screens)/account-settings')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.twoFactor')}
+              icon={<Icon name="lock" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/2fa-setup' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.accountSwitcher')}
+              icon={<Icon name="users" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/account-switcher' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.contactSync')}
+              icon={<Icon name="phone" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/contact-sync' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.closeFriends')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/close-friends' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.statusPrivacy')}
+              icon={<Icon name="eye-off" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/status-privacy' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.storageManagement')}
+              icon={<Icon name="settings" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/storage-management' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.manageData')}
+              icon={<Icon name="layers" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/manage-data' as never)}
             />
             <View style={styles.divider} />
             <Row

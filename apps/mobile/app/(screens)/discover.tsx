@@ -417,6 +417,23 @@ export default function DiscoverScreen() {
               <CategoryPills active={activeCategory} onSelect={setActiveCategory} categories={CATEGORIES} />
               {featuredItems.length > 0 && <FeaturedSection items={featuredItems} />}
               {trendingLoading ? <TrendingHashtagsSkeleton /> : trendingError ? null : <TrendingHashtags hashtags={trendingData ?? []} />}
+              {/* Quick links */}
+              <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.md }}>
+                <Pressable
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
+                  onPress={() => router.push('/(screens)/hashtag-explore' as never)}
+                >
+                  <Icon name="hash" size="sm" color={colors.emerald} />
+                  <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('screens.hashtag-explore.title')}</Text>
+                </Pressable>
+                <Pressable
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.dark.border }}
+                  onPress={() => router.push('/(screens)/series-discover' as never)}
+                >
+                  <Icon name="layers" size="sm" color={colors.gold} />
+                  <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, fontWeight: '500' }}>{t('series.discoverTitle')}</Text>
+                </Pressable>
+              </View>
               <Text style={styles.sectionTitle}>{t('discover.explore')}</Text>
             </>
           }

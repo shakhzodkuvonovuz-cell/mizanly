@@ -1102,7 +1102,13 @@
     "membershipTiers": "مستويات العضوية",
     "volunteerBoard": "لوحة التطوع",
     "closeFriends": "الأصدقاء المقربون والدوائر",
-    "community": "المجتمع"
+    "community": "المجتمع",
+    "twoFactor": "التحقق بخطوتين",
+    "accountSwitcher": "تبديل الحساب",
+    "contactSync": "العثور على أصدقاء",
+    "statusPrivacy": "خصوصية الحالة",
+    "storageManagement": "التخزين والبيانات",
+    "notificationTones": "نغمات الإشعارات"
   },
   "accessibility": {
     "goBack": "رجوع"

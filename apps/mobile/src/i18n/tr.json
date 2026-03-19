@@ -1159,7 +1159,13 @@
     "membershipTiers": "Üyelik Seviyeleri",
     "volunteerBoard": "Gönüllü Panosu",
     "closeFriends": "Yakın Arkadaşlar ve Çevreler",
-    "community": "Topluluk"
+    "community": "Topluluk",
+    "twoFactor": "İki Faktörlü Doğrulama",
+    "accountSwitcher": "Hesap Değiştir",
+    "contactSync": "Arkadaş Bul",
+    "statusPrivacy": "Durum Gizliliği",
+    "storageManagement": "Depolama ve Veri",
+    "notificationTones": "Bildirim Sesleri"
   },
   "onboarding": {
     "interests": {
