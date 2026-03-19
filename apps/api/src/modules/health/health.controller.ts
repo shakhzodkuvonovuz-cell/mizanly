@@ -18,22 +18,37 @@ export class HealthController {
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'Health check — checks DB + Redis' })
+  @ApiOperation({ summary: 'Health check dashboard — DB, Redis, R2, Stream status' })
   async check() {
-    const [dbOk, redisOk] = await Promise.all([
+    const [dbOk, redisOk, r2Ok, streamOk] = await Promise.all([
       this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
       this.redis.ping().then(() => true).catch(() => false),
+      // R2 health: check if public URL is reachable
+      fetch(`${process.env.R2_PUBLIC_URL || 'https://media.mizanly.app'}/`, { method: 'HEAD', signal: AbortSignal.timeout(3000) })
+        .then(r => r.status < 500).catch(() => false),
+      // Cloudflare Stream health: check API
+      process.env.CF_STREAM_API_TOKEN
+        ? fetch('https://api.cloudflare.com/client/v4/accounts/' + (process.env.CF_ACCOUNT_ID || '') + '/stream', {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${process.env.CF_STREAM_API_TOKEN}` },
+            signal: AbortSignal.timeout(3000),
+          }).then(r => r.ok).catch(() => false)
+        : Promise.resolve(null), // Not configured
     ]);
 
-    const allHealthy = dbOk && redisOk;
+    const criticalHealthy = dbOk && redisOk;
+    const allHealthy = criticalHealthy && r2Ok && (streamOk === null || streamOk);
     return {
-      status: allHealthy ? 'healthy' : 'degraded',
+      status: allHealthy ? 'healthy' : criticalHealthy ? 'degraded' : 'unhealthy',
       timestamp: new Date().toISOString(),
       services: {
         database: dbOk ? 'up' : 'down',
         redis: redisOk ? 'up' : 'down',
+        storage: r2Ok ? 'up' : 'down',
+        stream: streamOk === null ? 'not_configured' : streamOk ? 'up' : 'down',
       },
       version: process.env.npm_package_version ?? '0.1.0',
+      uptime: Math.round(process.uptime()),
     };
   }
 

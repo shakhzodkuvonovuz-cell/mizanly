@@ -80,6 +80,7 @@ import { DiscordFeaturesModule } from './modules/discord-features/discord-featur
 import { EmbeddingsModule } from './modules/embeddings/embeddings.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
+import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 
 @Module({
   imports: [
@@ -171,6 +172,6 @@ import { CorrelationIdMiddleware } from './common/middleware/correlation-id.midd
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware, SecurityHeadersMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, SecurityHeadersMiddleware, RequestLoggerMiddleware).forRoutes('*');
   }
 }
