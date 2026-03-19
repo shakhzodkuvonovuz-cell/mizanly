@@ -2872,6 +2872,20 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "scholarQA": {
+    "title": "عالم سوال و جواب",
+    "upcoming": "آنے والے سیشن",
+    "askQuestion": "سوال پوچھیں",
+    "submitQuestion": "سوال بھیجیں",
+    "voteQuestion": "ووٹ",
+    "answered": "جواب دیا گیا",
+    "live": "ابھی لائیو",
+    "recording": "ریکارڈنگ",
+    "schedule": "سیشن شیڈول کریں",
+    "startSession": "سیشن شروع کریں",
+    "endSession": "سیشن ختم کریں",
+    "pastSessions": "گزشتہ سیشن"
+  },
   "mosque": {
     "community": "مسجد کمیونٹی",
     "join": "کمیونٹی میں شامل ہوں",

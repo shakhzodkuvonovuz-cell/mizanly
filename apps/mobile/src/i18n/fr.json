@@ -2872,6 +2872,20 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "scholarQA": {
+    "title": "Q&R Savant",
+    "upcoming": "Sessions à venir",
+    "askQuestion": "Poser une question",
+    "submitQuestion": "Soumettre la question",
+    "voteQuestion": "Voter",
+    "answered": "Répondu",
+    "live": "En direct maintenant",
+    "recording": "Enregistrement",
+    "schedule": "Planifier Q&R",
+    "startSession": "Démarrer la session",
+    "endSession": "Terminer la session",
+    "pastSessions": "Sessions passées"
+  },
   "mosque": {
     "community": "Communauté de Mosquée",
     "join": "Rejoindre la communauté",

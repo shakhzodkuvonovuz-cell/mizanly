@@ -2871,6 +2871,20 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "scholarQA": {
+    "title": "Alim Soru-Cevap",
+    "upcoming": "Yaklaşan Oturumlar",
+    "askQuestion": "Soru Sor",
+    "submitQuestion": "Soruyu Gönder",
+    "voteQuestion": "Oy Ver",
+    "answered": "Cevaplandı",
+    "live": "Şu An Canlı",
+    "recording": "Kayıt",
+    "schedule": "Soru-Cevap Planla",
+    "startSession": "Oturumu Başlat",
+    "endSession": "Oturumu Bitir",
+    "pastSessions": "Geçmiş Oturumlar"
+  },
   "mosque": {
     "community": "Cami Topluluğu",
     "join": "Topluluğa Katıl",

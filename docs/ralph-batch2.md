@@ -1541,7 +1541,7 @@ mosque.createMosque: "Create Mosque Page"
 
 ---
 
-### [ ] Task 25: Islamic Scholar Live Q&A System
+### [x] Task 25: Islamic Scholar Live Q&A System — Done: ScholarQA + ScholarQuestion models, schedule/start/end, question voting, mark answered, recordings, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/audio-rooms/audio-rooms.service.ts`

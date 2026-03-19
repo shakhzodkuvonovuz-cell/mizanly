@@ -2871,6 +2871,20 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "scholarQA": {
+    "title": "أسئلة وأجوبة العلماء",
+    "upcoming": "الجلسات القادمة",
+    "askQuestion": "اطرح سؤال",
+    "submitQuestion": "إرسال السؤال",
+    "voteQuestion": "تصويت",
+    "answered": "تمت الإجابة",
+    "live": "مباشر الآن",
+    "recording": "تسجيل",
+    "schedule": "جدولة جلسة",
+    "startSession": "بدء الجلسة",
+    "endSession": "إنهاء الجلسة",
+    "pastSessions": "الجلسات السابقة"
+  },
   "mosque": {
     "community": "مجتمع المسجد",
     "join": "انضم للمجتمع",

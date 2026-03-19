@@ -2871,6 +2871,20 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "scholarQA": {
+    "title": "Scholar Q&A",
+    "upcoming": "Upcoming Sessions",
+    "askQuestion": "Ask a Question",
+    "submitQuestion": "Submit Question",
+    "voteQuestion": "Vote",
+    "answered": "Answered",
+    "live": "Live Now",
+    "recording": "Recording",
+    "schedule": "Schedule Q&A",
+    "startSession": "Start Session",
+    "endSession": "End Session",
+    "pastSessions": "Past Sessions"
+  },
   "mosque": {
     "community": "Mosque Community",
     "join": "Join Community",

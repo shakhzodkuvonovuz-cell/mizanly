@@ -3649,6 +3649,46 @@ model MosquePost {
 }
 
 // ============================================================
+// SCHOLAR Q&A
+// ============================================================
+
+model ScholarQA {
+  id           String    @id @default(cuid())
+  scholarId    String
+  title        String
+  description  String?
+  category     String // fiqh, aqeedah, tafsir, seerah, family, youth, women, converts
+  language     String    @default("en")
+  scheduledAt  DateTime
+  startedAt    DateTime?
+  endedAt      DateTime?
+  recordingUrl String?
+  status       String    @default("scheduled") // scheduled, live, ended
+  createdAt    DateTime  @default(now())
+
+  questions ScholarQuestion[]
+
+  @@index([scheduledAt])
+  @@index([scholarId])
+  @@map("scholar_qa")
+}
+
+model ScholarQuestion {
+  id         String    @id @default(cuid())
+  qaId       String
+  qa         ScholarQA @relation(fields: [qaId], references: [id], onDelete: Cascade)
+  userId     String
+  question   String
+  votes      Int       @default(0)
+  isAnswered Boolean   @default(false)
+  answeredAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([qaId, votes(sort: Desc)])
+  @@map("scholar_questions")
+}
+
+// ============================================================
 // DUA BOOKMARKS
 // ============================================================
 

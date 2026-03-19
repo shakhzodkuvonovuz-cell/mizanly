@@ -2872,6 +2872,20 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "scholarQA": {
+    "title": "Tanya Jawab Ulama",
+    "upcoming": "Sesi Mendatang",
+    "askQuestion": "Ajukan Pertanyaan",
+    "submitQuestion": "Kirim Pertanyaan",
+    "voteQuestion": "Vote",
+    "answered": "Dijawab",
+    "live": "Sedang Live",
+    "recording": "Rekaman",
+    "schedule": "Jadwalkan Sesi",
+    "startSession": "Mulai Sesi",
+    "endSession": "Akhiri Sesi",
+    "pastSessions": "Sesi Sebelumnya"
+  },
   "mosque": {
     "community": "Komunitas Masjid",
     "join": "Gabung Komunitas",
