@@ -208,6 +208,55 @@ export class LiveService {
     return { data: sessions, meta: { cursor: sessions[sessions.length - 1]?.id ?? null, hasMore } };
   }
 
+  // ── Multi-guest live streaming ──────────────────────────
+
+  async inviteGuest(liveId: string, userId: string, hostId: string) {
+    const session = await this.requireHost(liveId, hostId);
+    if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not live');
+
+    // Max 4 guests
+    const guestCount = await this.prisma.liveGuest.count({
+      where: { liveId, status: 'ACCEPTED' },
+    });
+    if (guestCount >= 4) throw new BadRequestException('Maximum 4 guests allowed');
+
+    return this.prisma.liveGuest.upsert({
+      where: { liveId_userId: { liveId, userId } },
+      update: { status: 'INVITED' },
+      create: { liveId, userId, status: 'INVITED' },
+      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+    });
+  }
+
+  async acceptGuestInvite(liveId: string, userId: string) {
+    const guest = await this.prisma.liveGuest.findUnique({
+      where: { liveId_userId: { liveId, userId } },
+    });
+    if (!guest || guest.status !== 'INVITED') throw new NotFoundException('No pending invitation');
+
+    return this.prisma.liveGuest.update({
+      where: { liveId_userId: { liveId, userId } },
+      data: { status: 'ACCEPTED', joinedAt: new Date() },
+      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+    });
+  }
+
+  async removeGuest(liveId: string, guestUserId: string, hostId: string) {
+    await this.requireHost(liveId, hostId);
+    return this.prisma.liveGuest.update({
+      where: { liveId_userId: { liveId, userId: guestUserId } },
+      data: { status: 'REMOVED', leftAt: new Date() },
+    });
+  }
+
+  async listGuests(liveId: string) {
+    return this.prisma.liveGuest.findMany({
+      where: { liveId, status: { in: ['INVITED', 'ACCEPTED'] } },
+      include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   private async requireHost(sessionId: string, userId: string) {
     const session = await this.prisma.liveSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new NotFoundException('Session not found');

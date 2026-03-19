@@ -1168,6 +1168,7 @@ model LiveSession {
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
   participants   LiveParticipant[]
+  guests         LiveGuest[]
 
   @@index([hostId, createdAt(sort: Desc)])
   @@index([status])
@@ -1189,6 +1190,28 @@ model LiveParticipant {
 
   @@index([sessionId])
   @@index([userId])
+}
+
+model LiveGuest {
+  id        String          @id @default(cuid())
+  liveId    String
+  userId    String
+  status    LiveGuestStatus @default(INVITED)
+  joinedAt  DateTime?
+  leftAt    DateTime?
+  createdAt DateTime        @default(now())
+  live      LiveSession     @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  user      User            @relation("LiveGuest", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([liveId, userId])
+  @@index([liveId, status])
+  @@map("live_guests")
+}
+
+enum LiveGuestStatus {
+  INVITED
+  ACCEPTED
+  REMOVED
 }
 
 // ============================================================

@@ -129,4 +129,38 @@ export class LiveController {
   async setRecording(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('recordingUrl') url: string) {
     return this.live.updateRecording(id, userId, url);
   }
+
+  // ── Multi-guest endpoints ──────────────────────────
+
+  @Post(':id/guests/invite')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Invite a guest to live (max 4)' })
+  async inviteGuest(@Param('id') id: string, @CurrentUser('id') userId: string, @Body('guestUserId') guestUserId: string) {
+    return this.live.inviteGuest(id, guestUserId, userId);
+  }
+
+  @Post(':id/guests/accept')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Accept guest invitation' })
+  async acceptGuest(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.live.acceptGuestInvite(id, userId);
+  }
+
+  @Delete(':id/guests/:userId')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a guest from live' })
+  async removeGuest(@Param('id') id: string, @Param('userId') guestUserId: string, @CurrentUser('id') hostId: string) {
+    return this.live.removeGuest(id, guestUserId, hostId);
+  }
+
+  @Get(':id/guests')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List guests in live session' })
+  async listGuests(@Param('id') id: string) {
+    return this.live.listGuests(id);
+  }
 }
