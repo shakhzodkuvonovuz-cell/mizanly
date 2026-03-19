@@ -1,10 +1,25 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
+
+type StickerStyle = 'cartoon' | 'calligraphy' | 'emoji' | 'geometric' | 'kawaii';
+
+// Inappropriate content filters for sticker generation
+const BLOCKED_TERMS = [
+  'nude', 'naked', 'sex', 'porn', 'violence', 'blood', 'gore',
+  'weapon', 'gun', 'drug', 'alcohol', 'beer', 'wine', 'gambling',
+  'idol', 'shirk',
+];
 
 @Injectable()
 export class StickersService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(StickersService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
 
   async createPack(data: { name: string; coverUrl?: string; isFree?: boolean; stickers: { url: string; name?: string }[] }) {
     return this.prisma.stickerPack.create({
@@ -107,5 +122,246 @@ export class StickersService {
       throw error;
     }
     return { deleted: true };
+  }
+
+  // ── AI Sticker Generation ───────────────────────────────
+
+  /**
+   * Generate an AI sticker from a text prompt.
+   * Uses Claude API to generate SVG sticker art.
+   * Rate limited to 10 generations per user per day.
+   */
+  async generateSticker(userId: string, prompt: string, style: StickerStyle = 'cartoon'): Promise<{
+    id: string;
+    imageUrl: string;
+    prompt: string;
+    style: string;
+  }> {
+    // Content moderation: reject inappropriate prompts
+    const lowerPrompt = prompt.toLowerCase();
+    for (const term of BLOCKED_TERMS) {
+      if (lowerPrompt.includes(term)) {
+        throw new BadRequestException('This prompt contains inappropriate content');
+      }
+    }
+
+    // Rate limit: 10 per day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dailyCount = await this.prisma.generatedSticker.count({
+      where: {
+        userId,
+        createdAt: { gte: today },
+      },
+    });
+
+    if (dailyCount >= 10) {
+      throw new BadRequestException('Daily sticker generation limit reached (10/day)');
+    }
+
+    // Generate SVG sticker using Claude API
+    const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
+    let imageUrl = '';
+
+    if (apiKey) {
+      try {
+        const svgCode = await this.generateStickerSVG(apiKey, prompt, style);
+        // Convert SVG to data URI (can be rendered directly in Image components)
+        const encoded = Buffer.from(svgCode).toString('base64');
+        imageUrl = `data:image/svg+xml;base64,${encoded}`;
+      } catch (error) {
+        this.logger.error('AI sticker generation failed', error);
+        throw new BadRequestException('Sticker generation failed. Please try again.');
+      }
+    } else {
+      // Fallback: generate a placeholder sticker
+      imageUrl = this.generateFallbackSticker(prompt, style);
+    }
+
+    // Save to database
+    const sticker = await this.prisma.generatedSticker.create({
+      data: {
+        userId,
+        imageUrl,
+        prompt,
+        style,
+      },
+    });
+
+    return {
+      id: sticker.id,
+      imageUrl: sticker.imageUrl,
+      prompt: sticker.prompt,
+      style: sticker.style,
+    };
+  }
+
+  /**
+   * Save a generated sticker to the user's "My Stickers" pack.
+   */
+  async saveGeneratedSticker(userId: string, stickerId: string): Promise<{ saved: boolean }> {
+    const generated = await this.prisma.generatedSticker.findUnique({
+      where: { id: stickerId },
+    });
+    if (!generated || generated.userId !== userId) {
+      throw new NotFoundException('Sticker not found');
+    }
+
+    // Find or create "My Stickers" pack for user
+    let myPack = await this.prisma.stickerPack.findFirst({
+      where: { name: `My Stickers - ${userId}` },
+    });
+
+    if (!myPack) {
+      myPack = await this.prisma.stickerPack.create({
+        data: {
+          name: `My Stickers - ${userId}`,
+          isFree: true,
+          stickersCount: 0,
+        },
+      });
+      // Auto-add to user's collection
+      await this.prisma.userStickerPack.create({
+        data: { userId, packId: myPack.id },
+      });
+    }
+
+    // Add sticker to pack
+    const position = await this.prisma.sticker.count({ where: { packId: myPack.id } });
+    await this.prisma.sticker.create({
+      data: {
+        packId: myPack.id,
+        url: generated.imageUrl,
+        name: generated.prompt.slice(0, 50),
+        position,
+      },
+    });
+
+    // Update sticker count
+    await this.prisma.stickerPack.update({
+      where: { id: myPack.id },
+      data: { stickersCount: { increment: 1 } },
+    });
+
+    return { saved: true };
+  }
+
+  /**
+   * Get user's generated stickers.
+   */
+  async getMyGeneratedStickers(userId: string, cursor?: string): Promise<{
+    data: { id: string; imageUrl: string; prompt: string; style: string; createdAt: Date }[];
+    meta: { cursor: string | null; hasMore: boolean };
+  }> {
+    const limit = 20;
+    const stickers = await this.prisma.generatedSticker.findMany({
+      where: { userId },
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+
+    const hasMore = stickers.length > limit;
+    if (hasMore) stickers.pop();
+
+    return {
+      data: stickers,
+      meta: { cursor: stickers[stickers.length - 1]?.id ?? null, hasMore },
+    };
+  }
+
+  /**
+   * Get Islamic preset stickers (available to all users).
+   */
+  getIslamicPresetStickers(): {
+    id: string;
+    text: string;
+    style: string;
+    category: string;
+  }[] {
+    return [
+      { id: 'islamic-1', text: 'Alhamdulillah', style: 'calligraphy', category: 'praise' },
+      { id: 'islamic-2', text: 'MashAllah', style: 'calligraphy', category: 'praise' },
+      { id: 'islamic-3', text: 'SubhanAllah', style: 'calligraphy', category: 'praise' },
+      { id: 'islamic-4', text: 'Bismillah', style: 'calligraphy', category: 'opening' },
+      { id: 'islamic-5', text: 'JazakAllah Khair', style: 'calligraphy', category: 'thanks' },
+      { id: 'islamic-6', text: 'Eid Mubarak', style: 'geometric', category: 'celebration' },
+      { id: 'islamic-7', text: 'Ramadan Kareem', style: 'geometric', category: 'celebration' },
+      { id: 'islamic-8', text: 'Assalamu Alaikum', style: 'calligraphy', category: 'greeting' },
+      { id: 'islamic-9', text: 'InshAllah', style: 'calligraphy', category: 'hope' },
+      { id: 'islamic-10', text: 'Allahu Akbar', style: 'calligraphy', category: 'praise' },
+      { id: 'islamic-11', text: 'La ilaha illallah', style: 'calligraphy', category: 'faith' },
+      { id: 'islamic-12', text: 'Astaghfirullah', style: 'calligraphy', category: 'forgiveness' },
+      { id: 'islamic-13', text: 'BarakAllahu Feek', style: 'calligraphy', category: 'blessings' },
+      { id: 'islamic-14', text: 'Tawakkul', style: 'geometric', category: 'trust' },
+      { id: 'islamic-15', text: 'Sabr', style: 'geometric', category: 'patience' },
+      { id: 'islamic-16', text: 'Shukr', style: 'geometric', category: 'gratitude' },
+      { id: 'islamic-17', text: 'Jummah Mubarak', style: 'geometric', category: 'celebration' },
+      { id: 'islamic-18', text: 'Mosque', style: 'kawaii', category: 'symbol' },
+      { id: 'islamic-19', text: 'Quran', style: 'kawaii', category: 'symbol' },
+      { id: 'islamic-20', text: 'Crescent Moon', style: 'kawaii', category: 'symbol' },
+    ];
+  }
+
+  // ── Private helpers ───────────────────────────────────────
+
+  private async generateStickerSVG(apiKey: string, prompt: string, style: StickerStyle): Promise<string> {
+    const stylePrompts: Record<StickerStyle, string> = {
+      cartoon: 'cute cartoon style with bold outlines and bright colors',
+      calligraphy: 'elegant Arabic-inspired calligraphy with decorative borders',
+      emoji: 'emoji-like round design with expressive features',
+      geometric: 'Islamic geometric pattern with interlocking shapes',
+      kawaii: 'Japanese kawaii style with big eyes and pastel colors',
+    };
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        system: `You are a sticker designer. Generate a single SVG image (512x512 viewBox) for a sticker. Style: ${stylePrompts[style]}. The SVG must be valid, self-contained, and look good on both light and dark backgrounds. Only output the SVG code, nothing else.`,
+        messages: [{ role: 'user', content: `Create a sticker: ${prompt}` }],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Claude API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const text = data.content?.[0]?.text || '';
+
+    // Extract SVG from response (it might be wrapped in markdown code blocks)
+    const svgMatch = text.match(/<svg[\s\S]*?<\/svg>/i);
+    if (!svgMatch) {
+      throw new Error('No valid SVG in response');
+    }
+
+    return svgMatch[0];
+  }
+
+  private generateFallbackSticker(prompt: string, style: StickerStyle): string {
+    // Generate a simple placeholder SVG sticker
+    const colors: Record<StickerStyle, { bg: string; fg: string }> = {
+      cartoon: { bg: '#FFE4B5', fg: '#D2691E' },
+      calligraphy: { bg: '#1C2333', fg: '#C8963E' },
+      emoji: { bg: '#FFF8DC', fg: '#FF6347' },
+      geometric: { bg: '#0A7B4F', fg: '#C8963E' },
+      kawaii: { bg: '#FFB6C1', fg: '#FF69B4' },
+    };
+    const c = colors[style];
+    const displayText = prompt.length > 20 ? prompt.slice(0, 20) + '...' : prompt;
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <circle cx="256" cy="256" r="240" fill="${c.bg}" stroke="${c.fg}" stroke-width="8"/>
+      <text x="256" y="270" text-anchor="middle" font-size="40" fill="${c.fg}" font-family="Arial">${displayText}</text>
+    </svg>`;
+
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
   }
 }

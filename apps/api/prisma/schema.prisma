@@ -1762,6 +1762,18 @@ model UserStickerPack {
   @@map("user_sticker_packs")
 }
 
+model GeneratedSticker {
+  id        String   @id @default(cuid())
+  userId    String
+  imageUrl  String
+  prompt    String
+  style     String   @default("cartoon")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("generated_stickers")
+}
+
 model MajlisList {
   id           String             @id @default(cuid())
   ownerId      String

@@ -2738,6 +2738,22 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "stickers": {
+    "createSticker": "Cipta Pelekat",
+    "describeSticker": "Huraikan pelekat anda...",
+    "generate": "Jana",
+    "generating": "Mencipta pelekat anda...",
+    "saveToMyStickers": "Simpan ke Pelekat Saya",
+    "tryAgain": "Cuba Lagi",
+    "myStickers": "Pelekat Saya",
+    "islamicStickers": "Pelekat Islamik",
+    "styleCartoon": "Kartun",
+    "styleCalligraphy": "Kaligrafi",
+    "styleEmoji": "Emoji",
+    "styleGeometric": "Geometri",
+    "styleKawaii": "Kawaii",
+    "dailyLimitReached": "Anda telah mencapai had pelekat harian"
+  },
   "encryption": {
     "verified": "Penyulitan disahkan",
     "mismatch": "Kunci tidak sepadan",

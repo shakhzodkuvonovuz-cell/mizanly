@@ -2738,6 +2738,22 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "stickers": {
+    "createSticker": "إنشاء ملصق",
+    "describeSticker": "صف ملصقك...",
+    "generate": "إنشاء",
+    "generating": "جاري إنشاء ملصقك...",
+    "saveToMyStickers": "حفظ في ملصقاتي",
+    "tryAgain": "حاول مرة أخرى",
+    "myStickers": "ملصقاتي",
+    "islamicStickers": "ملصقات إسلامية",
+    "styleCartoon": "كرتون",
+    "styleCalligraphy": "خط عربي",
+    "styleEmoji": "إيموجي",
+    "styleGeometric": "هندسي",
+    "styleKawaii": "كاواي",
+    "dailyLimitReached": "لقد وصلت إلى حد الملصقات اليومي"
+  },
   "encryption": {
     "verified": "تم التحقق من التشفير",
     "mismatch": "المفاتيح غير متطابقة",

@@ -2738,6 +2738,22 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "stickers": {
+    "createSticker": "Create Sticker",
+    "describeSticker": "Describe your sticker...",
+    "generate": "Generate",
+    "generating": "Creating your sticker...",
+    "saveToMyStickers": "Save to My Stickers",
+    "tryAgain": "Try Again",
+    "myStickers": "My Stickers",
+    "islamicStickers": "Islamic Stickers",
+    "styleCartoon": "Cartoon",
+    "styleCalligraphy": "Calligraphy",
+    "styleEmoji": "Emoji",
+    "styleGeometric": "Geometric",
+    "styleKawaii": "Kawaii",
+    "dailyLimitReached": "You've reached your daily sticker limit"
+  },
   "encryption": {
     "verified": "Encryption verified",
     "mismatch": "Keys don't match",

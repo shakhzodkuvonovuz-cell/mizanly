@@ -2738,6 +2738,22 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "stickers": {
+    "createSticker": "স্টিকার তৈরি করুন",
+    "describeSticker": "আপনার স্টিকার বর্ণনা করুন...",
+    "generate": "তৈরি করুন",
+    "generating": "আপনার স্টিকার তৈরি হচ্ছে...",
+    "saveToMyStickers": "আমার স্টিকারে সংরক্ষণ করুন",
+    "tryAgain": "আবার চেষ্টা করুন",
+    "myStickers": "আমার স্টিকার",
+    "islamicStickers": "ইসলামিক স্টিকার",
+    "styleCartoon": "কার্টুন",
+    "styleCalligraphy": "ক্যালিগ্রাফি",
+    "styleEmoji": "ইমোজি",
+    "styleGeometric": "জ্যামিতিক",
+    "styleKawaii": "কাওয়াই",
+    "dailyLimitReached": "আপনি দৈনিক স্টিকার সীমায় পৌঁছেছেন"
+  },
   "encryption": {
     "verified": "এনক্রিপশন যাচাই করা হয়েছে",
     "mismatch": "কী মিলছে না",

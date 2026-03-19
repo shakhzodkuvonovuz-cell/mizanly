@@ -2739,6 +2739,22 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "stickers": {
+    "createSticker": "Créer un autocollant",
+    "describeSticker": "Décrivez votre autocollant...",
+    "generate": "Générer",
+    "generating": "Création de votre autocollant...",
+    "saveToMyStickers": "Enregistrer dans Mes Autocollants",
+    "tryAgain": "Réessayer",
+    "myStickers": "Mes Autocollants",
+    "islamicStickers": "Autocollants Islamiques",
+    "styleCartoon": "Dessin animé",
+    "styleCalligraphy": "Calligraphie",
+    "styleEmoji": "Emoji",
+    "styleGeometric": "Géométrique",
+    "styleKawaii": "Kawaii",
+    "dailyLimitReached": "Vous avez atteint la limite quotidienne d'autocollants"
+  },
   "encryption": {
     "verified": "Chiffrement vérifié",
     "mismatch": "Les clés ne correspondent pas",

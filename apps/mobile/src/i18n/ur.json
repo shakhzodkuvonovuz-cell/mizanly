@@ -2739,6 +2739,22 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "stickers": {
+    "createSticker": "اسٹیکر بنائیں",
+    "describeSticker": "اپنا اسٹیکر بیان کریں...",
+    "generate": "بنائیں",
+    "generating": "آپ کا اسٹیکر بنایا جا رہا ہے...",
+    "saveToMyStickers": "میرے اسٹیکرز میں محفوظ کریں",
+    "tryAgain": "دوبارہ کوشش کریں",
+    "myStickers": "میرے اسٹیکرز",
+    "islamicStickers": "اسلامی اسٹیکرز",
+    "styleCartoon": "کارٹون",
+    "styleCalligraphy": "خطاطی",
+    "styleEmoji": "ایموجی",
+    "styleGeometric": "ہندسی",
+    "styleKawaii": "کاوائی",
+    "dailyLimitReached": "آپ نے روزانہ اسٹیکر کی حد تک پہنچ گئے"
+  },
   "encryption": {
     "verified": "انکرپشن تصدیق شدہ",
     "mismatch": "کلیدیں مماثل نہیں ہیں",

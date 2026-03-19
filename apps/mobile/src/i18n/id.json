@@ -2739,6 +2739,22 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "stickers": {
+    "createSticker": "Buat Stiker",
+    "describeSticker": "Deskripsikan stiker Anda...",
+    "generate": "Buat",
+    "generating": "Membuat stiker Anda...",
+    "saveToMyStickers": "Simpan ke Stiker Saya",
+    "tryAgain": "Coba Lagi",
+    "myStickers": "Stiker Saya",
+    "islamicStickers": "Stiker Islami",
+    "styleCartoon": "Kartun",
+    "styleCalligraphy": "Kaligrafi",
+    "styleEmoji": "Emoji",
+    "styleGeometric": "Geometris",
+    "styleKawaii": "Kawaii",
+    "dailyLimitReached": "Anda telah mencapai batas stiker harian"
+  },
   "encryption": {
     "verified": "Enkripsi terverifikasi",
     "mismatch": "Kunci tidak cocok",

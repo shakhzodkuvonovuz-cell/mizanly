@@ -2738,6 +2738,22 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "stickers": {
+    "createSticker": "Çıkartma Oluştur",
+    "describeSticker": "Çıkartmanızı tanımlayın...",
+    "generate": "Oluştur",
+    "generating": "Çıkartmanız oluşturuluyor...",
+    "saveToMyStickers": "Çıkartmalarıma Kaydet",
+    "tryAgain": "Tekrar Dene",
+    "myStickers": "Çıkartmalarım",
+    "islamicStickers": "İslami Çıkartmalar",
+    "styleCartoon": "Karikatür",
+    "styleCalligraphy": "Kaligrafi",
+    "styleEmoji": "Emoji",
+    "styleGeometric": "Geometrik",
+    "styleKawaii": "Kawaii",
+    "dailyLimitReached": "Günlük çıkartma sınırınıza ulaştınız"
+  },
   "encryption": {
     "verified": "Şifreleme doğrulandı",
     "mismatch": "Anahtarlar eşleşmiyor",
