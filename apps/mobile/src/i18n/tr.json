@@ -2871,6 +2871,20 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "hifz": {
+    "title": "Kur'an Ezberleme",
+    "progress": "İlerleme",
+    "memorized": "Ezberlenmiş",
+    "inProgress": "Devam Ediyor",
+    "notStarted": "Başlanmadı",
+    "needsReview": "Tekrar Gerekiyor",
+    "reviewToday": "Bugün Tekrar Et",
+    "totalMemorized": "{{count}} sure ezberlenmiş",
+    "lastReviewed": "Son tekrar {{date}}",
+    "juzView": "Cüz Görünümü",
+    "surahView": "Sure Görünümü",
+    "findStudyPartner": "Çalışma Arkadaşı Bul"
+  },
   "namesOfAllah": {
     "title": "Esmaül Hüsna",
     "dailyName": "Günün İsmi",

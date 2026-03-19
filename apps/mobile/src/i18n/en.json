@@ -2871,6 +2871,20 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "hifz": {
+    "title": "Quran Memorization",
+    "progress": "Progress",
+    "memorized": "Memorized",
+    "inProgress": "In Progress",
+    "notStarted": "Not Started",
+    "needsReview": "Needs Review",
+    "reviewToday": "Review Today",
+    "totalMemorized": "{{count}} surahs memorized",
+    "lastReviewed": "Last reviewed {{date}}",
+    "juzView": "Juz View",
+    "surahView": "Surah View",
+    "findStudyPartner": "Find Study Partner"
+  },
   "namesOfAllah": {
     "title": "99 Names of Allah",
     "dailyName": "Name of the Day",

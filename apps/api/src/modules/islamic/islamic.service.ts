@@ -1061,4 +1061,89 @@ export class IslamicService {
     const index = daysSinceEpoch % 99;
     return this.namesOfAllah[index];
   }
+
+  // ============================================================
+  // HIFZ (QURAN MEMORIZATION) TRACKER
+  // ============================================================
+
+  async getHifzProgress(userId: string) {
+    const progress = await this.prisma.hifzProgress.findMany({
+      where: { userId },
+      orderBy: { surahNum: 'asc' },
+    });
+
+    // Build full 114 surah list with default status
+    const progressMap = new Map(progress.map((p) => [p.surahNum, p]));
+    const allSurahs = [];
+    for (let i = 1; i <= 114; i++) {
+      const existing = progressMap.get(i);
+      allSurahs.push({
+        surahNum: i,
+        status: existing?.status ?? 'not_started',
+        lastReviewedAt: existing?.lastReviewedAt ?? null,
+      });
+    }
+    return allSurahs;
+  }
+
+  async updateHifzProgress(userId: string, surahNum: number, status: string) {
+    if (surahNum < 1 || surahNum > 114) {
+      throw new BadRequestException('Surah number must be 1-114');
+    }
+    const validStatuses = ['not_started', 'in_progress', 'memorized', 'needs_review'];
+    if (!validStatuses.includes(status)) {
+      throw new BadRequestException(`Status must be one of: ${validStatuses.join(', ')}`);
+    }
+
+    return this.prisma.hifzProgress.upsert({
+      where: { userId_surahNum: { userId, surahNum } },
+      update: {
+        status,
+        lastReviewedAt: status === 'memorized' || status === 'needs_review' ? new Date() : undefined,
+      },
+      create: {
+        userId,
+        surahNum,
+        status,
+        lastReviewedAt: status === 'memorized' ? new Date() : null,
+      },
+    });
+  }
+
+  async getHifzStats(userId: string) {
+    const progress = await this.prisma.hifzProgress.findMany({
+      where: { userId },
+    });
+
+    const memorized = progress.filter((p) => p.status === 'memorized').length;
+    const inProgress = progress.filter((p) => p.status === 'in_progress').length;
+    const needsReview = progress.filter((p) => p.status === 'needs_review').length;
+
+    return {
+      memorized,
+      inProgress,
+      needsReview,
+      notStarted: 114 - memorized - inProgress - needsReview,
+      percentage: Math.round((memorized / 114) * 100),
+    };
+  }
+
+  async getHifzReviewSchedule(userId: string) {
+    // Spaced repetition: return surahs not reviewed in the last 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    return this.prisma.hifzProgress.findMany({
+      where: {
+        userId,
+        status: { in: ['memorized', 'needs_review'] },
+        OR: [
+          { lastReviewedAt: null },
+          { lastReviewedAt: { lt: sevenDaysAgo } },
+        ],
+      },
+      orderBy: { lastReviewedAt: 'asc' },
+      take: 10,
+    });
+  }
 }

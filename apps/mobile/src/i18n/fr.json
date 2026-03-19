@@ -2872,6 +2872,20 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "hifz": {
+    "title": "Mémorisation du Coran",
+    "progress": "Progression",
+    "memorized": "Mémorisé",
+    "inProgress": "En cours",
+    "notStarted": "Non commencé",
+    "needsReview": "À réviser",
+    "reviewToday": "Réviser aujourd'hui",
+    "totalMemorized": "{{count}} sourates mémorisées",
+    "lastReviewed": "Dernière révision {{date}}",
+    "juzView": "Vue par Juz",
+    "surahView": "Vue par Sourate",
+    "findStudyPartner": "Trouver un partenaire d'étude"
+  },
   "namesOfAllah": {
     "title": "99 Noms d'Allah",
     "dailyName": "Nom du jour",

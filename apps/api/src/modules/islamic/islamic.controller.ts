@@ -549,4 +549,44 @@ export class IslamicController {
     if (!name) throw new NotFoundException('Name not found');
     return name;
   }
+
+  // ============================================================
+  // HIFZ (QURAN MEMORIZATION) TRACKER
+  // ============================================================
+
+  @Get('hifz/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all 114 surahs with memorization status' })
+  async getHifzProgress(@CurrentUser('id') userId: string) {
+    return this.islamicService.getHifzProgress(userId);
+  }
+
+  @Patch('hifz/progress/:surahNum')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update surah memorization status' })
+  async updateHifzProgress(
+    @CurrentUser('id') userId: string,
+    @Param('surahNum', ParseIntPipe) surahNum: number,
+    @Body() body: { status: string },
+  ) {
+    return this.islamicService.updateHifzProgress(userId, surahNum, body.status);
+  }
+
+  @Get('hifz/stats')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get hifz stats (memorized, in-progress, percentage)' })
+  async getHifzStats(@CurrentUser('id') userId: string) {
+    return this.islamicService.getHifzStats(userId);
+  }
+
+  @Get('hifz/review-schedule')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get surahs needing review (spaced repetition)' })
+  async getHifzReviewSchedule(@CurrentUser('id') userId: string) {
+    return this.islamicService.getHifzReviewSchedule(userId);
+  }
 }

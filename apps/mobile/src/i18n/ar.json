@@ -2871,6 +2871,20 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "hifz": {
+    "title": "حفظ القرآن",
+    "progress": "التقدم",
+    "memorized": "محفوظ",
+    "inProgress": "جاري الحفظ",
+    "notStarted": "لم يبدأ",
+    "needsReview": "يحتاج مراجعة",
+    "reviewToday": "مراجعة اليوم",
+    "totalMemorized": "{{count}} سورة محفوظة",
+    "lastReviewed": "آخر مراجعة {{date}}",
+    "juzView": "عرض الأجزاء",
+    "surahView": "عرض السور",
+    "findStudyPartner": "ابحث عن شريك دراسة"
+  },
   "namesOfAllah": {
     "title": "أسماء الله الحسنى",
     "dailyName": "اسم اليوم",

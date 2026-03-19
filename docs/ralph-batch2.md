@@ -1324,7 +1324,7 @@ namesOfAllah.shareProgress: "Share Progress"
 
 ---
 
-### [ ] Task 22: Quran Memorization (Hifz) Tracker
+### [x] Task 22: Quran Memorization (Hifz) Tracker — Done: HifzProgress model, 114 surah status tracking, spaced repetition review, stats API, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/islamic/islamic.service.ts`

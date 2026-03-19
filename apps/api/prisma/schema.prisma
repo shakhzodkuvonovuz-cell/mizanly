@@ -3576,6 +3576,23 @@ model CommunityRole {
 }
 
 // ============================================================
+// HIFZ (QURAN MEMORIZATION) TRACKER
+// ============================================================
+
+model HifzProgress {
+  id             String    @id @default(cuid())
+  userId         String
+  surahNum       Int // 1-114
+  status         String    @default("not_started") // not_started, in_progress, memorized, needs_review
+  lastReviewedAt DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([userId, surahNum])
+  @@index([userId])
+  @@map("hifz_progress")
+}
+
+// ============================================================
 // DUA BOOKMARKS
 // ============================================================
 

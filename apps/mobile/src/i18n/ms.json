@@ -2871,6 +2871,20 @@
     "noVideo": "Tiada video dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "hifz": {
+    "title": "Hafazan Al-Quran",
+    "progress": "Kemajuan",
+    "memorized": "Sudah Hafal",
+    "inProgress": "Sedang Berlangsung",
+    "notStarted": "Belum Dimulai",
+    "needsReview": "Perlu Muraja'ah",
+    "reviewToday": "Muraja'ah Hari Ini",
+    "totalMemorized": "{{count}} surah dihafal",
+    "lastReviewed": "Muraja'ah terakhir {{date}}",
+    "juzView": "Paparan Juzuk",
+    "surahView": "Paparan Surah",
+    "findStudyPartner": "Cari Rakan Belajar"
+  },
   "namesOfAllah": {
     "title": "99 Nama Allah",
     "dailyName": "Nama Hari Ini",

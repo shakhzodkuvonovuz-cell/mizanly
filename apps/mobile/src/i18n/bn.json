@@ -2871,6 +2871,20 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "hifz": {
+    "title": "কুরআন হিফজ",
+    "progress": "অগ্রগতি",
+    "memorized": "মুখস্থ করা হয়েছে",
+    "inProgress": "চলমান",
+    "notStarted": "শুরু হয়নি",
+    "needsReview": "পুনরায় পড়া দরকার",
+    "reviewToday": "আজ পুনরায় পড়ুন",
+    "totalMemorized": "{{count}} সূরা মুখস্থ",
+    "lastReviewed": "শেষ পুনরায় পড়া {{date}}",
+    "juzView": "পারা ভিউ",
+    "surahView": "সূরা ভিউ",
+    "findStudyPartner": "অধ্যয়ন সঙ্গী খুঁজুন"
+  },
   "namesOfAllah": {
     "title": "আল্লাহর ৯৯ নাম",
     "dailyName": "আজকের নাম",

@@ -2872,6 +2872,20 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "hifz": {
+    "title": "حفظ قرآن",
+    "progress": "پیش رفت",
+    "memorized": "حفظ شدہ",
+    "inProgress": "جاری ہے",
+    "notStarted": "شروع نہیں ہوا",
+    "needsReview": "مراجعت درکار",
+    "reviewToday": "آج مراجعت کریں",
+    "totalMemorized": "{{count}} سورتیں حفظ",
+    "lastReviewed": "آخری مراجعت {{date}}",
+    "juzView": "پارہ منظر",
+    "surahView": "سورۃ منظر",
+    "findStudyPartner": "مطالعہ ساتھی تلاش کریں"
+  },
   "namesOfAllah": {
     "title": "اللہ کے 99 نام",
     "dailyName": "آج کا نام",
