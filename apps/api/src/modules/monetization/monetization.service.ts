@@ -190,6 +190,7 @@ export class MonetizationService {
     const tiers = await this.prisma.membershipTier.findMany({
       where: { userId, isActive: true },
       orderBy: { price: 'asc' },
+      take: 50,
     });
     return { data: tiers };
   }
@@ -318,6 +319,7 @@ export class MonetizationService {
     const tiers = await this.prisma.membershipTier.findMany({
       where: { userId },
       select: { id: true },
+      take: 50,
     });
     const tierIds = tiers.map((t) => t.id);
     if (tierIds.length === 0) {

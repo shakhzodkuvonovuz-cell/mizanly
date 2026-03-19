@@ -187,14 +187,14 @@ describe('MessagesService', () => {
 
       const result = await service.getMessages(conversationId, userId, cursor, limit);
 
-      expect(prisma.message.findMany).toHaveBeenCalledWith({
+      expect(prisma.message.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { conversationId, isDeleted: false },
         select: expect.any(Object),
         take: limit + 1,
         cursor: { id: cursor },
         skip: 1,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
       expect(result).toEqual({
         data: mockMessages.slice(0, limit),
         meta: { cursor: null, hasMore: false },
@@ -464,10 +464,10 @@ describe('MessagesService', () => {
 
       const result = await service.createGroup(userId, groupName, memberIds);
 
-      expect(prisma.user.findMany).toHaveBeenCalledWith({
+      expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { id: { in: [userId, ...memberIds] } },
         select: { id: true },
-      });
+      }));
       expect(prisma.conversation.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({

@@ -34,7 +34,9 @@ export class StickersService {
 
   async browsePacks(cursor?: string, limit = 20) {
     const packs = await this.prisma.stickerPack.findMany({
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {
+      take: 50,
+    }),
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
     });
@@ -79,6 +81,7 @@ export class StickersService {
       where: { userId },
       include: { pack: { include: { stickers: { orderBy: { position: 'asc' } } } } },
       orderBy: { addedAt: 'desc' },
+      take: 50,
     });
     return owned.map(o => o.pack);
   }

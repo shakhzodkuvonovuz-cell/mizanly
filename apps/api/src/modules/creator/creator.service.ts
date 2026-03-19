@@ -194,6 +194,7 @@ export class CreatorService {
       where: { followingId: userId, createdAt: { gte: thirtyDaysAgo } },
       select: { createdAt: true },
       orderBy: { createdAt: 'asc' },
+      take: 50,
     });
 
     // Group by day
@@ -227,6 +228,7 @@ export class CreatorService {
           select: { subscriptions: { where: { status: 'active' } } },
         },
       },
+      take: 50,
     });
 
     const membershipTotal = tiersWithSubscribers.reduce(

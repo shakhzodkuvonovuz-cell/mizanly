@@ -33,7 +33,9 @@ export class StoryChainsService {
     const chains = await this.prisma.storyChain.findMany({
       where: {
         createdAt: { gte: sevenDaysAgo },
-        ...(cursor ? { id: { lt: cursor } } : {}),
+        ...(cursor ? { id: { lt: cursor } } : {
+      take: 50,
+    }),
       },
       orderBy: [
         { participantCount: 'desc' },
@@ -66,7 +68,9 @@ export class StoryChainsService {
     const entries = await this.prisma.storyChainEntry.findMany({
       where: {
         chainId,
-        ...(cursor ? { id: { gt: cursor } } : {}),
+        ...(cursor ? { id: { gt: cursor } } : {
+      take: 50,
+    }),
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -90,7 +94,8 @@ export class StoryChainsService {
           viewsCount: true,
           createdAt: true,
         },
-      }),
+      take: 50,
+    }),
       this.prisma.user.findMany({
         where: { id: { in: userIds } },
         select: {
@@ -100,7 +105,8 @@ export class StoryChainsService {
           avatarUrl: true,
           isVerified: true,
         },
-      }),
+      take: 50,
+    }),
     ]);
 
     const storyMap = new Map(stories.map((s) => [s.id, s]));

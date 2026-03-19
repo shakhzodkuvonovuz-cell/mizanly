@@ -115,6 +115,7 @@ export class VideoRepliesService {
         displayName: true,
         avatarUrl: true,
       },
+      take: 50,
     });
 
     const userMap = new Map(users.map((u) => [u.id, u]));

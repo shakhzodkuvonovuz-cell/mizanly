@@ -152,8 +152,12 @@ export class RecommendationsService {
 
   private async getExcludedUserIds(userId: string): Promise<string[]> {
     const [blocks, mutes] = await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]);
     return [
       ...blocks.map(b => b.blockedId),
@@ -192,6 +196,7 @@ export class RecommendationsService {
     const myFollowing = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
+      take: 50,
     });
     const myFollowingIds = myFollowing.map(f => f.followingId);
 
@@ -202,6 +207,7 @@ export class RecommendationsService {
         followingId: { notIn: [...myFollowingIds, userId, ...excludedIds] },
       },
       select: { followingId: true },
+      take: 50,
     });
 
     // 3. Count mutual connections per suggested user
@@ -231,6 +237,7 @@ export class RecommendationsService {
         isVerified: true,
         bio: true,
       },
+      take: 50,
     });
 
     // Re-sort by mutual count and attach count

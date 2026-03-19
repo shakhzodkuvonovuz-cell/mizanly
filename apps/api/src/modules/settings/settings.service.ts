@@ -69,6 +69,7 @@ export class SettingsService {
     return this.prisma.blockedKeyword.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -125,6 +126,7 @@ export class SettingsService {
     const logs = await this.prisma.screenTimeLog.findMany({
       where: { userId, date: { gte: sevenDaysAgo } },
       orderBy: { date: 'asc' },
+      take: 50,
     });
 
     const settings = await this.prisma.userSettings.findUnique({

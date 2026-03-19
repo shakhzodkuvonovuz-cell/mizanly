@@ -18,6 +18,7 @@ export class ProfileLinksService {
     return this.prisma.profileLink.findMany({
       where: { userId },
       orderBy: { position: 'asc' },
+      take: 50,
     });
   }
 
@@ -59,7 +60,9 @@ export class ProfileLinksService {
   }
 
   async reorder(userId: string, orderedIds: string[]) {
-    const links = await this.prisma.profileLink.findMany({ where: { userId } });
+    const links = await this.prisma.profileLink.findMany({ where: { userId },
+      take: 50,
+    });
     const userLinkIds = new Set(links.map((l) => l.id));
 
     for (const id of orderedIds) {

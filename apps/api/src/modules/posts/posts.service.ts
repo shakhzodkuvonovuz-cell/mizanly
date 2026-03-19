@@ -95,8 +95,12 @@ export class PostsService {
     if (type === 'foryou') {
       // Get blocked/muted users to exclude
       const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+        this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
+      take: 50,
+    }),
       ]);
       const excludedIds = [
         ...blocks.map((b) => b.blockedId),
@@ -110,7 +114,9 @@ export class PostsService {
           isRemoved: false,
           user: { isPrivate: false, isBanned: false },
           visibility: 'PUBLIC',
-          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {
+      take: 50,
+    }),
           ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
         },
         select: POST_SELECT,
@@ -155,9 +161,15 @@ export class PostsService {
 
     // Following feed (unchanged)
     const [follows, blocks, mutes] = await Promise.all([
-      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
+      take: 50,
+    }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
@@ -200,9 +212,14 @@ export class PostsService {
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true },
-      }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      take: 50,
+    }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]);
     const followIds = followingResult.map(f => f.followingId);
     const excludedIds = [
@@ -237,9 +254,14 @@ export class PostsService {
       this.prisma.circleMember.findMany({
         where: { circle: { ownerId: userId } },
         select: { userId: true },
-      }),
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      take: 50,
+    }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]);
     const excludedIds = [
       ...blocks.map((b) => b.blockedId),
@@ -276,11 +298,13 @@ export class PostsService {
       this.prisma.postReaction.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true, reaction: true },
-      }),
+      take: 50,
+    }),
       this.prisma.savedPost.findMany({
         where: { userId, postId: { in: postIds } },
         select: { postId: true },
-      }),
+      take: 50,
+    }),
     ]);
     const reactionMap = new Map(reactions.map((r) => [r.postId, r.reaction]));
     const savedSet = new Set(saves.map((s) => s.postId));
@@ -345,7 +369,9 @@ export class PostsService {
     // Mention notifications
     if (dto.mentions?.length) {
       const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
+      take: 50,
+    }),
         this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
       ]);
       for (const mentioned of mentionedUsers) {

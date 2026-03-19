@@ -83,6 +83,7 @@ export class TelegramFeaturesService {
     return this.prisma.chatFolder.findMany({
       where: { userId },
       orderBy: { position: 'asc' },
+      take: 50,
     });
   }
 
@@ -144,6 +145,7 @@ export class TelegramFeaturesService {
     const folders = await this.prisma.chatFolder.findMany({
       where: { userId },
       select: { id: true },
+      take: 50,
     });
     const ownedIds = new Set(folders.map((f) => f.id));
     for (const id of folderIds) {
@@ -251,6 +253,7 @@ export class TelegramFeaturesService {
     return this.prisma.groupTopic.findMany({
       where: { conversationId },
       orderBy: [{ isPinned: 'desc' }, { lastMessageAt: 'desc' }],
+      take: 50,
     });
   }
 
@@ -350,6 +353,7 @@ export class TelegramFeaturesService {
       where: { creatorId: userId },
       include: { emojis: true, _count: { select: { emojis: true } } },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 }

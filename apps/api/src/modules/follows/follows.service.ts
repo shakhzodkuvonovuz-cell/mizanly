@@ -276,6 +276,7 @@ export class FollowsService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -377,6 +378,7 @@ export class FollowsService {
     const following = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
+      take: 50,
     });
     const followingIds = following.map((f) => f.followingId);
 

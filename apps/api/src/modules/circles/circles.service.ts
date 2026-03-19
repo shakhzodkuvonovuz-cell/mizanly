@@ -22,6 +22,7 @@ export class CirclesService {
       where: { ownerId: userId },
       include: { _count: { select: { members: true } } },
       orderBy: { createdAt: 'asc' },
+      take: 50,
     });
   }
 
@@ -132,6 +133,7 @@ export class CirclesService {
     return this.prisma.circleMember.findMany({
       where: { circleId },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
+      take: 50,
     });
   }
 }

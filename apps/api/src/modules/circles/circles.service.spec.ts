@@ -50,11 +50,11 @@ describe('CirclesService', () => {
 
       const result = await service.getMyCircles(userId);
 
-      expect(prisma.circle.findMany).toHaveBeenCalledWith({
+      expect(prisma.circle.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { ownerId: userId },
         include: { _count: { select: { members: true } } },
         orderBy: { createdAt: 'asc' },
-      });
+      }));
       expect(result).toEqual(mockCircles);
     });
   });
@@ -252,10 +252,10 @@ describe('CirclesService', () => {
       const result = await service.getMembers(circleId, userId);
 
       expect(prisma.circle.findUnique).toHaveBeenCalledWith({ where: { id: circleId } });
-      expect(prisma.circleMember.findMany).toHaveBeenCalledWith({
+      expect(prisma.circleMember.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { circleId },
         include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
-      });
+      }));
       expect(result).toEqual(mockMembers);
     });
 

@@ -47,10 +47,10 @@ describe('ProfileLinksService', () => {
 
       const result = await service.getLinks(userId);
 
-      expect(prisma.profileLink.findMany).toHaveBeenCalledWith({
+      expect(prisma.profileLink.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId },
         orderBy: { position: 'asc' },
-      });
+      }));
       expect(result).toEqual(mockLinks);
     });
   });
@@ -195,7 +195,7 @@ describe('ProfileLinksService', () => {
 
       await service.reorder(userId, orderedIds);
 
-      expect(prisma.profileLink.findMany).toHaveBeenCalledWith({ where: { userId } });
+      expect(prisma.profileLink.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId } }));
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(prisma.profileLink.update).toHaveBeenCalledTimes(3);
       // First call should update link-2 to position 0

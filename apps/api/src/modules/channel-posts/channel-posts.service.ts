@@ -17,7 +17,9 @@ export class ChannelPostsService {
 
   async getFeed(channelId: string, cursor?: string, limit = 20) {
     const posts = await this.prisma.channelPost.findMany({
-      where: { channelId, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { channelId, ...(cursor ? { id: { lt: cursor } } : {
+      take: 50,
+    }) },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

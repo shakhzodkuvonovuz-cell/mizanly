@@ -701,6 +701,7 @@ export class IslamicService {
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, displayName: true, avatarUrl: true },
+      take: 50,
     });
 
     const userMap = new Map(users.map((u: { id: string; displayName: string | null; avatarUrl: string | null }) => [u.id, u]));
@@ -755,6 +756,7 @@ export class IslamicService {
     const users = await this.prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, displayName: true, avatarUrl: true },
+      take: 50,
     });
     const userMap = new Map(users.map((u: { id: string; displayName: string | null; avatarUrl: string | null }) => [u.id, u]));
 

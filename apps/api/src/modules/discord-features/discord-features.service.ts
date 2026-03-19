@@ -104,6 +104,7 @@ export class DiscordFeaturesService {
     return this.prisma.webhook.findMany({
       where: { circleId },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 

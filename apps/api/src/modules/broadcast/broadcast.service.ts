@@ -171,6 +171,7 @@ export class BroadcastService {
       where: { channelId, isPinned: true },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -190,13 +191,16 @@ export class BroadcastService {
       where: { userId },
       include: { channel: true },
       orderBy: { joinedAt: 'desc' },
+      take: 50,
     });
     return memberships.map(m => ({ ...m.channel, role: m.role, isMuted: m.isMuted }));
   }
 
   async discover(cursor?: string, limit = 20) {
     const channels = await this.prisma.broadcastChannel.findMany({
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {
+      take: 50,
+    }),
       orderBy: { subscribersCount: 'desc' },
       take: limit + 1,
     });

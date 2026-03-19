@@ -16,11 +16,19 @@ export class PrivacyService {
     if (!user) throw new NotFoundException('User not found');
 
     const [posts, threads, stories, messages, follows] = await Promise.all([
-      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true } }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
-      this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, createdAt: true } }),
+      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, createdAt: true },
+      take: 50,
+    }),
       this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true }, take: 10000 }),
-      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } }),
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
+      take: 50,
+    }),
     ]);
 
     this.logger.log(`Data export requested for user ${userId}`);

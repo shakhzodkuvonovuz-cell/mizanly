@@ -564,6 +564,7 @@ export class UsersService {
     return this.prisma.draftPost.findMany({
       where: { userId },
       orderBy: { updatedAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -770,14 +771,30 @@ export class UsersService {
 
   async exportData(userId: string) {
     const [posts, threads, reels, videos, messages, comments, reelComments, videoComments] = await Promise.all([
-      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, postType: true, mediaUrls: true, createdAt: true } }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true } }),
-      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true } }),
-      this.prisma.video.findMany({ where: { userId }, select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true } }),
-      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, createdAt: true, conversationId: true } }),
-      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, postId: true } }),
-      this.prisma.reelComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, reelId: true } }),
-      this.prisma.videoComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, videoId: true } }),
+      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, postType: true, mediaUrls: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.video.findMany({ where: { userId }, select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, createdAt: true, conversationId: true },
+      take: 50,
+    }),
+      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, postId: true },
+      take: 50,
+    }),
+      this.prisma.reelComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, reelId: true },
+      take: 50,
+    }),
+      this.prisma.videoComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, videoId: true },
+      take: 50,
+    }),
     ]);
     return {
       posts,
@@ -797,9 +814,11 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       where: { phone: { in: normalized }, id: { not: userId } },
       select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+      take: 50,
     });
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId, followingId: { in: users.map(u => u.id) } },
+      take: 50,
     });
     const followedSet = new Set(follows.map(f => f.followingId));
     return users.map(u => ({ ...u, isFollowing: followedSet.has(u.id) }));

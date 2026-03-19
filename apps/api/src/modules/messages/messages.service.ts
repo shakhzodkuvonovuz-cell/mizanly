@@ -267,6 +267,7 @@ export class MessagesService {
     const existingUsers = await this.prisma.user.findMany({
       where: { id: { in: allMemberIds } },
       select: { id: true },
+      take: 50,
     });
     const existingIds = new Set(existingUsers.map((u) => u.id));
     const invalidIds = allMemberIds.filter((id) => !existingIds.has(id));
@@ -447,7 +448,9 @@ export class MessagesService {
     if (!query?.trim()) throw new BadRequestException('Search query is required');
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {
+      take: 50,
+    }) },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -483,7 +486,9 @@ export class MessagesService {
   async getMediaGallery(conversationId: string, userId: string, cursor?: string, limit = 30) {
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, messageType: { in: ['IMAGE', 'VIDEO'] }, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { conversationId, isDeleted: false, messageType: { in: ['IMAGE', 'VIDEO'] }, ...(cursor ? { id: { lt: cursor } } : {
+      take: 50,
+    }) },
       select: { id: true, mediaUrl: true, mediaType: true, messageType: true, createdAt: true, senderId: true },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -649,6 +654,7 @@ export class MessagesService {
       where: { conversationId, isPinned: true, isDeleted: false },
       select: MESSAGE_SELECT,
       orderBy: { pinnedAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -781,11 +787,13 @@ export class MessagesService {
     const memberships = await this.prisma.conversationMember.findMany({
       where: { userId },
       select: { conversationId: true },
+      take: 50,
     });
     const convIds = memberships.map((m) => m.conversationId);
     const otherMembers = await this.prisma.conversationMember.findMany({
       where: { conversationId: { in: convIds }, userId: { not: userId } },
       select: { userId: true },
+      take: 50,
     });
     const contactIds = [...new Set(otherMembers.map((m) => m.userId))];
 
@@ -794,6 +802,7 @@ export class MessagesService {
         userId: { in: contactIds },
         expiresAt: { gt: new Date() },
       },
+      take: 50,
     });
   }
 

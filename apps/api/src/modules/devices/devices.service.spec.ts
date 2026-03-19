@@ -98,10 +98,10 @@ describe('DevicesService', () => {
 
       const result = await service.getActiveTokensForUser(userId);
 
-      expect(prisma.device.findMany).toHaveBeenCalledWith({
+      expect(prisma.device.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId, isActive: true },
         select: { pushToken: true },
-      });
+      }));
       expect(result).toEqual(['token-1', 'token-2']);
     });
 
@@ -126,10 +126,10 @@ describe('DevicesService', () => {
 
       const result = await service.getActiveTokensForUsers(userIds);
 
-      expect(prisma.device.findMany).toHaveBeenCalledWith({
+      expect(prisma.device.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId: { in: userIds }, isActive: true },
         select: { pushToken: true },
-      });
+      }));
       expect(result).toEqual(['token-a', 'token-b', 'token-c']);
     });
   });

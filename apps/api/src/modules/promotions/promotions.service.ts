@@ -84,6 +84,7 @@ export class PromotionsService {
     const promotions = await this.prisma.postPromotion.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
 
     return { data: promotions };

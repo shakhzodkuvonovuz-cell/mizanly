@@ -74,6 +74,7 @@ export class CollabsService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -82,12 +83,15 @@ export class CollabsService {
       where: { postId },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { createdAt: 'asc' },
+      take: 50,
     });
   }
 
   async getAcceptedCollabs(userId: string, cursor?: string, limit = 20) {
     const collabs = await this.prisma.postCollab.findMany({
-      where: { userId, status: CollabStatus.ACCEPTED, ...(cursor ? { id: { lt: cursor } } : {}) },
+      where: { userId, status: CollabStatus.ACCEPTED, ...(cursor ? { id: { lt: cursor } } : {
+      take: 50,
+    }) },
       include: {
         post: {
           select: { id: true, content: true, mediaUrls: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },

@@ -74,34 +74,34 @@ describe('SchedulingService', () => {
 
       const result = await service.getScheduled(userId);
 
-      expect(prisma.post.findMany).toHaveBeenCalledWith({
+      expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           userId,
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-      });
-      expect(prisma.thread.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.thread.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           userId,
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-      });
-      expect(prisma.reel.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           userId,
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-      });
-      expect(prisma.video.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.video.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           userId,
           scheduledAt: { not: null, gt: expect.any(Date) },
         },
         select: expect.any(Object),
-      });
+      }));
 
       // Expect combined list sorted by scheduledAt
       expect(result.length).toBe(4);

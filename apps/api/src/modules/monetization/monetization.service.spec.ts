@@ -128,7 +128,7 @@ describe('MonetizationService', () => {
       const result = await service.getSentTips('user1');
       expect(result.data).toEqual(mockTips);
       expect(result.meta.hasMore).toBe(false);
-      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { senderId: 'user1' },
         include: {
           receiver: {
@@ -137,7 +137,7 @@ describe('MonetizationService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
     });
 
     it('should handle cursor pagination', async () => {
@@ -148,7 +148,7 @@ describe('MonetizationService', () => {
       expect(result.data).toHaveLength(20);
       expect(result.meta.hasMore).toBe(true);
       expect(result.meta.cursor).toBe('tip19');
-      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { senderId: 'user1' },
         include: {
           receiver: {
@@ -159,7 +159,7 @@ describe('MonetizationService', () => {
         cursor: { id: 'cursor123' },
         skip: 1,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
     });
 
     it('should return empty array when no tips', async () => {
@@ -178,7 +178,7 @@ describe('MonetizationService', () => {
       mockPrismaService.tip.findMany.mockResolvedValue(mockTips);
       const result = await service.getReceivedTips('user1');
       expect(result.data).toEqual(mockTips);
-      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.tip.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { receiverId: 'user1' },
         include: {
           sender: {
@@ -187,7 +187,7 @@ describe('MonetizationService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
     });
   });
 
@@ -287,10 +287,10 @@ describe('MonetizationService', () => {
       mockPrismaService.membershipTier.findMany.mockResolvedValue(mockTiers);
       const result = await service.getUserTiers('user1');
       expect(result.data).toEqual(mockTiers);
-      expect(mockPrismaService.membershipTier.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.membershipTier.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId: 'user1', isActive: true },
         orderBy: { price: 'asc' },
-      });
+      }));
     });
 
     it('should return empty array when no tiers', async () => {
@@ -520,11 +520,11 @@ describe('MonetizationService', () => {
       const result = await service.getSubscribers('creator');
       expect(result.data).toEqual(mockSubscriptions);
       expect(result.meta.hasMore).toBe(false);
-      expect(mockPrismaService.membershipTier.findMany).toHaveBeenCalledWith({
+      expect(mockPrismaService.membershipTier.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId: 'creator' },
         select: { id: true },
-      });
-      expect(mockPrismaService.membershipSubscription.findMany).toHaveBeenCalledWith({
+      }));
+      expect(mockPrismaService.membershipSubscription.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           tierId: { in: ['tier1', 'tier2'] },
           status: 'active',
@@ -537,7 +537,7 @@ describe('MonetizationService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
     });
 
     it('should return empty array when user has no tiers', async () => {

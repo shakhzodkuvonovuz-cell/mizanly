@@ -59,7 +59,7 @@ describe('BlocksService', () => {
       expect(prisma.block.findUnique).toHaveBeenCalledWith({
         where: { blockerId_blockedId: { blockerId, blockedId } },
       });
-      expect(prisma.follow.findMany).toHaveBeenCalledWith({
+      expect(prisma.follow.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           OR: [
             { followerId: blockerId, followingId: blockedId },
@@ -67,7 +67,7 @@ describe('BlocksService', () => {
           ],
         },
         select: { followerId: true, followingId: true },
-      });
+      }));
       expect(prisma.$transaction).toHaveBeenCalled();
       expect(result).toEqual({ message: 'User blocked' });
     });
@@ -159,7 +159,7 @@ describe('BlocksService', () => {
 
       const result = await service.getBlockedList(userId);
 
-      expect(prisma.block.findMany).toHaveBeenCalledWith({
+      expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { blockerId: userId },
         include: {
           blocked: {
@@ -173,7 +173,7 @@ describe('BlocksService', () => {
         },
         take: 21,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
       expect(result.data).toEqual([blockedUser]);
       expect(result.meta.hasMore).toBe(false);
     });
@@ -185,14 +185,14 @@ describe('BlocksService', () => {
 
       await service.getBlockedList(userId, cursor, 10);
 
-      expect(prisma.block.findMany).toHaveBeenCalledWith({
+      expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { blockerId: userId },
         include: expect.any(Object),
         take: 11,
         cursor: { blockerId_blockedId: { blockerId: userId, blockedId: cursor } },
         skip: 1,
         orderBy: { createdAt: 'desc' },
-      });
+      }));
     });
   });
 

@@ -130,7 +130,8 @@ export class CommunitiesService {
         .findMany({
           where: { userId: viewerId },
           select: { circleId: true },
-        })
+      take: 50,
+    })
         .then((rows) => rows.map((r) => r.circleId));
 
       where.OR = [

@@ -112,7 +112,9 @@ export class ReelsService {
     // Mention notifications (skip self-mentions)
     if (dto.mentions?.length) {
       const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
+      take: 50,
+    }),
         this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
       ]);
       for (const mentioned of mentionedUsers) {
@@ -166,8 +168,12 @@ export class ReelsService {
     }
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true } }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId: userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]) : [[], []];
 
     const excludedIds = [
@@ -222,11 +228,13 @@ export class ReelsService {
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);
@@ -436,8 +444,12 @@ export class ReelsService {
     let excludedUserIds: string[] = [];
     if (userId) {
       const [blocks, mutes] = await Promise.all([
-        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-        this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+        this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+        this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
+      take: 50,
+    }),
       ]);
       excludedUserIds = [
         ...blocks.map(b => b.blockedId),
@@ -448,7 +460,9 @@ export class ReelsService {
     const comments = await this.prisma.reelComment.findMany({
       where: {
         reelId,
-        ...(excludedUserIds.length ? { userId: { notIn: excludedUserIds } } : {}),
+        ...(excludedUserIds.length ? { userId: { notIn: excludedUserIds } } : {
+      take: 50,
+    }),
       },
       select: {
         id: true,
@@ -608,11 +622,13 @@ export class ReelsService {
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);
@@ -666,11 +682,13 @@ export class ReelsService {
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);
@@ -714,11 +732,13 @@ export class ReelsService {
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);
@@ -762,11 +782,13 @@ export class ReelsService {
         this.prisma.reelReaction.findMany({
           where: { userId, reelId: { in: reelIds } },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
         this.prisma.reelInteraction.findMany({
           where: { userId, reelId: { in: reelIds }, saved: true },
           select: { reelId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedReelIds = reactions.map(r => r.reelId);
       bookmarkedReelIds = interactions.map(i => i.reelId);

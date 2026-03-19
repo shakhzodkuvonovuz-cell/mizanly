@@ -103,9 +103,15 @@ export class ThreadsService {
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us) */
   private async getExcludedUserIds(userId: string): Promise<string[]> {
     const [blockedByMe, blockedMe, mutes] = await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true } }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.block.findMany({ where: { blockedId: userId }, select: { blockerId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]);
     const ids = new Set<string>();
     for (const b of blockedByMe) ids.add(b.blockedId);
@@ -122,7 +128,9 @@ export class ThreadsService {
   ) {
     const [follows, excludedIds] = await Promise.all([
       type === 'following'
-        ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })
+        ? this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
+      take: 50,
+    })
         : Promise.resolve([]),
       this.getExcludedUserIds(userId),
     ]);
@@ -286,7 +294,9 @@ export class ThreadsService {
     // Mention notifications
     if (dto.mentions?.length) {
       const [mentionedUsers, actor] = await Promise.all([
-        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true } }),
+        this.prisma.user.findMany({ where: { username: { in: dto.mentions } }, select: { id: true },
+      take: 50,
+    }),
         this.prisma.user.findUnique({ where: { id: userId }, select: { username: true } }),
       ]);
       for (const mentioned of mentionedUsers) {
@@ -536,7 +546,8 @@ export class ThreadsService {
       const liked = await this.prisma.threadReplyLike.findMany({
         where: { userId: viewerId, replyId: { in: replyIds } },
         select: { replyId: true },
-      });
+      take: 50,
+    });
       const likedSet = new Set(liked.map((l) => l.replyId));
       return {
         data: items.map((r) => ({ ...r, isLiked: likedSet.has(r.id) })),

@@ -62,8 +62,12 @@ export class CommunityService {
 
   async getMyMentorships(userId: string) {
     const [asMentor, asMentee] = await Promise.all([
-      this.prisma.mentorship.findMany({ where: { mentorId: userId }, include: { mentee: { select: USER_SELECT } } }),
-      this.prisma.mentorship.findMany({ where: { menteeId: userId }, include: { mentor: { select: USER_SELECT } } }),
+      this.prisma.mentorship.findMany({ where: { mentorId: userId }, include: { mentee: { select: USER_SELECT } },
+      take: 50,
+    }),
+      this.prisma.mentorship.findMany({ where: { menteeId: userId }, include: { mentor: { select: USER_SELECT } },
+      take: 50,
+    }),
     ]);
     return { asMentor, asMentee };
   }
@@ -253,6 +257,7 @@ export class CommunityService {
     return this.prisma.sharedCollection.findMany({
       where: { createdById: userId },
       orderBy: { updatedAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -291,9 +296,15 @@ export class CommunityService {
   async getDataExport(userId: string) {
     const [user, posts, threads, messages] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
-      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true } }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
-      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true } }),
+      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true },
+      take: 50,
+    }),
+      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true },
+      take: 50,
+    }),
     ]);
     return { user, posts, threads, messages, exportedAt: new Date().toISOString() };
   }

@@ -449,6 +449,7 @@ export class PlaylistsService {
         },
       },
       orderBy: { addedAt: 'asc' },
+      take: 50,
     });
 
     return { data: collaborators };

@@ -43,7 +43,8 @@ export class SchedulingService {
           scheduledAt: true,
           createdAt: true,
         },
-      }),
+      take: 50,
+    }),
       this.prisma.thread.findMany({
         where: { userId, scheduledAt: { not: null, gt: new Date() } },
         select: {
@@ -52,7 +53,8 @@ export class SchedulingService {
           scheduledAt: true,
           createdAt: true,
         },
-      }),
+      take: 50,
+    }),
       this.prisma.reel.findMany({
         where: { userId, scheduledAt: { not: null, gt: new Date() } },
         select: {
@@ -61,7 +63,8 @@ export class SchedulingService {
           scheduledAt: true,
           createdAt: true,
         },
-      }),
+      take: 50,
+    }),
       this.prisma.video.findMany({
         where: { userId, scheduledAt: { not: null, gt: new Date() } },
         select: {
@@ -70,7 +73,8 @@ export class SchedulingService {
           scheduledAt: true,
           createdAt: true,
         },
-      }),
+      take: 50,
+    }),
     ]);
 
     const scheduledItems: ScheduledItem[] = [

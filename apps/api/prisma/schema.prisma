@@ -861,6 +861,9 @@ model VideoReaction {
 
   @@id([userId, videoId])
   @@map("video_reactions")
+
+  @@index([videoId])
+  @@index([userId])
 }
 
 model Subscription {
@@ -964,6 +967,9 @@ model CommentReaction {
 
   @@id([userId, commentId])
   @@map("comment_reactions")
+
+  @@index([commentId])
+  @@index([userId])
 }
 
 model SavedPost {
@@ -1170,6 +1176,9 @@ model LiveParticipant {
 
   @@id([sessionId, userId])
   @@map("live_participants")
+
+  @@index([sessionId])
+  @@index([userId])
 }
 
 // ============================================================
@@ -1230,6 +1239,9 @@ model CircleInvite {
   createdBy   User      @relation(fields: [createdById], references: [id])
 
   @@map("circle_invites")
+
+  @@index([circleId])
+  @@index([createdById])
 }
 
 // ============================================================
@@ -1432,6 +1444,8 @@ model Poll {
   options       PollOption[]
 
   @@map("polls")
+
+  @@index([threadId])
 }
 
 model PollOption {
@@ -1646,6 +1660,7 @@ model CallSession {
   participants CallParticipant[]
 
   @@map("call_sessions")
+
 }
 
 model CallParticipant {
@@ -1659,6 +1674,9 @@ model CallParticipant {
 
   @@id([sessionId, userId])
   @@map("call_participants")
+
+  @@index([sessionId])
+  @@index([userId])
 }
 
 model StickerPack {
@@ -1672,6 +1690,7 @@ model StickerPack {
   users         UserStickerPack[]
 
   @@map("sticker_packs")
+
 }
 
 model Sticker {
@@ -1695,6 +1714,8 @@ model UserStickerPack {
 
   @@id([userId, packId])
   @@map("user_sticker_packs")
+
+  @@index([userId])
 }
 
 model MajlisList {
@@ -1800,6 +1821,8 @@ model UserSettings {
   updatedAt              DateTime @updatedAt
 
   @@map("user_settings")
+
+  @@index([userId])
 }
 
 model SubtitleTrack {
@@ -2016,6 +2039,8 @@ model TwoFactorSecret {
   updatedAt   DateTime  @updatedAt
 
   @@map("two_factor_secrets")
+
+  @@index([userId])
 }
 
 model StoryChain {
@@ -2137,6 +2162,8 @@ model CoinBalance {
   updatedAt DateTime @updatedAt
 
   @@map("coin_balances")
+
+  @@index([userId])
 }
 
 model CoinTransaction {
@@ -2309,6 +2336,8 @@ model HajjProgress {
 
   @@unique([userId, year])
   @@map("hajj_progress")
+
+  @@index([userId])
 }
 
 model PrayerNotificationSetting {
@@ -2322,6 +2351,8 @@ model PrayerNotificationSetting {
   updatedAt       DateTime @updatedAt
 
   @@map("prayer_notification_settings")
+
+  @@index([userId])
 }
 
 model ContentFilterSetting {
@@ -2335,6 +2366,8 @@ model ContentFilterSetting {
   updatedAt       DateTime @updatedAt
 
   @@map("content_filter_settings")
+
+  @@index([userId])
 }
 
 model ScholarVerification {

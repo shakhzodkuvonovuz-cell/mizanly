@@ -140,6 +140,7 @@ export class PushService {
     const devices = await this.prisma.device.findMany({
       where: { userId, isActive: true },
       select: { pushToken: true },
+      take: 50,
     });
     return devices.map(d => d.pushToken);
   }
@@ -149,6 +150,7 @@ export class PushService {
     const devices = await this.prisma.device.findMany({
       where: { userId: { in: userIds }, isActive: true },
       select: { pushToken: true },
+      take: 50,
     });
     return devices.map(d => d.pushToken);
   }

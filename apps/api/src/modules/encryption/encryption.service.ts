@@ -67,6 +67,7 @@ export class EncryptionService {
         publicKey: true,
         keyFingerprint: true,
       },
+      take: 50,
     });
 
     return keys.map((k) => ({

@@ -233,8 +233,12 @@ export class ChannelsService {
     if (!channel) throw new NotFoundException('Channel not found');
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]) : [[], []];
 
     const excludedIds = [
@@ -301,11 +305,13 @@ export class ChannelsService {
         this.prisma.videoReaction.findMany({
           where: { userId, videoId: { in: videoIds } },
           select: { videoId: true, isLike: true },
-        }),
+      take: 50,
+    }),
         this.prisma.videoBookmark.findMany({
           where: { userId, videoId: { in: videoIds } },
           select: { videoId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
       dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
@@ -329,6 +335,7 @@ export class ChannelsService {
     const channels = await this.prisma.channel.findMany({
       where: { userId },
       select: CHANNEL_SELECT,
+      take: 50,
     });
 
     // No need for isSubscribed flag (own channels)
@@ -443,6 +450,7 @@ export class ChannelsService {
     const channels = await this.prisma.channel.findMany({
       where: { id: { in: ids } },
       select: CHANNEL_SELECT,
+      take: 50,
     });
 
     // Preserve order from raw SQL query

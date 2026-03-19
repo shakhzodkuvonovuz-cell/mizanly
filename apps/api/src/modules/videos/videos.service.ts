@@ -85,11 +85,13 @@ export class VideosService {
       this.prisma.videoReaction.findMany({
         where: { userId, videoId: { in: videoIds } },
         select: { videoId: true, isLike: true },
-      }),
+      take: 50,
+    }),
       this.prisma.videoBookmark.findMany({
         where: { userId, videoId: { in: videoIds } },
         select: { videoId: true },
-      }),
+      take: 50,
+    }),
     ]);
     const likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
     const dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
@@ -173,8 +175,12 @@ export class VideosService {
     }
 
     const [blocks, mutes] = userId ? await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true } }),
+      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
+      take: 50,
+    }),
+      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
+      take: 50,
+    }),
     ]) : [[], []];
 
     const excludedIds = [
@@ -186,6 +192,7 @@ export class VideosService {
     const subscribedChannels = userId ? await this.prisma.subscription.findMany({
       where: { userId },
       select: { channelId: true },
+      take: 50,
     }) : [];
 
     const channelIds = subscribedChannels.map(s => s.channelId);
@@ -225,11 +232,13 @@ export class VideosService {
         this.prisma.videoReaction.findMany({
           where: { userId, videoId: { in: videoIds } },
           select: { videoId: true, isLike: true },
-        }),
+      take: 50,
+    }),
         this.prisma.videoBookmark.findMany({
           where: { userId, videoId: { in: videoIds } },
           select: { videoId: true },
-        }),
+      take: 50,
+    }),
       ]);
       likedVideoIds = reactions.filter(r => r.isLike).map(r => r.videoId);
       dislikedVideoIds = reactions.filter(r => !r.isLike).map(r => r.videoId);
@@ -830,6 +839,7 @@ export class VideosService {
     return this.prisma.endScreen.findMany({
       where: { videoId },
       orderBy: { showAtSeconds: 'desc' },
+      take: 50,
     });
   }
 

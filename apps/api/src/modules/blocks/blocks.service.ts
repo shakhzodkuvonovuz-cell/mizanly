@@ -37,6 +37,7 @@ export class BlocksService {
         ],
       },
       select: { followerId: true, followingId: true },
+      take: 50,
     });
 
     // blocker→blocked: blocker loses 1 following, blocked loses 1 follower

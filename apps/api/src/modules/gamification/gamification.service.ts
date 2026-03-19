@@ -47,6 +47,7 @@ export class GamificationService {
     return this.prisma.userStreak.findMany({
       where: { userId },
       orderBy: { currentDays: 'desc' },
+      take: 50,
     });
   }
 
@@ -176,10 +177,13 @@ export class GamificationService {
   // ── Achievements ────────────────────────────────────────
 
   async getAchievements(userId: string) {
-    const all = await this.prisma.achievement.findMany({ orderBy: { category: 'asc' } });
+    const all = await this.prisma.achievement.findMany({ orderBy: { category: 'asc' },
+      take: 50,
+    });
     const unlocked = await this.prisma.userAchievement.findMany({
       where: { userId },
       select: { achievementId: true, unlockedAt: true },
+      take: 50,
     });
     const unlockedMap = new Map(unlocked.map(u => [u.achievementId, u.unlockedAt]));
 
@@ -250,7 +254,8 @@ export class GamificationService {
       const users = await this.prisma.user.findMany({
         where: { id: { in: userIds } },
         select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
-      });
+      take: 50,
+    });
       const userMap = new Map(users.map(u => [u.id, u]));
 
       return topCommenters.map(c => ({
@@ -371,6 +376,7 @@ export class GamificationService {
           },
         },
       },
+      take: 50,
     });
   }
 

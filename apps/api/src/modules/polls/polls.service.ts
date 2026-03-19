@@ -55,7 +55,8 @@ export class PollsService {
           },
         },
         select: { optionId: true },
-      });
+      take: 50,
+    });
       userVotedOptionIds = votes.map((v) => v.optionId);
     }
 

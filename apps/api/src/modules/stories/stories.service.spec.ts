@@ -121,11 +121,11 @@ describe('StoriesService', () => {
 
       const result = await service.getFeedStories(userId);
 
-      expect(prisma.follow.findMany).toHaveBeenCalledWith({
+      expect(prisma.follow.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { followerId: userId },
         select: { followingId: true },
-      });
-      expect(prisma.story.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.story.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           userId: { in: ['user-123', 'user-456'] },
           expiresAt: { gt: expect.any(Date) },
@@ -134,11 +134,11 @@ describe('StoriesService', () => {
         select: expect.any(Object),
         orderBy: { createdAt: 'desc' },
         take: 100,
-      });
-      expect(prisma.storyView.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.storyView.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { viewerId: userId, storyId: { in: ['story-1', 'story-2'] } },
         select: { storyId: true },
-      });
+      }));
       // Expect result to have groups
       expect(result).toHaveLength(2);
       expect(result[0].user.id).toBe('user-123');

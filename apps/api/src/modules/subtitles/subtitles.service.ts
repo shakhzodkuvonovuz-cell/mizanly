@@ -42,6 +42,7 @@ export class SubtitlesService {
         createdAt: true,
       },
       orderBy: { isDefault: 'desc' },
+      take: 50,
     });
 
     return tracks;

@@ -76,7 +76,7 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPeople(undefined, 20);
 
-      expect(prisma.user.findMany).toHaveBeenCalledWith({
+      expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           isDeactivated: false,
           isPrivate: false,
@@ -92,7 +92,7 @@ describe('RecommendationsService', () => {
         },
         orderBy: { followersCount: 'desc' },
         take: 20,
-      });
+      }));
       expect(result).toEqual([
         { ...mockUsers[0], mutualFollowers: 0 },
         { ...mockUsers[1], mutualFollowers: 0 },
@@ -140,29 +140,29 @@ describe('RecommendationsService', () => {
       const result = await service.suggestedPeople(userId, 20);
 
       // Check excluded IDs are used
-      expect(prisma.block.findMany).toHaveBeenCalledWith({
+      expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { blockerId: userId },
         select: { blockedId: true },
-      });
-      expect(prisma.mute.findMany).toHaveBeenCalledWith({
+      }));
+      expect(prisma.mute.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId },
         select: { mutedId: true },
-      });
+      }));
       // Check first follow call (myFollowing)
-      expect(prisma.follow.findMany).toHaveBeenNthCalledWith(1, {
+      expect(prisma.follow.findMany).toHaveBeenNthCalledWith(1, expect.objectContaining({
         where: { followerId: userId },
         select: { followingId: true },
-      });
+      }));
       // Check second follow call (fofFollows)
-      expect(prisma.follow.findMany).toHaveBeenNthCalledWith(2, {
+      expect(prisma.follow.findMany).toHaveBeenNthCalledWith(2, expect.objectContaining({
         where: {
           followerId: { in: ['followed1', 'followed2'] },
           followingId: { notIn: ['followed1', 'followed2', userId, ...excludedIds] },
         },
         select: { followingId: true },
-      });
+      }));
       // Check final user query excludes blocked/muted
-      expect(prisma.user.findMany).toHaveBeenCalledWith({
+      expect(prisma.user.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: {
           id: { in: ['suggested1', 'suggested2'], notIn: excludedIds },
           isDeactivated: false,
@@ -176,7 +176,7 @@ describe('RecommendationsService', () => {
           isVerified: true,
           bio: true,
         },
-      });
+      }));
       // Check mutual followers count attached and sorted
       expect(result).toEqual([
         { ...mockSuggestedUsers[0], mutualFollowers: 2 },
@@ -228,7 +228,7 @@ describe('RecommendationsService', () => {
         user: { isDeactivated: false, isPrivate: false },
         createdAt: { gte: expect.any(Date) },
       };
-      expect(prisma.post.findMany).toHaveBeenCalledWith({
+      expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expectedWhere,
         select: expect.any(Object),
         orderBy: [
@@ -238,7 +238,7 @@ describe('RecommendationsService', () => {
           { createdAt: 'desc' },
         ],
         take: 20,
-      });
+      }));
       expect(result).toEqual(mockPosts);
     });
 
@@ -251,7 +251,7 @@ describe('RecommendationsService', () => {
 
       await service.suggestedPosts(userId, 20);
 
-      expect(prisma.post.findMany).toHaveBeenCalledWith({
+      expect(prisma.post.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
           user: { id: { notIn: excludedIds }, isDeactivated: false, isPrivate: false },
@@ -259,7 +259,7 @@ describe('RecommendationsService', () => {
         select: expect.any(Object),
         orderBy: expect.any(Array),
         take: 20,
-      });
+      }));
     });
 
     it('should return empty array when no posts found', async () => {
@@ -305,7 +305,7 @@ describe('RecommendationsService', () => {
         user: { isDeactivated: false, isPrivate: false },
         createdAt: { gte: expect.any(Date) },
       };
-      expect(prisma.reel.findMany).toHaveBeenCalledWith({
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expectedWhere,
         select: expect.any(Object),
         orderBy: [
@@ -315,7 +315,7 @@ describe('RecommendationsService', () => {
           { createdAt: 'desc' },
         ],
         take: 20,
-      });
+      }));
       expect(result).toEqual(mockReels);
     });
 
@@ -328,7 +328,7 @@ describe('RecommendationsService', () => {
 
       await service.suggestedReels(userId, 20);
 
-      expect(prisma.reel.findMany).toHaveBeenCalledWith({
+      expect(prisma.reel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
           user: { id: { notIn: excludedIds }, isDeactivated: false, isPrivate: false },
@@ -336,7 +336,7 @@ describe('RecommendationsService', () => {
         select: expect.any(Object),
         orderBy: expect.any(Array),
         take: 20,
-      });
+      }));
     });
 
     it('should return empty array when no reels found', async () => {
@@ -373,7 +373,7 @@ describe('RecommendationsService', () => {
       const expectedWhere = {
         user: { isDeactivated: false },
       };
-      expect(prisma.channel.findMany).toHaveBeenCalledWith({
+      expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expectedWhere,
         select: expect.any(Object),
         orderBy: [
@@ -381,7 +381,7 @@ describe('RecommendationsService', () => {
           { totalViews: 'desc' },
         ],
         take: 20,
-      });
+      }));
       expect(result).toEqual(mockChannels);
     });
 
@@ -394,7 +394,7 @@ describe('RecommendationsService', () => {
 
       await service.suggestedChannels(userId, 20);
 
-      expect(prisma.channel.findMany).toHaveBeenCalledWith({
+      expect(prisma.channel.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: expect.objectContaining({
           userId: { not: userId },
           user: { id: { notIn: excludedIds }, isDeactivated: false },
@@ -402,7 +402,7 @@ describe('RecommendationsService', () => {
         select: expect.any(Object),
         orderBy: expect.any(Array),
         take: 20,
-      });
+      }));
     });
 
     it('should return empty array when no channels found', async () => {

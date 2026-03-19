@@ -323,10 +323,12 @@ export class HashtagsService {
     const [reactions, saved] = await Promise.all([
       this.prisma.postReaction.findMany({
         where: { userId, postId: { in: postIds } },
-      }),
+      take: 50,
+    }),
       this.prisma.savedPost.findMany({
         where: { userId, postId: { in: postIds } },
-      }),
+      take: 50,
+    }),
     ]);
     const reactionMap = new Map(reactions.map((r: { postId: string; reaction: string }) => [r.postId, r.reaction]));
     const savedSet = new Set(saved.map((s: { postId: string }) => s.postId));
@@ -342,10 +344,12 @@ export class HashtagsService {
     const [reactions, saved] = await Promise.all([
       this.prisma.reelReaction.findMany({
         where: { userId, reelId: { in: reelIds } },
-      }),
+      take: 50,
+    }),
       this.prisma.reelInteraction.findMany({
         where: { userId, reelId: { in: reelIds }, saved: true },
-      }),
+      take: 50,
+    }),
     ]);
     const reactionMap = new Map(reactions.map((r: { reelId: string; reaction: string }) => [r.reelId, r.reaction]));
     const savedSet = new Set(saved.map((s: { reelId: string }) => s.reelId));
@@ -385,6 +389,7 @@ export class HashtagsService {
     const hashtags = await this.prisma.hashtag.findMany({
       where: { id: { in: hashtagIds } },
       select: { id: true, name: true, postsCount: true },
+      take: 50,
     });
     return {
       data: hashtags,
@@ -397,10 +402,12 @@ export class HashtagsService {
     const [reactions, saved] = await Promise.all([
       this.prisma.threadReaction.findMany({
         where: { userId, threadId: { in: threadIds } },
-      }),
+      take: 50,
+    }),
       this.prisma.threadBookmark.findMany({
         where: { userId, threadId: { in: threadIds } },
-      }),
+      take: 50,
+    }),
     ]);
     const reactionMap = new Map(reactions.map((r: { threadId: string; reaction: string }) => [r.threadId, r.reaction]));
     const savedSet = new Set(saved.map((s: { threadId: string }) => s.threadId));

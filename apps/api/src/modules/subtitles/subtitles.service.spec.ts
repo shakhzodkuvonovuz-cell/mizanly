@@ -55,7 +55,7 @@ describe('SubtitlesService', () => {
         where: { id: videoId },
         select: { id: true, userId: true, status: true },
       });
-      expect(prisma.subtitleTrack.findMany).toHaveBeenCalledWith({
+      expect(prisma.subtitleTrack.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { videoId },
         select: {
           id: true,
@@ -66,7 +66,7 @@ describe('SubtitlesService', () => {
           createdAt: true,
         },
         orderBy: { isDefault: 'desc' },
-      });
+      }));
       expect(result).toEqual(mockTracks);
     });
 

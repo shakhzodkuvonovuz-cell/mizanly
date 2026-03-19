@@ -74,6 +74,7 @@ export class RestrictsService {
         displayName: true,
         avatarUrl: true,
       },
+      take: 50,
     });
 
     return {

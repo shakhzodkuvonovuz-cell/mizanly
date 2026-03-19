@@ -45,6 +45,7 @@ export class StoriesService {
     const follows = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
+      take: 50,
     });
     const ids = [userId, ...follows.map((f) => f.followingId)];
 
@@ -78,6 +79,7 @@ export class StoriesService {
     const views = await this.prisma.storyView.findMany({
       where: { viewerId: userId, storyId: { in: storyIds } },
       select: { storyId: true },
+      take: 50,
     });
     const viewedIds = new Set(views.map((v) => v.storyId));
 
@@ -194,7 +196,9 @@ export class StoriesService {
     const views = await this.prisma.storyView.findMany({
       where: {
         storyId,
-        ...(cursor && { viewerId: { gt: cursor } }),
+        ...(cursor && { viewerId: { gt: cursor },
+      take: 50,
+    }),
       },
       take: limit + 1,
       orderBy: { viewerId: 'asc' },
@@ -205,6 +209,7 @@ export class StoriesService {
     const users = await this.prisma.user.findMany({
       where: { id: { in: viewerIds } },
       select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+      take: 50,
     });
 
     const userMap = new Map(users.map((u) => [u.id, u]));
@@ -380,6 +385,7 @@ export class StoriesService {
       },
       select: STORY_SELECT,
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 
@@ -397,7 +403,9 @@ export class StoriesService {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story || story.userId !== ownerId) throw new ForbiddenException('Only story owner can view responses');
     return this.prisma.storyStickerResponse.findMany({
-      where: { storyId, ...(stickerType ? { stickerType } : {}) },
+      where: { storyId, ...(stickerType ? { stickerType } : {
+      take: 50,
+    }) },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -406,7 +414,9 @@ export class StoriesService {
   async getStickerSummary(storyId: string, ownerId: string) {
     const story = await this.prisma.story.findUnique({ where: { id: storyId } });
     if (!story || story.userId !== ownerId) throw new ForbiddenException();
-    const responses = await this.prisma.storyStickerResponse.findMany({ where: { storyId }, select: { stickerType: true, responseData: true } });
+    const responses = await this.prisma.storyStickerResponse.findMany({ where: { storyId }, select: { stickerType: true, responseData: true },
+      take: 50,
+    });
     const summary: Record<string, Record<string, number>> = {};
     for (const r of responses) {
       if (!summary[r.stickerType]) summary[r.stickerType] = {};

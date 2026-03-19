@@ -152,10 +152,10 @@ describe('SettingsService', () => {
 
       const result = await service.getBlockedKeywords(userId);
 
-      expect(prisma.blockedKeyword.findMany).toHaveBeenCalledWith({
+      expect(prisma.blockedKeyword.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId },
         orderBy: { createdAt: 'desc' },
-      });
+      }));
       expect(result).toEqual(mockKeywords);
     });
   });

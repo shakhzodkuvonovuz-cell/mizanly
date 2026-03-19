@@ -120,6 +120,7 @@ export class ParentalControlsService {
         },
       },
       orderBy: { createdAt: 'desc' },
+      take: 50,
     });
 
     return controls;
@@ -285,7 +286,8 @@ export class ParentalControlsService {
           date: { gte: sevenDaysAgo },
         },
         orderBy: { date: 'asc' },
-      }),
+      take: 50,
+    }),
     ]);
 
     const totalScreenTimeMinutes = screenTimeLogs.reduce(
