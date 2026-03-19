@@ -113,7 +113,7 @@ export class UsersService {
    * Includes: profile, posts, comments, messages, follows, likes, bookmarks, search history.
    */
   async exportData(userId: string) {
-    const [user, posts, comments, messages, followers, following, likes, bookmarks] = await Promise.all([
+    const [user, posts, comments, messages, followers, following, likes, bookmarks, threads, reels, videos] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -122,43 +122,50 @@ export class UsersService {
           createdAt: true, lastSeenAt: true,
         },
       }),
+      // GDPR requires ALL data — no take limits on data export
       this.prisma.post.findMany({
         where: { userId, isRemoved: false },
         select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true },
-        take: 50,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.comment.findMany({
         where: { userId, isRemoved: false },
         select: { id: true, content: true, postId: true, createdAt: true },
-        take: 50,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.message.findMany({
         where: { senderId: userId },
         select: { id: true, content: true, conversationId: true, createdAt: true },
-        take: 50,
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.follow.findMany({
         where: { followingId: userId },
         select: { followerId: true, createdAt: true },
-        take: 50,
       }),
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true, createdAt: true },
-        take: 50,
       }),
       this.prisma.postReaction.findMany({
         where: { userId },
         select: { postId: true, reaction: true, createdAt: true },
-        take: 50,
       }),
       this.prisma.savedPost.findMany({
         where: { userId },
         select: { postId: true, createdAt: true },
-        take: 50,
+      }),
+      // Additional content types for complete GDPR export
+      this.prisma.thread.findMany({
+        where: { userId },
+        select: { id: true, content: true, mediaUrls: true, createdAt: true },
+      }),
+      this.prisma.reel.findMany({
+        where: { userId },
+        select: { id: true, caption: true, videoUrl: true, createdAt: true },
+      }),
+      this.prisma.video.findMany({
+        where: { userId },
+        select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true },
       }),
     ]);
 
@@ -166,6 +173,9 @@ export class UsersService {
       exportedAt: new Date().toISOString(),
       profile: user,
       posts,
+      threads,
+      reels,
+      videos,
       comments,
       messages: messages.map(m => ({ ...m, content: m.content ? '[encrypted]' : null })),
       followers: followers.map(f => f.followerId),
@@ -834,46 +844,6 @@ export class UsersService {
       data: { nasheedMode: enabled },
       select: { id: true, nasheedMode: true },
     });
-  }
-
-  async exportData(userId: string) {
-    const [posts, threads, reels, videos, messages, comments, reelComments, videoComments] = await Promise.all([
-      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, postType: true, mediaUrls: true, createdAt: true },
-      take: 50,
-    }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true },
-      take: 50,
-    }),
-      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true },
-      take: 50,
-    }),
-      this.prisma.video.findMany({ where: { userId }, select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true },
-      take: 50,
-    }),
-      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, messageType: true, createdAt: true, conversationId: true },
-      take: 50,
-    }),
-      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, postId: true },
-      take: 50,
-    }),
-      this.prisma.reelComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, reelId: true },
-      take: 50,
-    }),
-      this.prisma.videoComment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true, videoId: true },
-      take: 50,
-    }),
-    ]);
-    return {
-      posts,
-      threads,
-      reels,
-      videos,
-      messages,
-      comments,
-      reelComments,
-      videoComments,
-      exportedAt: new Date().toISOString(),
-    };
   }
 
   async findByPhoneNumbers(userId: string, phoneNumbers: string[]) {

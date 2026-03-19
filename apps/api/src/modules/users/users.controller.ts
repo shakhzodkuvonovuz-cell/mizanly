@@ -251,14 +251,6 @@ export class UsersController {
     return this.usersService.updateNasheedMode(userId, body.nasheedMode);
   }
 
-  @Get('me/export-data')
-  @UseGuards(ClerkAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Export all user data (GDPR)' })
-  exportData(@CurrentUser('id') userId: string) {
-    return this.usersService.exportData(userId);
-  }
-
   // currentUserId extracted from verified auth context — never from query params
   @Get(':username')
   @UseGuards(OptionalClerkAuthGuard)
