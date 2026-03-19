@@ -1,20 +1,35 @@
-import React, { useEffect } from 'react';
-import { memo, StyleSheet, View } from 'react-native';
+import React, { useEffect, memo } from 'react';
+import { StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withSpring,
   withTiming,
+  withSequence,
+  runOnJS,
 } from 'react-native-reanimated';
-import { memo, Icon } from '@/components/ui/Icon';
-import { memo, animation, colors, fontSize, radius, spacing } from '@/theme';
+import { Icon } from '@/components/ui/Icon';
+import { animation, colors, fontSize, radius, spacing } from '@/theme';
+import { useHaptic } from '@/hooks/useHaptic';
+import { useTranslation } from '@/hooks/useTranslation';
+
+// Confetti particle positions (pre-computed for performance)
+const CONFETTI_PARTICLES = Array.from({ length: 12 }, (_, i) => ({
+  id: i,
+  angle: (i / 12) * Math.PI * 2,
+  color: i % 3 === 0 ? colors.emerald : i % 3 === 1 ? colors.gold : '#E8E8E8',
+  size: 4 + (i % 3) * 2,
+}));
 
 export const CaughtUpCard = memo(function CaughtUpCard() {
+  const { t } = useTranslation();
+  const haptic = useHaptic();
   const checkScale = useSharedValue(0);
   const ringScale = useSharedValue(0.8);
   const ringOpacity = useSharedValue(0);
   const textOpacity = useSharedValue(0);
+  const confettiProgress = useSharedValue(0);
 
   useEffect(() => {
     // 1. Check icon scales in with bounce (after 200ms delay)
@@ -38,6 +53,18 @@ export const CaughtUpCard = memo(function CaughtUpCard() {
       500,
       withTiming(1, { duration: 400 }),
     );
+
+    // 4. Confetti burst (after 300ms)
+    confettiProgress.value = withDelay(
+      300,
+      withSequence(
+        withTiming(1, { duration: 600 }),
+        withTiming(0, { duration: 400 }),
+      ),
+    );
+
+    // 5. Success haptic
+    setTimeout(() => haptic.success(), 300);
   }, []);
 
   const checkStyle = useAnimatedStyle(() => ({
@@ -56,6 +83,10 @@ export const CaughtUpCard = memo(function CaughtUpCard() {
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
+        {/* Confetti particles */}
+        {CONFETTI_PARTICLES.map((particle) => (
+          <ConfettiDot key={particle.id} particle={particle} progress={confettiProgress} />
+        ))}
         {/* Expanding ring behind check */}
         <Animated.View style={[styles.ring, ringStyle]} />
         {/* Check circle */}
@@ -65,14 +96,44 @@ export const CaughtUpCard = memo(function CaughtUpCard() {
       </View>
 
       <Animated.Text style={[styles.title, textStyle]}>
-        You're all caught up
+        {t('saf.caughtUp.title')}
       </Animated.Text>
       <Animated.Text style={[styles.subtitle, textStyle]}>
-        You've seen all new posts from the last 3 days
+        {t('saf.caughtUp.subtitle')}
       </Animated.Text>
     </View>
   );
 });
+
+// Confetti particle component
+function ConfettiDot({
+  particle,
+  progress,
+}: {
+  particle: (typeof CONFETTI_PARTICLES)[0];
+  progress: Animated.SharedValue<number>;
+}) {
+  const style = useAnimatedStyle(() => {
+    const distance = progress.value * 60;
+    const x = Math.cos(particle.angle) * distance;
+    const y = Math.sin(particle.angle) * distance;
+    return {
+      position: 'absolute',
+      width: particle.size,
+      height: particle.size,
+      borderRadius: particle.size / 2,
+      backgroundColor: particle.color,
+      opacity: progress.value > 0 ? 1 - progress.value * 0.5 : 0,
+      transform: [
+        { translateX: x },
+        { translateY: y },
+        { scale: 1 - progress.value * 0.3 },
+      ],
+    };
+  });
+
+  return <Animated.View style={style} />;
+}
 
 const styles = StyleSheet.create({
   container: {

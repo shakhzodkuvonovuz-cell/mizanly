@@ -78,6 +78,7 @@ import { CommunityModule as CommunityV2Module } from './modules/community/commun
 import { TelegramFeaturesModule } from './modules/telegram-features/telegram-features.module';
 import { DiscordFeaturesModule } from './modules/discord-features/discord-features.module';
 import { EmbeddingsModule } from './modules/embeddings/embeddings.module';
+import { RetentionModule } from './modules/retention/retention.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -165,6 +166,7 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
     TelegramFeaturesModule,
     DiscordFeaturesModule,
     EmbeddingsModule,
+    RetentionModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: UserThrottlerGuard },
