@@ -147,7 +147,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
       accessibilityRole="button"
       accessibilityLabel={`View ${item.title}`}
     >
-      <Image source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
+      <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.thumbnailUrl }} style={styles.featuredImage} />
       <View style={styles.featuredOverlay}>
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.85)']}
@@ -158,7 +158,7 @@ function FeaturedCard({ item, onPress }: { item: FeaturedItem; onPress: () => vo
           <View style={styles.featuredMeta}>
             <View style={styles.featuredCreator}>
               {item.creator.avatarUrl ? (
-                <Image source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
+                <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.creator.avatarUrl }} style={styles.featuredAvatar} />
               ) : (
                 <View style={styles.featuredAvatarPlaceholder}>
                   <Icon name="user" size={10} color={colors.text.primary} />
@@ -256,7 +256,7 @@ function ExploreGridItem({ item }: { item: ExploreItem }) {
       accessibilityLabel={t('accessibility.viewPost')}
     >
       {thumbnailUrl ? (
-        <Image source={{ uri: thumbnailUrl }} style={styles.gridImage} />
+        <Image accessible={true} accessibilityLabel="Content image" source={{ uri: thumbnailUrl }} style={styles.gridImage} />
       ) : (
         <View style={[styles.gridImage, styles.placeholder]} />
       )}

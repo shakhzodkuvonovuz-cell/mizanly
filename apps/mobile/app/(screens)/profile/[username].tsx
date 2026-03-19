@@ -377,7 +377,7 @@ export default function ProfileScreen() {
       <Animated.View style={[{ overflow: 'hidden' }, coverAnimStyle]}>
         {profile.coverUrl ? (
           <View>
-            <Image source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
+            <Image accessible={true} accessibilityLabel="Content image" source={{ uri: profile.coverUrl }} style={styles.cover} contentFit="cover" />
             <LinearGradient
               colors={['transparent', 'rgba(0,0,0,0.6)']}
               locations={[0.4, 1]}
@@ -527,7 +527,7 @@ export default function ProfileScreen() {
               <View style={styles.highlightRing}>
                 <View style={[styles.highlightCircle, loadingHighlightId === album.id && { opacity: 0.5 }]}>
                   {album.coverUrl ? (
-                    <Image source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
+                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: album.coverUrl }} style={styles.highlightImg} contentFit="cover" />
                   ) : (
                     <Icon name="image" size="md" color={colors.text.tertiary} />
                   )}

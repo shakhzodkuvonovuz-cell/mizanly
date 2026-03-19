@@ -360,7 +360,7 @@ export default function CreateReelScreen() {
                       thumbnailUri === frame && !customThumbnail && styles.thumbnailFrameSelected,
                     ]}
                   >
-                    <Image source={{ uri: frame }} style={styles.thumbnailImage} />
+                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: frame }} style={styles.thumbnailImage} />
                   </Pressable>
                 ))}
                 <Pressable

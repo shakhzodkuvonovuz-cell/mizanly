@@ -381,7 +381,7 @@ export default function CreatePostScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.mediaCardGradient}
                   >
-                    <Image source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
+                    <Image accessible={true} accessibilityLabel="Content image" source={{ uri: item.uri }} style={styles.mediaImage} contentFit="cover" />
                     {item.type === 'video' && (
                       <LinearGradient
                         colors={['rgba(0,0,0,0.6)', 'transparent']}
