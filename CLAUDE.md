@@ -16,12 +16,13 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: Tier 14 In Progress (as of 2026-03-19, Post-Batch 71)
-All 5 spaces built + Telegram + Discord feature parity + full audit pass. 197 screens, 700+ API endpoints, 69 backend modules, 160 Prisma models, 370+ commits, 179K+ lines of code.
-Backend: NestJS with 69 modules (88 test files). Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper. Commerce: marketplace, Zakat, Waqf. Gamification: streaks, XP/levels, achievements, challenges, series. Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
-Mobile: 196 screens across all spaces. i18n: en + ar + tr (Turkish wired). All screens reachable via navigation (0 orphans). Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
+## Status: Tier 15 Complete (as of 2026-03-20, Post-Batch 85)
+All 5 spaces built + Telegram + Discord + WeChat feature parity + full audit pass + 10/10 competitor parity. 196 screens, 700+ API endpoints, 71 backend modules, 166 Prisma models, 510+ commits, 195K+ lines of code.
+Backend: NestJS with 71 modules (98 test files). Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset calculator), Waqf. Gamification: streaks, XP/levels, achievements, challenges, series. Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
+Mobile: 196 screens across all spaces. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) all at 2,415 keys. All screens reachable via navigation (0 orphans). 196/196 screens wrapped with ScreenErrorBoundary. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 **Audit (Batch 53-64):** Fixed 4 P0 crashes, 9 P1 bugs, 6 P2 quality issues, 2 security fixes, removed 890 junk i18n keys (2,500 lines), eliminated 6 `any` types, wired 78→2 orphaned screens, fixed font rendering, added real-time message refresh, reel view tracking, 2FA flow.
-**Next: Tier 14 (2026 Competitor Parity) — see remaining gaps below.**
+**Batch 85 (Mega):** 294 Arabic keys added, 122 orphans removed, 32 Prisma onDelete rules added, 8 dead-code patterns removed, 10 new test files (100+ cases), multi-guest live (4), group calls (8), screen sharing, video chapters, audience demographics, adhan reciters (6), calc methods (8), Quran audio (4 reciters), Zakat calculator, webhooks system, Sentry error reporting.
+**All tiers complete. Next: production deployment + professional i18n review.**
 
 ---
 
@@ -56,7 +57,7 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 **Tier 12:** Community — local boards, mentorship, study circles, fatwa Q&A, volunteer, events, reputation, voice posts, watch parties, data export
 **Tier 13:** Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, font fix, security (socket token refresh, 2FA flow)
 
-### Tier 14: 2026 Competitor Parity (CURRENT)
+### Tier 14: 2026 Competitor Parity (COMPLETE)
 **Batch 65-68 — Quick wins (Low effort, high impact):**
 - ~~Spoiler text in messages (tap-to-reveal)~~ — ✅ Batch 65
 - ~~View Once voice messages~~ — ✅ Batch 65
@@ -74,17 +75,32 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~Algorithm transparency~~ — ✅ Already existed (feed-transparency.service)
 - ~~Photo carousels in Bakra~~ — ✅ Batch 71 (isPhotoCarousel + carouselUrls)
 - ~~Cross-channel publishing~~ — ✅ Batch 71 (crossPublish API)
-- Follower vs non-follower analytics — X 2026 (data model ready, UI pending)
-- Account deep dive (creation country, username history) — X 2026
+- ~~Follower vs non-follower analytics~~ — ✅ Batch 85 (ViewerDemographic model + getAudienceDemographics)
+- Account deep dive (creation country, username history) — Deferred
 
-**Batch 73-76 — High effort (future):**
-- AI dubbing (auto-dub in other languages) — TikTok 2026
-- AI Restyle video editing — Instagram 2026
-- AI "Best Moments" for Shorts from livestreams — YouTube 2026
-- Friends Map / location sharing — Instagram 2026
-- Camera effects (30 backgrounds/filters) — WhatsApp 2026
-- Live reaction to other streams — YouTube 2026
-- TV app (Fire TV / Google TV) — Instagram 2026
+**Batch 85 — 10/10 Parity (complete):**
+- ~~Multi-guest live streaming (up to 4 guests)~~ — ✅ Batch 85
+- ~~Audio room recording + discovery~~ — ✅ Batch 85
+- ~~Group video calls (up to 8) + screen sharing~~ — ✅ Batch 85
+- ~~Audience demographics (country, age, gender, source)~~ — ✅ Batch 85
+- ~~Video chapters with timestamp parsing~~ — ✅ Batch 85
+- ~~Multiple adhan reciters (6) + calculation methods (8)~~ — ✅ Batch 85
+- ~~Quran audio recitation (4 reciters)~~ — ✅ Batch 85
+- ~~Comprehensive Zakat calculator (multi-asset, nisab)~~ — ✅ Batch 85
+- ~~Granular community role permissions~~ — ✅ Batch 85
+- ~~Webhook system (HMAC-SHA256 signed delivery)~~ — ✅ Batch 85
+- ~~Persistent always-on voice channels~~ — ✅ Batch 85
+- ~~Sentry error reporting (mobile + API)~~ — ✅ Batch 85
+- ~~8 languages at 100% key parity~~ — ✅ Batch 85
+
+**Deferred to future releases:**
+- AI dubbing (auto-dub in other languages)
+- AI Restyle video editing
+- AI "Best Moments" for Shorts from livestreams
+- Friends Map / location sharing
+- Camera effects (30 backgrounds/filters)
+- Live reaction to other streams
+- TV app (Fire TV / Google TV)
 
 ### Backend + Performance Hardening (Batches 68, A1-C)
 - ~~TODO stubs~~ — ✅ Fixed
@@ -98,7 +114,10 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~Optimistic updates~~ — ✅ Bakra like/bookmark instantly update cache
 - ~~Touch targets~~ — ✅ Bakra follow button: hitSlop={12} for 44pt compliance
 - ~~Accessibility~~ — ✅ Image labels added to key screens
-- Remaining: ~50 Prisma relations missing onDelete (cosmetic), 43 inline renderItems in utility screens (negligible impact)
+- ~~Prisma onDelete rules~~ — ✅ Batch 85 (32 relations fixed, 0 remaining)
+- ~~Dead-code take:50 patterns~~ — ✅ Batch 85 (8 removed)
+- ~~ScreenErrorBoundary coverage~~ — ✅ Batch 85 (196/196 screens)
+- Remaining: 43 inline renderItems in utility screens (negligible impact)
 
 ---
 
@@ -141,10 +160,10 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 69 feature modules
-│   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
+│   │   ├── src/modules/         # 71 feature modules
+│   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators, sentry
 │   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
-│   │   └── prisma/schema.prisma # 160 models, 3,255 lines
+│   │   └── prisma/schema.prisma # 166 models, 3,461 lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
@@ -159,7 +178,7 @@ mizanly/
 │           ├── stores/index.ts  # Zustand store
 │           ├── theme/index.ts   # Design tokens
 │           ├── utils/           # hijri.ts, etc.
-│           ├── i18n/            # en.json + ar.json + tr.json (Turkish)
+│           ├── i18n/            # 8 languages: en, ar, tr, ur, bn, fr, id, ms
 │           └── types/index.ts   # TypeScript interfaces
 ```
 
@@ -301,11 +320,12 @@ fonts.arabicBold = 'NotoNaskhArabic_700Bold'
 ```
 
 ## i18n
-- **Languages:** en (English), ar (Arabic), tr (Turkish)
+- **Languages:** en (English), ar (Arabic), tr (Turkish), ur (Urdu), bn (Bengali), fr (French), id (Indonesian), ms (Malay)
+- **Keys:** 2,415 per language, all 8 files at 100% parity
 - **Config:** `src/i18n/index.ts` — auto-detects device locale, falls back to `en`
 - **Adding a language:** Create `xx.json`, import in `index.ts`, add to resources + resolveLanguage()
 - **Key structure:** Nested dot notation (`risalah.chats`, `tabs.createSheet.photoOrVideoPost`)
-- **IMPORTANT:** All new screens MUST have i18n keys in ALL 3 language files
+- **IMPORTANT:** All new screens MUST have i18n keys in ALL 8 language files
 
 ## Create Sheet Options (7 items)
 Post | Thread | Story | Reel | Long Video | Go Live | Voice Post
@@ -314,4 +334,4 @@ Post | Thread | Story | Reel | Long Video | Go Live | Voice Post
 Content | Appearance | Privacy | Notifications | Wellbeing | Islamic | Accessibility | Close Friends | AI | Creator | Community | Gamification | Account | About
 
 ## Deferred
-AR filters | Screen sharing | Multi-device sync | Group video calls
+AR filters | Multi-device sync | AI dubbing | AI restyle | Friends map | Camera effects | TV app | WeChat mini-programs

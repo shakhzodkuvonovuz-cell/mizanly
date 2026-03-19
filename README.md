@@ -37,10 +37,10 @@
 - [Custom Hooks](#custom-hooks)
 - [Service Layer](#service-layer)
 - [Backend Modules](#backend-modules)
-- [Database Schema](#database-schema-107-models)
+- [Database Schema](#database-schema-166-models)
 - [WebSocket Gateway](#websocket-gateway)
 - [Internationalization](#internationalization-i18n)
-- [All Screens](#all-screens-164-total)
+- [All Screens](#all-screens-196-total)
 - [Getting Started](#getting-started)
 - [Development Scripts](#development-scripts)
 - [Local Development with Docker](#local-development-with-docker)
@@ -86,22 +86,22 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 737+ |
-| Total Lines of Code | 179,000+ |
-| Mobile Screens | 202 |
-| Backend Modules | 69 |
+| Total Source Files | 800+ |
+| Total Lines of Code | 195,000+ |
+| Mobile Screens | 196 |
+| Backend Modules | 71 |
 | API Endpoints | 700+ |
-| Prisma Models | 160 |
-| Prisma Schema Lines | 3,295 |
-| Test Suites | 88 |
-| Tests Passing | 1,242 |
+| Prisma Models | 166 |
+| Prisma Schema Lines | 3,461 |
+| Test Suites | 98 |
+| Tests Passing | 1,400+ |
 | UI Components | 28 |
 | Custom Hooks | 13 |
 | Service Files | 16 |
-| Translation Keys | ~2,500 per language |
-| Supported Languages | 3 (English + Arabic + Turkish) |
-| Git Commits | 467+ |
-| Development Batches | 71+ |
+| Translation Keys | 2,415 per language |
+| Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
+| Git Commits | 510+ |
+| Development Batches | 85 |
 
 ---
 
@@ -372,7 +372,7 @@ What makes Mizanly fundamentally different from any mainstream social platform �
 | **Media** | expo-av | 15.0 | Audio/video playback |
 | **Thumbnails** | expo-video-thumbnails | 9.0 | Video thumbnail generation |
 | **Auth** | @clerk/clerk-expo | 2.5 | Authentication + session management |
-| **i18n** | i18next + react-i18next | 25.8 / 16.5 | English + Arabic translations |
+| **i18n** | i18next + react-i18next | 25.8 / 16.5 | 8 languages (EN, AR, TR, UR, BN, FR, ID, MS) |
 | **Realtime** | socket.io-client | 4.8 | WebSocket for chat + live features |
 | **Storage** | react-native-mmkv | 3.2 | Fast key-value storage |
 | **Secure Storage** | expo-secure-store | 14.0 | Encrypted credential storage |
@@ -463,7 +463,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 160 models, 3,295 lines
+│   │   │   └── schema.prisma         # 166 models, 3,461 lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -478,7 +478,7 @@ mizanly/
 │   │   │   ├── gateways/
 │   │   │   │   ├── chat.gateway.ts   # Socket.io /chat namespace
 │   │   │   │   └── dto/              # WebSocket event DTOs
-│   │   │   └── modules/              # 69 feature modules
+│   │   │   └── modules/              # 71 feature modules
 │   │   │       ├── admin/            # Admin dashboard endpoints
 │   │   │       ├── audio-rooms/      # Clubhouse-style audio rooms
 │   │   │       ├── audio-tracks/     # Music/nasheed library
@@ -586,7 +586,7 @@ mizanly/
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
 │       │   ├── utils/               # Utility functions (Hijri dates, etc.)
-│       │   └── i18n/                # Translations (EN + AR + TR)
+│       │   └── i18n/                # Translations (8 languages: EN, AR, TR, UR, BN, FR, ID, MS)
 │       ├── assets/
 │       │   └── images/              # App icon, splash, adaptive icon
 │       └── app.json                 # Expo configuration
@@ -783,7 +783,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Backend Modules
 
-All 69 NestJS modules in `apps/api/src/modules/`:
+All 71 NestJS modules in `apps/api/src/modules/`:
 
 <details>
 <summary>Click to expand full module list with descriptions</summary>
@@ -807,6 +807,7 @@ All 69 NestJS modules in `apps/api/src/modules/`:
 | `creator` | Creator dashboard — analytics, revenue, storefront |
 | `devices` | Device management — push tokens, active sessions |
 | `drafts` | Draft post auto-save and retrieval |
+| `embeddings` | Gemini text-embedding-004 — pgvector KNN similarity, content embedding pipeline, user interest vectors |
 | `encryption` | End-to-end encryption — key exchange, conversation envelopes |
 | `events` | Event creation — date, location, RSVPs, reminders |
 | `feed` | Feed algorithms — "For You" personalization, interaction tracking |
@@ -834,6 +835,7 @@ All 69 NestJS modules in `apps/api/src/modules/`:
 | `reels` | Short video CRUD — reactions, comments, interactions |
 | `reports` | User report submission — categories, evidence, status tracking |
 | `restricts` | Soft user restriction — limit interactions without blocking |
+| `retention` | Engagement — reel view milestones, streak warnings, social FOMO, session depth tracking |
 | `scheduling` | Post and live event scheduling with calendar |
 | `search` | Meilisearch integration — users, posts, hashtags, channels |
 | `settings` | User settings — screen time, undo send, auto-play, notifications |
@@ -849,6 +851,7 @@ All 69 NestJS modules in `apps/api/src/modules/`:
 | `video-replies` | Video comment replies — record + attach video responses |
 | `videos` | Long-form video CRUD — comments, reactions, chapters |
 | `watch-history` | Video watch tracking — history, watch later queue |
+| `webhooks` | Community webhook system — HMAC-SHA256 signed delivery, retry with exponential backoff, event dispatching |
 | `commerce` | Halal marketplace — products, orders, Islamic finance |
 | `community` | Community features — local boards, mentorship, fatwa Q&A, waqf |
 | `discord-features` | Discord parity — forum threads, webhooks, stage sessions |
@@ -863,12 +866,12 @@ All 69 NestJS modules in `apps/api/src/modules/`:
 
 ---
 
-## Database Schema (160 Models)
+## Database Schema (166 Models)
 
-The Prisma schema (`apps/api/prisma/schema.prisma`) contains 160 models across 3,295 lines. Models are organized by domain:
+The Prisma schema (`apps/api/prisma/schema.prisma`) contains 166 models across 3,461 lines. Models are organized by domain:
 
 <details>
-<summary>Click to expand all 160 models grouped by domain</summary>
+<summary>Click to expand all 166 models grouped by domain</summary>
 
 ### Core Social (8 models)
 `User` `Follow` `FollowRequest` `Post` `Comment` `PostReaction` `CommentReaction` `SavedPost`
@@ -955,27 +958,32 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 ## Internationalization (i18n)
 
-Mizanly supports trilingual operation with English, Arabic, and Turkish, including full RTL layout support.
+Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,415 keys each).
 
 | File | Keys | Description |
 |------|------|-------------|
-| `en.json` | ~2,500 | English translations |
-| `ar.json` | ~2,400 | Arabic translations |
-| `tr.json` | ~2,500 | Turkish translations |
+| `en.json` | 2,415 | English (primary) |
+| `ar.json` | 2,415 | Arabic (RTL) |
+| `tr.json` | 2,415 | Turkish |
+| `ur.json` | 2,415 | Urdu (RTL) |
+| `bn.json` | 2,415 | Bengali |
+| `fr.json` | 2,415 | French |
+| `id.json` | 2,415 | Indonesian |
+| `ms.json` | 2,415 | Malay |
 | `index.ts` | — | i18next config with automatic device locale detection |
 
 **Implementation:**
 - Every screen uses `useTranslation()` hook
 - All user-facing strings use `t('key.path')` function
-- Arabic text renders with `NotoNaskhArabic` font family
+- Arabic and Urdu text renders with `NotoNaskhArabic` font family
 - RTL layout automatically applied based on locale
 - Quran verses display in Arabic with parallel translation
-- Locale detection: `ar` → Arabic, `tr` → Turkish, else → English
+- Locale detection: `ar` → Arabic, `tr` → Turkish, `ur` → Urdu, `bn` → Bengali, `fr` → French, `id`/`ms` → Indonesian/Malay, else → English
 - Adding a language: create `xx.json`, import in `index.ts`, add to `resolveLanguage()`
 
 ---
 
-## All Screens (202 Total)
+## All Screens (196 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
@@ -1570,8 +1578,8 @@ Full roadmap with 200+ features across 15 tiers:
 | 11 | Commerce — Halal marketplace, business directory, Zakat, Waqf, premium | 48-49 | Complete |
 | 12 | Community — Local boards, mentorship, study circles, fatwa Q&A, volunteer, events | 50-52 | Complete |
 | 13 | Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, security | 53-64 | Complete |
-| 14 | 2026 Competitor Parity — Spoiler text, member tags, wind-down, nearby feed, chat lock | 65-71 | In Progress |
-| 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components | A1-C | Complete |
+| 14 | 2026 Competitor Parity — Multi-guest live, group calls, video chapters, demographics, Quran audio, Zakat calculator, webhooks, role permissions, 8 languages | 65-85 | Complete |
+| 15 | Performance — Unbounded query caps, DB indexes, optimistic updates, memo components, Sentry | A1-C, 85 | Complete |
 
 ---
 
