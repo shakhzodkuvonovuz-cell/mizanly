@@ -351,7 +351,7 @@ auth.alreadyHaveAccount: "Already have an account?"
 
 ---
 
-### [ ] Task 8: Basic Offline Support
+### [x] Task 8: Basic Offline Support — Done: feedCache (stale-while-revalidate), offlineQueue (action queuing + flush), i18n OfflineBanner
 
 **Problem:** App is 100% useless without internet. Zero caching.
 
@@ -1796,6 +1796,7 @@ When you complete a task, change `[ ]` to `[x]` and add a one-line note:
 - [x] Task 5: Fix Test Suite — 1427/1427 tests passing (100%), 12 suites fixed, 50 failures resolved
 - [x] Task 6: Video Preloading — 3-slot pool preloader with state tracking + memory management
 - [x] Task 7: BlurHash Progressive Loading — schema fields on 5 models + Avatar blurhash + expo-image transition
+- [x] Task 8: Basic Offline Support — feedCache + offlineQueue + i18n OfflineBanner
 
 ### Blocked:
 (none yet)
