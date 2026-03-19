@@ -38,7 +38,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
-import { useVideoPreload } from '@/hooks/useVideoPreload';
+import { useVideoPreloader } from '@/hooks/useVideoPreloader';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -476,7 +476,7 @@ export default function BakraScreen() {
   }, []);
   const listRef = useRef<FlashListRef<Reel>>(null);
   useScrollToTop(listRef as React.RefObject<FlashListRef<Reel>>);
-  const { preloadVideos } = useVideoPreload(2);
+  const { onViewableChange, markPlaying, isReady } = useVideoPreloader(3);
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed'],
@@ -524,12 +524,15 @@ export default function BakraScreen() {
           reelsApi.view(newReel.id).catch(() => {});
         }
         setCurrentIndex(idx);
-        // Preload next 2 videos
+        // Preload next 2 videos via enhanced preloader
         const videoUrls = reels.map(r => r.hlsUrl || r.videoUrl);
-        preloadVideos(idx, videoUrls);
+        onViewableChange(idx, videoUrls);
+        // Mark current video as playing
+        const currentUrl = videoUrls[idx];
+        if (currentUrl) markPlaying(currentUrl);
       }
     }
-  }, [currentIndex, reels, preloadVideos]);
+  }, [currentIndex, reels, onViewableChange, markPlaying]);
 
   const queryClient = useQueryClient();
   const likeInFlight = useRef(false);
