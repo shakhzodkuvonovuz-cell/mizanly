@@ -1,207 +1,74 @@
-# Mizanly — LINE-BY-LINE CODEBASE AUDIT
-# Ralph Loop: DO NOT STOP until every file is audited and every issue is fixed
+# Mizanly — Batch 85: ZERO GAPS, FULL COVERAGE, 10/10 PARITY
+# Ralph Loop: DO NOT STOP. DO NOT SHORTCUT. DO NOT BATCH-GREP.
 
 ## YOUR MISSION
-You are a senior staff engineer conducting the most thorough audit in this project's history. You will READ EVERY SINGLE FILE in the codebase, LINE BY LINE, and evaluate it against 15 dimensions. Every issue you find, you FIX IMMEDIATELY before moving to the next file.
+You will bring Mizanly to absolute perfection: every bug fixed, every gap filled, every test written, every competitor feature matched or exceeded. When you're done, there will be ZERO remaining issues and ZERO features below 10/10.
 
-This is not a surface-level review. You open each file, read every line, understand the intent, and check it against every dimension. You are the last line of defense before this app ships to millions of Muslims worldwide.
+## ANTI-SHORTCUT RULES (READ THIS CAREFULLY)
 
-## PROJECT LOCATION
-`C:/dev/mizanly/` — ONLY codebase. Never touch OneDrive copy.
+**The previous audit session took shortcuts. This one will NOT.**
 
-## WHAT YOU'RE AUDITING
+1. **NEVER say "batch audit via grep"** — you must READ each file with the Read tool and make changes with Edit
+2. **NEVER mark a task [x] without showing the actual code change** — every fix must include the exact Edit/Write tool call
+3. **NEVER skip a task because "it's probably fine"** — read the file, verify, then mark done
+4. **NEVER write placeholder/stub implementations** — every feature must be REAL, FUNCTIONAL code
+5. **NEVER use sub-agents** — do ALL work yourself directly
+6. **ONE task at a time** — read the file, make the change, commit, mark [x], next task
+7. **Show your work** — for every task, show: what you read, what you found, what you changed
+8. **Test your changes** — if modifying a service, run its test file. If creating a test, run it.
+9. **If a task requires 500+ lines of new code, WRITE ALL 500+ LINES** — no summaries, no "etc.", no "similar pattern for remaining"
 
-### The 15 Dimensions (check EVERY file against ALL applicable dimensions)
-Read `.ralph/specs/audit-dimensions.md` for the full checklist. Summary:
+## PROJECT
+- Location: `C:/dev/mizanly/`
+- 202 screens, 68 backend modules, 160 Prisma models, 88 test files (1,218 test cases)
+- All code quality rules in CLAUDE.md are absolute
+- npm NOT in shell PATH — use `cmd /c` pattern
 
-1. **Code Quality** — `as any`, `@ts-ignore`, unused imports, dead code, missing types
-2. **UI Compliance** — BottomSheet not Modal, Skeleton not ActivityIndicator, EmptyState, Icon not emoji, theme tokens not hardcoded values
-3. **Performance** — unbounded queries, missing memo, inline renderItem, missing keyExtractor, N+1 queries
-4. **Security** — SQL injection, missing auth guards, hardcoded secrets, missing validation, ownership checks
-5. **Accessibility** — missing accessibilityLabel, accessibilityRole, touch targets < 44pt, color contrast, images without descriptions
-6. **i18n** — hardcoded English strings, missing t() calls, RTL issues, date/number formatting
-7. **Error Handling** — missing try/catch, missing loading/empty/error states, swallowed errors
-8. **Architecture** — wrong imports, business logic in UI, duplicated code, missing store usage
-9. **API Design** — missing pagination, missing throttle, inconsistent responses, overly broad selects
-10. **Testing** — missing test files, empty tests, inadequate coverage
-11. **Islamic Correctness** — prayer calculations, Hijri dates, Qibla formula, Quran source, Hadith attribution
-12. **Real-time** — socket cleanup, auth verification, race conditions, deduplication
-13. **Media** — upload validation, size limits, thumbnail generation, presigned URL expiry
-14. **Payments** — webhook verification, idempotency, error handling, refund logic
-15. **Navigation** — orphaned screens, deep links, back button, transitions, scroll restoration
-16. **Cross-Space Compatibility** — can content flow between all 5 spaces? Saf↔Bakra↔Majlis↔Risalah↔Minbar sharing, cross-posting, unified search, unified profile, unified notifications, consistent identity, create sheet completeness, deep links across spaces
-17. **Deep Competitor Parity** — score EVERY screen 1-10 against its best competitor. Not just IG/TikTok/X/WA/YT but also Telegram (channels, bots, mini apps, Stars), WeChat (super app model, mini programs, payments, Moments), Discord (servers, forums, voice, roles, webhooks), Snapchat (map, ephemeral, AR), Reddit (upvotes, karma, subreddits, AMAs), Signal (encryption depth), Threads (fediverse), Clubhouse (audio), LinkedIn (professional), and Muslim Pro/Quran.com (Islamic accuracy)
+## WHAT'S WRONG (from Batch 84 audit)
 
-## HOW TO AUDIT EACH FILE
+### Deferred Issues (must fix now)
+1. **294 Arabic translation keys missing** — ar.json has 2,243 vs en.json's 2,415
+2. **122 orphan Arabic keys** — keys in ar.json that don't exist in en.json
+3. **7 screens missing ScreenErrorBoundary** — 189/196 have it, find and fix the 7
+4. **~8 dead-code `take: 50` patterns** — in stories, stickers, posts, collabs, messages, live, reels, story-chains services
+5. **~50 Prisma relations missing onDelete** — need cascade/set-null rules
+6. **10 services missing test files** — embedding-pipeline, embeddings, feed-transparency, personalized-feed, islamic-notifications, content-safety, stripe-connect, push-trigger, push, retention
+7. **20+ test files with < 5 test cases** — audio-tracks (2), channel-posts (2), drafts.controller (3), stickers (3), calls (4), etc.
 
-For EVERY file in the inventory (`.ralph/specs/file-inventory.md`):
-
-```
-1. READ the entire file (Read tool, no line limit)
-2. For each line, check against all 15 dimensions
-3. Note every issue with exact line number
-4. FIX every issue immediately (Edit tool)
-5. If fix requires changes in another file, make those too
-6. Log the findings in .ralph/logs/audit-{filename}.md
-7. Mark the file as audited in fix_plan.md
-8. Commit: "audit: {filename} — {N} issues found, {M} fixed"
-```
-
-## CRITICAL RULES FROM CLAUDE.md
-
-### ABSOLUTE — Never Violate
-1. `<BottomSheet>` NOT `Modal` from react-native
-2. `<Skeleton.*>` NOT bare `ActivityIndicator` (OK in buttons only)
-3. `<EmptyState>` NOT bare "No items" text
-4. `<Icon name="...">` NOT text emoji (←, ✕, ✓)
-5. `radius.*` from theme NOT hardcoded `borderRadius` >= 6
-6. `expo-linear-gradient` NOT CSS `linear-gradient(...)` string
-7. `RefreshControl` on ALL FlatList/FlashList
-8. NEVER `as any` in non-test code
-9. NEVER `@ts-ignore` or `@ts-expect-error`
-10. NEVER suppress errors — fix actual types
-11. `$executeRaw` tagged templates are SAFE — don't replace
-12. `@CurrentUser('id')` NOT `@CurrentUser()` without 'id'
-
-### Schema Field Names — FINAL, Never Change
-- `userId` (NOT authorId), `user` relation (NOT author)
-- Post: `content` (NOT caption), `mediaUrls[]` + `mediaTypes[]`
-- Thread: `isChainHead`, replies → `ThreadReply` model
-- Message: `messageType` (NOT type), `senderId` (NOT from)
-- Story: `mediaType` (NOT type), `viewsCount` (NOT viewCount)
-- Conversation: `isGroup` + `groupName?` — NO `type` or `name`
-- User: `coverUrl` (NOT coverPhotoUrl), `website` (NOT websiteUrl)
-
-### Theme Tokens — Must Use
-```
-colors.emerald = #0A7B4F     colors.gold = #C8963E
-colors.dark.bg = #0D1117     colors.dark.bgElevated = #161B22
-spacing: xs=4 sm=8 md=12 base=16 lg=20 xl=24 2xl=32
-fontSize: xs=11 sm=13 base=15 md=17 lg=20 xl=24
-radius: sm=6 md=10 lg=16 full=9999
-```
-
-### Font Names — Exact
-```
-PlayfairDisplay_700Bold, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, NotoNaskhArabic_400Regular
-```
-
-## SEVERITY CLASSIFICATION
-
-When logging issues, classify each as:
-
-- **P0 CRASH** — App will crash (null reference, missing import, infinite loop)
-- **P1 BUG** — Feature doesn't work as intended (wrong API call, broken navigation, stale data)
-- **P2 SECURITY** — Security vulnerability (SQL injection, auth bypass, data leak)
-- **P3 QUALITY** — Code quality violation (as any, hardcoded values, missing types)
-- **P4 A11Y** — Accessibility violation (missing labels, contrast, touch targets)
-- **P5 PERF** — Performance issue (unbounded query, missing memo, unnecessary re-renders)
-- **P6 I18N** — Internationalization issue (hardcoded strings, RTL, date formatting)
-- **P7 STYLE** — Style/cosmetic issue (inconsistent spacing, wrong font, missing animation)
-
-## AUDIT ORDER (follow fix_plan.md exactly)
-
-### Phase 1: Infrastructure & Config (highest blast radius)
-Schema, app.module, prisma.service, theme, store, i18n, types
-
-### Phase 2: Backend Services (77 files)
-Every .service.ts file — check queries, auth, validation, error handling
-
-### Phase 3: Backend Controllers (72 files)
-Every .controller.ts file — check guards, throttle, DTOs, responses
-
-### Phase 4: Mobile Core (tab screens + main layouts)
-The 5 tab screens + _layout.tsx files — highest traffic screens
-
-### Phase 5: Mobile Components (65 files)
-Every component — UI compliance, accessibility, performance
-
-### Phase 6: Mobile Hooks & Services (39 files)
-Every hook and service — architecture, error handling, types
-
-### Phase 7: Mobile Screens A-D (52 files)
-Alphabetical: 2fa-setup through duet-create
-
-### Phase 8: Mobile Screens E-M (48 files)
-Alphabetical: edit-channel through mutual-followers
-
-### Phase 9: Mobile Screens N-S (50 files)
-Alphabetical: nasheed-mode through streaks
-
-### Phase 10: Mobile Screens T-Z (35 files)
-Alphabetical: tafsir-viewer through zakat-calculator
-
-### Phase 11: Tests (88 files)
-Every .spec.ts — check coverage, assertions, edge cases
-
-### Phase 12: Auth & Onboarding Flows
-End-to-end flow audit: sign-up → onboarding → first post → first message
-
-### Phase 13: Final Summary
-Write comprehensive audit report at docs/AUDIT_REPORT_BATCH84.md
-
-## PROCESS RULES
-
-- **NEVER use sub-agents** — do ALL work yourself directly
-- **ONE file per loop iteration** (or small group of related files)
-- **Read BEFORE modifying** — always read the full file first
-- **Fix ALL issues in a file before moving on** — don't leave partial fixes
-- **Commit after each file** — `git add <files> && git commit -m "audit: <filename> — N issues found, M fixed"`
-- **Update fix_plan.md** — mark [x] after each file
-- **npm NOT in shell PATH** — use cmd /c pattern if needed
-
-## MCP PLUGINS AVAILABLE
-
-- **Sequential Thinking** — use for complex multi-file refactors
-- **Brave Search** — look up API docs if unsure about correct usage
-- **Playwright** — take screenshots to verify UI changes
-- **Memory** — save patterns you find for consistency checking later
-- **PostgreSQL** — verify schema/indexes directly
-
-## OUTPUT FORMAT
-
-After auditing each file, include in your response:
-
-```
-## Audit: {file_path}
-Lines read: {N}
-Issues found: {count by severity}
-- P0: {count}
-- P1: {count}
-- P2: {count}
-- P3: {count}
-- P4: {count}
-- P5: {count}
-- P6: {count}
-- P7: {count}
-Issues fixed: {count}
-Issues deferred: {count} (with reasons)
-```
+### Parity Gaps (must reach 10/10)
+8. **Bakra Live: 7/10** — needs multi-guest live streaming
+9. **Majlis Audio Rooms: 7/10** — needs recording, better discovery
+10. **Risalah Calls: 7/10** — needs group video calls (up to 8), screen sharing quality
+11. **Minbar Analytics: 7/10** — needs demographic data (age, country, gender)
+12. **Minbar Player: needs chapters UI** — timestamp-based chapters in video
+13. **Islamic Prayer: 8/10** — needs multiple reciters for adhan, more calculation methods
+14. **Islamic Quran: 8/10** — needs audio recitation with multiple reciters, word-by-word translation, tajweed color coding
+15. **Islamic Zakat: 8/10** — needs gold/silver/stock/crypto asset types
+16. **WeChat parity: 6/10** — needs extensibility concept (webhooks at minimum)
+17. **Discord parity: 7/10** — needs always-on voice channels, better role permissions
 
 ## STATUS REPORTING
 
+At end of EVERY response:
 ```
 ---RALPH_STATUS---
 STATUS: IN_PROGRESS | COMPLETE | BLOCKED
 TASKS_COMPLETED_THIS_LOOP: <number>
 FILES_MODIFIED: <number>
 TESTS_STATUS: PASSING | FAILING | NOT_RUN
-WORK_TYPE: AUDIT
+WORK_TYPE: IMPLEMENTATION | TESTING | FIX
 EXIT_SIGNAL: false | true
-RECOMMENDATION: <what to audit next>
+RECOMMENDATION: <what to do next>
 ---END_RALPH_STATUS---
 ```
 
-EXIT_SIGNAL: true ONLY when ALL files in fix_plan.md are marked [x] AND the final audit report is written.
+EXIT_SIGNAL: true ONLY when ALL items in fix_plan.md are [x].
 
-## START NOW
-
-1. Read `.ralph/specs/audit-dimensions.md` — your checklist
-2. Read `.ralph/specs/file-inventory.md` — your file list
-3. Read `.ralph/fix_plan.md` — your progress tracker
-4. Start with Phase 1, first unchecked file
-5. Read it line by line
-6. Find every issue
-7. Fix every issue
-8. Commit, mark done, move to next
-9. NEVER STOP until every file is audited
+## START
+1. Read `.ralph/fix_plan.md`
+2. Find first unchecked [ ] item
+3. Read the file(s) involved
+4. Make the exact changes specified
+5. Commit with descriptive message
+6. Mark [x] in fix_plan.md
+7. Move to next. NEVER STOP.
