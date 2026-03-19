@@ -1,9 +1,9 @@
-import { useState, useCallback } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { memo, useState, useCallback } from 'react';
+import { memo, View, Text, Pressable, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeOut, Layout } from 'react-native-reanimated';
-import { Icon } from '@/components/ui/Icon';
-import { colors, spacing, fontSize, radius, fonts } from '@/theme';
-import { useTranslation } from '@/hooks/useTranslation';
+import { memo, Icon } from '@/components/ui/Icon';
+import { memo, colors, spacing, fontSize, radius, fonts } from '@/theme';
+import { memo, useTranslation } from '@/hooks/useTranslation';
 
 interface AlgorithmCardProps {
   reasons: string[];
@@ -11,7 +11,7 @@ interface AlgorithmCardProps {
   onNotInterested: () => void;
 }
 
-export function AlgorithmCard({ reasons, onDismiss, onNotInterested }: AlgorithmCardProps) {
+export const AlgorithmCard = memo(function AlgorithmCard({ reasons, onDismiss, onNotInterested }: AlgorithmCardProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
@@ -68,7 +68,7 @@ export function AlgorithmCard({ reasons, onDismiss, onNotInterested }: Algorithm
       </View>
     </Animated.View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

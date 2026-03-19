@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { memo, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -7,10 +7,10 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Icon } from '@/components/ui/Icon';
-import { animation, colors, fontSize, radius, spacing } from '@/theme';
+import { memo, Icon } from '@/components/ui/Icon';
+import { memo, animation, colors, fontSize, radius, spacing } from '@/theme';
 
-export function CaughtUpCard() {
+export const CaughtUpCard = memo(function CaughtUpCard() {
   const checkScale = useSharedValue(0);
   const ringScale = useSharedValue(0.8);
   const ringOpacity = useSharedValue(0);
@@ -72,7 +72,7 @@ export function CaughtUpCard() {
       </Animated.Text>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

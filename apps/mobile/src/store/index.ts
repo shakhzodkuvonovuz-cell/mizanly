@@ -123,6 +123,10 @@ interface AppState {
   parentalRestrictions: ParentalRestrictions | null;
   setParentalRestrictions: (r: ParentalRestrictions | null) => void;
 
+  // Story viewer (avoids JSON.stringify in route params)
+  storyViewerData: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null;
+  setStoryViewerData: (data: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null) => void;
+
   logout: () => void;
 }
 
@@ -265,6 +269,10 @@ export const useStore = create<AppState>()(
       setIsChildAccount: (isChildAccount) => set({ isChildAccount }),
       parentalRestrictions: null,
       setParentalRestrictions: (parentalRestrictions) => set({ parentalRestrictions }),
+
+      // Story viewer
+      storyViewerData: null,
+      setStoryViewerData: (storyViewerData) => set({ storyViewerData }),
 
       // Auth actions
       logout: () => set({

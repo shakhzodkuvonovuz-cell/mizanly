@@ -1,7 +1,7 @@
-import { FlatList, View, StyleSheet } from 'react-native';
-import { useUser } from '@clerk/clerk-expo';
-import { StoryBubble } from './StoryBubble';
-import { colors, spacing } from '@/theme';
+import { memo, FlatList, View, StyleSheet } from 'react-native';
+import { memo, useUser } from '@clerk/clerk-expo';
+import { memo, StoryBubble } from './StoryBubble';
+import { memo, colors, spacing } from '@/theme';
 import type { StoryGroup } from '@/types';
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   onPressOwn: () => void;
 }
 
-export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
+export const StoryRow = memo(function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
   const { user } = useUser();
 
   // Build own story slot — use API data if available so ring shows when they have stories
@@ -49,7 +49,7 @@ export function StoryRow({ groups, onPressGroup, onPressOwn }: Props) {
       style={styles.row}
     />
   );
-}
+});
 
 const styles = StyleSheet.create({
   row: { borderBottomWidth: 0.5, borderBottomColor: colors.dark.border },

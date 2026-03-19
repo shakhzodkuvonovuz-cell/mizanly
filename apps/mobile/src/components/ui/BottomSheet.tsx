@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { View, StyleSheet, Pressable, useWindowDimensions, Platform } from 'react-native';
 import Animated, {
@@ -125,7 +125,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
 }
 
 // Convenience component for menu items inside BottomSheet
-export function BottomSheetItem({ label, icon, onPress, destructive, disabled }: {
+export const BottomSheetItem = memo(function BottomSheetItem({ label, icon, onPress, destructive, disabled }: {
   label: string;
   icon?: React.ReactNode;
   onPress: () => void;
@@ -165,7 +165,7 @@ export function BottomSheetItem({ label, icon, onPress, destructive, disabled }:
       </Animated.Text>
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   backdrop: {

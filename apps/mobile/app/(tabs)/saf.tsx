@@ -125,19 +125,15 @@ export default function SafScreen() {
     <View>
       <StoryRow
         groups={storyGroups}
-        onPressGroup={(group) =>
-          router.push({
-            pathname: '/(screens)/story-viewer',
-            params: { groupJson: JSON.stringify(group), startIndex: '0' },
-          })
-        }
+        onPressGroup={(group) => {
+          useStore.getState().setStoryViewerData({ groups: storyGroups, startIndex: storyGroups.indexOf(group) });
+          router.push('/(screens)/story-viewer');
+        }}
         onPressOwn={() => {
           const ownGroup = storyGroups.find((g) => g.user.id === user?.id);
           if (ownGroup && ownGroup.stories.length > 0) {
-            router.push({
-              pathname: '/(screens)/story-viewer',
-              params: { groupJson: JSON.stringify(ownGroup), startIndex: '0', isOwn: 'true' },
-            });
+            useStore.getState().setStoryViewerData({ groups: storyGroups, startIndex: storyGroups.indexOf(ownGroup), isOwn: true });
+            router.push('/(screens)/story-viewer');
           } else {
             router.push('/(screens)/create-story');
           }
