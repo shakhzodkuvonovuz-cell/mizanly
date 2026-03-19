@@ -2739,6 +2739,20 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "seriesEnhanced": {
+    "episodes": "Episode",
+    "episode": "Episode {{num}}",
+    "subscribe": "Berlangganan",
+    "subscribed": "Berlangganan",
+    "continueWatching": "Lanjutkan Menonton",
+    "nextEpisodeIn": "Episode berikutnya dalam {{seconds}} detik",
+    "playNext": "Putar Selanjutnya",
+    "seriesComplete": "Seri Selesai!",
+    "newSeries": "Seri Baru",
+    "trendingSeries": "Seri Trending",
+    "categories": "Kategori",
+    "progress": "{{percent}}% selesai"
+  },
   "flipside": {
     "title": "Profil Flipside",
     "create": "Buat Flipside",

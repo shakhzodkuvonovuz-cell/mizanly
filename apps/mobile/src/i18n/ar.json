@@ -2738,6 +2738,20 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "seriesEnhanced": {
+    "episodes": "الحلقات",
+    "episode": "الحلقة {{num}}",
+    "subscribe": "اشتراك",
+    "subscribed": "مشترك",
+    "continueWatching": "متابعة المشاهدة",
+    "nextEpisodeIn": "الحلقة التالية في {{seconds}} ثانية",
+    "playNext": "تشغيل التالي",
+    "seriesComplete": "اكتمل المسلسل!",
+    "newSeries": "مسلسلات جديدة",
+    "trendingSeries": "مسلسلات رائجة",
+    "categories": "الفئات",
+    "progress": "{{percent}}% مكتمل"
+  },
   "flipside": {
     "title": "الملف الشخصي البديل",
     "create": "إنشاء ملف بديل",

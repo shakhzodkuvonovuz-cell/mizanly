@@ -2738,6 +2738,20 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "seriesEnhanced": {
+    "episodes": "Bölümler",
+    "episode": "Bölüm {{num}}",
+    "subscribe": "Abone Ol",
+    "subscribed": "Abone",
+    "continueWatching": "İzlemeye Devam Et",
+    "nextEpisodeIn": "Sonraki bölüm {{seconds}} saniye sonra",
+    "playNext": "Sonrakini Oynat",
+    "seriesComplete": "Dizi Tamamlandı!",
+    "newSeries": "Yeni Diziler",
+    "trendingSeries": "Trend Diziler",
+    "categories": "Kategoriler",
+    "progress": "%{{percent}} tamamlandı"
+  },
   "flipside": {
     "title": "Alternatif Profil",
     "create": "Flipside Oluştur",

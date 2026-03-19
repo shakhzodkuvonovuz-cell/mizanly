@@ -488,6 +488,78 @@ export class GamificationService {
     };
   }
 
+  // ── Series Progress Tracking ────────────────────────────
+
+  async updateSeriesProgress(userId: string, seriesId: string, episodeNum: number, timestamp: number) {
+    return this.prisma.seriesProgress.upsert({
+      where: { seriesId_userId: { seriesId, userId } },
+      create: {
+        seriesId,
+        userId,
+        lastEpisodeNum: episodeNum,
+        lastTimestamp: timestamp,
+      },
+      update: {
+        lastEpisodeNum: episodeNum,
+        lastTimestamp: timestamp,
+      },
+    });
+  }
+
+  async getSeriesProgress(userId: string, seriesId: string) {
+    return this.prisma.seriesProgress.findUnique({
+      where: { seriesId_userId: { seriesId, userId } },
+    });
+  }
+
+  async getContinueWatching(userId: string) {
+    const progress = await this.prisma.seriesProgress.findMany({
+      where: { userId },
+      orderBy: { updatedAt: 'desc' },
+      take: 10,
+    });
+
+    if (progress.length === 0) return [];
+
+    const seriesIds = progress.map(p => p.seriesId);
+    const seriesList = await this.prisma.series.findMany({
+      where: { id: { in: seriesIds } },
+      include: {
+        creator: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+        episodes: { orderBy: { number: 'asc' }, select: { number: true, title: true, duration: true, thumbnailUrl: true } },
+      },
+    });
+
+    const seriesMap = new Map(seriesList.map(s => [s.id, s]));
+
+    return progress.map(p => {
+      const series = seriesMap.get(p.seriesId);
+      if (!series) return null;
+
+      const currentEpisode = series.episodes.find(e => e.number === p.lastEpisodeNum);
+      const totalDuration = currentEpisode?.duration || 0;
+      const progressPercent = totalDuration > 0 ? Math.round((p.lastTimestamp / totalDuration) * 100) : 0;
+
+      return {
+        series: {
+          id: series.id,
+          title: series.title,
+          coverUrl: series.coverUrl,
+          creator: series.creator,
+          episodeCount: series.episodeCount,
+        },
+        currentEpisode: {
+          number: p.lastEpisodeNum,
+          title: currentEpisode?.title || `Episode ${p.lastEpisodeNum}`,
+          thumbnailUrl: currentEpisode?.thumbnailUrl || null,
+        },
+        timestamp: p.lastTimestamp,
+        progressPercent,
+        updatedAt: p.updatedAt,
+      };
+    }).filter(Boolean);
+  }
+
   // ── Profile Customization ───────────────────────────────
 
   async getProfileCustomization(userId: string) {

@@ -2820,18 +2820,22 @@ model Series {
 }
 
 model SeriesEpisode {
-  id         String    @id @default(uuid())
-  seriesId   String
-  number     Int
-  title      String    @db.VarChar(200)
-  postId     String? // linked post/reel/video
-  reelId     String?
-  videoId    String?
-  releasedAt DateTime?
-  createdAt  DateTime  @default(now())
-  series     Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
+  id           String    @id @default(uuid())
+  seriesId     String
+  number       Int
+  title        String    @db.VarChar(200)
+  videoUrl     String?
+  thumbnailUrl String?
+  duration     Int?      // seconds
+  postId       String?
+  reelId       String?
+  videoId      String?
+  releasedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  series       Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
   @@unique([seriesId, number])
+  @@index([seriesId, number])
   @@map("series_episodes")
 }
 
@@ -2844,6 +2848,18 @@ model SeriesFollower {
   @@id([seriesId, userId])
   @@index([userId])
   @@map("series_followers")
+}
+
+model SeriesProgress {
+  id             String   @id @default(cuid())
+  seriesId       String
+  userId         String
+  lastEpisodeNum Int
+  lastTimestamp   Int      @default(0)
+  updatedAt      DateTime @updatedAt
+
+  @@unique([seriesId, userId])
+  @@map("series_progress")
 }
 
 model ProfileCustomization {

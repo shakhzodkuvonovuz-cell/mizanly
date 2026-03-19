@@ -2739,6 +2739,20 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "seriesEnhanced": {
+    "episodes": "Épisodes",
+    "episode": "Épisode {{num}}",
+    "subscribe": "S'abonner",
+    "subscribed": "Abonné",
+    "continueWatching": "Continuer à regarder",
+    "nextEpisodeIn": "Prochain épisode dans {{seconds}}s",
+    "playNext": "Lire le suivant",
+    "seriesComplete": "Série terminée !",
+    "newSeries": "Nouvelles séries",
+    "trendingSeries": "Séries tendance",
+    "categories": "Catégories",
+    "progress": "{{percent}}% terminé"
+  },
   "flipside": {
     "title": "Profil Flipside",
     "create": "Créer Flipside",

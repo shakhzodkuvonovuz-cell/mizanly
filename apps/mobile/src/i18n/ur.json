@@ -2739,6 +2739,20 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "seriesEnhanced": {
+    "episodes": "اقساط",
+    "episode": "قسط {{num}}",
+    "subscribe": "سبسکرائب",
+    "subscribed": "سبسکرائب شدہ",
+    "continueWatching": "دیکھنا جاری رکھیں",
+    "nextEpisodeIn": "اگلی قسط {{seconds}} سیکنڈ میں",
+    "playNext": "اگلا چلائیں",
+    "seriesComplete": "سیریز مکمل!",
+    "newSeries": "نئی سیریز",
+    "trendingSeries": "ٹرینڈنگ سیریز",
+    "categories": "زمرے",
+    "progress": "{{percent}}% مکمل"
+  },
   "flipside": {
     "title": "متبادل پروفائل",
     "create": "فلپ سائیڈ بنائیں",

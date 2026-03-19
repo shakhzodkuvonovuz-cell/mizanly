@@ -2738,6 +2738,20 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "seriesEnhanced": {
+    "episodes": "Episod",
+    "episode": "Episod {{num}}",
+    "subscribe": "Langgan",
+    "subscribed": "Dilanggan",
+    "continueWatching": "Teruskan Menonton",
+    "nextEpisodeIn": "Episod seterusnya dalam {{seconds}} saat",
+    "playNext": "Main Seterusnya",
+    "seriesComplete": "Siri Selesai!",
+    "newSeries": "Siri Baharu",
+    "trendingSeries": "Siri Trending",
+    "categories": "Kategori",
+    "progress": "{{percent}}% selesai"
+  },
   "flipside": {
     "title": "Profil Flipside",
     "create": "Cipta Flipside",

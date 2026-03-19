@@ -2738,6 +2738,20 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "seriesEnhanced": {
+    "episodes": "Episodes",
+    "episode": "Episode {{num}}",
+    "subscribe": "Subscribe",
+    "subscribed": "Subscribed",
+    "continueWatching": "Continue Watching",
+    "nextEpisodeIn": "Next episode in {{seconds}}s",
+    "playNext": "Play Next",
+    "seriesComplete": "Series Complete!",
+    "newSeries": "New Series",
+    "trendingSeries": "Trending Series",
+    "categories": "Categories",
+    "progress": "{{percent}}% complete"
+  },
   "flipside": {
     "title": "Flipside Profile",
     "create": "Create Flipside",

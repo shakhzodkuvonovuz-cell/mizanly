@@ -2738,6 +2738,20 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "seriesEnhanced": {
+    "episodes": "পর্বসমূহ",
+    "episode": "পর্ব {{num}}",
+    "subscribe": "সাবস্ক্রাইব",
+    "subscribed": "সাবস্ক্রাইব করা হয়েছে",
+    "continueWatching": "দেখা চালিয়ে যান",
+    "nextEpisodeIn": "পরবর্তী পর্ব {{seconds}} সেকেন্ডে",
+    "playNext": "পরেরটি চালান",
+    "seriesComplete": "সিরিজ সম্পূর্ণ!",
+    "newSeries": "নতুন সিরিজ",
+    "trendingSeries": "ট্রেন্ডিং সিরিজ",
+    "categories": "বিভাগসমূহ",
+    "progress": "{{percent}}% সম্পূর্ণ"
+  },
   "flipside": {
     "title": "ফ্লিপসাইড প্রোফাইল",
     "create": "ফ্লিপসাইড তৈরি করুন",

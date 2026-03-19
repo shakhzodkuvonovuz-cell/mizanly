@@ -160,6 +160,36 @@ export class GamificationController {
     return this.gamificationService.unfollowSeries(userId, id);
   }
 
+  // ── Series Progress ────────────────────────────────────
+
+  @Put('series/:id/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Update series watch progress' })
+  updateProgress(
+    @CurrentUser('id') userId: string,
+    @Param('id') seriesId: string,
+    @Body() body: { episodeNum: number; timestamp: number },
+  ) {
+    return this.gamificationService.updateSeriesProgress(userId, seriesId, body.episodeNum, body.timestamp);
+  }
+
+  @Get('series/:id/progress')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get series watch progress' })
+  getProgress(
+    @CurrentUser('id') userId: string,
+    @Param('id') seriesId: string,
+  ) {
+    return this.gamificationService.getSeriesProgress(userId, seriesId);
+  }
+
+  @Get('series/continue-watching')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Get continue watching list' })
+  continueWatching(@CurrentUser('id') userId: string) {
+    return this.gamificationService.getContinueWatching(userId);
+  }
+
   // ── Profile Customization ───────────────────────────────
 
   @Get('profile-customization')
