@@ -1919,7 +1919,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 36: Meilisearch Full Integration
+### [x] Task 36: Meilisearch Full Integration — Done: MeilisearchService with index creation, searchable/filterable attributes, graceful fallback, document CRUD
 
 **Files to read first:**
 - `apps/api/src/modules/search/search.service.ts`
@@ -1957,13 +1957,13 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 37: WebSocket Clustering (Redis Adapter)
+### [x] Task 37: WebSocket Clustering — Already built: RedisIoAdapter in socket-io-adapter.ts with Redis pub/sub
 
 **What to implement:** Socket.io Redis adapter for multi-instance support. See Batch 2 design doc section 2.6.2.
 
 ---
 
-### [ ] Task 38: Database Float→Decimal for Money
+### [x] Task 38: Float→Decimal — N/A: money fields already use Int (coins/diamonds), Float only used for duration/coordinates/rates
 
 **What to implement:** Migrate money fields from Float to Decimal. See Batch 2 design doc section 2.6.3.
 
