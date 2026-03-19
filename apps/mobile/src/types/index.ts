@@ -605,6 +605,8 @@ export interface SuggestedUser {
   isVerified: boolean;
   bio?: string;
   mutualFollowers?: number;
+  followersCount?: number;
+  postsCount?: number;
 }
 
 export interface CreatorStat {

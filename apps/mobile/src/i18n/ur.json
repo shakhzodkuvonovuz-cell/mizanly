@@ -2674,5 +2674,13 @@
     "message": "Consider taking a break and coming back refreshed",
     "continueScrolling": "Continue Scrolling",
     "closeApp": "Close for now"
+  },
+  "feed": {
+    "trending": "ٹرینڈنگ",
+    "featured": "نمایاں",
+    "exploreFirstTitle": "میزانلی میں خوش آمدید",
+    "exploreFirstSubtitle": "اپنی فیڈ بنانے کے لیے تخلیق کاروں کو فالو کریں",
+    "suggestedForYou": "آپ کے لیے تجویز کردہ",
+    "followToSeeMore": "ان کی پوسٹس اپنی فیڈ میں دیکھنے کے لیے فالو کریں"
   }
 }

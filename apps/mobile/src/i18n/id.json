@@ -2674,5 +2674,13 @@
     "message": "Consider taking a break and coming back refreshed",
     "continueScrolling": "Continue Scrolling",
     "closeApp": "Close for now"
+  },
+  "feed": {
+    "trending": "Trending",
+    "featured": "Unggulan",
+    "exploreFirstTitle": "Selamat datang di Mizanly",
+    "exploreFirstSubtitle": "Ikuti kreator untuk membangun feed Anda",
+    "suggestedForYou": "Disarankan untuk Anda",
+    "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
   }
 }

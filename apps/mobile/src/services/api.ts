@@ -1042,6 +1042,12 @@ export const feedApi = {
     api.post('/feed/session-signal', data),
   getNearby: (lat: number, lng: number, radiusKm?: number, cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/feed/nearby?lat=${lat}&lng=${lng}${radiusKm ? `&radiusKm=${radiusKm}` : ''}${cursor ? `&cursor=${cursor}` : ''}`),
+  getTrending: (cursor?: string, limit?: number) =>
+    api.get<PaginatedResponse<Post>>(`/feed/trending${qs({ cursor, limit })}`),
+  getFeatured: (cursor?: string, limit?: number) =>
+    api.get<PaginatedResponse<Post>>(`/feed/featured${qs({ cursor, limit })}`),
+  getSuggestedUsers: (limit = 5) =>
+    api.get<SuggestedUser[]>(`/feed/suggested-users${qs({ limit })}`),
 };
 
 // ── Moderation (user-facing appeal endpoints) ──

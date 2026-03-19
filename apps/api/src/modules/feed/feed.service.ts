@@ -1,6 +1,43 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { ContentSpace, Prisma } from '@prisma/client';
+import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
+
+const FEED_POST_SELECT = {
+  id: true,
+  postType: true,
+  content: true,
+  visibility: true,
+  mediaUrls: true,
+  mediaTypes: true,
+  thumbnailUrl: true,
+  mediaWidth: true,
+  mediaHeight: true,
+  hashtags: true,
+  mentions: true,
+  locationName: true,
+  likesCount: true,
+  commentsCount: true,
+  sharesCount: true,
+  savesCount: true,
+  viewsCount: true,
+  hideLikesCount: true,
+  commentsDisabled: true,
+  isSensitive: true,
+  isFeatured: true,
+  isRemoved: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      avatarUrl: true,
+      isVerified: true,
+    },
+  },
+  circle: { select: { id: true, name: true, slug: true } },
+};
 
 @Injectable()
 export class FeedService {
@@ -109,6 +146,151 @@ export class FeedService {
     }
 
     return where;
+  }
+
+  /**
+   * Trending feed — posts from last 7 days scored by engagement rate.
+   * Works without auth (for anonymous browsing + new user cold start).
+   */
+  async getTrendingFeed(cursor?: string, limit = 20) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        isRemoved: false,
+        visibility: PostVisibility.PUBLIC,
+        scheduledAt: null,
+        createdAt: { gte: sevenDaysAgo },
+        user: { isDeactivated: false, isPrivate: false },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: FEED_POST_SELECT,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    // Score by engagement RATE, not total
+    const scored = posts.map((post) => {
+      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+      const engagementTotal =
+        post.likesCount +
+        post.commentsCount * 2 +
+        post.sharesCount * 3 +
+        post.savesCount * 2;
+      const engagementRate = engagementTotal / ageHours;
+      return { ...post, _score: engagementRate };
+    });
+
+    scored.sort((a, b) => b._score - a._score);
+    const page = scored.slice(0, limit + 1);
+    const hasMore = page.length > limit;
+    const data = (hasMore ? page.slice(0, limit) : page).map(
+      ({ _score, ...post }) => post,
+    );
+
+    return {
+      data,
+      meta: {
+        hasMore,
+        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+      },
+    };
+  }
+
+  /**
+   * Featured / staff-picked posts — editorial control over what new users see.
+   */
+  async getFeaturedFeed(cursor?: string, limit = 20) {
+    const posts = await this.prisma.post.findMany({
+      where: {
+        isFeatured: true,
+        isRemoved: false,
+        visibility: PostVisibility.PUBLIC,
+        user: { isDeactivated: false },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: FEED_POST_SELECT,
+      orderBy: { featuredAt: 'desc' },
+      take: limit + 1,
+    });
+
+    const hasMore = posts.length > limit;
+    const data = hasMore ? posts.slice(0, limit) : posts;
+
+    return {
+      data,
+      meta: {
+        hasMore,
+        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+      },
+    };
+  }
+
+  /**
+   * Feature or unfeature a post (admin only).
+   */
+  async featurePost(postId: string, featured: boolean) {
+    return this.prisma.post.update({
+      where: { id: postId },
+      data: {
+        isFeatured: featured,
+        featuredAt: featured ? new Date() : null,
+      },
+      select: { id: true, isFeatured: true, featuredAt: true },
+    });
+  }
+
+  /**
+   * Suggested users to follow — scored by followers, content, verification, and language.
+   * Works without auth for anonymous users.
+   */
+  async getSuggestedUsers(userId?: string, limit = 5) {
+    // Get IDs to exclude: the user's own ID + already followed
+    const excludeIds: string[] = userId ? [userId] : [];
+    if (userId) {
+      const following = await this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
+        take: 50,
+      });
+      excludeIds.push(...following.map((f) => f.followingId));
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        isDeactivated: false,
+        isPrivate: false,
+        ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
+      },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        bio: true,
+        isVerified: true,
+        followersCount: true,
+        postsCount: true,
+      },
+      orderBy: [
+        { isVerified: 'desc' },
+        { followersCount: 'desc' },
+        { postsCount: 'desc' },
+      ],
+      take: limit,
+    });
+
+    return users;
+  }
+
+  /**
+   * Get the follow count for a user. Returns 0 if user not found.
+   */
+  async getUserFollowingCount(userId: string): Promise<number> {
+    const count = await this.prisma.follow.count({
+      where: { followerId: userId },
+    });
+    return count;
   }
 
   async getNearbyContent(lat: number, lng: number, radiusKm: number, cursor?: string, userId?: string) {

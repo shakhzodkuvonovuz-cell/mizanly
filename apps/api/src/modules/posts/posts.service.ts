@@ -157,7 +157,7 @@ export class PostsService {
       return finalResult;
     }
 
-    // Following feed (unchanged)
+    // Following feed — with zero-follow fallback to trending
     const [follows, blocks, mutes] = await Promise.all([
       this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true },
       take: 50,
@@ -171,12 +171,23 @@ export class PostsService {
     ]);
 
     const followingIds = follows.map((f) => f.followingId);
+    const followCount = followingIds.length;
     const excludedIds = [
       ...blocks.map((b) => b.blockedId),
       ...mutes.map((m) => m.mutedId),
     ];
 
-    // Bug fix: compute visible IDs upfront to avoid in+notIn conflict
+    // Zero follows → return trending content so feed is never empty
+    if (followCount === 0) {
+      return this.getTrendingFallback(userId, excludedIds, cursor, limit);
+    }
+
+    // Few follows (< 10) → blend 50% following + 50% trending
+    if (followCount < 10) {
+      return this.getBlendedFeed(userId, followingIds, excludedIds, cursor, limit);
+    }
+
+    // Normal following feed
     const excludedSet = new Set(excludedIds);
     const visibleUserIds = [userId, ...followingIds.filter(id => !excludedSet.has(id))];
 
@@ -203,6 +214,114 @@ export class PostsService {
     };
 
     return result;
+  }
+
+  /**
+   * Trending fallback for users with zero follows.
+   * Returns engagement-rate-scored posts from last 7 days.
+   */
+  private async getTrendingFallback(userId: string, excludedIds: string[], cursor?: string, limit = 20) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const posts = await this.prisma.post.findMany({
+      where: {
+        isRemoved: false,
+        visibility: 'PUBLIC',
+        scheduledAt: null,
+        createdAt: { gte: sevenDaysAgo },
+        user: { isDeactivated: false, isPrivate: false },
+        ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: POST_SELECT,
+      take: 200,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const scored = posts.map(post => {
+      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+      const engagement = post.likesCount + post.commentsCount * 2 + post.sharesCount * 3 + post.savesCount * 2;
+      return { ...post, _score: engagement / ageHours };
+    });
+    scored.sort((a, b) => b._score - a._score);
+
+    const page = scored.slice(0, limit + 1);
+    const hasMore = page.length > limit;
+    const data = (hasMore ? page.slice(0, limit) : page).map(({ _score, ...p }) => p);
+    const enriched = await this.enrichPostsForUser(data, userId);
+
+    return {
+      data: enriched,
+      meta: { cursor: data.length > 0 ? data[data.length - 1].id : null, hasMore },
+    };
+  }
+
+  /**
+   * Blended feed for users with few follows (< 10).
+   * 50% following content + 50% trending content, merged and deduplicated.
+   */
+  private async getBlendedFeed(userId: string, followingIds: string[], excludedIds: string[], cursor?: string, limit = 20) {
+    const excludedSet = new Set(excludedIds);
+    const visibleUserIds = [userId, ...followingIds.filter(id => !excludedSet.has(id))];
+    const halfLimit = Math.ceil(limit / 2);
+
+    // Get following content
+    const followingPosts = await this.prisma.post.findMany({
+      where: {
+        isRemoved: false,
+        scheduledAt: null,
+        userId: { in: visibleUserIds },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: POST_SELECT,
+      take: halfLimit + 1,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Get trending content to fill the rest
+    const seenIds = new Set(followingPosts.map(p => p.id));
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const trendingPosts = await this.prisma.post.findMany({
+      where: {
+        isRemoved: false,
+        visibility: 'PUBLIC',
+        scheduledAt: null,
+        createdAt: { gte: sevenDaysAgo },
+        user: { isDeactivated: false, isPrivate: false },
+        id: { notIn: [...seenIds] },
+        ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+      },
+      select: POST_SELECT,
+      take: 200,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Score trending by engagement rate
+    const scoredTrending = trendingPosts.map(post => {
+      const ageHours = Math.max(1, (Date.now() - post.createdAt.getTime()) / 3600000);
+      const engagement = post.likesCount + post.commentsCount * 2 + post.sharesCount * 3 + post.savesCount * 2;
+      return { ...post, _score: engagement / ageHours };
+    });
+    scoredTrending.sort((a, b) => b._score - a._score);
+    const trendingSlice = scoredTrending.slice(0, halfLimit).map(({ _score, ...p }) => p);
+
+    // Interleave: following, trending, following, trending...
+    const merged: typeof followingPosts = [];
+    const fi = followingPosts.slice(0, halfLimit);
+    const ti = trendingSlice;
+    const maxLen = Math.max(fi.length, ti.length);
+    for (let i = 0; i < maxLen && merged.length < limit; i++) {
+      if (i < fi.length) merged.push(fi[i]);
+      if (i < ti.length && merged.length < limit) merged.push(ti[i]);
+    }
+
+    const hasMore = followingPosts.length > halfLimit || scoredTrending.length > halfLimit;
+    const enriched = await this.enrichPostsForUser(merged, userId);
+
+    return {
+      data: enriched,
+      meta: { cursor: merged.length > 0 ? merged[merged.length - 1].id : null, hasMore },
+    };
   }
 
   private async getChronologicalFeed(userId: string, cursor?: string, limit = 20) {

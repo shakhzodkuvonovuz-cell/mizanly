@@ -2673,5 +2673,13 @@
     "message": "Consider taking a break and coming back refreshed",
     "continueScrolling": "Continue Scrolling",
     "closeApp": "Close for now"
+  },
+  "feed": {
+    "trending": "ট্রেন্ডিং",
+    "featured": "বৈশিষ্ট্যযুক্ত",
+    "exploreFirstTitle": "মিজানলিতে স্বাগতম",
+    "exploreFirstSubtitle": "আপনার ফিড তৈরি করতে নির্মাতাদের অনুসরণ করুন",
+    "suggestedForYou": "আপনার জন্য প্রস্তাবিত",
+    "followToSeeMore": "তাদের পোস্ট আপনার ফিডে দেখতে অনুসরণ করুন"
   }
 }

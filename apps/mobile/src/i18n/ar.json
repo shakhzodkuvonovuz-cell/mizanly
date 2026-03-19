@@ -2673,5 +2673,13 @@
     "loadErrorTitle": "تعذر تحميل الملف الشخصي",
     "loadErrorSubtitle": "يرجى المحاولة لاحقاً",
     "urlPlaceholder": "الرابط (https://...)"
+  },
+  "feed": {
+    "trending": "الأكثر رواجاً",
+    "featured": "المميز",
+    "exploreFirstTitle": "مرحباً بك في ميزانلي",
+    "exploreFirstSubtitle": "تابع المبدعين لبناء خلاصتك",
+    "suggestedForYou": "مقترح لك",
+    "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
   }
 }

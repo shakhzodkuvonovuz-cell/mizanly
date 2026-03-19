@@ -2674,5 +2674,13 @@
     "message": "Consider taking a break and coming back refreshed",
     "continueScrolling": "Continue Scrolling",
     "closeApp": "Close for now"
+  },
+  "feed": {
+    "trending": "Tendances",
+    "featured": "En vedette",
+    "exploreFirstTitle": "Bienvenue sur Mizanly",
+    "exploreFirstSubtitle": "Suivez des créateurs pour construire votre fil",
+    "suggestedForYou": "Suggestions pour vous",
+    "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
   }
 }

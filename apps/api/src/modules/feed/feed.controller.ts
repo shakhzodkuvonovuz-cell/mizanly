@@ -1,5 +1,6 @@
-import { Controller, Post, Get, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -112,6 +113,54 @@ export class FeedController {
   ) {
     this.personalizedFeed.trackSessionSignal(userId, body);
     return { success: true };
+  }
+
+  @UseGuards(OptionalClerkAuthGuard)
+  @Get('trending')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Trending posts scored by engagement rate (anonymous-safe)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getTrending(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.feed.getTrendingFeed(cursor, limit ? parseInt(limit, 10) : 20);
+  }
+
+  @UseGuards(OptionalClerkAuthGuard)
+  @Get('featured')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Staff-picked / featured posts (anonymous-safe)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getFeatured(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.feed.getFeaturedFeed(cursor, limit ? parseInt(limit, 10) : 20);
+  }
+
+  @UseGuards(OptionalClerkAuthGuard)
+  @Get('suggested-users')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Suggested users to follow (for in-feed cards)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getSuggestedUsers(
+    @CurrentUser('id') userId: string | undefined,
+    @Query('limit') limit?: string,
+  ) {
+    return this.feed.getSuggestedUsers(userId, limit ? parseInt(limit, 10) : 5);
+  }
+
+  @UseGuards(ClerkAuthGuard)
+  @Put('admin/posts/:id/feature')
+  @ApiOperation({ summary: 'Feature or unfeature a post (admin)' })
+  async featurePost(
+    @Param('id') postId: string,
+    @Body() body: { featured: boolean },
+  ) {
+    return this.feed.featurePost(postId, body.featured);
   }
 
   @UseGuards(OptionalClerkAuthGuard)

@@ -2673,5 +2673,13 @@
     "message": "Consider taking a break and coming back refreshed",
     "continueScrolling": "Continue Scrolling",
     "closeApp": "Close for now"
+  },
+  "feed": {
+    "trending": "Trending",
+    "featured": "Pilihan",
+    "exploreFirstTitle": "Selamat datang ke Mizanly",
+    "exploreFirstSubtitle": "Ikuti pencipta untuk membina suapan anda",
+    "suggestedForYou": "Dicadangkan untuk anda",
+    "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
   }
 }

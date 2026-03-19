@@ -2673,5 +2673,13 @@
     "message": "Ara verip dinlenmiş olarak dönmeyi düşünün",
     "continueScrolling": "Gezinmeye Devam Et",
     "closeApp": "Şimdilik kapat"
+  },
+  "feed": {
+    "trending": "Trend",
+    "featured": "Öne Çıkan",
+    "exploreFirstTitle": "Mizanly'ye Hoş Geldiniz",
+    "exploreFirstSubtitle": "Akışınızı oluşturmak için içerik üreticileri takip edin",
+    "suggestedForYou": "Sizin için önerilen",
+    "followToSeeMore": "Gönderilerini akışınızda görmek için takip edin"
   }
 }
