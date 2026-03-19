@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 import { usePiP } from '@/hooks/usePiP';
+import { useAmbientColor } from '@/hooks/useAmbientColor';
 
 type PlaybackSpeed = 0.25 | 0.5 | 1 | 1.25 | 1.5 | 2;
 type VideoQuality = 'auto' | '360p' | '720p' | '1080p' | '4k';
@@ -31,6 +32,7 @@ interface VideoPlayerProps {
   isLooping?: boolean;
   autoPlay?: boolean;
   enablePiP?: boolean;
+  enableAmbient?: boolean;
   onProgress?: (progress: number) => void;
   onComplete?: () => void;
   onPiPEnter?: () => void;
@@ -45,6 +47,7 @@ export function VideoPlayer({
   isLooping,
   autoPlay = false,
   enablePiP,
+  enableAmbient = true,
   onProgress,
   onComplete,
   onPiPEnter,
@@ -65,6 +68,7 @@ export function VideoPlayer({
   const [looping, setLooping] = useState(isLooping ?? false);
 
   const haptic = useHaptic();
+  const { dominantColor, secondaryColor } = useAmbientColor(enableAmbient ? thumbnailUrl : null);
   const { isPiPSupported, enterPiP } = usePiP({
     isPlaying,
     onPiPChange: (active) => { if (active) onPiPEnter?.(); },
@@ -200,6 +204,14 @@ export function VideoPlayer({
 
   return (
     <View style={styles.container}>
+      {/* Ambient gradient background — extracts dominant color from thumbnail */}
+      {enableAmbient && dominantColor && (
+        <LinearGradient
+          colors={[dominantColor, secondaryColor || 'transparent', colors.dark.bg]}
+          locations={[0, 0.4, 1]}
+          style={styles.ambientGradient}
+        />
+      )}
       {/* Video */}
       <Pressable onPress={handleVideoPress} style={styles.videoPressable}>
         <Video
@@ -384,6 +396,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.dark.bgCard,
     borderRadius: radius.md,
     overflow: 'hidden',
+  },
+  ambientGradient: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
   },
   videoPressable: {
     flex: 1,
