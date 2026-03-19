@@ -2738,6 +2738,18 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "flipside": {
+    "title": "Flipside Profile",
+    "create": "Create Flipside",
+    "description": "A private profile visible only to select people",
+    "manageAccess": "Manage Who Can See",
+    "addPeople": "Add People",
+    "removePerson": "Remove",
+    "seeFlipside": "See Flipside",
+    "postAsFlipside": "Post to Flipside",
+    "viewingFlipside": "Viewing Flipside",
+    "backToMain": "Back to Main Profile"
+  },
   "messages": {
     "transcription": "Transcription",
     "transcribing": "Transcribing...",

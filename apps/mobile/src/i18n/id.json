@@ -2739,6 +2739,18 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "flipside": {
+    "title": "Profil Flipside",
+    "create": "Buat Flipside",
+    "description": "Profil pribadi yang hanya terlihat oleh orang tertentu",
+    "manageAccess": "Kelola Siapa yang Bisa Melihat",
+    "addPeople": "Tambah Orang",
+    "removePerson": "Hapus",
+    "seeFlipside": "Lihat Flipside",
+    "postAsFlipside": "Posting ke Flipside",
+    "viewingFlipside": "Melihat Flipside",
+    "backToMain": "Kembali ke Profil Utama"
+  },
   "messages": {
     "transcription": "Transkripsi",
     "transcribing": "Mentranskripsi...",

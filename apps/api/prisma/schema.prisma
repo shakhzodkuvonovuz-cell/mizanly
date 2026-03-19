@@ -491,6 +491,7 @@ model Post {
   isFeatured       Boolean        @default(false)
   featuredAt       DateTime?
   blurhash         String?
+  isAltProfile     Boolean        @default(false)
 
   isRemoved        Boolean           @default(false)
   removedReason    String?
@@ -1773,6 +1774,31 @@ model GeneratedSticker {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("generated_stickers")
+}
+
+model AltProfile {
+  id          String             @id @default(cuid())
+  userId      String             @unique
+  displayName String
+  bio         String?            @db.VarChar(500)
+  avatarUrl   String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  access      AltProfileAccess[]
+
+  @@map("alt_profiles")
+}
+
+model AltProfileAccess {
+  id           String     @id @default(cuid())
+  altProfileId String
+  altProfile   AltProfile @relation(fields: [altProfileId], references: [id], onDelete: Cascade)
+  userId       String
+  createdAt    DateTime   @default(now())
+
+  @@unique([altProfileId, userId])
+  @@index([userId])
+  @@map("alt_profile_access")
 }
 
 model MajlisList {

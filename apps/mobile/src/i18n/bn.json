@@ -2738,6 +2738,18 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "flipside": {
+    "title": "ফ্লিপসাইড প্রোফাইল",
+    "create": "ফ্লিপসাইড তৈরি করুন",
+    "description": "শুধুমাত্র নির্বাচিত ব্যক্তিদের জন্য একটি ব্যক্তিগত প্রোফাইল",
+    "manageAccess": "কে দেখতে পারবে তা পরিচালনা করুন",
+    "addPeople": "মানুষ যোগ করুন",
+    "removePerson": "সরান",
+    "seeFlipside": "ফ্লিপসাইড দেখুন",
+    "postAsFlipside": "ফ্লিপসাইডে পোস্ট করুন",
+    "viewingFlipside": "ফ্লিপসাইড দেখা হচ্ছে",
+    "backToMain": "মূল প্রোফাইলে ফিরুন"
+  },
   "messages": {
     "transcription": "প্রতিলিপি",
     "transcribing": "প্রতিলিপি হচ্ছে...",

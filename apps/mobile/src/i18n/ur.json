@@ -2739,6 +2739,18 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "flipside": {
+    "title": "متبادل پروفائل",
+    "create": "فلپ سائیڈ بنائیں",
+    "description": "ایک نجی پروفائل صرف منتخب لوگوں کو نظر آتا ہے",
+    "manageAccess": "کون دیکھ سکتا ہے انتظام کریں",
+    "addPeople": "لوگ شامل کریں",
+    "removePerson": "ہٹائیں",
+    "seeFlipside": "فلپ سائیڈ دیکھیں",
+    "postAsFlipside": "فلپ سائیڈ پر پوسٹ کریں",
+    "viewingFlipside": "فلپ سائیڈ دیکھ رہے ہیں",
+    "backToMain": "مرکزی پروفائل پر واپس"
+  },
   "messages": {
     "transcription": "ٹرانسکرپشن",
     "transcribing": "ٹرانسکرپٹ ہو رہا ہے...",

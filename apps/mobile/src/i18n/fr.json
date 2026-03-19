@@ -2739,6 +2739,18 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "flipside": {
+    "title": "Profil Flipside",
+    "create": "Créer Flipside",
+    "description": "Un profil privé visible uniquement par les personnes sélectionnées",
+    "manageAccess": "Gérer qui peut voir",
+    "addPeople": "Ajouter des personnes",
+    "removePerson": "Retirer",
+    "seeFlipside": "Voir Flipside",
+    "postAsFlipside": "Publier sur Flipside",
+    "viewingFlipside": "Affichage Flipside",
+    "backToMain": "Retour au profil principal"
+  },
   "messages": {
     "transcription": "Transcription",
     "transcribing": "Transcription en cours...",

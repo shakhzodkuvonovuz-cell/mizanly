@@ -2738,6 +2738,18 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "flipside": {
+    "title": "Profil Flipside",
+    "create": "Cipta Flipside",
+    "description": "Profil peribadi yang hanya kelihatan kepada orang terpilih",
+    "manageAccess": "Urus Siapa Boleh Lihat",
+    "addPeople": "Tambah Orang",
+    "removePerson": "Buang",
+    "seeFlipside": "Lihat Flipside",
+    "postAsFlipside": "Hantar ke Flipside",
+    "viewingFlipside": "Melihat Flipside",
+    "backToMain": "Kembali ke Profil Utama"
+  },
   "messages": {
     "transcription": "Transkripsi",
     "transcribing": "Mentranskripsi...",

@@ -80,6 +80,7 @@ import { TelegramFeaturesModule } from './modules/telegram-features/telegram-fea
 import { DiscordFeaturesModule } from './modules/discord-features/discord-features.module';
 import { EmbeddingsModule } from './modules/embeddings/embeddings.module';
 import { RetentionModule } from './modules/retention/retention.module';
+import { AltProfileModule } from './modules/alt-profile/alt-profile.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -169,6 +170,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     DiscordFeaturesModule,
     EmbeddingsModule,
     RetentionModule,
+    AltProfileModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: UserThrottlerGuard },

@@ -2738,6 +2738,18 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "flipside": {
+    "title": "Alternatif Profil",
+    "create": "Flipside Oluştur",
+    "description": "Yalnızca seçili kişilere görünen özel profil",
+    "manageAccess": "Kimlerin Görebileceğini Yönet",
+    "addPeople": "Kişi Ekle",
+    "removePerson": "Kaldır",
+    "seeFlipside": "Flipside'ı Gör",
+    "postAsFlipside": "Flipside'a Gönder",
+    "viewingFlipside": "Flipside Görüntüleniyor",
+    "backToMain": "Ana Profile Dön"
+  },
   "messages": {
     "transcription": "Transkripsiyon",
     "transcribing": "Yazıya dönüştürülüyor...",

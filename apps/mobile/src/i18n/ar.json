@@ -2738,6 +2738,18 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "flipside": {
+    "title": "الملف الشخصي البديل",
+    "create": "إنشاء ملف بديل",
+    "description": "ملف شخصي خاص مرئي فقط لأشخاص محددين",
+    "manageAccess": "إدارة من يمكنه الرؤية",
+    "addPeople": "إضافة أشخاص",
+    "removePerson": "إزالة",
+    "seeFlipside": "رؤية الملف البديل",
+    "postAsFlipside": "نشر في الملف البديل",
+    "viewingFlipside": "عرض الملف البديل",
+    "backToMain": "العودة للملف الرئيسي"
+  },
   "messages": {
     "transcription": "نسخ صوتي",
     "transcribing": "جاري النسخ...",
