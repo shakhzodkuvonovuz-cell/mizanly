@@ -393,6 +393,63 @@ export default function ConversationInfoScreen() {
             </LinearGradient>
           </Animated.View>
 
+          {/* Chat Options */}
+          <Animated.View entering={FadeInUp.delay(250).duration(400)}>
+            <LinearGradient
+              colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+              style={styles.optionsCardGlass}
+            >
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/starred-messages?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="bookmark" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('screens.starred-messages.title')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/pinned-messages?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="map-pin" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('screens.pinned-messages.title')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/conversation-media?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="image" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('risalah.media')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/chat-export?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="share" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('settings.export')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/disappearing-settings?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="clock" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('risalah.disappearingMessages')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/chat-wallpaper?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="image" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('settings.appearance')}</Text>
+                </View>
+              </Pressable>
+            </LinearGradient>
+          </Animated.View>
+
           {/* Actions */}
           <Animated.View entering={FadeInUp.delay(280).duration(400)}>
             <LinearGradient

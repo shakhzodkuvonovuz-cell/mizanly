@@ -546,6 +546,42 @@ export default function SettingsScreen() {
               label={t('quranPlan.title')}
               icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
               onPress={() => router.push('/(screens)/quran-reading-plan' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.hadith')}
+              icon={<Icon name="bookmark" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/hadith' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.mosque')}
+              icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/mosque-finder' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('hajj.title')}
+              icon={<Icon name="globe" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/hajj-companion' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.zakat')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/zakat-calculator' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('eidCards.title')}
+              icon={<Icon name="smile" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/eid-cards' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('scholar.title')}
+              icon={<Icon name="check-circle" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/scholar-verification' as never)}
               isLast
             />
           </LinearGradient>
@@ -652,6 +688,88 @@ export default function SettingsScreen() {
               label={t('settings.myReports')}
               icon={<Icon name="flag" size="sm" color={colors.error} />}
               onPress={() => router.push('/(screens)/my-reports')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.creatorDashboard')}
+              icon={<Icon name="bar-chart-2" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/creator-dashboard' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.revenue')}
+              icon={<Icon name="trending-up" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/revenue' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.creatorStorefront')}
+              icon={<Icon name="shopping-bag" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/creator-storefront' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.enableTips')}
+              icon={<Icon name="heart" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/enable-tips' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.membershipTiers')}
+              icon={<Icon name="users" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/membership-tiers' as never)}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Community Section */}
+          <SectionHeader title={t('settings.sections.community')} icon="users" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('community.localBoards')}
+              icon={<Icon name="map-pin" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/local-boards' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('community.mentorship')}
+              icon={<Icon name="users" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/mentorship' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('community.fatwaQA')}
+              icon={<Icon name="help-circle" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/fatwa-qa' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('community.waqfEndowments')}
+              icon={<Icon name="heart" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/waqf' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('community.watchParties')}
+              icon={<Icon name="play" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/watch-party' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('community.voicePost')}
+              icon={<Icon name="mic" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/voice-post-create' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.volunteerBoard')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/volunteer-board' as never)}
               isLast
             />
           </LinearGradient>

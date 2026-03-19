@@ -1083,7 +1083,9 @@
       "wellbeing": "الرفاهية",
       "ai": "الذكاء الاصطناعي",
       "creator": "أدوات صانع المحتوى",
-      "islamic": "إسلامي"
+      "islamic": "إسلامي",
+      "closeFriends": "الأصدقاء المقربون والدوائر",
+      "community": "المجتمع"
     },
     "hints": {
       "circles": "إدارة دوائر المشاركة",
@@ -1092,7 +1094,15 @@
       "blockedKeywords": "إدارة الكلمات المحظورة",
       "reduceMotion": "تقليل الحركات في التطبيق",
       "account": "إدارة إعدادات حسابك"
-    }
+    },
+    "creatorDashboard": "لوحة صانع المحتوى",
+    "revenue": "الإيرادات",
+    "creatorStorefront": "واجهة المتجر",
+    "enableTips": "تفعيل الإكراميات",
+    "membershipTiers": "مستويات العضوية",
+    "volunteerBoard": "لوحة التطوع",
+    "closeFriends": "الأصدقاء المقربون والدوائر",
+    "community": "المجتمع"
   },
   "accessibility": {
     "goBack": "رجوع"
@@ -1680,7 +1690,13 @@
     "selectThumbnail": "اختر غلاف",
     "customThumbnail": "مخصص",
     "normalizeAudio": "تسوية الصوت",
-    "normalizeAudioDesc": "مستويات صوت متسقة"
+    "normalizeAudioDesc": "مستويات صوت متسقة",
+    "templates": "قوالب",
+    "schedule": "جدولة",
+    "music": "موسيقى",
+    "hashtag": "هاشتاج",
+    "mention": "إشارة",
+    "duet": "ديو"
   },
   "createVideo": {
     "selectThumbnail": "اختر صورة مصغرة",

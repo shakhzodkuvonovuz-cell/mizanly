@@ -613,6 +613,20 @@ export default function CreatePostScreen() {
               </LinearGradient>
             </Pressable>
 
+            <Pressable
+              style={styles.toolbarBtn}
+              onPress={() => router.push('/(screens)/schedule-post?space=saf' as never)}
+              accessibilityLabel={t('screens.schedule-post.title')}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.1)', 'rgba(10,123,79,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="calendar" size="sm" color={colors.emerald} />
+              </LinearGradient>
+            </Pressable>
+
             <View style={styles.toolbarSpacer} />
 
             {/* Animated char count with glow effect */}

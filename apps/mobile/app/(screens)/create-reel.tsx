@@ -464,14 +464,32 @@ export default function CreateReelScreen() {
                 <Text style={styles.toolbarLabel}>{t('createReel.music')}</Text>
               </Pressable>
 
-              <Pressable style={styles.toolbarButton} disabled>
+              <Pressable
+                style={styles.toolbarButton}
+                onPress={() => router.push('/(screens)/reel-templates' as never)}
+                accessibilityRole="button"
+              >
                 <LinearGradient
-                  colors={['rgba(110,119,129,0.15)', 'rgba(110,119,129,0.05)']}
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
                   style={styles.toolbarBtnGradient}
                 >
-                  <Icon name="repeat" size="md" color={colors.text.tertiary} />
+                  <Icon name="layers" size="md" color={colors.gold} />
                 </LinearGradient>
-                <Text style={[styles.toolbarLabel, { color: colors.text.tertiary }]}>{t('createReel.duet')}</Text>
+                <Text style={styles.toolbarLabel}>{t('createReel.templates')}</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.toolbarButton}
+                onPress={() => router.push('/(screens)/schedule-post?space=bakra' as never)}
+                accessibilityRole="button"
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="clock" size="md" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.toolbarLabel}>{t('createReel.schedule')}</Text>
               </Pressable>
             </LinearGradient>
           </View>

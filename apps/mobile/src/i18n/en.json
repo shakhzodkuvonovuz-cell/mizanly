@@ -1140,7 +1140,9 @@
       "wellbeing": "Wellbeing",
       "ai": "AI",
       "creator": "Creator Tools",
-      "islamic": "Islamic"
+      "islamic": "Islamic",
+      "closeFriends": "Close Friends & Circles",
+      "community": "Community"
     },
     "hints": {
       "circles": "Manage your sharing circles",
@@ -1149,7 +1151,15 @@
       "blockedKeywords": "Manage blocked words",
       "reduceMotion": "Reduce animations throughout the app",
       "account": "Manage your account settings"
-    }
+    },
+    "creatorDashboard": "Creator Dashboard",
+    "revenue": "Revenue",
+    "creatorStorefront": "Creator Storefront",
+    "enableTips": "Enable Tips",
+    "membershipTiers": "Membership Tiers",
+    "volunteerBoard": "Volunteer Board",
+    "closeFriends": "Close Friends & Circles",
+    "community": "Community"
   },
   "onboarding": {
     "interests": {
@@ -1842,7 +1852,13 @@
     "selectThumbnail": "Select cover",
     "customThumbnail": "Custom",
     "normalizeAudio": "Normalize audio",
-    "normalizeAudioDesc": "Consistent volume levels"
+    "normalizeAudioDesc": "Consistent volume levels",
+    "templates": "Templates",
+    "schedule": "Schedule",
+    "music": "Music",
+    "hashtag": "Hashtag",
+    "mention": "Mention",
+    "duet": "Duet"
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",

@@ -1140,7 +1140,9 @@
       "wellbeing": "İyi Oluş",
       "ai": "Yapay Zeka",
       "creator": "İçerik Üretici Araçları",
-      "islamic": "İslami"
+      "islamic": "İslami",
+      "closeFriends": "Yakın Arkadaşlar ve Çevreler",
+      "community": "Topluluk"
     },
     "hints": {
       "circles": "Paylaşım çevrelerinizi yönetin",
@@ -1149,7 +1151,15 @@
       "blockedKeywords": "Engellenen kelimeleri yönetin",
       "reduceMotion": "Uygulama genelinde animasyonları azaltın",
       "account": "Hesap ayarlarınızı yönetin"
-    }
+    },
+    "creatorDashboard": "İçerik Üretici Paneli",
+    "revenue": "Gelirler",
+    "creatorStorefront": "Mağaza Vitrini",
+    "enableTips": "Bahşişleri Etkinleştir",
+    "membershipTiers": "Üyelik Seviyeleri",
+    "volunteerBoard": "Gönüllü Panosu",
+    "closeFriends": "Yakın Arkadaşlar ve Çevreler",
+    "community": "Topluluk"
   },
   "onboarding": {
     "interests": {
@@ -1842,7 +1852,13 @@
     "selectThumbnail": "Küçük resim seçin",
     "customThumbnail": "Özel",
     "normalizeAudio": "Ses normalleştirme",
-    "normalizeAudioDesc": "Tutarlı ses seviyeleri"
+    "normalizeAudioDesc": "Tutarlı ses seviyeleri",
+    "templates": "Şablonlar",
+    "schedule": "Planla",
+    "music": "Müzik",
+    "hashtag": "Hashtag",
+    "mention": "Bahset",
+    "duet": "Düet"
   },
   "createVideo": {
     "selectThumbnail": "Küçük resim seçin",

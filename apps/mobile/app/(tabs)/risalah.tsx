@@ -375,15 +375,33 @@ export default function RisalahScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.risalah')}</Text>
-        <Pressable
-          hitSlop={8}
-          onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
-          accessibilityLabel={t('accessibility.newConversation')}
-          accessibilityRole="button"
-          accessibilityHint={t('accessibility.newConversationHint')}
-        >
-          <Icon name="pencil" size="sm" color={colors.text.primary} />
-        </Pressable>
+        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/saved-messages' as never); }}
+            accessibilityLabel={t('risalah.savedMessages')}
+            accessibilityRole="button"
+          >
+            <Icon name="bookmark" size="sm" color={colors.text.primary} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/call-history' as never); }}
+            accessibilityLabel={t('risalah.call')}
+            accessibilityRole="button"
+          >
+            <Icon name="phone" size="sm" color={colors.text.primary} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); setOpenNewConvoSheet(true); }}
+            accessibilityLabel={t('accessibility.newConversation')}
+            accessibilityRole="button"
+            accessibilityHint={t('accessibility.newConversationHint')}
+          >
+            <Icon name="pencil" size="sm" color={colors.text.primary} />
+          </Pressable>
+        </View>
       </View>
 
       <BottomSheet visible={openNewConvoSheet} onClose={() => setOpenNewConvoSheet(false)}>
@@ -472,6 +490,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   logo: { color: colors.emerald, fontSize: fontSize.xl, fontWeight: '700', fontFamily: 'PlayfairDisplay_700Bold' },
+  headerRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.lg },
   chatItem: {
     flexDirection: 'row',
     alignItems: 'center',
