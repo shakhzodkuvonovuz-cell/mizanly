@@ -481,7 +481,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "Rejoignez Mizanly",
+    "signUpToInteract": "Inscrivez-vous pour aimer, commenter et suivre",
+    "enjoyingMizanly": "Vous aimez Mizanly ?",
+    "createAccountPrompt": "Créez un compte pour sauvegarder et interagir",
+    "signUpFree": "Inscription gratuite"
   },
   "bakra": {
     "forYou": "For You",

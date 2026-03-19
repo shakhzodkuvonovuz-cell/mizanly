@@ -481,7 +481,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "Bergabung dengan Mizanly",
+    "signUpToInteract": "Daftar untuk menyukai, berkomentar, dan mengikuti",
+    "enjoyingMizanly": "Menikmati Mizanly?",
+    "createAccountPrompt": "Buat akun untuk menyimpan dan berinteraksi",
+    "signUpFree": "Daftar gratis"
   },
   "bakra": {
     "forYou": "For You",

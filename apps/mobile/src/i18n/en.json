@@ -235,7 +235,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "Join Mizanly",
+    "signUpToInteract": "Sign up to like, comment, and follow",
+    "enjoyingMizanly": "Enjoying Mizanly?",
+    "createAccountPrompt": "Create an account to save and interact",
+    "signUpFree": "Sign up free"
   },
   "tabs": {
     "saf": "Saf",

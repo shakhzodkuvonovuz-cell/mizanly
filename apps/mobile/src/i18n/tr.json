@@ -235,7 +235,12 @@
     "or": "veya",
     "resetPasswordHint": "E-postanızı girin, size sıfırlama kodu gönderelim",
     "codeSentTo": "Kod gönderildi:",
-    "passwordResetSuccess": "Şifre başarıyla sıfırlandı"
+    "passwordResetSuccess": "Şifre başarıyla sıfırlandı",
+    "joinMizanly": "Mizanly'ye Katılın",
+    "signUpToInteract": "Beğenmek, yorum yapmak ve takip etmek için kaydolun",
+    "enjoyingMizanly": "Mizanly'yi beğeniyor musunuz?",
+    "createAccountPrompt": "Kaydetmek ve etkileşim kurmak için hesap oluşturun",
+    "signUpFree": "Ücretsiz kaydolun"
   },
   "tabs": {
     "saf": "Saf",

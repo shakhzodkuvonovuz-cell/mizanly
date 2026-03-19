@@ -235,7 +235,12 @@
     "or": "أو",
     "resetPasswordHint": "أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين",
     "codeSentTo": "تم إرسال الرمز إلى",
-    "passwordResetSuccess": "تم إعادة تعيين كلمة المرور بنجاح"
+    "passwordResetSuccess": "تم إعادة تعيين كلمة المرور بنجاح",
+    "joinMizanly": "انضم إلى ميزانلي",
+    "signUpToInteract": "سجل للإعجاب والتعليق والمتابعة",
+    "enjoyingMizanly": "هل تستمتع بميزانلي؟",
+    "createAccountPrompt": "أنشئ حساباً للحفظ والتفاعل",
+    "signUpFree": "سجل مجاناً"
   },
   "tabs": {
     "saf": "الصف",

@@ -107,8 +107,9 @@ function AuthGuard() {
     const inOnboarding = segments[0] === 'onboarding';
 
     if (!isSignedIn) {
-      // Not signed in — go to auth screens
-      if (!inAuthGroup) router.replace('/(auth)/sign-in');
+      // Allow anonymous browsing of feed tabs — only redirect to auth if in onboarding
+      if (inOnboarding) router.replace('/(auth)/sign-in');
+      // If user is already in auth screens or tabs, let them stay
     } else {
       // Signed in but no username set → onboarding
       const hasUsername = !!(user?.unsafeMetadata?.onboardingComplete);

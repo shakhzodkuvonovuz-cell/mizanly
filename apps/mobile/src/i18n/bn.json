@@ -380,7 +380,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "মিজানলিতে যোগ দিন",
+    "signUpToInteract": "লাইক, মন্তব্য এবং অনুসরণ করতে সাইন আপ করুন",
+    "enjoyingMizanly": "মিজানলি উপভোগ করছেন?",
+    "createAccountPrompt": "সংরক্ষণ এবং ইন্টারঅ্যাক্ট করতে একটি অ্যাকাউন্ট তৈরি করুন",
+    "signUpFree": "বিনামূল্যে সাইন আপ করুন"
   },
   "saf": {
     "feed": "Feed",

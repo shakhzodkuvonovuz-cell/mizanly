@@ -380,7 +380,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "Sertai Mizanly",
+    "signUpToInteract": "Daftar untuk suka, komen dan ikuti",
+    "enjoyingMizanly": "Menikmati Mizanly?",
+    "createAccountPrompt": "Cipta akaun untuk simpan dan berinteraksi",
+    "signUpFree": "Daftar percuma"
   },
   "saf": {
     "feed": "Feed",

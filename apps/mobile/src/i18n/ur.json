@@ -939,7 +939,12 @@
     "or": "or",
     "resetPasswordHint": "Enter your email and we'll send you a reset code",
     "codeSentTo": "Code sent to",
-    "passwordResetSuccess": "Password reset successfully"
+    "passwordResetSuccess": "Password reset successfully",
+    "joinMizanly": "میزانلی میں شامل ہوں",
+    "signUpToInteract": "پسند کرنے، تبصرہ کرنے اور فالو کرنے کے لیے سائن اپ کریں",
+    "enjoyingMizanly": "میزانلی پسند آ رہا ہے؟",
+    "createAccountPrompt": "محفوظ کرنے اور تعامل کرنے کے لیے اکاؤنٹ بنائیں",
+    "signUpFree": "مفت سائن اپ کریں"
   },
   "profile": {
     "followers": "Followers",
