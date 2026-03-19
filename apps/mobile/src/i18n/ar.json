@@ -1077,7 +1077,21 @@
     "acceptableUsePolicy": "Acceptable Use Policy",
     "codeOfConduct": "Code of Conduct",
     "ethics": "Ethics",
-    "compliance": "Compliance"
+    "compliance": "Compliance",
+    "sections": {
+      "wellbeing": "الرفاهية",
+      "ai": "الذكاء الاصطناعي",
+      "creator": "أدوات صانع المحتوى",
+      "islamic": "إسلامي"
+    },
+    "hints": {
+      "circles": "إدارة دوائر المشاركة",
+      "filterSensitiveContent": "إخفاء المحتوى الحساس",
+      "followRequests": "مراجعة طلبات المتابعة",
+      "blockedKeywords": "إدارة الكلمات المحظورة",
+      "reduceMotion": "تقليل الحركات في التطبيق",
+      "account": "إدارة إعدادات حسابك"
+    }
   },
   "accessibility": {
     "goBack": "رجوع"

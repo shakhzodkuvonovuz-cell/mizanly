@@ -487,6 +487,65 @@ export default function SettingsScreen() {
               icon={<Icon name="clock" size="sm" color={colors.gold} />}
               hint={t('screenTime.settingsHint')}
               onPress={() => router.push('/(screens)/screen-time' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('nasheed.settingsLabel')}
+              icon={<Icon name="volume-x" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/nasheed-mode' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('contentFilter.title')}
+              icon={<Icon name="filter" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/content-filter-settings' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('autoPlaySettings.title')}
+              icon={<Icon name="play" size="sm" color={colors.emerald} />}
+              hint={t('autoPlaySettings.hint')}
+              onPress={() => router.push('/(screens)/media-settings' as never)}
+              isLast
+            />
+          </LinearGradient>
+
+          {/* Islamic Section */}
+          <SectionHeader title={t('islamic.prayerTimes')} icon="globe" />
+          <LinearGradient
+            colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.card}
+          >
+            <Row
+              label={t('islamic.prayerTimes')}
+              icon={<Icon name="clock" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/prayer-times' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.qibla')}
+              icon={<Icon name="map-pin" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/qibla-compass' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('hijri.title')}
+              icon={<Icon name="calendar" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/islamic-calendar' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('islamic.dhikr')}
+              icon={<Icon name="heart" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/dhikr-counter' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('quranPlan.title')}
+              icon={<Icon name="bookmark" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/quran-reading-plan' as never)}
               isLast
             />
           </LinearGradient>

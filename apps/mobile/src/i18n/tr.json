@@ -1134,7 +1134,21 @@
     "acceptableUsePolicy": "Kabul Edilebilir Kullanım Politikası",
     "codeOfConduct": "Davranış Kuralları",
     "ethics": "Ethics",
-    "compliance": "Uyumluluk"
+    "compliance": "Uyumluluk",
+    "sections": {
+      "wellbeing": "İyi Oluş",
+      "ai": "Yapay Zeka",
+      "creator": "İçerik Üretici Araçları",
+      "islamic": "İslami"
+    },
+    "hints": {
+      "circles": "Paylaşım çevrelerinizi yönetin",
+      "filterSensitiveContent": "Hassas içerikleri gizleyin",
+      "followRequests": "Bekleyen takip isteklerini inceleyin",
+      "blockedKeywords": "Engellenen kelimeleri yönetin",
+      "reduceMotion": "Uygulama genelinde animasyonları azaltın",
+      "account": "Hesap ayarlarınızı yönetin"
+    }
   },
   "onboarding": {
     "interests": {

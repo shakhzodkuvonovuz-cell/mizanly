@@ -504,10 +504,12 @@ export default function BakraScreen() {
         if (prevReel && videoRefs.current[prevReel.id]) {
           videoRefs.current[prevReel.id].pauseAsync();
         }
-        // Play new video
+        // Play new video and track view
         const newReel = reels[idx];
         if (newReel && videoRefs.current[newReel.id]) {
           videoRefs.current[newReel.id].playAsync();
+          // Track view (fire-and-forget)
+          reelsApi.view(newReel.id).catch(() => {});
         }
         setCurrentIndex(idx);
       }
@@ -658,6 +660,14 @@ export default function BakraScreen() {
             accessibilityRole="button"
           >
             <Icon name="search" size="sm" color={colors.text.primary} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/trending-audio'); }}
+            accessibilityLabel={t('screens.trending-audio.title')}
+            accessibilityRole="button"
+          >
+            <Icon name="trending-up" size="sm" color={colors.text.primary} />
           </Pressable>
           <Pressable
             hitSlop={8}

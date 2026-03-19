@@ -194,15 +194,33 @@ export default function MajlisScreen() {
       {/* Header */}
       <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
         <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>{t('tabs.majlis')}</Text>
-        <Pressable
-          hitSlop={8}
-          onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
-          accessibilityLabel={t('common.search')}
-          accessibilityRole="button"
-          accessibilityHint={t('accessibility.searchHint')}
-        >
-          <Icon name="search" size="sm" color={colors.text.primary} />
-        </Pressable>
+        <View style={[styles.headerRight, { flexDirection: rtlFlexRow(isRTL) }]}>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/audio-room'); }}
+            accessibilityLabel={t('tabs.audioRooms')}
+            accessibilityRole="button"
+          >
+            <Icon name="mic" size="sm" color={colors.text.primary} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/majlis-lists'); }}
+            accessibilityLabel={t('screens.majlis-lists.title')}
+            accessibilityRole="button"
+          >
+            <Icon name="layers" size="sm" color={colors.text.primary} />
+          </Pressable>
+          <Pressable
+            hitSlop={8}
+            onPress={() => { haptic.light(); router.push('/(screens)/search'); }}
+            accessibilityLabel={t('common.search')}
+            accessibilityRole="button"
+            accessibilityHint={t('accessibility.searchHint')}
+          >
+            <Icon name="search" size="sm" color={colors.text.primary} />
+          </Pressable>
+        </View>
       </View>
 
       {/* Feed tabs */}
@@ -299,6 +317,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   logo: { color: colors.emerald, fontSize: fontSize.xl, fontFamily: 'PlayfairDisplay_700Bold' },
+  headerRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.lg },
   footer: { paddingVertical: spacing.sm },
   fab: {
     position: 'absolute',

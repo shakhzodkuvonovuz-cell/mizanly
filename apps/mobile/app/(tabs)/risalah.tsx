@@ -11,6 +11,10 @@ import { io, Socket } from 'socket.io-client';
 import Animated, {
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withSequence,
+  withTiming,
+  withDelay,
   useSharedValue,
 } from 'react-native-reanimated';
 import { Avatar } from '@/components/ui/Avatar';
@@ -33,6 +37,39 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 type TabKey = 'chats' | 'groups';
 
+function TypingDots() {
+  const dot1 = useSharedValue(0.3);
+  const dot2 = useSharedValue(0.3);
+  const dot3 = useSharedValue(0.3);
+
+  useEffect(() => {
+    const pulse = (sv: Animated.SharedValue<number>, delay: number) => {
+      sv.value = withDelay(delay, withRepeat(
+        withSequence(
+          withTiming(1, { duration: 400 }),
+          withTiming(0.3, { duration: 400 }),
+        ),
+        -1,
+        false,
+      ));
+    };
+    pulse(dot1, 0);
+    pulse(dot2, 150);
+    pulse(dot3, 300);
+  }, [dot1, dot2, dot3]);
+
+  const s1 = useAnimatedStyle(() => ({ opacity: dot1.value }));
+  const s2 = useAnimatedStyle(() => ({ opacity: dot2.value }));
+  const s3 = useAnimatedStyle(() => ({ opacity: dot3.value }));
+
+  return (
+    <View style={styles.typingDots}>
+      <Animated.View style={[styles.typingDot, s1]} />
+      <Animated.View style={[styles.typingDot, s2]} />
+      <Animated.View style={[styles.typingDot, s3]} />
+    </View>
+  );
+}
 
 
 
@@ -98,16 +135,7 @@ const ConversationRow = memo(function ConversationRow({
           {isTyping ? (
             <View style={styles.typingContainer}>
               <Text style={styles.typingText}>{t('risalah.typing')}</Text>
-              <View style={styles.typingDots}>
-                {[0, 1, 2].map((i) => (
-                  <Animated.View
-                    key={i}
-                    style={[styles.typingDot, {
-                      opacity: 0.4,
-                    }]}
-                  />
-                ))}
-              </View>
+              <TypingDots />
             </View>
           ) : (
             <Text

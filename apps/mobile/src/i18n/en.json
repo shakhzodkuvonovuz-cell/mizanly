@@ -1134,7 +1134,21 @@
     "acceptableUsePolicy": "Acceptable Use Policy",
     "codeOfConduct": "Code of Conduct",
     "ethics": "Ethics",
-    "compliance": "Compliance"
+    "compliance": "Compliance",
+    "sections": {
+      "wellbeing": "Wellbeing",
+      "ai": "AI",
+      "creator": "Creator Tools",
+      "islamic": "Islamic"
+    },
+    "hints": {
+      "circles": "Manage your sharing circles",
+      "filterSensitiveContent": "Hide sensitive content from your feeds",
+      "followRequests": "Review pending follow requests",
+      "blockedKeywords": "Manage blocked words",
+      "reduceMotion": "Reduce animations throughout the app",
+      "account": "Manage your account settings"
+    }
   },
   "onboarding": {
     "interests": {

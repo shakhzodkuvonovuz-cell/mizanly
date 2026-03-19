@@ -130,6 +130,16 @@ function CreateButton() {
           icon={<Icon name="video" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/create-reel')}
         />
+        <BottomSheetItem
+          label={t('tabs.createSheet.longVideo')}
+          icon={<Icon name="play" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/create-video')}
+        />
+        <BottomSheetItem
+          label={t('tabs.createSheet.goLive')}
+          icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/go-live')}
+        />
       </BottomSheet>
     </>
   );

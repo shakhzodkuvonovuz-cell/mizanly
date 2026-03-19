@@ -252,7 +252,11 @@ export default function SafScreen() {
             hitSlop={8}
             onPress={() => {
               haptic.light();
-              router.push('/(screens)/settings');
+              if (user?.username) {
+                router.push(`/(screens)/profile/${user.username}`);
+              } else {
+                router.push('/(screens)/settings');
+              }
             }}
             onPressIn={profilePress.onPressIn}
             onPressOut={profilePress.onPressOut}
@@ -260,7 +264,7 @@ export default function SafScreen() {
             accessibilityLabel={t('accessibility.yourProfile')}
             accessibilityRole="button"
           >
-            <Icon name="user" size="sm" color={colors.text.primary} />
+            <Avatar uri={user?.imageUrl ?? null} name={user?.username ?? ''} size="xs" />
           </AnimatedPressable>
         </View>
       </View>
