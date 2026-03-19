@@ -1201,7 +1201,7 @@ manageData.deleteGracePeriod: "You have 30 days to change your mind"
 
 ---
 
-### [ ] Task 27: Device Session Management — Needs DeviceSession model + session tracking middleware + frontend screen
+### [x] Task 27: Device Session Management — Done: enhanced Device model, session endpoints (list/logout/logoutAll), touchSession, i18n (8 langs)
 
 **Files to read first:**
 - `apps/api/src/modules/auth/` or Clerk configuration
