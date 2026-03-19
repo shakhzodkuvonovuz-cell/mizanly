@@ -2739,6 +2739,16 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "encryption": {
+    "verified": "انکرپشن تصدیق شدہ",
+    "mismatch": "کلیدیں مماثل نہیں ہیں",
+    "safetyNumber": "حفاظتی نمبر",
+    "scanCode": "کوڈ اسکین کریں",
+    "securityCodeChanged": "{{name}} کا سیکیورٹی کوڈ تبدیل ہو گیا",
+    "tapToVerify": "تصدیق کے لیے ٹیپ کریں",
+    "encrypted": "پیغامات اینڈ ٹو اینڈ انکرپٹڈ ہیں",
+    "notEncrypted": "انکرپشن سیٹ اپ نہیں ہے"
+  },
   "videoEditor": {
     "editVideo": "ویڈیو ایڈٹ کریں",
     "trim": "تراشیں",

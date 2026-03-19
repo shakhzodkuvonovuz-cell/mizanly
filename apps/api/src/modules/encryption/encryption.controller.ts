@@ -123,4 +123,22 @@ export class EncryptionController {
   ) {
     return this.encryptionService.rotateKey(conversationId, userId, dto.envelopes);
   }
+
+  @Get('safety-number/:otherUserId')
+  @ApiOperation({ summary: 'Compute safety number between current user and another user' })
+  async getSafetyNumber(
+    @CurrentUser('id') userId: string,
+    @Param('otherUserId') otherUserId: string,
+  ) {
+    const safetyNumber = await this.encryptionService.computeSafetyNumber(userId, otherUserId);
+    return { safetyNumber };
+  }
+
+  @Get('status/:conversationId')
+  @ApiOperation({ summary: 'Check encryption status for a conversation' })
+  async getConversationStatus(
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.encryptionService.getConversationEncryptionStatus(conversationId);
+  }
 }

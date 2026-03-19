@@ -2738,6 +2738,16 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "encryption": {
+    "verified": "Şifreleme doğrulandı",
+    "mismatch": "Anahtarlar eşleşmiyor",
+    "safetyNumber": "Güvenlik Numarası",
+    "scanCode": "Kodu Tara",
+    "securityCodeChanged": "{{name}} için güvenlik kodu değişti",
+    "tapToVerify": "Doğrulamak için dokunun",
+    "encrypted": "Mesajlar uçtan uca şifrelenmiştir",
+    "notEncrypted": "Şifreleme ayarlanmadı"
+  },
   "videoEditor": {
     "editVideo": "Video Düzenle",
     "trim": "Kes",

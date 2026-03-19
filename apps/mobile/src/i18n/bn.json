@@ -2738,6 +2738,16 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "encryption": {
+    "verified": "এনক্রিপশন যাচাই করা হয়েছে",
+    "mismatch": "কী মিলছে না",
+    "safetyNumber": "নিরাপত্তা নম্বর",
+    "scanCode": "কোড স্ক্যান করুন",
+    "securityCodeChanged": "{{name}} এর নিরাপত্তা কোড পরিবর্তিত হয়েছে",
+    "tapToVerify": "যাচাই করতে ট্যাপ করুন",
+    "encrypted": "বার্তাগুলি এন্ড-টু-এন্ড এনক্রিপ্টেড",
+    "notEncrypted": "এনক্রিপশন সেট আপ করা হয়নি"
+  },
   "videoEditor": {
     "editVideo": "ভিডিও সম্পাদনা",
     "trim": "ছাঁটাই",

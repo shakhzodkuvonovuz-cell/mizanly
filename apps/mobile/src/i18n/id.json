@@ -2739,6 +2739,16 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "encryption": {
+    "verified": "Enkripsi terverifikasi",
+    "mismatch": "Kunci tidak cocok",
+    "safetyNumber": "Nomor Keamanan",
+    "scanCode": "Pindai Kode",
+    "securityCodeChanged": "Kode keamanan berubah untuk {{name}}",
+    "tapToVerify": "Ketuk untuk memverifikasi",
+    "encrypted": "Pesan dienkripsi ujung ke ujung",
+    "notEncrypted": "Enkripsi belum diatur"
+  },
   "videoEditor": {
     "editVideo": "Edit Video",
     "trim": "Potong",

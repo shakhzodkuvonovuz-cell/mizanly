@@ -25,6 +25,34 @@ function formatFingerprint(raw: string): string {
   return clean.match(/.{1,4}/g)?.join(' ') ?? clean;
 }
 
+/**
+ * Compute a safety number from two fingerprints.
+ * Sorted by userId for deterministic order, concatenated, hashed to 60 digits.
+ */
+function computeSafetyNumber(fpA: string, fpB: string, userIdA: string, userIdB: string): string {
+  const sorted = [userIdA, userIdB].sort();
+  const first = sorted[0] === userIdA ? fpA : fpB;
+  const second = sorted[0] === userIdA ? fpB : fpA;
+  const combined = first + second;
+
+  // Simple hash to decimal digits (no crypto module needed on mobile)
+  let hash = 0;
+  for (let i = 0; i < combined.length; i++) {
+    hash = ((hash << 5) - hash + combined.charCodeAt(i)) | 0;
+  }
+
+  // Generate 60 digits deterministically from hash seed
+  let digits = '';
+  let seed = Math.abs(hash);
+  for (let i = 0; i < 60; i++) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    digits += (seed % 10).toString();
+  }
+
+  // Format as groups of 5 digits
+  return digits.match(/.{5}/g)!.join(' ');
+}
+
 function VerifyEncryptionContent() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -37,6 +65,7 @@ function VerifyEncryptionContent() {
 
   const [myFingerprint, setMyFingerprint] = useState<string>('');
   const [theirFingerprint, setTheirFingerprint] = useState<string>('');
+  const [safetyNumber, setSafetyNumber] = useState<string>('');
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [verifying, setVerifying] = useState(false);
@@ -64,6 +93,24 @@ function VerifyEncryptionContent() {
             }
           } catch {
             // Their key not available
+          }
+        }
+
+        // Compute safety number from both fingerprints
+        if (ownFp && userId) {
+          try {
+            const response = await encryptionApi.getPublicKey(userId);
+            if (!cancelled && response?.fingerprint) {
+              const safeNum = computeSafetyNumber(
+                ownFp,
+                response.fingerprint,
+                encryptionService.getUserId?.() || 'self',
+                userId,
+              );
+              setSafetyNumber(safeNum);
+            }
+          } catch {
+            // Safety number unavailable
           }
         }
 
@@ -279,6 +326,37 @@ function VerifyEncryptionContent() {
             </LinearGradient>
           </Animated.View>
 
+          {/* Safety Number Display */}
+          {safetyNumber ? (
+            <Animated.View
+              entering={FadeInUp.delay(275).duration(400)}
+              style={styles.cardWrapper}
+            >
+              <LinearGradient
+                colors={['rgba(10,123,79,0.15)', 'rgba(10,123,79,0.05)']}
+                style={styles.card}
+              >
+                <Text style={styles.cardLabel}>
+                  {t('encryption.safetyNumber')}
+                </Text>
+                <Text style={styles.safetyNumberText} selectable>
+                  {safetyNumber}
+                </Text>
+                <Pressable
+                  style={styles.copyButton}
+                  onPress={() => handleCopy(safetyNumber)}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('screens.verify-encryption.copyCode')}
+                >
+                  <Icon name="layers" size="sm" color={colors.emerald} />
+                  <Text style={styles.copyText}>
+                    {t('screens.verify-encryption.copy')}
+                  </Text>
+                </Pressable>
+              </LinearGradient>
+            </Animated.View>
+          ) : null}
+
           {/* QR Code Section */}
           {qrValue ? (
             <Animated.View
@@ -477,6 +555,15 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     marginBottom: spacing.md,
     lineHeight: 26,
+  },
+  safetyNumberText: {
+    fontFamily: fonts.mono,
+    fontSize: fontSize.base,
+    color: colors.emerald,
+    letterSpacing: 2,
+    lineHeight: 28,
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   copyButton: {
     flexDirection: 'row',

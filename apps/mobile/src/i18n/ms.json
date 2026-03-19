@@ -2738,6 +2738,16 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "encryption": {
+    "verified": "Penyulitan disahkan",
+    "mismatch": "Kunci tidak sepadan",
+    "safetyNumber": "Nombor Keselamatan",
+    "scanCode": "Imbas Kod",
+    "securityCodeChanged": "Kod keselamatan berubah untuk {{name}}",
+    "tapToVerify": "Ketik untuk mengesahkan",
+    "encrypted": "Mesej disulitkan hujung ke hujung",
+    "notEncrypted": "Penyulitan belum disediakan"
+  },
   "videoEditor": {
     "editVideo": "Edit Video",
     "trim": "Potong",

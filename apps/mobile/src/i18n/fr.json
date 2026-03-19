@@ -2739,6 +2739,16 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "encryption": {
+    "verified": "Chiffrement vérifié",
+    "mismatch": "Les clés ne correspondent pas",
+    "safetyNumber": "Numéro de sécurité",
+    "scanCode": "Scanner le code",
+    "securityCodeChanged": "Le code de sécurité a changé pour {{name}}",
+    "tapToVerify": "Appuyez pour vérifier",
+    "encrypted": "Les messages sont chiffrés de bout en bout",
+    "notEncrypted": "Chiffrement non configuré"
+  },
   "videoEditor": {
     "editVideo": "Éditer la vidéo",
     "trim": "Couper",

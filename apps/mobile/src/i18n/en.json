@@ -2738,6 +2738,16 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "encryption": {
+    "verified": "Encryption verified",
+    "mismatch": "Keys don't match",
+    "safetyNumber": "Safety Number",
+    "scanCode": "Scan Code",
+    "securityCodeChanged": "Security code changed for {{name}}",
+    "tapToVerify": "Tap to verify",
+    "encrypted": "Messages are end-to-end encrypted",
+    "notEncrypted": "Encryption not set up"
+  },
   "videoEditor": {
     "editVideo": "Edit Video",
     "trim": "Trim",

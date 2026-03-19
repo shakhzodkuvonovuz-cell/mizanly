@@ -2738,6 +2738,16 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "encryption": {
+    "verified": "تم التحقق من التشفير",
+    "mismatch": "المفاتيح غير متطابقة",
+    "safetyNumber": "رقم الأمان",
+    "scanCode": "مسح الرمز",
+    "securityCodeChanged": "تغير رمز الأمان لـ {{name}}",
+    "tapToVerify": "انقر للتحقق",
+    "encrypted": "الرسائل مشفرة من طرف إلى طرف",
+    "notEncrypted": "التشفير غير مُعد"
+  },
   "videoEditor": {
     "editVideo": "تعديل الفيديو",
     "trim": "قص",

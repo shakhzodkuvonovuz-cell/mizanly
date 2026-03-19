@@ -36,11 +36,132 @@ export class EncryptionService {
       .digest('hex')
       .slice(0, 32);
 
-    return this.prisma.encryptionKey.upsert({
+    // Check if this is a key change (re-registration)
+    const existingKey = await this.prisma.encryptionKey.findUnique({
+      where: { userId },
+    });
+    const isKeyChange = existingKey && existingKey.keyFingerprint !== fingerprint;
+
+    const result = await this.prisma.encryptionKey.upsert({
       where: { userId },
       create: { userId, publicKey, keyFingerprint: fingerprint },
       update: { publicKey, keyFingerprint: fingerprint },
     });
+
+    // If key changed, notify conversation partners with system message
+    if (isKeyChange) {
+      await this.notifyKeyChange(userId);
+    }
+
+    return result;
+  }
+
+  /**
+   * Compute a safety number for two users in a conversation.
+   * Concatenates both fingerprints (sorted by userId for deterministic order),
+   * hashes with SHA-256, and formats as groups of 5 digits (60 digits total).
+   */
+  async computeSafetyNumber(userIdA: string, userIdB: string): Promise<string | null> {
+    const keys = await this.prisma.encryptionKey.findMany({
+      where: { userId: { in: [userIdA, userIdB] } },
+      select: { userId: true, keyFingerprint: true },
+    });
+
+    if (keys.length < 2) return null;
+
+    // Sort by userId for deterministic order
+    const sorted = [userIdA, userIdB].sort();
+    const fpA = keys.find(k => k.userId === sorted[0])?.keyFingerprint ?? '';
+    const fpB = keys.find(k => k.userId === sorted[1])?.keyFingerprint ?? '';
+
+    if (!fpA || !fpB) return null;
+
+    // Concatenate and hash
+    const combined = fpA + fpB;
+    const hash = createHash('sha256').update(combined).digest('hex');
+
+    // Convert hex hash to decimal digits: take 60 characters of numeric output
+    let digits = '';
+    for (let i = 0; i < hash.length && digits.length < 60; i++) {
+      const num = parseInt(hash[i], 16);
+      digits += num.toString();
+      if (digits.length >= 60) break;
+    }
+    // Pad if needed (SHA-256 hex → 64 hex chars → at least 64 decimal digits)
+    while (digits.length < 60) {
+      digits += '0';
+    }
+    digits = digits.slice(0, 60);
+
+    // Format as groups of 5 digits
+    return digits.match(/.{5}/g)!.join(' ');
+  }
+
+  /**
+   * Check encryption status for a conversation:
+   * returns whether both members have registered encryption keys.
+   */
+  async getConversationEncryptionStatus(conversationId: string): Promise<{
+    encrypted: boolean;
+    members: { userId: string; hasKey: boolean }[];
+  }> {
+    const members = await this.prisma.conversationMember.findMany({
+      where: { conversationId },
+      select: { userId: true },
+      take: 50,
+    });
+
+    const userIds = members.map(m => m.userId);
+    const keys = await this.prisma.encryptionKey.findMany({
+      where: { userId: { in: userIds } },
+      select: { userId: true },
+    });
+
+    const keyUserIds = new Set(keys.map(k => k.userId));
+    const memberStatuses = userIds.map(uid => ({
+      userId: uid,
+      hasKey: keyUserIds.has(uid),
+    }));
+
+    return {
+      encrypted: memberStatuses.every(m => m.hasKey),
+      members: memberStatuses,
+    };
+  }
+
+  /**
+   * Notify all conversation partners when a user re-registers their encryption key.
+   * Creates a system message in each DM conversation.
+   */
+  private async notifyKeyChange(userId: string): Promise<void> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, displayName: true },
+      });
+      const name = user?.displayName || user?.username || 'A user';
+
+      // Find all conversations this user is in
+      const memberships = await this.prisma.conversationMember.findMany({
+        where: { userId },
+        select: { conversationId: true },
+        take: 50,
+      });
+
+      // Create system messages in each conversation
+      for (const { conversationId } of memberships) {
+        await this.prisma.message.create({
+          data: {
+            conversationId,
+            senderId: userId,
+            content: `Security code changed for ${name}. Tap to verify.`,
+            messageType: 'SYSTEM',
+          },
+        });
+      }
+    } catch {
+      // Non-critical: notification failure shouldn't break key registration
+    }
   }
 
   async getPublicKey(userId: string) {
