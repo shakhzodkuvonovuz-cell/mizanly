@@ -169,6 +169,7 @@ export default function RisalahScreen() {
   const { user } = useUser();
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
+  const queryClient = useQueryClient();
 
   const TABS = [
     { key: 'chats', label: t('risalah.chats') },
@@ -195,14 +196,26 @@ export default function RisalahScreen() {
 
   useEffect(() => {
     let socket: Socket;
+    const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
+
     const connect = async () => {
       const token = await getToken();
       if (!token) return;
 
-      const SOCKET_URL = `${(process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:3000')}/chat`;
       socket = io(SOCKET_URL, {
         auth: { token },
         transports: ['websocket'],
+        reconnection: true,
+        reconnectionAttempts: 10,
+        reconnectionDelay: 1000,
+      });
+
+      // Refresh token on reconnect attempt (handles expired tokens)
+      socket.on('connect_error', async () => {
+        const freshToken = await getToken({ skipCache: true });
+        if (freshToken && socket) {
+          socket.auth = { token: freshToken };
+        }
       });
 
       socket.on('user_online', ({ userId }: { userId: string }) => {
@@ -235,19 +248,23 @@ export default function RisalahScreen() {
         });
       });
 
+      // Refetch conversations on new messages so list stays fresh
+      socket.on('new_message', () => {
+        queryClient.invalidateQueries({ queryKey: ['conversations'] });
+      });
+
       socketRef.current = socket;
     };
 
     connect();
     return () => { socket?.disconnect(); };
-  }, [getToken]);
+  }, [getToken, queryClient]);
 
   const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
 
-  const queryClient = useQueryClient();
   const archiveMutation = useMutation({
     mutationFn: (conversationId: string) => messagesApi.archiveConversation(conversationId),
     onSuccess: () => {

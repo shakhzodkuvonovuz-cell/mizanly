@@ -140,6 +140,11 @@ function CreateButton() {
           icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
           onPress={() => navigate('/(screens)/go-live')}
         />
+        <BottomSheetItem
+          label={t('tabs.createSheet.voicePost')}
+          icon={<Icon name="mic" size="sm" color={colors.text.primary} />}
+          onPress={() => navigate('/(screens)/voice-post-create')}
+        />
       </BottomSheet>
     </>
   );
