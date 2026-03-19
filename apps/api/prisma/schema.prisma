@@ -2297,6 +2297,7 @@ model DhikrChallengeParticipant {
 
   @@id([userId, challengeId])
   @@index([challengeId])
+  @@index([userId])
   @@map("dhikr_challenge_participants")
 }
 
@@ -2313,6 +2314,7 @@ model CharityDonation {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([recipientUserId])
+  @@index([campaignId])
   @@map("charity_donations")
 }
 
@@ -2760,6 +2762,7 @@ model SeriesFollower {
   followedAt DateTime @default(now())
   series    Series @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   @@id([seriesId, userId])
+  @@index([userId])
   @@map("series_followers")
 }
 
@@ -2842,6 +2845,7 @@ model Order {
   buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id])
   product         Product  @relation(fields: [productId], references: [id])
   @@index([buyerId])
+  @@index([productId])
   @@index([status])
   @@map("orders")
 }
@@ -2927,6 +2931,9 @@ model ZakatDonation {
   createdAt       DateTime @default(now())
   fund            ZakatFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
   donor           User      @relation("ZakatDonor", fields: [donorId], references: [id])
+
+  @@index([fundId])
+  @@index([donorId])
   @@map("zakat_donations")
 }
 
@@ -2944,6 +2951,8 @@ model CommunityTreasury {
   updatedAt    DateTime @updatedAt
   creator      User     @relation("TreasuryCreator", fields: [createdById], references: [id])
   contributions TreasuryContribution[]
+  @@index([circleId])
+  @@index([createdById])
   @@map("community_treasuries")
 }
 
@@ -2955,6 +2964,9 @@ model TreasuryContribution {
   createdAt  DateTime @default(now())
   treasury   CommunityTreasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
   user       User               @relation("TreasuryContributor", fields: [userId], references: [id])
+
+  @@index([treasuryId])
+  @@index([userId])
   @@map("treasury_contributions")
 }
 
@@ -2989,6 +3001,7 @@ model LocalBoard {
   createdAt    DateTime @default(now())
   creator      User     @relation("BoardCreator", fields: [createdById], references: [id])
   @@index([city, country])
+  @@index([createdById])
   @@map("local_boards")
 }
 
@@ -3005,6 +3018,8 @@ model Mentorship {
   mentor      User     @relation("MentorOf", fields: [mentorId], references: [id])
   mentee      User     @relation("MenteeOf", fields: [menteeId], references: [id])
   @@unique([mentorId, menteeId])
+  @@index([mentorId])
+  @@index([menteeId])
   @@map("mentorships")
 }
 
@@ -3022,6 +3037,7 @@ model StudyCircle {
   createdAt    DateTime @default(now())
   leader       User     @relation("CircleLeader", fields: [leaderId], references: [id])
   @@index([topic, isActive])
+  @@index([leaderId])
   @@map("study_circles")
 }
 
@@ -3038,6 +3054,7 @@ model FatwaQuestion {
   createdAt  DateTime @default(now())
   asker      User     @relation("FatwaAsker", fields: [askerId], references: [id])
   @@index([status, madhab])
+  @@index([askerId])
   @@map("fatwa_questions")
 }
 
@@ -3057,6 +3074,7 @@ model VolunteerOpportunity {
   createdAt    DateTime @default(now())
   organizer    User     @relation("VolunteerOrganizer", fields: [organizerId], references: [id])
   @@index([category, isActive])
+  @@index([organizerId])
   @@map("volunteer_opportunities")
 }
 
@@ -3078,6 +3096,7 @@ model IslamicEvent {
   createdAt   DateTime @default(now())
   organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id])
   @@index([eventType, startDate])
+  @@index([organizerId])
   @@map("islamic_events")
 }
 
@@ -3119,6 +3138,8 @@ model WatchParty {
   endedAt     DateTime?
   createdAt   DateTime @default(now())
   host        User     @relation(fields: [hostId], references: [id])
+  @@index([hostId])
+  @@index([videoId])
   @@map("watch_parties")
 }
 
@@ -3132,6 +3153,7 @@ model SharedCollection {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   creator     User     @relation("CollectionCreator", fields: [createdById], references: [id])
+  @@index([createdById])
   @@map("shared_collections")
 }
 
@@ -3145,6 +3167,7 @@ model WaqfFund {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   creator      User     @relation("WaqfCreator", fields: [createdById], references: [id])
+  @@index([createdById])
   @@map("waqf_funds")
 }
 
