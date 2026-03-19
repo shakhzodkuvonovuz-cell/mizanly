@@ -2738,6 +2738,17 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "analyticsAI": {
+    "askAI": "Ask AI",
+    "askAboutPerformance": "Ask about your performance...",
+    "suggestedQuestions": "Suggested Questions",
+    "aiThinking": "Analyzing your data...",
+    "bestPost": "What was my best post this week?",
+    "bestTime": "When should I post?",
+    "bestHashtags": "Which hashtags work best for me?",
+    "audienceGrowth": "How is my audience growing?",
+    "questionsRemaining": "{{count}} questions remaining this hour"
+  },
   "thumbnails": {
     "addVariants": "Add Thumbnail Variants",
     "variant": "Variant {{num}}",

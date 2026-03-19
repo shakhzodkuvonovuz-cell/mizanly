@@ -2738,6 +2738,17 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "analyticsAI": {
+    "askAI": "AI কে জিজ্ঞাসা করুন",
+    "askAboutPerformance": "আপনার পারফরম্যান্স সম্পর্কে জিজ্ঞাসা করুন...",
+    "suggestedQuestions": "প্রস্তাবিত প্রশ্ন",
+    "aiThinking": "আপনার ডেটা বিশ্লেষণ করা হচ্ছে...",
+    "bestPost": "এই সপ্তাহে আমার সেরা পোস্ট কোনটি?",
+    "bestTime": "আমার কখন পোস্ট করা উচিত?",
+    "bestHashtags": "কোন হ্যাশট্যাগ সবচেয়ে ভালো কাজ করে?",
+    "audienceGrowth": "আমার দর্শক কিভাবে বাড়ছে?",
+    "questionsRemaining": "এই ঘন্টায় {{count}} প্রশ্ন বাকি"
+  },
   "thumbnails": {
     "addVariants": "থাম্বনেইল ভেরিয়েন্ট যোগ করুন",
     "variant": "ভেরিয়েন্ট {{num}}",

@@ -2,12 +2,20 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class CreatorService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(CreatorService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+  ) {}
 
   async getPostInsights(postId: string, userId: string) {
     const post = await this.prisma.post.findUnique({
@@ -280,5 +288,105 @@ export class CreatorService {
       genders: genders.map(g => ({ gender: g.gender, count: g._count.gender })),
       sources: sources.map(s => ({ source: s.source, count: s._count.source })),
     };
+  }
+
+  // ── AI Analytics Chat ─────────────────────────────────
+
+  /**
+   * AI-powered analytics chat. Creator asks a question about their performance,
+   * the system fetches their analytics data and passes it to Claude with the question.
+   */
+  async askAI(userId: string, question: string): Promise<{ answer: string; dataUsed: string[] }> {
+    const apiKey = this.config.get<string>('ANTHROPIC_API_KEY');
+
+    // Gather analytics context for the creator
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const [user, topPosts, recentFollowerCount, totalPosts] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true, displayName: true, followersCount: true, followingCount: true, postsCount: true },
+      }),
+      this.prisma.post.findMany({
+        where: { userId, createdAt: { gte: thirtyDaysAgo } },
+        orderBy: { likesCount: 'desc' },
+        take: 10,
+        select: {
+          id: true, content: true, postType: true,
+          likesCount: true, commentsCount: true, sharesCount: true, viewsCount: true,
+          hashtags: true, createdAt: true,
+        },
+      }),
+      this.prisma.follow.count({
+        where: { followingId: userId, createdAt: { gte: thirtyDaysAgo } },
+      }),
+      this.prisma.post.count({
+        where: { userId, createdAt: { gte: thirtyDaysAgo } },
+      }),
+    ]);
+
+    if (!user) throw new NotFoundException('User not found');
+
+    // Build analytics context
+    const topPostsSummary = topPosts.map((p, i) => {
+      const totalEng = p.likesCount + p.commentsCount + p.sharesCount;
+      const engRate = p.viewsCount > 0 ? ((totalEng / p.viewsCount) * 100).toFixed(1) : '0';
+      return `${i + 1}. "${(p.content || '').slice(0, 60)}..." (${p.postType}) — ${p.likesCount} likes, ${p.commentsCount} comments, ${p.viewsCount} views, ${engRate}% engagement, posted ${p.createdAt.toLocaleDateString()}, hashtags: ${p.hashtags.join(', ') || 'none'}`;
+    }).join('\n');
+
+    const context = `
+Creator: @${user.username} (${user.displayName})
+Followers: ${user.followersCount} | Following: ${user.followingCount}
+New followers (30d): ${recentFollowerCount}
+Posts (30d): ${totalPosts}
+
+Top 10 Posts (Last 30 Days):
+${topPostsSummary || 'No posts in the last 30 days.'}
+`.trim();
+
+    const dataUsed = ['followers', 'posts', 'engagement', 'hashtags'];
+
+    if (!apiKey) {
+      return {
+        answer: `Based on your ${totalPosts} posts in the last 30 days with ${user.followersCount} followers and ${recentFollowerCount} new followers, your account is ${recentFollowerCount > 10 ? 'growing well' : 'steady'}. Try posting more during peak hours and using relevant hashtags.`,
+        dataUsed,
+      };
+    }
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 500,
+          system: `You are an analytics assistant for Mizanly, a social media platform for the Muslim community. Answer the creator's question using ONLY the data provided. Be specific with numbers. Keep responses concise (2-3 sentences). If you don't have data to answer, say so honestly.`,
+          messages: [
+            { role: 'user', content: `Analytics data:\n${context}\n\nQuestion: ${question}` },
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        this.logger.error(`Claude API error in askAI: ${response.status}`);
+        throw new Error('AI service unavailable');
+      }
+
+      const data = await response.json();
+      const answer = data.content?.[0]?.text || 'Unable to analyze your data right now.';
+
+      return { answer, dataUsed };
+    } catch (error) {
+      this.logger.error('AI analytics chat failed', error);
+      return {
+        answer: `You have ${user.followersCount} followers with ${recentFollowerCount} new in the last 30 days. You posted ${totalPosts} times. Your top post got ${topPosts[0]?.likesCount ?? 0} likes.`,
+        dataUsed,
+      };
+    }
   }
 }

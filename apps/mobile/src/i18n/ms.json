@@ -2738,6 +2738,17 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "analyticsAI": {
+    "askAI": "Tanya AI",
+    "askAboutPerformance": "Tanya tentang prestasi anda...",
+    "suggestedQuestions": "Soalan Cadangan",
+    "aiThinking": "Menganalisis data anda...",
+    "bestPost": "Apakah siaran terbaik saya minggu ini?",
+    "bestTime": "Bilakah saya patut menyiar?",
+    "bestHashtags": "Hashtag mana yang paling berkesan?",
+    "audienceGrowth": "Bagaimana pertumbuhan audiens saya?",
+    "questionsRemaining": "{{count}} soalan tinggal jam ini"
+  },
   "thumbnails": {
     "addVariants": "Tambah Varian Lakaran Kecil",
     "variant": "Varian {{num}}",

@@ -2739,6 +2739,17 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "analyticsAI": {
+    "askAI": "Demander à l'IA",
+    "askAboutPerformance": "Interrogez votre performance...",
+    "suggestedQuestions": "Questions suggérées",
+    "aiThinking": "Analyse de vos données...",
+    "bestPost": "Quelle était ma meilleure publication cette semaine ?",
+    "bestTime": "Quand devrais-je publier ?",
+    "bestHashtags": "Quels hashtags fonctionnent le mieux ?",
+    "audienceGrowth": "Comment mon audience évolue-t-elle ?",
+    "questionsRemaining": "{{count}} questions restantes cette heure"
+  },
   "thumbnails": {
     "addVariants": "Ajouter des variantes de miniature",
     "variant": "Variante {{num}}",

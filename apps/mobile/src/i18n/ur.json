@@ -2739,6 +2739,17 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "analyticsAI": {
+    "askAI": "AI سے پوچھیں",
+    "askAboutPerformance": "اپنی کارکردگی کے بارے میں پوچھیں...",
+    "suggestedQuestions": "تجویز کردہ سوالات",
+    "aiThinking": "آپ کا ڈیٹا تجزیہ کیا جا رہا ہے...",
+    "bestPost": "اس ہفتے میری بہترین پوسٹ کیا تھی؟",
+    "bestTime": "مجھے کب پوسٹ کرنا چاہیے؟",
+    "bestHashtags": "کون سے ہیش ٹیگز بہترین ہیں؟",
+    "audienceGrowth": "میری آڈیئنس کیسے بڑھ رہی ہے؟",
+    "questionsRemaining": "اس گھنٹے {{count}} سوالات باقی ہیں"
+  },
   "thumbnails": {
     "addVariants": "تھمب نیل متغیرات شامل کریں",
     "variant": "متغیر {{num}}",

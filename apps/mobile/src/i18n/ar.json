@@ -2738,6 +2738,17 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "analyticsAI": {
+    "askAI": "اسأل الذكاء الاصطناعي",
+    "askAboutPerformance": "اسأل عن أدائك...",
+    "suggestedQuestions": "أسئلة مقترحة",
+    "aiThinking": "جاري تحليل بياناتك...",
+    "bestPost": "ما أفضل منشور لي هذا الأسبوع؟",
+    "bestTime": "متى يجب أن أنشر؟",
+    "bestHashtags": "أي الهاشتاقات تعمل بشكل أفضل؟",
+    "audienceGrowth": "كيف ينمو جمهوري؟",
+    "questionsRemaining": "{{count}} أسئلة متبقية هذه الساعة"
+  },
   "thumbnails": {
     "addVariants": "إضافة صور مصغرة بديلة",
     "variant": "النسخة {{num}}",

@@ -1,10 +1,13 @@
 import {
   Controller,
   Get,
+  Post,
+  Body,
   Param,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { CreatorService } from './creator.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -73,5 +76,15 @@ export class CreatorController {
   @ApiResponse({ status: 200, description: 'Revenue summary returned' })
   getRevenueSummary(@CurrentUser('id') userId: string) {
     return this.creatorService.getRevenueSummary(userId);
+  }
+
+  @Post('ask')
+  @Throttle({ default: { ttl: 3600000, limit: 20 } })
+  @ApiOperation({ summary: 'AI analytics chat — ask about your performance (20/hour)' })
+  askAI(
+    @CurrentUser('id') userId: string,
+    @Body() body: { question: string },
+  ) {
+    return this.creatorService.askAI(userId, body.question);
   }
 }

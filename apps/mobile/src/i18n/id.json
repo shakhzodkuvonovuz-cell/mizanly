@@ -2739,6 +2739,17 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "analyticsAI": {
+    "askAI": "Tanya AI",
+    "askAboutPerformance": "Tanya tentang performa Anda...",
+    "suggestedQuestions": "Pertanyaan yang Disarankan",
+    "aiThinking": "Menganalisis data Anda...",
+    "bestPost": "Apa postingan terbaik saya minggu ini?",
+    "bestTime": "Kapan sebaiknya saya posting?",
+    "bestHashtags": "Hashtag mana yang paling efektif?",
+    "audienceGrowth": "Bagaimana pertumbuhan audiens saya?",
+    "questionsRemaining": "{{count}} pertanyaan tersisa jam ini"
+  },
   "thumbnails": {
     "addVariants": "Tambah Varian Thumbnail",
     "variant": "Varian {{num}}",
