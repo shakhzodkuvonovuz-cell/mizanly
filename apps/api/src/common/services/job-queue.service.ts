@@ -136,7 +136,7 @@ export class JobQueueService implements OnModuleDestroy {
           }
         }
       } catch (error) {
-        // Queue processing error — non-fatal
+        this.logger.error('Queue processing error', error instanceof Error ? error.message : error);
       }
     }, 1000);
   }

@@ -369,8 +369,24 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message_delivered')
   async handleMessageDelivered(@ConnectedSocket() client: Socket, @MessageBody() data: { messageId: string; conversationId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
-    this.prisma.message.update({ where: { id: data.messageId }, data: { deliveredAt: new Date() } }).catch((e) => this.logger.error('Failed to update delivery', e));
-    this.server.to(`conversation:${data.conversationId}`).emit('delivery_receipt', { messageId: data.messageId, deliveredAt: new Date().toISOString(), deliveredTo: client.data.userId });
+    if (!data.messageId || !data.conversationId) {
+      client.emit('error', { message: 'Invalid message_delivered data' });
+      return;
+    }
+
+    // Verify membership before updating delivery status
+    try {
+      await this.messagesService.requireMembership(data.conversationId, client.data.userId);
+    } catch {
+      throw new WsException('Not a member of this conversation');
+    }
+
+    const now = new Date();
+    this.prisma.message.updateMany({
+      where: { id: data.messageId, conversationId: data.conversationId },
+      data: { deliveredAt: now },
+    }).catch((e) => this.logger.error('Failed to update delivery', e));
+    this.server.to(`conversation:${data.conversationId}`).emit('delivery_receipt', { messageId: data.messageId, deliveredAt: now.toISOString(), deliveredTo: client.data.userId });
   }
 
   @SubscribeMessage('join_quran_room')
