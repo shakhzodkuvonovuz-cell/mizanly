@@ -231,6 +231,7 @@ describe('AuthService', () => {
       expect(prisma.follow.findMany).toHaveBeenCalledWith({
         where: { followerId: userId },
         select: { followingId: true },
+        take: 5000,
       });
       expect(result).toEqual(mockSuggestions);
     });
