@@ -1,0 +1,367 @@
+#{{rank}}
++{{amount}} XP
+Anime
+Apple
+Bakra
+Bakra (Reels)
+Bluetooth
+Cosmic
+Debug
+Decrease
+Deleted
+Disabled
+Disclosure
+Dismissed
+Disputed
+Divorced
+Document
+Downloading
+Dua
+Emerald
+Emergency
+Emoji
+Engaged
+Enhancement
+Expired
+Face ID
+Facebook
+Files
+Finance
+Fitness
+Follows
+Fraud
+Friends
+GIFs
+Generating...
+GitHub
+Goal
+Gold
+Google
+High
+Hizb
+Hobbies
+Ideas
+Identity
+Increase
+Initiative
+Interests
+Invalid
+JazakAllahu Khairan
+Lat: {{lat}}, Lng: {{lng}}
+Microsoft
+Min
+Minimal
+Music URL
+Normal
+Open Settings
+Open relationship
+Opt-in
+Opt-out
+Outbox
+PIN Mismatch
+PINs do not match. Please try again.
+Page {{page}}
+Partnership
+Paste Prayer Calendar
+Payment Options
+Permission
+Photography
+Pin important messages to find them easily
+Play Offline
+Playlists will appear here
+Please allow camera access to scan QR codes
+Please enter a name for the list
+Polls
+Post Note
+Prayer Adjustments
+Prayer Calendar
+Prayer Location
+Prayer Notifications
+Premiering in
+Premiering {{date}}
+Preview Clip
+Previous Verse
+Print Prayer Calendar
+Profile Music
+Profile unavailable
+Promote users to admin
+Pronouns
+Proof
+Public List
+Quick Pick
+Quiet Mode is on
+Quote
+Quotes
+Quran Reading Room
+Raised hands
+Re-enter your 4-digit PIN to confirm
+Received
+Recommended: 16:9 ratio
+Recommended: {{space}}
+Reel
+Reels
+Reels you save will appear here
+Referral
+Refresh suggestions
+Relationship
+Remix
+Remove All
+Remove Participants
+Remove Prayer Calendar
+Remove Reminder
+Remove Subscriber
+Remove Trailer
+Remove from playlist
+Remove {{name}} as admin?
+Remove {{name}} from channel?
+Remove {{name}} from playlist?
+Rename Prayer Calendar
+Rename playlist
+Reply hidden
+Reply to @{{username}}...
+Reply visible again
+Replying to @{{username}}
+Report Channel
+Reports you submit will appear here
+Reset Tracker
+Restore Prayer Calendar
+Restricted Accounts
+Restricted Mode
+Restricted accounts can see your profile but their interactions are hidden from you
+Resubmit
+Retweet
+Retweets
+Review
+Reviewing
+Rub
+Saf
+Sample Nasheeds
+Save Changes
+Save End Screens
+Save QR code to your device
+Save to playlist
+Scan QR
+Scanned successfully
+Schedule Live
+Schedule Post
+Schedule Time *
+Scheduled for:
+Scheduled!
+Scheduled: {{start}} - {{end}}
+Scheduling…
+Search Participants
+Search by username...
+Search for a User
+Search sticker packs...
+Secret
+Security Issue
+Select All Centers
+Select All Clear
+Select All Corners
+Select All Deselect
+Select All Edges
+Select All Firsts
+Select All Invert
+Select All Lasts
+Select All Middles
+Select All Multiple
+Select All Next
+Select All None
+Select All Previous
+Select All Random
+Select All Range
+Select All Select
+Select All Single
+Select Center
+Select Corner
+Select Edge
+Select First
+Select Language
+Select Last
+Select Middle
+Select Multiple
+Select Next
+Select None
+Select Previous
+Select Random
+Select Range
+Select Single
+Select a video as your channel trailer
+Select spaces to share to
+Select thumbnail
+Self-destructing
+Selfie
+Send a message...
+Sending message...
+Sent
+Sent to people who message you
+Separated
+Serif
+Sessions
+Set Channel Trailer
+Set Daily Limit
+Set as Profile
+Settings saved
+Share Channel
+Share Clip
+Share Progress
+Share Tafsir
+Share a thought...
+Share as Post
+Share your QR code for others to find you
+Share your channel link
+Share your profile with friends
+Shared Content
+Shared successfully!
+Shopping
+Show Badges
+Show Captions
+Show Full
+Show Level
+Show Original
+Show Streak
+Show Translation
+Show at
+Shows next prayer time with countdown
+Shows unread message and notification counts
+SoC
+Social
+Some screens may require a restart to fully apply
+Sound
+Spam
+Speakers
+Sponsorship
+Star important messages to find them easily
+Starred
+Start Hajj Tracker
+Start Plan
+Start Time
+Start Verification
+Start the conversation
+Stream Ended
+Stream not found
+Strictest — safe for all ages
+Submit Application
+Submit Information
+Submitting...
+Subscribe to unlock all content
+Subscriber removed
+Suggestion: {{text}}
+Suggestions
+Suspicious
+Sync Prayer Calendar
+T-Shirt
+Take a Break Reminders
+Target ID
+Task
+Tell viewers what your stream is about
+Terms
+The 10th of Muharram. A day of fasting and remembrance, commemorating the salvation of Prophet Musa (AS).
+The 9th of Dhu al-Hijjah. Standing at Arafah is the essence of Hajj. Fasting on this day expiates sins.
+The Festival of Breaking the Fast. A joyous celebration marking the end of Ramadan.
+The Festival of Sacrifice. Commemorating Prophet Ibrahim's (AS) willingness to sacrifice his son.
+The Night Journey and Ascension of Prophet Muhammad (PBUH) from Makkah to Jerusalem and to the heavens.
+The Night of Decree, better than a thousand months. Seek it in the last ten nights of Ramadan.
+The beginning of the blessed month of fasting, prayer, and spiritual reflection.
+The first day of Muharram marks the beginning of the Islamic New Year. A time for reflection and gratitude.
+This Weekend
+This audio track may have been removed or is unavailable
+This live stream has ended
+This live stream may have ended or been removed
+This will enable parental controls on their account. You can manage their content restrictions, screen time, and activity.
+This will remove all items from your watch history.
+Threads you save will appear here
+Thumbnail (optional)
+Title *
+Top Contributors
+Total views
+Trace
+Transaction
+Transactions
+Transcribing audio...
+Translated from {{language}}
+Translating...
+Trash
+Travel
+Trending Audio
+Trivial
+Tweet
+Tweets
+Twitter
+Type a message...
+Type your question...
+URL (https://...)
+Unable to load your profile
+Unarchive
+Unlink Account
+Unlisted
+Unlock Mizanly
+Unmute Conversation
+Unmute Notifications
+Unrestricted
+Unverified
+Upcoming Events
+Update Information
+Update Prayer Calendar
+Updates
+Upload Background
+Upload Prayer Calendar
+Uploading thumbnail...
+Urgent
+Use
+Use this sound
+User demoted from Admin
+User promoted to Admin
+Valid
+Video
+Videos you watch will appear here
+View Prayer Calendar
+Wants to speak
+Watch History
+Watch Next
+Watch Trailer
+Watch {{title}} live on Mizanly!
+Watercolor
+Weather
+Website
+Weekly Activity Digest
+Weekly Activity Report
+Welcome to the stream!
+What are you streaming?
+What's this list about?
+When Quiet Mode is on, you won't receive push notifications. People who message you will see your auto-reply.
+When enabled, background music in reels and stories will be replaced with Islamic nasheeds. Perfect for users who prefer music-free content.
+Wi-Fi
+Widowed
+Will post to: {{space}}
+You don't have any followers in common
+You'll receive a reminder 30 minutes before
+You've reached your daily limit
+Your Avatars
+Your Current Photo
+Your Name
+Your Scholar Badge
+Your Stats
+Your current note
+Your donation has been received
+Your live stream has been scheduled
+Your purchases will appear here
+Your video will premiere on {{date}} at {{time}}
+e.g. Friends, Tech news
+high engagement
+last seen
+video
+{{amount}} raised of {{goal}}
+{{count}} clips
+{{count}} day streak
+{{count}} donors
+{{count}} episodes
+{{count}} today
+{{count}} waiting
+{{count}}x payment
+{{current}} / {{target}}
+{{current}}/{{target}}
+{{degrees}}° {{direction}}
+{{reason}}
+{{seconds}}s before end
+{{xp}} XP
