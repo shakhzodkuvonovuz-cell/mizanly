@@ -312,6 +312,17 @@ export class MessagesController {
     return this.messagesService.leaveGroup(id, userId);
   }
 
+  @Patch('groups/:id/members/me/tag')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set your tag/role label in a group' })
+  setMemberTag(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('tag') tag: string | null,
+  ) {
+    return this.messagesService.setMemberTag(id, userId, tag);
+  }
+
   @Get(':conversationId/search')
   @ApiOperation({ summary: 'Search messages' })
   async searchMessages(@Param('conversationId') cid: string, @CurrentUser('id') uid: string, @Query('q') q: string, @Query('cursor') cursor?: string) {

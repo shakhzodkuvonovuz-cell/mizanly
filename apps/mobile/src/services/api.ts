@@ -54,6 +54,7 @@ type CreateStoryPayload = {
   bgGradient?: string;
   stickerData?: object[];
   closeFriendsOnly?: boolean;
+  subscribersOnly?: boolean;
 };
 
 type UpdateHighlightPayload = { title?: string; coverUrl?: string; position?: number };
@@ -586,6 +587,8 @@ export const messagesApi = {
   removeMember: (id: string, userId: string) =>
     api.delete(`/messages/groups/${id}/members/${userId}`),
   leaveGroup: (id: string) => api.delete(`/messages/groups/${id}/members/me`),
+  setMemberTag: (groupId: string, tag: string | null) =>
+    api.patch(`/messages/groups/${groupId}/members/me/tag`, { tag }),
   setDisappearingTimer: (conversationId: string, duration: number) =>
     api.patch(`/messages/conversations/${conversationId}/disappearing-timer`, { duration }),
   archiveConversation: (conversationId: string) =>

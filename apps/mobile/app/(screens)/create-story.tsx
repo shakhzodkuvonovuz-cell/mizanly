@@ -137,8 +137,9 @@ export default function CreateStoryScreen() {
   const [sliderMin, setSliderMin] = useState('0');
   const [sliderMax, setSliderMax] = useState('100');
 
-  // ── Close friends ──
+  // ── Close friends / Subscribers ──
   const [closeFriendsOnly, setCloseFriendsOnly] = useState(false);
+  const [subscribersOnly, setSubscribersOnly] = useState(false);
 
   // ── Active tool ──
   const [activeTool, setActiveTool] = useState<'text' | 'filter' | 'sticker' | null>(null);
@@ -305,6 +306,7 @@ export default function CreateStoryScreen() {
         bgGradient: !mediaUri ? JSON.stringify(BG_GRADIENTS[bgGradientIndex]) : undefined,
         stickerData: stickers.length > 0 ? stickers : undefined,
         closeFriendsOnly,
+        subscribersOnly,
       });
     },
     onSuccess: () => {
@@ -1041,6 +1043,30 @@ export default function CreateStoryScreen() {
               justifyContent: 'center', alignItems: 'center',
             }}>
               {closeFriendsOnly && <Icon name="check" size={12} color="#fff" />}
+            </View>
+          </Pressable>
+          {/* Subscribers-only toggle */}
+          <Pressable
+            onPress={() => setSubscribersOnly(!subscribersOnly)}
+            style={{
+              flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+              backgroundColor: subscribersOnly ? 'rgba(200,150,62,0.1)' : colors.dark.bgElevated,
+              borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.md,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Icon name="lock" size="sm" color={subscribersOnly ? colors.gold : colors.text.secondary} />
+              <Text style={{ color: subscribersOnly ? colors.gold : colors.text.primary, marginLeft: spacing.sm, fontSize: fontSize.sm }}>
+                {t('stories.subscribersOnly')}
+              </Text>
+            </View>
+            <View style={{
+              width: 20, height: 20, borderRadius: radius.full,
+              backgroundColor: subscribersOnly ? colors.gold : colors.dark.surface,
+              borderWidth: 1, borderColor: colors.dark.border,
+              justifyContent: 'center', alignItems: 'center',
+            }}>
+              {subscribersOnly && <Icon name="check" size={12} color="#fff" />}
             </View>
           </Pressable>
 

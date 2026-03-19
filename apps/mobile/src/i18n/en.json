@@ -2650,6 +2650,8 @@
     "camera": "Camera",
     "background": "Background",
     "pickFromGallery": "Pick from gallery",
-    "takePhoto": "Take photo"
+    "takePhoto": "Take photo",
+    "subscribersOnly": "Subscribers only",
+    "closeFriendsOnly": "Close friends only"
   }
 }

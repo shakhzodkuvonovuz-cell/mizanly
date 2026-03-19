@@ -2461,6 +2461,8 @@
     "camera": "الكاميرا",
     "background": "الخلفية",
     "pickFromGallery": "اختر من المعرض",
-    "takePhoto": "التقط صورة"
+    "takePhoto": "التقط صورة",
+    "subscribersOnly": "للمشتركين فقط",
+    "closeFriendsOnly": "الأصدقاء المقربون فقط"
   }
 }

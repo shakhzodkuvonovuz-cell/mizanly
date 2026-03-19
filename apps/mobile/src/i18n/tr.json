@@ -2650,6 +2650,8 @@
     "camera": "Kamera",
     "background": "Arka Plan",
     "pickFromGallery": "Galeriden seç",
-    "takePhoto": "Fotoğraf çek"
+    "takePhoto": "Fotoğraf çek",
+    "subscribersOnly": "Yalnızca aboneler",
+    "closeFriendsOnly": "Yalnızca yakın arkadaşlar"
   }
 }

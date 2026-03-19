@@ -326,6 +326,15 @@ export class MessagesService {
     return { removed: true };
   }
 
+  async setMemberTag(conversationId: string, userId: string, tag: string | null) {
+    await this.requireMembership(conversationId, userId);
+    await this.prisma.conversationMember.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { tag: tag ? tag.slice(0, 30) : null },
+    });
+    return { updated: true };
+  }
+
   async leaveGroup(conversationId: string, userId: string) {
     await this.requireMembership(conversationId, userId);
 

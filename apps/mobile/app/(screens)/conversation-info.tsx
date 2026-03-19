@@ -348,6 +348,11 @@ export default function ConversationInfoScreen() {
                               <Text style={styles.creatorBadgeText}>{t('conversation.creator')}</Text>
                             </LinearGradient>
                           )}
+                          {(m as { tag?: string | null }).tag && (
+                            <View style={{ backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.xs, paddingVertical: 1 }}>
+                              <Text style={{ color: colors.text.secondary, fontSize: 10, fontWeight: '500' }}>{(m as { tag?: string | null }).tag}</Text>
+                            </View>
+                          )}
                         </View>
                         <Text style={styles.memberHandle}>@{m.user.username}</Text>
                       </View>

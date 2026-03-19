@@ -91,6 +91,7 @@ export interface Story {
   highlightAlbumId?: string;
   stickerData?: Record<string, unknown>[] | string;
   closeFriendsOnly: boolean;
+  subscribersOnly: boolean;
   isArchived: boolean;
   expiresAt: string;
   createdAt: string;
@@ -399,6 +400,7 @@ export interface ConversationMember {
   unreadCount: number;
   isMuted: boolean;
   isArchived: boolean;
+  tag?: string | null;
   joinedAt: string;
 }
 

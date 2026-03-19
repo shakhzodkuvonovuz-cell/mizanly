@@ -520,6 +520,7 @@ model Story {
   highlightAlbum   StoryHighlightAlbum?   @relation(fields: [highlightAlbumId], references: [id], onDelete: SetNull)
   stickerData      Json?
   closeFriendsOnly Boolean                @default(false)
+  subscribersOnly  Boolean                @default(false)
   isArchived       Boolean                @default(false)
   createdAt        DateTime               @default(now())
   views            StoryView[]
@@ -1013,6 +1014,7 @@ model ConversationMember {
   isBanned       Boolean      @default(false)
   customTone     String?
   wallpaperUrl   String?
+  tag            String?      @db.VarChar(30)
   joinedAt       DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -110,6 +110,7 @@ export class StoriesService {
       bgColor?: string;
       stickerData?: object;
       closeFriendsOnly?: boolean;
+      subscribersOnly?: boolean;
     },
   ) {
     return this.prisma.story.create({
@@ -124,6 +125,7 @@ export class StoriesService {
         bgColor: data.bgColor,
         stickerData: data.stickerData as Prisma.InputJsonValue,
         closeFriendsOnly: data.closeFriendsOnly ?? false,
+        subscribersOnly: data.subscribersOnly ?? false,
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
       select: STORY_SELECT,
