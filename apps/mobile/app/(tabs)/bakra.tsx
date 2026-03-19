@@ -38,6 +38,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlMargin } from '@/utils/rtl';
 import * as Clipboard from 'expo-clipboard';
+import { useVideoPreload } from '@/hooks/useVideoPreload';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
 
@@ -475,6 +476,7 @@ export default function BakraScreen() {
   }, []);
   const listRef = useRef<FlashListRef<Reel>>(null);
   useScrollToTop(listRef as React.RefObject<FlashListRef<Reel>>);
+  const { preloadVideos } = useVideoPreload(2);
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed'],
@@ -515,9 +517,12 @@ export default function BakraScreen() {
           reelsApi.view(newReel.id).catch(() => {});
         }
         setCurrentIndex(idx);
+        // Preload next 2 videos
+        const videoUrls = reels.map(r => r.hlsUrl || r.videoUrl);
+        preloadVideos(idx, videoUrls);
       }
     }
-  }, [currentIndex, reels]);
+  }, [currentIndex, reels, preloadVideos]);
 
   const queryClient = useQueryClient();
   const likeInFlight = useRef(false);

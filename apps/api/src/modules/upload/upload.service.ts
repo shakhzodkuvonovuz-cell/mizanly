@@ -90,6 +90,7 @@ export class UploadService {
       Key: key,
       ContentType: contentType,
       ContentLength: effectiveMaxSize,
+      CacheControl: 'public, max-age=31536000, immutable',
     });
 
     const uploadUrl = await getSignedUrl(this.s3, command, { expiresIn });
