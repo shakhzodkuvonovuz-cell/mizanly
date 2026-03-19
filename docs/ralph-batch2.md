@@ -1786,7 +1786,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 28: Stripe Connect for Creator Payouts
+### [x] Task 28: Stripe Connect for Creator Payouts — Already built: stripe-connect.service.ts with onboarding, payouts, 70/30 split, tax reporting
 
 **(Can be combined with Task 27 if Stripe Connect is not yet set up)**
 
@@ -1822,7 +1822,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 29: Promoted Posts / Self-Serve Ads
+### [x] Task 29: Promoted Posts / Self-Serve Ads — Already built: PostPromotion model, boost/cancel endpoints, branded content, budget tracking
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/boost-post.tsx`
