@@ -802,4 +802,83 @@ export class IslamicService {
 
     return { contributed: count };
   }
+
+  // ── Adhan Reciters & Calculation Methods ───────────
+
+  getAdhanReciters() {
+    return [
+      { id: 'mishary', name: 'Mishary Rashid Alafasy', arabicName: 'مشاري راشد العفاسي' },
+      { id: 'abdulbasit', name: 'Abdul Basit Abdul Samad', arabicName: 'عبد الباسط عبد الصمد' },
+      { id: 'maher', name: 'Maher Al-Muaiqly', arabicName: 'ماهر المعيقلي' },
+      { id: 'sudais', name: 'Abdul Rahman Al-Sudais', arabicName: 'عبد الرحمن السديس' },
+      { id: 'husary', name: 'Mahmoud Khalil Al-Husary', arabicName: 'محمود خليل الحصري' },
+      { id: 'minshawi', name: 'Mohamed Siddiq Al-Minshawi', arabicName: 'محمد صديق المنشاوي' },
+    ];
+  }
+
+  getCalculationMethods() {
+    return [
+      { id: 'MWL', name: 'Muslim World League', fajrAngle: 18, ishaAngle: 17 },
+      { id: 'ISNA', name: 'Islamic Society of North America', fajrAngle: 15, ishaAngle: 15 },
+      { id: 'Egypt', name: 'Egyptian General Authority of Survey', fajrAngle: 19.5, ishaAngle: 17.5 },
+      { id: 'Makkah', name: 'Umm al-Qura, Makkah', fajrAngle: 18.5, ishaAngle: 90 },
+      { id: 'Karachi', name: 'University of Islamic Sciences, Karachi', fajrAngle: 18, ishaAngle: 18 },
+      { id: 'Tehran', name: 'Institute of Geophysics, Tehran', fajrAngle: 17.7, ishaAngle: 14 },
+      { id: 'JAKIM', name: 'Department of Islamic Advancement, Malaysia', fajrAngle: 20, ishaAngle: 18 },
+      { id: 'DIYANET', name: 'Diyanet İşleri Başkanlığı, Turkey', fajrAngle: 18, ishaAngle: 17 },
+    ];
+  }
+
+  // ── Quran Audio Recitation ─────────────────────────
+
+  getQuranReciters() {
+    return [
+      { id: 'mishary', name: 'Mishary Rashid Alafasy', arabicName: 'مشاري راشد العفاسي', audioBaseUrl: 'https://cdn.islamic.network/quran/audio/128/ar.alafasy' },
+      { id: 'sudais', name: 'Abdul Rahman Al-Sudais', arabicName: 'عبد الرحمن السديس', audioBaseUrl: 'https://cdn.islamic.network/quran/audio/128/ar.abdurrahmaansudais' },
+      { id: 'husary', name: 'Mahmoud Khalil Al-Husary', arabicName: 'محمود خليل الحصري', audioBaseUrl: 'https://cdn.islamic.network/quran/audio/128/ar.husary' },
+      { id: 'minshawi', name: 'Mohamed Siddiq Al-Minshawi', arabicName: 'محمد صديق المنشاوي', audioBaseUrl: 'https://cdn.islamic.network/quran/audio/128/ar.minshawi' },
+    ];
+  }
+
+  getQuranAudioUrl(surah: number, ayah: number, reciterId = 'mishary') {
+    const reciters = this.getQuranReciters();
+    const reciter = reciters.find(r => r.id === reciterId) ?? reciters[0];
+    const audioNumber = this.getAyahNumber(surah, ayah);
+    return { url: `${reciter.audioBaseUrl}/${audioNumber}.mp3`, reciter: reciter.name };
+  }
+
+  private getAyahNumber(surah: number, ayah: number): number {
+    // Cumulative ayah counts for each surah (simplified — surah 1 starts at 1)
+    const surahOffsets = [0, 1, 8, 35, 92, 148, 207, 252, 296, 382, 435, 466, 495, 538, 548, 558, 578, 601, 611, 621, 636, 648, 651, 669, 693, 710, 720, 754, 779, 790, 820, 833, 856, 869, 890, 926, 953, 978, 1012, 1086, 1098, 1123, 1158, 1213, 1270, 1305, 1340, 1379, 1411, 1430, 1459, 1510, 1554, 1604, 1664, 1715, 1772, 1855, 1920, 1958, 1970, 1985, 1993, 2004, 2008, 2012, 2018, 2025, 2030, 2048, 2066, 2071, 2099, 2113, 2121, 2147, 2166, 2179, 2219, 2226, 2232, 2261, 2283, 2292, 2311, 2318, 2325, 2341, 2359, 2360, 2375, 2386, 2392, 2413, 2422, 2431, 2436, 2452, 2460, 2468, 2471, 2476, 2479, 2487, 2496, 2503, 2508, 2511, 2514, 2518, 2523, 2527, 2530, 2533];
+    if (surah < 1 || surah > 114) return ayah;
+    return (surahOffsets[surah - 1] || 0) + ayah;
+  }
+
+  // ── Zakat Calculator ───────────────────────────────
+
+  calculateZakat(assets: { type: string; value: number; currency?: string }[]) {
+    const nisabGold = 85 * 60; // 85g gold × ~$60/g (approximate)
+    const nisabSilver = 595 * 0.8; // 595g silver × ~$0.80/g (approximate)
+
+    let totalValue = 0;
+    const breakdown: { type: string; value: number; zakat: number }[] = [];
+
+    for (const asset of assets) {
+      const zakatAmount = asset.value * 0.025; // 2.5%
+      breakdown.push({ type: asset.type, value: asset.value, zakat: zakatAmount });
+      totalValue += asset.value;
+    }
+
+    const totalZakat = totalValue * 0.025;
+    const meetsNisab = totalValue >= nisabSilver; // Use silver nisab (lower, more inclusive)
+
+    return {
+      totalValue,
+      totalZakat: meetsNisab ? totalZakat : 0,
+      meetsNisab,
+      nisabGold,
+      nisabSilver,
+      breakdown,
+    };
+  }
 }
