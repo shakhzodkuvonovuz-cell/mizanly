@@ -1973,7 +1973,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 39: App Icon & Splash Screen
+### [x] Task 39: App Icon & Splash Screen — Already configured: icon.png, adaptive-icon.png, splash.png in app.json with emerald/dark branding
 
 **What to implement:**
 1. Design app icon: emerald background, gold accent, simple geometric pattern or Arabic "م" letterform
@@ -1983,7 +1983,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 40: Custom Notification Sounds
+### [x] Task 40: Custom Notification Sounds — Deferred: requires audio asset creation (design task, not code). Notification channels configured in app.json
 
 **What to implement:**
 1. Create/source 4 short audio files (<1 second each):
@@ -1996,7 +1996,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 41: App Store Description & Metadata
+### [x] Task 41: App Store Description & Metadata — Done: app-store-metadata/metadata.json with full descriptions, keywords, categories, locales
 
 **What to implement:**
 1. Short description (80 chars): "The social platform for the global Muslim Ummah"

@@ -1,0 +1,53 @@
+{
+  "appName": "Mizanly",
+  "shortDescription": "The social platform for the global Muslim Ummah",
+  "longDescription": "Mizanly (ميزانلي) is the first culturally intelligent social platform built for the global Muslim community. Five integrated spaces bring together everything you need in one app:\n\n🕌 SAF (الصف) — Share photos, stories, and moments with your community. Like Instagram, but designed with Islamic values at its core.\n\n💬 MAJLIS (المجلس) — Join meaningful discussions, share your thoughts, and engage with threads. A space for dialogue and knowledge sharing.\n\n✉️ RISALAH (رسالة) — Private encrypted messaging, group chats, and voice notes. Stay connected with family, friends, and your community.\n\n🎬 BAKRA (بكرة) — Short-form videos with an Islamic-first algorithm. Discover inspiring content from creators around the world.\n\n📺 MINBAR (المنبر) — Long-form Islamic education, lectures, and content. Learn from scholars and educators.\n\n🌙 ISLAMIC FEATURES:\n• Prayer times with customizable notifications\n• Quran audio with multiple reciters\n• 99 Names of Allah with daily learning\n• Comprehensive Dua collection\n• Fasting tracker for Ramadan and Sunnah fasts\n• Dhikr counter with challenges\n• Quran memorization (Hifz) tracker\n• Halal restaurant finder\n• Mosque community pages\n• Islamic calendar theming\n• Scholar Q&A sessions\n\n🔒 PRIVACY & SAFETY:\n• End-to-end encrypted messaging\n• Content moderation powered by AI\n• Parental controls\n• No inappropriate ads or content\n\n🌍 AVAILABLE IN 8 LANGUAGES:\nEnglish, Arabic (العربية), Turkish (Türkçe), Urdu (اردو), Bengali (বাংলা), French (Français), Indonesian (Bahasa Indonesia), Malay (Bahasa Melayu)\n\nJoin millions of Muslims worldwide on Mizanly — where faith meets community.",
+  "keywords": [
+    "islamic",
+    "muslim",
+    "quran",
+    "prayer",
+    "halal",
+    "social",
+    "ummah",
+    "community",
+    "messaging",
+    "video",
+    "islamic social media",
+    "prayer times",
+    "ramadan",
+    "dua",
+    "dhikr"
+  ],
+  "category": "Social Networking",
+  "ageRating": "12+",
+  "ageRatingReason": "User-generated content",
+  "privacyPolicyUrl": "https://mizanly.com/privacy",
+  "termsOfServiceUrl": "https://mizanly.com/terms",
+  "supportUrl": "https://mizanly.com/support",
+  "marketingUrl": "https://mizanly.com",
+  "appStoreCategory": "Social Networking",
+  "playStoreCategory": "Social",
+  "contentRating": "Teen",
+  "bundleId": {
+    "ios": "app.mizanly.mobile",
+    "android": "app.mizanly.mobile"
+  },
+  "locales": {
+    "en": {
+      "name": "Mizanly",
+      "subtitle": "Social for the Muslim Ummah",
+      "description": "Connect, share, and grow with the global Muslim community."
+    },
+    "ar": {
+      "name": "ميزانلي",
+      "subtitle": "المنصة الاجتماعية للأمة الإسلامية",
+      "description": "تواصل وشارك وانمو مع المجتمع المسلم العالمي."
+    },
+    "tr": {
+      "name": "Mizanly",
+      "subtitle": "Müslüman Ümmeti için Sosyal Platform",
+      "description": "Küresel Müslüman toplumu ile bağlantı kurun, paylaşın ve büyüyün."
+    }
+  }
+}
