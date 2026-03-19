@@ -2872,6 +2872,20 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "mosque": {
+    "community": "Komunitas Masjid",
+    "join": "Gabung Komunitas",
+    "leave": "Tinggalkan Komunitas",
+    "members": "Anggota",
+    "announcements": "Pengumuman",
+    "postUpdate": "Posting Pembaruan",
+    "admin": "Admin",
+    "imam": "Imam",
+    "myMosques": "Masjid Saya",
+    "nearbyMosques": "Masjid Terdekat",
+    "madhab": "Mazhab",
+    "createMosque": "Buat Halaman Masjid"
+  },
   "prayer": {
     "timeFor": "Waktunya {{prayer}}",
     "in15Min": "{{prayer}} 15 menit lagi",

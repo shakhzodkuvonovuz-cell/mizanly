@@ -1445,7 +1445,7 @@ prayer.enableNotification: "Enable {{prayer}} notification"
 
 ---
 
-### [ ] Task 24: Mosque Social Graph
+### [x] Task 24: Mosque Social Graph — Done: MosqueCommunity + MosqueMembership + MosquePost models, full CRUD, join/leave, feed, nearby search, i18n 8 langs
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/mosque-finder.tsx`

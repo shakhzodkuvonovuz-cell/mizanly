@@ -2871,6 +2871,20 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "mosque": {
+    "community": "Cami Topluluğu",
+    "join": "Topluluğa Katıl",
+    "leave": "Topluluktan Ayrıl",
+    "members": "Üyeler",
+    "announcements": "Duyurular",
+    "postUpdate": "Güncelleme Paylaş",
+    "admin": "Yönetici",
+    "imam": "İmam",
+    "myMosques": "Camilerim",
+    "nearbyMosques": "Yakındaki Camiler",
+    "madhab": "Mezhep",
+    "createMosque": "Cami Sayfası Oluştur"
+  },
   "prayer": {
     "timeFor": "{{prayer}} vakti geldi",
     "in15Min": "{{prayer}} 15 dakika sonra",

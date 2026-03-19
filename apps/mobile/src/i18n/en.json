@@ -2871,6 +2871,20 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "mosque": {
+    "community": "Mosque Community",
+    "join": "Join Community",
+    "leave": "Leave Community",
+    "members": "Members",
+    "announcements": "Announcements",
+    "postUpdate": "Post Update",
+    "admin": "Admin",
+    "imam": "Imam",
+    "myMosques": "My Mosques",
+    "nearbyMosques": "Nearby Mosques",
+    "madhab": "Madhab",
+    "createMosque": "Create Mosque Page"
+  },
   "prayer": {
     "timeFor": "It's time for {{prayer}}",
     "in15Min": "{{prayer}} in 15 minutes",

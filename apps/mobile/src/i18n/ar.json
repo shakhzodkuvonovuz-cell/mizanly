@@ -2871,6 +2871,20 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "mosque": {
+    "community": "مجتمع المسجد",
+    "join": "انضم للمجتمع",
+    "leave": "مغادرة المجتمع",
+    "members": "الأعضاء",
+    "announcements": "الإعلانات",
+    "postUpdate": "نشر تحديث",
+    "admin": "مشرف",
+    "imam": "إمام",
+    "myMosques": "مساجدي",
+    "nearbyMosques": "المساجد القريبة",
+    "madhab": "المذهب",
+    "createMosque": "إنشاء صفحة مسجد"
+  },
   "prayer": {
     "timeFor": "حان وقت {{prayer}}",
     "in15Min": "{{prayer}} بعد 15 دقيقة",

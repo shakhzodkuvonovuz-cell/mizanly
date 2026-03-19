@@ -2871,6 +2871,20 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "mosque": {
+    "community": "মসজিদ কমিউনিটি",
+    "join": "কমিউনিটিতে যোগ দিন",
+    "leave": "কমিউনিটি ছেড়ে দিন",
+    "members": "সদস্য",
+    "announcements": "ঘোষণা",
+    "postUpdate": "আপডেট পোস্ট করুন",
+    "admin": "অ্যাডমিন",
+    "imam": "ইমাম",
+    "myMosques": "আমার মসজিদ",
+    "nearbyMosques": "কাছের মসজিদ",
+    "madhab": "মাযহাব",
+    "createMosque": "মসজিদ পেজ তৈরি করুন"
+  },
   "prayer": {
     "timeFor": "{{prayer}} এর সময় হয়েছে",
     "in15Min": "{{prayer}} ১৫ মিনিট পর",

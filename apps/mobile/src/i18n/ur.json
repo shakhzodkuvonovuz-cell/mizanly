@@ -2872,6 +2872,20 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "mosque": {
+    "community": "مسجد کمیونٹی",
+    "join": "کمیونٹی میں شامل ہوں",
+    "leave": "کمیونٹی چھوڑیں",
+    "members": "اراکین",
+    "announcements": "اعلانات",
+    "postUpdate": "اپ ڈیٹ پوسٹ کریں",
+    "admin": "ایڈمن",
+    "imam": "امام",
+    "myMosques": "میری مساجد",
+    "nearbyMosques": "قریبی مساجد",
+    "madhab": "مذہب",
+    "createMosque": "مسجد کا صفحہ بنائیں"
+  },
   "prayer": {
     "timeFor": "{{prayer}} کا وقت ہو گیا",
     "in15Min": "{{prayer}} 15 منٹ بعد",

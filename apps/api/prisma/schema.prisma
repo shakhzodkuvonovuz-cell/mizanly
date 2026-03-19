@@ -3593,6 +3593,62 @@ model HifzProgress {
 }
 
 // ============================================================
+// MOSQUE SOCIAL GRAPH
+// ============================================================
+
+model MosqueCommunity {
+  id          String   @id @default(cuid())
+  name        String
+  address     String
+  city        String
+  country     String
+  latitude    Float
+  longitude   Float
+  madhab      String? // hanafi, shafi, maliki, hanbali
+  language    String?
+  phone       String?
+  website     String?
+  imageUrl    String?
+  memberCount Int      @default(0)
+  createdById String
+  isVerified  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  memberships MosqueMembership[]
+  posts       MosquePost[]
+
+  @@index([latitude, longitude])
+  @@index([city])
+  @@map("mosque_communities")
+}
+
+model MosqueMembership {
+  id        String          @id @default(cuid())
+  mosqueId  String
+  mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+  userId    String
+  role      String          @default("member") // member, admin, imam
+  createdAt DateTime        @default(now())
+
+  @@unique([mosqueId, userId])
+  @@map("mosque_memberships")
+}
+
+model MosquePost {
+  id        String          @id @default(cuid())
+  mosqueId  String
+  mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
+  userId    String
+  content   String
+  mediaUrls String[]
+  isPinned  Boolean         @default(false)
+  createdAt DateTime        @default(now())
+
+  @@index([mosqueId, createdAt(sort: Desc)])
+  @@map("mosque_posts")
+}
+
+// ============================================================
 // DUA BOOKMARKS
 // ============================================================
 
