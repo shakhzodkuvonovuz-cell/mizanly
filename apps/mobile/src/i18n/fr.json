@@ -1,0 +1,57 @@
+{
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "done": "Terminé",
+    "next": "Suivant",
+    "back": "Retour",
+    "search": "Rechercher",
+    "share": "Partager",
+    "edit": "Modifier",
+    "settings": "Paramètres",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "yes": "Oui",
+    "no": "Non",
+    "ok": "OK",
+    "continue": "Continuer",
+    "skip": "Passer",
+    "skipForNow": "Passer pour le moment",
+    "viewAll": "Voir tout",
+    "report": "Signaler",
+    "block": "Bloquer",
+    "mute": "Masquer",
+    "follow": "Suivre",
+    "following": "Abonné",
+    "unfollow": "Se désabonner",
+    "message": "Message",
+    "like": "J'aime",
+    "comment": "Commenter",
+    "copyLink": "Copier le lien"
+  },
+  "tabs": {
+    "saf": "Saf",
+    "bakra": "Bakra",
+    "majlis": "Majlis",
+    "risalah": "Risalah",
+    "minbar": "Minbar"
+  },
+  "saf": {
+    "following": "Abonnements",
+    "forYou": "Pour vous",
+    "caughtUp": {
+      "title": "Vous êtes à jour",
+      "subtitle": "Vous avez vu toutes les publications des 3 derniers jours"
+    }
+  },
+  "islamic": {
+    "prayerTimes": "Horaires de prière",
+    "hadith": "Hadith du jour",
+    "dhikr": "Compteur de dhikr",
+    "zakat": "Calculateur de zakat"
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Hapus",
+    "loading": "Memuat...",
+    "error": "Terjadi kesalahan",
+    "retry": "Coba lagi",
+    "done": "Selesai",
+    "next": "Berikutnya",
+    "back": "Kembali",
+    "search": "Cari",
+    "share": "Bagikan",
+    "edit": "Edit",
+    "settings": "Pengaturan",
+    "close": "Tutup",
+    "confirm": "Konfirmasi",
+    "yes": "Ya",
+    "no": "Tidak",
+    "ok": "OK",
+    "continue": "Lanjutkan",
+    "skip": "Lewati",
+    "skipForNow": "Lewati untuk sekarang",
+    "viewAll": "Lihat Semua",
+    "report": "Laporkan",
+    "block": "Blokir",
+    "mute": "Bisukan",
+    "follow": "Ikuti",
+    "following": "Mengikuti",
+    "unfollow": "Berhenti Ikuti",
+    "message": "Pesan",
+    "like": "Suka",
+    "comment": "Komentar",
+    "copyLink": "Salin Tautan"
+  },
+  "tabs": {
+    "saf": "Saf",
+    "bakra": "Bakra",
+    "majlis": "Majlis",
+    "risalah": "Risalah",
+    "minbar": "Minbar"
+  },
+  "saf": {
+    "following": "Mengikuti",
+    "forYou": "Untuk Anda",
+    "caughtUp": {
+      "title": "Anda sudah melihat semuanya",
+      "subtitle": "Anda telah melihat semua postingan baru dari 3 hari terakhir"
+    }
+  },
+  "islamic": {
+    "prayerTimes": "Waktu Shalat",
+    "hadith": "Hadits Hari Ini",
+    "dhikr": "Penghitung Dzikir",
+    "zakat": "Kalkulator Zakat"
+  }
+}

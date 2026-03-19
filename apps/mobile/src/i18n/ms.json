@@ -1,0 +1,43 @@
+{
+  "common": {
+    "save": "Simpan",
+    "cancel": "Batal",
+    "delete": "Padam",
+    "loading": "Memuatkan...",
+    "error": "Sesuatu telah berlaku",
+    "retry": "Cuba lagi",
+    "done": "Selesai",
+    "next": "Seterusnya",
+    "back": "Kembali",
+    "search": "Cari",
+    "share": "Kongsi",
+    "edit": "Edit",
+    "settings": "Tetapan",
+    "close": "Tutup",
+    "confirm": "Sahkan",
+    "yes": "Ya",
+    "no": "Tidak",
+    "ok": "OK",
+    "continue": "Teruskan",
+    "skip": "Langkau",
+    "skipForNow": "Langkau buat masa ini",
+    "viewAll": "Lihat Semua",
+    "follow": "Ikuti",
+    "following": "Mengikuti",
+    "like": "Suka",
+    "comment": "Komen"
+  },
+  "tabs": {
+    "saf": "Saf",
+    "bakra": "Bakra",
+    "majlis": "Majlis",
+    "risalah": "Risalah",
+    "minbar": "Minbar"
+  },
+  "islamic": {
+    "prayerTimes": "Waktu Solat",
+    "hadith": "Hadis Hari Ini",
+    "dhikr": "Kiraan Zikir",
+    "zakat": "Kalkulator Zakat"
+  }
+}

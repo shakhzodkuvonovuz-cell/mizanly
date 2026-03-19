@@ -1,0 +1,77 @@
+{
+  "common": {
+    "save": "محفوظ کریں",
+    "cancel": "منسوخ",
+    "delete": "حذف کریں",
+    "loading": "لوڈ ہو رہا ہے...",
+    "error": "کچھ غلط ہو گیا",
+    "retry": "دوبارہ کوشش کریں",
+    "done": "ہو گیا",
+    "next": "اگلا",
+    "back": "واپس",
+    "search": "تلاش",
+    "share": "شیئر کریں",
+    "edit": "ترمیم",
+    "settings": "ترتیبات",
+    "close": "بند کریں",
+    "confirm": "تصدیق",
+    "yes": "ہاں",
+    "no": "نہیں",
+    "ok": "ٹھیک ہے",
+    "continue": "جاری رکھیں",
+    "skip": "چھوڑیں",
+    "skipForNow": "ابھی چھوڑیں",
+    "viewAll": "سب دیکھیں",
+    "report": "رپورٹ",
+    "block": "بلاک",
+    "mute": "خاموش",
+    "follow": "فالو کریں",
+    "following": "فالو کر رہے ہیں",
+    "unfollow": "ان فالو",
+    "message": "پیغام",
+    "like": "پسند",
+    "comment": "تبصرہ",
+    "copyLink": "لنک کاپی کریں"
+  },
+  "tabs": {
+    "saf": "صف",
+    "bakra": "بکرا",
+    "majlis": "مجلس",
+    "risalah": "رسالہ",
+    "minbar": "منبر"
+  },
+  "saf": {
+    "following": "فالونگ",
+    "forYou": "آپ کے لیے",
+    "caughtUp": {
+      "title": "آپ سب کچھ دیکھ چکے ہیں",
+      "subtitle": "آپ نے پچھلے 3 دنوں کی تمام نئی پوسٹس دیکھ لی ہیں"
+    }
+  },
+  "bakra": {
+    "duet": "ڈوئٹ",
+    "stitch": "سٹچ",
+    "notInterested": "دلچسپی نہیں",
+    "saveToCollection": "کلیکشن میں محفوظ کریں"
+  },
+  "majlis": {
+    "forYou": "آپ کے لیے",
+    "following": "فالونگ",
+    "trending": "رجحان"
+  },
+  "risalah": {
+    "chats": "گفتگو",
+    "newChat": "نئی گفتگو",
+    "typeMessage": "پیغام لکھیں..."
+  },
+  "minbar": {
+    "subscribe": "سبسکرائب",
+    "subscribed": "سبسکرائبڈ"
+  },
+  "islamic": {
+    "prayerTimes": "نماز کے اوقات",
+    "hadith": "حدیثِ نبوی",
+    "dhikr": "ذکر کاؤنٹر",
+    "zakat": "زکوٰة کیلکولیٹر"
+  }
+}

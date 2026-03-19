@@ -5,6 +5,11 @@ import { getLocales } from 'expo-localization';
 import en from './en.json';
 import ar from './ar.json';
 import tr from './tr.json';
+import ur from './ur.json';
+import id from './id.json';
+import bn from './bn.json';
+import fr from './fr.json';
+import ms from './ms.json';
 
 // Get locale from expo-localization (locale was removed in newer versions; use getLocales())
 const deviceLocale = getLocales()[0]?.languageTag ?? 'en';
@@ -13,6 +18,11 @@ const deviceLocale = getLocales()[0]?.languageTag ?? 'en';
 function resolveLanguage(locale: string): string {
   if (locale.startsWith('ar')) return 'ar';
   if (locale.startsWith('tr')) return 'tr';
+  if (locale.startsWith('ur')) return 'ur';
+  if (locale.startsWith('id')) return 'id';
+  if (locale.startsWith('bn')) return 'bn';
+  if (locale.startsWith('fr')) return 'fr';
+  if (locale.startsWith('ms')) return 'ms';
   return 'en';
 }
 
@@ -24,6 +34,11 @@ i18next
       en: { translation: en },
       ar: { translation: ar },
       tr: { translation: tr },
+      ur: { translation: ur },
+      id: { translation: id },
+      bn: { translation: bn },
+      fr: { translation: fr },
+      ms: { translation: ms },
     },
     lng: resolveLanguage(deviceLocale),
     fallbackLng: 'en',
