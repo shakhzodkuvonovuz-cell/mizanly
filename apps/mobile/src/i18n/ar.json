@@ -2871,6 +2871,23 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "halal": {
+    "finder": "باحث الحلال",
+    "restaurants": "مطاعم حلال",
+    "nearYou": "بالقرب منك",
+    "mapView": "خريطة",
+    "listView": "قائمة",
+    "addRestaurant": "إضافة مطعم",
+    "certified": "شهادة حلال",
+    "verified": "معتمد من المجتمع",
+    "cuisineType": "نوع المطبخ",
+    "priceRange": "نطاق السعر",
+    "reviews": "التقييمات",
+    "writeReview": "اكتب تقييم",
+    "directions": "احصل على الاتجاهات",
+    "verifyHalal": "تحقق من حالة الحلال",
+    "distance": "{{distance}} كم"
+  },
   "tts": {
     "listen": "استمع",
     "listening": "جارٍ الاستماع...",

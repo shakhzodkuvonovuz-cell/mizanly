@@ -2872,6 +2872,23 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "halal": {
+    "finder": "Pencari Halal",
+    "restaurants": "Restoran Halal",
+    "nearYou": "Di Dekat Anda",
+    "mapView": "Peta",
+    "listView": "Daftar",
+    "addRestaurant": "Tambah Restoran",
+    "certified": "Bersertifikat Halal",
+    "verified": "Diverifikasi Komunitas",
+    "cuisineType": "Jenis Masakan",
+    "priceRange": "Kisaran Harga",
+    "reviews": "Ulasan",
+    "writeReview": "Tulis Ulasan",
+    "directions": "Dapatkan Petunjuk",
+    "verifyHalal": "Verifikasi Status Halal",
+    "distance": "{{distance}} km"
+  },
   "tts": {
     "listen": "Dengarkan",
     "listening": "Mendengarkan...",

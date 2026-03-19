@@ -2871,6 +2871,23 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "halal": {
+    "finder": "Helal Bulucu",
+    "restaurants": "Helal Restoranlar",
+    "nearYou": "Yakınında",
+    "mapView": "Harita",
+    "listView": "Liste",
+    "addRestaurant": "Restoran Ekle",
+    "certified": "Helal Sertifikalı",
+    "verified": "Topluluk Onaylı",
+    "cuisineType": "Mutfak",
+    "priceRange": "Fiyat Aralığı",
+    "reviews": "Yorumlar",
+    "writeReview": "Yorum Yaz",
+    "directions": "Yol Tarifi Al",
+    "verifyHalal": "Helal Durumunu Doğrula",
+    "distance": "{{distance}} km uzakta"
+  },
   "tts": {
     "listen": "Dinle",
     "listening": "Dinleniyor...",

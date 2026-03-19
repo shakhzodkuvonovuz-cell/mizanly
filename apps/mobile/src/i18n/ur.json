@@ -2872,6 +2872,23 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "halal": {
+    "finder": "حلال فائنڈر",
+    "restaurants": "حلال ریستوران",
+    "nearYou": "آپ کے قریب",
+    "mapView": "نقشہ",
+    "listView": "فہرست",
+    "addRestaurant": "ریستوران شامل کریں",
+    "certified": "حلال مصدقہ",
+    "verified": "کمیونٹی تصدیق شدہ",
+    "cuisineType": "کھانے کی قسم",
+    "priceRange": "قیمت کی حد",
+    "reviews": "جائزے",
+    "writeReview": "جائزہ لکھیں",
+    "directions": "راستہ حاصل کریں",
+    "verifyHalal": "حلال حیثیت کی تصدیق",
+    "distance": "{{distance}} کلومیٹر دور"
+  },
   "tts": {
     "listen": "سنیں",
     "listening": "سن رہے ہیں...",

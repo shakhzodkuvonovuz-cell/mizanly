@@ -1025,7 +1025,7 @@ tts.readingAloud: "Reading aloud"
 
 ---
 
-### [ ] Task 18: Halal Food & Restaurant Finder
+### [x] Task 18: Halal Food & Restaurant Finder — Done: HalalRestaurant + HalalRestaurantReview models, full CRUD with geolocation, reviews, verify voting, halal-finder screen, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/islamic/islamic.service.ts`

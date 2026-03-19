@@ -2872,6 +2872,23 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "halal": {
+    "finder": "Trouveur Halal",
+    "restaurants": "Restaurants Halal",
+    "nearYou": "Près de vous",
+    "mapView": "Carte",
+    "listView": "Liste",
+    "addRestaurant": "Ajouter un restaurant",
+    "certified": "Certifié Halal",
+    "verified": "Vérifié par la communauté",
+    "cuisineType": "Cuisine",
+    "priceRange": "Gamme de prix",
+    "reviews": "Avis",
+    "writeReview": "Écrire un avis",
+    "directions": "Obtenir l'itinéraire",
+    "verifyHalal": "Vérifier le statut Halal",
+    "distance": "{{distance}} km"
+  },
   "tts": {
     "listen": "Écouter",
     "listening": "Écoute en cours...",

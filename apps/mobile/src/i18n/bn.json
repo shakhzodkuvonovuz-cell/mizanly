@@ -2871,6 +2871,23 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "halal": {
+    "finder": "হালাল ফাইন্ডার",
+    "restaurants": "হালাল রেস্তোরাঁ",
+    "nearYou": "আপনার কাছে",
+    "mapView": "মানচিত্র",
+    "listView": "তালিকা",
+    "addRestaurant": "রেস্তোরাঁ যোগ করুন",
+    "certified": "হালাল সার্টিফাইড",
+    "verified": "কমিউনিটি যাচাইকৃত",
+    "cuisineType": "রান্নার ধরন",
+    "priceRange": "মূল্য সীমা",
+    "reviews": "পর্যালোচনা",
+    "writeReview": "পর্যালোচনা লিখুন",
+    "directions": "দিকনির্দেশনা পান",
+    "verifyHalal": "হালাল স্থিতি যাচাই করুন",
+    "distance": "{{distance}} কিমি দূরে"
+  },
   "tts": {
     "listen": "শুনুন",
     "listening": "শোনা হচ্ছে...",

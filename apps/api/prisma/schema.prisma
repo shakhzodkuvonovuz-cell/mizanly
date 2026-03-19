@@ -1157,24 +1157,24 @@ model BroadcastMessage {
 // ============================================================
 
 model LiveSession {
-  id             String            @id @default(cuid())
-  hostId         String
-  host           User              @relation("LiveHost", fields: [hostId], references: [id], onDelete: Cascade)
-  title          String            @db.VarChar(200)
-  description    String?           @db.VarChar(1000)
-  thumbnailUrl   String?
-  liveType       LiveType
-  status         LiveStatus        @default(SCHEDULED)
-  streamKey      String?           @unique
-  playbackUrl    String?
-  streamId       String?
-  peakViewers    Int               @default(0)
-  currentViewers Int               @default(0)
-  totalViews     Int               @default(0)
-  scheduledAt    DateTime?
-  startedAt      DateTime?
-  endedAt        DateTime?
-  recordingUrl   String?
+  id                String            @id @default(cuid())
+  hostId            String
+  host              User              @relation("LiveHost", fields: [hostId], references: [id], onDelete: Cascade)
+  title             String            @db.VarChar(200)
+  description       String?           @db.VarChar(1000)
+  thumbnailUrl      String?
+  liveType          LiveType
+  status            LiveStatus        @default(SCHEDULED)
+  streamKey         String?           @unique
+  playbackUrl       String?
+  streamId          String?
+  peakViewers       Int               @default(0)
+  currentViewers    Int               @default(0)
+  totalViews        Int               @default(0)
+  scheduledAt       DateTime?
+  startedAt         DateTime?
+  endedAt           DateTime?
+  recordingUrl      String?
   isRecorded        Boolean           @default(true)
   isRehearsal       Boolean           @default(false)
   isSubscribersOnly Boolean           @default(false)
@@ -2828,7 +2828,7 @@ model SeriesEpisode {
   title        String    @db.VarChar(200)
   videoUrl     String?
   thumbnailUrl String?
-  duration     Int?      // seconds
+  duration     Int? // seconds
   postId       String?
   reelId       String?
   videoId      String?
@@ -2853,14 +2853,14 @@ model SeriesFollower {
 }
 
 model ThumbnailVariant {
-  id          String   @id @default(cuid())
-  contentType String   // 'post' | 'reel' | 'video'
-  contentId   String
+  id           String   @id @default(cuid())
+  contentType  String // 'post' | 'reel' | 'video'
+  contentId    String
   thumbnailUrl String
-  impressions Int      @default(0)
-  clicks      Int      @default(0)
-  isWinner    Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  impressions  Int      @default(0)
+  clicks       Int      @default(0)
+  isWinner     Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
   @@index([contentType, contentId])
   @@map("thumbnail_variants")
@@ -2871,7 +2871,7 @@ model SeriesProgress {
   seriesId       String
   userId         String
   lastEpisodeNum Int
-  lastTimestamp   Int      @default(0)
+  lastTimestamp  Int      @default(0)
   updatedAt      DateTime @updatedAt
 
   @@unique([seriesId, userId])
@@ -3573,4 +3573,50 @@ model CommunityRole {
 
   @@index([communityId, position])
   @@map("community_roles")
+}
+
+// ============================================================
+// HALAL RESTAURANT FINDER
+// ============================================================
+
+model HalalRestaurant {
+  id             String   @id @default(cuid())
+  name           String
+  address        String
+  city           String
+  country        String
+  latitude       Float
+  longitude      Float
+  cuisineType    String?
+  priceRange     Int? // 1-4
+  halalCertified Boolean  @default(false)
+  certifyingBody String?
+  phone          String?
+  website        String?
+  imageUrl       String?
+  averageRating  Float    @default(0)
+  reviewCount    Int      @default(0)
+  verifyVotes    Int      @default(0)
+  addedById      String?
+  isVerified     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  reviews HalalRestaurantReview[]
+
+  @@index([latitude, longitude])
+  @@index([city])
+  @@map("halal_restaurants")
+}
+
+model HalalRestaurantReview {
+  id           String          @id @default(cuid())
+  restaurantId String
+  restaurant   HalalRestaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  userId       String
+  rating       Int // 1-5
+  comment      String?
+  createdAt    DateTime        @default(now())
+
+  @@unique([restaurantId, userId])
+  @@map("halal_restaurant_reviews")
 }

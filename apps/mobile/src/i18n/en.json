@@ -2871,6 +2871,23 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "halal": {
+    "finder": "Halal Finder",
+    "restaurants": "Halal Restaurants",
+    "nearYou": "Near You",
+    "mapView": "Map",
+    "listView": "List",
+    "addRestaurant": "Add Restaurant",
+    "certified": "Halal Certified",
+    "verified": "Community Verified",
+    "cuisineType": "Cuisine",
+    "priceRange": "Price Range",
+    "reviews": "Reviews",
+    "writeReview": "Write a Review",
+    "directions": "Get Directions",
+    "verifyHalal": "Verify Halal Status",
+    "distance": "{{distance}} km away"
+  },
   "tts": {
     "listen": "Listen",
     "listening": "Listening...",
