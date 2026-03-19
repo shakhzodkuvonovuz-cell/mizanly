@@ -674,7 +674,7 @@ series.progress: "{{percent}}% complete"
 
 ---
 
-### [ ] Task 11: Live Rehearsal Mode
+### [x] Task 11: Live Rehearsal Mode — Done: rehearsal start/go-live/end endpoints, excluded from feeds, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/live/live.controller.ts`
@@ -720,7 +720,7 @@ live.audioLevel: "Audio Level"
 
 ---
 
-### [ ] Task 12: Subscriber-Only Live Streams
+### [x] Task 12: Subscriber-Only Live Streams — Done: isSubscribersOnly on LiveSession, toggle endpoint, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/live/` — live streaming module
@@ -766,7 +766,7 @@ live.switchToSubscribers: "Switch to Subscribers Only"
 
 ---
 
-### [ ] Task 13: Thumbnail A/B Testing for Creators
+### [x] Task 13: Thumbnail A/B Testing for Creators — Done: ThumbnailVariant model, serve/track/analytics endpoints, auto-winner at 1000 impressions, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/videos/videos.service.ts`
@@ -836,7 +836,7 @@ thumbnails.testInProgress: "Testing — {{current}}/{{total}} impressions"
 
 ---
 
-### [ ] Task 14: AI Analytics Chat (AskStudio equivalent)
+### [x] Task 14: AI Analytics Chat (AskStudio equivalent) — Done: POST /creator/ask with Claude API, analytics context, 20/hour rate limit, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/creator/creator.service.ts`
