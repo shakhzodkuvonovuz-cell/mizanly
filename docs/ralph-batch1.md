@@ -976,7 +976,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 22: Content Embeddings with Gemini
+### [x] Task 22: Content Embeddings with Gemini — Already implemented: EmbeddingsService with generateEmbedding, findSimilarByVector, getUserInterestVector
 
 **Problem:** No content understanding. Feed ranking is based purely on engagement, not content relevance.
 
@@ -1017,7 +1017,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 23: Multi-Stage Feed Ranking Pipeline
+### [x] Task 23: Multi-Stage Feed Ranking Pipeline — Already implemented: PersonalizedFeedService with 4-stage pipeline (candidate gen → scoring → diversity → explain)
 
 **Problem:** Feed uses simple SQL weights. Need a proper ranking pipeline.
 
@@ -1075,7 +1075,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 24: Session-Aware Real-Time Adaptation
+### [x] Task 24: Session-Aware Real-Time Adaptation — Already implemented: trackSessionSignal + getSessionBoost in PersonalizedFeedService
 
 **Problem:** Feed is static once loaded. No in-session learning.
 
@@ -1110,7 +1110,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 25: Interest Selection → Algorithm Seeding
+### [x] Task 25: Interest Selection → Algorithm Seeding — Already implemented: onboarding/interests.tsx + interest-based cold start in feed
 
 **Problem:** Onboarding has interest selection but it doesn't affect the feed algorithm.
 
@@ -1251,7 +1251,7 @@ sessions.notYou: "Not you? Secure your account"
 
 ---
 
-### [ ] Task 28: Per-User Rate Limiting
+### [x] Task 28: Per-User Rate Limiting — Already implemented: UserThrottlerGuard (user ID when authed, IP fallback for anonymous)
 
 **Files to read first:**
 - `apps/api/src/common/` — guards, decorators, filters
@@ -1803,7 +1803,9 @@ When you complete a task, change `[ ]` to `[x]` and add a one-line note:
 - [x] Task 12: Bundle Size — explicit Hermes, lazy i18n loading (7 langs deferred)
 - [x] Task 13: Sentry Performance — already configured (tracesSampleRate 0.2 mobile, 0.1 API)
 - [x] Tasks 14-19, 21: UX/UI Polish — shimmer, double-tap heart, scroll-hide, haptics, story viewer, pull-to-refresh all already implemented
-- [ ] Task 20: Ambient Mode — deferred (needs color extraction library)
+- [ ] Task 20: Ambient Mode — deferred
+- [x] Tasks 22-25: Algorithm & Feed — all already implemented (embeddings, ranking pipeline, session signals, interests)
+- [x] Task 28: Per-User Rate Limiting — already implemented (UserThrottlerGuard)
 
 ### Blocked:
 - Task 10: BullMQ requires `npm install bullmq` which needs Windows terminal (npm not in shell PATH). AsyncJobService already provides in-process job execution with retry.
