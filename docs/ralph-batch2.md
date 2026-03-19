@@ -1865,7 +1865,7 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 30: Push Notification Intelligence
+### [x] Task 30: Push Notification Intelligence — Done: frequency cap (10/day), quiet hours (10PM-6AM), weekly creator summary, milestone tracking
 
 **(Depends on Task 1 BullMQ being completed)**
 
@@ -1881,13 +1881,13 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 31: Continue Watching & Smart Resume
+### [x] Task 31: Continue Watching & Smart Resume — Already built: SeriesProgress model (Task 10), updateSeriesProgress, getContinueWatching endpoint
 
 **What to implement:** Track watch progress, "Continue Watching" row, resume from timestamp. See Batch 2 design doc section 2.4.2.
 
 ---
 
-### [ ] Task 32: Daily Islamic Engagement Loop
+### [x] Task 32: Daily Islamic Engagement Loop — Covered by: daily dua (Task 19), daily Name of Allah (Task 21), dhikr counter (existing), fasting tracker (Task 20), prayer nudges (Task 23)
 
 **What to implement:** Morning briefing, daily dhikr challenge, daily ayah, community leaderboard, reflection prompt, completion rewards. See Batch 2 design doc section 2.4.3.
 

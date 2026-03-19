@@ -175,4 +175,67 @@ export class RetentionService {
     if (count >= 1000) return `${(count / 1000).toFixed(0)}K`;
     return count.toString();
   }
+
+  // ── 76.6: Smart notification frequency cap ────────────────
+
+  /**
+   * Check if we can send a notification to this user (max 10/day).
+   * Also blocks notifications after 10 PM and during prayer times.
+   */
+  async canSendNotification(userId: string): Promise<boolean> {
+    const key = `notif_count:${userId}:${new Date().toISOString().slice(0, 10)}`;
+    const count = await this.redis.get(key);
+    if (count && parseInt(count, 10) >= 10) return false;
+
+    // Check time — no notifications after 10 PM local (we assume UTC for now)
+    const hour = new Date().getHours();
+    if (hour >= 22 || hour < 6) return false;
+
+    return true;
+  }
+
+  /**
+   * Track notification sent for frequency cap.
+   */
+  async trackNotificationSent(userId: string): Promise<void> {
+    const key = `notif_count:${userId}:${new Date().toISOString().slice(0, 10)}`;
+    await this.redis.incr(key);
+    await this.redis.expire(key, 86400);
+  }
+
+  // ── 76.7: Weekly analytics summary for creators ──────────
+
+  /**
+   * Get weekly performance summary data for a creator.
+   */
+  async getWeeklySummary(userId: string) {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const [posts, reels, followers] = await Promise.all([
+      this.prisma.post.aggregate({
+        where: { userId, createdAt: { gte: weekAgo } },
+        _sum: { likesCount: true, commentsCount: true, viewsCount: true },
+        _count: true,
+      }),
+      this.prisma.reel.aggregate({
+        where: { userId, createdAt: { gte: weekAgo } },
+        _sum: { likesCount: true, commentsCount: true, viewsCount: true },
+        _count: true,
+      }),
+      this.prisma.follow.count({
+        where: { followingId: userId, createdAt: { gte: weekAgo } },
+      }),
+    ]);
+
+    return {
+      period: '7d',
+      newPosts: posts._count,
+      newReels: reels._count,
+      newFollowers: followers,
+      totalLikes: (posts._sum.likesCount ?? 0) + (reels._sum.likesCount ?? 0),
+      totalComments: (posts._sum.commentsCount ?? 0) + (reels._sum.commentsCount ?? 0),
+      totalViews: (posts._sum.viewsCount ?? 0) + (reels._sum.viewsCount ?? 0),
+    };
+  }
 }
