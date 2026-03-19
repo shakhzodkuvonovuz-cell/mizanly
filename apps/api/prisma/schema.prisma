@@ -6,13 +6,15 @@
 // ============================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_DATABASE_URL")
+  extensions = [vector]
 }
 
 // ============================================================
@@ -3292,4 +3294,28 @@ model StageSession {
   host           User     @relation("StageHost", fields: [hostId], references: [id])
   @@index([circleId, status])
   @@map("stage_sessions")
+}
+
+// ============================================================
+// EMBEDDINGS — pgvector-based content similarity
+// ============================================================
+
+enum EmbeddingContentType {
+  POST
+  REEL
+  THREAD
+  VIDEO
+}
+
+model Embedding {
+  id          String               @id @default(uuid())
+  contentId   String
+  contentType EmbeddingContentType
+  vector      Unsupported("vector(768)")
+  metadata    Json?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  @@unique([contentId, contentType])
+  @@index([contentType])
+  @@map("embeddings")
 }

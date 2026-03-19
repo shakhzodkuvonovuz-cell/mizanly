@@ -1032,12 +1032,14 @@ export const audioTracksApi = {
 export const feedApi = {
   dismiss: (data: { postId?: string; reelId?: string; threadId?: string; reason: string }) =>
     api.post('/feed/dismiss', data),
-  getPersonalized: (cursor?: string) =>
-    api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/personalized${cursor ? `?cursor=${cursor}` : ''}`),
+  getPersonalized: (space: 'saf' | 'bakra' | 'majlis', cursor?: string) =>
+    api.get<PaginatedResponse<{ id: string; type: string; score: number; reasons: string[] }>>(`/feed/personalized${qs({ space, cursor })}`),
   getExplore: (cursor?: string) =>
     api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
   reportNotInterested: (contentId: string, contentType: string) =>
     api.post('/feed/not-interested', { contentId, contentType }),
+  trackSessionSignal: (data: { contentId: string; action: 'view' | 'like' | 'save' | 'share' | 'skip'; hashtags?: string[]; scrollPosition?: number }) =>
+    api.post('/feed/session-signal', data),
   getNearby: (lat: number, lng: number, radiusKm?: number, cursor?: string) =>
     api.get<PaginatedResponse<Post>>(`/feed/nearby?lat=${lat}&lng=${lng}${radiusKm ? `&radiusKm=${radiusKm}` : ''}${cursor ? `&cursor=${cursor}` : ''}`),
 };

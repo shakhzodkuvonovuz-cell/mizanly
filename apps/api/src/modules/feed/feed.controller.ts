@@ -5,6 +5,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { FeedService } from './feed.service';
 import { FeedTransparencyService } from './feed-transparency.service';
+import { PersonalizedFeedService } from './personalized-feed.service';
 import { LogInteractionDto } from './dto/log-interaction.dto';
 
 @ApiTags('Feed Intelligence')
@@ -14,6 +15,7 @@ export class FeedController {
   constructor(
     private feed: FeedService,
     private transparency: FeedTransparencyService,
+    private personalizedFeed: PersonalizedFeedService,
   ) {}
 
   @UseGuards(ClerkAuthGuard)
@@ -79,6 +81,37 @@ export class FeedController {
   ) {
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
     return this.transparency.enhancedSearch(q, cursor, parsedLimit, userId);
+  }
+
+  @UseGuards(OptionalClerkAuthGuard)
+  @Get('personalized')
+  @ApiOperation({ summary: 'Get personalized feed (pgvector + Islamic boost + session signals)' })
+  @ApiQuery({ name: 'space', required: true, enum: ['saf', 'bakra', 'majlis'] })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getPersonalized(
+    @CurrentUser('id') userId: string | undefined,
+    @Query('space') space: 'saf' | 'bakra' | 'majlis',
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.personalizedFeed.getPersonalizedFeed(
+      userId,
+      space,
+      cursor,
+      limit ? parseInt(limit, 10) : 20,
+    );
+  }
+
+  @UseGuards(ClerkAuthGuard)
+  @Post('session-signal') @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Track in-session feed signal for real-time adaptation' })
+  async trackSessionSignal(
+    @CurrentUser('id') userId: string,
+    @Body() body: { contentId: string; action: 'view' | 'like' | 'save' | 'share' | 'skip'; hashtags?: string[]; scrollPosition?: number },
+  ) {
+    this.personalizedFeed.trackSessionSignal(userId, body);
+    return { success: true };
   }
 
   @UseGuards(OptionalClerkAuthGuard)
