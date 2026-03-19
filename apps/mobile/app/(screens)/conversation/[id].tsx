@@ -36,7 +36,7 @@ import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { useStore } from '@/store';
 import { colors, spacing, fontSize, radius, animation } from '@/theme';
-import { messagesApi, uploadApi } from '@/services/api';
+import { messagesApi, uploadApi, aiApi } from '@/services/api';
 import { encryptionService } from '@/services/encryption';
 import type { Message, Conversation, ConversationMember } from '@/types';
 import { rtlFlexRow, rtlTextAlign, rtlArrow, rtlMargin, rtlBorderStart } from '@/utils/rtl';
@@ -375,6 +375,8 @@ function MessageBubble({
   const { t, isRTL } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
   const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
   const spoilerOpacity = useSharedValue(1);
   const spoilerAnimStyle = useAnimatedStyle(() => ({
     opacity: spoilerOpacity.value,
@@ -536,6 +538,33 @@ function MessageBubble({
               </Text>
             )}
           </>
+        )}
+        {/* Inline translation — Instagram 2026 */}
+        {translatedText && (
+          <View style={{ marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 0.5, borderTopColor: isOwn ? 'rgba(255,255,255,0.15)' : colors.dark.border }}>
+            <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { fontStyle: 'italic' }]}>{translatedText}</Text>
+            <Pressable onPress={() => setTranslatedText(null)} hitSlop={8}>
+              <Text style={{ color: isOwn ? 'rgba(255,255,255,0.5)' : colors.text.tertiary, fontSize: 10 }}>{t('ai.showOriginal')}</Text>
+            </Pressable>
+          </View>
+        )}
+        {message.content && !translatedText && !isOwn && (
+          <Pressable
+            onPress={async () => {
+              setIsTranslating(true);
+              try {
+                const result = await aiApi.translate(message.content!, 'auto');
+                if (result?.translatedText) setTranslatedText(result.translatedText);
+              } catch { /* silent */ }
+              setIsTranslating(false);
+            }}
+            hitSlop={8}
+            style={{ marginTop: 2 }}
+          >
+            <Text style={{ color: colors.text.tertiary, fontSize: 10 }}>
+              {isTranslating ? t('ai.translating') : t('ai.translate')}
+            </Text>
+          </Pressable>
         )}
         <View style={[styles.bubbleMeta, { flexDirection: rtlFlexRow(isRTL) }]}>
           {message.editedAt && (

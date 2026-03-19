@@ -80,4 +80,27 @@ export class FeedController {
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
     return this.transparency.enhancedSearch(q, cursor, parsedLimit, userId);
   }
+
+  @UseGuards(OptionalClerkAuthGuard)
+  @Get('nearby')
+  @ApiOperation({ summary: 'Get nearby content based on location' })
+  @ApiQuery({ name: 'lat', required: true, type: Number })
+  @ApiQuery({ name: 'lng', required: true, type: Number })
+  @ApiQuery({ name: 'radiusKm', required: false, type: Number })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  async getNearby(
+    @CurrentUser('id') userId: string | undefined,
+    @Query('lat') lat: string,
+    @Query('lng') lng: string,
+    @Query('radiusKm') radiusKm?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    return this.feed.getNearbyContent(
+      parseFloat(lat),
+      parseFloat(lng),
+      radiusKm ? parseFloat(radiusKm) : 25,
+      cursor,
+      userId,
+    );
+  }
 }

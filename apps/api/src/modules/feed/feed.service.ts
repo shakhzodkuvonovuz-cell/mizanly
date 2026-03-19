@@ -110,4 +110,43 @@ export class FeedService {
 
     return where;
   }
+
+  async getNearbyContent(lat: number, lng: number, radiusKm: number, cursor?: string, userId?: string) {
+    const limit = 20;
+    // Find posts with locationName that were created nearby
+    // Since we don't have lat/lng on posts, we search for posts with any locationName
+    // and sort by recency. In production, you'd use PostGIS or a geo index.
+    const posts = await this.prisma.post.findMany({
+      where: {
+        locationName: { not: null },
+        isArchived: false,
+        ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+      },
+      select: {
+        id: true,
+        content: true,
+        mediaUrls: true,
+        mediaTypes: true,
+        postType: true,
+        locationName: true,
+        likesCount: true,
+        commentsCount: true,
+        createdAt: true,
+        user: {
+          select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+
+    const hasMore = posts.length === limit;
+    return {
+      data: posts,
+      meta: {
+        hasMore,
+        cursor: hasMore ? posts[posts.length - 1].createdAt.toISOString() : undefined,
+      },
+    };
+  }
 }

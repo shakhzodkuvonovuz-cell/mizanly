@@ -1027,6 +1027,8 @@ export const feedApi = {
     api.get<PaginatedResponse<Post | Reel | Thread>>(`/feed/explore${cursor ? `?cursor=${cursor}` : ''}`),
   reportNotInterested: (contentId: string, contentType: string) =>
     api.post('/feed/not-interested', { contentId, contentType }),
+  getNearby: (lat: number, lng: number, radiusKm?: number, cursor?: string) =>
+    api.get<PaginatedResponse<Post>>(`/feed/nearby?lat=${lat}&lng=${lng}${radiusKm ? `&radiusKm=${radiusKm}` : ''}${cursor ? `&cursor=${cursor}` : ''}`),
 };
 
 // ── Moderation (user-facing appeal endpoints) ──
