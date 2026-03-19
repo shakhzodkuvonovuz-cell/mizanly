@@ -19,6 +19,7 @@ import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSp
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
 const POST_SELECT = {
@@ -68,6 +69,7 @@ export class PostsService {
     private gamification: GamificationService,
     private ai: AiService,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}
 
@@ -503,7 +505,7 @@ export class PostsService {
               body: `@${actor?.username ?? 'Someone'} mentioned you in a post`,
             });
             if (notification) {
-              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+              this.queueService.addPushNotificationJob({ notificationId: notification.id });
             }
           } catch (err) {
             this.logger.error('Failed to create mention notification', err);
@@ -512,24 +514,12 @@ export class PostsService {
       }
     }
     // Gamification: award XP + update streak (fire-and-forget)
-    this.jobs.enqueue('award-xp:post_created', () => this.gamification.awardXP(userId, 'post_created'));
-    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'post_created' });
+    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
-    // AI moderation: check content asynchronously (flag for review, don't block)
+    // AI moderation: check content asynchronously via queue (flag for review, don't block)
     if (dto.content) {
-      this.jobs.enqueue('ai-moderate:post', () =>
-        this.ai.moderateContent(dto.content || '', 'post').then(result => {
-          if (!result.safe) {
-            this.logger.warn(`Post ${post.id} flagged by AI moderation: ${result.flags.join(', ')}`);
-            if (result.confidence > 0.8) {
-              return this.prisma.post.update({
-                where: { id: post.id },
-                data: { isSensitive: true },
-              });
-            }
-          }
-        }),
-      );
+      this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id });
     }
 
     // Track analytics
@@ -643,7 +633,7 @@ export class PostsService {
               type: 'LIKE', postId,
             });
             if (notification) {
-              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+              this.queueService.addPushNotificationJob({ notificationId: notification.id });
             }
           } catch (err) {
             this.logger.error('Failed to create notification', err);
@@ -835,7 +825,7 @@ export class PostsService {
             body: dto.content.substring(0, 100),
           });
           if (notification) {
-            this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+            this.queueService.addPushNotificationJob({ notificationId: notification.id });
           }
         }
       } else if (post.userId !== userId) {
@@ -847,7 +837,7 @@ export class PostsService {
           body: dto.content.substring(0, 100),
         });
         if (notification) {
-          this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+          this.queueService.addPushNotificationJob({ notificationId: notification.id });
         }
       }
     } catch (err) {
@@ -855,7 +845,7 @@ export class PostsService {
     }
 
     // Gamification: award XP for commenting
-    this.jobs.enqueue('award-xp:comment_posted', () => this.gamification.awardXP(userId, 'comment_posted'));
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'comment_posted' });
 
     return comment;
   }

@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { FeatureFlagsService } from '../../common/services/feature-flags.service';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -14,6 +15,7 @@ export class HealthController {
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
     private flags: FeatureFlagsService,
   ) {}
 
@@ -88,7 +90,8 @@ export class HealthController {
     return {
       timestamp: new Date().toISOString(),
       counts: { users: userCount, posts: postCount, threads: threadCount, reels: reelCount },
-      jobs: this.jobs.getStats(),
+      inProcessJobs: this.jobs.getStats(),
+      queues: await this.queueService.getStats(),
       uptime: Math.round(process.uptime()),
       memory: {
         heapUsedMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),

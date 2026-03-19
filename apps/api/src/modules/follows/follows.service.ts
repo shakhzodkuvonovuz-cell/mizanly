@@ -10,6 +10,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class FollowsService {
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}
 
@@ -84,7 +86,7 @@ export class FollowsService {
         })
           .then((notification: Notification | null) => {
             if (notification) {
-              this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+              this.queueService.addPushNotificationJob({ notificationId: notification.id });
             }
           })
           .catch((err) => this.logger.error('Failed to create notification', err));
@@ -122,7 +124,7 @@ export class FollowsService {
       })
         .then((notification: Notification | null) => {
           if (notification) {
-            this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+            this.queueService.addPushNotificationJob({ notificationId: notification.id });
           }
         })
         .catch((err) => this.logger.error('Failed to create notification', err));
@@ -341,7 +343,7 @@ export class FollowsService {
     })
       .then((notification: Notification | null) => {
         if (notification) {
-          this.jobs.enqueue('push:' + notification.id, () => this.pushTrigger.triggerPush(notification.id));
+          this.queueService.addPushNotificationJob({ notificationId: notification.id });
         }
       })
       .catch((err) => this.logger.error('Failed to create notification', err));

@@ -16,6 +16,7 @@ import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { GamificationService } from '../gamification/gamification.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 
 const REEL_SELECT = {
   id: true,
@@ -65,6 +66,7 @@ export class ReelsService {
     private stream: StreamService,
     private gamification: GamificationService,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
   ) {}
 
   async create(userId: string, dto: CreateReelDto) {
@@ -149,8 +151,8 @@ export class ReelsService {
       });
 
     // Gamification: award XP + update streak
-    this.jobs.enqueue('award-xp:reel_created', () => this.gamification.awardXP(userId, 'reel_created'));
-    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
+    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
     return {
       ...reel,

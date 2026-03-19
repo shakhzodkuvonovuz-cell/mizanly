@@ -15,6 +15,7 @@ import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 
 const THREAD_SELECT = {
   id: true,
@@ -98,6 +99,7 @@ export class ThreadsService {
     private gamification: GamificationService,
     private ai: AiService,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
   ) {}
 
   /** Get IDs of users that should be excluded (blocked by us, blocked us, muted by us) */
@@ -399,18 +401,12 @@ export class ThreadsService {
     }
 
     // Gamification: award XP + update streak
-    this.jobs.enqueue('award-xp:thread_created', () => this.gamification.awardXP(userId, 'thread_created'));
-    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'thread_created' });
+    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
-    // AI moderation: async content check
+    // AI moderation: async content check via queue
     if (dto.content) {
-      this.jobs.enqueue('ai-moderate:thread', () =>
-        this.ai.moderateContent(dto.content, 'thread').then(result => {
-          if (!result.safe && result.confidence > 0.8) {
-            this.logger.warn(`Thread ${thread.id} flagged by AI moderation: ${result.flags.join(', ')}`);
-          }
-        }),
-      );
+      this.queueService.addModerationJob({ content: dto.content, contentType: 'thread', contentId: thread.id });
     }
 
     return thread;

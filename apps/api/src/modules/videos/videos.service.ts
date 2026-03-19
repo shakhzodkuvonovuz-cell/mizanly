@@ -17,6 +17,7 @@ import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { GamificationService } from '../gamification/gamification.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
+import { QueueService } from '../../common/queue/queue.service';
 
 const VIDEO_SELECT = {
   id: true,
@@ -76,6 +77,7 @@ export class VideosService {
     private stream: StreamService,
     private gamification: GamificationService,
     private jobs: AsyncJobService,
+    private queueService: QueueService,
   ) {}
 
   private async enhanceVideos(videos: VideoWithRelations[], userId?: string) {
@@ -155,8 +157,8 @@ export class VideosService {
       });
 
     // Gamification: award XP + update streak
-    this.jobs.enqueue('award-xp:video_created', () => this.gamification.awardXP(userId, 'video_created'));
-    this.jobs.enqueue('update-streak:posting', () => this.gamification.updateStreak(userId, 'posting'));
+    this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'video_created' });
+    this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
     return {
       ...video[0],
