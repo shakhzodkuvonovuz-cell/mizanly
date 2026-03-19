@@ -165,7 +165,9 @@
     "copyLink": "نسخ الرابط",
     "unlock": "فتح القفل",
     "shareAsStory": "مشاركة كقصة",
-    "notInterested": "غير مهتم"
+    "notInterested": "غير مهتم",
+    "collections": "المجموعات",
+    "folders": "المجلدات"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -1121,7 +1123,13 @@
     "ramadanMode": "وضع رمضان",
     "events": "الفعاليات",
     "giftShop": "متجر الهدايا",
-    "followedTopics": "المواضيع المتابعة"
+    "followedTopics": "المواضيع المتابعة",
+    "restrictedAccounts": "الحسابات المقيدة",
+    "collabRequests": "طلبات التعاون",
+    "appealModeration": "استئناف الإشراف",
+    "edit": "تعديل",
+    "manage": "إدارة",
+    "scheduleLive": "جدولة بث مباشر"
   },
   "accessibility": {
     "goBack": "رجوع"

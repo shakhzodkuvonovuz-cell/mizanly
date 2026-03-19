@@ -172,7 +172,9 @@
     "explore": "Keşfet",
     "copyLink": "Bağlantıyı Kopyala",
     "shareAsStory": "Hikaye olarak paylaş",
-    "notInterested": "İlgilenmiyorum"
+    "notInterested": "İlgilenmiyorum",
+    "collections": "Koleksiyonlar",
+    "folders": "Klasörler"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -1177,7 +1179,13 @@
     "ramadanMode": "Ramazan Modu",
     "events": "Etkinlikler",
     "giftShop": "Hediye Dükkanı",
-    "followedTopics": "Takip Edilen Konular"
+    "followedTopics": "Takip Edilen Konular",
+    "restrictedAccounts": "Kısıtlı Hesaplar",
+    "collabRequests": "İşbirliği İstekleri",
+    "appealModeration": "Moderasyon İtirazı",
+    "edit": "Düzenle",
+    "manage": "Yönet",
+    "scheduleLive": "Canlı Yayın Planla"
   },
   "onboarding": {
     "interests": {

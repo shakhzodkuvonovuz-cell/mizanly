@@ -172,7 +172,9 @@
     "explore": "Explore",
     "copyLink": "Copy Link",
     "shareAsStory": "Share as Story",
-    "notInterested": "Not interested"
+    "notInterested": "Not interested",
+    "collections": "Collections",
+    "folders": "Folders"
   },
   "auth": {
     "signIn": "Sign In",
@@ -1177,7 +1179,13 @@
     "ramadanMode": "Ramadan Mode",
     "events": "Events",
     "giftShop": "Gift Shop",
-    "followedTopics": "Followed Topics"
+    "followedTopics": "Followed Topics",
+    "restrictedAccounts": "Restricted Accounts",
+    "collabRequests": "Collaboration Requests",
+    "appealModeration": "Appeal Moderation",
+    "edit": "Edit",
+    "manage": "Manage",
+    "scheduleLive": "Schedule Live"
   },
   "onboarding": {
     "interests": {

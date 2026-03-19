@@ -646,6 +646,24 @@ export default function SettingsScreen() {
               label={t('settings.mutedAccounts')}
               icon={<Icon name="volume-x" size="sm" color={colors.text.tertiary} />}
               onPress={() => router.push('/(screens)/muted')}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.restrictedAccounts')}
+              icon={<Icon name="eye-off" size="sm" color={colors.text.tertiary} />}
+              onPress={() => router.push('/(screens)/restricted' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.collabRequests')}
+              icon={<Icon name="users" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/collab-requests' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.appealModeration')}
+              icon={<Icon name="flag" size="sm" color={colors.text.secondary} />}
+              onPress={() => router.push('/(screens)/appeal-moderation' as never)}
               isLast
             />
           </LinearGradient>

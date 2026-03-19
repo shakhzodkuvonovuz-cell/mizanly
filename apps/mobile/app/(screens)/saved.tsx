@@ -276,6 +276,10 @@ export default function SavedScreen() {
         <GlassHeader
           title={t('screens.saved.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('accessibility.goBack') }}
+          rightActions={[
+            { icon: 'layers', onPress: () => router.push('/(screens)/bookmark-collections' as never), accessibilityLabel: t('common.collections') },
+            { icon: 'bookmark', onPress: () => router.push('/(screens)/bookmark-folders' as never), accessibilityLabel: t('common.folders') },
+          ]}
         />
         <View style={styles.headerSpacer} />
 

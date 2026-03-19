@@ -624,6 +624,34 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
               handleCopyLink();
             }}
           />
+          {isOwner && (
+            <>
+              <BottomSheetItem
+                label={t('settings.edit')}
+                icon={<Icon name="pencil" size="sm" color={colors.text.primary} />}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push(`/(screens)/edit-channel?handle=${handle}` as never);
+                }}
+              />
+              <BottomSheetItem
+                label={t('settings.manage')}
+                icon={<Icon name="settings" size="sm" color={colors.text.primary} />}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push(`/(screens)/manage-broadcast?channelId=${channel?.id}` as never);
+                }}
+              />
+              <BottomSheetItem
+                label={t('settings.scheduleLive')}
+                icon={<Icon name="globe" size="sm" color={colors.emerald} />}
+                onPress={() => {
+                  setShowMenu(false);
+                  router.push('/(screens)/schedule-live' as never);
+                }}
+              />
+            </>
+          )}
         </BottomSheet>
 
         {/* Share bottom sheet */}
