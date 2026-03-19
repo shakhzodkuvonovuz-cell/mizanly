@@ -387,6 +387,9 @@ export interface Message {
   reactions?: MessageReaction[];
   isPinned?: boolean;
   expiresAt?: string;
+  isSpoiler?: boolean;
+  isViewOnce?: boolean;
+  viewedAt?: string;
 }
 
 export interface ConversationMember {

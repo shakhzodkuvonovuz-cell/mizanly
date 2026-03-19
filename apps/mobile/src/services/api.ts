@@ -109,6 +109,8 @@ type SendMessagePayload = {
   mediaUrl?: string;
   replyToId?: string;
   voiceDuration?: number;
+  isSpoiler?: boolean;
+  isViewOnce?: boolean;
 };
 
 type PrivacySettings = { isPrivate?: boolean };

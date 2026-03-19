@@ -692,7 +692,11 @@
     "chat": "Sohbet",
     "archived": "Arşivlenen",
     "newGroup": "Yeni Grup",
-    "createBroadcast": "Yayın Oluştur"
+    "createBroadcast": "Yayın Oluştur",
+    "spoiler": "Spoiler",
+    "tapToReveal": "Görmek için dokun",
+    "viewOnce": "Bir kez görüntüle",
+    "viewOnceOpened": "Açıldı"
   },
   "minbar": {
     "home": "Ana Sayfa",

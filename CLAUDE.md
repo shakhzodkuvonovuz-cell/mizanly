@@ -16,11 +16,12 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: All 12 Tiers + Telegram/Discord Parity (as of 2026-03-18, Post-Batch 52)
-All 5 spaces built + Telegram + Discord feature parity. 194 screens, 700+ API endpoints, 69 backend modules, 160 Prisma models, 340+ commits, 180K+ lines of code.
-Backend: NestJS with 69 modules. Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper. Commerce: marketplace, Zakat, Waqf. Gamification: streaks, XP/levels, achievements, challenges, series (all wired into content creation). Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
-Mobile: 194 screens across all spaces + gamification (streaks, achievements, leaderboard, challenges) + commerce (marketplace, product detail, orders) + community (local boards, mentorship, fatwa Q&A, volunteer, waqf, watch party, voice posts) + Telegram (saved messages, chat folders) + AI (assistant, avatar).
-See `docs/plans/2026-03-18-gap-fix-checklist.md` for remaining items (Batches 53-56).
+## Status: Tier 13 Audit Complete (as of 2026-03-19, Post-Batch 64)
+All 5 spaces built + Telegram + Discord feature parity + full audit pass. 196 screens, 700+ API endpoints, 69 backend modules, 160 Prisma models, 350+ commits, 178K+ lines of code.
+Backend: NestJS with 69 modules (88 test files). Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper. Commerce: marketplace, Zakat, Waqf. Gamification: streaks, XP/levels, achievements, challenges, series. Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
+Mobile: 196 screens across all spaces. i18n: en + ar + tr (Turkish wired). All screens reachable via navigation (0 orphans). Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
+**Audit (Batch 53-64):** Fixed 4 P0 crashes, 9 P1 bugs, 6 P2 quality issues, 2 security fixes, removed 890 junk i18n keys (2,500 lines), eliminated 6 `any` types, wired 78→2 orphaned screens, fixed font rendering, added real-time message refresh, reel view tracking, 2FA flow.
+**Next: Tier 14 (2026 Competitor Parity) — see remaining gaps below.**
 
 ---
 
@@ -53,7 +54,45 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 **Tier 10:** Gamification — streaks, achievements, XP/levels, leaderboards, challenges, series, profile customization
 **Tier 11:** Commerce — halal marketplace, business directory, checkout, Islamic finance, Zakat, Waqf, premium
 **Tier 12:** Community — local boards, mentorship, study circles, fatwa Q&A, volunteer, events, reputation, voice posts, watch parties, data export
-**Next: Tier 13 (Testing & Hardening)**
+**Tier 13:** Audit & Hardening — P0-P2 bug fixes, screen wiring, i18n cleanup, type safety, font fix, security (socket token refresh, 2FA flow)
+
+### Tier 14: 2026 Competitor Parity (CURRENT)
+**Batch 65-68 — Quick wins (Low effort, high impact):**
+- Spoiler text in messages (tap-to-reveal) — WhatsApp 2026
+- View Once voice messages — WhatsApp 2026
+- Member tags in group chats — WhatsApp 2026
+- Subscriber-only stories (close friends → subscribers) — TikTok 2026
+- Meditation/wind-down screen (screen time nudge) — TikTok 2026
+- Dedicated video tab in Majlis — X 2026
+- Side panel shortcuts (Live, Subscriptions, Series) — TikTok 2026
+
+**Batch 69-72 — Medium effort:**
+- Local/Nearby Feed (location-based content discovery) — TikTok 2026
+- Group message history for new members (25-100 msgs) — WhatsApp 2026
+- Inline DM translation (we have AI translate API) — Instagram 2026
+- "Your Algorithm" transparency tool — Instagram 2026
+- Secret code chat lock — WhatsApp 2026
+- Photo carousels in Bakra feed — YouTube 2026
+- Cross-channel simultaneous publishing — YouTube 2026
+- Follower vs non-follower analytics — X 2026
+- Account deep dive (creation country, username history) — X 2026
+
+**Batch 73-76 — High effort (future):**
+- AI dubbing (auto-dub in other languages) — TikTok 2026
+- AI Restyle video editing — Instagram 2026
+- AI "Best Moments" for Shorts from livestreams — YouTube 2026
+- Friends Map / location sharing — Instagram 2026
+- Camera effects (30 backgrounds/filters) — WhatsApp 2026
+- Live reaction to other streams — YouTube 2026
+- TV app (Fire TV / Google TV) — Instagram 2026
+
+### Backend Hardening Remaining
+- 8 TODO stubs in production code (audio-room, mosque-finder, video quality, enable-tips)
+- ~50 Prisma relations missing onDelete cascade
+- Some findMany without pagination limits
+- Payments endpoint needs rate limiting
+- Parental PIN should be hashed
+- Upload folder param needs server-side validation
 
 ---
 
@@ -96,14 +135,14 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 59 feature modules
+│   │   ├── src/modules/         # 69 feature modules
 │   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators
 │   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
-│   │   └── prisma/schema.prisma # 107 models, 2,235 lines
+│   │   └── prisma/schema.prisma # 160 models, 3,255 lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
-│       │   └── (screens)/       # 131+ screens + 17 nested route dirs
+│       │   └── (screens)/       # 196 screens + nested route dirs
 │       └── src/
 │           ├── components/ui/   # 28 components: BottomSheet, Skeleton, Icon, Avatar,
 │           │                    # GlassHeader, GradientButton, EmptyState, VerifiedBadge,
@@ -114,7 +153,7 @@ mizanly/
 │           ├── stores/index.ts  # Zustand store
 │           ├── theme/index.ts   # Design tokens
 │           ├── utils/           # hijri.ts, etc.
-│           ├── i18n/            # en.json (2,659 lines) + ar.json (2,551 lines)
+│           ├── i18n/            # en.json + ar.json + tr.json (Turkish)
 │           └── types/index.ts   # TypeScript interfaces
 ```
 
@@ -230,7 +269,7 @@ unreadMessages / setUnreadMessages(n)
 safFeedType: 'following'|'foryou'
 majlisFeedType: 'foryou'|'following'|'trending'
 isCreateSheetOpen / setCreateSheetOpen(bool)
-theme: 'dark'|'light'|'system' / setTheme   // ← no UI yet, store exists
+theme: 'dark'|'light'|'system' / setTheme   // theme-settings screen exists
 ```
 
 ---
@@ -243,6 +282,30 @@ cd apps/mobile && npm install && npx expo start
 cd apps/api && npx prisma db push                 # Apply schema changes
 cd apps/api && npx prisma studio                  # DB browser GUI
 ```
+
+## Font Family Names (IMPORTANT — must match useFonts registration)
+```ts
+// These are the ACTUAL registered font family names after useFonts() loads them:
+fonts.headingBold = 'PlayfairDisplay_700Bold'   // NOT 'PlayfairDisplay-Bold'
+fonts.body = 'DMSans_400Regular'                // NOT 'DMSans'
+fonts.bodyMedium = 'DMSans_500Medium'
+fonts.bodyBold = 'DMSans_700Bold'
+fonts.arabic = 'NotoNaskhArabic_400Regular'
+fonts.arabicBold = 'NotoNaskhArabic_700Bold'
+```
+
+## i18n
+- **Languages:** en (English), ar (Arabic), tr (Turkish)
+- **Config:** `src/i18n/index.ts` — auto-detects device locale, falls back to `en`
+- **Adding a language:** Create `xx.json`, import in `index.ts`, add to resources + resolveLanguage()
+- **Key structure:** Nested dot notation (`risalah.chats`, `tabs.createSheet.photoOrVideoPost`)
+- **IMPORTANT:** All new screens MUST have i18n keys in ALL 3 language files
+
+## Create Sheet Options (7 items)
+Post | Thread | Story | Reel | Long Video | Go Live | Voice Post
+
+## Settings Sections (11)
+Content | Appearance | Privacy | Notifications | Wellbeing | Islamic | Accessibility | Close Friends | AI | Creator | Community | Gamification | Account | About
 
 ## Deferred
 AR filters | Screen sharing | Multi-device sync | Group video calls

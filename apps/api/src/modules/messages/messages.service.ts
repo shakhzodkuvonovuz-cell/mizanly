@@ -133,6 +133,8 @@ export class MessagesService {
       mediaUrl?: string;
       mediaType?: string;
       replyToId?: string;
+      isSpoiler?: boolean;
+      isViewOnce?: boolean;
     },
   ) {
     await this.requireMembership(conversationId, senderId);
@@ -152,6 +154,8 @@ export class MessagesService {
           mediaUrl: data.mediaUrl,
           mediaType: data.mediaType,
           replyToId: data.replyToId,
+          isSpoiler: data.isSpoiler ?? false,
+          isViewOnce: data.isViewOnce ?? false,
         },
         select: MESSAGE_SELECT,
       });

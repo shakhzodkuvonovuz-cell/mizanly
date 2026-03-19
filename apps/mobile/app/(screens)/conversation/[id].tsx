@@ -374,6 +374,11 @@ function MessageBubble({
   const haptic = useHaptic();
   const { t, isRTL } = useTranslation();
   const [isReacting, setIsReacting] = useState(false);
+  const [spoilerRevealed, setSpoilerRevealed] = useState(false);
+  const spoilerOpacity = useSharedValue(1);
+  const spoilerAnimStyle = useAnimatedStyle(() => ({
+    opacity: spoilerOpacity.value,
+  }));
   const time = messageTimestamp(message.createdAt, t);
   const AVATAR_SIZE = 28;
 
@@ -468,7 +473,46 @@ function MessageBubble({
             </Text>
           </View>
         )}
-        {message.messageType === 'VOICE' && message.mediaUrl ? (
+        {/* View Once badge */}
+        {message.isViewOnce && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: spacing.sm, paddingTop: spacing.xs }}>
+            <Icon name="clock" size={12} color={isOwn ? 'rgba(255,255,255,0.7)' : colors.gold} />
+            <Text style={{ fontSize: fontSize.xs, color: isOwn ? 'rgba(255,255,255,0.7)' : colors.gold, fontWeight: '600' }}>
+              {message.viewedAt ? t('risalah.viewOnceOpened') : t('risalah.viewOnce')}
+            </Text>
+          </View>
+        )}
+        {/* Spoiler overlay */}
+        {message.isSpoiler && !spoilerRevealed ? (
+          <Pressable
+            onPress={() => {
+              haptic.light();
+              setSpoilerRevealed(true);
+              spoilerOpacity.value = withTiming(0, { duration: 300 });
+            }}
+            style={{ position: 'relative', overflow: 'hidden' }}
+          >
+            {message.content && (
+              <Text style={[styles.bubbleText, isOwn && styles.bubbleTextOwn, { opacity: 0 }]}>
+                {message.content}
+              </Text>
+            )}
+            <Animated.View style={[{
+              ...StyleSheet.absoluteFillObject,
+              backgroundColor: isOwn ? 'rgba(10,123,79,0.85)' : 'rgba(45,53,72,0.9)',
+              borderRadius: radius.sm,
+              justifyContent: 'center',
+              alignItems: 'center',
+              flexDirection: 'row',
+              gap: spacing.xs,
+            }, spoilerAnimStyle]}>
+              <Icon name="eye-off" size={14} color={colors.text.secondary} />
+              <Text style={{ color: colors.text.secondary, fontSize: fontSize.sm, fontWeight: '500' }}>
+                {t('risalah.tapToReveal')}
+              </Text>
+            </Animated.View>
+          </Pressable>
+        ) : message.messageType === 'VOICE' && message.mediaUrl ? (
           <VoicePlayer mediaUrl={message.mediaUrl} isOwn={isOwn} />
         ) : (
           <>
@@ -608,6 +652,8 @@ export default function ConversationScreen() {
   const inputRef = useRef<TextInput>(null);
   const newMessageIdsRef = useRef(new Set<string>());
   const [text, setText] = useState('');
+  const [sendAsSpoiler, setSendAsSpoiler] = useState(false);
+  const [sendAsViewOnce, setSendAsViewOnce] = useState(false);
   const [replyTo, setReplyTo] = useState<{ id: string; content?: string; username: string } | null>(null);
   const [pendingMessages, setPendingMessages] = useState<PendingMessage[]>([]);
   const [deliveredMessages, setDeliveredMessages] = useState<Set<string>>(() => new Set());
@@ -887,6 +933,8 @@ export default function ConversationScreen() {
     encryptedContent?: string;
     encNonce?: string;
     isEncrypted?: boolean;
+    isSpoiler?: boolean;
+    isViewOnce?: boolean;
   }) => {
     if (!isOffline && socketRef.current?.connected) {
       socketRef.current.emit('send_message', {
@@ -896,8 +944,13 @@ export default function ConversationScreen() {
         messageType: 'TEXT',
         clientId: pending.id,
         ...(pending.isEncrypted ? { isEncrypted: true, encNonce: pending.encNonce } : {}),
+        ...(pending.isSpoiler ? { isSpoiler: true } : {}),
+        ...(pending.isViewOnce ? { isViewOnce: true } : {}),
       });
     }
+    // Reset spoiler/viewOnce toggles after sending
+    setSendAsSpoiler(false);
+    setSendAsViewOnce(false);
     setUndoPending(null);
   }, [id, isOffline]);
 
@@ -960,6 +1013,8 @@ export default function ConversationScreen() {
       encryptedContent: messageIsEncrypted ? messageContent : undefined,
       encNonce: messageIsEncrypted ? encNonce : undefined,
       isEncrypted: messageIsEncrypted || undefined,
+      isSpoiler: sendAsSpoiler || undefined,
+      isViewOnce: sendAsViewOnce || undefined,
     };
     const timer = setTimeout(() => {
       commitSend(undoPayload);
@@ -1426,6 +1481,29 @@ export default function ConversationScreen() {
               </Pressable>
             </View>
           )}
+          {/* Spoiler / View Once toggle bar */}
+          {(sendAsSpoiler || sendAsViewOnce) && (
+            <View style={{ flexDirection: 'row', paddingHorizontal: spacing.base, paddingVertical: spacing.xs, gap: spacing.sm }}>
+              {sendAsSpoiler && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
+                  <Icon name="eye-off" size={12} color={colors.emerald} />
+                  <Text style={{ color: colors.emerald, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.spoiler')}</Text>
+                  <Pressable onPress={() => setSendAsSpoiler(false)} hitSlop={8}>
+                    <Icon name="x" size={12} color={colors.text.tertiary} />
+                  </Pressable>
+                </View>
+              )}
+              {sendAsViewOnce && (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.dark.surface, borderRadius: radius.full, paddingHorizontal: spacing.sm, paddingVertical: 2, gap: 4 }}>
+                  <Icon name="clock" size={12} color={colors.gold} />
+                  <Text style={{ color: colors.gold, fontSize: fontSize.xs, fontWeight: '600' }}>{t('risalah.viewOnce')}</Text>
+                  <Pressable onPress={() => setSendAsViewOnce(false)} hitSlop={8}>
+                    <Icon name="x" size={12} color={colors.text.tertiary} />
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          )}
           <View style={styles.inputRow}>
             <Pressable
               style={styles.attachBtn}
@@ -1440,6 +1518,24 @@ export default function ConversationScreen() {
                 size="sm"
                 color={uploadingMedia ? colors.text.tertiary : colors.text.secondary}
               />
+            </Pressable>
+            <Pressable
+              style={styles.attachBtn}
+              hitSlop={8}
+              onPress={() => setSendAsSpoiler(!sendAsSpoiler)}
+              accessibilityLabel={t('risalah.spoiler')}
+              accessibilityRole="button"
+            >
+              <Icon name="eye-off" size="sm" color={sendAsSpoiler ? colors.emerald : colors.text.secondary} />
+            </Pressable>
+            <Pressable
+              style={styles.attachBtn}
+              hitSlop={8}
+              onPress={() => setSendAsViewOnce(!sendAsViewOnce)}
+              accessibilityLabel={t('risalah.viewOnce')}
+              accessibilityRole="button"
+            >
+              <Icon name="clock" size="sm" color={sendAsViewOnce ? colors.gold : colors.text.secondary} />
             </Pressable>
             <Pressable
               style={styles.gifBtn}

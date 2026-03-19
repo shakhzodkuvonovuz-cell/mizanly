@@ -1051,6 +1051,7 @@ model Message {
   pinnedById      String?
   isViewOnce      Boolean           @default(false)
   viewedAt        DateTime?
+  isSpoiler       Boolean           @default(false)
   isSilent        Boolean           @default(false)
   isEncrypted     Boolean           @default(false)
   encNonce        String?

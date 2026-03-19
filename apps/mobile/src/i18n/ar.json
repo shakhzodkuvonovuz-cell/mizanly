@@ -647,7 +647,11 @@
     "archived": "الأرشيف",
     "newGroup": "مجموعة جديدة",
     "chatFolders": "مجلدات المحادثات",
-    "createBroadcast": "إنشاء بث"
+    "createBroadcast": "إنشاء بث",
+    "spoiler": "محتوى مخفي",
+    "tapToReveal": "اضغط للكشف",
+    "viewOnce": "عرض مرة واحدة",
+    "viewOnceOpened": "تم الفتح"
   },
   "minbar": {
     "home": "الرئيسية",

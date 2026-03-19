@@ -692,7 +692,11 @@
     "browseMorePacks": "Browse more sticker packs",
     "noStickersInPack": "No stickers in this pack",
     "addMorePacks": "Add more sticker packs to get started",
-    "createBroadcast": "Create Broadcast"
+    "createBroadcast": "Create Broadcast",
+    "spoiler": "Spoiler",
+    "tapToReveal": "Tap to reveal",
+    "viewOnce": "View once",
+    "viewOnceOpened": "Opened"
   },
   "minbar": {
     "home": "Home",

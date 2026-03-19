@@ -52,6 +52,16 @@ class SendMessageDto {
   @IsOptional()
   @IsUUID()
   replyToId?: string;
+
+  @ApiProperty({ required: false, description: 'Mark message content as spoiler (tap to reveal)' })
+  @IsOptional()
+  @IsBoolean()
+  isSpoiler?: boolean;
+
+  @ApiProperty({ required: false, description: 'View-once message (auto-deleted after viewing)' })
+  @IsOptional()
+  @IsBoolean()
+  isViewOnce?: boolean;
 }
 
 class CreateGroupDto {
