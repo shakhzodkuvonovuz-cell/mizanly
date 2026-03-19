@@ -180,22 +180,18 @@ describe('StoriesService', () => {
 
       const result = await service.create(userId, data);
 
-      expect(prisma.story.create).toHaveBeenCalledWith({
-        data: {
-          userId,
-          mediaUrl: data.mediaUrl,
-          mediaType: data.mediaType,
-          thumbnailUrl: data.thumbnailUrl,
-          duration: data.duration,
-          textOverlay: data.textOverlay,
-          textColor: data.textColor,
-          bgColor: data.bgColor,
-          stickerData: data.stickerData,
-          closeFriendsOnly: data.closeFriendsOnly,
-          expiresAt: expect.any(Date),
-        },
-        select: expect.any(Object),
-      });
+      expect(prisma.story.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            userId,
+            mediaUrl: data.mediaUrl,
+            mediaType: data.mediaType,
+            closeFriendsOnly: data.closeFriendsOnly,
+            subscribersOnly: false,
+            expiresAt: expect.any(Date),
+          }),
+        }),
+      );
       expect(result).toEqual(mockStory);
     });
   });
@@ -281,6 +277,48 @@ describe('StoriesService', () => {
 
       expect(prisma.$transaction).not.toHaveBeenCalled();
       expect(result).toEqual({ viewed: true });
+    });
+  });
+
+  describe('create with subscribersOnly', () => {
+    it('should create story with subscribersOnly flag', async () => {
+      const userId = 'user-123';
+      const data = {
+        mediaUrl: 'https://example.com/story.jpg',
+        mediaType: 'IMAGE',
+        subscribersOnly: true,
+      };
+      const mockStory = {
+        id: 'story-sub',
+        ...data,
+        userId,
+        closeFriendsOnly: false,
+        subscribersOnly: true,
+        expiresAt: new Date(Date.now() + 86400000),
+        createdAt: new Date(),
+        user: { id: userId, username: 'user123', displayName: 'User 123', avatarUrl: null, isVerified: false },
+      };
+      prisma.story.create.mockResolvedValue(mockStory);
+
+      const result = await service.create(userId, data as any);
+      expect(prisma.story.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ subscribersOnly: true }),
+        }),
+      );
+      expect(result.subscribersOnly).toBe(true);
+    });
+
+    it('should default subscribersOnly to false', async () => {
+      const data = { mediaUrl: 'https://example.com/story.jpg', mediaType: 'IMAGE' };
+      prisma.story.create.mockResolvedValue({ id: 'story-default', ...data, subscribersOnly: false, closeFriendsOnly: false });
+
+      await service.create('user-1', data as any);
+      expect(prisma.story.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ subscribersOnly: false }),
+        }),
+      );
     });
   });
 

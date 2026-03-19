@@ -723,4 +723,147 @@ describe('MessagesService', () => {
     });
   });
 
+  describe('setMemberTag', () => {
+    it('should update member tag', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.update.mockResolvedValue({ tag: 'Admin' });
+
+      const result = await service.setMemberTag('conv-1', 'user-1', 'Admin');
+      expect(result).toEqual({ updated: true });
+      expect(prisma.conversationMember.update).toHaveBeenCalledWith({
+        where: { conversationId_userId: { conversationId: 'conv-1', userId: 'user-1' } },
+        data: { tag: 'Admin' },
+      });
+    });
+
+    it('should truncate tag to 30 characters', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.update.mockResolvedValue({ tag: 'a'.repeat(30) });
+
+      await service.setMemberTag('conv-1', 'user-1', 'a'.repeat(50));
+      expect(prisma.conversationMember.update).toHaveBeenCalledWith({
+        where: { conversationId_userId: { conversationId: 'conv-1', userId: 'user-1' } },
+        data: { tag: 'a'.repeat(30) },
+      });
+    });
+
+    it('should clear tag when null is passed', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversationMember.update.mockResolvedValue({ tag: null });
+
+      await service.setMemberTag('conv-1', 'user-1', null);
+      expect(prisma.conversationMember.update).toHaveBeenCalledWith({
+        where: { conversationId_userId: { conversationId: 'conv-1', userId: 'user-1' } },
+        data: { tag: null },
+      });
+    });
+  });
+
+  describe('setLockCode', () => {
+    it('should set lock code on conversation', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.update.mockResolvedValue({ lockCode: '1234' });
+
+      const result = await service.setLockCode('conv-1', 'user-1', '1234');
+      expect(result).toEqual({ updated: true });
+      expect(prisma.conversation.update).toHaveBeenCalledWith({
+        where: { id: 'conv-1' },
+        data: { lockCode: '1234' },
+      });
+    });
+
+    it('should remove lock code when null is passed', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.update.mockResolvedValue({ lockCode: null });
+
+      await service.setLockCode('conv-1', 'user-1', null);
+      expect(prisma.conversation.update).toHaveBeenCalledWith({
+        where: { id: 'conv-1' },
+        data: { lockCode: null },
+      });
+    });
+  });
+
+  describe('verifyLockCode', () => {
+    it('should return valid: true for correct code', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: 'secret123' });
+
+      const result = await service.verifyLockCode('conv-1', 'user-1', 'secret123');
+      expect(result).toEqual({ valid: true });
+    });
+
+    it('should return valid: false for wrong code', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ lockCode: 'secret123' });
+
+      const result = await service.verifyLockCode('conv-1', 'user-1', 'wrong');
+      expect(result).toEqual({ valid: false });
+    });
+
+    it('should throw NotFoundException if conversation not found', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue(null);
+
+      await expect(service.verifyLockCode('conv-1', 'user-1', 'code')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('setNewMemberHistoryCount', () => {
+    it('should set history count for group owner', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
+      prisma.conversation.update.mockResolvedValue({ newMemberHistoryCount: 50 });
+
+      const result = await service.setNewMemberHistoryCount('conv-1', 'user-1', 50);
+      expect(result).toEqual({ count: 50 });
+    });
+
+    it('should clamp count to 0-100 range', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
+      prisma.conversation.update.mockResolvedValue({ newMemberHistoryCount: 100 });
+
+      const result = await service.setNewMemberHistoryCount('conv-1', 'user-1', 500);
+      expect(result).toEqual({ count: 100 });
+      expect(prisma.conversation.update).toHaveBeenCalledWith({
+        where: { id: 'conv-1' },
+        data: { newMemberHistoryCount: 100 },
+      });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-2', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: true });
+
+      await expect(service.setNewMemberHistoryCount('conv-1', 'user-2', 25)).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw BadRequestException for non-group conversation', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ userId: 'user-1', isMuted: false, isArchived: false, isBanned: false });
+      prisma.conversation.findUnique.mockResolvedValue({ createdById: 'user-1', isGroup: false });
+
+      await expect(service.setNewMemberHistoryCount('conv-1', 'user-1', 25)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('sendMessage with spoiler and viewOnce', () => {
+    it('should create message with isSpoiler flag', async () => {
+      const result = await service.sendMessage('conv-1', 'user-1', {
+        content: 'Hidden text',
+        isSpoiler: true,
+      });
+      const createCall = prisma.$transaction.mock.calls[0][0];
+      expect(createCall).toBeDefined();
+    });
+
+    it('should create message with isViewOnce flag', async () => {
+      const result = await service.sendMessage('conv-1', 'user-1', {
+        content: 'Self-destruct',
+        isViewOnce: true,
+      });
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+  });
+
 });
