@@ -2872,6 +2872,19 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "namesOfAllah": {
+    "title": "اللہ کے 99 نام",
+    "dailyName": "آج کا نام",
+    "learned": "یاد ہو گیا",
+    "progress": "{{count}}/99 نام یاد ہوئے",
+    "markAsLearned": "یاد شدہ نشان لگائیں",
+    "meaning": "معنی",
+    "explanation": "وضاحت",
+    "quranReference": "قرآنی حوالہ",
+    "listen": "سنیں",
+    "dhikr": "ذکر",
+    "shareProgress": "پیش رفت شیئر کریں"
+  },
   "fasting": {
     "tracker": "روزے کا ٹریکر",
     "areYouFasting": "کیا آپ آج روزے سے ہیں؟",

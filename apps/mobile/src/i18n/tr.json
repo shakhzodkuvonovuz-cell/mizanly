@@ -2871,6 +2871,19 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "namesOfAllah": {
+    "title": "Esmaül Hüsna",
+    "dailyName": "Günün İsmi",
+    "learned": "Öğrenildi",
+    "progress": "{{count}}/99 isim öğrenildi",
+    "markAsLearned": "Öğrenildi olarak işaretle",
+    "meaning": "Anlam",
+    "explanation": "Açıklama",
+    "quranReference": "Kur'an Referansı",
+    "listen": "Dinle",
+    "dhikr": "Zikir",
+    "shareProgress": "İlerlemeyi Paylaş"
+  },
   "fasting": {
     "tracker": "Oruç Takibi",
     "areYouFasting": "Bugün oruç tutuyor musunuz?",

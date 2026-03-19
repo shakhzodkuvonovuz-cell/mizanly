@@ -1269,7 +1269,7 @@ fasting.totalThisYear: "Total Fasts This Year"
 
 ---
 
-### [ ] Task 21: 99 Names of Allah — Interactive Learning
+### [x] Task 21: 99 Names of Allah — Done: full 99 names data (Arabic + transliteration + meaning + explanation + Quran refs), daily name, GET endpoints, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/islamic/islamic.service.ts`

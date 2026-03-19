@@ -2872,6 +2872,19 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "namesOfAllah": {
+    "title": "99 Noms d'Allah",
+    "dailyName": "Nom du jour",
+    "learned": "Appris",
+    "progress": "{{count}}/99 noms appris",
+    "markAsLearned": "Marquer comme appris",
+    "meaning": "Signification",
+    "explanation": "Explication",
+    "quranReference": "Référence coranique",
+    "listen": "Écouter",
+    "dhikr": "Dhikr",
+    "shareProgress": "Partager la progression"
+  },
   "fasting": {
     "tracker": "Suivi du Jeûne",
     "areYouFasting": "Jeûnez-vous aujourd'hui ?",

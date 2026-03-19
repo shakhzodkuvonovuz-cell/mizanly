@@ -12,6 +12,16 @@ import * as hadiths from './data/hadiths.json';
 import * as hajjGuideData from './data/hajj-guide.json';
 import * as tafsirJson from './data/tafsir.json';
 import * as duasData from './data/duas.json';
+import * as asmaUlHusnaData from './data/asma-ul-husna.json';
+
+interface NameOfAllah {
+  number: number;
+  arabicName: string;
+  transliteration: string;
+  englishMeaning: string;
+  explanation: string;
+  quranRef?: string;
+}
 
 interface DuaEntry {
   id: string;
@@ -1028,5 +1038,27 @@ export class IslamicService {
     });
     const ids = new Set(bookmarks.map((b) => b.duaId));
     return this.duas.filter((d) => ids.has(d.id));
+  }
+
+  // ============================================================
+  // 99 NAMES OF ALLAH
+  // ============================================================
+
+  private get namesOfAllah(): NameOfAllah[] {
+    return asmaUlHusnaData as unknown as NameOfAllah[];
+  }
+
+  getAllNamesOfAllah(): NameOfAllah[] {
+    return this.namesOfAllah;
+  }
+
+  getNameOfAllahByNumber(num: number): NameOfAllah | undefined {
+    return this.namesOfAllah.find((n) => n.number === num);
+  }
+
+  getDailyNameOfAllah(): NameOfAllah {
+    const daysSinceEpoch = Math.floor(Date.now() / 86400000);
+    const index = daysSinceEpoch % 99;
+    return this.namesOfAllah[index];
   }
 }

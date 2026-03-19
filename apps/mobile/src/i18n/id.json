@@ -2872,6 +2872,19 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "namesOfAllah": {
+    "title": "99 Nama Allah",
+    "dailyName": "Nama Hari Ini",
+    "learned": "Dipelajari",
+    "progress": "{{count}}/99 nama dipelajari",
+    "markAsLearned": "Tandai Dipelajari",
+    "meaning": "Makna",
+    "explanation": "Penjelasan",
+    "quranReference": "Referensi Al-Quran",
+    "listen": "Dengarkan",
+    "dhikr": "Dzikir",
+    "shareProgress": "Bagikan Kemajuan"
+  },
   "fasting": {
     "tracker": "Pelacak Puasa",
     "areYouFasting": "Apakah Anda berpuasa hari ini?",

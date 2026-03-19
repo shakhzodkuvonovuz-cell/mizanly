@@ -2871,6 +2871,19 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "namesOfAllah": {
+    "title": "أسماء الله الحسنى",
+    "dailyName": "اسم اليوم",
+    "learned": "تم الحفظ",
+    "progress": "{{count}}/99 اسم تم حفظه",
+    "markAsLearned": "وضع علامة محفوظ",
+    "meaning": "المعنى",
+    "explanation": "الشرح",
+    "quranReference": "مرجع قرآني",
+    "listen": "استمع",
+    "dhikr": "ذكر",
+    "shareProgress": "مشاركة التقدم"
+  },
   "fasting": {
     "tracker": "متتبع الصيام",
     "areYouFasting": "هل أنت صائم اليوم؟",

@@ -525,4 +525,28 @@ export class IslamicController {
   async unbookmarkDua(@CurrentUser('id') userId: string, @Param('id') duaId: string) {
     return this.islamicService.unbookmarkDua(userId, duaId);
   }
+
+  // ============================================================
+  // 99 NAMES OF ALLAH
+  // ============================================================
+
+  @Get('names-of-allah')
+  @ApiOperation({ summary: 'Get all 99 Names of Allah' })
+  async getAllNames() {
+    return this.islamicService.getAllNamesOfAllah();
+  }
+
+  @Get('names-of-allah/daily')
+  @ApiOperation({ summary: 'Get the daily Name of Allah' })
+  async getDailyName() {
+    return this.islamicService.getDailyNameOfAllah();
+  }
+
+  @Get('names-of-allah/:number')
+  @ApiOperation({ summary: 'Get a single Name by number (1-99)' })
+  async getNameByNumber(@Param('number', ParseIntPipe) num: number) {
+    const name = this.islamicService.getNameOfAllahByNumber(num);
+    if (!name) throw new NotFoundException('Name not found');
+    return name;
+  }
 }
