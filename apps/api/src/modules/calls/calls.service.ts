@@ -192,4 +192,64 @@ export class CallsService {
       throw new ForbiddenException('Not a participant in this call');
     }
   }
+
+  // ── Group calls (up to 8 participants) ─────────────
+
+  async createGroupCall(conversationId: string, initiatorId: string, participantIds: string[]) {
+    if (participantIds.length > 7) throw new BadRequestException('Group calls support up to 8 participants');
+
+    const allIds = [initiatorId, ...participantIds.filter(id => id !== initiatorId)];
+
+    const session = await this.prisma.callSession.create({
+      data: {
+        callType: CallType.VIDEO,
+        status: CallStatus.RINGING,
+        maxParticipants: allIds.length,
+        participants: {
+          createMany: {
+            data: allIds.map(userId => ({
+              userId,
+              role: userId === initiatorId ? 'caller' : 'receiver',
+            })),
+          },
+        },
+      },
+      include: { participants: { include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } } } },
+    });
+
+    return session;
+  }
+
+  // ── Screen sharing ─────────────────────────────────
+
+  async shareScreen(callId: string, userId: string) {
+    const session = await this.prisma.callSession.findUnique({
+      where: { id: callId },
+      include: { participants: true },
+    });
+    if (!session) throw new NotFoundException('Call not found');
+    this.requireParticipant(session.participants, userId);
+    if (session.status !== CallStatus.ACTIVE) throw new BadRequestException('Call must be active');
+    if (session.isScreenSharing) throw new BadRequestException('Someone is already sharing their screen');
+
+    return this.prisma.callSession.update({
+      where: { id: callId },
+      data: { isScreenSharing: true, screenShareUserId: userId },
+    });
+  }
+
+  async stopScreenShare(callId: string, userId: string) {
+    const session = await this.prisma.callSession.findUnique({
+      where: { id: callId },
+      include: { participants: true },
+    });
+    if (!session) throw new NotFoundException('Call not found');
+    this.requireParticipant(session.participants, userId);
+    if (session.screenShareUserId !== userId) throw new ForbiddenException('Only the screen sharer can stop');
+
+    return this.prisma.callSession.update({
+      where: { id: callId },
+      data: { isScreenSharing: false, screenShareUserId: null },
+    });
+  }
 }

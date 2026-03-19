@@ -1682,15 +1682,18 @@ model Device {
 }
 
 model CallSession {
-  id           String            @id @default(cuid())
-  callType     CallType
-  status       CallStatus        @default(RINGING)
-  startedAt    DateTime?
-  endedAt      DateTime?
-  duration     Int?
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
-  participants CallParticipant[]
+  id               String            @id @default(cuid())
+  callType         CallType
+  status           CallStatus        @default(RINGING)
+  startedAt        DateTime?
+  endedAt          DateTime?
+  duration         Int?
+  maxParticipants  Int               @default(2)
+  isScreenSharing  Boolean           @default(false)
+  screenShareUserId String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  participants     CallParticipant[]
 
   @@map("call_sessions")
 
