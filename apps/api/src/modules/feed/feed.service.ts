@@ -332,4 +332,73 @@ export class FeedService {
       },
     };
   }
+
+  /**
+   * Get creators that the user frequently interacts with (10+ interactions in last 7 days).
+   * Returns a Set of creator user IDs for fast lookup.
+   */
+  async getFrequentCreatorIds(userId: string): Promise<Set<string>> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // Count interactions per post creator in last 7 days
+    const interactions = await this.prisma.feedInteraction.findMany({
+      where: {
+        userId,
+        createdAt: { gte: sevenDaysAgo },
+        OR: [
+          { viewed: true },
+          { liked: true },
+          { commented: true },
+          { shared: true },
+          { saved: true },
+        ],
+      },
+      select: {
+        post: {
+          select: { userId: true },
+        },
+      },
+      take: 500,
+    });
+
+    // Aggregate by creator
+    const creatorCounts = new Map<string, number>();
+    for (const interaction of interactions) {
+      if (!interaction.post) continue;
+      const creatorId = interaction.post.userId;
+      if (creatorId === userId) continue; // Skip self
+      creatorCounts.set(creatorId, (creatorCounts.get(creatorId) || 0) + 1);
+    }
+
+    // Threshold: 10+ interactions
+    const frequentIds = new Set<string>();
+    for (const [creatorId, count] of creatorCounts) {
+      if (count >= 10) {
+        frequentIds.add(creatorId);
+      }
+    }
+
+    return frequentIds;
+  }
+
+  /**
+   * Get the list of frequent creators with their profile info.
+   */
+  async getFrequentCreators(userId: string) {
+    const frequentIds = await this.getFrequentCreatorIds(userId);
+    if (frequentIds.size === 0) return [];
+
+    return this.prisma.user.findMany({
+      where: { id: { in: [...frequentIds] } },
+      select: {
+        id: true,
+        username: true,
+        displayName: true,
+        avatarUrl: true,
+        isVerified: true,
+      },
+      take: 50,
+    });
+  }
 }

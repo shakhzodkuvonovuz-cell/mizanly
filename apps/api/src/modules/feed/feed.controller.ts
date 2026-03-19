@@ -154,6 +154,13 @@ export class FeedController {
   }
 
   @UseGuards(ClerkAuthGuard)
+  @Get('frequent-creators')
+  @ApiOperation({ summary: 'Get creators the user frequently engages with' })
+  async getFrequentCreators(@CurrentUser('id') userId: string) {
+    return this.feed.getFrequentCreators(userId);
+  }
+
+  @UseGuards(ClerkAuthGuard)
   @Put('admin/posts/:id/feature')
   @ApiOperation({ summary: 'Feature or unfeature a post (admin)' })
   async featurePost(

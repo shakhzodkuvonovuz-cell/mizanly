@@ -989,7 +989,7 @@ tts.readingAloud: "Reading aloud"
 
 ---
 
-### [ ] Task 17: "Frequently Watched" Creator Badge
+### [x] Task 17: "Frequently Watched" Creator Badge — Done: getFrequentCreatorIds (10+ interactions/7d), GET /feed/frequent-creators endpoint
 
 **Files to read first:**
 - `apps/api/src/modules/feed/feed.service.ts`
