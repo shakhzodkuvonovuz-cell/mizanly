@@ -2872,6 +2872,22 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "fasting": {
+    "tracker": "Suivi du Jeûne",
+    "areYouFasting": "Jeûnez-vous aujourd'hui ?",
+    "yesFasting": "Oui, je jeûne",
+    "notFasting": "Pas de jeûne aujourd'hui",
+    "reason": "Raison (optionnel)",
+    "iftarIn": "Iftar dans",
+    "suhoorEndsIn": "Suhoor se termine dans",
+    "streak": "Série actuelle",
+    "thisMonth": "Ce mois",
+    "makeupNeeded": "Rattrapage nécessaire",
+    "sunnahFasts": "Jeûnes Sunnah",
+    "mondayThursday": "Lundi et Jeudi",
+    "whiteDays": "Jours Blancs (13-15)",
+    "totalThisYear": "Total jeûnes cette année"
+  },
   "duas": {
     "title": "Collection de Duas",
     "categories": "Catégories",

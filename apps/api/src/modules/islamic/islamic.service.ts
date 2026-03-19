@@ -945,6 +945,80 @@ export class IslamicService {
     return { removed: true };
   }
 
+  // ============================================================
+  // FASTING TRACKER
+  // ============================================================
+
+  async logFast(userId: string, data: { date: string; isFasting: boolean; fastType?: string; reason?: string }) {
+    const dateObj = new Date(data.date);
+    return this.prisma.fastingLog.upsert({
+      where: { userId_date: { userId, date: dateObj } },
+      update: {
+        isFasting: data.isFasting,
+        fastType: data.fastType ?? 'ramadan',
+        reason: data.reason,
+      },
+      create: {
+        userId,
+        date: dateObj,
+        isFasting: data.isFasting,
+        fastType: data.fastType ?? 'ramadan',
+        reason: data.reason,
+      },
+    });
+  }
+
+  async getFastingLog(userId: string, month: string) {
+    // month format: YYYY-MM
+    const [year, mon] = month.split('-').map(Number);
+    const startDate = new Date(year, mon - 1, 1);
+    const endDate = new Date(year, mon, 0); // Last day of month
+
+    return this.prisma.fastingLog.findMany({
+      where: {
+        userId,
+        date: { gte: startDate, lte: endDate },
+      },
+      orderBy: { date: 'asc' },
+    });
+  }
+
+  async getFastingStats(userId: string) {
+    const yearStart = new Date(new Date().getFullYear(), 0, 1);
+
+    const logs = await this.prisma.fastingLog.findMany({
+      where: { userId, date: { gte: yearStart } },
+      orderBy: { date: 'asc' },
+    });
+
+    const totalFasts = logs.filter((l) => l.isFasting).length;
+    const missedRamadan = logs.filter((l) => !l.isFasting && l.fastType === 'ramadan').length;
+
+    // Calculate current streak
+    let streak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sortedDesc = [...logs].filter((l) => l.isFasting).reverse();
+    for (const log of sortedDesc) {
+      const logDate = new Date(log.date);
+      logDate.setHours(0, 0, 0, 0);
+      const expected = new Date(today);
+      expected.setDate(expected.getDate() - streak);
+      expected.setHours(0, 0, 0, 0);
+      if (logDate.getTime() === expected.getTime()) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return {
+      totalFastsThisYear: totalFasts,
+      currentStreak: streak,
+      makeupNeeded: missedRamadan,
+    };
+  }
+
   async getBookmarkedDuas(userId: string): Promise<DuaEntry[]> {
     const bookmarks = await this.prisma.duaBookmark.findMany({
       where: { userId },

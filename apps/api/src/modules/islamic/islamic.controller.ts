@@ -434,6 +434,42 @@ export class IslamicController {
   }
 
   // ============================================================
+  // FASTING TRACKER
+  // ============================================================
+
+  @Post('fasting/log')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Log a fast (or not fasting with reason)' })
+  async logFast(
+    @CurrentUser('id') userId: string,
+    @Body() body: { date: string; isFasting: boolean; fastType?: string; reason?: string },
+  ) {
+    return this.islamicService.logFast(userId, body);
+  }
+
+  @Get('fasting/log')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get fasting log for a month (YYYY-MM)' })
+  @ApiQuery({ name: 'month', required: true, type: String })
+  async getFastingLog(
+    @CurrentUser('id') userId: string,
+    @Query('month') month: string,
+  ) {
+    return this.islamicService.getFastingLog(userId, month);
+  }
+
+  @Get('fasting/stats')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get fasting stats (streak, total, makeup)' })
+  async getFastingStats(@CurrentUser('id') userId: string) {
+    return this.islamicService.getFastingStats(userId);
+  }
+
+  // ============================================================
   // DUA COLLECTION
   // ============================================================
 

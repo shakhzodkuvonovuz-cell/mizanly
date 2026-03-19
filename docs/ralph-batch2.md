@@ -1192,7 +1192,7 @@ duas.protection: "Protection"
 
 ---
 
-### [ ] Task 20: Fasting Tracker
+### [x] Task 20: Fasting Tracker — Done: FastingLog model, log/stats/monthly endpoints, streak calculation, Sunnah fast types, i18n 8 langs
 
 **Files to read first:**
 - `apps/mobile/app/(screens)/ramadan-mode.tsx`

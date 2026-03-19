@@ -2872,6 +2872,22 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "fasting": {
+    "tracker": "روزے کا ٹریکر",
+    "areYouFasting": "کیا آپ آج روزے سے ہیں؟",
+    "yesFasting": "ہاں، میں روزے سے ہوں",
+    "notFasting": "آج روزہ نہیں ہے",
+    "reason": "وجہ (اختیاری)",
+    "iftarIn": "افطار باقی",
+    "suhoorEndsIn": "سحری ختم ہو رہی ہے",
+    "streak": "موجودہ سلسلہ",
+    "thisMonth": "اس مہینے",
+    "makeupNeeded": "قضا روزے",
+    "sunnahFasts": "سنت روزے",
+    "mondayThursday": "پیر اور جمعرات",
+    "whiteDays": "ایام بیض (13-15)",
+    "totalThisYear": "اس سال کل روزے"
+  },
   "duas": {
     "title": "دعاؤں کا مجموعہ",
     "categories": "زمرے",

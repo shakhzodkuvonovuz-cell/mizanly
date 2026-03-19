@@ -3591,6 +3591,24 @@ model DuaBookmark {
 }
 
 // ============================================================
+// FASTING TRACKER
+// ============================================================
+
+model FastingLog {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  isFasting Boolean
+  fastType  String   @default("ramadan") // ramadan, monday, thursday, ayyam-al-bid, arafat, ashura, qada, nafl
+  reason    String? // if not fasting: travel, illness, menstruation, other
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@map("fasting_logs")
+}
+
+// ============================================================
 // HALAL RESTAURANT FINDER
 // ============================================================
 

@@ -2871,6 +2871,22 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "fasting": {
+    "tracker": "متتبع الصيام",
+    "areYouFasting": "هل أنت صائم اليوم؟",
+    "yesFasting": "نعم، أنا صائم",
+    "notFasting": "لست صائماً اليوم",
+    "reason": "السبب (اختياري)",
+    "iftarIn": "الإفطار بعد",
+    "suhoorEndsIn": "ينتهي السحور بعد",
+    "streak": "التتابع الحالي",
+    "thisMonth": "هذا الشهر",
+    "makeupNeeded": "أيام القضاء",
+    "sunnahFasts": "صيام السنة",
+    "mondayThursday": "الإثنين والخميس",
+    "whiteDays": "الأيام البيض (13-15)",
+    "totalThisYear": "إجمالي الصيام هذا العام"
+  },
   "duas": {
     "title": "مجموعة الأدعية",
     "categories": "الفئات",

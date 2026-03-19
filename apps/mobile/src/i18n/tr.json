@@ -2871,6 +2871,22 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "fasting": {
+    "tracker": "Oruç Takibi",
+    "areYouFasting": "Bugün oruç tutuyor musunuz?",
+    "yesFasting": "Evet, oruçluyum",
+    "notFasting": "Bugün oruç tutmuyorum",
+    "reason": "Sebep (isteğe bağlı)",
+    "iftarIn": "İftara kalan",
+    "suhoorEndsIn": "Sahur bitiyor",
+    "streak": "Mevcut Seri",
+    "thisMonth": "Bu Ay",
+    "makeupNeeded": "Kaza Gerekli",
+    "sunnahFasts": "Sünnet Oruçları",
+    "mondayThursday": "Pazartesi ve Perşembe",
+    "whiteDays": "Eyyam-ı Biyd (13-15)",
+    "totalThisYear": "Bu Yıl Toplam Oruç"
+  },
   "duas": {
     "title": "Dua Koleksiyonu",
     "categories": "Kategoriler",

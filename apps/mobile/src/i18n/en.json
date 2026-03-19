@@ -2871,6 +2871,22 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "fasting": {
+    "tracker": "Fasting Tracker",
+    "areYouFasting": "Are you fasting today?",
+    "yesFasting": "Yes, I'm fasting",
+    "notFasting": "Not fasting today",
+    "reason": "Reason (optional)",
+    "iftarIn": "Iftar in",
+    "suhoorEndsIn": "Suhoor ends in",
+    "streak": "Current Streak",
+    "thisMonth": "This Month",
+    "makeupNeeded": "Makeup Needed",
+    "sunnahFasts": "Sunnah Fasts",
+    "mondayThursday": "Monday & Thursday",
+    "whiteDays": "White Days (13-15)",
+    "totalThisYear": "Total Fasts This Year"
+  },
   "duas": {
     "title": "Dua Collection",
     "categories": "Categories",

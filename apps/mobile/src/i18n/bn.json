@@ -2871,6 +2871,22 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "fasting": {
+    "tracker": "রোজা ট্র্যাকার",
+    "areYouFasting": "আজ কি রোজা রেখেছেন?",
+    "yesFasting": "হ্যাঁ, আমি রোজা রেখেছি",
+    "notFasting": "আজ রোজা নেই",
+    "reason": "কারণ (ঐচ্ছিক)",
+    "iftarIn": "ইফতার বাকি",
+    "suhoorEndsIn": "সেহরি শেষ হচ্ছে",
+    "streak": "বর্তমান ধারা",
+    "thisMonth": "এই মাসে",
+    "makeupNeeded": "কাযা প্রয়োজন",
+    "sunnahFasts": "সুন্নত রোজা",
+    "mondayThursday": "সোমবার ও বৃহস্পতিবার",
+    "whiteDays": "আইয়ামে বীয (১৩-১৫)",
+    "totalThisYear": "এই বছর মোট রোজা"
+  },
   "duas": {
     "title": "দোয়া সংকলন",
     "categories": "বিভাগ",

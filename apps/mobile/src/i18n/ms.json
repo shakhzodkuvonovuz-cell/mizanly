@@ -2871,6 +2871,22 @@
     "noVideo": "Tiada video dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "fasting": {
+    "tracker": "Penjejak Puasa",
+    "areYouFasting": "Adakah anda berpuasa hari ini?",
+    "yesFasting": "Ya, saya berpuasa",
+    "notFasting": "Tidak berpuasa hari ini",
+    "reason": "Sebab (pilihan)",
+    "iftarIn": "Berbuka dalam",
+    "suhoorEndsIn": "Sahur berakhir dalam",
+    "streak": "Streak Semasa",
+    "thisMonth": "Bulan Ini",
+    "makeupNeeded": "Qadha Diperlukan",
+    "sunnahFasts": "Puasa Sunat",
+    "mondayThursday": "Isnin & Khamis",
+    "whiteDays": "Ayyamul Bidh (13-15)",
+    "totalThisYear": "Jumlah Puasa Tahun Ini"
+  },
   "duas": {
     "title": "Koleksi Doa",
     "categories": "Kategori",
