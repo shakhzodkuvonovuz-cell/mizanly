@@ -85,5 +85,64 @@ describe('HealthController', () => {
       expect(prisma.thread.count).toHaveBeenCalled();
       expect(prisma.reel.count).toHaveBeenCalledWith({ where: { status: 'READY' } });
     });
+
+    it('should include memory usage info', async () => {
+      prisma.user.count.mockResolvedValue(0);
+      prisma.post.count.mockResolvedValue(0);
+      prisma.thread.count.mockResolvedValue(0);
+      prisma.reel.count.mockResolvedValue(0);
+
+      const result = await controller.metrics();
+      expect(result.memory).toBeDefined();
+      expect(result.memory.heapUsed).toBeDefined();
+    });
+
+    it('should return uptime as positive number', async () => {
+      prisma.user.count.mockResolvedValue(0);
+      prisma.post.count.mockResolvedValue(0);
+      prisma.thread.count.mockResolvedValue(0);
+      prisma.reel.count.mockResolvedValue(0);
+
+      const result = await controller.metrics();
+      expect(result.uptime).toBeGreaterThan(0);
+    });
+  });
+
+  describe('response format', () => {
+    it('should include timestamp as ISO string in health check', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      const result = await controller.check();
+      expect(new Date(result.timestamp).toISOString()).toBe(result.timestamp);
+    });
+
+    it('should include version string', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      const result = await controller.check();
+      expect(typeof result.version).toBe('string');
+    });
+
+    it('should report redis status', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      const result = await controller.check();
+      expect(result.services.redis).toBeDefined();
+    });
+
+    it('should handle all services healthy', async () => {
+      prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
+      const result = await controller.check();
+      expect(result.status).toBe('healthy');
+      expect(result.services.database).toBe('up');
+    });
+
+    it('should report zero counts for empty database', async () => {
+      prisma.user.count.mockResolvedValue(0);
+      prisma.post.count.mockResolvedValue(0);
+      prisma.thread.count.mockResolvedValue(0);
+      prisma.reel.count.mockResolvedValue(0);
+
+      const result = await controller.metrics();
+      expect(result.counts.users).toBe(0);
+      expect(result.counts.posts).toBe(0);
+    });
   });
 });

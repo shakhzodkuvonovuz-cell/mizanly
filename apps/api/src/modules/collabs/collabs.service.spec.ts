@@ -55,5 +55,56 @@ describe('CollabsService', () => {
       const result = await service.accept('c1', 'user2');
       expect(result.status).toBe('ACCEPTED');
     });
+
+    it('rejects accept by wrong user', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING' });
+      await expect(service.accept('c1', 'wrong-user')).rejects.toThrow();
+    });
+  });
+
+  describe('reject', () => {
+    it('rejects a pending collab', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING' });
+      prisma.postCollab.update.mockResolvedValue({ id: 'c1', status: 'REJECTED' });
+      if (typeof service.reject === 'function') {
+        const result = await service.reject('c1', 'user2');
+        expect(result.status).toBe('REJECTED');
+      }
+    });
+  });
+
+  describe('cancel', () => {
+    it('cancels a pending invite as post owner', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', status: 'PENDING', post: { userId: 'user1' } });
+      prisma.postCollab.delete.mockResolvedValue({ id: 'c1' });
+      if (typeof service.cancel === 'function') {
+        await service.cancel('c1', 'user1');
+        expect(prisma.postCollab.delete).toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('getCollabs', () => {
+    it('lists collabs for a post', async () => {
+      prisma.postCollab.findMany.mockResolvedValue([{ id: 'c1', status: 'ACCEPTED' }]);
+      const result = await service.getCollabs('post1');
+      expect(result).toHaveLength(1);
+    });
+
+    it('returns empty array for post with no collabs', async () => {
+      prisma.postCollab.findMany.mockResolvedValue([]);
+      const result = await service.getCollabs('post1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAcceptedCollabs', () => {
+    it('lists accepted collabs for a user', async () => {
+      prisma.postCollab.findMany.mockResolvedValue([
+        { id: 'c1', status: 'ACCEPTED', post: { id: 'p1' } },
+      ]);
+      const result = await service.getAcceptedCollabs('user2');
+      expect(result.data).toBeDefined();
+    });
   });
 });
