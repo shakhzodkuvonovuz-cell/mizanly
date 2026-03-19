@@ -2034,8 +2034,11 @@ model AudioRoom {
   startedAt    DateTime?
   endedAt      DateTime?
   maxSpeakers  Int                    @default(10)
-  isRecording  Boolean                @default(false)
-  participants AudioRoomParticipant[]
+  isRecording       Boolean                @default(false)
+  recordingUrl      String?
+  recordingDuration Int?
+  isPersistent      Boolean                @default(false)
+  participants      AudioRoomParticipant[]
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
 

@@ -415,4 +415,97 @@ export class AudioRoomsService {
       meta: { cursor: nextCursor, hasMore },
     };
   }
+
+  // ── Recording ──────────────────────────────────────
+
+  async startRecording(roomId: string, userId: string) {
+    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('Room not found');
+    if (room.hostId !== userId) throw new ForbiddenException('Only the host can record');
+    if (room.status !== 'live') throw new BadRequestException('Room must be live');
+
+    return this.prisma.audioRoom.update({
+      where: { id: roomId },
+      data: { isRecording: true },
+    });
+  }
+
+  async stopRecording(roomId: string, userId: string, recordingUrl?: string) {
+    const room = await this.prisma.audioRoom.findUnique({ where: { id: roomId } });
+    if (!room) throw new NotFoundException('Room not found');
+    if (room.hostId !== userId) throw new ForbiddenException('Only the host can stop recording');
+
+    const duration = room.startedAt ? Math.floor((Date.now() - room.startedAt.getTime()) / 1000) : 0;
+    return this.prisma.audioRoom.update({
+      where: { id: roomId },
+      data: { isRecording: false, recordingUrl, recordingDuration: duration },
+    });
+  }
+
+  async getRecording(roomId: string) {
+    const room = await this.prisma.audioRoom.findUnique({
+      where: { id: roomId },
+      select: { id: true, title: true, recordingUrl: true, recordingDuration: true, endedAt: true },
+    });
+    if (!room || !room.recordingUrl) throw new NotFoundException('Recording not found');
+    return room;
+  }
+
+  async listRecordings(userId: string) {
+    return this.prisma.audioRoom.findMany({
+      where: { hostId: userId, recordingUrl: { not: null } },
+      select: { id: true, title: true, recordingUrl: true, recordingDuration: true, endedAt: true },
+      orderBy: { endedAt: 'desc' },
+      take: 50,
+    });
+  }
+
+  // ── Discovery ──────────────────────────────────────
+
+  async getActiveRooms(cursor?: string, limit = 20) {
+    const rooms = await this.prisma.audioRoom.findMany({
+      where: { status: 'live', ...(cursor ? { id: { lt: cursor } } : {}) },
+      include: {
+        host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+        _count: { select: { participants: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+    });
+    const hasMore = rooms.length > limit;
+    if (hasMore) rooms.pop();
+    return { data: rooms, meta: { cursor: rooms[rooms.length - 1]?.id ?? null, hasMore } };
+  }
+
+  async getUpcomingRooms(cursor?: string, limit = 20) {
+    const rooms = await this.prisma.audioRoom.findMany({
+      where: {
+        status: 'scheduled',
+        scheduledAt: { gte: new Date() },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      include: {
+        host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } },
+      },
+      orderBy: { scheduledAt: 'asc' },
+      take: limit + 1,
+    });
+    const hasMore = rooms.length > limit;
+    if (hasMore) rooms.pop();
+    return { data: rooms, meta: { cursor: rooms[rooms.length - 1]?.id ?? null, hasMore } };
+  }
+
+  // ── Persistent voice channels ─────────────────────
+
+  async createPersistentRoom(communityId: string, name: string, userId: string) {
+    return this.prisma.audioRoom.create({
+      data: {
+        title: name,
+        hostId: userId,
+        status: 'live',
+        isPersistent: true,
+        startedAt: new Date(),
+      },
+    });
+  }
 }
