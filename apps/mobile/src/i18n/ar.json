@@ -2692,6 +2692,18 @@
     "suggestedForYou": "مقترح لك",
     "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
   },
+  "storyStickers": {
+    "poll": "استطلاع",
+    "question": "سؤال",
+    "emojiSlider": "شريط الإيموجي",
+    "countdown": "عد تنازلي",
+    "askQuestion": "اطرح سؤالاً...",
+    "addOption": "إضافة خيار",
+    "vote": "صوّت",
+    "results": "النتائج",
+    "remindMe": "ذكّرني",
+    "dragToDelete": "اسحب هنا للحذف"
+  },
   "translation": {
     "seeTranslation": "عرض الترجمة",
     "seeOriginal": "عرض الأصلي",

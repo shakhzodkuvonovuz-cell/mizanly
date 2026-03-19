@@ -2692,6 +2692,18 @@
     "suggestedForYou": "আপনার জন্য প্রস্তাবিত",
     "followToSeeMore": "তাদের পোস্ট আপনার ফিডে দেখতে অনুসরণ করুন"
   },
+  "storyStickers": {
+    "poll": "পোল",
+    "question": "প্রশ্ন",
+    "emojiSlider": "ইমোজি স্লাইডার",
+    "countdown": "কাউন্টডাউন",
+    "askQuestion": "একটি প্রশ্ন জিজ্ঞাসা করুন...",
+    "addOption": "বিকল্প যোগ করুন",
+    "vote": "ভোট দিন",
+    "results": "ফলাফল",
+    "remindMe": "আমাকে মনে করিয়ে দিন",
+    "dragToDelete": "মুছতে এখানে টেনে আনুন"
+  },
   "translation": {
     "seeTranslation": "অনুবাদ দেখুন",
     "seeOriginal": "মূল দেখুন",

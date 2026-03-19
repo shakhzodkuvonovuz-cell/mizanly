@@ -2692,6 +2692,18 @@
     "suggestedForYou": "Suggested for you",
     "followToSeeMore": "Follow to see their posts in your feed"
   },
+  "storyStickers": {
+    "poll": "Poll",
+    "question": "Question",
+    "emojiSlider": "Emoji Slider",
+    "countdown": "Countdown",
+    "askQuestion": "Ask a question...",
+    "addOption": "Add option",
+    "vote": "Vote",
+    "results": "Results",
+    "remindMe": "Remind me",
+    "dragToDelete": "Drag here to delete"
+  },
   "translation": {
     "seeTranslation": "See Translation",
     "seeOriginal": "See Original",

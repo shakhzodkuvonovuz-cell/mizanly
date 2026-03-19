@@ -2692,6 +2692,18 @@
     "suggestedForYou": "Sizin için önerilen",
     "followToSeeMore": "Gönderilerini akışınızda görmek için takip edin"
   },
+  "storyStickers": {
+    "poll": "Anket",
+    "question": "Soru",
+    "emojiSlider": "Emoji Kaydırıcı",
+    "countdown": "Geri Sayım",
+    "askQuestion": "Bir soru sor...",
+    "addOption": "Seçenek ekle",
+    "vote": "Oy ver",
+    "results": "Sonuçlar",
+    "remindMe": "Hatırlat",
+    "dragToDelete": "Silmek için buraya sürükle"
+  },
   "translation": {
     "seeTranslation": "Çeviriyi Gör",
     "seeOriginal": "Orijinali Gör",

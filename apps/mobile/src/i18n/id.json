@@ -2693,6 +2693,18 @@
     "suggestedForYou": "Disarankan untuk Anda",
     "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
   },
+  "storyStickers": {
+    "poll": "Polling",
+    "question": "Pertanyaan",
+    "emojiSlider": "Slider Emoji",
+    "countdown": "Hitung Mundur",
+    "askQuestion": "Ajukan pertanyaan...",
+    "addOption": "Tambah opsi",
+    "vote": "Vote",
+    "results": "Hasil",
+    "remindMe": "Ingatkan saya",
+    "dragToDelete": "Seret ke sini untuk menghapus"
+  },
   "translation": {
     "seeTranslation": "Lihat Terjemahan",
     "seeOriginal": "Lihat Asli",

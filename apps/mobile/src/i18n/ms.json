@@ -2692,6 +2692,18 @@
     "suggestedForYou": "Dicadangkan untuk anda",
     "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
   },
+  "storyStickers": {
+    "poll": "Undian",
+    "question": "Soalan",
+    "emojiSlider": "Peluncur Emoji",
+    "countdown": "Kira Detik",
+    "askQuestion": "Tanya soalan...",
+    "addOption": "Tambah pilihan",
+    "vote": "Undi",
+    "results": "Keputusan",
+    "remindMe": "Ingatkan saya",
+    "dragToDelete": "Seret ke sini untuk padam"
+  },
   "translation": {
     "seeTranslation": "Lihat Terjemahan",
     "seeOriginal": "Lihat Asal",

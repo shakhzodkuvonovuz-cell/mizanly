@@ -2693,6 +2693,18 @@
     "suggestedForYou": "آپ کے لیے تجویز کردہ",
     "followToSeeMore": "ان کی پوسٹس اپنی فیڈ میں دیکھنے کے لیے فالو کریں"
   },
+  "storyStickers": {
+    "poll": "پول",
+    "question": "سوال",
+    "emojiSlider": "ایموجی سلائیڈر",
+    "countdown": "الٹی گنتی",
+    "askQuestion": "سوال پوچھیں...",
+    "addOption": "آپشن شامل کریں",
+    "vote": "ووٹ دیں",
+    "results": "نتائج",
+    "remindMe": "مجھے یاد دلائیں",
+    "dragToDelete": "حذف کرنے کے لیے یہاں گھسیٹیں"
+  },
   "translation": {
     "seeTranslation": "ترجمہ دیکھیں",
     "seeOriginal": "اصل دیکھیں",

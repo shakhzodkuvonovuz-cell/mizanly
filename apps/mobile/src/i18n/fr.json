@@ -2693,6 +2693,18 @@
     "suggestedForYou": "Suggestions pour vous",
     "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
   },
+  "storyStickers": {
+    "poll": "Sondage",
+    "question": "Question",
+    "emojiSlider": "Curseur Emoji",
+    "countdown": "Compte à rebours",
+    "askQuestion": "Posez une question...",
+    "addOption": "Ajouter une option",
+    "vote": "Voter",
+    "results": "Résultats",
+    "remindMe": "Me rappeler",
+    "dragToDelete": "Glissez ici pour supprimer"
+  },
   "translation": {
     "seeTranslation": "Voir la traduction",
     "seeOriginal": "Voir l'original",
