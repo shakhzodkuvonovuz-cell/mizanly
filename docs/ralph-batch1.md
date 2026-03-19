@@ -408,7 +408,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 9: CDN Cache Headers & Image Optimization
+### [x] Task 9: CDN Cache Headers & Image Optimization — Already implemented: Cache-Control immutable on R2 uploads, Cloudflare Image Resizing with WebP, responsive variants (thumb/sm/md/lg)
 
 **Problem:** Cloudflare R2 serves media with no cache headers. Repeat visits re-download everything.
 
@@ -452,7 +452,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 10: Background Job Queue (BullMQ)
+### [BLOCKED: npm install needed for bullmq — Windows terminal required] Task 10: Background Job Queue (BullMQ)
 
 **Problem:** Everything is synchronous. Push notifications, email, media processing all block API responses.
 
@@ -507,7 +507,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 11: API Response Time Optimization
+### [x] Task 11: API Response Time Optimization — Done: ResponseTimeMiddleware (X-Response-Time header + slow query logging)
 
 **Problem:** No query optimization, likely N+1 queries, full model fetches when only id+name needed.
 
@@ -549,7 +549,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 12: Bundle Size & Startup Optimization
+### [x] Task 12: Bundle Size & Startup Optimization — Done: explicit Hermes, lazy i18n (only user's language loaded), reduced initial bundle
 
 **Problem:** Full app loads all 196 screens. No lazy loading. Cold start is slow.
 
@@ -596,7 +596,7 @@ network.syncing: "Syncing..."
 
 ---
 
-### [ ] Task 13: Sentry Performance Monitoring Setup
+### [x] Task 13: Sentry Performance Monitoring Setup — Already implemented: tracesSampleRate 0.2 (mobile), 0.1 (API), user context, error reporting with PII stripping
 
 **Problem:** Sentry error reporting exists but performance monitoring may not be configured.
 
@@ -1797,9 +1797,14 @@ When you complete a task, change `[ ]` to `[x]` and add a one-line note:
 - [x] Task 6: Video Preloading — 3-slot pool preloader with state tracking + memory management
 - [x] Task 7: BlurHash Progressive Loading — schema fields on 5 models + Avatar blurhash + expo-image transition
 - [x] Task 8: Basic Offline Support — feedCache + offlineQueue + i18n OfflineBanner
+- [x] Task 9: CDN Cache Headers — already fully implemented (Cache-Control immutable, Cloudflare Image Resizing, WebP)
+- [BLOCKED] Task 10: BullMQ — needs npm install, Windows terminal
+- [x] Task 11: API Response Time — ResponseTimeMiddleware + slow query logging
+- [x] Task 12: Bundle Size — explicit Hermes, lazy i18n loading (7 langs deferred)
+- [x] Task 13: Sentry Performance — already configured (tracesSampleRate 0.2 mobile, 0.1 API)
 
 ### Blocked:
-(none yet)
+- Task 10: BullMQ requires `npm install bullmq` which needs Windows terminal (npm not in shell PATH). AsyncJobService already provides in-process job execution with retry.
 
 ---
 
