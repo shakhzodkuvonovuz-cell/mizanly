@@ -1005,7 +1005,7 @@ model Conversation {
   groupName            String?
   groupAvatarUrl       String?
   createdById          String?
-  createdBy            User?                @relation("ConversationCreator", fields: [createdById], references: [id])
+  createdBy            User?                @relation("ConversationCreator", fields: [createdById], references: [id], onDelete: SetNull)
   lastMessageText      String?
   lastMessageAt        DateTime?
   lastMessageById      String?
@@ -1246,7 +1246,7 @@ model CircleInvite {
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
   circle      Circle    @relation(fields: [circleId], references: [id], onDelete: Cascade)
-  createdBy   User      @relation(fields: [createdById], references: [id])
+  createdBy   User      @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@map("circle_invites")
 
@@ -1338,12 +1338,12 @@ model ModerationLog {
   appealResolved  Boolean?
   appealResult    String?
   createdAt       DateTime         @default(now())
-  moderator       User             @relation("Moderator", fields: [moderatorId], references: [id])
-  targetUser      User?            @relation("ModTarget", fields: [targetUserId], references: [id])
-  targetPost      Post?            @relation("ModPostTarget", fields: [targetPostId], references: [id])
-  targetComment   Comment?         @relation("ModCommentTarget", fields: [targetCommentId], references: [id])
-  targetMessage   Message?         @relation("ModMessageTarget", fields: [targetMessageId], references: [id])
-  report          Report?          @relation(fields: [reportId], references: [id])
+  moderator       User             @relation("Moderator", fields: [moderatorId], references: [id], onDelete: Cascade)
+  targetUser      User?            @relation("ModTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+  targetPost      Post?            @relation("ModPostTarget", fields: [targetPostId], references: [id], onDelete: SetNull)
+  targetComment   Comment?         @relation("ModCommentTarget", fields: [targetCommentId], references: [id], onDelete: SetNull)
+  targetMessage   Message?         @relation("ModMessageTarget", fields: [targetMessageId], references: [id], onDelete: SetNull)
+  report          Report?          @relation(fields: [reportId], references: [id], onDelete: SetNull)
 
   @@index([targetUserId, createdAt(sort: Desc)])
   @@map("moderation_log")
@@ -2703,7 +2703,7 @@ model Challenge {
   participantCount Int  @default(0)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  creator      User     @relation("ChallengeCreator", fields: [createdById], references: [id])
+  creator      User     @relation("ChallengeCreator", fields: [createdById], references: [id], onDelete: Cascade)
   participants ChallengeParticipant[]
   @@index([isActive, endDate])
   @@map("challenges")
@@ -2842,8 +2842,8 @@ model Order {
   shippingAddress String?  @db.VarChar(500)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id])
-  product         Product  @relation(fields: [productId], references: [id])
+  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   @@index([buyerId])
   @@index([productId])
   @@index([status])
@@ -2881,7 +2881,7 @@ model HalalBusiness {
   openingHours String?  @db.VarChar(500) // JSON
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  owner        User     @relation("BusinessOwner", fields: [ownerId], references: [id])
+  owner        User     @relation("BusinessOwner", fields: [ownerId], references: [id], onDelete: Cascade)
   reviews      BusinessReview[]
   @@index([category])
   @@index([lat, lng])
@@ -2915,7 +2915,7 @@ model ZakatFund {
   status       String   @default("active") // active | completed | closed
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  recipient    User     @relation("ZakatRecipient", fields: [recipientId], references: [id])
+  recipient    User     @relation("ZakatRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   donations    ZakatDonation[]
   @@map("zakat_funds")
 }
@@ -2930,7 +2930,7 @@ model ZakatDonation {
   stripePaymentId String?
   createdAt       DateTime @default(now())
   fund            ZakatFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
-  donor           User      @relation("ZakatDonor", fields: [donorId], references: [id])
+  donor           User      @relation("ZakatDonor", fields: [donorId], references: [id], onDelete: Cascade)
 
   @@index([fundId])
   @@index([donorId])
@@ -2949,7 +2949,7 @@ model CommunityTreasury {
   createdById  String
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  creator      User     @relation("TreasuryCreator", fields: [createdById], references: [id])
+  creator      User     @relation("TreasuryCreator", fields: [createdById], references: [id], onDelete: Cascade)
   contributions TreasuryContribution[]
   @@index([circleId])
   @@index([createdById])
@@ -2963,7 +2963,7 @@ model TreasuryContribution {
   amount     Float
   createdAt  DateTime @default(now())
   treasury   CommunityTreasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
-  user       User               @relation("TreasuryContributor", fields: [userId], references: [id])
+  user       User               @relation("TreasuryContributor", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([treasuryId])
   @@index([userId])
@@ -2999,7 +2999,7 @@ model LocalBoard {
   postsCount   Int      @default(0)
   createdById  String
   createdAt    DateTime @default(now())
-  creator      User     @relation("BoardCreator", fields: [createdById], references: [id])
+  creator      User     @relation("BoardCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([city, country])
   @@index([createdById])
   @@map("local_boards")
@@ -3015,8 +3015,8 @@ model Mentorship {
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime @default(now())
-  mentor      User     @relation("MentorOf", fields: [mentorId], references: [id])
-  mentee      User     @relation("MenteeOf", fields: [menteeId], references: [id])
+  mentor      User     @relation("MentorOf", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee      User     @relation("MenteeOf", fields: [menteeId], references: [id], onDelete: Cascade)
   @@unique([mentorId, menteeId])
   @@index([mentorId])
   @@index([menteeId])
@@ -3035,7 +3035,7 @@ model StudyCircle {
   membersCount Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  leader       User     @relation("CircleLeader", fields: [leaderId], references: [id])
+  leader       User     @relation("CircleLeader", fields: [leaderId], references: [id], onDelete: Cascade)
   @@index([topic, isActive])
   @@index([leaderId])
   @@map("study_circles")
@@ -3052,7 +3052,7 @@ model FatwaQuestion {
   answeredBy String?
   answeredAt DateTime?
   createdAt  DateTime @default(now())
-  asker      User     @relation("FatwaAsker", fields: [askerId], references: [id])
+  asker      User     @relation("FatwaAsker", fields: [askerId], references: [id], onDelete: Cascade)
   @@index([status, madhab])
   @@index([askerId])
   @@map("fatwa_questions")
@@ -3072,7 +3072,7 @@ model VolunteerOpportunity {
   spotsFilled  Int      @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  organizer    User     @relation("VolunteerOrganizer", fields: [organizerId], references: [id])
+  organizer    User     @relation("VolunteerOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
   @@index([category, isActive])
   @@index([organizerId])
   @@map("volunteer_opportunities")
@@ -3094,7 +3094,7 @@ model IslamicEvent {
   attendeeCount Int    @default(0)
   coverUrl    String?
   createdAt   DateTime @default(now())
-  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id])
+  organizer   User     @relation("EventOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
   @@index([eventType, startDate])
   @@index([organizerId])
   @@map("islamic_events")
@@ -3137,7 +3137,7 @@ model WatchParty {
   startedAt   DateTime?
   endedAt     DateTime?
   createdAt   DateTime @default(now())
-  host        User     @relation(fields: [hostId], references: [id])
+  host        User     @relation(fields: [hostId], references: [id], onDelete: Cascade)
   @@index([hostId])
   @@index([videoId])
   @@map("watch_parties")
@@ -3152,7 +3152,7 @@ model SharedCollection {
   itemCount   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  creator     User     @relation("CollectionCreator", fields: [createdById], references: [id])
+  creator     User     @relation("CollectionCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([createdById])
   @@map("shared_collections")
 }
@@ -3166,7 +3166,7 @@ model WaqfFund {
   createdById  String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
-  creator      User     @relation("WaqfCreator", fields: [createdById], references: [id])
+  creator      User     @relation("WaqfCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([createdById])
   @@map("waqf_funds")
 }
@@ -3255,7 +3255,7 @@ model CustomEmojiPack {
   isPublic    Boolean  @default(true)
   usageCount  Int      @default(0)
   createdAt   DateTime @default(now())
-  creator     User     @relation("EmojiPackCreator", fields: [creatorId], references: [id])
+  creator     User     @relation("EmojiPackCreator", fields: [creatorId], references: [id], onDelete: Cascade)
   emojis      CustomEmoji[]
   @@map("custom_emoji_packs")
 }
@@ -3275,7 +3275,7 @@ model ForumThread {
   tags           String[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  author         User     @relation("ForumThreadAuthor", fields: [authorId], references: [id])
+  author         User     @relation("ForumThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   replies        ForumReply[]
   @@index([circleId, isPinned, lastReplyAt(sort: Desc)])
   @@map("forum_threads")
@@ -3289,7 +3289,7 @@ model ForumReply {
   likesCount Int     @default(0)
   createdAt DateTime @default(now())
   thread    ForumThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  author    User        @relation("ForumReplyAuthor", fields: [authorId], references: [id])
+  author    User        @relation("ForumReplyAuthor", fields: [authorId], references: [id], onDelete: Cascade)
   @@index([threadId, createdAt])
   @@map("forum_replies")
 }
@@ -3305,7 +3305,7 @@ model Webhook {
   isActive       Boolean  @default(true)
   lastUsedAt     DateTime?
   createdAt      DateTime @default(now())
-  creator        User     @relation("WebhookCreator", fields: [createdById], references: [id])
+  creator        User     @relation("WebhookCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([circleId])
   @@map("webhooks")
 }
@@ -3322,7 +3322,7 @@ model StageSession {
   startedAt      DateTime?
   endedAt        DateTime?
   createdAt      DateTime @default(now())
-  host           User     @relation("StageHost", fields: [hostId], references: [id])
+  host           User     @relation("StageHost", fields: [hostId], references: [id], onDelete: Cascade)
   @@index([circleId, status])
   @@map("stage_sessions")
 }
@@ -3364,7 +3364,7 @@ model CreatorEarning {
   diamonds  Int      @default(0)
   year      Int
   createdAt DateTime @default(now())
-  user      User     @relation("CreatorEarnings", fields: [userId], references: [id])
+  user      User     @relation("CreatorEarnings", fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, year])
   @@map("creator_earnings")
 }
