@@ -9,6 +9,7 @@ import { NotificationsService } from '../../modules/notifications/notifications.
 import { GamificationService } from '../../modules/gamification/gamification.service';
 import { AiService } from '../../modules/ai/ai.service';
 import { StreamService } from '../../modules/stream/stream.service';
+import { QueueService } from '../queue/queue.service';
 
 /**
  * Shared mock providers for test modules.
@@ -99,6 +100,22 @@ export const mockAsyncJobService = {
   },
 };
 
+export const mockQueueService = {
+  provide: QueueService,
+  useValue: {
+    addPushNotificationJob: jest.fn().mockResolvedValue('job-1'),
+    addBulkPushJob: jest.fn().mockResolvedValue('job-2'),
+    addMediaProcessingJob: jest.fn().mockResolvedValue('job-3'),
+    addGamificationJob: jest.fn().mockResolvedValue('job-4'),
+    addEngagementTrackingJob: jest.fn().mockResolvedValue('job-5'),
+    addWebhookDeliveryJob: jest.fn().mockResolvedValue('job-6'),
+    addSearchIndexJob: jest.fn().mockResolvedValue('job-7'),
+    addModerationJob: jest.fn().mockResolvedValue('job-8'),
+    addCaptionGenerationJob: jest.fn().mockResolvedValue('job-9'),
+    getStats: jest.fn().mockResolvedValue({}),
+  },
+};
+
 export const mockAnalyticsService = {
   provide: AnalyticsService,
   useValue: {
@@ -154,6 +171,7 @@ export const globalMockProviders = [
   mockAiService,
   mockStreamService,
   mockAsyncJobService,
+  mockQueueService,
   mockAnalyticsService,
   mockFeatureFlagsService,
 ];
