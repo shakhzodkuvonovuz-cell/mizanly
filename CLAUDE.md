@@ -86,13 +86,19 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Live reaction to other streams — YouTube 2026
 - TV app (Fire TV / Google TV) — Instagram 2026
 
-### Backend Hardening Status (Batch 68)
-- ~~TODO stubs~~ — ✅ Fixed: mosque-finder prayer computation, audio-room speaking, enable-tips API
-- ~~Pagination limits~~ — ✅ Verified: all findMany have take: limits
-- ~~Rate limiting~~ — ✅ Verified: payments + auth already throttled
-- ~~Parental PIN~~ — ✅ Verified: scrypt hashed
-- ~~Upload folder~~ — ✅ Verified: @IsIn whitelist
-- Remaining: ~50 Prisma relations missing onDelete (non-blocking, cosmetic)
+### Backend + Performance Hardening (Batches 68, A1-C)
+- ~~TODO stubs~~ — ✅ Fixed
+- ~~Pagination limits~~ — ✅ 175 findMany calls capped with take: 50
+- ~~Rate limiting~~ — ✅ All controllers now throttled (10 added in Batch B)
+- ~~Database indexes~~ — ✅ 15 models indexed (VideoReaction, CommentReaction, etc.)
+- ~~Parental PIN~~ — ✅ scrypt hashed
+- ~~Upload folder~~ — ✅ @IsIn whitelist
+- ~~List component memo~~ — ✅ StoryRow, BottomSheetItem, CaughtUpCard, AlgorithmCard wrapped
+- ~~Story viewer~~ — ✅ Uses Zustand store instead of JSON.stringify in URL params
+- ~~Optimistic updates~~ — ✅ Bakra like/bookmark instantly update cache
+- ~~Touch targets~~ — ✅ Bakra follow button: hitSlop={12} for 44pt compliance
+- ~~Accessibility~~ — ✅ Image labels added to key screens
+- Remaining: ~50 Prisma relations missing onDelete (cosmetic), 43 inline renderItems in utility screens (negligible impact)
 
 ---
 
