@@ -237,8 +237,7 @@ export default function CommunitiesScreen() {
   }, [communities]);
 
   const handleCommunityPress = useCallback((community: Community) => {
-    // Navigate to community detail
-    // router.push(`/(screens)/community/${community.id}`);
+    router.push(`/(screens)/community-posts?communityId=${community.id}` as never);
   }, [router]);
 
   const handleCreateCommunity = useCallback(() => {

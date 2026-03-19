@@ -926,6 +926,12 @@ export default function SettingsScreen() {
             />
             <View style={styles.divider} />
             <Row
+              label={t('settings.disappearingDefault')}
+              icon={<Icon name="clock" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/disappearing-default' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
               label={t('settings.storageManagement')}
               icon={<Icon name="settings" size="sm" color={colors.emerald} />}
               onPress={() => router.push('/(screens)/storage-management' as never)}

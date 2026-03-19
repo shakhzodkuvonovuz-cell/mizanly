@@ -1188,7 +1188,8 @@
     "appealModeration": "Appeal Moderation",
     "edit": "Edit",
     "manage": "Manage",
-    "scheduleLive": "Schedule Live"
+    "scheduleLive": "Schedule Live",
+    "disappearingDefault": "Default Disappearing Timer"
   },
   "onboarding": {
     "interests": {

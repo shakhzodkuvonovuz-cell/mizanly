@@ -402,6 +402,23 @@ export default function CreatePostScreen() {
                         <Icon name="x" size={12} color="#fff" />
                       </LinearGradient>
                     </Pressable>
+                    <Pressable
+                      style={[styles.removeMedia, { top: undefined, bottom: spacing.xs }]}
+                      onPress={() => {
+                        const editorScreen = item.type === 'video'
+                          ? '/(screens)/video-editor'
+                          : '/(screens)/image-editor';
+                        router.push(`${editorScreen}?uri=${encodeURIComponent(item.uri)}` as never);
+                      }}
+                      hitSlop={4}
+                    >
+                      <LinearGradient
+                        colors={['rgba(10,123,79,0.9)', 'rgba(10,123,79,0.7)']}
+                        style={styles.removeMediaGradient}
+                      >
+                        <Icon name="pencil" size={12} color="#fff" />
+                      </LinearGradient>
+                    </Pressable>
                   </LinearGradient>
                 </Animated.View>
               ))}

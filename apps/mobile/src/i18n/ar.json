@@ -1132,7 +1132,8 @@
     "appealModeration": "استئناف الإشراف",
     "edit": "تعديل",
     "manage": "إدارة",
-    "scheduleLive": "جدولة بث مباشر"
+    "scheduleLive": "جدولة بث مباشر",
+    "disappearingDefault": "مؤقت الاختفاء الافتراضي"
   },
   "accessibility": {
     "goBack": "رجوع"

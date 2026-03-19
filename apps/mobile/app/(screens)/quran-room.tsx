@@ -214,6 +214,11 @@ export default function QuranRoomScreen() {
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}
           rightActions={[
             {
+              icon: 'share',
+              onPress: () => router.push('/(screens)/quran-share' as never),
+              accessibilityLabel: t('tafsir.share'),
+            },
+            {
               icon: (
                 <View
                   style={[

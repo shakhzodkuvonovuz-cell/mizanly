@@ -400,6 +400,26 @@ export default function CreateVideoScreen() {
             </View>
           )}
 
+          {/* Quick tools */}
+          {video && (
+            <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md }}>
+              <Pressable
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
+                onPress={() => router.push(`/(screens)/caption-editor?videoUri=${encodeURIComponent(video.uri)}` as never)}
+              >
+                <Icon name="edit" size="sm" color={colors.emerald} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('ai.captions.title')}</Text>
+              </Pressable>
+              <Pressable
+                style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, backgroundColor: colors.dark.surface, borderRadius: radius.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.dark.border }}
+                onPress={() => router.push(`/(screens)/video-editor?uri=${encodeURIComponent(video.uri)}` as never)}
+              >
+                <Icon name="video" size="sm" color={colors.gold} />
+                <Text style={{ color: colors.text.primary, fontSize: fontSize.sm }}>{t('common.edit')}</Text>
+              </Pressable>
+            </View>
+          )}
+
           {/* Title */}
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>{t('createVideo.titleField')}</Text>

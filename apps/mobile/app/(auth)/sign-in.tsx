@@ -58,6 +58,8 @@ export default function SignInScreen() {
       const result = await signIn.create({ identifier: email, password });
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
+      } else if (result.status === 'needs_second_factor') {
+        router.push('/(screens)/2fa-verify' as never);
       }
     } catch (err: unknown) {
       console.error('Sign in error:', JSON.stringify(err, null, 2));

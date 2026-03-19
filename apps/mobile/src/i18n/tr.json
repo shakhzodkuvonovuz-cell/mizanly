@@ -1188,7 +1188,8 @@
     "appealModeration": "Moderasyon İtirazı",
     "edit": "Düzenle",
     "manage": "Yönet",
-    "scheduleLive": "Canlı Yayın Planla"
+    "scheduleLive": "Canlı Yayın Planla",
+    "disappearingDefault": "Varsayılan Kaybolma Zamanlayıcısı"
   },
   "onboarding": {
     "interests": {
