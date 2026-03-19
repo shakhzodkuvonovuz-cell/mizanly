@@ -58,10 +58,10 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 
 ### Tier 14: 2026 Competitor Parity (CURRENT)
 **Batch 65-68 — Quick wins (Low effort, high impact):**
-- Spoiler text in messages (tap-to-reveal) — WhatsApp 2026
-- View Once voice messages — WhatsApp 2026
-- Member tags in group chats — WhatsApp 2026
-- Subscriber-only stories (close friends → subscribers) — TikTok 2026
+- ~~Spoiler text in messages (tap-to-reveal)~~ — ✅ Batch 65
+- ~~View Once voice messages~~ — ✅ Batch 65
+- ~~Member tags in group chats~~ — ✅ Batch 66
+- ~~Subscriber-only stories~~ — ✅ Batch 66
 - Meditation/wind-down screen (screen time nudge) — TikTok 2026
 - Dedicated video tab in Majlis — X 2026
 - Side panel shortcuts (Live, Subscriptions, Series) — TikTok 2026
