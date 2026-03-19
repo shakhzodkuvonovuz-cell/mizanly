@@ -369,6 +369,8 @@ export const storiesApi = {
 // ── Reels (Bakra) ──
 export const reelsApi = {
   getFeed: (cursor?: string) => api.get<PaginatedResponse<Reel>>(`/reels/feed${qs({ cursor })}`),
+  getTrending: (cursor?: string, limit?: number) =>
+    api.get<PaginatedResponse<Reel>>(`/reels/trending${qs({ cursor, limit })}`),
   getById: (id: string) => api.get<Reel>(`/reels/${id}`),
   create: (data: CreateReelPayload) => api.post<Reel>('/reels', data),
   delete: (id: string) => api.delete(`/reels/${id}`),

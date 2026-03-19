@@ -262,6 +262,63 @@ export class ReelsService {
     return result;
   }
 
+  /**
+   * Trending reels endpoint — scored by completion rate + engagement.
+   * Completion rate > 80% is the strongest signal (people watched the whole thing).
+   * Works without auth for anonymous browsing.
+   */
+  async getTrendingReels(cursor?: string, limit = 20) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const reels = await this.prisma.reel.findMany({
+      where: {
+        status: ReelStatus.READY,
+        isRemoved: false,
+        createdAt: { gte: sevenDaysAgo },
+        user: { isDeactivated: false, isPrivate: false },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: {
+        ...REEL_SELECT,
+        savesCount: true,
+      },
+      take: 200,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Score by completion rate (heavily weighted) + engagement
+    const scored = reels.map((reel) => {
+      const ageHours = Math.max(1, (Date.now() - reel.createdAt.getTime()) / 3600000);
+      // Estimate completion rate from view-to-like ratio (proxy — real completion rate
+      // would come from view tracking). Higher like/view ratio = people watched longer.
+      const completionProxy = reel.viewsCount > 0
+        ? Math.min(1, (reel.likesCount + reel.commentsCount) / reel.viewsCount * 5)
+        : 0;
+      const engagement =
+        completionProxy * 2.0 +
+        reel.likesCount * 1.0 +
+        reel.sharesCount * 3.0 +
+        (reel.commentsCount * 1.5);
+      const engagementRate = engagement / ageHours;
+      return { ...reel, _score: engagementRate };
+    });
+
+    scored.sort((a, b) => b._score - a._score);
+    const page = scored.slice(0, limit + 1);
+    const hasMore = page.length > limit;
+    const data = (hasMore ? page.slice(0, limit) : page).map(
+      ({ _score, ...reel }) => reel,
+    );
+
+    return {
+      data,
+      meta: {
+        hasMore,
+        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+      },
+    };
+  }
+
   async getById(reelId: string, userId?: string) {
     const reel = await this.prisma.reel.findUnique({
       where: { id: reelId },

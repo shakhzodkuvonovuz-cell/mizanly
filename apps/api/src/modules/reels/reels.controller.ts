@@ -1,6 +1,6 @@
 import { Body, Controller, Post, Get, UseGuards, Query, Param, Delete, Patch } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -36,6 +36,19 @@ export class ReelsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.reelsService.getFeed(userId, cursor);
+  }
+
+  @Get('trending')
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Trending reels scored by completion rate + engagement (anonymous-safe)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getTrending(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.reelsService.getTrendingReels(cursor, limit ? parseInt(limit, 10) : 20);
   }
 
   @Get('user/:username')

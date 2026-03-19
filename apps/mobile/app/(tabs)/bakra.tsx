@@ -480,7 +480,14 @@ export default function BakraScreen() {
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['reels-feed'],
-    queryFn: ({ pageParam }) => reelsApi.getFeed(pageParam as string | undefined),
+    queryFn: async ({ pageParam }) => {
+      const res = await reelsApi.getFeed(pageParam as string | undefined);
+      // If regular feed returns empty on first page, fallback to trending
+      if (!pageParam && (!res?.data || res.data.length === 0)) {
+        return reelsApi.getTrending(undefined, 20);
+      }
+      return res;
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
