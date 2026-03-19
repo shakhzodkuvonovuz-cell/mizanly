@@ -209,6 +209,8 @@ export interface Reel {
   audioTrack?: AudioTrack;
   isDuet: boolean;
   isStitch: boolean;
+  isPhotoCarousel?: boolean;
+  carouselUrls?: string[];
   likesCount: number;
   commentsCount: number;
   sharesCount: number;

@@ -87,6 +87,8 @@ type CreateReelPayload = {
   audioTrackId?: string;
   isDuet?: boolean;
   isStitch?: boolean;
+  isPhotoCarousel?: boolean;
+  carouselUrls?: string[];
   normalizeAudio?: boolean;
   scheduledAt?: string;
 };
@@ -487,6 +489,9 @@ export const videosApi = {
     api.get<EndScreen[]>(`/videos/${id}/end-screens`),
   deleteEndScreens: (id: string) =>
     api.delete(`/videos/${id}/end-screens`),
+  // Cross-channel publishing (YouTube 2026)
+  crossPublish: (id: string, channelIds: string[]) =>
+    api.post(`/videos/${id}/cross-publish`, { channelIds }),
 };
 // ── Playlists (Minbar) ──
 export const playlistsApi = {
