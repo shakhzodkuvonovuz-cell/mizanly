@@ -28,6 +28,47 @@ import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
+const PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'] as const;
+
+function computeNextPrayer(prayerTimes?: Record<string, string>): string {
+  if (!prayerTimes) return 'Fajr';
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  for (const prayer of PRAYER_ORDER) {
+    const timeStr = prayerTimes[prayer];
+    if (!timeStr) continue;
+    const [h, m] = timeStr.split(':').map(Number);
+    if (h * 60 + m > currentMinutes) {
+      return prayer.charAt(0).toUpperCase() + prayer.slice(1);
+    }
+  }
+  return 'Fajr'; // Tomorrow's Fajr
+}
+
+function computeNextPrayerTime(prayerTimes?: Record<string, string>): string {
+  if (!prayerTimes) return '--:--';
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  for (const prayer of PRAYER_ORDER) {
+    const timeStr = prayerTimes[prayer];
+    if (!timeStr) continue;
+    const [h, m] = timeStr.split(':').map(Number);
+    if (h * 60 + m > currentMinutes) {
+      const hour12 = h % 12 || 12;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      return `${hour12}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+  }
+  // Return tomorrow's Fajr time
+  const fajrTime = prayerTimes.fajr;
+  if (fajrTime) {
+    const [h, m] = fajrTime.split(':').map(Number);
+    const hour12 = h % 12 || 12;
+    return `${hour12}:${m.toString().padStart(2, '0')} AM`;
+  }
+  return '--:--';
+}
+
 interface Mosque {
   id: string;
   name: string;
@@ -170,8 +211,8 @@ export default function MosqueFinderScreen() {
         name: m.name,
         address: m.address,
         distance: m.distanceKm >= 1 ? `${m.distanceKm.toFixed(1)} km` : `${Math.round(m.distanceKm * 1000)} m`,
-        nextPrayer: 'Fajr', // TODO: compute from m.prayerTimes
-        nextPrayerTime: '5:23 AM', // TODO: compute
+        nextPrayer: computeNextPrayer(m.prayerTimes),
+        nextPrayerTime: computeNextPrayerTime(m.prayerTimes),
         facilities: m.facilities,
       }));
       setMosques(mappedMosques);

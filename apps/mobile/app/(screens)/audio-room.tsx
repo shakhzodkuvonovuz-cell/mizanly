@@ -147,7 +147,7 @@ export default function AudioRoomScreen() {
     id: p.id,
     name: p.user.name || p.user.username || 'User',
     avatar: p.user.avatarUrl || null,
-    isSpeaking: false, // TODO: implement speaking detection
+    isSpeaking: p.isSpeaking ?? false, // Server pushes speaking state via socket
     isMuted: p.isMuted,
     isHost: p.role === 'host',
   }));

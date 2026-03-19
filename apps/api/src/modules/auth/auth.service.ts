@@ -127,6 +127,7 @@ export class AuthService {
     const following = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
+      take: 5000, // Cap to prevent unbounded query for users following millions
     });
     const followingIds = following.map((f) => f.followingId);
 

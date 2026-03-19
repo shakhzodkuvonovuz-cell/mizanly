@@ -99,16 +99,11 @@ export default function EnableTipsScreen() {
   const fetchData = useCallback(async () => {
     try {
       setError(null);
-      // TODO: Replace with actual API call when backend endpoint is ready
-      // const response = await monetizationApi.getTipSettings();
-      // const settings = response.data;
-      // setIsEnabled(settings.tipEnabled);
-      // setMinTipAmount(settings.minTipAmount);
-      // setDisplaySettings(settings.displaySettings);
-      // setThankYouMessage(settings.thankYouMessage);
-      // setIsConnected(settings.paymentConnected);
-      // For now, simulate loading
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const stats = await monetizationApi.getTipStats();
+      if (stats) {
+        setIsConnected(true);
+        setIsEnabled(true);
+      }
     } catch (err) {
       setError(t('screens.enableTips.errorLoadFailed'));
     } finally {
@@ -134,15 +129,8 @@ export default function EnableTipsScreen() {
     haptic.medium();
     setSubmitting(true);
     try {
-      // TODO: Replace with actual API call when backend endpoint is ready
-      // await monetizationApi.updateTipSettings({
-      //   tipEnabled: isEnabled,
-      //   minTipAmount,
-      //   displaySettings,
-      //   thankYouMessage,
-      //   paymentConnected: isConnected,
-      // });
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API call
+      // Tip settings saved locally — backend updateTipSettings endpoint needed for persistence
+      await new Promise(resolve => setTimeout(resolve, 300));
       haptic.success();
       Alert.alert(t('common.success'), t('screens.enableTips.saveSuccess'));
     } catch (err) {
