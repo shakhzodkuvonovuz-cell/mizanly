@@ -2738,6 +2738,21 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "live": {
+    "rehearse": "রিহার্সাল",
+    "rehearsalMode": "রিহার্সাল মোড",
+    "rehearsalBanner": "শুধু আপনি এটি দেখতে পারেন",
+    "goLiveFromRehearsal": "লাইভ যান",
+    "endRehearsal": "রিহার্সাল শেষ করুন",
+    "connectionQuality": "সংযোগ মান",
+    "audioLevel": "অডিও স্তর",
+    "subscribersOnly": "শুধুমাত্র গ্রাহকদের জন্য",
+    "subscribersOnlyDescription": "শুধুমাত্র আপনার গ্রাহকরা দেখতে পারবেন",
+    "subscribeToWatch": "দেখতে সাবস্ক্রাইব করুন",
+    "subscribersOnlyStream": "এটি শুধুমাত্র গ্রাহকদের জন্য স্ট্রিম",
+    "switchToPublic": "সর্বজনীন করুন",
+    "switchToSubscribers": "শুধু গ্রাহকদের জন্য করুন"
+  },
   "seriesEnhanced": {
     "episodes": "পর্বসমূহ",
     "episode": "পর্ব {{num}}",

@@ -2739,6 +2739,21 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "live": {
+    "rehearse": "مشق",
+    "rehearsalMode": "مشق کا موڈ",
+    "rehearsalBanner": "صرف آپ یہ دیکھ سکتے ہیں",
+    "goLiveFromRehearsal": "لائیو شروع کریں",
+    "endRehearsal": "مشق ختم کریں",
+    "connectionQuality": "کنکشن کا معیار",
+    "audioLevel": "آواز کی سطح",
+    "subscribersOnly": "صرف سبسکرائبرز",
+    "subscribersOnlyDescription": "صرف آپ کے سبسکرائبرز دیکھ سکتے ہیں",
+    "subscribeToWatch": "دیکھنے کے لیے سبسکرائب کریں",
+    "subscribersOnlyStream": "یہ صرف سبسکرائبرز کا سٹریم ہے",
+    "switchToPublic": "عوامی میں تبدیل کریں",
+    "switchToSubscribers": "صرف سبسکرائبرز میں تبدیل کریں"
+  },
   "seriesEnhanced": {
     "episodes": "اقساط",
     "episode": "قسط {{num}}",

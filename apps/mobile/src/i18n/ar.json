@@ -2738,6 +2738,21 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "live": {
+    "rehearse": "تجربة",
+    "rehearsalMode": "وضع التجربة",
+    "rehearsalBanner": "أنت فقط من يمكنه رؤية هذا",
+    "goLiveFromRehearsal": "بث مباشر",
+    "endRehearsal": "إنهاء التجربة",
+    "connectionQuality": "جودة الاتصال",
+    "audioLevel": "مستوى الصوت",
+    "subscribersOnly": "للمشتركين فقط",
+    "subscribersOnlyDescription": "فقط المشتركون يمكنهم المشاهدة",
+    "subscribeToWatch": "اشترك للمشاهدة",
+    "subscribersOnlyStream": "هذا بث للمشتركين فقط",
+    "switchToPublic": "تحويل للعام",
+    "switchToSubscribers": "تحويل للمشتركين فقط"
+  },
   "seriesEnhanced": {
     "episodes": "الحلقات",
     "episode": "الحلقة {{num}}",

@@ -2739,6 +2739,21 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "live": {
+    "rehearse": "Répéter",
+    "rehearsalMode": "Mode répétition",
+    "rehearsalBanner": "Vous seul pouvez voir ceci",
+    "goLiveFromRehearsal": "Passer en direct",
+    "endRehearsal": "Terminer la répétition",
+    "connectionQuality": "Qualité de connexion",
+    "audioLevel": "Niveau audio",
+    "subscribersOnly": "Abonnés uniquement",
+    "subscribersOnlyDescription": "Seuls vos abonnés peuvent regarder",
+    "subscribeToWatch": "S'abonner pour regarder",
+    "subscribersOnlyStream": "Ce stream est réservé aux abonnés",
+    "switchToPublic": "Passer en public",
+    "switchToSubscribers": "Passer aux abonnés uniquement"
+  },
   "seriesEnhanced": {
     "episodes": "Épisodes",
     "episode": "Épisode {{num}}",

@@ -2738,6 +2738,21 @@
     "queuedAction": "Akan disegerakkan apabila disambungkan",
     "syncing": "Menyegerakkan..."
   },
+  "live": {
+    "rehearse": "Latihan",
+    "rehearsalMode": "Mod Latihan",
+    "rehearsalBanner": "Hanya anda boleh melihat ini",
+    "goLiveFromRehearsal": "Mula Live",
+    "endRehearsal": "Tamatkan Latihan",
+    "connectionQuality": "Kualiti Sambungan",
+    "audioLevel": "Tahap Audio",
+    "subscribersOnly": "Pelanggan Sahaja",
+    "subscribersOnlyDescription": "Hanya pelanggan anda boleh menonton",
+    "subscribeToWatch": "Langgan untuk Menonton",
+    "subscribersOnlyStream": "Ini adalah strim untuk pelanggan sahaja",
+    "switchToPublic": "Tukar ke Awam",
+    "switchToSubscribers": "Tukar ke Pelanggan Sahaja"
+  },
   "seriesEnhanced": {
     "episodes": "Episod",
     "episode": "Episod {{num}}",

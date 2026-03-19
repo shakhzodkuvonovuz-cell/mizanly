@@ -163,4 +163,44 @@ export class LiveController {
   async listGuests(@Param('id') id: string) {
     return this.live.listGuests(id);
   }
+
+  // ── Rehearsal Mode ───────────────────────────────────
+
+  @Post('rehearse')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Start a rehearsal (private, no notifications)' })
+  async startRehearsal(@CurrentUser('id') userId: string, @Body() body: { title: string; description?: string; thumbnailUrl?: string }) {
+    return this.live.startRehearsal(userId, body);
+  }
+
+  @Patch(':id/go-live')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Transition rehearsal to public live' })
+  async goLive(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.live.goLiveFromRehearsal(id, userId);
+  }
+
+  @Patch(':id/end-rehearsal')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'End rehearsal without going public' })
+  async endRehearsal(@Param('id') id: string, @CurrentUser('id') userId: string) {
+    return this.live.endRehearsal(id, userId);
+  }
+
+  // ── Subscribers-Only Mode ────────────────────────────
+
+  @Patch(':id/subscribers-only')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle subscribers-only mode' })
+  async setSubscribersOnly(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body() body: { subscribersOnly: boolean },
+  ) {
+    return this.live.setSubscribersOnly(id, userId, body.subscribersOnly);
+  }
 }

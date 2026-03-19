@@ -43,7 +43,7 @@ export class LiveService {
   }
 
   async getActive(liveType?: string, cursor?: string, limit = 20) {
-    const where: Record<string, unknown> = { status: LiveStatus.LIVE };
+    const where: Record<string, unknown> = { status: LiveStatus.LIVE, isRehearsal: false };
     if (liveType) where.liveType = liveType as LiveType;
     if (cursor) where.id = { lt: cursor };
 
@@ -254,6 +254,77 @@ export class LiveService {
       where: { liveId, status: { in: ['INVITED', 'ACCEPTED'] } },
       include: { user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  // ── Rehearsal Mode ─────────────────────────────────────
+
+  /**
+   * Start a rehearsal: creates a live session that is not visible in feeds
+   * and doesn't send notifications. Only the host can see it.
+   */
+  async startRehearsal(userId: string, data: { title: string; description?: string; thumbnailUrl?: string }) {
+    const streamKey = randomBytes(16).toString('hex');
+    return this.prisma.liveSession.create({
+      data: {
+        hostId: userId,
+        title: data.title,
+        description: data.description,
+        thumbnailUrl: data.thumbnailUrl,
+        liveType: 'VIDEO' as LiveType,
+        status: LiveStatus.LIVE,
+        streamKey,
+        startedAt: new Date(),
+        isRehearsal: true,
+        isRecorded: false,
+      },
+      include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
+    });
+  }
+
+  /**
+   * Transition from rehearsal to public live.
+   * Sets isRehearsal = false, making the stream visible in feeds.
+   */
+  async goLiveFromRehearsal(sessionId: string, userId: string) {
+    const session = await this.requireHost(sessionId, userId);
+    if (!session.isRehearsal) throw new BadRequestException('Session is not in rehearsal mode');
+    if (session.status !== LiveStatus.LIVE) throw new BadRequestException('Session is not active');
+
+    return this.prisma.liveSession.update({
+      where: { id: sessionId },
+      data: { isRehearsal: false },
+    });
+  }
+
+  /**
+   * End a rehearsal without ever going public.
+   */
+  async endRehearsal(sessionId: string, userId: string) {
+    const session = await this.requireHost(sessionId, userId);
+    if (!session.isRehearsal) throw new BadRequestException('Session is not in rehearsal mode');
+
+    await this.prisma.liveParticipant.updateMany({
+      where: { sessionId, leftAt: null },
+      data: { leftAt: new Date() },
+    });
+
+    return this.prisma.liveSession.update({
+      where: { id: sessionId },
+      data: { status: LiveStatus.ENDED, endedAt: new Date(), currentViewers: 0 },
+    });
+  }
+
+  // ── Subscribers-Only Mode ─────────────────────────────
+
+  /**
+   * Toggle subscribers-only mode for a live stream.
+   */
+  async setSubscribersOnly(sessionId: string, userId: string, subscribersOnly: boolean) {
+    await this.requireHost(sessionId, userId);
+    return this.prisma.liveSession.update({
+      where: { id: sessionId },
+      data: { isSubscribersOnly: subscribersOnly },
     });
   }
 

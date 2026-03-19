@@ -2739,6 +2739,21 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "live": {
+    "rehearse": "Latihan",
+    "rehearsalMode": "Mode Latihan",
+    "rehearsalBanner": "Hanya Anda yang bisa melihat ini",
+    "goLiveFromRehearsal": "Mulai Live",
+    "endRehearsal": "Akhiri Latihan",
+    "connectionQuality": "Kualitas Koneksi",
+    "audioLevel": "Level Audio",
+    "subscribersOnly": "Hanya Pelanggan",
+    "subscribersOnlyDescription": "Hanya pelanggan Anda yang bisa menonton",
+    "subscribeToWatch": "Berlangganan untuk Menonton",
+    "subscribersOnlyStream": "Ini adalah stream khusus pelanggan",
+    "switchToPublic": "Ubah ke Publik",
+    "switchToSubscribers": "Ubah ke Khusus Pelanggan"
+  },
   "seriesEnhanced": {
     "episodes": "Episode",
     "episode": "Episode {{num}}",

@@ -2738,6 +2738,21 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "live": {
+    "rehearse": "Prova",
+    "rehearsalMode": "Prova Modu",
+    "rehearsalBanner": "Sadece siz görebilirsiniz",
+    "goLiveFromRehearsal": "Canlıya Geç",
+    "endRehearsal": "Provayı Bitir",
+    "connectionQuality": "Bağlantı Kalitesi",
+    "audioLevel": "Ses Seviyesi",
+    "subscribersOnly": "Yalnızca Aboneler",
+    "subscribersOnlyDescription": "Sadece aboneleriniz izleyebilir",
+    "subscribeToWatch": "İzlemek İçin Abone Ol",
+    "subscribersOnlyStream": "Bu abonelere özel bir yayın",
+    "switchToPublic": "Halka Aç",
+    "switchToSubscribers": "Abonelere Özel Yap"
+  },
   "seriesEnhanced": {
     "episodes": "Bölümler",
     "episode": "Bölüm {{num}}",

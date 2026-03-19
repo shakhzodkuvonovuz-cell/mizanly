@@ -1175,11 +1175,13 @@ model LiveSession {
   startedAt      DateTime?
   endedAt        DateTime?
   recordingUrl   String?
-  isRecorded     Boolean           @default(true)
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  participants   LiveParticipant[]
-  guests         LiveGuest[]
+  isRecorded        Boolean           @default(true)
+  isRehearsal       Boolean           @default(false)
+  isSubscribersOnly Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  participants      LiveParticipant[]
+  guests            LiveGuest[]
 
   @@index([hostId, createdAt(sort: Desc)])
   @@index([status])

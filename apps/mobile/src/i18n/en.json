@@ -2738,6 +2738,21 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "live": {
+    "rehearse": "Rehearse",
+    "rehearsalMode": "Rehearsal Mode",
+    "rehearsalBanner": "Only you can see this",
+    "goLiveFromRehearsal": "Go Live",
+    "endRehearsal": "End Rehearsal",
+    "connectionQuality": "Connection Quality",
+    "audioLevel": "Audio Level",
+    "subscribersOnly": "Subscribers Only",
+    "subscribersOnlyDescription": "Only your subscribers can watch",
+    "subscribeToWatch": "Subscribe to Watch",
+    "subscribersOnlyStream": "This is a subscribers-only stream",
+    "switchToPublic": "Switch to Public",
+    "switchToSubscribers": "Switch to Subscribers Only"
+  },
   "seriesEnhanced": {
     "episodes": "Episodes",
     "episode": "Episode {{num}}",
