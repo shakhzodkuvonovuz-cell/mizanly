@@ -12,7 +12,7 @@
 
 ---
 
-### [ ] Task 1: Background Job Queue (BullMQ)
+### [x] Task 1: Background Job Queue (BullMQ) — Done: BullMQ installed, 6 queues + 5 processors, posts/follows/reels/videos/threads wired
 
 **Carryover reason:** Required `npm install bullmq` in Windows terminal. An `AsyncJobService` was created as in-process fallback, but real job queue is needed for production.
 
@@ -67,7 +67,7 @@
 
 ---
 
-### [ ] Task 2: Video Editor — Real Editing Capabilities
+### [x] Task 2: Video Editor — Real Editing Capabilities — Done: expo-av playback, FFmpeg export, progress tracking, 38 i18n keys in 8 langs
 
 **Carryover reason:** Required `npm install ffmpeg-kit-react-native` in Windows terminal.
 
@@ -138,7 +138,7 @@ videoEditor.textTiming: "Text Timing"
 
 ---
 
-### [ ] Task 3: Ambient Mode for Video Player
+### [x] Task 3: Ambient Mode for Video Player — Done: real color extraction via react-native-image-colors, ambient gradient on VideoPlayer, hash fallback, caching
 
 **Carryover reason:** Deferred as lower priority. Now implementing.
 
@@ -180,7 +180,7 @@ videoEditor.textTiming: "Text Timing"
 
 ---
 
-### [ ] Task 4: E2E Encryption Enhancement
+### [x] Task 4: E2E Encryption Enhancement — Done: safety numbers, key change notifications, status endpoint, i18n in 8 langs
 
 **Carryover reason:** Audit revealed the encryption service is more complete than expected (key registration, envelopes, rotation with transactions). This task enhances what exists.
 
@@ -237,7 +237,7 @@ encryption.notEncrypted: "Encryption not set up"
 
 ---
 
-### [ ] Task 5: Integration Tests for Critical Paths
+### [x] Task 5: Integration Tests for Critical Paths — Done: test infra + 3 suites (feed/messaging/auth), QueueService mock added
 
 **Carryover reason:** Needed test database setup and real Prisma client integration tests.
 
@@ -295,7 +295,7 @@ encryption.notEncrypted: "Encryption not set up"
 
 ---
 
-### [ ] Task 6: Professional Translation Quality Sweep
+### [x] Task 6: Professional Translation Quality Sweep — Done: audit script, fixed Arabic {{count}} mismatch, 0 structural issues remaining
 
 **Carryover reason:** Requires manual review — but can be partially automated by checking for common machine-translation artifacts.
 
@@ -347,7 +347,7 @@ encryption.notEncrypted: "Encryption not set up"
 
 ---
 
-### [ ] Task 7: AI Sticker Generator
+### [x] Task 7: AI Sticker Generator — Done: Claude SVG generation, 20 Islamic presets, 10/day rate limit, content moderation, i18n 8 langs
 
 **What it is:** WhatsApp's newest feature — type a phrase, AI generates a custom sticker.
 
@@ -425,7 +425,7 @@ stickers.dailyLimitReached: "You've reached your daily sticker limit"
 
 ---
 
-### [ ] Task 8: Voice Message Transcription
+### [x] Task 8: Voice Message Transcription — Done: Whisper API integration, auto-detect language, async transcription on voice send, i18n 8 langs
 
 **What it is:** WhatsApp + Telegram both auto-transcribe voice messages to text.
 
@@ -475,7 +475,7 @@ settings.autoTranscribeDescription: "Automatically convert voice messages to tex
 
 ---
 
-### [ ] Task 9: Flipside / Alt Profile
+### [x] Task 9: Flipside / Alt Profile — Done: AltProfile + AltProfileAccess models, CRUD endpoints, access control, isAltProfile on Post, i18n 8 langs
 
 **What it is:** Instagram's new feature — create an alternative private profile.
 
@@ -562,7 +562,7 @@ flipside.backToMain: "Back to Main Profile"
 
 ---
 
-### [ ] Task 10: Short Dramas / Episodic Content Enhancement
+### [x] Task 10: Short Dramas / Episodic Content Enhancement — Done: SeriesProgress model, continue watching, videoUrl/thumbnailUrl/duration on episodes, i18n 8 langs
 
 **What it is:** Instagram's episodic mini-dramas + Islamic educational series.
 
