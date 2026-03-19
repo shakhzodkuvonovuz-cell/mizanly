@@ -62,9 +62,9 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~View Once voice messages~~ — ✅ Batch 65
 - ~~Member tags in group chats~~ — ✅ Batch 66
 - ~~Subscriber-only stories~~ — ✅ Batch 66
-- Meditation/wind-down screen (screen time nudge) — TikTok 2026
-- Dedicated video tab in Majlis — X 2026
-- Side panel shortcuts (Live, Subscriptions, Series) — TikTok 2026
+- ~~Meditation/wind-down screen~~ — ✅ Batch 67
+- ~~Dedicated video tab in Majlis~~ — ✅ Batch 67
+- ~~Side panel shortcuts (Live, Series)~~ — ✅ Batch 67
 
 **Batch 69-72 — Medium effort:**
 - Local/Nearby Feed (location-based content discovery) — TikTok 2026
