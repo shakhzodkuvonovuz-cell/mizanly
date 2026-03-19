@@ -188,8 +188,18 @@ export class ThreadsService {
       };
     }
 
-    // Following feed: chronological from followed users
+    // Following feed: chronological from followed users, with zero-follow fallback
     if (type === 'following') {
+      // Zero follows → serve trending instead so feed is never empty
+      if (followingIds.length === 0) {
+        return this.getTrendingThreads(excludedIds, cursor, limit);
+      }
+
+      // Few follows (< 10) → blend following + trending
+      if (followingIds.length < 10) {
+        return this.getBlendedThreadFeed(userId, followingIds, excludedIds, cursor, limit);
+      }
+
       const allowedUserIds = [userId, ...followingIds].filter(id => !excludedIds.includes(id));
       const where: Prisma.ThreadWhereInput = {
         isRemoved: false,
@@ -214,28 +224,103 @@ export class ThreadsService {
       };
     }
 
-    // Trending feed: sorted by likesCount (already engagement-based)
-    const where: Prisma.ThreadWhereInput = {
-      isRemoved: false,
-      isChainHead: true,
-      visibility: 'PUBLIC',
-      user: { isPrivate: false, isDeactivated: false },
-    };
-    if (excludedIds.length) where.userId = { notIn: excludedIds };
+    // Trending feed: engagement-rate scoring with reply depth
+    return this.getTrendingThreads(excludedIds, cursor, limit);
+  }
+
+  /**
+   * Trending threads scored by reply depth + engagement rate.
+   * Threads with deep reply chains score higher.
+   */
+  private async getTrendingThreads(excludedIds: string[], cursor?: string, limit = 20) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const threads = await this.prisma.thread.findMany({
-      where,
+      where: {
+        isRemoved: false,
+        isChainHead: true,
+        visibility: 'PUBLIC',
+        createdAt: { gte: sevenDaysAgo },
+        user: { isPrivate: false, isDeactivated: false },
+        ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
       select: THREAD_SELECT,
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      orderBy: { likesCount: 'desc' },
+      take: 200,
+      orderBy: { createdAt: 'desc' },
     });
 
-    const hasMore = threads.length > limit;
-    const items = hasMore ? threads.slice(0, limit) : threads;
+    // Score by reply depth + engagement rate
+    const scored = threads.map((thread) => {
+      const ageHours = Math.max(1, (Date.now() - thread.createdAt.getTime()) / 3600000);
+      // Reply depth is the strongest signal for threads (conversation depth > likes)
+      const replyDepthScore = thread.repliesCount * 3;
+      const engagementScore =
+        thread.likesCount * 1.0 +
+        replyDepthScore +
+        thread.repostsCount * 2.0 +
+        thread.quotesCount * 2.5;
+      const engagementRate = engagementScore / ageHours;
+      return { ...thread, _score: engagementRate };
+    });
+
+    scored.sort((a, b) => b._score - a._score);
+    const page = scored.slice(0, limit + 1);
+    const hasMore = page.length > limit;
+    const data = (hasMore ? page.slice(0, limit) : page).map(
+      ({ _score, ...t }) => t,
+    );
+
     return {
-      data: items,
-      meta: { cursor: hasMore && items.length > 0 ? items[items.length - 1].id : null, hasMore },
+      data,
+      meta: {
+        hasMore,
+        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+      },
+    };
+  }
+
+  /**
+   * Blended feed for users with few follows (< 10).
+   * 50% following + 50% trending, merged and deduplicated.
+   */
+  private async getBlendedThreadFeed(userId: string, followingIds: string[], excludedIds: string[], cursor?: string, limit = 20) {
+    const allowedUserIds = [userId, ...followingIds].filter(id => !excludedIds.includes(id));
+    const halfLimit = Math.ceil(limit / 2);
+
+    // Get following threads
+    const followingThreads = await this.prisma.thread.findMany({
+      where: {
+        isRemoved: false,
+        isChainHead: true,
+        userId: { in: allowedUserIds },
+        user: { isDeactivated: false },
+        ...(cursor ? { id: { lt: cursor } } : {}),
+      },
+      select: THREAD_SELECT,
+      take: halfLimit + 1,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Get trending to fill the rest
+    const seenIds = new Set(followingThreads.map(t => t.id));
+    const trending = await this.getTrendingThreads(excludedIds, undefined, halfLimit);
+    const trendingFiltered = trending.data.filter(t => !seenIds.has(t.id));
+
+    // Interleave
+    const merged: typeof followingThreads = [];
+    const fi = followingThreads.slice(0, halfLimit);
+    const ti = trendingFiltered;
+    const maxLen = Math.max(fi.length, ti.length);
+    for (let i = 0; i < maxLen && merged.length < limit; i++) {
+      if (i < fi.length) merged.push(fi[i]);
+      if (i < ti.length && merged.length < limit) merged.push(ti[i]);
+    }
+
+    const hasMore = followingThreads.length > halfLimit || trending.meta.hasMore;
+    return {
+      data: merged,
+      meta: { cursor: merged.length > 0 ? merged[merged.length - 1].id : null, hasMore },
     };
   }
 

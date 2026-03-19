@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ThreadsService } from './threads.service';
 import { CreateThreadDto } from './dto/create-thread.dto';
@@ -39,6 +39,19 @@ export class ThreadsController {
     @Query('cursor') cursor?: string,
   ) {
     return this.threadsService.getFeed(userId ?? '', type ?? 'foryou', cursor);
+  }
+
+  @Get('trending')
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
+  @ApiOperation({ summary: 'Trending threads scored by reply depth + engagement (anonymous-safe)' })
+  @ApiQuery({ name: 'cursor', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  getTrending(
+    @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.threadsService.getFeed('', 'trending', cursor, limit ? parseInt(limit, 10) : 20);
   }
 
   @Get('user/:username')

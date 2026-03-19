@@ -529,6 +529,8 @@ export const playlistsApi = {
 export const threadsApi = {
   getFeed: (type: 'foryou' | 'following' | 'trending' = 'foryou', cursor?: string) =>
     api.get<PaginatedResponse<Thread>>(`/threads/feed${qs({ type, cursor })}`),
+  getTrending: (cursor?: string, limit?: number) =>
+    api.get<PaginatedResponse<Thread>>(`/threads/trending${qs({ cursor, limit })}`),
   create: (data: CreateThreadPayload) => api.post<Thread>('/threads', data),
   getById: (id: string) => api.get<Thread>(`/threads/${id}`),
   delete: (id: string) => api.delete(`/threads/${id}`),
