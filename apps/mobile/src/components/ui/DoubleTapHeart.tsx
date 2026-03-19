@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Icon } from '@/components/ui/Icon';
-import { colors, animation } from '@/theme';
+import { colors, animation, radius } from '@/theme';
 import { useHaptic } from '@/hooks/useHaptic';
 
 interface DoubleTapHeartProps {
@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 120,
     height: 120,
-    borderRadius: 60,
+    borderRadius: radius.full,
     backgroundColor: colors.error,
   },
   particle: {
