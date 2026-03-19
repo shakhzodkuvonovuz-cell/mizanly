@@ -312,6 +312,39 @@ export class MessagesController {
     return this.messagesService.leaveGroup(id, userId);
   }
 
+  @Patch('conversations/:id/lock-code')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set or remove secret lock code for a conversation' })
+  setLockCode(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('code') code: string | null,
+  ) {
+    return this.messagesService.setLockCode(id, userId, code);
+  }
+
+  @Post('conversations/:id/verify-lock')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify lock code for a conversation' })
+  verifyLockCode(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('code') code: string,
+  ) {
+    return this.messagesService.verifyLockCode(id, userId, code);
+  }
+
+  @Patch('groups/:id/history-count')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set number of recent messages shown to new group members' })
+  setHistoryCount(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @Body('count') count: number,
+  ) {
+    return this.messagesService.setNewMemberHistoryCount(id, userId, count);
+  }
+
   @Patch('groups/:id/members/me/tag')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Set your tag/role label in a group' })

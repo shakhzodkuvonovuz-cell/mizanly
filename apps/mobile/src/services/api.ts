@@ -589,6 +589,12 @@ export const messagesApi = {
   leaveGroup: (id: string) => api.delete(`/messages/groups/${id}/members/me`),
   setMemberTag: (groupId: string, tag: string | null) =>
     api.patch(`/messages/groups/${groupId}/members/me/tag`, { tag }),
+  setLockCode: (conversationId: string, code: string | null) =>
+    api.patch(`/messages/conversations/${conversationId}/lock-code`, { code }),
+  verifyLockCode: (conversationId: string, code: string) =>
+    api.post<{ valid: boolean }>(`/messages/conversations/${conversationId}/verify-lock`, { code }),
+  setHistoryCount: (groupId: string, count: number) =>
+    api.patch(`/messages/groups/${groupId}/history-count`, { count }),
   setDisappearingTimer: (conversationId: string, duration: number) =>
     api.patch(`/messages/conversations/${conversationId}/disappearing-timer`, { duration }),
   archiveConversation: (conversationId: string) =>

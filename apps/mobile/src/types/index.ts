@@ -411,6 +411,8 @@ export interface Conversation {
   groupName?: string;
   groupAvatarUrl?: string;
   disappearingDuration?: number;
+  lockCode?: string | null;
+  newMemberHistoryCount?: number;
   lastMessageText?: string;
   lastMessageAt?: string;
   createdAt: string;

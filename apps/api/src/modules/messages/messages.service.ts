@@ -326,6 +326,40 @@ export class MessagesService {
     return { removed: true };
   }
 
+  async setLockCode(conversationId: string, userId: string, code: string | null) {
+    await this.requireMembership(conversationId, userId);
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { lockCode: code },
+    });
+    return { updated: true };
+  }
+
+  async verifyLockCode(conversationId: string, userId: string, code: string) {
+    await this.requireMembership(conversationId, userId);
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { lockCode: true },
+    });
+    if (!convo) throw new NotFoundException('Conversation not found');
+    return { valid: convo.lockCode === code };
+  }
+
+  async setNewMemberHistoryCount(conversationId: string, userId: string, count: number) {
+    const convo = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { createdById: true, isGroup: true },
+    });
+    if (!convo?.isGroup) throw new BadRequestException('Not a group');
+    if (convo.createdById !== userId) throw new ForbiddenException('Only group owner can set this');
+    const clampedCount = Math.max(0, Math.min(100, count));
+    await this.prisma.conversation.update({
+      where: { id: conversationId },
+      data: { newMemberHistoryCount: clampedCount },
+    });
+    return { count: clampedCount };
+  }
+
   async setMemberTag(conversationId: string, userId: string, tag: string | null) {
     await this.requireMembership(conversationId, userId);
     await this.prisma.conversationMember.update({

@@ -993,6 +993,8 @@ model Conversation {
   lastMessageById      String?
   disappearingDuration Int?
   slowModeSeconds      Int?     // 0 = off, 30, 60, 300, 900, 3600
+  lockCode             String?  // Secret code to unlock this conversation
+  newMemberHistoryCount Int?    @default(25) // Number of recent messages shown to new members (0-100)
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   members              ConversationMember[]
