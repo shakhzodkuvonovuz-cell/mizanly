@@ -167,7 +167,10 @@
     "following": "Takip Edilen",
     "followers": "Takipçiler",
     "seeAll": "Tümünü gör",
-    "goBack": "Geri dön"
+    "goBack": "Geri dön",
+    "more": "daha fazla",
+    "explore": "Keşfet",
+    "copyLink": "Bağlantıyı Kopyala"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -220,7 +223,14 @@
     "backupCodes": "Yedek Kodlar",
     "generateBackupCodes": "Yedek Kodları Oluştur",
     "downloadBackupCodes": "Yedek Kodları İndir",
-    "saveBackupCodes": "Yedek Kodları Kaydet"
+    "saveBackupCodes": "Yedek Kodları Kaydet",
+    "tagline": "Dengeli dijital topluluğunuz",
+    "emailPlaceholder": "E-posta adresi",
+    "passwordPlaceholder": "Şifre",
+    "or": "veya",
+    "resetPasswordHint": "E-postanızı girin, size sıfırlama kodu gönderelim",
+    "codeSentTo": "Kod gönderildi:",
+    "passwordResetSuccess": "Şifre başarıyla sıfırlandı"
   },
   "tabs": {
     "saf": "Saf",
@@ -247,7 +257,22 @@
     "hadith": "Hadis",
     "zakat": "Zekât",
     "mosques": "Camiler",
-    "ramadan": "Ramazan"
+    "ramadan": "Ramazan",
+    "createSheet": {
+      "photoOrVideoPost": "Fotoğraf veya Video Gönderisi",
+      "startThread": "Konu Başlat",
+      "shareStory": "Hikaye Paylaş",
+      "shortVideoReel": "Kısa Video (Reel)",
+      "longVideo": "Uzun Video",
+      "goLive": "Canlı Yayın"
+    },
+    "accessibility": {
+      "homeFeed": "Ana Akış",
+      "shortVideos": "Kısa Videolar",
+      "videos": "Videolar",
+      "threads": "Konular",
+      "messages": "Mesajlar"
+    }
   },
   "saf": {
     "feed": "Akış",
@@ -338,7 +363,11 @@
     "viewLocal": "Yereli Gör",
     "viewNational": "Ulusal Gör",
     "viewInternational": "Uluslararası Gör",
-    "viewWorldwide": "Dünya Genelini Gör"
+    "viewWorldwide": "Dünya Genelini Gör",
+    "emptyFeed": {
+      "title": "Akışınız boş",
+      "subtitle": "Gönderilerini görmek için insanları takip edin"
+    }
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -424,7 +453,24 @@
     "beFirstToComment": "İlk yorumu yapan siz olun",
     "questionPlaceholder": "Sorunuzu yazın...",
     "couldNotLoadContent": "Bu içerik yüklenemedi",
-    "goBack": "Geri Dön"
+    "goBack": "Geri Dön",
+    "emptyFeed": {
+      "title": "Henüz reel yok",
+      "subtitle": "İçerik üreticilerini takip edin veya keşfedin",
+      "actionLabel": "Reel Oluştur"
+    },
+    "originalAudio": "Orijinal ses",
+    "unknown": "Bilinmeyen",
+    "notInterested": "İlgilenmiyorum",
+    "saveToCollection": "Koleksiyona Kaydet",
+    "notInterestedAlert": {
+      "title": "İlgilenmiyorum",
+      "message": "Bunun gibi içerikleri daha az göstereceğiz"
+    },
+    "linkCopiedAlert": {
+      "title": "Bağlantı Kopyalandı",
+      "message": "Bağlantı panonuza kopyalandı"
+    }
   },
   "majlis": {
     "forYou": "Senin İçin",
@@ -518,7 +564,12 @@
     "loadContentError": "Bu gönderi dizisi yüklenemedi",
     "deleteReplyTitle": "Yanıt silinsin mi?",
     "deleteReplyMessage": "Bu yanıt kalıcı olarak silinecek.",
-    "caughtUp": "Hepsini gördünüz"
+    "caughtUp": "Hepsini gördünüz",
+    "emptyFeed": {
+      "title": "Henüz konu yok",
+      "subtitle": "İnsanları takip edin veya gündem konularını keşfedin",
+      "actionLabel": "Konu Başlat"
+    }
   },
   "risalah": {
     "messages": "Mesajlar",
@@ -615,7 +666,20 @@
     "useStickersHint": "Çıkartma kullanın ve burada görünecekler",
     "browseMorePacks": "Daha fazla çıkartma paketi göz atın",
     "noStickersInPack": "Bu pakette çıkartma yok",
-    "addMorePacks": "Başlamak için daha fazla çıkartma paketi ekleyin"
+    "addMorePacks": "Başlamak için daha fazla çıkartma paketi ekleyin",
+    "chats": "Sohbetler",
+    "groups": "Gruplar",
+    "all": "Tümü",
+    "unread": "Okunmamış",
+    "noGroupsYet": "Henüz grup yok",
+    "createGroupHint": "Birden fazla kişiyle sohbet etmek için grup oluşturun",
+    "yourConversations": "Konuşmalarınız",
+    "messagesHint": "Biriyle konuşma başlatın",
+    "noMessages": "Henüz mesaj yok",
+    "group": "Grup",
+    "chat": "Sohbet",
+    "archived": "Arşivlenen",
+    "newGroup": "Yeni Grup"
   },
   "minbar": {
     "home": "Ana Sayfa",

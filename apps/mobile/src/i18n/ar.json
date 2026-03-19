@@ -159,7 +159,11 @@
     "following": "يتابع",
     "followers": "متابعين",
     "seeAll": "عرض الكل",
-    "goBack": "رجوع"
+    "goBack": "رجوع",
+    "more": "المزيد",
+    "explore": "استكشاف",
+    "copyLink": "نسخ الرابط",
+    "unlock": "فتح القفل"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -212,7 +216,14 @@
     "backupCodes": "رموز النسخ الاحتياطي",
     "generateBackupCodes": "إنشاء رموز النسخ الاحتياطي",
     "downloadBackupCodes": "تنزيل رموز النسخ الاحتياطي",
-    "saveBackupCodes": "حفظ رموز النسخ الاحتياطي"
+    "saveBackupCodes": "حفظ رموز النسخ الاحتياطي",
+    "tagline": "مجتمعك الرقمي المتوازن",
+    "emailPlaceholder": "البريد الإلكتروني",
+    "passwordPlaceholder": "كلمة المرور",
+    "or": "أو",
+    "resetPasswordHint": "أدخل بريدك الإلكتروني وسنرسل لك رمز إعادة التعيين",
+    "codeSentTo": "تم إرسال الرمز إلى",
+    "passwordResetSuccess": "تم إعادة تعيين كلمة المرور بنجاح"
   },
   "tabs": {
     "saf": "الصف",
@@ -239,7 +250,22 @@
     "hadith": "الحديث",
     "zakat": "الزكاة",
     "mosques": "المساجد",
-    "ramadan": "رمضان"
+    "ramadan": "رمضان",
+    "createSheet": {
+      "photoOrVideoPost": "منشور صورة أو فيديو",
+      "startThread": "بدء سلسلة",
+      "shareStory": "مشاركة قصة",
+      "shortVideoReel": "فيديو قصير (ريل)",
+      "longVideo": "فيديو طويل",
+      "goLive": "بث مباشر"
+    },
+    "accessibility": {
+      "homeFeed": "الصفحة الرئيسية",
+      "shortVideos": "فيديوهات قصيرة",
+      "videos": "فيديوهات",
+      "threads": "المواضيع",
+      "messages": "الرسائل"
+    }
   },
   "saf": {
     "feed": "المغذي",
@@ -331,7 +357,11 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "emptyFeed": {
+      "title": "خلاصتك فارغة",
+      "subtitle": "تابع أشخاصاً لرؤية منشوراتهم هنا"
+    }
   },
   "bakra": {
     "forYou": "لك",
@@ -405,7 +435,24 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "emptyFeed": {
+      "title": "لا توجد ريلز حتى الآن",
+      "subtitle": "تابع صناع المحتوى أو استكشف لمشاهدة الريلز",
+      "actionLabel": "إنشاء ريل"
+    },
+    "originalAudio": "صوت أصلي",
+    "unknown": "غير معروف",
+    "notInterested": "غير مهتم",
+    "saveToCollection": "حفظ في المجموعة",
+    "notInterestedAlert": {
+      "title": "غير مهتم",
+      "message": "سنعرض لك محتوى أقل من هذا النوع"
+    },
+    "linkCopiedAlert": {
+      "title": "تم نسخ الرابط",
+      "message": "تم نسخ الرابط إلى الحافظة"
+    }
   },
   "majlis": {
     "forYou": "لك",
@@ -491,7 +538,12 @@
     "viewLocal": "View Local",
     "viewNational": "View National",
     "viewInternational": "View International",
-    "viewWorldwide": "View Worldwide"
+    "viewWorldwide": "View Worldwide",
+    "emptyFeed": {
+      "title": "لا توجد مواضيع بعد",
+      "subtitle": "تابع أشخاصاً أو استكشف المواضيع الرائجة",
+      "actionLabel": "بدء موضوع"
+    }
   },
   "risalah": {
     "messages": "الرسائل",
@@ -568,7 +620,20 @@
     "days": "days",
     "weeks": "weeks",
     "months": "months",
-    "years": "years"
+    "years": "years",
+    "chats": "المحادثات",
+    "groups": "المجموعات",
+    "all": "الكل",
+    "unread": "غير مقروءة",
+    "noGroupsYet": "لا توجد مجموعات بعد",
+    "createGroupHint": "أنشئ مجموعة للدردشة مع عدة أشخاص",
+    "yourConversations": "محادثاتك",
+    "messagesHint": "ابدأ محادثة مع شخص ما",
+    "noMessages": "لا توجد رسائل بعد",
+    "group": "مجموعة",
+    "chat": "محادثة",
+    "archived": "الأرشيف",
+    "newGroup": "مجموعة جديدة"
   },
   "minbar": {
     "home": "الرئيسية",
