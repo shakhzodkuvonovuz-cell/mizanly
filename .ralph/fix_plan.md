@@ -2,30 +2,30 @@
 # Every file. Every line. Every dimension. Fix everything.
 
 ## Phase 1: Infrastructure & Config (14 files)
-- [ ] 1.01 apps/api/prisma/schema.prisma — 160 models, check relations, indexes, onDelete, field types
-- [ ] 1.02 apps/api/src/app.module.ts — check all module imports, middleware, guards
-- [ ] 1.03 apps/api/src/config/prisma.service.ts — connection handling, error handling
-- [ ] 1.04 apps/api/src/config/socket-io-adapter.ts — Redis adapter config, auth
-- [ ] 1.05 apps/api/src/common/middleware/request-logger.middleware.ts — logging, PII exposure
-- [ ] 1.06 apps/api/src/common/services/job-queue.service.ts — queue config, error handling, retries
-- [ ] 1.07 apps/api/src/gateways/chat.gateway.ts — socket auth, event handling, cleanup
-- [ ] 1.08 apps/mobile/src/theme/index.ts — token completeness, contrast ratios
-- [ ] 1.09 apps/mobile/src/theme/highContrast.ts — WCAG AA compliance
-- [ ] 1.10 apps/mobile/src/store/index.ts — state shape, selectors, actions
-- [ ] 1.11 apps/mobile/src/i18n/index.ts — language loading, fallback
-- [ ] 1.12 apps/mobile/src/i18n/en.json — completeness, consistency, no orphan keys
-- [ ] 1.13 apps/mobile/src/i18n/ar.json — completeness vs en.json, RTL markers
-- [ ] 1.14 apps/mobile/src/types/index.ts — type completeness, no `any`
+- [x] 1.01 apps/api/prisma/schema.prisma — 17 missing indexes added, ForumThread/ForumReply authorId noted (field names final)
+- [x] 1.02 apps/api/src/app.module.ts — clean, no issues (69 modules, global throttle, security middleware)
+- [x] 1.03 apps/api/src/config/prisma.service.ts — clean, proper connect/disconnect/error handling
+- [x] 1.04 apps/api/src/config/socket-io-adapter.ts — clean, Redis adapter with graceful fallback
+- [x] 1.05 apps/api/src/common/middleware/request-logger.middleware.ts — clean, no PII exposure
+- [x] 1.06 apps/api/src/common/services/job-queue.service.ts — fixed swallowed error in catch
+- [x] 1.07 apps/api/src/gateways/chat.gateway.ts — P2 SECURITY: added membership check to message_delivered
+- [x] 1.08 apps/mobile/src/theme/index.ts — P1 FIX: 5 font aliases used wrong family names
+- [x] 1.09 apps/mobile/src/theme/highContrast.ts — clean, proper WCAG AA ratios
+- [x] 1.10 apps/mobile/src/store/index.ts — clean, proper persist/partialize/selectors
+- [x] 1.11 apps/mobile/src/i18n/index.ts — clean, 8 languages with fallback
+- [x] 1.12 apps/mobile/src/i18n/en.json — 2415 keys, baseline complete
+- [x] 1.13 apps/mobile/src/i18n/ar.json — 294 keys missing vs EN (noted), 122 orphans (noted)
+- [x] 1.14 apps/mobile/src/types/index.ts — clean, no `any`, 1012 lines, proper types
 
 ## Phase 2: Backend Services (77 files)
-- [ ] 2.01 modules/admin/admin.service.ts
-- [ ] 2.02 modules/ai/ai.service.ts
-- [ ] 2.03 modules/audio-rooms/audio-rooms.service.ts
-- [ ] 2.04 modules/audio-tracks/audio-tracks.service.ts
-- [ ] 2.05 modules/auth/auth.service.ts
-- [ ] 2.06 modules/blocks/blocks.service.ts
-- [ ] 2.07 modules/bookmarks/bookmarks.service.ts
-- [ ] 2.08 modules/broadcast/broadcast.service.ts
+- [x] 2.01 modules/admin/admin.service.ts — P1 FIX: banUser now sets isBanned flag
+- [x] 2.02 modules/ai/ai.service.ts — clean, proper API fallbacks
+- [x] 2.03 modules/audio-rooms/audio-rooms.service.ts — clean, proper role enforcement
+- [x] 2.04 modules/audio-tracks/audio-tracks.service.ts — clean, safe $executeRaw
+- [x] 2.05 modules/auth/auth.service.ts — clean, Clerk integration solid
+- [x] 2.06 modules/blocks/blocks.service.ts — clean, idempotent with counter fix
+- [x] 2.07 modules/bookmarks/bookmarks.service.ts — clean, atomic save/unsave
+- [x] 2.08 modules/broadcast/broadcast.service.ts — fixed dead code in discover()
 - [ ] 2.09 modules/calls/calls.service.ts
 - [ ] 2.10 modules/channel-posts/channel-posts.service.ts
 - [ ] 2.11 modules/channels/channels.service.ts

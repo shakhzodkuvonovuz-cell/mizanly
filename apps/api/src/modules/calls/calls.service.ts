@@ -122,9 +122,7 @@ export class CallsService {
 
   async getHistory(userId: string, cursor?: string, limit = 20) {
     const participations = await this.prisma.callParticipant.findMany({
-      where: { userId, ...(cursor ? { session: { id: { lt: cursor } } } : {
-      take: 50,
-    }) },
+      where: { userId, ...(cursor ? { session: { id: { lt: cursor } } } : {}) },
       include: {
         session: {
           include: {
