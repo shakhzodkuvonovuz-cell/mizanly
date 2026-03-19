@@ -2871,6 +2871,27 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "coins": {
+    "balance": "কয়েন ব্যালেন্স",
+    "buy": "কয়েন কিনুন",
+    "pack": "{{count}} কয়েন",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "উপহার পাঠান",
+    "rose": "গোলাপ",
+    "crown": "মুকুট",
+    "crescent": "চাঁদ",
+    "mosque": "মসজিদ",
+    "universe": "মহাবিশ্ব",
+    "received": "প্রাপ্ত উপহার"
+  },
+  "diamonds": {
+    "balance": "ডায়মন্ড ব্যালেন্স",
+    "cashout": "নগদ উত্তোলন",
+    "minimumCashout": "সর্বনিম্ন উত্তোলন: {{amount}}",
+    "conversionRate": "{{diamonds}} ডায়মন্ড = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "ইসলামি ক্যালেন্ডার থিম",
     "islamicCalendarDescription": "ইসলামি উপলক্ষে অ্যাপের চেহারা পরিবর্তন হয়",

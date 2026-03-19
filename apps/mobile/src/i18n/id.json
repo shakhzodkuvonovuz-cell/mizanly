@@ -2872,6 +2872,27 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "coins": {
+    "balance": "Saldo Koin",
+    "buy": "Beli Koin",
+    "pack": "{{count}} Koin",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "Kirim Hadiah",
+    "rose": "Mawar",
+    "crown": "Mahkota",
+    "crescent": "Bulan Sabit",
+    "mosque": "Masjid",
+    "universe": "Alam Semesta",
+    "received": "Hadiah Diterima"
+  },
+  "diamonds": {
+    "balance": "Saldo Diamond",
+    "cashout": "Cairkan",
+    "minimumCashout": "Penarikan minimum: {{amount}}",
+    "conversionRate": "{{diamonds}} diamond = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "Tema Kalender Islam",
     "islamicCalendarDescription": "Tampilan aplikasi berubah saat hari besar Islam",

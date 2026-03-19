@@ -2871,6 +2871,27 @@
     "noVideo": "No video selected",
     "selectVideo": "Select a video to edit"
   },
+  "coins": {
+    "balance": "Coin Balance",
+    "buy": "Buy Coins",
+    "pack": "{{count}} Coins",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "Send Gift",
+    "rose": "Rose",
+    "crown": "Crown",
+    "crescent": "Crescent",
+    "mosque": "Mosque",
+    "universe": "Universe",
+    "received": "Gifts Received"
+  },
+  "diamonds": {
+    "balance": "Diamond Balance",
+    "cashout": "Cash Out",
+    "minimumCashout": "Minimum cashout: {{amount}}",
+    "conversionRate": "{{diamonds}} diamonds = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "Islamic Calendar Themes",
     "islamicCalendarDescription": "App appearance changes during Islamic occasions",

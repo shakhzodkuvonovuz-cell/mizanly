@@ -2871,6 +2871,27 @@
     "noVideo": "Tiada video dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "coins": {
+    "balance": "Baki Syiling",
+    "buy": "Beli Syiling",
+    "pack": "{{count}} Syiling",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "Hantar Hadiah",
+    "rose": "Bunga Mawar",
+    "crown": "Mahkota",
+    "crescent": "Bulan Sabit",
+    "mosque": "Masjid",
+    "universe": "Alam Semesta",
+    "received": "Hadiah Diterima"
+  },
+  "diamonds": {
+    "balance": "Baki Diamond",
+    "cashout": "Keluarkan Wang",
+    "minimumCashout": "Pengeluaran minimum: {{amount}}",
+    "conversionRate": "{{diamonds}} diamond = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "Tema Kalendar Islam",
     "islamicCalendarDescription": "Rupa aplikasi berubah semasa peristiwa Islam",

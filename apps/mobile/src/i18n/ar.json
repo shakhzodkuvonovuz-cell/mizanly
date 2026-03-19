@@ -2871,6 +2871,27 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "coins": {
+    "balance": "رصيد العملات",
+    "buy": "شراء عملات",
+    "pack": "{{count}} عملة",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "إرسال هدية",
+    "rose": "وردة",
+    "crown": "تاج",
+    "crescent": "هلال",
+    "mosque": "مسجد",
+    "universe": "كون",
+    "received": "الهدايا المستلمة"
+  },
+  "diamonds": {
+    "balance": "رصيد الألماس",
+    "cashout": "سحب",
+    "minimumCashout": "الحد الأدنى للسحب: {{amount}}",
+    "conversionRate": "{{diamonds}} ألماس = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "سمات التقويم الإسلامي",
     "islamicCalendarDescription": "يتغير مظهر التطبيق أثناء المناسبات الإسلامية",

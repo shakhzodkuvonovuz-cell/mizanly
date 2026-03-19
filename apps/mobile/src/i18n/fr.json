@@ -2872,6 +2872,27 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "coins": {
+    "balance": "Solde de pièces",
+    "buy": "Acheter des pièces",
+    "pack": "{{count}} pièces",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "Envoyer un cadeau",
+    "rose": "Rose",
+    "crown": "Couronne",
+    "crescent": "Croissant",
+    "mosque": "Mosquée",
+    "universe": "Univers",
+    "received": "Cadeaux reçus"
+  },
+  "diamonds": {
+    "balance": "Solde de diamants",
+    "cashout": "Retirer",
+    "minimumCashout": "Retrait minimum : {{amount}}",
+    "conversionRate": "{{diamonds}} diamants = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "Thèmes du calendrier islamique",
     "islamicCalendarDescription": "L'apparence change lors des occasions islamiques",

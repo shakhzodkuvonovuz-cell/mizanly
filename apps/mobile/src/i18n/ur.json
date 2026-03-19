@@ -2872,6 +2872,27 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "coins": {
+    "balance": "سکے بیلنس",
+    "buy": "سکے خریدیں",
+    "pack": "{{count}} سکے",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "تحفہ بھیجیں",
+    "rose": "گلاب",
+    "crown": "تاج",
+    "crescent": "ہلال",
+    "mosque": "مسجد",
+    "universe": "کائنات",
+    "received": "موصول تحائف"
+  },
+  "diamonds": {
+    "balance": "ہیرے بیلنس",
+    "cashout": "نقد نکالیں",
+    "minimumCashout": "کم از کم نکاسی: {{amount}}",
+    "conversionRate": "{{diamonds}} ہیرے = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "اسلامی کیلنڈر تھیمز",
     "islamicCalendarDescription": "اسلامی مواقع کے دوران ایپ کی ظاہری شکل بدل جاتی ہے",

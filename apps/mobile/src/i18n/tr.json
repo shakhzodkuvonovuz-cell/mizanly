@@ -2871,6 +2871,27 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "coins": {
+    "balance": "Jeton Bakiyesi",
+    "buy": "Jeton Satın Al",
+    "pack": "{{count}} Jeton",
+    "price": "{{price}}"
+  },
+  "gifts": {
+    "send": "Hediye Gönder",
+    "rose": "Gül",
+    "crown": "Taç",
+    "crescent": "Hilal",
+    "mosque": "Cami",
+    "universe": "Evren",
+    "received": "Alınan Hediyeler"
+  },
+  "diamonds": {
+    "balance": "Elmas Bakiyesi",
+    "cashout": "Nakde Çevir",
+    "minimumCashout": "Minimum çekim: {{amount}}",
+    "conversionRate": "{{diamonds}} elmas = {{money}}"
+  },
   "themes": {
     "islamicCalendar": "İslami Takvim Temaları",
     "islamicCalendarDescription": "İslami günlerde uygulama görünümü değişir",

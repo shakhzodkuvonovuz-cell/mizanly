@@ -1685,7 +1685,7 @@ themes.ramadanKareem: "Ramadan Kareem"
 
 ---
 
-### [ ] Task 27: Virtual Currency Economy (Coins → Gifts → Diamonds → Cash)
+### [x] Task 27: Virtual Currency Economy — Done: Already built (CoinBalance, GiftRecord, 8 gift types, purchase/send/cashout), added 15 coin/gift/diamond i18n keys in 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/gifts/gifts.service.ts`
