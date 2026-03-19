@@ -802,6 +802,11 @@ export default function ProfileScreen() {
       {/* Bottom Sheets */}
       <BottomSheet visible={showMenu} onClose={() => setShowMenu(false)}>
         <BottomSheetItem
+          label={t('monetization.sendTip')}
+          icon={<Icon name="heart" size="sm" color={colors.gold} />}
+          onPress={() => { setShowMenu(false); router.push(`/(screens)/send-tip?userId=${profile?.id}` as never); }}
+        />
+        <BottomSheetItem
           label={t('profile.muteUser', { username })}
           icon={<Icon name="volume-x" size="sm" color={colors.text.primary} />}
           onPress={() => muteMutation.mutate()}

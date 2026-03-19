@@ -376,7 +376,8 @@
     "crossPost": "Cross-post",
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
-    "whyShowing": "Why am I seeing this?"
+    "whyShowing": "Why am I seeing this?",
+    "brandedContent": "Branded Content"
   },
   "bakra": {
     "forYou": "For You",
@@ -479,7 +480,9 @@
       "title": "No reels yet",
       "subtitle": "Follow creators or explore to see reels",
       "actionLabel": "Create a Reel"
-    }
+    },
+    "remix": "Remix",
+    "reel": "Reel"
   },
   "majlis": {
     "forYou": "For You",
@@ -1884,7 +1887,9 @@
     "music": "Music",
     "hashtag": "Hashtag",
     "mention": "Mention",
-    "duet": "Duet"
+    "duet": "Duet",
+    "greenScreen": "Green Screen",
+    "audioLibrary": "Audio Library"
   },
   "createVideo": {
     "selectThumbnail": "Select thumbnail",
@@ -2632,5 +2637,14 @@
       "delivered": "Delivered",
       "cancelled": "Cancelled"
     }
+  },
+  "stories": {
+    "disposable": "Disposable",
+    "photoMusic": "Photo + Music",
+    "gallery": "Gallery",
+    "camera": "Camera",
+    "background": "Background",
+    "pickFromGallery": "Pick from gallery",
+    "takePhoto": "Take photo"
   }
 }

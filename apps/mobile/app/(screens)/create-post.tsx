@@ -627,6 +627,20 @@ export default function CreatePostScreen() {
               </LinearGradient>
             </Pressable>
 
+            <Pressable
+              style={styles.toolbarBtn}
+              onPress={() => router.push('/(screens)/branded-content' as never)}
+              accessibilityLabel={t('saf.brandedContent')}
+              accessibilityRole="button"
+            >
+              <LinearGradient
+                colors={['rgba(200,150,62,0.1)', 'rgba(200,150,62,0.05)']}
+                style={styles.toolbarBtnGradient}
+              >
+                <Icon name="check-circle" size="sm" color={colors.gold} />
+              </LinearGradient>
+            </Pressable>
+
             <View style={styles.toolbarSpacer} />
 
             {/* Animated char count with glow effect */}

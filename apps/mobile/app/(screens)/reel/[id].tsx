@@ -435,6 +435,11 @@ export default function ReelDetailScreen() {
         <GlassHeader
           title={t('bakra.reel')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back(), accessibilityLabel: t('common.goBack') }}
+          rightActions={[
+            { icon: 'layers', onPress: () => router.push(`/(screens)/duet-create?reelId=${id}` as never), accessibilityLabel: t('bakra.duet') },
+            { icon: 'repeat', onPress: () => router.push(`/(screens)/reel-remix?reelId=${id}` as never), accessibilityLabel: t('bakra.remix') },
+            { icon: 'share', onPress: () => router.push(`/(screens)/stitch-create?reelId=${id}` as never), accessibilityLabel: t('bakra.stitch') },
+          ]}
         />
 
         <KeyboardAvoidingView

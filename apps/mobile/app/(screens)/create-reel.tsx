@@ -491,6 +491,34 @@ export default function CreateReelScreen() {
                 </LinearGradient>
                 <Text style={styles.toolbarLabel}>{t('createReel.schedule')}</Text>
               </Pressable>
+
+              <Pressable
+                style={styles.toolbarButton}
+                onPress={() => router.push('/(screens)/green-screen-editor' as never)}
+                accessibilityRole="button"
+              >
+                <LinearGradient
+                  colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="image" size="md" color={colors.emerald} />
+                </LinearGradient>
+                <Text style={styles.toolbarLabel}>{t('createReel.greenScreen')}</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.toolbarButton}
+                onPress={() => router.push('/(screens)/audio-library' as never)}
+                accessibilityRole="button"
+              >
+                <LinearGradient
+                  colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.05)']}
+                  style={styles.toolbarBtnGradient}
+                >
+                  <Icon name="volume-x" size="md" color={colors.gold} />
+                </LinearGradient>
+                <Text style={styles.toolbarLabel}>{t('createReel.audioLibrary')}</Text>
+              </Pressable>
             </LinearGradient>
           </View>
 

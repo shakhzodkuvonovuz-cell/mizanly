@@ -370,7 +370,8 @@
     "crossPost": "نشر متعدد",
     "boostPost": "ترويج المنشور",
     "postInsights": "إحصائيات المنشور",
-    "whyShowing": "لماذا أرى هذا؟"
+    "whyShowing": "لماذا أرى هذا؟",
+    "brandedContent": "محتوى ممول"
   },
   "bakra": {
     "forYou": "لك",
@@ -461,7 +462,9 @@
     "linkCopiedAlert": {
       "title": "تم نسخ الرابط",
       "message": "تم نسخ الرابط إلى الحافظة"
-    }
+    },
+    "remix": "ريمكس",
+    "reel": "ريل"
   },
   "majlis": {
     "forYou": "لك",
@@ -1723,7 +1726,9 @@
     "music": "موسيقى",
     "hashtag": "هاشتاج",
     "mention": "إشارة",
-    "duet": "ديو"
+    "duet": "ديو",
+    "greenScreen": "شاشة خضراء",
+    "audioLibrary": "مكتبة الصوت"
   },
   "createVideo": {
     "selectThumbnail": "اختر صورة مصغرة",
@@ -2443,5 +2448,14 @@
       "delivered": "تم التسليم",
       "cancelled": "ملغي"
     }
+  },
+  "stories": {
+    "disposable": "كاميرا فورية",
+    "photoMusic": "صورة + موسيقى",
+    "gallery": "المعرض",
+    "camera": "الكاميرا",
+    "background": "الخلفية",
+    "pickFromGallery": "اختر من المعرض",
+    "takePhoto": "التقط صورة"
   }
 }

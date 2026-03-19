@@ -663,6 +663,16 @@ export default function CreateStoryScreen() {
               <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.camera')}</Text>
             </Pressable>
           </View>
+          <View style={{ flexDirection: 'row', gap: spacing.md, marginBottom: spacing.md }}>
+            <Pressable onPress={() => router.push('/(screens)/disposable-camera' as never)} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.disposable')} accessibilityRole="button">
+              <Icon name="camera" size="sm" color={colors.gold} />
+              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.disposable')}</Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/(screens)/photo-music' as never)} style={[toolBtnStyle, { flex: 1 }]} accessibilityLabel={t('stories.photoMusic')} accessibilityRole="button">
+              <Icon name="volume-x" size="sm" color={colors.gold} />
+              <Text style={{ color: colors.text.primary, fontSize: fontSize.sm, marginLeft: spacing.sm }}>{t('stories.photoMusic')}</Text>
+            </Pressable>
+          </View>
         )}
 
         {/* BG gradient picker (text-only stories) */}

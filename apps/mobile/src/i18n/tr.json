@@ -376,7 +376,8 @@
     "crossPost": "Çapraz paylaş",
     "boostPost": "Gönderiyi Öne Çıkar",
     "postInsights": "Gönderi İstatistikleri",
-    "whyShowing": "Bunu neden görüyorum?"
+    "whyShowing": "Bunu neden görüyorum?",
+    "brandedContent": "Markalı İçerik"
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -479,7 +480,9 @@
     "linkCopiedAlert": {
       "title": "Bağlantı Kopyalandı",
       "message": "Bağlantı panonuza kopyalandı"
-    }
+    },
+    "remix": "Remix",
+    "reel": "Reel"
   },
   "majlis": {
     "forYou": "Senin İçin",
@@ -1884,7 +1887,9 @@
     "music": "Müzik",
     "hashtag": "Hashtag",
     "mention": "Bahset",
-    "duet": "Düet"
+    "duet": "Düet",
+    "greenScreen": "Yeşil Ekran",
+    "audioLibrary": "Ses Kütüphanesi"
   },
   "createVideo": {
     "selectThumbnail": "Küçük resim seçin",
@@ -2632,5 +2637,14 @@
       "delivered": "Teslim Edildi",
       "cancelled": "İptal Edildi"
     }
+  },
+  "stories": {
+    "disposable": "Tek Kullanımlık",
+    "photoMusic": "Fotoğraf + Müzik",
+    "gallery": "Galeri",
+    "camera": "Kamera",
+    "background": "Arka Plan",
+    "pickFromGallery": "Galeriden seç",
+    "takePhoto": "Fotoğraf çek"
   }
 }
