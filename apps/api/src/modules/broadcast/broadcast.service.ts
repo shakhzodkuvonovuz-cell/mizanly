@@ -198,9 +198,7 @@ export class BroadcastService {
 
   async discover(cursor?: string, limit = 20) {
     const channels = await this.prisma.broadcastChannel.findMany({
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {
-      take: 50,
-    }),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { subscribersCount: 'desc' },
       take: limit + 1,
     });

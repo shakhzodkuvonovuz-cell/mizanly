@@ -148,6 +148,7 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id: targetId },
       data: {
+        isBanned: true,
         isDeactivated: true,
         banReason: reason,
         banExpiresAt,
@@ -161,6 +162,7 @@ export class AdminService {
     return this.prisma.user.update({
       where: { id: targetId },
       data: {
+        isBanned: false,
         isDeactivated: false,
         banReason: null,
         banExpiresAt: null,
