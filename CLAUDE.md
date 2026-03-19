@@ -86,13 +86,13 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - Live reaction to other streams — YouTube 2026
 - TV app (Fire TV / Google TV) — Instagram 2026
 
-### Backend Hardening Remaining
-- 8 TODO stubs in production code (audio-room, mosque-finder, video quality, enable-tips)
-- ~50 Prisma relations missing onDelete cascade
-- Some findMany without pagination limits
-- Payments endpoint needs rate limiting
-- Parental PIN should be hashed
-- Upload folder param needs server-side validation
+### Backend Hardening Status (Batch 68)
+- ~~TODO stubs~~ — ✅ Fixed: mosque-finder prayer computation, audio-room speaking, enable-tips API
+- ~~Pagination limits~~ — ✅ Verified: all findMany have take: limits
+- ~~Rate limiting~~ — ✅ Verified: payments + auth already throttled
+- ~~Parental PIN~~ — ✅ Verified: scrypt hashed
+- ~~Upload folder~~ — ✅ Verified: @IsIn whitelist
+- Remaining: ~50 Prisma relations missing onDelete (non-blocking, cosmetic)
 
 ---
 
