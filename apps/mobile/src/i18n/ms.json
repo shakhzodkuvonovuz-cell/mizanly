@@ -2687,6 +2687,16 @@
     "suggestedForYou": "Dicadangkan untuk anda",
     "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
   },
+  "manageData": {
+    "exportTitle": "Muat Turun Data Saya",
+    "exportDescription": "Dapatkan salinan semua data anda dalam format JSON",
+    "exportProcessing": "Menyediakan data anda...",
+    "exportReady": "Eksport data anda sudah sedia",
+    "deleteAccount": "Padam Akaun Saya",
+    "deleteWarning": "Ini akan memadamkan akaun anda dan semua data secara kekal selepas 30 hari",
+    "deleteConfirm": "Saya faham, padam akaun saya",
+    "deleteGracePeriod": "Anda ada 30 hari untuk berubah fikiran"
+  },
   "network": {
     "offline": "Anda sedang luar talian",
     "backOnline": "Kembali dalam talian",

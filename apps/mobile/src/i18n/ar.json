@@ -2687,6 +2687,16 @@
     "suggestedForYou": "مقترح لك",
     "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
   },
+  "manageData": {
+    "exportTitle": "تحميل بياناتي",
+    "exportDescription": "احصل على نسخة من جميع بياناتك بصيغة JSON",
+    "exportProcessing": "جاري إعداد بياناتك...",
+    "exportReady": "تصدير بياناتك جاهز",
+    "deleteAccount": "حذف حسابي",
+    "deleteWarning": "سيؤدي هذا إلى حذف حسابك وجميع البيانات نهائياً بعد 30 يوماً",
+    "deleteConfirm": "أفهم، احذف حسابي",
+    "deleteGracePeriod": "لديك 30 يوماً لتغيير رأيك"
+  },
   "network": {
     "offline": "أنت غير متصل",
     "backOnline": "عدت للاتصال",

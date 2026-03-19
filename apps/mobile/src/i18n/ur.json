@@ -2688,6 +2688,16 @@
     "suggestedForYou": "آپ کے لیے تجویز کردہ",
     "followToSeeMore": "ان کی پوسٹس اپنی فیڈ میں دیکھنے کے لیے فالو کریں"
   },
+  "manageData": {
+    "exportTitle": "میرا ڈیٹا ڈاؤن لوڈ کریں",
+    "exportDescription": "اپنے تمام ڈیٹا کی JSON فارمیٹ میں کاپی حاصل کریں",
+    "exportProcessing": "آپ کا ڈیٹا تیار ہو رہا ہے...",
+    "exportReady": "آپ کا ڈیٹا ایکسپورٹ تیار ہے",
+    "deleteAccount": "میرا اکاؤنٹ حذف کریں",
+    "deleteWarning": "یہ 30 دنوں کے بعد آپ کا اکاؤنٹ اور تمام ڈیٹا مستقل طور پر حذف کر دے گا",
+    "deleteConfirm": "میں سمجھتا ہوں، میرا اکاؤنٹ حذف کریں",
+    "deleteGracePeriod": "آپ کے پاس ذہن بدلنے کے لیے 30 دن ہیں"
+  },
   "network": {
     "offline": "آپ آف لائن ہیں",
     "backOnline": "واپس آن لائن",

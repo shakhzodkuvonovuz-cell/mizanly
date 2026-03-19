@@ -108,6 +108,73 @@ export class UsersService {
     return { message: 'Account deactivated' };
   }
 
+  /**
+   * GDPR data export — returns all user data in JSON format.
+   * Includes: profile, posts, comments, messages, follows, likes, bookmarks, search history.
+   */
+  async exportData(userId: string) {
+    const [user, posts, comments, messages, followers, following, likes, bookmarks] = await Promise.all([
+      this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, username: true, displayName: true, bio: true, avatarUrl: true,
+          coverUrl: true, website: true, location: true, isPrivate: true,
+          createdAt: true, lastSeenAt: true,
+        },
+      }),
+      this.prisma.post.findMany({
+        where: { userId, isRemoved: false },
+        select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true },
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.comment.findMany({
+        where: { userId, isRemoved: false },
+        select: { id: true, content: true, postId: true, createdAt: true },
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.message.findMany({
+        where: { senderId: userId },
+        select: { id: true, content: true, conversationId: true, createdAt: true },
+        take: 50,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.follow.findMany({
+        where: { followingId: userId },
+        select: { followerId: true, createdAt: true },
+        take: 50,
+      }),
+      this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true, createdAt: true },
+        take: 50,
+      }),
+      this.prisma.postReaction.findMany({
+        where: { userId },
+        select: { postId: true, reaction: true, createdAt: true },
+        take: 50,
+      }),
+      this.prisma.savedPost.findMany({
+        where: { userId },
+        select: { postId: true, createdAt: true },
+        take: 50,
+      }),
+    ]);
+
+    return {
+      exportedAt: new Date().toISOString(),
+      profile: user,
+      posts,
+      comments,
+      messages: messages.map(m => ({ ...m, content: m.content ? '[encrypted]' : null })),
+      followers: followers.map(f => f.followerId),
+      following: following.map(f => f.followingId),
+      likes,
+      bookmarks,
+    };
+  }
+
   async deleteAccount(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

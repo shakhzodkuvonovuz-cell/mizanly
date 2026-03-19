@@ -2688,6 +2688,16 @@
     "suggestedForYou": "Disarankan untuk Anda",
     "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
   },
+  "manageData": {
+    "exportTitle": "Unduh Data Saya",
+    "exportDescription": "Dapatkan salinan semua data Anda dalam format JSON",
+    "exportProcessing": "Menyiapkan data Anda...",
+    "exportReady": "Ekspor data Anda siap",
+    "deleteAccount": "Hapus Akun Saya",
+    "deleteWarning": "Ini akan menghapus akun Anda dan semua data secara permanen setelah 30 hari",
+    "deleteConfirm": "Saya mengerti, hapus akun saya",
+    "deleteGracePeriod": "Anda punya 30 hari untuk berubah pikiran"
+  },
   "network": {
     "offline": "Anda sedang offline",
     "backOnline": "Kembali online",

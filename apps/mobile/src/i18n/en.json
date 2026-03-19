@@ -2687,6 +2687,16 @@
     "suggestedForYou": "Suggested for you",
     "followToSeeMore": "Follow to see their posts in your feed"
   },
+  "manageData": {
+    "exportTitle": "Download My Data",
+    "exportDescription": "Get a copy of all your data in JSON format",
+    "exportProcessing": "Preparing your data...",
+    "exportReady": "Your data export is ready",
+    "deleteAccount": "Delete My Account",
+    "deleteWarning": "This will permanently delete your account and all data after 30 days",
+    "deleteConfirm": "I understand, delete my account",
+    "deleteGracePeriod": "You have 30 days to change your mind"
+  },
   "network": {
     "offline": "You're offline",
     "backOnline": "Back online",

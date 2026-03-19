@@ -2688,6 +2688,16 @@
     "suggestedForYou": "Suggestions pour vous",
     "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
   },
+  "manageData": {
+    "exportTitle": "Télécharger mes données",
+    "exportDescription": "Obtenez une copie de toutes vos données au format JSON",
+    "exportProcessing": "Préparation de vos données...",
+    "exportReady": "Votre export de données est prêt",
+    "deleteAccount": "Supprimer mon compte",
+    "deleteWarning": "Cela supprimera définitivement votre compte et toutes les données après 30 jours",
+    "deleteConfirm": "Je comprends, supprimer mon compte",
+    "deleteGracePeriod": "Vous avez 30 jours pour changer d'avis"
+  },
   "network": {
     "offline": "Vous êtes hors ligne",
     "backOnline": "De retour en ligne",

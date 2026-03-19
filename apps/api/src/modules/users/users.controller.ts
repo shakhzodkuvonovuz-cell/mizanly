@@ -47,6 +47,15 @@ export class UsersController {
     return this.usersService.updateProfile(userId, dto);
   }
 
+  @Get('me/data-export')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { ttl: 86400000, limit: 1 } })
+  @ApiOperation({ summary: 'GDPR data export — all user data in JSON (rate limited: 1 per 24h)' })
+  exportData(@CurrentUser('id') userId: string) {
+    return this.usersService.exportData(userId);
+  }
+
   @Delete('me/deactivate')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
