@@ -82,6 +82,7 @@ import { RetentionModule } from './modules/retention/retention.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
+import { ResponseTimeMiddleware } from './common/middleware/response-time.middleware';
 
 @Module({
   imports: [
@@ -174,6 +175,6 @@ import { RequestLoggerMiddleware } from './common/middleware/request-logger.midd
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(CorrelationIdMiddleware, SecurityHeadersMiddleware, RequestLoggerMiddleware).forRoutes('*');
+    consumer.apply(CorrelationIdMiddleware, SecurityHeadersMiddleware, RequestLoggerMiddleware, ResponseTimeMiddleware).forRoutes('*');
   }
 }
