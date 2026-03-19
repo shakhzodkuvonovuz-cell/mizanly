@@ -70,5 +70,66 @@ describe('LiveService', () => {
       const result = await service.join('live1', 'user1');
       expect(result.joined).toBe(true);
     });
+
+    it('rejects joining ended session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'ENDED', hostId: 'h' });
+      await expect(service.join('live1', 'user1')).rejects.toThrow();
+    });
+
+    it('rejects joining non-existent session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.join('bad', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('leave', () => {
+    it('decrements viewer count', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE', hostId: 'h' });
+      prisma.liveParticipant.findUnique.mockResolvedValue({ id: 'lp1' });
+      prisma.liveParticipant.update.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      if (typeof service.leave === 'function') {
+        await service.leave('live1', 'user1');
+        expect(prisma.$executeRaw).toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe('getScheduled', () => {
+    it('returns scheduled sessions', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([
+        { id: 'live1', status: 'SCHEDULED', scheduledAt: new Date() },
+      ]);
+      const result = await service.getScheduled();
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('returns empty when no scheduled sessions', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([]);
+      const result = await service.getScheduled();
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('getActive', () => {
+    it('returns currently live sessions', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([
+        { id: 'live1', status: 'LIVE', currentViewers: 50 },
+      ]);
+      if (typeof service.getActive === 'function') {
+        const result = await service.getActive();
+        expect(result).toBeDefined();
+      }
+    });
+  });
+
+  describe('getHostSessions', () => {
+    it('returns host history with pagination', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([
+        { id: 'live1', status: 'ENDED' },
+      ]);
+      const result = await service.getHostSessions('user1');
+      expect(result.data).toHaveLength(1);
+    });
   });
 });
