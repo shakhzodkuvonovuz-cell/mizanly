@@ -34,9 +34,7 @@ export class StickersService {
 
   async browsePacks(cursor?: string, limit = 20) {
     const packs = await this.prisma.stickerPack.findMany({
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {
-      take: 50,
-    }),
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
     });

@@ -114,9 +114,7 @@ export class PostsService {
           isRemoved: false,
           user: { isPrivate: false, isBanned: false },
           visibility: 'PUBLIC',
-          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {
-      take: 50,
-    }),
+          ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
           ...(cursor ? { createdAt: { lt: new Date(cursor), gte: new Date(Date.now() - 72 * 60 * 60 * 1000) } } : {}),
         },
         select: POST_SELECT,

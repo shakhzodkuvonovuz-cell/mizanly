@@ -60,9 +60,7 @@ export class LiveService {
 
   async getScheduled(cursor?: string, limit = 20) {
     const sessions = await this.prisma.liveSession.findMany({
-      where: { status: LiveStatus.SCHEDULED, scheduledAt: { gte: new Date() }, ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }) },
+      where: { status: LiveStatus.SCHEDULED, scheduledAt: { gte: new Date() }, ...(cursor ? { id: { lt: cursor } } : {}) },
       include: { host: { select: { id: true, username: true, displayName: true, avatarUrl: true, isVerified: true } } },
       orderBy: { scheduledAt: 'asc' },
       take: limit + 1,
@@ -201,9 +199,7 @@ export class LiveService {
 
   async getHostSessions(userId: string, cursor?: string, limit = 20) {
     const sessions = await this.prisma.liveSession.findMany({
-      where: { hostId: userId, ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }) },
+      where: { hostId: userId, ...(cursor ? { id: { lt: cursor } } : {}) },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
     });

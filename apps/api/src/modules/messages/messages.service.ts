@@ -448,9 +448,7 @@ export class MessagesService {
     if (!query?.trim()) throw new BadRequestException('Search query is required');
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }) },
+      where: { conversationId, isDeleted: false, content: { contains: query, mode: 'insensitive' }, ...(cursor ? { id: { lt: cursor } } : {}) },
       include: { sender: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -486,9 +484,7 @@ export class MessagesService {
   async getMediaGallery(conversationId: string, userId: string, cursor?: string, limit = 30) {
     await this.requireMembership(conversationId, userId);
     const messages = await this.prisma.message.findMany({
-      where: { conversationId, isDeleted: false, messageType: { in: ['IMAGE', 'VIDEO'] }, ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }) },
+      where: { conversationId, isDeleted: false, messageType: { in: ['IMAGE', 'VIDEO'] }, ...(cursor ? { id: { lt: cursor } } : {}) },
       select: { id: true, mediaUrl: true, mediaType: true, messageType: true, createdAt: true, senderId: true },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

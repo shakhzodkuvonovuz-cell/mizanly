@@ -33,9 +33,7 @@ export class StoryChainsService {
     const chains = await this.prisma.storyChain.findMany({
       where: {
         createdAt: { gte: sevenDaysAgo },
-        ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }),
+        ...(cursor ? { id: { lt: cursor } } : {}),
       },
       orderBy: [
         { participantCount: 'desc' },
@@ -68,9 +66,7 @@ export class StoryChainsService {
     const entries = await this.prisma.storyChainEntry.findMany({
       where: {
         chainId,
-        ...(cursor ? { id: { gt: cursor } } : {
-      take: 50,
-    }),
+        ...(cursor ? { id: { gt: cursor } } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

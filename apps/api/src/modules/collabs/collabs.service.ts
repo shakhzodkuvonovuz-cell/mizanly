@@ -89,9 +89,7 @@ export class CollabsService {
 
   async getAcceptedCollabs(userId: string, cursor?: string, limit = 20) {
     const collabs = await this.prisma.postCollab.findMany({
-      where: { userId, status: CollabStatus.ACCEPTED, ...(cursor ? { id: { lt: cursor } } : {
-      take: 50,
-    }) },
+      where: { userId, status: CollabStatus.ACCEPTED, ...(cursor ? { id: { lt: cursor } } : {}) },
       include: {
         post: {
           select: { id: true, content: true, mediaUrls: true, createdAt: true, user: { select: { id: true, username: true, displayName: true, avatarUrl: true } } },

@@ -196,9 +196,7 @@ export class StoriesService {
     const views = await this.prisma.storyView.findMany({
       where: {
         storyId,
-        ...(cursor && { viewerId: { gt: cursor },
-      take: 50,
-    }),
+        ...(cursor && { viewerId: { gt: cursor } }),
       },
       take: limit + 1,
       orderBy: { viewerId: 'asc' },

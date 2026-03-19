@@ -460,9 +460,7 @@ export class ReelsService {
     const comments = await this.prisma.reelComment.findMany({
       where: {
         reelId,
-        ...(excludedUserIds.length ? { userId: { notIn: excludedUserIds } } : {
-      take: 50,
-    }),
+        ...(excludedUserIds.length ? { userId: { notIn: excludedUserIds } } : {}),
       },
       select: {
         id: true,
