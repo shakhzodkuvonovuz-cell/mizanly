@@ -502,27 +502,190 @@
 ## Phase 13: Test Files (88 files)
 - [ ] 13.01 Audit ALL 88 .spec.ts files for: empty tests, missing assertions, adequate coverage, proper mocking
 
-## Phase 14: Final Audit Report
-- [ ] 14.01 Write docs/AUDIT_REPORT_BATCH84.md — comprehensive findings, stats, severity breakdown, recommendations
+## Phase 14: Cross-Space Compatibility Audit (D16)
+Read specs/audit-dimensions.md D16 for full checklist. Check every cross-space interaction.
+
+### Saf ↔ Other Spaces
+- [ ] 14.01 Saf → Majlis: Can a Saf post be shared as a Majlis thread? Check create-thread.tsx, cross-post.tsx, PostCard share action
+- [ ] 14.02 Saf → Risalah: Can a Saf post be sent in Risalah DM? Check conversation/[id].tsx share receive, share-receive.tsx
+- [ ] 14.03 Saf → Bakra: Can a Saf story reference a Bakra reel? Check create-story.tsx link sticker, story mentions
+- [ ] 14.04 Saf → Minbar: Can a Saf carousel be posted on Minbar? Check cross-post.tsx, create-video.tsx
+
+### Bakra ↔ Other Spaces
+- [ ] 14.05 Bakra → Saf: Can a reel be cross-posted as a Saf post? Check cross-post.tsx, reels.service crossPublish
+- [ ] 14.06 Bakra → Majlis: Can reels embed in threads? Check thread/[id].tsx media rendering, RichText link handling
+- [ ] 14.07 Bakra → Risalah: Can reels be forwarded in chat? Check messages.service forward, conversation/[id].tsx share
+- [ ] 14.08 Bakra → Minbar: Can Bakra audio be used cross-space? Check sound/[id].tsx, audio-library.tsx
+
+### Majlis ↔ Other Spaces
+- [ ] 14.09 Majlis → Saf: Can a thread quote a Saf post? Check create-thread.tsx quotePost, ThreadCard quote rendering
+- [ ] 14.10 Majlis → Risalah: Can polls be shared to groups? Check polls sharing, conversation/[id].tsx
+- [ ] 14.11 Majlis → Bakra: Can threads link to reels with preview? Check RichText, LinkPreview component
+- [ ] 14.12 Majlis → Minbar: Can threads link to videos with inline player? Check thread/[id].tsx
+
+### Risalah ↔ Other Spaces
+- [ ] 14.13 Risalah → All: Can ALL content types be forwarded via Risalah? Check messages.service.ts forward logic
+- [ ] 14.14 Risalah → All: Does share sheet show "Send via Risalah" for every content type? Check every screen's share action
+- [ ] 14.15 Risalah → Saf: Can voice messages become voice posts? Check voice-post-create.tsx
+- [ ] 14.16 Risalah attribution: Does forwarded content show "shared from [Space]" label?
+
+### Minbar ↔ Other Spaces
+- [ ] 14.17 Minbar → Bakra: Can long videos be clipped to reels? Check create-clip.tsx, video/[id].tsx clip action
+- [ ] 14.18 Minbar → Majlis: Can video comments link to discussion threads? Check video/[id].tsx, thread linking
+- [ ] 14.19 Minbar → Saf: Can channel posts appear in Saf feed? Check feed algorithm, personalized-feed.service
+- [ ] 14.20 Minbar → Risalah: Can live streams be announced in groups? Check go-live.tsx share, schedule-live.tsx
+
+### Universal Cross-Space
+- [ ] 14.21 Unified notifications: Do notifications from ALL 5 spaces show in notifications.tsx? Check notification types
+- [ ] 14.22 Unified search: Does search.tsx / search-results.tsx find content from all 5 spaces? Check search.service.ts
+- [ ] 14.23 Unified profile: Does profile/[username].tsx show tabs for posts, reels, threads, videos, channels?
+- [ ] 14.24 Cross-space analytics: Does analytics.tsx / creator-dashboard.tsx aggregate stats from all spaces?
+- [ ] 14.25 Content graph: Is there a linking model (Post → discussed in Thread → shared in Message)?
+- [ ] 14.26 User identity consistency: Same avatar, badge, display name rendered identically across all 5 tab screens?
+- [ ] 14.27 Create sheet: Does create.tsx offer options for all content types (post, reel, thread, story, video, live)?
+- [ ] 14.28 Deep links: Test mizanly.app/post/X, /reel/X, /thread/X, /video/X, /channel/X routing
+- [ ] 14.29 Offline consistency: Does offlineCache.ts cache content from all spaces equally?
+- [ ] 14.30 RTL consistency: Are all 5 tab screens and their sub-screens RTL-correct? Check rtl.ts usage in each
+
+## Phase 15: Deep Competitor Parity Audit (D17)
+Read specs/audit-dimensions.md D17 for full checklist. Score EVERY screen 1-10 against best competitor.
+
+### vs Instagram — Saf Space (score each 1-10)
+- [ ] 15.01 Feed (saf.tsx) — algorithm ranking, suggested interleaved, caught-up marker, pull-to-refresh, story row
+- [ ] 15.02 Stories (create-story.tsx, story-viewer.tsx) — all 8 sticker types, music, drawing, text effects, highlights
+- [ ] 15.03 Reels in Saf context — reel tab, remix, templates, effects, sound page
+- [ ] 15.04 Profile (profile/[username].tsx) — highlights, bio links, story ring, collab, account switching, pro dashboard
+- [ ] 15.05 Create (create-post.tsx) — multi-image, filters, editing, scheduling, collab, location, hashtag suggestions, alt text
+- [ ] 15.06 Explore (discover.tsx, hashtag-explore.tsx) — mixed grid, categories, search suggestions, trending
+- [ ] 15.07 DM from Saf (new-conversation.tsx, conversation/[id].tsx) — vanish mode, reactions, GIF, shared media
+- [ ] 15.08 Shopping (marketplace.tsx, product/[id].tsx, creator-storefront.tsx) — product tags, checkout
+- [ ] 15.09 Notifications (notifications.tsx) — activity feed, grouping, follow suggestions
+- [ ] 15.10 Settings applicable to Saf (settings.tsx, account-settings.tsx, privacy) — privacy, 2FA, data
+
+### vs TikTok — Bakra Space (score each 1-10)
+- [ ] 15.11 FYP (bakra.tsx) — algorithm quality, completion-rate ranking, not-interested, scroll feel
+- [ ] 15.12 Video player UX — double-tap, hearts, comments, share, sound link, follow, scrubber
+- [ ] 15.13 Create (create-reel.tsx, video-editor.tsx, caption-editor.tsx) — recording modes, speed, timer, effects, green screen, duet, stitch, voiceover, captions, transitions
+- [ ] 15.14 Sound page (sound/[id].tsx, trending-audio.tsx) — all videos using sound, save, use
+- [ ] 15.15 Comments (CommentsSheet.tsx) — nested, liked by creator, pinned, video replies
+- [ ] 15.16 Creator profile as TikTok — video grid, liked, sounds, analytics
+- [ ] 15.17 Live (live/[id].tsx, go-live.tsx) — gifts, viewers, comments, multi-guest, shopping
+- [ ] 15.18 Search from Bakra context — users, videos, sounds, hashtags, live
+- [ ] 15.19 Series (series/[id].tsx, series-detail.tsx) — paywall episodic, subscribe
+- [ ] 15.20 Analytics for Bakra (analytics.tsx, post-insights.tsx) — views, traffic sources, audience
+
+### vs X/Twitter — Majlis Space (score each 1-10)
+- [ ] 15.21 Timeline (majlis.tsx) — For You + Following tabs, algorithm + chronological
+- [ ] 15.22 Threads (thread/[id].tsx, create-thread.tsx) — chains, quote, repost, like, bookmark, view count
+- [ ] 15.23 Replies — nested, hide reply, mute conversation
+- [ ] 15.24 Spaces/Audio (audio-room.tsx) — speaker queue, recording, scheduling
+- [ ] 15.25 Communities (communities.tsx, community-posts.tsx) — pages, rules, moderation, roles
+- [ ] 15.26 Lists (majlis-lists.tsx, majlis-list/[id].tsx) — custom lists, timeline
+- [ ] 15.27 Search from Majlis context (search.tsx) — trending, for you, people tabs
+- [ ] 15.28 Polls (create-thread.tsx polls) — multi-option, duration, results
+- [ ] 15.29 Subscriptions — subscriber content, badge, subscriber-only replies
+- [ ] 15.30 DMs from Majlis — message requests, read receipts
+
+### vs WhatsApp — Risalah Space (score each 1-10)
+- [ ] 15.31 Chat (conversation/[id].tsx) — E2E encryption, disappearing, view-once, voice speed, reactions, replies, forward, star, search
+- [ ] 15.32 Groups (create-group.tsx, conversation-info.tsx) — admin controls, permissions, approval, topics, description
+- [ ] 15.33 Calls (call/[id].tsx, call-history.tsx) — voice/video, group calls, screen sharing, quality
+- [ ] 15.34 Status — text + media, privacy controls, replies
+- [ ] 15.35 Communities (broadcast-channels.tsx) — announcement groups, sub-groups
+- [ ] 15.36 Channels (broadcast/[id].tsx) — one-way broadcast, voice notes, quizzes
+- [ ] 15.37 Settings for Risalah — privacy, storage, backup, tones, 2-step
+- [ ] 15.38 New 2026 WA features — group history, secret lock, view-once voice, camera effects, translation, member tags
+- [ ] 15.39 File sharing — documents, contacts, location (live + static)
+- [ ] 15.40 Stickers (sticker-browser.tsx, StickerPicker.tsx) — custom maker, packs, animated
+
+### vs YouTube — Minbar Space (score each 1-10)
+- [ ] 15.41 Home (minbar.tsx) — recommendation feed, categories, continue watching
+- [ ] 15.42 Video player (video/[id].tsx, VideoPlayer.tsx, VideoControls.tsx) — quality, speed, PiP, mini player, ambient, captions, chapters, end screens
+- [ ] 15.43 Shorts equivalent in Minbar — does Minbar have a Shorts/vertical video section?
+- [ ] 15.44 Subscriptions — channel list, bell, all/none/personalized
+- [ ] 15.45 Library (watch-history.tsx, downloads.tsx, saved.tsx) — history, playlists, downloads, watch later
+- [ ] 15.46 Channel (channel/[handle].tsx, edit-channel.tsx) — about, videos, shorts, playlists, community, trailer, memberships
+- [ ] 15.47 Upload (create-video.tsx) — title, description, tags, thumbnail, visibility, schedule, monetization, subtitles, end screen
+- [ ] 15.48 Analytics for Minbar (analytics.tsx) — views, watch time, revenue, demographics
+- [ ] 15.49 Comments from Minbar — threaded, heart, pin, creator reply, timestamps
+- [ ] 15.50 Live (live/[id].tsx, go-live.tsx) — stream, chat, super chat, scheduling, premiere
+
+### vs Telegram — Deep Comparison
+- [ ] 15.51 Channels: Telegram unlimited subscribers vs Risalah broadcast capacity
+- [ ] 15.52 Groups: Telegram 200K members, topics, slow mode, admin log vs Risalah groups
+- [ ] 15.53 Bots/Mini Apps: Does Mizanly have ANY extensibility? Check for webhook, bot, or plugin architecture
+- [ ] 15.54 Stars/Payments: Telegram Stars vs Mizanly virtual currency — feature completeness
+- [ ] 15.55 Chat folders, saved messages, scheduled messages, silent messages, edit history — check all in Risalah
+- [ ] 15.56 File sharing: Telegram 2GB vs Mizanly limits — check upload.service.ts limits
+- [ ] 15.57 Secret chats vs Risalah encryption — depth comparison
+- [ ] 15.58 Username-only contact (phone privacy) — does Mizanly support this?
+
+### vs WeChat — Super App Model
+- [ ] 15.59 Mini programs: Does Mizanly have any plugin/extension model? Any equivalent?
+- [ ] 15.60 Payments: Is Mizanly payment as seamless as WeChat Pay? Check payment flow friction
+- [ ] 15.61 Social feed (Moments): Is Saf feed friends-only by default like Moments? Check visibility defaults
+- [ ] 15.62 QR code usage: Does Mizanly use QR for profile, payment, group join? Check qr-code.tsx, qr-scanner.tsx
+- [ ] 15.63 Integrated search: Does search span messages, contacts, content, communities? Check search.service.ts scope
+- [ ] 15.64 Daily opens: What drives 10+ daily opens? Check notification strategy, retention.service.ts
+
+### vs Discord — Community & Voice
+- [ ] 15.65 Server structure: Do Mizanly communities support channels, categories, roles? Check communities.service.ts
+- [ ] 15.66 Forum channels: Do communities support threaded discussions? Check community-posts.tsx
+- [ ] 15.67 Voice channels: Does Mizanly have always-on drop-in voice? Check audio-room.tsx — is it scheduled-only?
+- [ ] 15.68 Webhooks: Does Mizanly support external integrations? Check for webhook endpoints
+- [ ] 15.69 Role-based permissions: How granular are community permissions? Check communities.service.ts roles
+- [ ] 15.70 Server discovery: Is community discovery as good as Discord's? Check discover.tsx
+
+### vs Snapchat, Reddit, Signal, Threads, Clubhouse
+- [ ] 15.71 Snapchat: Map/location features vs mosque-finder, ephemeral vs disappearing, Lenses vs AR plan
+- [ ] 15.72 Reddit: Upvote/karma vs XP/reputation, subreddits vs communities, awards vs gifts, wiki vs knowledge base
+- [ ] 15.73 Signal: Protocol comparison vs encryption.service.ts, sealed sender, metadata protection depth
+- [ ] 15.74 Threads: Fediverse support?, character limits, re-share mechanism, cross-posting to Saf (like Threads→IG)
+- [ ] 15.75 Clubhouse: Audio room quality, discovery, replays, clubs vs recurring audio groups
+
+### vs Muslim Pro / Quran.com — Islamic Features
+- [ ] 15.76 Prayer times: Calculation method accuracy, multiple methods (MWL, ISNA, Umm Al-Qura, etc.) — check islamic.service.ts
+- [ ] 15.77 Quran: Audio recitation (multiple reciters?), word-by-word, tajweed colors, bookmarks — check quran-share.tsx, quran-room.tsx, quran-reading-plan.tsx
+- [ ] 15.78 Hadith: Which collections? Bukhari, Muslim, Abu Dawud, Tirmidhi, Nasai, Ibn Majah — check hadith.tsx, islamic.service.ts
+- [ ] 15.79 Dua collection: Categorized? Morning/evening, travel, eating, etc. — check islamic features
+- [ ] 15.80 Mosque finder: Data source? Coverage? Accuracy? — check mosque-finder.tsx, islamic.service.ts
+- [ ] 15.81 Zakat: Handles gold, silver, cash, stocks, crypto, business assets? — check zakat-calculator.tsx
+- [ ] 15.82 Islamic calendar: Which method? Um al-Qura, calculated, observed? — check hijri.ts, islamic-calendar.tsx
+- [ ] 15.83 Tafsir: Multiple scholars, multiple languages? — check tafsir-viewer.tsx
+- [ ] 15.84 Dhikr: Customizable counters, goal tracking, social sharing? — check dhikr-counter.tsx, dhikr-challenges.tsx
+- [ ] 15.85 Ramadan: Suhoor/iftar per location, fasting tracker, Ramadan-specific UI? — check ramadan-mode.tsx
+
+## Phase 16: Final Audit Report
+- [ ] 16.01 Write docs/AUDIT_REPORT_BATCH84.md — comprehensive findings with:
+  - Total issues by severity (P0-P7)
+  - Total issues by dimension (D1-D17)
+  - Cross-space compatibility score matrix (5×5 grid)
+  - Per-screen competitor parity scores (1-10)
+  - Space-by-space competitor parity averages
+  - Top 20 highest-priority fixes
+  - Recommendations for next batch
+  - Islamic feature accuracy report
 
 ---
 
 ## Completion Criteria
-ALL items marked [x] + audit report written = EXIT_SIGNAL: true
+ALL items marked [x] + final audit report written = EXIT_SIGNAL: true
 
 ## TOTALS
-- Phase 1: 14 files
-- Phase 2: 77 files
-- Phase 3: 72 files
-- Phase 4: 10 files
-- Phase 5: 65 files
-- Phase 6: 39 files
-- Phase 7: 52 files
-- Phase 8: 48 files
-- Phase 9: 50 files
-- Phase 10: 35 files
-- Phase 11: 4 files
-- Phase 12: 8 files
-- Phase 13: 88 files (batch)
-- Phase 14: 1 report
-- **GRAND TOTAL: ~563 audit items**
+- Phase 1: 14 files (infrastructure)
+- Phase 2: 77 files (backend services)
+- Phase 3: 72 files (backend controllers)
+- Phase 4: 10 files (tab screens)
+- Phase 5: 65 files (components)
+- Phase 6: 39 files (hooks & services)
+- Phase 7: 52 files (screens A-D)
+- Phase 8: 48 files (screens D-M)
+- Phase 9: 50 files (screens M-S)
+- Phase 10: 35 files (screens S-Z)
+- Phase 11: 4 files (onboarding)
+- Phase 12: 8 files (utils & i18n)
+- Phase 13: 88 files (tests)
+- Phase 14: 30 items (cross-space compatibility)
+- Phase 15: 85 items (deep competitor parity)
+- Phase 16: 1 report
+- **GRAND TOTAL: ~678 audit items**

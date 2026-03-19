@@ -29,6 +29,8 @@ Read `.ralph/specs/audit-dimensions.md` for the full checklist. Summary:
 13. **Media** — upload validation, size limits, thumbnail generation, presigned URL expiry
 14. **Payments** — webhook verification, idempotency, error handling, refund logic
 15. **Navigation** — orphaned screens, deep links, back button, transitions, scroll restoration
+16. **Cross-Space Compatibility** — can content flow between all 5 spaces? Saf↔Bakra↔Majlis↔Risalah↔Minbar sharing, cross-posting, unified search, unified profile, unified notifications, consistent identity, create sheet completeness, deep links across spaces
+17. **Deep Competitor Parity** — score EVERY screen 1-10 against its best competitor. Not just IG/TikTok/X/WA/YT but also Telegram (channels, bots, mini apps, Stars), WeChat (super app model, mini programs, payments, Moments), Discord (servers, forums, voice, roles, webhooks), Snapchat (map, ephemeral, AR), Reddit (upvotes, karma, subreddits, AMAs), Signal (encryption depth), Threads (fediverse), Clubhouse (audio), LinkedIn (professional), and Muslim Pro/Quran.com (Islamic accuracy)
 
 ## HOW TO AUDIT EACH FILE
 
