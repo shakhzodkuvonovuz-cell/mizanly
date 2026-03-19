@@ -2686,5 +2686,11 @@
     "exploreFirstSubtitle": "আপনার ফিড তৈরি করতে নির্মাতাদের অনুসরণ করুন",
     "suggestedForYou": "আপনার জন্য প্রস্তাবিত",
     "followToSeeMore": "তাদের পোস্ট আপনার ফিডে দেখতে অনুসরণ করুন"
+  },
+  "network": {
+    "offline": "আপনি অফলাইন",
+    "backOnline": "পুনরায় অনলাইন",
+    "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
+    "syncing": "সিঙ্ক হচ্ছে..."
   }
 }

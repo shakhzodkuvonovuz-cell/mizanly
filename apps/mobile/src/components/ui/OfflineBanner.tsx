@@ -9,11 +9,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useStore } from '@/store';
 import { Icon } from '@/components/ui/Icon';
+import { useTranslation } from '@/hooks/useTranslation';
 import { colors, spacing, fontSize } from '@/theme';
 
 const BANNER_HEIGHT = 36;
 
 export function OfflineBanner() {
+  const { t } = useTranslation();
   const isOffline = useStore((s) => s.isOffline);
   const progress = useSharedValue(0);
 
@@ -30,7 +32,7 @@ export function OfflineBanner() {
   return (
     <Animated.View style={[styles.banner, animatedStyle]}>
       <Icon name="globe" size="xs" color={colors.text.primary} />
-      <Text style={styles.text}>No internet connection</Text>
+      <Text style={styles.text}>{t('network.offline')}</Text>
     </Animated.View>
   );
 }

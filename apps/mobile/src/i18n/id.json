@@ -2687,5 +2687,11 @@
     "exploreFirstSubtitle": "Ikuti kreator untuk membangun feed Anda",
     "suggestedForYou": "Disarankan untuk Anda",
     "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
+  },
+  "network": {
+    "offline": "Anda sedang offline",
+    "backOnline": "Kembali online",
+    "queuedAction": "Akan disinkronkan saat terhubung",
+    "syncing": "Menyinkronkan..."
   }
 }

@@ -2686,5 +2686,11 @@
     "exploreFirstSubtitle": "تابع المبدعين لبناء خلاصتك",
     "suggestedForYou": "مقترح لك",
     "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
+  },
+  "network": {
+    "offline": "أنت غير متصل",
+    "backOnline": "عدت للاتصال",
+    "queuedAction": "ستتم المزامنة عند الاتصال",
+    "syncing": "جاري المزامنة..."
   }
 }

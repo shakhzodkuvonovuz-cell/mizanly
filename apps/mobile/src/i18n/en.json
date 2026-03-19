@@ -2686,5 +2686,11 @@
     "exploreFirstSubtitle": "Follow creators to build your feed",
     "suggestedForYou": "Suggested for you",
     "followToSeeMore": "Follow to see their posts in your feed"
+  },
+  "network": {
+    "offline": "You're offline",
+    "backOnline": "Back online",
+    "queuedAction": "Will sync when connected",
+    "syncing": "Syncing..."
   }
 }

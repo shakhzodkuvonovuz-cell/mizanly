@@ -2686,5 +2686,11 @@
     "exploreFirstSubtitle": "Akışınızı oluşturmak için içerik üreticileri takip edin",
     "suggestedForYou": "Sizin için önerilen",
     "followToSeeMore": "Gönderilerini akışınızda görmek için takip edin"
+  },
+  "network": {
+    "offline": "Çevrimdışısınız",
+    "backOnline": "Tekrar çevrimiçi",
+    "queuedAction": "Bağlandığında senkronize edilecek",
+    "syncing": "Senkronize ediliyor..."
   }
 }

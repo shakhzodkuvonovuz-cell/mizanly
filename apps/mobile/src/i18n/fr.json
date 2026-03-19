@@ -2687,5 +2687,11 @@
     "exploreFirstSubtitle": "Suivez des créateurs pour construire votre fil",
     "suggestedForYou": "Suggestions pour vous",
     "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
+  },
+  "network": {
+    "offline": "Vous êtes hors ligne",
+    "backOnline": "De retour en ligne",
+    "queuedAction": "Sera synchronisé une fois connecté",
+    "syncing": "Synchronisation..."
   }
 }

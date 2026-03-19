@@ -2686,5 +2686,11 @@
     "exploreFirstSubtitle": "Ikuti pencipta untuk membina suapan anda",
     "suggestedForYou": "Dicadangkan untuk anda",
     "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
+  },
+  "network": {
+    "offline": "Anda sedang luar talian",
+    "backOnline": "Kembali dalam talian",
+    "queuedAction": "Akan disegerakkan apabila disambungkan",
+    "syncing": "Menyegerakkan..."
   }
 }
