@@ -10,6 +10,9 @@ import {
   Body,
   UseGuards,
   ParseIntPipe,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiParam, ApiBearerAuth, ApiProperty } from '@nestjs/swagger';
 // class-validator imports removed (DTOs use @ApiProperty only)
@@ -428,5 +431,62 @@ export class IslamicController {
   @ApiOperation({ summary: 'Contribute to a challenge' })
   async contributeToChallenge(@CurrentUser('id') userId: string, @Param('id') id: string, @Body() dto: ContributeDhikrDto) {
     return this.islamicService.contributeToChallenge(userId, id, dto.count);
+  }
+
+  // ============================================================
+  // DUA COLLECTION
+  // ============================================================
+
+  @Get('duas')
+  @ApiOperation({ summary: 'List duas, optionally filtered by category' })
+  @ApiQuery({ name: 'category', required: false, type: String })
+  async getDuas(@Query('category') category?: string) {
+    return this.islamicService.getDuasByCategory(category);
+  }
+
+  @Get('duas/daily')
+  @ApiOperation({ summary: 'Get dua of the day' })
+  async getDuaOfTheDay() {
+    return this.islamicService.getDuaOfTheDay();
+  }
+
+  @Get('duas/categories')
+  @ApiOperation({ summary: 'List all dua categories' })
+  async getDuaCategories() {
+    return this.islamicService.getDuaCategories();
+  }
+
+  @Get('duas/bookmarked')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get bookmarked duas' })
+  async getBookmarkedDuas(@CurrentUser('id') userId: string) {
+    return this.islamicService.getBookmarkedDuas(userId);
+  }
+
+  @Get('duas/:id')
+  @ApiOperation({ summary: 'Get single dua by ID' })
+  async getDuaById(@Param('id') id: string) {
+    const dua = this.islamicService.getDuaById(id);
+    if (!dua) throw new NotFoundException('Dua not found');
+    return dua;
+  }
+
+  @Post('duas/:id/bookmark')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bookmark a dua' })
+  async bookmarkDua(@CurrentUser('id') userId: string, @Param('id') duaId: string) {
+    return this.islamicService.bookmarkDua(userId, duaId);
+  }
+
+  @Delete('duas/:id/bookmark')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Remove dua bookmark' })
+  async unbookmarkDua(@CurrentUser('id') userId: string, @Param('id') duaId: string) {
+    return this.islamicService.unbookmarkDua(userId, duaId);
   }
 }

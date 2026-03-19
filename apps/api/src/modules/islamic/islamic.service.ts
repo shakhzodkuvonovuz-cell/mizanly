@@ -11,6 +11,17 @@ import { SaveDhikrSessionDto, CreateDhikrChallengeDto } from './dto/dhikr.dto';
 import * as hadiths from './data/hadiths.json';
 import * as hajjGuideData from './data/hajj-guide.json';
 import * as tafsirJson from './data/tafsir.json';
+import * as duasData from './data/duas.json';
+
+interface DuaEntry {
+  id: string;
+  category: string;
+  arabicText: string;
+  transliteration: string;
+  translation: Record<string, string>;
+  source: string;
+  sourceRef: string;
+}
 
 export interface TafsirSource {
   name: string;
@@ -880,5 +891,68 @@ export class IslamicService {
       nisabSilver,
       breakdown,
     };
+  }
+
+  // ============================================================
+  // DUA COLLECTION
+  // ============================================================
+
+  private get duas(): DuaEntry[] {
+    return duasData as unknown as DuaEntry[];
+  }
+
+  getDuasByCategory(category?: string): DuaEntry[] {
+    if (!category) return this.duas;
+    return this.duas.filter((d) => d.category === category);
+  }
+
+  getDuaById(id: string): DuaEntry | undefined {
+    return this.duas.find((d) => d.id === id);
+  }
+
+  getDuaOfTheDay(): DuaEntry {
+    // Deterministic per day: hash the date to pick a dua
+    const today = new Date();
+    const daysSinceEpoch = Math.floor(today.getTime() / 86400000);
+    const index = daysSinceEpoch % this.duas.length;
+    return this.duas[index];
+  }
+
+  getDuaCategories(): string[] {
+    const cats = new Set<string>();
+    for (const d of this.duas) cats.add(d.category);
+    return [...cats];
+  }
+
+  async bookmarkDua(userId: string, duaId: string) {
+    const existing = await this.prisma.duaBookmark.findUnique({
+      where: { userId_duaId: { userId, duaId } },
+    });
+    if (existing) return existing;
+    return this.prisma.duaBookmark.create({
+      data: { userId, duaId },
+    });
+  }
+
+  async unbookmarkDua(userId: string, duaId: string) {
+    try {
+      await this.prisma.duaBookmark.delete({
+        where: { userId_duaId: { userId, duaId } },
+      });
+    } catch {
+      // Already removed
+    }
+    return { removed: true };
+  }
+
+  async getBookmarkedDuas(userId: string): Promise<DuaEntry[]> {
+    const bookmarks = await this.prisma.duaBookmark.findMany({
+      where: { userId },
+      select: { duaId: true },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+    const ids = new Set(bookmarks.map((b) => b.duaId));
+    return this.duas.filter((d) => ids.has(d.id));
   }
 }

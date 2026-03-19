@@ -2872,6 +2872,26 @@
     "noVideo": "کوئی ویڈیو منتخب نہیں",
     "selectVideo": "ایڈٹ کرنے کے لیے ویڈیو منتخب کریں"
   },
+  "duas": {
+    "title": "دعاؤں کا مجموعہ",
+    "categories": "زمرے",
+    "duaOfTheDay": "آج کی دعا",
+    "bookmark": "محفوظ کریں",
+    "bookmarked": "محفوظ دعائیں",
+    "shareDua": "دعا شیئر کریں",
+    "source": "ماخذ",
+    "morning": "صبح",
+    "evening": "شام",
+    "eating": "کھانا",
+    "travel": "سفر",
+    "sleep": "نیند",
+    "rain": "بارش",
+    "anxiety": "پریشانی اور تنگی",
+    "illness": "بیماری",
+    "gratitude": "شکر",
+    "forgiveness": "استغفار",
+    "protection": "حفاظت"
+  },
   "halal": {
     "finder": "حلال فائنڈر",
     "restaurants": "حلال ریستوران",

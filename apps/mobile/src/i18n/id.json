@@ -2872,6 +2872,26 @@
     "noVideo": "Tidak ada video yang dipilih",
     "selectVideo": "Pilih video untuk diedit"
   },
+  "duas": {
+    "title": "Koleksi Doa",
+    "categories": "Kategori",
+    "duaOfTheDay": "Doa Hari Ini",
+    "bookmark": "Tandai",
+    "bookmarked": "Doa Tersimpan",
+    "shareDua": "Bagikan Doa",
+    "source": "Sumber",
+    "morning": "Pagi",
+    "evening": "Sore",
+    "eating": "Makan",
+    "travel": "Perjalanan",
+    "sleep": "Tidur",
+    "rain": "Hujan",
+    "anxiety": "Kecemasan & Tekanan",
+    "illness": "Sakit",
+    "gratitude": "Syukur",
+    "forgiveness": "Istighfar",
+    "protection": "Perlindungan"
+  },
   "halal": {
     "finder": "Pencari Halal",
     "restaurants": "Restoran Halal",

@@ -2871,6 +2871,26 @@
     "noVideo": "Video seçilmedi",
     "selectVideo": "Düzenlemek için video seçin"
   },
+  "duas": {
+    "title": "Dua Koleksiyonu",
+    "categories": "Kategoriler",
+    "duaOfTheDay": "Günün Duası",
+    "bookmark": "Yer İşareti",
+    "bookmarked": "Kaydedilen Dualar",
+    "shareDua": "Duayı Paylaş",
+    "source": "Kaynak",
+    "morning": "Sabah",
+    "evening": "Akşam",
+    "eating": "Yemek",
+    "travel": "Seyahat",
+    "sleep": "Uyku",
+    "rain": "Yağmur",
+    "anxiety": "Kaygı ve Sıkıntı",
+    "illness": "Hastalık",
+    "gratitude": "Şükür",
+    "forgiveness": "İstiğfar",
+    "protection": "Korunma"
+  },
   "halal": {
     "finder": "Helal Bulucu",
     "restaurants": "Helal Restoranlar",

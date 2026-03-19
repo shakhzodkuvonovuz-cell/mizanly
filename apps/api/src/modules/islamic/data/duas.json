@@ -1,0 +1,290 @@
+[
+  {
+    "id": "dua-morning-1",
+    "category": "morning",
+    "arabicText": "أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَـهَ إِلاَّ اللهُ وَحْدَهُ لاَ شَرِيكَ لَهُ",
+    "transliteration": "Asbahna wa asbahal-mulku lillah, walhamdu lillah, la ilaha illallahu wahdahu la shareeka lah",
+    "translation": {
+      "en": "We have reached the morning and at this very time the whole kingdom belongs to Allah. All praise is due to Allah. None has the right to be worshipped except Allah alone.",
+      "ar": "أصبحنا وأصبح الملك لله والحمد لله",
+      "tr": "Sabaha erdik, mülk de Allah'ın sabahına erdi. Hamd Allah'a mahsustur.",
+      "ur": "ہم نے صبح کی اور ملک اللہ کے لیے ہوا، حمد اللہ کے لیے ہے",
+      "bn": "আমরা সকালে উপনীত হলাম এবং রাজত্ব আল্লাহর",
+      "fr": "Nous voici au matin et le royaume appartient à Allah",
+      "id": "Kami memasuki pagi hari dan kerajaan milik Allah",
+      "ms": "Kami memasuki waktu pagi dan kerajaan milik Allah"
+    },
+    "source": "Abu Dawud",
+    "sourceRef": "4:317"
+  },
+  {
+    "id": "dua-morning-2",
+    "category": "morning",
+    "arabicText": "اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ، وَإِلَيْكَ النُّشُورُ",
+    "transliteration": "Allahumma bika asbahna, wa bika amsayna, wa bika nahya, wa bika namootu, wa ilaykan-nushoor",
+    "translation": {
+      "en": "O Allah, by Your leave we have reached the morning and by Your leave we have reached the evening, by Your leave we live and die and unto You is our resurrection.",
+      "ar": "اللهم بك أصبحنا وبك أمسينا وبك نحيا وبك نموت وإليك النشور",
+      "tr": "Allah'ım, Senin izninle sabaha erdik, Senin izninle akşama erdik",
+      "ur": "اے اللہ تیری مدد سے ہم نے صبح کی اور تیری مدد سے شام کی",
+      "bn": "হে আল্লাহ, তোমার কারণে আমরা সকালে উপনীত হলাম",
+      "fr": "Ô Allah, c'est par Toi que nous atteignons le matin",
+      "id": "Ya Allah, dengan-Mu kami memasuki pagi",
+      "ms": "Ya Allah, dengan-Mu kami memasuki waktu pagi"
+    },
+    "source": "Tirmidhi",
+    "sourceRef": "5:466"
+  },
+  {
+    "id": "dua-evening-1",
+    "category": "evening",
+    "arabicText": "أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لاَ إِلَـهَ إِلاَّ اللهُ وَحْدَهُ لاَ شَرِيكَ لَهُ",
+    "transliteration": "Amsayna wa amsal-mulku lillah, walhamdu lillah, la ilaha illallahu wahdahu la shareeka lah",
+    "translation": {
+      "en": "We have reached the evening and at this very time the whole kingdom belongs to Allah.",
+      "ar": "أمسينا وأمسى الملك لله والحمد لله",
+      "tr": "Akşama erdik, mülk de Allah'ın akşamına erdi",
+      "ur": "ہم نے شام کی اور ملک اللہ کے لیے ہوا",
+      "bn": "আমরা সন্ধ্যায় উপনীত হলাম এবং রাজত্ব আল্লাহর",
+      "fr": "Nous voici au soir et le royaume appartient à Allah",
+      "id": "Kami memasuki petang dan kerajaan milik Allah",
+      "ms": "Kami memasuki waktu petang dan kerajaan milik Allah"
+    },
+    "source": "Muslim",
+    "sourceRef": "4:2088"
+  },
+  {
+    "id": "dua-sleep-1",
+    "category": "sleep",
+    "arabicText": "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
+    "transliteration": "Bismika Allahumma amootu wa ahya",
+    "translation": {
+      "en": "In Your name O Allah, I die and I live.",
+      "ar": "باسمك اللهم أموت وأحيا",
+      "tr": "Senin adınla ölürüm ve yaşarım Allahım",
+      "ur": "تیرے نام سے اے اللہ میں مرتا ہوں اور جیتا ہوں",
+      "bn": "তোমার নামে হে আল্লাহ, আমি মরি এবং বাঁচি",
+      "fr": "En Ton nom Ô Allah, je meurs et je vis",
+      "id": "Dengan nama-Mu ya Allah, aku mati dan aku hidup",
+      "ms": "Dengan nama-Mu ya Allah, aku mati dan aku hidup"
+    },
+    "source": "Bukhari",
+    "sourceRef": "6324"
+  },
+  {
+    "id": "dua-eating-1",
+    "category": "eating",
+    "arabicText": "بِسْمِ اللَّهِ",
+    "transliteration": "Bismillah",
+    "translation": {
+      "en": "In the name of Allah.",
+      "ar": "بسم الله",
+      "tr": "Allah'ın adıyla",
+      "ur": "اللہ کے نام سے",
+      "bn": "আল্লাহর নামে",
+      "fr": "Au nom d'Allah",
+      "id": "Dengan nama Allah",
+      "ms": "Dengan nama Allah"
+    },
+    "source": "Tirmidhi",
+    "sourceRef": "1858"
+  },
+  {
+    "id": "dua-eating-2",
+    "category": "eating",
+    "arabicText": "الْحَمْدُ لِلَّهِ الَّذِي أَطْعَمَنِي هَذَا وَرَزَقَنِيهِ مِنْ غَيْرِ حَوْلٍ مِنِّي وَلاَ قُوَّةٍ",
+    "transliteration": "Alhamdu lillahil-ladhi at'amani hadha wa razaqaneehi min ghayri hawlin minnee wa la quwwah",
+    "translation": {
+      "en": "All praise is to Allah who fed me this and provided it for me without any might or power from myself.",
+      "ar": "الحمد لله الذي أطعمني هذا ورزقنيه من غير حول مني ولا قوة",
+      "tr": "Bana bunu yediren ve güç ve kuvvetim olmadan rızık veren Allah'a hamd olsun",
+      "ur": "تمام تعریف اللہ کے لیے ہے جس نے مجھے یہ کھلایا",
+      "bn": "সকল প্রশংসা আল্লাহর যিনি আমাকে এটি খাওয়ালেন",
+      "fr": "Louange à Allah qui m'a nourri de ceci",
+      "id": "Segala puji bagi Allah yang memberi makan ini",
+      "ms": "Segala puji bagi Allah yang memberi makan ini"
+    },
+    "source": "Abu Dawud",
+    "sourceRef": "4023"
+  },
+  {
+    "id": "dua-travel-1",
+    "category": "travel",
+    "arabicText": "سُبْحَانَ الَّذِي سَخَّرَ لَنَا هَذَا وَمَا كُنَّا لَهُ مُقْرِنِينَ وَإِنَّا إِلَى رَبِّنَا لَمُنْقَلِبُونَ",
+    "transliteration": "Subhanal-ladhi sakhkhara lana hadha wa ma kunna lahu muqrineen, wa inna ila Rabbina lamunqaliboon",
+    "translation": {
+      "en": "Glory to Him who has subjected this to us and we were not capable of doing so. And to our Lord we will surely return.",
+      "ar": "سبحان الذي سخر لنا هذا وما كنا له مقرنين وإنا إلى ربنا لمنقلبون",
+      "tr": "Bunu bizim hizmetimize veren Allah'ın şanı yücedir",
+      "ur": "پاک ہے وہ ذات جس نے ہمارے لیے اسے مسخر کیا",
+      "bn": "পবিত্র সেই সত্তা যিনি এটি আমাদের বশীভূত করেছেন",
+      "fr": "Gloire à Celui qui nous a soumis cela",
+      "id": "Maha Suci yang telah menundukkan ini untuk kami",
+      "ms": "Maha Suci yang telah menundukkan ini untuk kami"
+    },
+    "source": "Quran",
+    "sourceRef": "43:13-14"
+  },
+  {
+    "id": "dua-anxiety-1",
+    "category": "anxiety",
+    "arabicText": "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحُزْنِ، وَالْعَجْزِ وَالْكَسَلِ، وَالْبُخْلِ وَالْجُبْنِ، وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ",
+    "transliteration": "Allahumma inni a'udhu bika minal-hammi wal-hazan, wal-'ajzi wal-kasal, wal-bukhli wal-jubn, wa dala'id-dayni wa ghalabatir-rijal",
+    "translation": {
+      "en": "O Allah, I seek refuge in You from worry and grief, from helplessness and laziness, from cowardice and stinginess, from being heavily in debt and from being overpowered by men.",
+      "ar": "اللهم إني أعوذ بك من الهم والحزن",
+      "tr": "Allah'ım sıkıntıdan, üzüntüden, acizlikten, tembellikten sana sığınırım",
+      "ur": "اے اللہ میں تجھ سے فکر اور غم سے پناہ مانگتا ہوں",
+      "bn": "হে আল্লাহ, আমি দুশ্চিন্তা ও দুঃখ থেকে তোমার আশ্রয় চাই",
+      "fr": "Ô Allah, je cherche refuge en Toi contre le souci et la tristesse",
+      "id": "Ya Allah, aku berlindung kepada-Mu dari kekhawatiran dan kesedihan",
+      "ms": "Ya Allah, aku berlindung kepada-Mu dari kerisauan dan kesedihan"
+    },
+    "source": "Bukhari",
+    "sourceRef": "6369"
+  },
+  {
+    "id": "dua-illness-1",
+    "category": "illness",
+    "arabicText": "اللَّهُمَّ رَبَّ النَّاسِ أَذْهِبِ الْبَأْسَ، اشْفِ أَنْتَ الشَّافِي، لاَ شِفَاءَ إِلاَّ شِفَاؤُكَ، شِفَاءً لاَ يُغَادِرُ سَقَمًا",
+    "transliteration": "Allahumma Rabban-nas, adh-hibil-ba's, ishfi antash-shafi, la shifa'a illa shifa'uk, shifa'an la yughadiru saqama",
+    "translation": {
+      "en": "O Allah, Lord of mankind, remove the illness, cure the disease. You are the One who cures. There is no cure except Your cure. Grant us a cure that leaves no illness.",
+      "ar": "اللهم رب الناس أذهب البأس اشف أنت الشافي",
+      "tr": "Allah'ım insanların Rabbi, hastalığı gider, şifa ver",
+      "ur": "اے اللہ لوگوں کے رب تکلیف دور فرما، شفا دے",
+      "bn": "হে আল্লাহ মানুষের রব, কষ্ট দূর করুন, সুস্থতা দিন",
+      "fr": "Ô Allah, Seigneur des hommes, enlève la souffrance, guéris",
+      "id": "Ya Allah Tuhan manusia, hilangkan penyakit, sembuhkan",
+      "ms": "Ya Allah Tuhan manusia, hilangkan penyakit, sembuhkan"
+    },
+    "source": "Bukhari",
+    "sourceRef": "5675"
+  },
+  {
+    "id": "dua-gratitude-1",
+    "category": "gratitude",
+    "arabicText": "اللَّهُمَّ أَعِنِّي عَلَى ذِكْرِكَ وَشُكْرِكَ وَحُسْنِ عِبَادَتِكَ",
+    "transliteration": "Allahumma a'inni 'ala dhikrika wa shukrika wa husni 'ibadatik",
+    "translation": {
+      "en": "O Allah, help me to remember You, to give You thanks, and to worship You in the best of manners.",
+      "ar": "اللهم أعني على ذكرك وشكرك وحسن عبادتك",
+      "tr": "Allah'ım seni anmam, sana şükretmem ve sana güzel ibadet etmem için bana yardım et",
+      "ur": "اے اللہ مجھے اپنی یاد، شکر اور حسن عبادت پر مدد فرما",
+      "bn": "হে আল্লাহ, তোমাকে স্মরণ করতে, ধন্যবাদ দিতে সাহায্য করো",
+      "fr": "Ô Allah, aide-moi à Te mentionner, Te remercier et bien T'adorer",
+      "id": "Ya Allah, bantulah aku mengingat-Mu, bersyukur kepada-Mu",
+      "ms": "Ya Allah, bantulah aku mengingati-Mu, bersyukur kepada-Mu"
+    },
+    "source": "Abu Dawud",
+    "sourceRef": "1522"
+  },
+  {
+    "id": "dua-forgiveness-1",
+    "category": "forgiveness",
+    "arabicText": "أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ الَّذِي لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ وَأَتُوبُ إِلَيْهِ",
+    "transliteration": "Astaghfirullaha al-'Azeem alladhi la ilaha illa Huwal-Hayyul-Qayyoom wa atoobu ilayh",
+    "translation": {
+      "en": "I seek forgiveness from Allah the Mighty, whom there is none worthy of worship except Him, the Living, the Sustainer, and I repent to Him.",
+      "ar": "أستغفر الله العظيم الذي لا إله إلا هو الحي القيوم وأتوب إليه",
+      "tr": "Yüce Allah'tan bağışlanmamı dilerim",
+      "ur": "میں عظیم اللہ سے مغفرت طلب کرتا ہوں",
+      "bn": "আমি মহান আল্লাহর কাছে ক্ষমা প্রার্থনা করি",
+      "fr": "Je demande pardon à Allah le Tout-Puissant",
+      "id": "Aku memohon ampunan kepada Allah Yang Maha Agung",
+      "ms": "Aku memohon ampunan kepada Allah Yang Maha Agung"
+    },
+    "source": "Abu Dawud",
+    "sourceRef": "1517"
+  },
+  {
+    "id": "dua-protection-1",
+    "category": "protection",
+    "arabicText": "بِسْمِ اللَّهِ الَّذِي لاَ يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الأَرْضِ وَلاَ فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ",
+    "transliteration": "Bismillahil-ladhi la yadurru ma'asmihi shay'un fil-ardi wa la fis-sama'i wa Huwas-Samee'ul-'Aleem",
+    "translation": {
+      "en": "In the name of Allah with whose name nothing can cause harm in the earth or in the heavens. He is the All-Hearing, the All-Knowing.",
+      "ar": "بسم الله الذي لا يضر مع اسمه شيء في الأرض ولا في السماء",
+      "tr": "Allah'ın adıyla, O'nun adıyla ne yerde ne gökte hiçbir şey zarar veremez",
+      "ur": "اللہ کے نام سے جس کے نام کے ساتھ زمین و آسمان میں کوئی چیز نقصان نہیں دے سکتی",
+      "bn": "আল্লাহর নামে যাঁর নামের সাথে পৃথিবী ও আকাশে কিছুই ক্ষতি করতে পারে না",
+      "fr": "Au nom d'Allah, avec le nom duquel rien ne peut nuire",
+      "id": "Dengan nama Allah yang dengan nama-Nya tidak ada yang membahayakan",
+      "ms": "Dengan nama Allah yang dengan nama-Nya tiada yang membahayakan"
+    },
+    "source": "Abu Dawud",
+    "sourceRef": "5088"
+  },
+  {
+    "id": "dua-rain-1",
+    "category": "rain",
+    "arabicText": "اللَّهُمَّ صَيِّبًا نَافِعًا",
+    "transliteration": "Allahumma sayyiban nafi'a",
+    "translation": {
+      "en": "O Allah, may it be a beneficial rain.",
+      "ar": "اللهم صيباً نافعاً",
+      "tr": "Allah'ım faydalı yağmur yağdır",
+      "ur": "اے اللہ فائدہ مند بارش برسا",
+      "bn": "হে আল্লাহ, উপকারী বৃষ্টি দাও",
+      "fr": "Ô Allah, fais-en une pluie bénéfique",
+      "id": "Ya Allah, jadikanlah hujan yang bermanfaat",
+      "ms": "Ya Allah, jadikanlah hujan yang bermanfaat"
+    },
+    "source": "Bukhari",
+    "sourceRef": "1032"
+  },
+  {
+    "id": "dua-waking-1",
+    "category": "waking",
+    "arabicText": "الْحَمْدُ لِلَّهِ الَّذِي أَحْيَانَا بَعْدَ مَا أَمَاتَنَا وَإِلَيْهِ النُّشُورُ",
+    "transliteration": "Alhamdu lillahil-ladhi ahyana ba'da ma amatana wa ilayhin-nushoor",
+    "translation": {
+      "en": "All praise is to Allah who gave us life after having taken it from us and unto Him is the resurrection.",
+      "ar": "الحمد لله الذي أحيانا بعد ما أماتنا وإليه النشور",
+      "tr": "Bizi öldürdükten sonra dirilten Allah'a hamd olsun",
+      "ur": "تمام تعریف اللہ کے لیے جس نے ہمیں مارنے کے بعد زندہ کیا",
+      "bn": "সকল প্রশংসা আল্লাহর যিনি আমাদের মৃত্যুর পর জীবিত করেছেন",
+      "fr": "Louange à Allah qui nous a rendu la vie après nous avoir donné la mort",
+      "id": "Segala puji bagi Allah yang menghidupkan kami setelah mematikan",
+      "ms": "Segala puji bagi Allah yang menghidupkan kami setelah mematikan"
+    },
+    "source": "Bukhari",
+    "sourceRef": "6324"
+  },
+  {
+    "id": "dua-mosque-1",
+    "category": "mosque",
+    "arabicText": "اللَّهُمَّ افْتَحْ لِي أَبْوَابَ رَحْمَتِكَ",
+    "transliteration": "Allahummaf-tah li abwaba rahmatik",
+    "translation": {
+      "en": "O Allah, open the gates of Your mercy for me.",
+      "ar": "اللهم افتح لي أبواب رحمتك",
+      "tr": "Allah'ım rahmetinin kapılarını bana aç",
+      "ur": "اے اللہ میرے لیے اپنی رحمت کے دروازے کھول دے",
+      "bn": "হে আল্লাহ, তোমার রহমতের দরজা আমার জন্য খুলে দাও",
+      "fr": "Ô Allah, ouvre-moi les portes de Ta miséricorde",
+      "id": "Ya Allah, bukakanlah pintu-pintu rahmat-Mu untukku",
+      "ms": "Ya Allah, bukakanlah pintu-pintu rahmat-Mu untukku"
+    },
+    "source": "Muslim",
+    "sourceRef": "713"
+  },
+  {
+    "id": "dua-parents-1",
+    "category": "parents",
+    "arabicText": "رَبِّ ارْحَمْهُمَا كَمَا رَبَّيَانِي صَغِيرًا",
+    "transliteration": "Rabbir-hamhuma kama rabbayani sagheera",
+    "translation": {
+      "en": "My Lord, have mercy upon them as they brought me up when I was small.",
+      "ar": "رب ارحمهما كما ربياني صغيرا",
+      "tr": "Rabbim, küçükken beni yetiştirdikleri gibi onlara merhamet et",
+      "ur": "اے رب ان پر رحم فرما جیسا انہوں نے مجھے بچپن میں پالا",
+      "bn": "হে আমার রব, তাদের প্রতি দয়া করুন যেমন তারা আমাকে ছোটবেলায় লালন-পালন করেছেন",
+      "fr": "Seigneur, fais-leur miséricorde comme ils m'ont élevé tout petit",
+      "id": "Tuhanku, sayangilah mereka sebagaimana mereka telah mendidikku waktu kecil",
+      "ms": "Tuhanku, kasihanilah mereka sebagaimana mereka mendidikku waktu kecil"
+    },
+    "source": "Quran",
+    "sourceRef": "17:24"
+  }
+]

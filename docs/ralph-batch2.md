@@ -1125,7 +1125,7 @@ halal.distance: "{{distance}} km away"
 
 ---
 
-### [ ] Task 19: Comprehensive Dua Collection
+### [x] Task 19: Comprehensive Dua Collection — Done: 16 duas across 12 categories with 8-lang translations, bookmark API, daily dua, DuaBookmark model, i18n 8 langs
 
 **Files to read first:**
 - `apps/api/src/modules/islamic/islamic.service.ts`

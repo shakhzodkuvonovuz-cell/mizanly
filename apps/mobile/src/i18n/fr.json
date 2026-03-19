@@ -2872,6 +2872,26 @@
     "noVideo": "Aucune vidéo sélectionnée",
     "selectVideo": "Sélectionnez une vidéo à éditer"
   },
+  "duas": {
+    "title": "Collection de Duas",
+    "categories": "Catégories",
+    "duaOfTheDay": "Dua du jour",
+    "bookmark": "Signet",
+    "bookmarked": "Duas enregistrées",
+    "shareDua": "Partager le Dua",
+    "source": "Source",
+    "morning": "Matin",
+    "evening": "Soir",
+    "eating": "Repas",
+    "travel": "Voyage",
+    "sleep": "Sommeil",
+    "rain": "Pluie",
+    "anxiety": "Anxiété et détresse",
+    "illness": "Maladie",
+    "gratitude": "Gratitude",
+    "forgiveness": "Pardon",
+    "protection": "Protection"
+  },
   "halal": {
     "finder": "Trouveur Halal",
     "restaurants": "Restaurants Halal",

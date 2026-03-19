@@ -2871,6 +2871,26 @@
     "noVideo": "কোনো ভিডিও নির্বাচিত নেই",
     "selectVideo": "সম্পাদনার জন্য ভিডিও নির্বাচন করুন"
   },
+  "duas": {
+    "title": "দোয়া সংকলন",
+    "categories": "বিভাগ",
+    "duaOfTheDay": "আজকের দোয়া",
+    "bookmark": "বুকমার্ক",
+    "bookmarked": "সংরক্ষিত দোয়া",
+    "shareDua": "দোয়া শেয়ার",
+    "source": "উৎস",
+    "morning": "সকাল",
+    "evening": "সন্ধ্যা",
+    "eating": "খাবার",
+    "travel": "ভ্রমণ",
+    "sleep": "ঘুম",
+    "rain": "বৃষ্টি",
+    "anxiety": "উদ্বেগ ও কষ্ট",
+    "illness": "অসুস্থতা",
+    "gratitude": "কৃতজ্ঞতা",
+    "forgiveness": "ক্ষমা",
+    "protection": "সুরক্ষা"
+  },
   "halal": {
     "finder": "হালাল ফাইন্ডার",
     "restaurants": "হালাল রেস্তোরাঁ",

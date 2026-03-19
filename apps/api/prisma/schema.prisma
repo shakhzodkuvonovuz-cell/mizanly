@@ -3576,6 +3576,21 @@ model CommunityRole {
 }
 
 // ============================================================
+// DUA BOOKMARKS
+// ============================================================
+
+model DuaBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  duaId     String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, duaId])
+  @@index([userId])
+  @@map("dua_bookmarks")
+}
+
+// ============================================================
 // HALAL RESTAURANT FINDER
 // ============================================================
 

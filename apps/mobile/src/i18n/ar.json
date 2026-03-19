@@ -2871,6 +2871,26 @@
     "noVideo": "لا يوجد فيديو محدد",
     "selectVideo": "اختر فيديو للتعديل"
   },
+  "duas": {
+    "title": "مجموعة الأدعية",
+    "categories": "الفئات",
+    "duaOfTheDay": "دعاء اليوم",
+    "bookmark": "حفظ",
+    "bookmarked": "الأدعية المحفوظة",
+    "shareDua": "مشاركة الدعاء",
+    "source": "المصدر",
+    "morning": "الصباح",
+    "evening": "المساء",
+    "eating": "الطعام",
+    "travel": "السفر",
+    "sleep": "النوم",
+    "rain": "المطر",
+    "anxiety": "القلق والضيق",
+    "illness": "المرض",
+    "gratitude": "الشكر",
+    "forgiveness": "الاستغفار",
+    "protection": "الحماية"
+  },
   "halal": {
     "finder": "باحث الحلال",
     "restaurants": "مطاعم حلال",
