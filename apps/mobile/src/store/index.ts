@@ -117,6 +117,12 @@ interface AppState {
   ambientModeEnabled: boolean;
   setAmbientModeEnabled: (enabled: boolean) => void;
 
+  // Accessibility
+  reducedMotion: boolean;
+  setReducedMotion: (v: boolean) => void;
+  highContrast: boolean;
+  setHighContrast: (v: boolean) => void;
+
   // Parental controls
   isChildAccount: boolean;
   setIsChildAccount: (v: boolean) => void;
@@ -263,6 +269,12 @@ export const useStore = create<AppState>()(
       // Ambient mode
       ambientModeEnabled: false,
       setAmbientModeEnabled: (ambientModeEnabled) => set({ ambientModeEnabled }),
+
+      // Accessibility
+      reducedMotion: false,
+      setReducedMotion: (reducedMotion) => set({ reducedMotion }),
+      highContrast: false,
+      setHighContrast: (highContrast) => set({ highContrast }),
 
       // Parental controls
       isChildAccount: false,

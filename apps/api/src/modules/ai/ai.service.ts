@@ -401,4 +401,57 @@ Only respond with the summary, nothing else.`;
       take: 20,
     });
   }
+
+  // ── AI Alt Text (Accessibility) ───────────────────────────
+
+  /**
+   * Generate alt text for an uploaded image using Claude Vision API.
+   * Returns a concise, descriptive alt text for screen readers.
+   */
+  async generateAltText(imageUrl: string): Promise<string> {
+    if (!this.apiAvailable || !this.apiKey) {
+      return 'Image';
+    }
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 150,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'url', url: imageUrl },
+              },
+              {
+                type: 'text',
+                text: 'Generate a concise alt text description for this image (max 125 characters). Focus on the key visual content for screen reader users. Be factual and descriptive, not interpretive. Respond with ONLY the alt text, no quotes or explanation.',
+              },
+            ],
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        this.logger.error(`Alt text generation failed: ${response.status}`);
+        return 'Image';
+      }
+
+      const data = await response.json();
+      const altText = data.content?.[0]?.text?.trim() || 'Image';
+      // Truncate to 125 chars for WCAG best practice
+      return altText.slice(0, 125);
+    } catch (error) {
+      this.logger.error('Alt text generation error', error instanceof Error ? error.message : error);
+      return 'Image';
+    }
+  }
 }
