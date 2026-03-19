@@ -82,6 +82,7 @@ import { EmbeddingsModule } from './modules/embeddings/embeddings.module';
 import { RetentionModule } from './modules/retention/retention.module';
 import { AltProfileModule } from './modules/alt-profile/alt-profile.module';
 import { ThumbnailsModule } from './modules/thumbnails/thumbnails.module';
+import { OgModule } from './modules/og/og.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -173,6 +174,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     RetentionModule,
     AltProfileModule,
     ThumbnailsModule,
+    OgModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: UserThrottlerGuard },

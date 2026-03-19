@@ -18,6 +18,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.mizanly.mobile",
+      "associatedDomains": ["applinks:mizanly.com", "applinks:mizanly.app"],
       "infoPlist": {
         "NSCameraUsageDescription": "Mizanly needs camera access to create posts, stories, and reels",
         "NSMicrophoneUsageDescription": "Mizanly needs microphone access for voice notes and video recording",
@@ -31,6 +32,23 @@
         "backgroundColor": "#0D1117"
       },
       "package": "app.mizanly.mobile",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "mizanly.com", "pathPrefix": "/post" },
+            { "scheme": "https", "host": "mizanly.com", "pathPrefix": "/reel" },
+            { "scheme": "https", "host": "mizanly.com", "pathPrefix": "/profile" },
+            { "scheme": "https", "host": "mizanly.com", "pathPrefix": "/thread" },
+            { "scheme": "https", "host": "mizanly.app", "pathPrefix": "/post" },
+            { "scheme": "https", "host": "mizanly.app", "pathPrefix": "/reel" },
+            { "scheme": "https", "host": "mizanly.app", "pathPrefix": "/profile" },
+            { "scheme": "https", "host": "mizanly.app", "pathPrefix": "/thread" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.CAMERA",

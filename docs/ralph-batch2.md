@@ -938,7 +938,7 @@ tts.readingAloud: "Reading aloud"
 
 ---
 
-### [ ] Task 16: Web Presence & SEO (Landing Page + Content Previews)
+### [x] Task 16: Web Presence & SEO — Done: OG module (post/reel/profile/thread), sitemap.xml, robots.txt, landing page, deep linking (iOS+Android), universal links
 
 **Files to read first:**
 - `apps/api/src/modules/posts/posts.controller.ts` — public post endpoint
