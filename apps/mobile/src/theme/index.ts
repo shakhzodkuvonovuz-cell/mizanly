@@ -85,12 +85,12 @@ export const fonts = {
   bodyBold: 'DMSans_700Bold',
   arabic: 'NotoNaskhArabic_400Regular',
   arabicBold: 'NotoNaskhArabic_700Bold',
-  mono: 'JetBrainsMono',
-  // Aliases for convenience
-  regular: 'DMSans',
-  medium: 'DMSans-Medium',
-  semibold: 'DMSans-SemiBold',
-  bold: 'DMSans-Bold',
+  mono: 'DMSans_400Regular',
+  // Aliases matching useFonts registration keys
+  regular: 'DMSans_400Regular',
+  medium: 'DMSans_500Medium',
+  semibold: 'DMSans_500Medium',
+  bold: 'DMSans_700Bold',
 } as const;
 
 export const fontWeight = {
