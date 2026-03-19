@@ -2692,6 +2692,13 @@
     "suggestedForYou": "مقترح لك",
     "followToSeeMore": "تابع لمشاهدة منشوراتهم في خلاصتك"
   },
+  "translation": {
+    "seeTranslation": "عرض الترجمة",
+    "seeOriginal": "عرض الأصلي",
+    "translating": "جاري الترجمة...",
+    "translatedFrom": "مترجم من {{language}}",
+    "autoDetected": "تم الاكتشاف تلقائياً: {{language}}"
+  },
   "manageData": {
     "exportTitle": "تحميل بياناتي",
     "exportDescription": "احصل على نسخة من جميع بياناتك بصيغة JSON",

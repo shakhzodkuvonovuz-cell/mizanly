@@ -2692,6 +2692,13 @@
     "suggestedForYou": "Suggested for you",
     "followToSeeMore": "Follow to see their posts in your feed"
   },
+  "translation": {
+    "seeTranslation": "See Translation",
+    "seeOriginal": "See Original",
+    "translating": "Translating...",
+    "translatedFrom": "Translated from {{language}}",
+    "autoDetected": "Auto-detected: {{language}}"
+  },
   "manageData": {
     "exportTitle": "Download My Data",
     "exportDescription": "Get a copy of all your data in JSON format",

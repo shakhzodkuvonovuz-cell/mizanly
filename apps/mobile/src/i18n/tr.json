@@ -2692,6 +2692,13 @@
     "suggestedForYou": "Sizin için önerilen",
     "followToSeeMore": "Gönderilerini akışınızda görmek için takip edin"
   },
+  "translation": {
+    "seeTranslation": "Çeviriyi Gör",
+    "seeOriginal": "Orijinali Gör",
+    "translating": "Çevriliyor...",
+    "translatedFrom": "{{language}} dilinden çevrildi",
+    "autoDetected": "Otomatik algılandı: {{language}}"
+  },
   "manageData": {
     "exportTitle": "Verilerimi İndir",
     "exportDescription": "Tüm verilerinizin JSON formatında bir kopyasını alın",

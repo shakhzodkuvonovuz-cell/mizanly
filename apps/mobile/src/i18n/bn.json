@@ -2692,6 +2692,13 @@
     "suggestedForYou": "আপনার জন্য প্রস্তাবিত",
     "followToSeeMore": "তাদের পোস্ট আপনার ফিডে দেখতে অনুসরণ করুন"
   },
+  "translation": {
+    "seeTranslation": "অনুবাদ দেখুন",
+    "seeOriginal": "মূল দেখুন",
+    "translating": "অনুবাদ হচ্ছে...",
+    "translatedFrom": "{{language}} থেকে অনুবাদ করা হয়েছে",
+    "autoDetected": "স্বয়ংক্রিয়ভাবে শনাক্ত: {{language}}"
+  },
   "manageData": {
     "exportTitle": "আমার ডেটা ডাউনলোড করুন",
     "exportDescription": "JSON ফরম্যাটে আপনার সমস্ত ডেটার একটি কপি পান",

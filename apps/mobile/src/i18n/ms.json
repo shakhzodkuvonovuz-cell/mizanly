@@ -2692,6 +2692,13 @@
     "suggestedForYou": "Dicadangkan untuk anda",
     "followToSeeMore": "Ikuti untuk melihat siaran mereka dalam suapan anda"
   },
+  "translation": {
+    "seeTranslation": "Lihat Terjemahan",
+    "seeOriginal": "Lihat Asal",
+    "translating": "Menterjemah...",
+    "translatedFrom": "Diterjemah dari {{language}}",
+    "autoDetected": "Dikesan secara automatik: {{language}}"
+  },
   "manageData": {
     "exportTitle": "Muat Turun Data Saya",
     "exportDescription": "Dapatkan salinan semua data anda dalam format JSON",

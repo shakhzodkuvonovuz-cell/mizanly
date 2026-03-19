@@ -2693,6 +2693,13 @@
     "suggestedForYou": "Disarankan untuk Anda",
     "followToSeeMore": "Ikuti untuk melihat postingan mereka di feed Anda"
   },
+  "translation": {
+    "seeTranslation": "Lihat Terjemahan",
+    "seeOriginal": "Lihat Asli",
+    "translating": "Menerjemahkan...",
+    "translatedFrom": "Diterjemahkan dari {{language}}",
+    "autoDetected": "Terdeteksi otomatis: {{language}}"
+  },
   "manageData": {
     "exportTitle": "Unduh Data Saya",
     "exportDescription": "Dapatkan salinan semua data Anda dalam format JSON",

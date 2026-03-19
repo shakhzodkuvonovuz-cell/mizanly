@@ -2693,6 +2693,13 @@
     "suggestedForYou": "Suggestions pour vous",
     "followToSeeMore": "Suivez pour voir leurs publications dans votre fil"
   },
+  "translation": {
+    "seeTranslation": "Voir la traduction",
+    "seeOriginal": "Voir l'original",
+    "translating": "Traduction en cours...",
+    "translatedFrom": "Traduit de {{language}}",
+    "autoDetected": "Détecté automatiquement : {{language}}"
+  },
   "manageData": {
     "exportTitle": "Télécharger mes données",
     "exportDescription": "Obtenez une copie de toutes vos données au format JSON",
