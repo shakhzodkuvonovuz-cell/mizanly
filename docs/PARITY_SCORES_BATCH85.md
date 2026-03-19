@@ -43,10 +43,17 @@
 - Webhook system with HMAC-SHA256 signed delivery + retry
 
 ## Stats
-- Total commits: 510+
+- Total commits: 511+
 - Total screens: 196
 - Backend modules: 71
+- API endpoints: 460+ (442 REST + 17 Socket)
 - Prisma models: 166
+- Schema lines: 3,461
 - Test files: 98
+- Test cases: 1,427
+- UI components: 33
+- Custom hooks: 20
+- Service files: 19
 - Languages: 8 (all at 2,415 keys)
-- Total lines: ~195K
+- Source files: 790+
+- Total lines: ~213K

@@ -17,7 +17,7 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ---
 
 ## Status: Tier 15 Complete (as of 2026-03-20, Post-Batch 85)
-All 5 spaces built + Telegram + Discord + WeChat feature parity + full audit pass + 10/10 competitor parity. 196 screens, 700+ API endpoints, 71 backend modules, 166 Prisma models, 510+ commits, 195K+ lines of code.
+All 5 spaces built + Telegram + Discord + WeChat feature parity + full audit pass + 10/10 competitor parity. 196 screens, 460+ API endpoints, 71 backend modules, 166 Prisma models, 511+ commits, 213K+ lines of code.
 Backend: NestJS with 71 modules (98 test files). Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset calculator), Waqf. Gamification: streaks, XP/levels, achievements, challenges, series. Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
 Mobile: 196 screens across all spaces. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) all at 2,415 keys. All screens reachable via navigation (0 orphans). 196/196 screens wrapped with ScreenErrorBoundary. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 **Audit (Batch 53-64):** Fixed 4 P0 crashes, 9 P1 bugs, 6 P2 quality issues, 2 security fixes, removed 890 junk i18n keys (2,500 lines), eliminated 6 `any` types, wired 78→2 orphaned screens, fixed font rendering, added real-time message refresh, reel view tracking, 2FA flow.
@@ -169,12 +169,12 @@ mizanly/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
 │       │   └── (screens)/       # 196 screens + nested route dirs
 │       └── src/
-│           ├── components/ui/   # 28 components: BottomSheet, Skeleton, Icon, Avatar,
+│           ├── components/ui/   # 33 components: BottomSheet, Skeleton, Icon, Avatar,
 │           │                    # GlassHeader, GradientButton, EmptyState, VerifiedBadge,
-│           │                    # CharCountRing, VideoPlayer, ImageLightbox, etc.
+│           │                    # CharCountRing, VideoPlayer, ImageLightbox, DoubleTapHeart, etc.
 │           ├── components/islamic/ # EidFrame
-│           ├── hooks/           # 13 hooks: useHaptic, useTranslation, useNetworkStatus, etc.
-│           ├── services/        # 16 API service files (api.ts, islamicApi.ts, etc.)
+│           ├── hooks/           # 20 hooks: useHaptic, useTranslation, useNetworkStatus, usePiP, etc.
+│           ├── services/        # 19 API service files (api.ts, islamicApi.ts, widgetData.ts, etc.)
 │           ├── stores/index.ts  # Zustand store
 │           ├── theme/index.ts   # Design tokens
 │           ├── utils/           # hijri.ts, etc.

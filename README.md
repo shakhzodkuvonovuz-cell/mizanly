@@ -86,18 +86,18 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 800+ |
-| Total Lines of Code | 195,000+ |
+| Total Source Files | 790+ |
+| Total Lines of Code | 213,000+ |
 | Mobile Screens | 196 |
 | Backend Modules | 71 |
-| API Endpoints | 700+ |
+| API Endpoints | 460+ (442 REST + 17 Socket) |
 | Prisma Models | 166 |
 | Prisma Schema Lines | 3,461 |
 | Test Suites | 98 |
-| Tests Passing | 1,400+ |
-| UI Components | 28 |
-| Custom Hooks | 13 |
-| Service Files | 16 |
+| Tests Passing | 1,427 |
+| UI Components | 33 |
+| Custom Hooks | 20 |
+| Service Files | 19 |
 | Translation Keys | 2,415 per language |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
 | Git Commits | 510+ |
@@ -578,10 +578,10 @@ mizanly/
 │       │       └── playlists/        # Playlist browser
 │       ├── src/
 │       │   ├── components/
-│       │   │   ├── ui/              # 28 reusable UI components
+│       │   │   ├── ui/              # 33 reusable UI components
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 13 custom hooks
-│       │   ├── services/            # 16 API service files
+│       │   ├── hooks/               # 20 custom hooks
+│       │   ├── services/            # 19 API service files
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
 │       │   ├── types/               # TypeScript interfaces
@@ -693,7 +693,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## UI Component Library
 
-28 reusable components in `apps/mobile/src/components/ui/`:
+33 reusable components in `apps/mobile/src/components/ui/`:
 
 | Component | File | Description |
 |-----------|------|-------------|
@@ -704,7 +704,10 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 | **BottomSheet** | `BottomSheet.tsx` | Modal bottom sheet with `BottomSheetItem` list items (replaces RN Modal everywhere) |
 | **CaughtUpCard** | `CaughtUpCard.tsx` | "You're all caught up" end-of-feed card |
 | **CharCountRing** | `CharCountRing.tsx` | Circular character count indicator (like Twitter's) |
+| **DoubleTapHeart** | `DoubleTapHeart.tsx` | Instagram-style double-tap heart animation overlay |
 | **EmptyState** | `EmptyState.tsx` | Empty state with icon, title, subtitle, and optional action button |
+| **EndScreenOverlay** | `EndScreenOverlay.tsx` | Video end-screen overlay with suggested content cards |
+| **FadeIn** | `FadeIn.tsx` | Fade-in animation wrapper component |
 | **FloatingHearts** | `FloatingHearts.tsx` | Animated floating hearts for live streams |
 | **GlassHeader** | `GlassHeader.tsx` | Glassmorphism navigation header with blur effect |
 | **GradientButton** | `GradientButton.tsx` | Emerald gradient button with loading state |
@@ -716,9 +719,11 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 | **LocationPicker** | `LocationPicker.tsx` | Location search and selection |
 | **MiniPlayer** | `MiniPlayer.tsx` | Floating mini audio/video player |
 | **OfflineBanner** | `OfflineBanner.tsx` | Network connectivity warning banner |
+| **PremiereCountdown** | `PremiereCountdown.tsx` | Video premiere countdown timer overlay |
 | **RichText** | `RichText.tsx` | Text with parsed hashtags, mentions, and links |
 | **ScreenErrorBoundary** | `ScreenErrorBoundary.tsx` | Error boundary wrapper for every screen |
 | **Skeleton** | `Skeleton.tsx` | Loading skeletons (Rect, Circle, PostCard, etc.) |
+| **TabBarIndicator** | `TabBarIndicator.tsx` | Animated underline indicator for tab bars |
 | **TabSelector** | `TabSelector.tsx` | Animated tab bar with indicator |
 | **ToastNotification** | `ToastNotification.tsx` | In-app toast notification system |
 | **VerifiedBadge** | `VerifiedBadge.tsx` | Verified checkmark (emerald) or scholar badge (gold star) |
@@ -736,29 +741,36 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Custom Hooks
 
-13 hooks in `apps/mobile/src/hooks/`:
+20 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
+| `useAmbientColor` | `useAmbientColor.ts` | Extracts dominant color from image for ambient UI theming |
 | `useAnimatedPress` | `useAnimatedPress.ts` | Scale animation on press with Reanimated |
+| `useBackgroundUpload` | `useBackgroundUpload.ts` | Background file upload with progress tracking |
 | `useChatLock` | `useChatLock.ts` | Chat-level biometric/PIN lock state |
 | `useEntranceAnimation` | `useEntranceAnimation.ts` | Screen entrance fade/slide animations |
+| `useFpsMonitor` | `useFpsMonitor.ts` | Frame rate monitoring for performance debugging |
 | `useHaptic` | `useHaptic.ts` | Haptic feedback triggers (light, medium, heavy, success, error) |
 | `useIsWeb` | `useIsWeb.ts` | Platform detection for web-specific logic |
 | `useNetworkStatus` | `useNetworkStatus.ts` | Online/offline connectivity state |
 | `usePayment` | `usePayment.ts` | Stripe payment flow hook |
+| `usePiP` | `usePiP.ts` | Picture-in-picture video mode management |
 | `usePulseGlow` | `usePulseGlow.ts` | Pulsing glow animation for live indicators |
 | `usePushNotificationHandler` | `usePushNotificationHandler.ts` | Push notification response handling |
 | `usePushNotifications` | `usePushNotifications.ts` | Push notification registration and permissions |
+| `useReducedMotion` | `useReducedMotion.ts` | Detects system reduced motion preference for accessibility |
 | `useResponsive` | `useResponsive.ts` | Responsive layout breakpoints |
+| `useScrollDirection` | `useScrollDirection.ts` | Tracks scroll direction for auto-hiding headers |
 | `useTranslation` | `useTranslation.ts` | i18n translation function with RTL awareness |
+| `useVideoPreload` | `useVideoPreload.ts` | Preloads next videos in feed for smooth scrolling |
 | `useWebKeyboardShortcuts` | `useWebKeyboardShortcuts.ts` | Keyboard shortcuts for web platform |
 
 ---
 
 ## Service Layer
 
-16 API service files in `apps/mobile/src/services/`:
+19 API service files in `apps/mobile/src/services/`:
 
 | Service | File | Description |
 |---------|------|-------------|
@@ -767,17 +779,20 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 | **Chat Export** | `chatExportApi.ts` | Conversation export generation |
 | **Communities** | `communitiesApi.ts` | Community group endpoints |
 | **Creator** | `creatorApi.ts` | Creator dashboard, analytics, storefronts |
+| **Download Manager** | `downloadManager.ts` | Offline content download queue and storage management |
 | **Encryption** | `encryption.ts` | Client-side E2E encryption utilities |
 | **Encryption API** | `encryptionApi.ts` | Key exchange + envelope endpoints |
 | **Events** | `eventsApi.ts` | Event CRUD + RSVP |
 | **Gifts** | `giftsApi.ts` | Virtual gift shop + sending |
 | **Islamic** | `islamicApi.ts` | All Islamic feature endpoints (prayer, Quran, dhikr, etc.) |
 | **Monetization** | `monetizationApi.ts` | Memberships, tiers, revenue |
+| **Offline Cache** | `offlineCache.ts` | Local-first caching for offline-capable features |
 | **Payments** | `paymentsApi.ts` | Stripe payment intents + subscriptions |
 | **Promotions** | `promotionsApi.ts` | Post boosting + promotion management |
 | **Push Notifications** | `pushNotifications.ts` | Push token registration + preferences |
 | **Reel Templates** | `reelTemplatesApi.ts` | Reel template library endpoints |
 | **Two-Factor** | `twoFactorApi.ts` | 2FA setup, verify, disable |
+| **Widget Data** | `widgetData.ts` | iOS/Android widget data provider (prayer times, streaks) |
 
 ---
 
