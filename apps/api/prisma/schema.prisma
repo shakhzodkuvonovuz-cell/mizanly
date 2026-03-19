@@ -261,6 +261,13 @@ model User {
   isScholarVerified Boolean @default(false)
   nasheedMode       Boolean @default(false)
 
+  // Monetization
+  coinBalance              Int      @default(0)
+  diamondBalance           Int      @default(0)
+  stripeConnectAccountId   String?
+  madhab                   String?  @db.VarChar(20)
+  lastActiveAt             DateTime @default(now())
+
   isDeactivated Boolean   @default(false)
   deactivatedAt DateTime?
   isDeleted     Boolean   @default(false)
@@ -411,6 +418,7 @@ model User {
   forumReplies     ForumReply[]      @relation("ForumReplyAuthor")
   webhooks         Webhook[]         @relation("WebhookCreator")
   stageSessions    StageSession[]    @relation("StageHost")
+  creatorEarnings  CreatorEarning[]  @relation("CreatorEarnings")
 
   @@index([username])
   @@index([clerkId])
@@ -3318,4 +3326,22 @@ model Embedding {
   @@unique([contentId, contentType])
   @@index([contentType])
   @@map("embeddings")
+}
+
+// ============================================================
+// CREATOR EARNINGS — Tax reporting + cashout tracking
+// ============================================================
+
+model CreatorEarning {
+  id        String   @id @default(uuid())
+  userId    String
+  amount    Float
+  currency  String   @default("USD") @db.VarChar(3)
+  type      String   @db.VarChar(50) // cashout | tip | gift | subscription
+  diamonds  Int      @default(0)
+  year      Int
+  createdAt DateTime @default(now())
+  user      User     @relation("CreatorEarnings", fields: [userId], references: [id])
+  @@index([userId, year])
+  @@map("creator_earnings")
 }
