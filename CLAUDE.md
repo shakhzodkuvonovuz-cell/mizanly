@@ -16,8 +16,8 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 
 ---
 
-## Status: Tier 13 Audit Complete (as of 2026-03-19, Post-Batch 64)
-All 5 spaces built + Telegram + Discord feature parity + full audit pass. 196 screens, 700+ API endpoints, 69 backend modules, 160 Prisma models, 350+ commits, 178K+ lines of code.
+## Status: Tier 14 In Progress (as of 2026-03-19, Post-Batch 71)
+All 5 spaces built + Telegram + Discord feature parity + full audit pass. 197 screens, 700+ API endpoints, 69 backend modules, 160 Prisma models, 370+ commits, 179K+ lines of code.
 Backend: NestJS with 69 modules (88 test files). Core: Redis, rate limiting, Stripe, Cloudflare Stream. AI: Claude API + Whisper. Commerce: marketplace, Zakat, Waqf. Gamification: streaks, XP/levels, achievements, challenges, series. Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties.
 Mobile: 196 screens across all spaces. i18n: en + ar + tr (Turkish wired). All screens reachable via navigation (0 orphans). Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 **Audit (Batch 53-64):** Fixed 4 P0 crashes, 9 P1 bugs, 6 P2 quality issues, 2 security fixes, removed 890 junk i18n keys (2,500 lines), eliminated 6 `any` types, wired 78→2 orphaned screens, fixed font rendering, added real-time message refresh, reel view tracking, 2FA flow.
@@ -66,15 +66,15 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~Dedicated video tab in Majlis~~ — ✅ Batch 67
 - ~~Side panel shortcuts (Live, Series)~~ — ✅ Batch 67
 
-**Batch 69-72 — Medium effort:**
-- Local/Nearby Feed (location-based content discovery) — TikTok 2026
-- Group message history for new members (25-100 msgs) — WhatsApp 2026
-- Inline DM translation (we have AI translate API) — Instagram 2026
-- "Your Algorithm" transparency tool — Instagram 2026
-- Secret code chat lock — WhatsApp 2026
-- Photo carousels in Bakra feed — YouTube 2026
-- Cross-channel simultaneous publishing — YouTube 2026
-- Follower vs non-follower analytics — X 2026
+**Batch 69-71 — Medium effort:**
+- ~~Local/Nearby Feed~~ — ✅ Batch 69 (backend + API)
+- ~~Inline DM translation~~ — ✅ Batch 69 (inline translate button in MessageBubble)
+- ~~Group message history for new members~~ — ✅ Batch 70 (newMemberHistoryCount field)
+- ~~Secret code chat lock~~ — ✅ Batch 70 (lockCode + verify endpoint)
+- ~~Algorithm transparency~~ — ✅ Already existed (feed-transparency.service)
+- ~~Photo carousels in Bakra~~ — ✅ Batch 71 (isPhotoCarousel + carouselUrls)
+- ~~Cross-channel publishing~~ — ✅ Batch 71 (crossPublish API)
+- Follower vs non-follower analytics — X 2026 (data model ready, UI pending)
 - Account deep dive (creation country, username history) — X 2026
 
 **Batch 73-76 — High effort (future):**
