@@ -3704,6 +3704,85 @@ model DuaBookmark {
 }
 
 // ============================================================
+// COMMUNITY NOTES (Crowd-sourced fact-checking)
+// ============================================================
+
+model CommunityNote {
+  id              String   @id @default(cuid())
+  contentType     String   @db.VarChar(20) // post, thread, reel
+  contentId       String
+  authorId        String
+  note            String
+  status          String   @default("proposed") // proposed, helpful, not_helpful
+  helpfulVotes    Int      @default(0)
+  notHelpfulVotes Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  ratings CommunityNoteRating[]
+
+  @@index([contentType, contentId])
+  @@index([authorId])
+  @@map("community_notes")
+}
+
+model CommunityNoteRating {
+  id     String        @id @default(cuid())
+  noteId String
+  note   CommunityNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  userId String
+  rating String // helpful, somewhat_helpful, not_helpful
+
+  @@unique([noteId, userId])
+  @@map("community_note_ratings")
+}
+
+// ============================================================
+// COLLABORATIVE POSTS
+// ============================================================
+
+model CollabInvite {
+  id        String   @id @default(cuid())
+  postId    String
+  inviterId String
+  inviteeId String
+  status    String   @default("pending") // pending, accepted, declined
+  createdAt DateTime @default(now())
+
+  @@unique([postId, inviteeId])
+  @@index([inviteeId, status])
+  @@map("collab_invites")
+}
+
+// ============================================================
+// MESSAGE CHECKLISTS
+// ============================================================
+
+model MessageChecklist {
+  id             String   @id @default(cuid())
+  conversationId String
+  title          String
+  createdById    String
+  createdAt      DateTime @default(now())
+
+  items MessageChecklistItem[]
+
+  @@index([conversationId])
+  @@map("message_checklists")
+}
+
+model MessageChecklistItem {
+  id          String           @id @default(cuid())
+  checklistId String
+  checklist   MessageChecklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  text        String
+  isCompleted Boolean          @default(false)
+  completedBy String?
+  createdAt   DateTime         @default(now())
+
+  @@map("message_checklist_items")
+}
+
+// ============================================================
 // FASTING TRACKER
 // ============================================================
 

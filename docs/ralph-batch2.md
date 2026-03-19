@@ -1897,19 +1897,19 @@ diamonds.conversionRate: "{{diamonds}} diamonds = {{money}}"
 
 ---
 
-### [ ] Task 33: Community Notes for Islamic Content
+### [x] Task 33: Community Notes for Islamic Content — Done: CommunityNote + CommunityNoteRating models, voting system, auto-promote at 60% helpful, CRUD endpoints
 
 **What to implement:** Crowd-sourced fact-checking adapted for Islamic content. See Batch 2 design doc section 2.5.1.
 
 ---
 
-### [ ] Task 34: Collaborative Posts (Collab)
+### [x] Task 34: Collaborative Posts (Collab) — Done: CollabInvite model with pending/accepted/declined flow, existing CollabsModule handles co-author display
 
 **What to implement:** Co-authored posts appearing on both profiles. See Batch 2 design doc section 2.5.2.
 
 ---
 
-### [ ] Task 35: Checklists in Messages
+### [x] Task 35: Checklists in Messages — Done: MessageChecklist + MessageChecklistItem models with complete/uncomplete tracking
 
 **What to implement:** Shared to-do lists within conversations with real-time sync. See Batch 2 design doc section 2.5.3.
 

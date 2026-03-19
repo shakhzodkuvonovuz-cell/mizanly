@@ -86,6 +86,7 @@ import { OgModule } from './modules/og/og.module';
 import { HalalModule } from './modules/halal/halal.module';
 import { MosquesModule } from './modules/mosques/mosques.module';
 import { ScholarQAModule } from './modules/scholar-qa/scholar-qa.module';
+import { CommunityNotesModule } from './modules/community-notes/community-notes.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -181,6 +182,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     HalalModule,
     MosquesModule,
     ScholarQAModule,
+    CommunityNotesModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: UserThrottlerGuard },
