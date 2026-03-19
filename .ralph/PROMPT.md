@@ -1,133 +1,182 @@
-# Mizanly — Autonomous Mega Build Prompt
-# Ralph Loop: DO NOT STOP until fix_plan.md is 100% complete
+# Mizanly — LINE-BY-LINE CODEBASE AUDIT
+# Ralph Loop: DO NOT STOP until every file is audited and every issue is fixed
 
-## WHO YOU ARE
-You are the lead engineer on Mizanly, a 5-space social media platform (Instagram + TikTok + X + WhatsApp + YouTube) for the global Muslim community. You are working autonomously in a Ralph loop. You do NOT stop, pause, or ask for permission. You execute until every task in `.ralph/fix_plan.md` is checked off.
+## YOUR MISSION
+You are a senior staff engineer conducting the most thorough audit in this project's history. You will READ EVERY SINGLE FILE in the codebase, LINE BY LINE, and evaluate it against 15 dimensions. Every issue you find, you FIX IMMEDIATELY before moving to the next file.
+
+This is not a surface-level review. You open each file, read every line, understand the intent, and check it against every dimension. You are the last line of defense before this app ships to millions of Muslims worldwide.
 
 ## PROJECT LOCATION
-`C:/dev/mizanly/` — this is the ONLY codebase. Never touch `C:/Users/shakh/OneDrive/Desktop/mizanly/` (old copy).
+`C:/dev/mizanly/` — ONLY codebase. Never touch OneDrive copy.
 
-## CURRENT STATE
-- 468 commits, Batch 71 complete, Tier 14 in progress
-- 202 screens, 68 backend modules, 160 Prisma models, 3,295-line schema
-- All 5 spaces functional: Saf (IG), Bakra (TikTok), Majlis (X), Risalah (WA), Minbar (YT)
-- Tiers 1-13 complete, needs algorithm/performance/infrastructure/monetization depth
-- Full audit: `docs/COMPETITOR_DEEP_AUDIT_2026.md`
+## WHAT YOU'RE AUDITING
 
-## CRITICAL RULES — NEVER VIOLATE
+### The 15 Dimensions (check EVERY file against ALL applicable dimensions)
+Read `.ralph/specs/audit-dimensions.md` for the full checklist. Summary:
 
-### Code Quality (from CLAUDE.md)
-1. Modals → `<BottomSheet>` — NEVER RN `Modal`
-2. Loading → `<Skeleton.*>` — NEVER bare `ActivityIndicator` (OK in buttons)
-3. Empty states → `<EmptyState>` — NEVER bare "No items" text
-4. Icons → `<Icon name="...">` — NEVER text emoji for icons
-5. Border radius → `radius.*` from theme — NEVER hardcoded >= 6
-6. NEVER use `any` in non-test code
-7. NEVER use `@ts-ignore` or `@ts-expect-error`
-8. ALL FlatLists must have `RefreshControl`
-9. `$executeRaw` tagged template literals are SAFE — do NOT replace them
-10. Test files (*.spec.ts) MAY use `as any` for mocks
+1. **Code Quality** — `as any`, `@ts-ignore`, unused imports, dead code, missing types
+2. **UI Compliance** — BottomSheet not Modal, Skeleton not ActivityIndicator, EmptyState, Icon not emoji, theme tokens not hardcoded values
+3. **Performance** — unbounded queries, missing memo, inline renderItem, missing keyExtractor, N+1 queries
+4. **Security** — SQL injection, missing auth guards, hardcoded secrets, missing validation, ownership checks
+5. **Accessibility** — missing accessibilityLabel, accessibilityRole, touch targets < 44pt, color contrast, images without descriptions
+6. **i18n** — hardcoded English strings, missing t() calls, RTL issues, date/number formatting
+7. **Error Handling** — missing try/catch, missing loading/empty/error states, swallowed errors
+8. **Architecture** — wrong imports, business logic in UI, duplicated code, missing store usage
+9. **API Design** — missing pagination, missing throttle, inconsistent responses, overly broad selects
+10. **Testing** — missing test files, empty tests, inadequate coverage
+11. **Islamic Correctness** — prayer calculations, Hijri dates, Qibla formula, Quran source, Hadith attribution
+12. **Real-time** — socket cleanup, auth verification, race conditions, deduplication
+13. **Media** — upload validation, size limits, thumbnail generation, presigned URL expiry
+14. **Payments** — webhook verification, idempotency, error handling, refund logic
+15. **Navigation** — orphaned screens, deep links, back button, transitions, scroll restoration
 
-### Architecture Rules
-- ALL models use `userId` (NOT authorId), `user` relation (NOT `author`)
-- Post: `content` (NOT caption), `mediaUrls[]` + `mediaTypes[]` arrays
-- Thread: `isChainHead`, replies → separate `ThreadReply` model
+## HOW TO AUDIT EACH FILE
+
+For EVERY file in the inventory (`.ralph/specs/file-inventory.md`):
+
+```
+1. READ the entire file (Read tool, no line limit)
+2. For each line, check against all 15 dimensions
+3. Note every issue with exact line number
+4. FIX every issue immediately (Edit tool)
+5. If fix requires changes in another file, make those too
+6. Log the findings in .ralph/logs/audit-{filename}.md
+7. Mark the file as audited in fix_plan.md
+8. Commit: "audit: {filename} — {N} issues found, {M} fixed"
+```
+
+## CRITICAL RULES FROM CLAUDE.md
+
+### ABSOLUTE — Never Violate
+1. `<BottomSheet>` NOT `Modal` from react-native
+2. `<Skeleton.*>` NOT bare `ActivityIndicator` (OK in buttons only)
+3. `<EmptyState>` NOT bare "No items" text
+4. `<Icon name="...">` NOT text emoji (←, ✕, ✓)
+5. `radius.*` from theme NOT hardcoded `borderRadius` >= 6
+6. `expo-linear-gradient` NOT CSS `linear-gradient(...)` string
+7. `RefreshControl` on ALL FlatList/FlashList
+8. NEVER `as any` in non-test code
+9. NEVER `@ts-ignore` or `@ts-expect-error`
+10. NEVER suppress errors — fix actual types
+11. `$executeRaw` tagged templates are SAFE — don't replace
+12. `@CurrentUser('id')` NOT `@CurrentUser()` without 'id'
+
+### Schema Field Names — FINAL, Never Change
+- `userId` (NOT authorId), `user` relation (NOT author)
+- Post: `content` (NOT caption), `mediaUrls[]` + `mediaTypes[]`
+- Thread: `isChainHead`, replies → `ThreadReply` model
 - Message: `messageType` (NOT type), `senderId` (NOT from)
-- Font names: `PlayfairDisplay_700Bold`, `DMSans_400Regular`, `DMSans_500Medium`, `DMSans_700Bold`, `NotoNaskhArabic_400Regular`
+- Story: `mediaType` (NOT type), `viewsCount` (NOT viewCount)
+- Conversation: `isGroup` + `groupName?` — NO `type` or `name`
+- User: `coverUrl` (NOT coverPhotoUrl), `website` (NOT websiteUrl)
 
-### Process Rules
+### Theme Tokens — Must Use
+```
+colors.emerald = #0A7B4F     colors.gold = #C8963E
+colors.dark.bg = #0D1117     colors.dark.bgElevated = #161B22
+spacing: xs=4 sm=8 md=12 base=16 lg=20 xl=24 2xl=32
+fontSize: xs=11 sm=13 base=15 md=17 lg=20 xl=24
+radius: sm=6 md=10 lg=16 full=9999
+```
+
+### Font Names — Exact
+```
+PlayfairDisplay_700Bold, DMSans_400Regular, DMSans_500Medium, DMSans_700Bold, NotoNaskhArabic_400Regular
+```
+
+## SEVERITY CLASSIFICATION
+
+When logging issues, classify each as:
+
+- **P0 CRASH** — App will crash (null reference, missing import, infinite loop)
+- **P1 BUG** — Feature doesn't work as intended (wrong API call, broken navigation, stale data)
+- **P2 SECURITY** — Security vulnerability (SQL injection, auth bypass, data leak)
+- **P3 QUALITY** — Code quality violation (as any, hardcoded values, missing types)
+- **P4 A11Y** — Accessibility violation (missing labels, contrast, touch targets)
+- **P5 PERF** — Performance issue (unbounded query, missing memo, unnecessary re-renders)
+- **P6 I18N** — Internationalization issue (hardcoded strings, RTL, date formatting)
+- **P7 STYLE** — Style/cosmetic issue (inconsistent spacing, wrong font, missing animation)
+
+## AUDIT ORDER (follow fix_plan.md exactly)
+
+### Phase 1: Infrastructure & Config (highest blast radius)
+Schema, app.module, prisma.service, theme, store, i18n, types
+
+### Phase 2: Backend Services (77 files)
+Every .service.ts file — check queries, auth, validation, error handling
+
+### Phase 3: Backend Controllers (72 files)
+Every .controller.ts file — check guards, throttle, DTOs, responses
+
+### Phase 4: Mobile Core (tab screens + main layouts)
+The 5 tab screens + _layout.tsx files — highest traffic screens
+
+### Phase 5: Mobile Components (65 files)
+Every component — UI compliance, accessibility, performance
+
+### Phase 6: Mobile Hooks & Services (39 files)
+Every hook and service — architecture, error handling, types
+
+### Phase 7: Mobile Screens A-D (52 files)
+Alphabetical: 2fa-setup through duet-create
+
+### Phase 8: Mobile Screens E-M (48 files)
+Alphabetical: edit-channel through mutual-followers
+
+### Phase 9: Mobile Screens N-S (50 files)
+Alphabetical: nasheed-mode through streaks
+
+### Phase 10: Mobile Screens T-Z (35 files)
+Alphabetical: tafsir-viewer through zakat-calculator
+
+### Phase 11: Tests (88 files)
+Every .spec.ts — check coverage, assertions, edge cases
+
+### Phase 12: Auth & Onboarding Flows
+End-to-end flow audit: sign-up → onboarding → first post → first message
+
+### Phase 13: Final Summary
+Write comprehensive audit report at docs/AUDIT_REPORT_BATCH84.md
+
+## PROCESS RULES
+
 - **NEVER use sub-agents** — do ALL work yourself directly
-- **ONE task per loop iteration** — focus, complete, commit, move to next
-- **Read before modifying** — always read a file before editing it
-- **Commit after each task** — `git add` specific files, descriptive commit message
-- **npm NOT in shell PATH** — use `cmd /c "cd apps/api && npm ..."` pattern if needed
-- **Read CLAUDE.md first** if unsure about any convention
+- **ONE file per loop iteration** (or small group of related files)
+- **Read BEFORE modifying** — always read the full file first
+- **Fix ALL issues in a file before moving on** — don't leave partial fixes
+- **Commit after each file** — `git add <files> && git commit -m "audit: <filename> — N issues found, M fixed"`
+- **Update fix_plan.md** — mark [x] after each file
+- **npm NOT in shell PATH** — use cmd /c pattern if needed
 
-## YOUR TOOLS — USE THEM
+## MCP PLUGINS AVAILABLE
 
-### MCP Plugins (available in this session)
-- **Playwright** (`mcp__playwright__*`) — open browser, take screenshots, test the app visually
-- **Memory** (`mcp__memory__*`) — save/recall knowledge across loops
-- **Filesystem** (`mcp__filesystem__*`) — read/write files directly
-- **Sequential Thinking** (`mcp__sequential-thinking__*`) — break down complex problems step by step
-- **Brave Search** (`mcp__brave-search__*`) — search the web for API docs, library usage, best practices
-- **PostgreSQL** (`mcp__postgres__*`) — query the database directly
-- **Docker** (`mcp__docker__*`) — manage containers
+- **Sequential Thinking** — use for complex multi-file refactors
+- **Brave Search** — look up API docs if unsure about correct usage
+- **Playwright** — take screenshots to verify UI changes
+- **Memory** — save patterns you find for consistency checking later
+- **PostgreSQL** — verify schema/indexes directly
 
-### When to use which tool
-- **Before implementing a new library/API**: Use Brave Search to find current docs and best practices
-- **Before modifying a service**: Read the file first, understand the full context
-- **For complex multi-step tasks**: Use Sequential Thinking to plan approach
-- **After implementing UI changes**: Use Playwright to screenshot and verify visually
-- **For database schema changes**: After prisma push, verify with PostgreSQL MCP
+## OUTPUT FORMAT
 
-## EXECUTION ORDER
+After auditing each file, include in your response:
 
-You MUST follow `.ralph/fix_plan.md` in order. The batches are:
-
-**Phase 1 (CRITICAL):**
-1. Batch 72: Algorithm & Discovery Engine
-2. Batch 73: Performance & Media Optimization
-3. Batch 74: Onboarding & Cold Start
-4. Batch 75: Infrastructure & Monitoring
-
-**Phase 2 (HIGH):**
-5. Batch 76: Retention & Engagement Loops
-6. Batch 77: UX/UI Polish
-7. Batch 78: Accessibility (WCAG AA)
-8. Batch 79: Monetization Infrastructure
-
-**Phase 3 (MOAT):**
-9. Batch 80: Islamic Moat (10/10)
-10. Batch 81: Content Creation Depth
-11. Batch 82: Moderation & Safety
-12. Batch 83: Branding & i18n
-
-## PER-TASK WORKFLOW
-
-For each task in fix_plan.md:
-
-1. **Read** — Read all files you'll modify. Read CLAUDE.md if touching new areas.
-2. **Plan** — Use Sequential Thinking if the task has multiple parts.
-3. **Research** — Use Brave Search if you need API docs or library info.
-4. **Implement** — Write the code. Follow ALL code quality rules.
-5. **Test** — Run relevant tests if they exist. Don't write tests unless task requires it.
-6. **Commit** — `git add <specific files>` + `git commit -m "feat: Batch XX.Y — <description>"`
-7. **Update fix_plan** — Mark the task as [x] in .ralph/fix_plan.md
-8. **Report** — Output RALPH_STATUS block
-
-## FILE LOCATIONS REFERENCE
-
-### Backend (apps/api/src/)
-- `modules/feed/feed.service.ts` — Feed algorithm (151 lines)
-- `modules/recommendations/recommendations.service.ts` — Recommendations (332 lines)
-- `modules/encryption/encryption.service.ts` — E2E encryption (188 lines)
-- `modules/*/` — 68 module directories, each with controller + service + module + spec
-- `config/prisma.service.ts` — Database connection
-- `gateways/chat.gateway.ts` — Socket.io real-time
-- `prisma/schema.prisma` — 160 models, 3,295 lines
-
-### Mobile (apps/mobile/)
-- `app/(tabs)/saf.tsx` — Instagram feed
-- `app/(tabs)/bakra.tsx` — TikTok reels
-- `app/(tabs)/majlis.tsx` — X/Twitter threads
-- `app/(tabs)/risalah.tsx` — WhatsApp messages
-- `app/(tabs)/minbar.tsx` — YouTube videos
-- `src/theme/index.ts` — Design tokens (colors, spacing, radius, animation)
-- `src/components/ui/` — 28 shared components
-- `src/services/api.ts` — API client
-- `src/i18n/en.json` — English translations (2,667 lines)
-- `src/store/index.ts` — Zustand store
-- `src/hooks/` — 13 custom hooks
-
-### Docs
-- `CLAUDE.md` — Project rules (READ THIS FIRST)
-- `docs/COMPETITOR_DEEP_AUDIT_2026.md` — Full competitor audit with scores
-- `.ralph/fix_plan.md` — YOUR TODO LIST
+```
+## Audit: {file_path}
+Lines read: {N}
+Issues found: {count by severity}
+- P0: {count}
+- P1: {count}
+- P2: {count}
+- P3: {count}
+- P4: {count}
+- P5: {count}
+- P6: {count}
+- P7: {count}
+Issues fixed: {count}
+Issues deferred: {count} (with reasons)
+```
 
 ## STATUS REPORTING
-
-At the end of EVERY response, include:
 
 ```
 ---RALPH_STATUS---
@@ -135,21 +184,22 @@ STATUS: IN_PROGRESS | COMPLETE | BLOCKED
 TASKS_COMPLETED_THIS_LOOP: <number>
 FILES_MODIFIED: <number>
 TESTS_STATUS: PASSING | FAILING | NOT_RUN
-WORK_TYPE: IMPLEMENTATION | TESTING | DOCUMENTATION
+WORK_TYPE: AUDIT
 EXIT_SIGNAL: false | true
-RECOMMENDATION: <what to do next>
+RECOMMENDATION: <what to audit next>
 ---END_RALPH_STATUS---
 ```
 
-Set EXIT_SIGNAL: true ONLY when ALL items in fix_plan.md are [x].
+EXIT_SIGNAL: true ONLY when ALL files in fix_plan.md are marked [x] AND the final audit report is written.
 
 ## START NOW
 
-1. Read `.ralph/fix_plan.md`
-2. Find the first unchecked [ ] item
-3. Execute it
-4. Mark it [x]
-5. Commit
-6. Report status
-7. Continue to next item
-8. NEVER STOP until fix_plan.md is 100% complete
+1. Read `.ralph/specs/audit-dimensions.md` — your checklist
+2. Read `.ralph/specs/file-inventory.md` — your file list
+3. Read `.ralph/fix_plan.md` — your progress tracker
+4. Start with Phase 1, first unchecked file
+5. Read it line by line
+6. Find every issue
+7. Fix every issue
+8. Commit, mark done, move to next
+9. NEVER STOP until every file is audited

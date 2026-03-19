@@ -1,0 +1,237 @@
+# Complete File Inventory — Every File to Audit
+
+## Mobile Screens (202 files)
+### Auth (4)
+- apps/mobile/app/(auth)/_layout.tsx
+- apps/mobile/app/(auth)/forgot-password.tsx
+- apps/mobile/app/(auth)/sign-in.tsx
+- apps/mobile/app/(auth)/sign-up.tsx
+
+### Tab Screens (8)
+- apps/mobile/app/(tabs)/_layout.tsx
+- apps/mobile/app/(tabs)/bakra.tsx
+- apps/mobile/app/(tabs)/create.tsx
+- apps/mobile/app/(tabs)/majlis.tsx
+- apps/mobile/app/(tabs)/minbar.tsx
+- apps/mobile/app/(tabs)/risalah.tsx
+- apps/mobile/app/(tabs)/saf.tsx
+- apps/mobile/app/_layout.tsx
+
+### Onboarding (5)
+- apps/mobile/app/onboarding/_layout.tsx
+- apps/mobile/app/onboarding/interests.tsx
+- apps/mobile/app/onboarding/profile.tsx
+- apps/mobile/app/onboarding/suggested.tsx
+- apps/mobile/app/onboarding/username.tsx
+
+### Screens (185)
+- apps/mobile/app/(screens)/2fa-setup.tsx
+- apps/mobile/app/(screens)/2fa-verify.tsx
+- apps/mobile/app/(screens)/account-settings.tsx
+- apps/mobile/app/(screens)/account-switcher.tsx
+- apps/mobile/app/(screens)/achievements.tsx
+- apps/mobile/app/(screens)/ai-assistant.tsx
+- apps/mobile/app/(screens)/ai-avatar.tsx
+- apps/mobile/app/(screens)/analytics.tsx
+- apps/mobile/app/(screens)/appeal-moderation.tsx
+- apps/mobile/app/(screens)/archive.tsx
+- apps/mobile/app/(screens)/audio-library.tsx
+- apps/mobile/app/(screens)/audio-room.tsx
+- apps/mobile/app/(screens)/biometric-lock.tsx
+- apps/mobile/app/(screens)/blocked-keywords.tsx
+- apps/mobile/app/(screens)/blocked.tsx
+- apps/mobile/app/(screens)/bookmark-collections.tsx
+- apps/mobile/app/(screens)/bookmark-folders.tsx
+- apps/mobile/app/(screens)/boost-post.tsx
+- apps/mobile/app/(screens)/branded-content.tsx
+- apps/mobile/app/(screens)/broadcast-channels.tsx
+- apps/mobile/app/(screens)/broadcast/[id].tsx
+- apps/mobile/app/(screens)/call-history.tsx
+- apps/mobile/app/(screens)/call/[id].tsx
+- apps/mobile/app/(screens)/camera.tsx
+- apps/mobile/app/(screens)/caption-editor.tsx
+- apps/mobile/app/(screens)/cashout.tsx
+- apps/mobile/app/(screens)/challenges.tsx
+- apps/mobile/app/(screens)/channel/[handle].tsx
+- apps/mobile/app/(screens)/charity-campaign.tsx
+- apps/mobile/app/(screens)/chat-export.tsx
+- apps/mobile/app/(screens)/chat-folders.tsx
+- apps/mobile/app/(screens)/chat-lock.tsx
+- apps/mobile/app/(screens)/chat-theme-picker.tsx
+- apps/mobile/app/(screens)/chat-wallpaper.tsx
+- apps/mobile/app/(screens)/circles.tsx
+- apps/mobile/app/(screens)/close-friends.tsx
+- apps/mobile/app/(screens)/collab-requests.tsx
+- apps/mobile/app/(screens)/communities.tsx
+- apps/mobile/app/(screens)/community-posts.tsx
+- apps/mobile/app/(screens)/contact-sync.tsx
+- apps/mobile/app/(screens)/content-filter-settings.tsx
+- apps/mobile/app/(screens)/content-settings.tsx
+- apps/mobile/app/(screens)/conversation-info.tsx
+- apps/mobile/app/(screens)/conversation-media.tsx
+- apps/mobile/app/(screens)/conversation/[id].tsx
+- apps/mobile/app/(screens)/create-broadcast.tsx
+- apps/mobile/app/(screens)/create-clip.tsx
+- apps/mobile/app/(screens)/create-event.tsx
+- apps/mobile/app/(screens)/create-group.tsx
+- apps/mobile/app/(screens)/create-playlist.tsx
+- apps/mobile/app/(screens)/create-post.tsx
+- apps/mobile/app/(screens)/create-reel.tsx
+- apps/mobile/app/(screens)/create-story.tsx
+- apps/mobile/app/(screens)/create-thread.tsx
+- apps/mobile/app/(screens)/create-video.tsx
+- apps/mobile/app/(screens)/creator-dashboard.tsx
+- apps/mobile/app/(screens)/creator-storefront.tsx
+- apps/mobile/app/(screens)/cross-post.tsx
+- apps/mobile/app/(screens)/dhikr-challenge-detail.tsx
+- apps/mobile/app/(screens)/dhikr-challenges.tsx
+- apps/mobile/app/(screens)/dhikr-counter.tsx
+- apps/mobile/app/(screens)/disappearing-default.tsx
+- apps/mobile/app/(screens)/disappearing-settings.tsx
+- apps/mobile/app/(screens)/discover.tsx
+- apps/mobile/app/(screens)/disposable-camera.tsx
+- apps/mobile/app/(screens)/dm-note-editor.tsx
+- apps/mobile/app/(screens)/donate.tsx
+- apps/mobile/app/(screens)/downloads.tsx
+- apps/mobile/app/(screens)/drafts.tsx
+- apps/mobile/app/(screens)/duet-create.tsx
+- apps/mobile/app/(screens)/edit-channel.tsx
+- apps/mobile/app/(screens)/edit-profile.tsx
+- apps/mobile/app/(screens)/eid-cards.tsx
+- apps/mobile/app/(screens)/enable-tips.tsx
+- apps/mobile/app/(screens)/end-screen-editor.tsx
+- apps/mobile/app/(screens)/event-detail.tsx
+- apps/mobile/app/(screens)/fatwa-qa.tsx
+- apps/mobile/app/(screens)/follow-requests.tsx
+- apps/mobile/app/(screens)/followed-topics.tsx
+- apps/mobile/app/(screens)/followers/[userId].tsx
+- apps/mobile/app/(screens)/following/[userId].tsx
+- apps/mobile/app/(screens)/gift-shop.tsx
+- apps/mobile/app/(screens)/go-live.tsx
+- apps/mobile/app/(screens)/green-screen-editor.tsx
+- apps/mobile/app/(screens)/hadith.tsx
+- apps/mobile/app/(screens)/hajj-companion.tsx
+- apps/mobile/app/(screens)/hajj-step.tsx
+- apps/mobile/app/(screens)/hashtag-explore.tsx
+- apps/mobile/app/(screens)/hashtag/[tag].tsx
+- apps/mobile/app/(screens)/image-editor.tsx
+- apps/mobile/app/(screens)/islamic-calendar.tsx
+- apps/mobile/app/(screens)/leaderboard.tsx
+- apps/mobile/app/(screens)/link-child-account.tsx
+- apps/mobile/app/(screens)/live/[id].tsx
+- apps/mobile/app/(screens)/local-boards.tsx
+- apps/mobile/app/(screens)/location-picker.tsx
+- apps/mobile/app/(screens)/majlis-list/[id].tsx
+- apps/mobile/app/(screens)/majlis-lists.tsx
+- apps/mobile/app/(screens)/manage-broadcast.tsx
+- apps/mobile/app/(screens)/manage-data.tsx
+- apps/mobile/app/(screens)/marketplace.tsx
+- apps/mobile/app/(screens)/media-settings.tsx
+- apps/mobile/app/(screens)/membership-tiers.tsx
+- apps/mobile/app/(screens)/mentorship.tsx
+- apps/mobile/app/(screens)/mosque-finder.tsx
+- apps/mobile/app/(screens)/muted.tsx
+- apps/mobile/app/(screens)/mutual-followers.tsx
+- apps/mobile/app/(screens)/my-reports.tsx
+- apps/mobile/app/(screens)/nasheed-mode.tsx
+- apps/mobile/app/(screens)/new-conversation.tsx
+- apps/mobile/app/(screens)/notification-tones.tsx
+- apps/mobile/app/(screens)/notifications.tsx
+- apps/mobile/app/(screens)/orders.tsx
+- apps/mobile/app/(screens)/parental-controls.tsx
+- apps/mobile/app/(screens)/photo-music.tsx
+- apps/mobile/app/(screens)/pinned-messages.tsx
+- apps/mobile/app/(screens)/playlist/[id].tsx
+- apps/mobile/app/(screens)/playlists/[channelId].tsx
+- apps/mobile/app/(screens)/post-insights.tsx
+- apps/mobile/app/(screens)/post/[id].tsx
+- apps/mobile/app/(screens)/prayer-times.tsx
+- apps/mobile/app/(screens)/product-detail.tsx
+- apps/mobile/app/(screens)/product/[id].tsx
+- apps/mobile/app/(screens)/profile-customization.tsx
+- apps/mobile/app/(screens)/profile/[username].tsx
+- apps/mobile/app/(screens)/qibla-compass.tsx
+- apps/mobile/app/(screens)/qr-code.tsx
+- apps/mobile/app/(screens)/qr-scanner.tsx
+- apps/mobile/app/(screens)/quiet-mode.tsx
+- apps/mobile/app/(screens)/quran-reading-plan.tsx
+- apps/mobile/app/(screens)/quran-room.tsx
+- apps/mobile/app/(screens)/quran-share.tsx
+- apps/mobile/app/(screens)/ramadan-mode.tsx
+- apps/mobile/app/(screens)/reel-remix.tsx
+- apps/mobile/app/(screens)/reel-templates.tsx
+- apps/mobile/app/(screens)/reel/[id].tsx
+- apps/mobile/app/(screens)/report.tsx
+- apps/mobile/app/(screens)/reports/[id].tsx
+- apps/mobile/app/(screens)/restricted.tsx
+- apps/mobile/app/(screens)/revenue.tsx
+- apps/mobile/app/(screens)/save-to-playlist.tsx
+- apps/mobile/app/(screens)/saved-messages.tsx
+- apps/mobile/app/(screens)/saved.tsx
+- apps/mobile/app/(screens)/schedule-live.tsx
+- apps/mobile/app/(screens)/schedule-post.tsx
+- apps/mobile/app/(screens)/scholar-verification.tsx
+- apps/mobile/app/(screens)/screen-time.tsx
+- apps/mobile/app/(screens)/search-results.tsx
+- apps/mobile/app/(screens)/search.tsx
+- apps/mobile/app/(screens)/send-tip.tsx
+- apps/mobile/app/(screens)/series-detail.tsx
+- apps/mobile/app/(screens)/series-discover.tsx
+- apps/mobile/app/(screens)/series/[id].tsx
+- apps/mobile/app/(screens)/settings.tsx
+- apps/mobile/app/(screens)/share-profile.tsx
+- apps/mobile/app/(screens)/share-receive.tsx
+- apps/mobile/app/(screens)/sound/[id].tsx
+- apps/mobile/app/(screens)/starred-messages.tsx
+- apps/mobile/app/(screens)/status-privacy.tsx
+- apps/mobile/app/(screens)/sticker-browser.tsx
+- apps/mobile/app/(screens)/stitch-create.tsx
+- apps/mobile/app/(screens)/storage-management.tsx
+- apps/mobile/app/(screens)/story-viewer.tsx
+- apps/mobile/app/(screens)/streaks.tsx
+- apps/mobile/app/(screens)/tafsir-viewer.tsx
+- apps/mobile/app/(screens)/theme-settings.tsx
+- apps/mobile/app/(screens)/thread/[id].tsx
+- apps/mobile/app/(screens)/trending-audio.tsx
+- apps/mobile/app/(screens)/verify-encryption.tsx
+- apps/mobile/app/(screens)/video-editor.tsx
+- apps/mobile/app/(screens)/video-premiere.tsx
+- apps/mobile/app/(screens)/video/[id].tsx
+- apps/mobile/app/(screens)/voice-post-create.tsx
+- apps/mobile/app/(screens)/voice-recorder.tsx
+- apps/mobile/app/(screens)/volunteer-board.tsx
+- apps/mobile/app/(screens)/waqf.tsx
+- apps/mobile/app/(screens)/watch-history.tsx
+- apps/mobile/app/(screens)/watch-party.tsx
+- apps/mobile/app/(screens)/why-showing.tsx
+- apps/mobile/app/(screens)/wind-down.tsx
+- apps/mobile/app/(screens)/xp-history.tsx
+- apps/mobile/app/(screens)/zakat-calculator.tsx
+
+## Components (65 files)
+Listed in audit-dimensions.md context — all under apps/mobile/src/components/
+
+## Hooks (20 files)
+Listed above — all under apps/mobile/src/hooks/
+
+## Services (19 mobile + 77 backend)
+Listed above — apps/mobile/src/services/ + apps/api/src/modules/*/
+
+## Config & Infrastructure
+- apps/api/src/app.module.ts
+- apps/api/src/config/prisma.service.ts
+- apps/api/src/config/socket-io-adapter.ts
+- apps/api/src/common/middleware/request-logger.middleware.ts
+- apps/api/src/common/services/job-queue.service.ts
+- apps/api/src/gateways/chat.gateway.ts
+- apps/api/prisma/schema.prisma
+- apps/mobile/src/theme/index.ts
+- apps/mobile/src/theme/highContrast.ts
+- apps/mobile/src/store/index.ts
+- apps/mobile/src/i18n/index.ts
+- apps/mobile/src/i18n/en.json
+- apps/mobile/src/i18n/ar.json
+- apps/mobile/src/types/index.ts
+- apps/mobile/src/utils/*.ts
+
+## Total Files to Audit: ~385
