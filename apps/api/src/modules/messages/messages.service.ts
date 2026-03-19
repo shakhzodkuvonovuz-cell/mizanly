@@ -459,18 +459,51 @@ export class MessagesService {
   }
 
   async forwardMessage(messageId: string, userId: string, targetConversationIds: string[]) {
-    const original = await this.prisma.message.findUnique({ where: { id: messageId }, select: { conversationId: true, content: true, messageType: true, mediaUrl: true, mediaType: true, voiceDuration: true, fileName: true, fileSize: true } });
+    const MAX_FORWARD_TARGETS = 5;
+    if (targetConversationIds.length > MAX_FORWARD_TARGETS) {
+      throw new BadRequestException(`You can forward to a maximum of ${MAX_FORWARD_TARGETS} chats at once`);
+    }
+    if (targetConversationIds.length === 0) {
+      throw new BadRequestException('No target conversations provided');
+    }
+
+    const original = await this.prisma.message.findUnique({
+      where: { id: messageId },
+      select: {
+        conversationId: true, content: true, messageType: true, mediaUrl: true,
+        mediaType: true, voiceDuration: true, fileName: true, fileSize: true,
+        forwardCount: true,
+      },
+    });
     if (!original) throw new NotFoundException('Message not found');
     await this.requireMembership(original.conversationId, userId);
+
     const results = [];
     for (const convId of targetConversationIds) {
       await this.requireMembership(convId, userId);
       const msg = await this.prisma.message.create({
-        data: { conversationId: convId, senderId: userId, content: original.content, messageType: original.messageType, mediaUrl: original.mediaUrl, mediaType: original.mediaType, voiceDuration: original.voiceDuration, fileName: original.fileName, fileSize: original.fileSize, isForwarded: true, forwardedFromId: messageId },
+        data: {
+          conversationId: convId, senderId: userId,
+          content: original.content, messageType: original.messageType,
+          mediaUrl: original.mediaUrl, mediaType: original.mediaType,
+          voiceDuration: original.voiceDuration, fileName: original.fileName,
+          fileSize: original.fileSize,
+          isForwarded: true, forwardedFromId: messageId,
+        },
       });
       results.push(msg);
-      await this.prisma.conversation.update({ where: { id: convId }, data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: new Date(), lastMessageById: userId } });
+      await this.prisma.conversation.update({
+        where: { id: convId },
+        data: { lastMessageText: original.content ?? '[Forwarded]', lastMessageAt: new Date(), lastMessageById: userId },
+      });
     }
+
+    // Increment forward count on original message
+    await this.prisma.message.update({
+      where: { id: messageId },
+      data: { forwardCount: { increment: targetConversationIds.length } },
+    });
+
     return results;
   }
 

@@ -1069,6 +1069,7 @@ model Message {
   deliveredAt     DateTime?
   isForwarded     Boolean           @default(false)
   forwardedFromId String?
+  forwardCount    Int               @default(0)
   editableUntil   DateTime?
   expiresAt       DateTime?
   isDeleted       Boolean           @default(false)
