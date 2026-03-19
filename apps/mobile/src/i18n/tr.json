@@ -581,7 +581,8 @@
       "title": "Henüz konu yok",
       "subtitle": "İnsanları takip edin veya gündem konularını keşfedin",
       "actionLabel": "Konu Başlat"
-    }
+    },
+    "video": "Video"
   },
   "risalah": {
     "messages": "Mesajlar",
@@ -2653,5 +2654,14 @@
     "takePhoto": "Fotoğraf çek",
     "subscribersOnly": "Yalnızca aboneler",
     "closeFriendsOnly": "Yalnızca yakın arkadaşlar"
+  },
+  "windDown": {
+    "title": "Dinlenme Zamanı",
+    "subtitle": "Bir süredir geziniyorsun. Nefes almak için bir an dur.",
+    "breatheIn": "Nefes al",
+    "breatheOut": "Nefes ver",
+    "message": "Ara verip dinlenmiş olarak dönmeyi düşünün",
+    "continueScrolling": "Gezinmeye Devam Et",
+    "closeApp": "Şimdilik kapat"
   }
 }

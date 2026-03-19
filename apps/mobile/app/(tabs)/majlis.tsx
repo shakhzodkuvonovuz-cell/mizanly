@@ -84,6 +84,7 @@ export default function MajlisScreen() {
     { key: 'foryou', label: t('majlis.forYou') },
     { key: 'following', label: t('majlis.following') },
     { key: 'trending', label: t('majlis.trending') },
+    { key: 'video', label: t('majlis.video') },
   ];
 
   // Feed transition animation
@@ -119,7 +120,11 @@ export default function MajlisScreen() {
 
   const feedQuery = useInfiniteQuery({
     queryKey: ['majlis-feed', feedType],
-    queryFn: ({ pageParam }) => threadsApi.getFeed(feedType, pageParam as string | undefined),
+    queryFn: ({ pageParam }) => {
+      // Video tab: use the same feed endpoint but pass 'video' type hint
+      const type = feedType === 'video' ? 'foryou' : feedType;
+      return threadsApi.getFeed(type as 'foryou' | 'following' | 'trending', pageParam as string | undefined);
+    },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   });
@@ -129,7 +134,11 @@ export default function MajlisScreen() {
     queryFn: () => hashtagsApi.getTrending(),
   });
 
-  const threads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  const allThreads: Thread[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
+  // Video tab: filter to threads with video media only
+  const threads = feedType === 'video'
+    ? allThreads.filter((t) => t.mediaTypes?.some((mt: string) => mt.startsWith('video')))
+    : allThreads;
 
   const listEmpty = useMemo(() => (
     feedQuery.isLoading ? (

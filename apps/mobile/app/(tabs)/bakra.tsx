@@ -680,6 +680,28 @@ export default function BakraScreen() {
         </View>
       </View>
 
+      {/* Side panel shortcuts — TikTok 2026 */}
+      <View style={styles.shortcutRow}>
+        <Pressable
+          style={styles.shortcutPill}
+          onPress={() => { haptic.light(); router.push('/(screens)/go-live' as never); }}
+          accessibilityLabel={t('tabs.live')}
+          accessibilityRole="button"
+        >
+          <Icon name="globe" size={14} color={colors.error} />
+          <Text style={styles.shortcutText}>{t('tabs.live')}</Text>
+        </Pressable>
+        <Pressable
+          style={styles.shortcutPill}
+          onPress={() => { haptic.light(); router.push('/(screens)/series-discover' as never); }}
+          accessibilityLabel={t('series.discoverTitle')}
+          accessibilityRole="button"
+        >
+          <Icon name="layers" size={14} color={colors.gold} />
+          <Text style={styles.shortcutText}>{t('series.discoverTitle')}</Text>
+        </Pressable>
+      </View>
+
       <FlashList
         ref={listRef}
         data={reels}
@@ -851,5 +873,29 @@ const styles = StyleSheet.create({
   footer: {
     width: SCREEN_W,
     height: VIDEO_HEIGHT,
+  },
+  shortcutRow: {
+    position: 'absolute',
+    top: 50,
+    left: spacing.base,
+    zIndex: 10,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  shortcutPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.15)',
+  },
+  shortcutText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });

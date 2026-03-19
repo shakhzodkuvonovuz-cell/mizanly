@@ -581,7 +581,8 @@
       "title": "No threads yet",
       "subtitle": "Follow people or explore trending topics",
       "actionLabel": "Start a Thread"
-    }
+    },
+    "video": "Video"
   },
   "risalah": {
     "messages": "Messages",
@@ -2653,5 +2654,14 @@
     "takePhoto": "Take photo",
     "subscribersOnly": "Subscribers only",
     "closeFriendsOnly": "Close friends only"
+  },
+  "windDown": {
+    "title": "Time to Wind Down",
+    "subtitle": "You have been scrolling for a while. Take a moment to breathe.",
+    "breatheIn": "Breathe in",
+    "breatheOut": "Breathe out",
+    "message": "Consider taking a break and coming back refreshed",
+    "continueScrolling": "Continue Scrolling",
+    "closeApp": "Close for now"
   }
 }
