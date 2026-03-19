@@ -2739,6 +2739,17 @@
     "queuedAction": "Akan disinkronkan saat terhubung",
     "syncing": "Menyinkronkan..."
   },
+  "thumbnails": {
+    "addVariants": "Tambah Varian Thumbnail",
+    "variant": "Varian {{num}}",
+    "testing": "Menguji...",
+    "impressions": "{{count}} tayangan",
+    "clicks": "{{count}} klik",
+    "ctr": "{{percent}}% CTR",
+    "winner": "Pemenang",
+    "testComplete": "Tes Selesai",
+    "testInProgress": "Menguji — {{current}}/{{total}} tayangan"
+  },
   "live": {
     "rehearse": "Latihan",
     "rehearsalMode": "Mode Latihan",

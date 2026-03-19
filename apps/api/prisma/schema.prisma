@@ -2852,6 +2852,20 @@ model SeriesFollower {
   @@map("series_followers")
 }
 
+model ThumbnailVariant {
+  id          String   @id @default(cuid())
+  contentType String   // 'post' | 'reel' | 'video'
+  contentId   String
+  thumbnailUrl String
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+  isWinner    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([contentType, contentId])
+  @@map("thumbnail_variants")
+}
+
 model SeriesProgress {
   id             String   @id @default(cuid())
   seriesId       String

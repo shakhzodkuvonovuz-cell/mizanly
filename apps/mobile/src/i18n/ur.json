@@ -2739,6 +2739,17 @@
     "queuedAction": "کنکشن ہونے پر مطابقت ہوگی",
     "syncing": "مطابقت ہو رہی ہے..."
   },
+  "thumbnails": {
+    "addVariants": "تھمب نیل متغیرات شامل کریں",
+    "variant": "متغیر {{num}}",
+    "testing": "ٹیسٹ ہو رہا ہے...",
+    "impressions": "{{count}} مشاہدات",
+    "clicks": "{{count}} کلکس",
+    "ctr": "{{percent}}% CTR",
+    "winner": "فاتح",
+    "testComplete": "ٹیسٹ مکمل",
+    "testInProgress": "ٹیسٹ — {{current}}/{{total}} مشاہدات"
+  },
   "live": {
     "rehearse": "مشق",
     "rehearsalMode": "مشق کا موڈ",

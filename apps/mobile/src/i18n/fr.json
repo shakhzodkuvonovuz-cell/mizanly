@@ -2739,6 +2739,17 @@
     "queuedAction": "Sera synchronisé une fois connecté",
     "syncing": "Synchronisation..."
   },
+  "thumbnails": {
+    "addVariants": "Ajouter des variantes de miniature",
+    "variant": "Variante {{num}}",
+    "testing": "Test en cours...",
+    "impressions": "{{count}} impressions",
+    "clicks": "{{count}} clics",
+    "ctr": "{{percent}}% CTR",
+    "winner": "Gagnant",
+    "testComplete": "Test terminé",
+    "testInProgress": "Test — {{current}}/{{total}} impressions"
+  },
   "live": {
     "rehearse": "Répéter",
     "rehearsalMode": "Mode répétition",

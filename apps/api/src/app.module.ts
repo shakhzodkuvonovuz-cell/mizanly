@@ -81,6 +81,7 @@ import { DiscordFeaturesModule } from './modules/discord-features/discord-featur
 import { EmbeddingsModule } from './modules/embeddings/embeddings.module';
 import { RetentionModule } from './modules/retention/retention.module';
 import { AltProfileModule } from './modules/alt-profile/alt-profile.module';
+import { ThumbnailsModule } from './modules/thumbnails/thumbnails.module';
 import { SecurityHeadersMiddleware } from './common/middleware/security-headers.middleware';
 import { CorrelationIdMiddleware } from './common/middleware/correlation-id.middleware';
 import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
@@ -171,6 +172,7 @@ import { ResponseTimeMiddleware } from './common/middleware/response-time.middle
     EmbeddingsModule,
     RetentionModule,
     AltProfileModule,
+    ThumbnailsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: UserThrottlerGuard },

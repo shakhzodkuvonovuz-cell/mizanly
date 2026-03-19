@@ -2738,6 +2738,17 @@
     "queuedAction": "Bağlandığında senkronize edilecek",
     "syncing": "Senkronize ediliyor..."
   },
+  "thumbnails": {
+    "addVariants": "Küçük Resim Varyantları Ekle",
+    "variant": "Varyant {{num}}",
+    "testing": "Test ediliyor...",
+    "impressions": "{{count}} gösterim",
+    "clicks": "{{count}} tıklama",
+    "ctr": "%{{percent}} TO",
+    "winner": "Kazanan",
+    "testComplete": "Test Tamamlandı",
+    "testInProgress": "Test — {{current}}/{{total}} gösterim"
+  },
   "live": {
     "rehearse": "Prova",
     "rehearsalMode": "Prova Modu",

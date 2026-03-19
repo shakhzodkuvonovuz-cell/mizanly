@@ -2738,6 +2738,17 @@
     "queuedAction": "Will sync when connected",
     "syncing": "Syncing..."
   },
+  "thumbnails": {
+    "addVariants": "Add Thumbnail Variants",
+    "variant": "Variant {{num}}",
+    "testing": "Testing...",
+    "impressions": "{{count}} impressions",
+    "clicks": "{{count}} clicks",
+    "ctr": "{{percent}}% CTR",
+    "winner": "Winner",
+    "testComplete": "Test Complete",
+    "testInProgress": "Testing — {{current}}/{{total}} impressions"
+  },
   "live": {
     "rehearse": "Rehearse",
     "rehearsalMode": "Rehearsal Mode",

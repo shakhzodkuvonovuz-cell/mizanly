@@ -2738,6 +2738,17 @@
     "queuedAction": "ستتم المزامنة عند الاتصال",
     "syncing": "جاري المزامنة..."
   },
+  "thumbnails": {
+    "addVariants": "إضافة صور مصغرة بديلة",
+    "variant": "النسخة {{num}}",
+    "testing": "جاري الاختبار...",
+    "impressions": "{{count}} مشاهدة",
+    "clicks": "{{count}} نقرة",
+    "ctr": "{{percent}}% معدل النقر",
+    "winner": "الفائز",
+    "testComplete": "اكتمل الاختبار",
+    "testInProgress": "اختبار — {{current}}/{{total}} مشاهدة"
+  },
   "live": {
     "rehearse": "تجربة",
     "rehearsalMode": "وضع التجربة",

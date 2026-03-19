@@ -2738,6 +2738,17 @@
     "queuedAction": "সংযোগ হলে সিঙ্ক হবে",
     "syncing": "সিঙ্ক হচ্ছে..."
   },
+  "thumbnails": {
+    "addVariants": "থাম্বনেইল ভেরিয়েন্ট যোগ করুন",
+    "variant": "ভেরিয়েন্ট {{num}}",
+    "testing": "পরীক্ষা হচ্ছে...",
+    "impressions": "{{count}} ইমপ্রেশন",
+    "clicks": "{{count}} ক্লিক",
+    "ctr": "{{percent}}% CTR",
+    "winner": "বিজয়ী",
+    "testComplete": "পরীক্ষা সম্পূর্ণ",
+    "testInProgress": "পরীক্ষা — {{current}}/{{total}} ইমপ্রেশন"
+  },
   "live": {
     "rehearse": "রিহার্সাল",
     "rehearsalMode": "রিহার্সাল মোড",
