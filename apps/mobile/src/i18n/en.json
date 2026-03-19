@@ -170,7 +170,9 @@
     "goBack": "Go back",
     "more": "more",
     "explore": "Explore",
-    "copyLink": "Copy Link"
+    "copyLink": "Copy Link",
+    "shareAsStory": "Share as Story",
+    "notInterested": "Not interested"
   },
   "auth": {
     "signIn": "Sign In",
@@ -368,7 +370,11 @@
     "emptyFeed": {
       "title": "Your feed is empty",
       "subtitle": "Follow people to see their posts here"
-    }
+    },
+    "crossPost": "Cross-post",
+    "boostPost": "Boost Post",
+    "postInsights": "Post Insights",
+    "whyShowing": "Why am I seeing this?"
   },
   "bakra": {
     "forYou": "For You",
@@ -680,7 +686,8 @@
     "useStickersHint": "Use some stickers and they will appear here",
     "browseMorePacks": "Browse more sticker packs",
     "noStickersInPack": "No stickers in this pack",
-    "addMorePacks": "Add more sticker packs to get started"
+    "addMorePacks": "Add more sticker packs to get started",
+    "createBroadcast": "Create Broadcast"
   },
   "minbar": {
     "home": "Home",
@@ -1165,7 +1172,12 @@
     "contactSync": "Find Friends",
     "statusPrivacy": "Status Privacy",
     "storageManagement": "Storage & Data",
-    "notificationTones": "Notification Tones"
+    "notificationTones": "Notification Tones",
+    "theme": "Theme",
+    "ramadanMode": "Ramadan Mode",
+    "events": "Events",
+    "giftShop": "Gift Shop",
+    "followedTopics": "Followed Topics"
   },
   "onboarding": {
     "interests": {

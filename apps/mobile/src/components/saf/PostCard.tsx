@@ -391,6 +391,21 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
               onPress={() => dismissMutation.mutate()}
             />
             <BottomSheetItem
+              label={t('saf.crossPost')}
+              icon={<Icon name="repeat" size="sm" color={colors.text.primary} />}
+              onPress={() => { setShowMenu(false); router.push(`/(screens)/cross-post?postId=${post.id}` as never); }}
+            />
+            <BottomSheetItem
+              label={t('saf.boostPost')}
+              icon={<Icon name="trending-up" size="sm" color={colors.gold} />}
+              onPress={() => { setShowMenu(false); router.push(`/(screens)/boost-post?postId=${post.id}` as never); }}
+            />
+            <BottomSheetItem
+              label={t('saf.postInsights')}
+              icon={<Icon name="bar-chart-2" size="sm" color={colors.text.primary} />}
+              onPress={() => { setShowMenu(false); router.push(`/(screens)/post-insights?postId=${post.id}` as never); }}
+            />
+            <BottomSheetItem
               label={t('common.delete')}
               icon={<Icon name="trash" size="sm" color={colors.error} />}
               onPress={handleDelete}
@@ -413,6 +428,11 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
               label={t('common.shareAsStory')}
               icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
               onPress={() => shareAsStoryMutation.mutate()}
+            />
+            <BottomSheetItem
+              label={t('saf.whyShowing')}
+              icon={<Icon name="help-circle" size="sm" color={colors.text.primary} />}
+              onPress={() => { setShowMenu(false); router.push(`/(screens)/why-showing?postId=${post.id}` as never); }}
             />
             <BottomSheetItem
               label={t('common.report')}

@@ -421,6 +421,30 @@ export default function RisalahScreen() {
             router.push('/(screens)/create-group');
           }}
         />
+        <BottomSheetItem
+          label={t('risalah.chatFolders')}
+          icon={<Icon name="layers" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setOpenNewConvoSheet(false);
+            router.push('/(screens)/chat-folders' as never);
+          }}
+        />
+        <BottomSheetItem
+          label={t('dmNotes.title')}
+          icon={<Icon name="edit" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setOpenNewConvoSheet(false);
+            router.push('/(screens)/dm-note-editor' as never);
+          }}
+        />
+        <BottomSheetItem
+          label={t('risalah.createBroadcast')}
+          icon={<Icon name="globe" size="sm" color={colors.text.primary} />}
+          onPress={() => {
+            setOpenNewConvoSheet(false);
+            router.push('/(screens)/create-broadcast' as never);
+          }}
+        />
       </BottomSheet>
 
       {/* Tabs */}

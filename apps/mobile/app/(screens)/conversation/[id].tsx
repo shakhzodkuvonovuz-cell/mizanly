@@ -1451,6 +1451,15 @@ export default function ConversationScreen() {
             >
               <Icon name="smile" size="sm" color={colors.text.secondary} />
             </Pressable>
+            <Pressable
+              style={styles.gifBtn}
+              hitSlop={8}
+              onPress={() => router.push(`/(screens)/sticker-browser?conversationId=${id}` as never)}
+              accessibilityLabel={t('risalah.stickers')}
+              accessibilityRole="button"
+            >
+              <Icon name="heart" size="sm" color={colors.text.secondary} />
+            </Pressable>
             <TextInput
               ref={inputRef}
               style={styles.input}

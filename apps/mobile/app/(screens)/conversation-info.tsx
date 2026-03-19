@@ -447,6 +447,30 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('settings.appearance')}</Text>
                 </View>
               </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/chat-theme-picker?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="eye" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('settings.theme')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/chat-lock?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(10,123,79,0.2)', 'rgba(10,123,79,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="lock" size="xs" color={colors.emerald} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('biometric.settingsLabel')}</Text>
+                </View>
+              </Pressable>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/verify-encryption?conversationId=${convo?.id}` as never)}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
+                  <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
+                    <Icon name="check-circle" size="xs" color={colors.gold} />
+                  </LinearGradient>
+                  <Text style={styles.actionText}>{t('risalah.endToEndEncryption')}</Text>
+                </View>
+              </Pressable>
             </LinearGradient>
           </Animated.View>
 

@@ -588,6 +588,24 @@ export default function SettingsScreen() {
               label={t('scholar.title')}
               icon={<Icon name="check-circle" size="sm" color={colors.emerald} />}
               onPress={() => router.push('/(screens)/scholar-verification' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('quranRoom.title')}
+              icon={<Icon name="bookmark" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/quran-room' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('charity.title')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/charity-campaign' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.ramadanMode')}
+              icon={<Icon name="globe" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/ramadan-mode' as never)}
               isLast
             />
           </LinearGradient>
@@ -776,6 +794,24 @@ export default function SettingsScreen() {
               label={t('settings.volunteerBoard')}
               icon={<Icon name="heart" size="sm" color={colors.emerald} />}
               onPress={() => router.push('/(screens)/volunteer-board' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.events')}
+              icon={<Icon name="calendar" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/create-event' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.giftShop')}
+              icon={<Icon name="heart" size="sm" color={colors.emerald} />}
+              onPress={() => router.push('/(screens)/gift-shop' as never)}
+            />
+            <View style={styles.divider} />
+            <Row
+              label={t('settings.followedTopics')}
+              icon={<Icon name="hash" size="sm" color={colors.gold} />}
+              onPress={() => router.push('/(screens)/followed-topics' as never)}
               isLast
             />
           </LinearGradient>

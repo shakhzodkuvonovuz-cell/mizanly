@@ -163,7 +163,9 @@
     "more": "المزيد",
     "explore": "استكشاف",
     "copyLink": "نسخ الرابط",
-    "unlock": "فتح القفل"
+    "unlock": "فتح القفل",
+    "shareAsStory": "مشاركة كقصة",
+    "notInterested": "غير مهتم"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -362,7 +364,11 @@
     "emptyFeed": {
       "title": "خلاصتك فارغة",
       "subtitle": "تابع أشخاصاً لرؤية منشوراتهم هنا"
-    }
+    },
+    "crossPost": "نشر متعدد",
+    "boostPost": "ترويج المنشور",
+    "postInsights": "إحصائيات المنشور",
+    "whyShowing": "لماذا أرى هذا؟"
   },
   "bakra": {
     "forYou": "لك",
@@ -634,7 +640,9 @@
     "group": "مجموعة",
     "chat": "محادثة",
     "archived": "الأرشيف",
-    "newGroup": "مجموعة جديدة"
+    "newGroup": "مجموعة جديدة",
+    "chatFolders": "مجلدات المحادثات",
+    "createBroadcast": "إنشاء بث"
   },
   "minbar": {
     "home": "الرئيسية",
@@ -1108,7 +1116,12 @@
     "contactSync": "العثور على أصدقاء",
     "statusPrivacy": "خصوصية الحالة",
     "storageManagement": "التخزين والبيانات",
-    "notificationTones": "نغمات الإشعارات"
+    "notificationTones": "نغمات الإشعارات",
+    "theme": "المظهر",
+    "ramadanMode": "وضع رمضان",
+    "events": "الفعاليات",
+    "giftShop": "متجر الهدايا",
+    "followedTopics": "المواضيع المتابعة"
   },
   "accessibility": {
     "goBack": "رجوع"

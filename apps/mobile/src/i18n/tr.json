@@ -170,7 +170,9 @@
     "goBack": "Geri dön",
     "more": "daha fazla",
     "explore": "Keşfet",
-    "copyLink": "Bağlantıyı Kopyala"
+    "copyLink": "Bağlantıyı Kopyala",
+    "shareAsStory": "Hikaye olarak paylaş",
+    "notInterested": "İlgilenmiyorum"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -368,7 +370,11 @@
     "emptyFeed": {
       "title": "Akışınız boş",
       "subtitle": "Gönderilerini görmek için insanları takip edin"
-    }
+    },
+    "crossPost": "Çapraz paylaş",
+    "boostPost": "Gönderiyi Öne Çıkar",
+    "postInsights": "Gönderi İstatistikleri",
+    "whyShowing": "Bunu neden görüyorum?"
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -680,7 +686,8 @@
     "group": "Grup",
     "chat": "Sohbet",
     "archived": "Arşivlenen",
-    "newGroup": "Yeni Grup"
+    "newGroup": "Yeni Grup",
+    "createBroadcast": "Yayın Oluştur"
   },
   "minbar": {
     "home": "Ana Sayfa",
@@ -1165,7 +1172,12 @@
     "contactSync": "Arkadaş Bul",
     "statusPrivacy": "Durum Gizliliği",
     "storageManagement": "Depolama ve Veri",
-    "notificationTones": "Bildirim Sesleri"
+    "notificationTones": "Bildirim Sesleri",
+    "theme": "Tema",
+    "ramadanMode": "Ramazan Modu",
+    "events": "Etkinlikler",
+    "giftShop": "Hediye Dükkanı",
+    "followedTopics": "Takip Edilen Konular"
   },
   "onboarding": {
     "interests": {
