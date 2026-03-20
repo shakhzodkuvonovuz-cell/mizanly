@@ -1,0 +1,77 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { RecommendationsController } from './recommendations.controller';
+import { RecommendationsService } from './recommendations.service';
+import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
+import { globalMockProviders } from '../../common/test/mock-providers';
+
+describe('RecommendationsController', () => {
+  let controller: RecommendationsController;
+  let service: jest.Mocked<RecommendationsService>;
+
+  const userId = 'user-123';
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [RecommendationsController],
+      providers: [
+        ...globalMockProviders,
+        {
+          provide: RecommendationsService,
+          useValue: {
+            suggestedPeople: jest.fn(),
+            suggestedPosts: jest.fn(),
+            suggestedReels: jest.fn(),
+            suggestedChannels: jest.fn(),
+          },
+        },
+        { provide: OptionalClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
+      ],
+    }).compile();
+
+    controller = module.get(RecommendationsController);
+    service = module.get(RecommendationsService) as jest.Mocked<RecommendationsService>;
+  });
+
+  afterEach(() => jest.clearAllMocks());
+
+  describe('suggestedPeople', () => {
+    it('should call recommendationsService.suggestedPeople with userId and limit', async () => {
+      service.suggestedPeople.mockResolvedValue([{ id: 'user-2' }] as any);
+
+      const result = await controller.suggestedPeople(userId, 10);
+
+      expect(service.suggestedPeople).toHaveBeenCalledWith(userId, 10);
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('suggestedPosts', () => {
+    it('should call recommendationsService.suggestedPosts with userId and limit', async () => {
+      service.suggestedPosts.mockResolvedValue([{ id: 'post-1' }] as any);
+
+      await controller.suggestedPosts(userId, 5);
+
+      expect(service.suggestedPosts).toHaveBeenCalledWith(userId, 5);
+    });
+  });
+
+  describe('suggestedReels', () => {
+    it('should call recommendationsService.suggestedReels with userId and limit', async () => {
+      service.suggestedReels.mockResolvedValue([{ id: 'reel-1' }] as any);
+
+      await controller.suggestedReels(userId, 10);
+
+      expect(service.suggestedReels).toHaveBeenCalledWith(userId, 10);
+    });
+  });
+
+  describe('suggestedChannels', () => {
+    it('should call recommendationsService.suggestedChannels with userId and limit', async () => {
+      service.suggestedChannels.mockResolvedValue([{ id: 'ch-1' }] as any);
+
+      await controller.suggestedChannels(userId, 10);
+
+      expect(service.suggestedChannels).toHaveBeenCalledWith(userId, 10);
+    });
+  });
+});
