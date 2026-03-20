@@ -37,10 +37,10 @@
 - [Custom Hooks](#custom-hooks)
 - [Service Layer](#service-layer)
 - [Backend Modules](#backend-modules)
-- [Database Schema](#database-schema-166-models)
+- [Database Schema](#database-schema-187-models)
 - [WebSocket Gateway](#websocket-gateway)
 - [Internationalization](#internationalization-i18n)
-- [All Screens](#all-screens-196-total)
+- [All Screens](#all-screens-208-total)
 - [Getting Started](#getting-started)
 - [Development Scripts](#development-scripts)
 - [Local Development with Docker](#local-development-with-docker)
@@ -86,22 +86,21 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Total Source Files | 790+ |
-| Total Lines of Code | 213,000+ |
-| Mobile Screens | 196 |
-| Backend Modules | 71 |
-| API Endpoints | 460+ (442 REST + 17 Socket) |
-| Prisma Models | 166 |
-| Prisma Schema Lines | 3,461 |
-| Test Suites | 98 |
-| Tests Passing | 1,427 |
-| UI Components | 33 |
-| Custom Hooks | 20 |
+| Mobile Screens | 208 |
+| Backend Modules | 79 |
+| Backend Controllers | 82 |
+| Prisma Models | 187 |
+| Prisma Relations | 447 |
+| Prisma Schema Lines | 4,049 |
+| Test Suites | 108 |
+| Tests Passing | 1,493 (100%) |
+| UI Components | 35 |
+| Custom Hooks | 23 |
 | Service Files | 19 |
-| Translation Keys | 2,415 per language |
+| Translation Keys | 2,740 per language |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
-| Git Commits | 510+ |
-| Development Batches | 85 |
+| Git Commits | 633 |
+| Development Time | 17 days (Mar 3–20, 2026) |
 
 ---
 
@@ -463,7 +462,7 @@ mizanly/
 ├── apps/
 │   ├── api/                          # NestJS backend (REST + WebSocket)
 │   │   ├── prisma/
-│   │   │   └── schema.prisma         # 166 models, 3,461 lines
+│   │   │   └── schema.prisma         # 187 models, 4,049 lines
 │   │   ├── src/
 │   │   │   ├── config/
 │   │   │   │   └── prisma.service.ts # Prisma client singleton
@@ -478,7 +477,7 @@ mizanly/
 │   │   │   ├── gateways/
 │   │   │   │   ├── chat.gateway.ts   # Socket.io /chat namespace
 │   │   │   │   └── dto/              # WebSocket event DTOs
-│   │   │   └── modules/              # 71 feature modules
+│   │   │   └── modules/              # 79 feature modules
 │   │   │       ├── admin/            # Admin dashboard endpoints
 │   │   │       ├── audio-rooms/      # Clubhouse-style audio rooms
 │   │   │       ├── audio-tracks/     # Music/nasheed library
@@ -558,7 +557,7 @@ mizanly/
 │       │   │   ├── risalah.tsx       # WhatsApp-style conversations
 │       │   │   ├── minbar.tsx        # YouTube-style channels
 │       │   │   └── create.tsx        # Universal create button
-│       │   └── (screens)/            # 183 detail/utility screens
+│       │   └── (screens)/            # 195 detail/utility screens
 │       │       ├── conversation/     # Chat screens (per conversation)
 │       │       ├── post/             # Post detail views
 │       │       ├── profile/          # User profile views
@@ -580,7 +579,7 @@ mizanly/
 │       │   ├── components/
 │       │   │   ├── ui/              # 33 reusable UI components
 │       │   │   └── islamic/         # Islamic-specific components
-│       │   ├── hooks/               # 20 custom hooks
+│       │   ├── hooks/               # 23 custom hooks
 │       │   ├── services/            # 19 API service files
 │       │   ├── stores/              # Zustand global store
 │       │   ├── theme/               # Design tokens
@@ -693,7 +692,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## UI Component Library
 
-33 reusable components in `apps/mobile/src/components/ui/`:
+35 reusable components in `apps/mobile/src/components/ui/`:
 
 | Component | File | Description |
 |-----------|------|-------------|
@@ -741,7 +740,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Custom Hooks
 
-20 hooks in `apps/mobile/src/hooks/`:
+23 hooks in `apps/mobile/src/hooks/`:
 
 | Hook | File | Description |
 |------|------|-------------|
@@ -798,7 +797,7 @@ Mizanly uses a custom dark-mode-first design system with glassmorphism aesthetic
 
 ## Backend Modules
 
-All 71 NestJS modules in `apps/api/src/modules/`:
+All 79 NestJS modules in `apps/api/src/modules/`:
 
 <details>
 <summary>Click to expand full module list with descriptions</summary>
@@ -883,10 +882,10 @@ All 71 NestJS modules in `apps/api/src/modules/`:
 
 ## Database Schema (166 Models)
 
-The Prisma schema (`apps/api/prisma/schema.prisma`) contains 166 models across 3,461 lines. Models are organized by domain:
+The Prisma schema (`apps/api/prisma/schema.prisma`) contains 187 models across 4,049 lines with 447 relations. Models are organized by domain:
 
 <details>
-<summary>Click to expand all 166 models grouped by domain</summary>
+<summary>Click to expand all 187 models grouped by domain</summary>
 
 ### Core Social (8 models)
 `User` `Follow` `FollowRequest` `Post` `Comment` `PostReaction` `CommentReaction` `SavedPost`
@@ -973,7 +972,7 @@ Real-time features are powered by a Socket.io gateway at the `/chat` namespace (
 
 ## Internationalization (i18n)
 
-Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,415 keys each).
+Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. All language files maintain 100% key parity (2,740 keys each).
 
 | File | Keys | Description |
 |------|------|-------------|
@@ -998,7 +997,7 @@ Mizanly supports 8 languages with full RTL layout support for Arabic and Urdu. A
 
 ---
 
-## All Screens (196 Total)
+## All Screens (208 Total)
 
 <details>
 <summary>Click to expand complete screen list</summary>
