@@ -294,6 +294,11 @@ These models use semantically meaningful field names instead of `userId`:
 - `GiftRecord.senderId`/`receiverId`, `Restrict.restricterId`/`restrictedId` — role-specific FKs
 These are NOT violations — they're intentional semantic naming for multi-FK models.
 
+## ID Strategy
+- Core models (Pre-Batch 33): use `@default(cuid())`
+- Extension models (Batch 33+): use `@default(uuid())`
+- Both are acceptable. New models should use `@default(cuid())` for consistency with core.
+
 ---
 
 ## Zustand Store
