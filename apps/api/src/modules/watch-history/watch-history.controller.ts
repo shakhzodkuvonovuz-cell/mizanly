@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ import { AddToWatchLaterDto } from './dto/add-to-watch-later.dto';
 @ApiTags('Watch History')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('watch-history')
 export class WatchHistoryController {
   constructor(private service: WatchHistoryService) {}

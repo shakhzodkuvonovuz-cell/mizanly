@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Post, Get, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
@@ -14,6 +15,7 @@ class RegisterDeviceDto {
 @ApiTags('Devices')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('devices')
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) {}

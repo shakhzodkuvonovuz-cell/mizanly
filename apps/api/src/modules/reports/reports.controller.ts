@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Post,
@@ -18,6 +19,7 @@ import { CreateReportDto } from './dto/create-report.dto';
 @ApiTags('Reports')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('api/v1/reports')
 export class ReportsController {
   constructor(private service: ReportsService) {}

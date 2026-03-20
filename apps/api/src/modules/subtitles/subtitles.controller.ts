@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -17,6 +18,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Subtitles')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('videos/:videoId/subtitles')
 export class SubtitlesController {
   constructor(private subtitlesService: SubtitlesService) {}

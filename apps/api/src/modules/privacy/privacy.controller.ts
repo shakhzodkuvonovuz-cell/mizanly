@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Delete, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -5,6 +6,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { PrivacyService } from './privacy.service';
 
 @ApiTags('Privacy (GDPR/CCPA)')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('privacy')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

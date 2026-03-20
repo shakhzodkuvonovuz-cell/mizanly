@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -23,6 +24,7 @@ interface CreateReelTemplateBody {
 }
 
 @ApiTags('Reel Templates (Bakra)')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('reel-templates')
 export class ReelTemplatesController {
   constructor(private reelTemplatesService: ReelTemplatesService) {}

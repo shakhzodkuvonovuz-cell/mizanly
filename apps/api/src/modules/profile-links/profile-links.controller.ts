@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -26,6 +27,7 @@ class ReorderLinksDto {
 }
 
 @ApiTags('Profile Links')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('profile-links')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

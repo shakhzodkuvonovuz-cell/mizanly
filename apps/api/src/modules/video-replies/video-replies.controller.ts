@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Body,
   Controller,
@@ -16,6 +17,7 @@ import { VideoRepliesService } from './video-replies.service';
 
 @ApiTags('video-replies')
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('video-replies')
 export class VideoRepliesController {
   constructor(private readonly videoRepliesService: VideoRepliesService) {}

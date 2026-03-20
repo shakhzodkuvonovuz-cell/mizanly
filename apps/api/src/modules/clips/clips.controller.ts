@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Post,
@@ -14,6 +15,7 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('clips')
 export class ClipsController {
   constructor(private clipsService: ClipsService) {}

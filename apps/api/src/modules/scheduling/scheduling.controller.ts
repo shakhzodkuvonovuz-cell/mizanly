@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -24,6 +25,7 @@ class UpdateScheduleDto {
 }
 
 @ApiTags('Scheduling')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('scheduling')
 export class SchedulingController {
   constructor(private schedulingService: SchedulingService) {}

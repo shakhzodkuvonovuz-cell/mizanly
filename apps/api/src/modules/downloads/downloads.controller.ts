@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ import { CreateDownloadDto, UpdateProgressDto } from './dto/create-download.dto'
 @ApiTags('Downloads')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('api/v1/downloads')
 export class DownloadsController {
   constructor(private service: DownloadsService) {}

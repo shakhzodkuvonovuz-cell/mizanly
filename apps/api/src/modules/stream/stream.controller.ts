@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Post,
@@ -13,6 +14,7 @@ import { StreamService } from './stream.service';
 import { createHmac, timingSafeEqual } from 'crypto';
 
 @ApiTags('Stream Webhooks')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('stream')
 export class StreamController {
   private readonly logger = new Logger(StreamController.name);

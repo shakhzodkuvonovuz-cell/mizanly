@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -64,6 +65,7 @@ class RotateKeyDto {
 
 @ApiTags('Encryption')
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('encryption')
 @UseGuards(ClerkAuthGuard)
 export class EncryptionController {

@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -7,6 +8,7 @@ import { AudioTracksService } from './audio-tracks.service';
 import { CreateAudioTrackDto } from './dto/create-audio-track.dto';
 
 @ApiTags('Audio Tracks')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('audio-tracks')
 export class AudioTracksController {
   constructor(private audioTracks: AudioTracksService) {}

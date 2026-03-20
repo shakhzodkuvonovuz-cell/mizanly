@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -20,6 +21,7 @@ interface GenerateExportBody {
 }
 
 @ApiTags('Chat Export (Risalah)')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('chat-export')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

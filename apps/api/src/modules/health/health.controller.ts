@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
@@ -9,6 +10,7 @@ import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Health')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('health')
 export class HealthController {
   constructor(

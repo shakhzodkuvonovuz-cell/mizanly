@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -64,6 +65,7 @@ class AddAccessDto {
 
 @ApiTags('Alt Profile (Flipside)')
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('users/me/alt-profile')
 @UseGuards(ClerkAuthGuard)
 export class AltProfileController {
@@ -137,6 +139,7 @@ export class AltProfileController {
 
 @ApiTags('Alt Profile (Flipside)')
 @ApiBearerAuth()
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('users/:userId/alt-profile')
 @UseGuards(ClerkAuthGuard)
 export class AltProfileViewerController {

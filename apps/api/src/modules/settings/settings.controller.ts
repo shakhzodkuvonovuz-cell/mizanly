@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import {
   Controller,
   Get,
@@ -28,6 +29,7 @@ class AddKeywordDto {
 }
 
 @ApiTags('Settings')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('settings')
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()

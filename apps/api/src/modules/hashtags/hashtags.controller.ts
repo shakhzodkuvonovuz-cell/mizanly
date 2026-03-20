@@ -1,3 +1,4 @@
+import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
@@ -6,6 +7,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HashtagsService } from './hashtags.service';
 
 @ApiTags('Hashtags')
+@Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('hashtags')
 export class HashtagsController {
   constructor(private service: HashtagsService) {}
