@@ -20,6 +20,7 @@ describe('UsersService', () => {
           useValue: {
             user: {
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               update: jest.fn(),
               findFirst: jest.fn(),
               count: jest.fn(),
@@ -71,6 +72,31 @@ describe('UsersService', () => {
             creatorStat: {
               findMany: jest.fn(),
             },
+            comment: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            message: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            postReaction: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            reel: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            video: {
+              findMany: jest.fn().mockResolvedValue([]),
+            },
+            watchHistory: {
+              findMany: jest.fn().mockResolvedValue([]),
+              deleteMany: jest.fn(),
+            },
+            watchLaterItem: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              delete: jest.fn(),
+            },
+            $queryRaw: jest.fn().mockResolvedValue([]),
           },
         },
         {
@@ -880,6 +906,207 @@ describe('UsersService', () => {
       prisma.user.findUnique.mockResolvedValue(null);
 
       await expect(service.getQrCode(userId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // exportData
+  // ═══════════════════════════════════════════════════════
+
+  describe('exportData', () => {
+    it('should return all user data for GDPR export', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'testuser' });
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', content: 'test' }]);
+      prisma.comment.findMany.mockResolvedValue([]);
+      prisma.message.findMany.mockResolvedValue([{ id: 'm1', content: 'hello', conversationId: 'c1' }]);
+      prisma.follow.findMany
+        .mockResolvedValueOnce([{ followerId: 'f1' }])
+        .mockResolvedValueOnce([{ followingId: 'f2' }]);
+      prisma.postReaction.findMany.mockResolvedValue([]);
+      prisma.savedPost.findMany.mockResolvedValue([]);
+      prisma.thread.findMany.mockResolvedValue([]);
+      prisma.reel.findMany.mockResolvedValue([]);
+      prisma.video.findMany.mockResolvedValue([]);
+
+      const result = await service.exportData('user-1');
+      expect(result.profile).toBeDefined();
+      expect(result.posts).toHaveLength(1);
+      expect(result.messages).toHaveLength(1);
+      expect(result.messages[0].content).toBe('[encrypted]');
+      expect(result.followers).toContain('f1');
+      expect(result.following).toContain('f2');
+      expect(result.exportedAt).toBeDefined();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getMutualFollowers
+  // ═══════════════════════════════════════════════════════
+
+  describe('getMutualFollowers', () => {
+    it('should return mutual followers', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'target-1' });
+      prisma.$queryRaw.mockResolvedValue([
+        { id: 'mutual-1', username: 'mutual', displayName: 'Mutual', avatarUrl: null },
+      ]);
+
+      const result = await service.getMutualFollowers('user-1', 'targetuser');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException for non-existent target', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.getMutualFollowers('user-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getLikedPosts
+  // ═══════════════════════════════════════════════════════
+
+  describe('getLikedPosts', () => {
+    it('should return liked posts with pagination', async () => {
+      prisma.postReaction.findMany.mockResolvedValue([
+        { postId: 'p1', post: { id: 'p1', content: 'Test', user: { id: 'u1' } } },
+      ]);
+
+      const result = await service.getLikedPosts('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty when no liked posts', async () => {
+      prisma.postReaction.findMany.mockResolvedValue([]);
+      const result = await service.getLikedPosts('user-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // requestAccountDeletion / cancelAccountDeletion
+  // ═══════════════════════════════════════════════════════
+
+  describe('requestAccountDeletion', () => {
+    it('should mark account for deletion', async () => {
+      prisma.user.update.mockResolvedValue({});
+      const result = await service.requestAccountDeletion('user-1');
+      expect(result).toEqual({ requested: true });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'user-1' },
+          data: expect.objectContaining({ isDeactivated: true }),
+        }),
+      );
+    });
+  });
+
+  describe('cancelAccountDeletion', () => {
+    it('should cancel account deletion', async () => {
+      prisma.user.update.mockResolvedValue({});
+      const result = await service.cancelAccountDeletion('user-1');
+      expect(result).toEqual({ cancelled: true });
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ deletedAt: null, isDeactivated: false }),
+        }),
+      );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // updateNasheedMode
+  // ═══════════════════════════════════════════════════════
+
+  describe('updateNasheedMode', () => {
+    it('should enable nasheed mode', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'user-1', nasheedMode: true });
+      const result = await service.updateNasheedMode('user-1', true);
+      expect(result.nasheedMode).toBe(true);
+    });
+
+    it('should disable nasheed mode', async () => {
+      prisma.user.update.mockResolvedValue({ id: 'user-1', nasheedMode: false });
+      const result = await service.updateNasheedMode('user-1', false);
+      expect(result.nasheedMode).toBe(false);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // findByPhoneNumbers
+  // ═══════════════════════════════════════════════════════
+
+  describe('findByPhoneNumbers', () => {
+    it('should return matching users with follow status', async () => {
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u2', username: 'friend', displayName: 'Friend', avatarUrl: null, isVerified: false },
+      ]);
+      prisma.follow.findMany.mockResolvedValue([{ followingId: 'u2' }]);
+
+      const result = await service.findByPhoneNumbers('user-1', ['+1234567890']);
+      expect(result).toHaveLength(1);
+      expect(result[0].isFollowing).toBe(true);
+    });
+
+    it('should return empty for no matches', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.follow.findMany.mockResolvedValue([]);
+      const result = await service.findByPhoneNumbers('user-1', ['+0000000000']);
+      expect(result).toEqual([]);
+    });
+
+    it('should normalize phone numbers', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.follow.findMany.mockResolvedValue([]);
+      await service.findByPhoneNumbers('user-1', ['+1 (234) 567-8900', '0561234567']);
+      expect(prisma.user.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            phone: { in: expect.any(Array) },
+          }),
+        }),
+      );
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getFollowRequests
+  // ═══════════════════════════════════════════════════════
+
+  describe('getFollowRequests', () => {
+    it('should return pending follow requests', async () => {
+      prisma.followRequest.findMany.mockResolvedValue([
+        { id: 'fr-1', fromUserId: 'user-2', createdAt: new Date(), fromUser: { id: 'user-2', username: 'requester' } },
+      ]);
+
+      const result = await service.getFollowRequests('user-1');
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getDrafts
+  // ═══════════════════════════════════════════════════════
+
+  describe('getDrafts', () => {
+    it('should return user drafts', async () => {
+      prisma.draftPost.findMany.mockResolvedValue([{ id: 'd1', content: 'draft' }]);
+      const result = await service.getDrafts('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getAnalytics
+  // ═══════════════════════════════════════════════════════
+
+  describe('getAnalytics', () => {
+    it('should return user analytics', async () => {
+      prisma.user.findUnique.mockResolvedValue({
+        id: 'user-1', followersCount: 100, followingCount: 50, postsCount: 20, reelsCount: 5,
+      });
+
+      const result = await service.getAnalytics('user-1');
+      expect(result).toBeDefined();
     });
   });
 });
