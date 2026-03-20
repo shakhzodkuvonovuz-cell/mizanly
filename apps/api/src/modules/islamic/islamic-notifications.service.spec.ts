@@ -91,25 +91,21 @@ describe('IslamicNotificationsService', () => {
     });
   });
 
-  describe('getQueuedNotifications', () => {
-    it('should return empty array when no queued notifications', async () => {
-      redis.lrange.mockResolvedValue([]);
-      if (typeof (service as any).getQueuedNotifications === 'function') {
-        const result = await (service as any).getQueuedNotifications('user-1');
-        expect(result).toEqual([]);
-      }
-    });
-
-    it('should return parsed notifications from Redis', async () => {
-      redis.lrange.mockResolvedValue([JSON.stringify({ title: 'Test', body: 'Body' })]);
-      if (typeof (service as any).getQueuedNotifications === 'function') {
-        const result = await (service as any).getQueuedNotifications('user-1');
-        expect(result.length).toBe(1);
-      }
+  describe('shouldShowPrayFirstNudge', () => {
+    it('should return nudge data with show property', async () => {
+      redis.get.mockResolvedValue(null);
+      const result = await service.shouldShowPrayFirstNudge('user-1');
+      expect(result).toHaveProperty('show');
+      expect(typeof result.show).toBe('boolean');
     });
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  describe('getJummahReminder', () => {
+    it('should return reminder with isJummahDay property', async () => {
+      const result = await service.getJummahReminder('user-1');
+      expect(result).toHaveProperty('isJummahDay');
+      expect(typeof result.isJummahDay).toBe('boolean');
+      expect(result).toHaveProperty('nearPrayerTime');
+    });
   });
 });

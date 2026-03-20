@@ -21,7 +21,7 @@ describe('PersonalizedFeedService', () => {
             follow: { findMany: jest.fn().mockResolvedValue([]) },
             block: { findMany: jest.fn().mockResolvedValue([]) },
             mute: { findMany: jest.fn().mockResolvedValue([]) },
-            feedInteraction: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn() },
+            feedInteraction: { findMany: jest.fn().mockResolvedValue([]), create: jest.fn(), count: jest.fn().mockResolvedValue(0) },
             postReaction: { findMany: jest.fn().mockResolvedValue([]) },
             savedPost: { findMany: jest.fn().mockResolvedValue([]) },
             user: { findUnique: jest.fn() },
@@ -83,11 +83,9 @@ describe('PersonalizedFeedService', () => {
         { id: 'p1', content: 'test', likesCount: 10, commentsCount: 2, createdAt: new Date(), userId: 'u1', hashtags: [] },
       ]);
 
-      // If generateFeed exists and is accessible
-      if (typeof (service as any).generateFeed === 'function') {
-        const result = await (service as any).generateFeed('new-user');
-        expect(result).toBeDefined();
-      }
+      const result = await service.getPersonalizedFeed('new-user', 'SAF');
+      expect(result).toHaveProperty('data');
+      expect(result).toHaveProperty('meta');
     });
 
     it('should handle empty feed gracefully', async () => {

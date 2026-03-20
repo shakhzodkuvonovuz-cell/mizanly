@@ -102,20 +102,17 @@ describe('ChannelPostsService', () => {
         channel: { id: 'ch1', handle: 'ch1', name: 'Channel 1' },
       });
       prisma.channelPost.update.mockResolvedValue({ id: 'cp1', isPinned: true });
-      if (typeof (service as any).pin === 'function') {
-        const result = await (service as any).pin('cp1', 'user1');
-        expect(result.isPinned).toBe(true);
-      }
+      const result = await service.pin('cp1', 'user1');
+      expect(result.isPinned).toBe(true);
     });
   });
 
   describe('pagination', () => {
     it('should paginate with cursor', async () => {
       prisma.channelPost.findMany.mockResolvedValue([{ id: 'cp3' }]);
-      if (typeof service.list === 'function') {
-        await service.list('ch1', 'cp2', 10);
-      }
-      expect(prisma.channelPost.findMany).toBeDefined();
+      const result = await service.getFeed('ch1', 'cp2', 10);
+      expect(result.data).toEqual([{ id: 'cp3' }]);
+      expect(prisma.channelPost.findMany).toHaveBeenCalled();
     });
   });
 });
