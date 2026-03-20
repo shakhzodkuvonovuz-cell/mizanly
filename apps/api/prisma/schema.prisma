@@ -2487,7 +2487,7 @@ model CharityDonation {
   recipientUser   User?            @relation("charityDonationsReceived", fields: [recipientUserId], references: [id], onDelete: SetNull)
   campaignId      String?
   campaign        CharityCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  amount          Int
+  amount          Decimal          @db.Decimal(12, 2)
   currency        String           @default("usd")
   stripePaymentId String?
   status          String           @default("pending")
@@ -2505,8 +2505,8 @@ model CharityCampaign {
   user         User              @relation("charityCampaigns", fields: [userId], references: [id], onDelete: Cascade)
   title        String
   description  String?
-  goalAmount   Int
-  raisedAmount Int               @default(0)
+  goalAmount   Decimal           @db.Decimal(12, 2)
+  raisedAmount Decimal           @default(0) @db.Decimal(12, 2)
   donorCount   Int               @default(0)
   imageUrl     String?
   isActive     Boolean           @default(true)
