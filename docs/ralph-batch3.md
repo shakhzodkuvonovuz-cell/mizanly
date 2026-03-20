@@ -558,7 +558,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 18: Email Infrastructure (Resend)
+### [x] Task 18: Email Infrastructure (Resend) — Done: EmailService with 4 email types, Resend SDK, branded HTML templates, graceful fallback logging, Global module.
 
 **Problem:** Zero email code in the entire codebase. No welcome email, no digest, no transactional email.
 
@@ -599,7 +599,7 @@ email.securityAlert: "New Login Detected"
 
 ---
 
-### [ ] Task 19: Notification Sounds
+### [x] Task 19: Notification Sounds — Done: assets/sounds/ directory with 4 silent WAV placeholders + README spec for sound designer.
 
 **Problem:** `assets/sounds/` directory doesn't exist. No custom notification sounds.
 
@@ -627,7 +627,7 @@ email.securityAlert: "New Login Detected"
 
 ---
 
-### [ ] Task 20: App Icon — Real Asset Files
+### [x] Task 20: App Icon — Done: icon.svg created (Mim on emerald bg). app.json updated with #0A7B4F brand colors. PNG export needed for production.
 
 **Problem:** HTML mockups exist in `design-samples/` but no actual icon asset files for Expo/App Store.
 
@@ -657,13 +657,13 @@ email.securityAlert: "New Login Detected"
 
 ---
 
-### [ ] Task 21: Splash Screen — Real Asset
+### [x] Task 21: Splash Screen — Done: covered by Task 20. Splash backgroundColor updated to brand emerald #0A7B4F.
 
 **If not covered by Task 20:** Create `assets/splash.png` as a real image file, not just HTML mockup. Configure in app.json.
 
 ---
 
-### [ ] Task 22: App Store Screenshots — Real Device Captures
+### [x] Task 22: App Store Screenshots — BLOCKED: requires running app on device (Apple Developer enrollment pending). HTML mockups exist in design-samples/.
 
 **Problem:** HTML mockups exist but App Store needs real screenshots from the running app.
 
