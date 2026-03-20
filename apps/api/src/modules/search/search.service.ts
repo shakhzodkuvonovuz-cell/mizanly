@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
+import { MeilisearchService } from './meilisearch.service';
 
 const USER_SEARCH_SELECT = {
   id: true,
@@ -142,7 +143,10 @@ export interface SearchResults {
 
 @Injectable()
 export class SearchService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private meilisearch: MeilisearchService,
+  ) {}
 
   async search(
     query: string,
@@ -150,6 +154,22 @@ export class SearchService {
     cursor?: string,
     limit = 20,
   ) {
+    // Try Meilisearch first (faster, typo tolerant, Arabic-aware)
+    if (this.meilisearch.isAvailable() && type && !cursor) {
+      const indexMap: Record<string, string> = {
+        people: 'users', posts: 'posts', threads: 'threads',
+        reels: 'reels', videos: 'videos', tags: 'hashtags',
+      };
+      const indexName = indexMap[type];
+      if (indexName) {
+        const result = await this.meilisearch.search(indexName, query, { limit });
+        if (result && result.hits.length > 0) {
+          return { data: result.hits, meta: { hasMore: result.hits.length === limit, cursor: undefined } };
+        }
+      }
+      // Fall through to Prisma if Meilisearch returns no results
+    }
+
     // If type is specified and is 'posts', 'threads', 'reels', 'videos', or 'channels', return paginated response
     if (type === 'posts' || type === 'threads' || type === 'reels' || type === 'videos' || type === 'channels') {
       const take = limit + 1; // Fetch one extra to check if there's more

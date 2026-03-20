@@ -33,9 +33,10 @@ interface Props {
   post: Post;
   viewerId?: string;
   isOwn?: boolean;
+  isFrequentCreator?: boolean;
 }
 
-export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props) {
+export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFrequentCreator }: Props) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const haptic = useHaptic();
@@ -223,6 +224,11 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn }: Props)
             <View style={styles.nameRow}>
               <Text style={styles.name}>{post.user.displayName}</Text>
               {post.user.isVerified && <VerifiedBadge size={14} />}
+              {isFrequentCreator && (
+                <View style={{ marginLeft: 4, flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                  <Icon name="heart-filled" size={12} color={colors.gold} />
+                </View>
+              )}
               {(post.collaborators?.length ?? 0) > 0 && (
                 <View style={{ marginLeft: 4 }}>
                   <Icon name="users" size="sm" color={colors.text.secondary} />

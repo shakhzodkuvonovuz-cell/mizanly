@@ -27,6 +27,7 @@ import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
+import { getActiveIslamicTheme, isEidToday } from '@/theme/islamicThemes';
 import { initSentry, setSentryUser } from '@/config/sentry';
 
 // Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
@@ -47,6 +48,28 @@ initSentry();
 SplashScreen.preventAutoHideAsync();
 
 const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+/**
+ * Islamic calendar theme banner.
+ * Shows Eid/Ramadan banners and applies accent color overrides.
+ */
+function IslamicThemeBanner() {
+  const theme = getActiveIslamicTheme();
+  if (!theme || !theme.bannerTextKey) return null;
+
+  return (
+    <View style={{
+      backgroundColor: theme.accentColor,
+      paddingVertical: 6,
+      paddingHorizontal: 16,
+      alignItems: 'center',
+    }}>
+      <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
+        {theme.bannerTextKey === 'themes.eidMubarak' ? 'Eid Mubarak! 🌙' : 'Ramadan Kareem 🌙'}
+      </Text>
+    </View>
+  );
+}
 
 // Query cache persistence deferred — requires @tanstack/react-query-persist-client package install
 const queryClient = new QueryClient({
@@ -273,6 +296,7 @@ export default function RootLayout() {
             <QueryClientProvider client={queryClient}>
               <StatusBar style="light" />
               <OfflineBanner />
+              <IslamicThemeBanner />
               <AuthGuard />
               <AppStateHandler />
               <ShareIntentHandler />

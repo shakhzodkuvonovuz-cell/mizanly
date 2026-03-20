@@ -138,4 +138,37 @@ export const islamicApi = {
     api.post(`/islamic/dhikr/challenges/${id}/join`, {}),
   contributeToDhikrChallenge: (id: string, count: number) =>
     api.post(`/islamic/dhikr/challenges/${id}/contribute`, { count }),
+
+  // ── Dua Collection ──
+
+  getDuas: (category?: string) =>
+    api.get(`/islamic/duas${category ? `?category=${category}` : ''}`),
+  getDuaOfTheDay: () => api.get('/islamic/duas/daily'),
+  getDuaCategories: () => api.get<string[]>('/islamic/duas/categories'),
+  getDuaById: (id: string) => api.get(`/islamic/duas/${id}`),
+  bookmarkDua: (duaId: string) => api.post(`/islamic/duas/${duaId}/bookmark`, {}),
+  unbookmarkDua: (duaId: string) => api.delete(`/islamic/duas/${duaId}/bookmark`),
+  getBookmarkedDuas: () => api.get('/islamic/duas/bookmarked'),
+
+  // ── Fasting Tracker ──
+
+  logFast: (data: { date: string; isFasting: boolean; fastType?: string; reason?: string }) =>
+    api.post('/islamic/fasting/log', data),
+  getFastingLog: (month: string) =>
+    api.get(`/islamic/fasting/log?month=${month}`),
+  getFastingStats: () => api.get('/islamic/fasting/stats'),
+
+  // ── 99 Names of Allah ──
+
+  getNamesOfAllah: () => api.get('/islamic/names-of-allah'),
+  getDailyNameOfAllah: () => api.get('/islamic/names-of-allah/daily'),
+  getNameOfAllah: (num: number) => api.get(`/islamic/names-of-allah/${num}`),
+
+  // ── Hifz (Quran Memorization) Tracker ──
+
+  getHifzProgress: () => api.get('/islamic/hifz/progress'),
+  updateHifzProgress: (surahNum: number, status: string) =>
+    api.patch(`/islamic/hifz/progress/${surahNum}`, { status }),
+  getHifzStats: () => api.get('/islamic/hifz/stats'),
+  getHifzReviewSchedule: () => api.get('/islamic/hifz/review-schedule'),
 };

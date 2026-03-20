@@ -32,6 +32,26 @@ declare module 'expo-sensors' {
   };
 }
 
+declare module 'expo-speech' {
+  export function speak(text: string, options?: {
+    language?: string;
+    pitch?: number;
+    rate?: number;
+    onDone?: () => void;
+    onStopped?: () => void;
+    onError?: (error: Error) => void;
+    onStart?: () => void;
+  }): void;
+  export function stop(): Promise<void>;
+  export function isSpeakingAsync(): Promise<boolean>;
+  export function getAvailableVoicesAsync(): Promise<Array<{
+    identifier: string;
+    name: string;
+    quality: string;
+    language: string;
+  }>>;
+}
+
 declare module 'expo-contacts' {
   export function requestPermissionsAsync(): Promise<{ status: string }>;
   export function getContactsAsync(options?: {
