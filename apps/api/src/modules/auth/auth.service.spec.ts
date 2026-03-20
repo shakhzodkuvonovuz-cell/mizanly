@@ -252,5 +252,88 @@ describe('AuthService', () => {
     });
   });
 
-  // Note: register method is complex due to Clerk dependency; we skip for brevity
+  describe('register', () => {
+    it('should register a new user with Clerk data', async () => {
+      const clerkId = 'clerk-abc';
+      const dto = { username: 'JohnDoe', displayName: 'John Doe', bio: 'Hello', avatarUrl: 'https://example.com/av.jpg', language: 'en' };
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null); // username not taken
+      prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId, username: 'johndoe', email: 'john@example.com' });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      const result = await service.register(clerkId, dto as any);
+
+      expect(mockClerkClient.users.getUser).toHaveBeenCalledWith(clerkId);
+      expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        where: { clerkId },
+        create: expect.objectContaining({ username: 'johndoe', email: 'john@example.com' }),
+      }));
+      expect(prisma.userSettings.upsert).toHaveBeenCalled();
+      expect(result.id).toBe('user-1');
+    });
+
+    it('should throw BadRequestException when Clerk has no email', async () => {
+      mockClerkClient.users.getUser.mockResolvedValue({ emailAddresses: [] });
+
+      await expect(service.register('clerk-abc', { username: 'test', displayName: 'Test' } as any)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ConflictException when username taken by another user', async () => {
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue({ id: 'other-user', clerkId: 'clerk-other' });
+
+      await expect(service.register('clerk-abc', { username: 'taken', displayName: 'Test' } as any)).rejects.toThrow(ConflictException);
+    });
+
+    it('should allow re-registration with same clerkId owning the username', async () => {
+      const clerkId = 'clerk-abc';
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', clerkId }); // same user
+      prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId, username: 'myname' });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      const result = await service.register(clerkId, { username: 'myname', displayName: 'Test' } as any);
+
+      expect(result.id).toBe('user-1');
+    });
+
+    it('should default language to en when not provided', async () => {
+      const clerkId = 'clerk-abc';
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.register(clerkId, { username: 'test', displayName: 'Test' } as any);
+
+      expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        create: expect.objectContaining({ language: 'en' }),
+      }));
+    });
+
+    it('should lowercase the username', async () => {
+      const clerkId = 'clerk-abc';
+      mockClerkClient.users.getUser.mockResolvedValue({
+        emailAddresses: [{ emailAddress: 'john@example.com' }],
+      });
+      prisma.user.findUnique.mockResolvedValue(null);
+      prisma.user.upsert.mockResolvedValue({ id: 'user-1', clerkId });
+      prisma.userSettings.upsert.mockResolvedValue({});
+
+      await service.register(clerkId, { username: 'MyUser', displayName: 'Test' } as any);
+
+      expect(prisma.user.findUnique).toHaveBeenCalledWith({ where: { username: 'myuser' } });
+      expect(prisma.user.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        create: expect.objectContaining({ username: 'myuser' }),
+      }));
+    });
+  });
 });

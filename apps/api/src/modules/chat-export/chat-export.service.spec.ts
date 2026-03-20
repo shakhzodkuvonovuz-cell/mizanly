@@ -78,5 +78,53 @@ describe('ChatExportService', () => {
       prisma.conversationMember.findUnique.mockResolvedValue(null);
       await expect(service.getConversationStats('c1', 'u1')).rejects.toThrow(ForbiddenException);
     });
+
+    it('should return "Direct Message" for DMs without groupName', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({
+        groupName: null, isGroup: false, createdAt: new Date(),
+        _count: { members: 2 },
+      });
+      prisma.message.count.mockResolvedValueOnce(50).mockResolvedValueOnce(5);
+      const result = await service.getConversationStats('c1', 'u1');
+      expect(result.name).toBe('Direct Message');
+      expect(result.isGroup).toBe(false);
+    });
+  });
+
+  describe('generateExport — includeMedia', () => {
+    it('should include mediaUrl in JSON export when includeMedia is true', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'm1', content: 'Photo', messageType: 'IMAGE', mediaUrl: 'https://cdn.example.com/pic.jpg', createdAt: new Date(), sender: { username: 'u1', displayName: 'User 1' } },
+      ]);
+      const result = await service.generateExport('c1', 'u1', 'json', true) as any;
+      expect(result.messages[0].mediaUrl).toBe('https://cdn.example.com/pic.jpg');
+    });
+
+    it('should include mediaUrl in text export when includeMedia is true', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: true, groupName: 'Photos', createdAt: new Date() });
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'm1', content: 'Check this', messageType: 'IMAGE', mediaUrl: 'https://cdn.example.com/pic.jpg', createdAt: new Date(), sender: { username: 'u1', displayName: 'User 1' } },
+      ]);
+      const result = await service.generateExport('c1', 'u1', 'text', true) as any;
+      expect(result.text).toContain('https://cdn.example.com/pic.jpg');
+    });
+  });
+
+  describe('generateExport — edge cases', () => {
+    it('should handle empty conversation', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      prisma.message.findMany.mockResolvedValue([]);
+      const result = await service.generateExport('c1', 'u1', 'json', false) as any;
+      expect(result.messages).toHaveLength(0);
+      expect(result.conversation.messageCount).toBe(0);
+    });
+
+    it('should use "Direct Message" as name for DMs in text format', async () => {
+      prisma.conversation.findUnique.mockResolvedValue({ id: 'c1', isGroup: false, groupName: null, createdAt: new Date() });
+      prisma.message.findMany.mockResolvedValue([]);
+      const result = await service.generateExport('c1', 'u1', 'text', false) as any;
+      expect(result.text).toContain('Direct Message');
+    });
   });
 });

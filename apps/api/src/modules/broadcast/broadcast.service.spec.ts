@@ -178,4 +178,144 @@ describe('BroadcastService', () => {
       expect(result.data).toHaveLength(1);
     });
   });
+
+  describe('getById', () => {
+    it('should return channel by id', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue({ id: 'ch1', name: 'Test' });
+      const result = await service.getById('ch1');
+      expect(result.id).toBe('ch1');
+    });
+
+    it('should throw NotFoundException for invalid id', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unpinMessage', () => {
+    it('should unpin message as admin', async () => {
+      prisma.broadcastMessage.findUnique.mockResolvedValue({ id: 'msg1', channelId: 'ch1' });
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.broadcastMessage.update.mockResolvedValue({ id: 'msg1', isPinned: false });
+      const result = await service.unpinMessage('msg1', 'user1');
+      expect(result.isPinned).toBe(false);
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.broadcastMessage.findUnique.mockResolvedValue(null);
+      await expect(service.unpinMessage('nonexistent', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteMessage', () => {
+    it('should delete message and decrement postsCount', async () => {
+      prisma.broadcastMessage.findUnique.mockResolvedValue({ id: 'msg1', channelId: 'ch1' });
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      prisma.broadcastMessage.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      const result = await service.deleteMessage('msg1', 'user1');
+      expect(result).toEqual({ deleted: true });
+      expect(prisma.$executeRaw).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.broadcastMessage.findUnique.mockResolvedValue(null);
+      await expect(service.deleteMessage('nonexistent', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getPinnedMessages', () => {
+    it('should return pinned messages', async () => {
+      prisma.broadcastMessage.findMany.mockResolvedValue([{ id: 'msg1', isPinned: true }]);
+      const result = await service.getPinnedMessages('ch1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('muteChannel', () => {
+    it('should mute channel for subscriber', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ userId: 'u1', channelId: 'ch1' });
+      prisma.channelMember.update.mockResolvedValue({ isMuted: true });
+      const result = await service.muteChannel('ch1', 'u1', true);
+      expect(result.isMuted).toBe(true);
+    });
+
+    it('should throw NotFoundException when not subscribed', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue(null);
+      await expect(service.muteChannel('ch1', 'u1', true)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMyChannels', () => {
+    it('should return user channels with role', async () => {
+      prisma.channelMember.findMany.mockResolvedValue([
+        { channel: { id: 'ch1', name: 'Test' }, role: 'OWNER', isMuted: false },
+      ]);
+      const result = await service.getMyChannels('u1');
+      expect(result).toHaveLength(1);
+      expect(result[0].role).toBe('OWNER');
+    });
+  });
+
+  describe('promoteToAdmin', () => {
+    it('should promote subscriber to admin', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' }) // requireRole for owner
+        .mockResolvedValueOnce({ role: 'SUBSCRIBER', userId: 'target' }); // target lookup
+      prisma.channelMember.update.mockResolvedValue({ role: 'ADMIN' });
+      const result = await service.promoteToAdmin('ch1', 'owner1', 'target');
+      expect(result.role).toBe('ADMIN');
+    });
+
+    it('should throw NotFoundException when target not found', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' })
+        .mockResolvedValueOnce(null);
+      await expect(service.promoteToAdmin('ch1', 'owner1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when targeting owner', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' })
+        .mockResolvedValueOnce({ role: 'OWNER', userId: 'target' });
+      await expect(service.promoteToAdmin('ch1', 'owner1', 'target')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('demoteFromAdmin', () => {
+    it('should demote admin to subscriber', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' })
+        .mockResolvedValueOnce({ role: 'ADMIN', userId: 'target' });
+      prisma.channelMember.update.mockResolvedValue({ role: 'SUBSCRIBER' });
+      const result = await service.demoteFromAdmin('ch1', 'owner1', 'target');
+      expect(result.role).toBe('SUBSCRIBER');
+    });
+  });
+
+  describe('removeSubscriber', () => {
+    it('should remove subscriber from channel', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' })
+        .mockResolvedValueOnce({ role: 'SUBSCRIBER', userId: 'target' });
+      prisma.channelMember.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      const result = await service.removeSubscriber('ch1', 'owner1', 'target');
+      expect(result).toEqual({ removed: true });
+    });
+
+    it('should throw ForbiddenException when removing owner', async () => {
+      prisma.channelMember.findUnique
+        .mockResolvedValueOnce({ role: 'OWNER' })
+        .mockResolvedValueOnce({ role: 'OWNER', userId: 'target' });
+      await expect(service.removeSubscriber('ch1', 'owner1', 'target')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('unsubscribe — owner restriction', () => {
+    it('should throw ForbiddenException when owner tries to unsubscribe', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ userId: 'u1', channelId: 'ch1', role: 'OWNER' });
+      await expect(service.unsubscribe('ch1', 'u1')).rejects.toThrow(ForbiddenException);
+    });
+  });
 });

@@ -220,4 +220,61 @@ describe('BlocksService', () => {
       expect(result).toBe(false);
     });
   });
+
+  describe('block — edge cases', () => {
+    it('should throw NotFoundException when target user does not exist', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+
+      await expect(service.block('user-123', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should not include counter updates when no follows existed', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-456' });
+      prisma.block.findUnique.mockResolvedValue(null);
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.$transaction.mockResolvedValue([]);
+
+      await service.block('user-123', 'user-456');
+
+      const txArgs = prisma.$transaction.mock.calls[0][0];
+      expect(txArgs.length).toBe(3); // block.create + follow.deleteMany + followRequest.deleteMany
+    });
+  });
+
+  describe('getBlockedList — edge cases', () => {
+    it('should return empty list when no blocks', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+
+      const result = await service.getBlockedList('user-123');
+
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toBeNull();
+    });
+
+    it('should set hasMore true when results exceed limit', async () => {
+      const blocks = Array.from({ length: 21 }, (_, i) => ({
+        blockedId: `user-${i}`,
+        createdAt: new Date(),
+        blocked: { id: `user-${i}`, username: `user${i}`, displayName: `User ${i}`, avatarUrl: null },
+      }));
+      prisma.block.findMany.mockResolvedValue(blocks);
+
+      const result = await service.getBlockedList('user-123');
+
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('user-19');
+    });
+
+    it('should apply custom limit', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+
+      await service.getBlockedList('user-123', undefined, 5);
+
+      expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        take: 6,
+      }));
+    });
+  });
 });
