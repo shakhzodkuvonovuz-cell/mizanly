@@ -28,7 +28,13 @@
 **Fix:** Add `@relation(fields: [...], references: [id], onDelete: Cascade)` to all internal FK fields. Add corresponding relation arrays on referenced models.
 **Effort:** Large (touch 93 fields across ~55 models, plus add relation arrays on User model)
 
-### P1-002: CharityDonation/CharityCampaign Money Fields Use Int
+### P1-002: No WebRTC TURN/STUN Server for Calls
+**File:** `apps/api/src/gateways/chat.gateway.ts` — call signaling events
+**Impact:** Voice/video calls fail behind NAT (most mobile networks). Call UI exists but actual peer-to-peer audio/video won't connect.
+**Fix:** Deploy a TURN server (coturn or Twilio TURN), configure credentials in backend, pass ICE servers to clients.
+**Effort:** Medium-Large (2-3 days for TURN setup + testing)
+
+### P1-003: CharityDonation/CharityCampaign Money Fields Use Int
 **File:** `apps/api/prisma/schema.prisma` lines 2396, 2413, 2414
 **Impact:** Cannot donate fractional amounts ($4.50 becomes $4 or $5). Real money truncation.
 **Fix:** Change `amount Int` to `amount Decimal @db.Decimal(12, 2)` on CharityDonation, and `goalAmount`/`raisedAmount` on CharityCampaign.

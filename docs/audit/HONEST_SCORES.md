@@ -23,6 +23,27 @@ Scores are 1-10 where:
 | 10 | Zustand Store | 8.0/10 | Fully typed, persisted, flat shape, 50 state fields. Clean implementation. |
 | 20 | Code Quality | 9.0/10 | 0 ts-ignore, 0 console.log, 1 `as any`, 0 `any` in types. Exceptional. |
 
-**Dimensions 1-10 + 20 Average: 6.6/10**
+| 11 | Type Definitions | 8.0/10 | 1,014 lines, 0 `any`, matches Prisma models accurately. |
+| 12 | Navigation & Routing | 7.5/10 | Clerk auth, 5 tabs, RTL, deep linking, font scaling cap. |
+| 13 | i18n (8 languages) | 8.0/10 | 2,740 keys × 8 languages at 100% parity. Auto-detect locale. |
+| 14 | Socket.io Gateway | 7.0/10 | JWT auth, Redis presence, DTO validation, Quran rooms. No WebRTC TURN for calls. |
+| 15 | Security | 7.0/10 | OWASP covered. Helmet, CORS, validation, rate limits. Image moderation stub is P0. |
 
-Schema and Islamic backend drag the score down hard. Frontend code quality is genuinely strong (7-9/10 range). The gap between backend data integrity (5/10) and frontend discipline (8/10) is the most notable pattern.
+**Dimensions 1-15 + 20 Average: 6.9/10**
+
+| 16 | Testing | 7.5/10 | 101 suites, 1,445 tests, 100% pass. Real business logic tests, not stubs. 6 untested modules. |
+
+**Dimensions 1-16 + 20 Average: 7.0/10**
+
+The pattern is clear: **infrastructure and frontend are strong (7-8/10), but the Islamic differentiator and data integrity are weak (5/10)**. The app has a solid skeleton built to enterprise standards, but the features that make it unique (prayer times, mosques, halal finder) are mock stubs.
+
+### Honest Assessment
+
+What Instagram/TikTok/WhatsApp engineers would say if they reviewed this codebase:
+- "The architecture is sound — NestJS + Prisma + Expo Router + Zustand is a reasonable stack"
+- "Controller layer is professional quality — auth, rate limiting, swagger, validation"
+- "Code quality is exceptional for a solo/small-team project — 0 ts-ignore is rare"
+- "But the Islamic features — the WHOLE REASON this app exists — are mocked. Prayer times don't work."
+- "93 tables have no referential integrity. User deletion = data corruption."
+- "Calls have a pretty UI but no actual WebRTC. Can't make a real call."
+- "This is a very well-built shell with critical gaps in the unique value proposition."
