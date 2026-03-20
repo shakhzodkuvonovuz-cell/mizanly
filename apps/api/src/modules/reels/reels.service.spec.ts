@@ -640,4 +640,310 @@ describe('ReelsService', () => {
       expect(prisma.$transaction).toHaveBeenCalled();
     });
   });
+
+  // ═══════════════════════════════════════════════════════
+  // getById
+  // ═══════════════════════════════════════════════════════
+
+  describe('getById', () => {
+    const mockReel = {
+      id: 'reel-1', videoUrl: 'https://r2/vid.mp4', caption: 'Test', status: 'READY',
+      isRemoved: false, likesCount: 10, commentsCount: 5, sharesCount: 2, viewsCount: 100,
+      user: { id: 'owner', username: 'owner', displayName: 'Owner', avatarUrl: null, isVerified: false },
+    };
+
+    it('should return reel with isLiked/isBookmarked when userId provided', async () => {
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
+      prisma.reelReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
+      prisma.reelInteraction.findUnique.mockResolvedValue({ saved: true });
+
+      const result = await service.getById('reel-1', 'user-1');
+      expect(result.id).toBe('reel-1');
+      expect(result.isLiked).toBe(true);
+      expect(result.isBookmarked).toBe(true);
+    });
+
+    it('should return reel with isLiked=false isBookmarked=false when no interaction', async () => {
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
+      prisma.reelReaction.findUnique.mockResolvedValue(null);
+      prisma.reelInteraction.findUnique.mockResolvedValue(null);
+
+      const result = await service.getById('reel-1', 'user-1');
+      expect(result.isLiked).toBe(false);
+      expect(result.isBookmarked).toBe(false);
+    });
+
+    it('should return reel without user context', async () => {
+      prisma.reel.findUnique.mockResolvedValue(mockReel);
+
+      const result = await service.getById('reel-1');
+      expect(result.isLiked).toBe(false);
+      expect(result.isBookmarked).toBe(false);
+    });
+
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when reel is removed', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ ...mockReel, isRemoved: true });
+      await expect(service.getById('reel-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when reel status is PROCESSING', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ ...mockReel, status: 'PROCESSING' });
+      await expect(service.getById('reel-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // comment
+  // ═══════════════════════════════════════════════════════
+
+  describe('comment', () => {
+    it('should create comment and return it', async () => {
+      const mockComment = { id: 'comment-1', content: 'Great reel!', createdAt: new Date(), user: { id: 'user-1' } };
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', userId: 'user-1', status: 'READY' });
+      prisma.$transaction.mockResolvedValue([mockComment, 1]);
+
+      const result = await service.comment('reel-1', 'user-1', 'Great reel!');
+      expect(result.id).toBe('comment-1');
+      expect(result.content).toBe('Great reel!');
+    });
+
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.comment('nonexistent', 'user-1', 'test')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when reel not READY', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', status: 'PROCESSING' });
+      await expect(service.comment('reel-1', 'user-1', 'test')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getComments
+  // ═══════════════════════════════════════════════════════
+
+  describe('getComments', () => {
+    it('should return comments with pagination', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.reelComment.findMany.mockResolvedValue([
+        { id: 'c-1', content: 'Nice!', user: { id: 'u1' } },
+      ]);
+
+      const result = await service.getComments('reel-1', 'user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty for reel with no comments', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.reelComment.findMany.mockResolvedValue([]);
+
+      const result = await service.getComments('reel-1', 'user-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // share
+  // ═══════════════════════════════════════════════════════
+
+  describe('share', () => {
+    it('should share reel and increment count', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', status: 'READY' });
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn({
+          reelInteraction: { findUnique: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
+          $executeRaw: jest.fn(),
+        });
+        return [];
+      });
+
+      const result = await service.share('reel-1', 'user-1');
+      expect(result).toEqual({ shared: true });
+    });
+
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.share('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // bookmark / unbookmark
+  // ═══════════════════════════════════════════════════════
+
+  describe('bookmark', () => {
+    it('should bookmark reel', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', status: 'READY' });
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn({
+          reelInteraction: { findUnique: jest.fn().mockResolvedValue(null), upsert: jest.fn() },
+          $executeRaw: jest.fn(),
+        });
+        return false;
+      });
+
+      const result = await service.bookmark('reel-1', 'user-1');
+      expect(result).toEqual({ bookmarked: true });
+    });
+
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.bookmark('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException when already bookmarked', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', status: 'READY' });
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn({
+          reelInteraction: { findUnique: jest.fn().mockResolvedValue({ saved: true }), upsert: jest.fn() },
+          $executeRaw: jest.fn(),
+        });
+        return true;
+      });
+
+      await expect(service.bookmark('reel-1', 'user-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('unbookmark', () => {
+    it('should unbookmark reel', async () => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn({
+          reelInteraction: { findUnique: jest.fn().mockResolvedValue({ saved: true }), update: jest.fn() },
+          $executeRaw: jest.fn(),
+        });
+        return true;
+      });
+
+      const result = await service.unbookmark('reel-1', 'user-1');
+      expect(result).toEqual({ bookmarked: false });
+    });
+
+    it('should throw NotFoundException when not bookmarked', async () => {
+      prisma.$transaction.mockImplementation(async (fn: any) => {
+        if (typeof fn === 'function') return fn({
+          reelInteraction: { findUnique: jest.fn().mockResolvedValue(null) },
+        });
+        return false;
+      });
+
+      await expect(service.unbookmark('reel-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // report
+  // ═══════════════════════════════════════════════════════
+
+  describe('report', () => {
+    it('should create report for reel', async () => {
+      prisma.report.create.mockResolvedValue({});
+
+      const result = await service.report('reel-1', 'user-1', 'SPAM');
+      expect(result).toEqual({ reported: true });
+      expect(prisma.report.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ reporterId: 'user-1' }) }),
+      );
+    });
+
+    it('should handle unknown reason by mapping to OTHER', async () => {
+      prisma.report.create.mockResolvedValue({});
+      const result = await service.report('reel-1', 'user-1', 'UNKNOWN_REASON');
+      expect(result).toEqual({ reported: true });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // archive / unarchive
+  // ═══════════════════════════════════════════════════════
+
+  describe('archive', () => {
+    it('should archive reel for owner', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', userId: 'user-1' });
+      prisma.reel.update.mockResolvedValue({});
+
+      const result = await service.archive('reel-1', 'user-1');
+      expect(result).toEqual({ archived: true });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', userId: 'other' });
+      await expect(service.archive('reel-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.archive('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unarchive', () => {
+    it('should unarchive reel for owner', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', userId: 'user-1', isArchived: true });
+      prisma.reel.update.mockResolvedValue({});
+
+      const result = await service.unarchive('reel-1', 'user-1');
+      expect(result).toEqual({ archived: false });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ id: 'reel-1', userId: 'other', isArchived: true });
+      await expect(service.unarchive('reel-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getUserReels
+  // ═══════════════════════════════════════════════════════
+
+  describe('getUserReels', () => {
+    it('should return reels by username', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'testuser' });
+      prisma.reel.findMany.mockResolvedValue([
+        { id: 'reel-1', status: 'READY', isRemoved: false, user: { id: 'user-1' } },
+      ]);
+      prisma.reelReaction.findMany.mockResolvedValue([]);
+      prisma.reelInteraction.findMany.mockResolvedValue([]);
+
+      const result = await service.getUserReels('testuser');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException for non-existent user', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.getUserReels('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getTrendingReels
+  // ═══════════════════════════════════════════════════════
+
+  describe('getTrendingReels', () => {
+    it('should return trending reels scored by engagement', async () => {
+      prisma.reel.findMany.mockResolvedValue([
+        { id: 'reel-1', createdAt: new Date(), likesCount: 100, commentsCount: 50, sharesCount: 20, viewsCount: 1000, user: { id: 'u1' } },
+        { id: 'reel-2', createdAt: new Date(), likesCount: 10, commentsCount: 5, sharesCount: 2, viewsCount: 100, user: { id: 'u2' } },
+      ]);
+
+      const result = await service.getTrendingReels();
+      expect(result.data).toBeDefined();
+      expect(result.meta).toBeDefined();
+    });
+
+    it('should return empty when no recent reels', async () => {
+      prisma.reel.findMany.mockResolvedValue([]);
+
+      const result = await service.getTrendingReels();
+      expect(result.data).toEqual([]);
+    });
+  });
 });
