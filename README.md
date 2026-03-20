@@ -103,7 +103,11 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 | Service Files | 19 |
 | Translation Keys | 2,740 per language |
 | Supported Languages | 8 (English, Arabic, Turkish, Urdu, Bengali, French, Indonesian, Malay) |
-| Git Commits | 633 |
+| REST Endpoints | 843 |
+| Socket Events | 16 |
+| Backend Services | 87 |
+| DTOs | 86 |
+| Git Commits | 636 |
 | Development Time | 17 days (Mar 3–20, 2026) |
 
 ---
