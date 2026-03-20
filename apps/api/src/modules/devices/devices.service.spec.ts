@@ -12,8 +12,10 @@ describe('DevicesService', () => {
     prisma = {
       device: {
         upsert: jest.fn(),
+        update: jest.fn(),
         updateMany: jest.fn(),
         findMany: jest.fn(),
+        deleteMany: jest.fn(),
       },
     };
 
@@ -131,6 +133,66 @@ describe('DevicesService', () => {
         select: { pushToken: true },
       }));
       expect(result).toEqual(['token-a', 'token-b', 'token-c']);
+    });
+  });
+
+  describe('getSessions', () => {
+    it('should return active sessions for user', async () => {
+      prisma.device.findMany.mockResolvedValue([
+        { id: 'd1', platform: 'ios', deviceName: 'iPhone 15', lastActiveAt: new Date() },
+        { id: 'd2', platform: 'android', deviceName: 'Pixel 8', lastActiveAt: new Date() },
+      ]);
+      const result = await service.getSessions('user-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].platform).toBe('ios');
+    });
+  });
+
+  describe('logoutSession', () => {
+    it('should deactivate specific session', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 1 });
+      const result = await service.logoutSession('session-1', 'user-1');
+      expect(result).toEqual({ loggedOut: true });
+      expect(prisma.device.updateMany).toHaveBeenCalledWith({
+        where: { id: 'session-1', userId: 'user-1' },
+        data: { isActive: false },
+      });
+    });
+  });
+
+  describe('logoutAllOtherSessions', () => {
+    it('should deactivate all sessions except current', async () => {
+      prisma.device.updateMany.mockResolvedValue({ count: 3 });
+      const result = await service.logoutAllOtherSessions('user-1', 'current-session');
+      expect(result).toEqual({ loggedOut: true });
+      expect(prisma.device.updateMany).toHaveBeenCalledWith({
+        where: { userId: 'user-1', isActive: true, id: { not: 'current-session' } },
+        data: { isActive: false },
+      });
+    });
+  });
+
+  describe('touchSession', () => {
+    it('should update lastActiveAt and ipAddress', async () => {
+      prisma.device.update.mockResolvedValue({});
+      await service.touchSession('device-1', '192.168.1.1');
+      expect(prisma.device.update).toHaveBeenCalledWith({
+        where: { id: 'device-1' },
+        data: expect.objectContaining({ lastActiveAt: expect.any(Date), ipAddress: '192.168.1.1' }),
+      });
+    });
+
+    it('should skip when deviceId is empty', async () => {
+      await service.touchSession('');
+      expect(prisma.device.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('cleanupStaleTokens', () => {
+    it('should delete stale inactive tokens', async () => {
+      prisma.device.deleteMany.mockResolvedValue({ count: 5 });
+      const result = await service.cleanupStaleTokens(90);
+      expect(result).toBe(5);
     });
   });
 });
