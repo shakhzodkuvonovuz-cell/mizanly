@@ -142,7 +142,7 @@ export class IslamicController {
   @Get('mosques')
   @ApiOperation({ summary: 'Find nearby mosques' })
   @ApiResponse({ status: 200, description: 'List of nearby mosques', type: Object })
-  getNearbyMosques(@Query() query: MosquesQueryDto): Mosque[] {
+  async getNearbyMosques(@Query() query: MosquesQueryDto): Promise<Mosque[]> {
     return this.islamicService.getNearbyMosques(query.lat, query.lng, query.radius);
   }
 

@@ -311,84 +311,107 @@ export class IslamicService {
     return { data, cursor: nextCursor, hasMore };
   }
 
-  getNearbyMosques(lat: number, lng: number, radiusKm = 10): Mosque[] {
-    // Mock data for 8 mosques
-    const mockMosques: Mosque[] = [
-      {
-        id: '1',
-        name: 'Masjid al-Haram',
-        address: 'Mecca, Saudi Arabia',
-        lat: 21.4225,
-        lng: 39.8262,
-        facilities: ['Prayer Hall', 'Ablution', 'Library', 'Cafeteria'],
-      },
-      {
-        id: '2',
-        name: 'Masjid an-Nabawi',
-        address: 'Medina, Saudi Arabia',
-        lat: 24.4672,
-        lng: 39.6111,
-        facilities: ['Prayer Hall', 'Ablution', 'Library', 'Hospital'],
-      },
-      {
-        id: '3',
-        name: 'Al-Aqsa Mosque',
-        address: 'Jerusalem, Palestine',
-        lat: 31.7761,
-        lng: 35.2358,
-        facilities: ['Prayer Hall', 'Ablution', 'Historical Site'],
-      },
-      {
-        id: '4',
-        name: 'Sultan Ahmed Mosque',
-        address: 'Istanbul, Turkey',
-        lat: 41.0054,
-        lng: 28.9768,
-        facilities: ['Prayer Hall', 'Ablution', 'Tourist Guide'],
-      },
-      {
-        id: '5',
-        name: 'Sheikh Zayed Grand Mosque',
-        address: 'Abu Dhabi, UAE',
-        lat: 24.4129,
-        lng: 54.4740,
-        facilities: ['Prayer Hall', 'Ablution', 'Library', 'Cafeteria', 'Guided Tours'],
-      },
-      {
-        id: '6',
-        name: 'Islamic Center of Washington',
-        address: 'Washington D.C., USA',
-        lat: 38.9186,
-        lng: -77.0600,
-        facilities: ['Prayer Hall', 'Ablution', 'Library', 'Community Center'],
-      },
-      {
-        id: '7',
-        name: 'East London Mosque',
-        address: 'London, UK',
-        lat: 51.5187,
-        lng: -0.0656,
-        facilities: ['Prayer Hall', 'Ablution', 'School', 'Clinic'],
-      },
-      {
-        id: '8',
-        name: 'Sydney Islamic Centre',
-        address: 'Sydney, Australia',
-        lat: -33.8688,
-        lng: 151.2093,
-        facilities: ['Prayer Hall', 'Ablution', 'Sports Hall', 'Cafeteria'],
-      },
-    ];
+  async getNearbyMosques(lat: number, lng: number, radiusKm = 10, limit = 20): Promise<Mosque[]> {
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw new BadRequestException('Invalid coordinates');
+    }
 
-    // Filter by distance (simplified)
-    const filtered = mockMosques.map(mosque => ({
-      ...mosque,
-      distance: this.calculateDistance(lat, lng, mosque.lat, mosque.lng),
-    })).filter(m => m.distance <= radiusKm * 1000); // convert km to meters
+    const safeLimit = Math.min(Math.max(limit, 1), 50);
 
-    // Sort by distance
-    filtered.sort((a, b) => a.distance - b.distance);
-    return filtered;
+    // 1. Query MosqueCommunity database using Haversine formula
+    try {
+      const dbMosques = await this.prisma.$queryRaw<Array<{
+        id: string; name: string; address: string; city: string; country: string;
+        latitude: number; longitude: number; madhab: string | null; language: string | null;
+        phone: string | null; website: string | null; imageUrl: string | null;
+        memberCount: number; isVerified: boolean; distance: number;
+      }>>`
+        SELECT id, name, address, city, country, latitude, longitude,
+          madhab, language, phone, website, "imageUrl", "memberCount", "isVerified",
+          (6371 * acos(
+            LEAST(1.0, GREATEST(-1.0,
+              cos(radians(${lat})) * cos(radians(latitude))
+              * cos(radians(longitude) - radians(${lng}))
+              + sin(radians(${lat})) * sin(radians(latitude))
+            ))
+          )) AS distance
+        FROM "mosque_communities"
+        WHERE (6371 * acos(
+          LEAST(1.0, GREATEST(-1.0,
+            cos(radians(${lat})) * cos(radians(latitude))
+            * cos(radians(longitude) - radians(${lng}))
+            + sin(radians(${lat})) * sin(radians(latitude))
+          ))
+        )) < ${radiusKm}
+        ORDER BY distance
+        LIMIT ${safeLimit}
+      `;
+
+      if (dbMosques.length > 0) {
+        return dbMosques.map(m => ({
+          id: m.id,
+          name: m.name,
+          address: `${m.address}, ${m.city}, ${m.country}`,
+          lat: m.latitude,
+          lng: m.longitude,
+          facilities: [],
+          distance: Math.round(m.distance * 1000), // km to meters
+        }));
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`MosqueCommunity query failed: ${msg}`);
+    }
+
+    // 2. Fallback: query OpenStreetMap Overpass API for mosques
+    const cacheKey = `mosques:${lat.toFixed(1)}:${lng.toFixed(1)}:${radiusKm}`;
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Cache miss
+    }
+
+    try {
+      const radiusMeters = radiusKm * 1000;
+      const query = `[out:json][timeout:10];node["amenity"="place_of_worship"]["religion"="muslim"](around:${radiusMeters},${lat},${lng});out body ${safeLimit};`;
+      const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+      const elements = data.elements || [];
+
+      const mosques: Mosque[] = elements.map((el: { id: number; lat: number; lon: number; tags?: Record<string, string> }) => ({
+        id: `osm-${el.id}`,
+        name: el.tags?.name || el.tags?.['name:en'] || 'Mosque',
+        address: [el.tags?.['addr:street'], el.tags?.['addr:city'], el.tags?.['addr:country']].filter(Boolean).join(', ') || 'Address unavailable',
+        lat: el.lat,
+        lng: el.lon,
+        facilities: [],
+        distance: this.calculateDistance(lat, lng, el.lat, el.lon),
+      }));
+
+      mosques.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
+
+      // Cache OSM results for 7 days
+      try {
+        await this.redis.setex(cacheKey, 604800, JSON.stringify(mosques));
+      } catch {
+        // Non-critical
+      }
+
+      return mosques;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`OSM Overpass API failed: ${msg}`);
+    }
+
+    // 3. No results from either source
+    return [];
   }
 
   calculateZakat(params: ZakatCalculationRequest): ZakatCalculationResponse {
