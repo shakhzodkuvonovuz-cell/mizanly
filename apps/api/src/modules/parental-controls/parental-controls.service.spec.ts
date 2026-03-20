@@ -153,5 +153,140 @@ describe('ParentalControlsService', () => {
       expect(result.dailyBreakdown).toHaveLength(1);
       expect(result.totalScreenTimeMinutes).toBe(60);
     });
+
+    it('should throw NotFoundException for unlinked parent/child', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(null);
+      await expect(service.getActivityDigest('parent-1', 'child-99'))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('linkChild — parent is child account', () => {
+    it('should throw BadRequestException when parent is a child account', async () => {
+      prisma.user.findUnique.mockResolvedValueOnce({ isChildAccount: true });
+      await expect(service.linkChild('child-parent', { childUserId: 'kid-1', pin: '1234' }))
+        .rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when child user not found', async () => {
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ isChildAccount: false })
+        .mockResolvedValueOnce(null);
+      prisma.parentalControl.findUnique.mockResolvedValue(null);
+      await expect(service.linkChild('parent-1', { childUserId: 'ghost', pin: '1234' }))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unlinkChild — not found', () => {
+    it('should throw NotFoundException when link does not exist', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(null);
+      await expect(service.unlinkChild('parent-1', 'child-99', '1234'))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMyChildren', () => {
+    it('should return linked children', async () => {
+      prisma.parentalControl.findMany.mockResolvedValue([
+        { id: 'pc-1', child: { id: 'child-1', username: 'kid1', displayName: 'Kid', avatarUrl: null, isChildAccount: true } },
+        { id: 'pc-2', child: { id: 'child-2', username: 'kid2', displayName: 'Kid2', avatarUrl: null, isChildAccount: true } },
+      ]);
+      const result = await service.getMyChildren('parent-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].child.username).toBe('kid1');
+    });
+
+    it('should return empty when no children linked', async () => {
+      prisma.parentalControl.findMany.mockResolvedValue([]);
+      const result = await service.getMyChildren('parent-1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getParentInfo', () => {
+    it('should return parent info for child', async () => {
+      prisma.parentalControl.findUnique.mockResolvedValue({
+        ...mockControl,
+        parent: { id: 'parent-1', username: 'dad', displayName: 'Dad', avatarUrl: null },
+      });
+      const result = await service.getParentInfo('child-1');
+      expect(result).not.toBeNull();
+      expect(result!.parentUser.username).toBe('dad');
+      expect(result!.restrictedMode).toBe(true);
+    });
+
+    it('should return null for non-child account', async () => {
+      prisma.parentalControl.findUnique.mockResolvedValue(null);
+      const result = await service.getParentInfo('not-a-child');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('updateControls', () => {
+    it('should update parental controls', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      prisma.parentalControl.update.mockResolvedValue({ ...mockControl, dailyLimitMinutes: 60 });
+      const result = await service.updateControls('parent-1', 'child-1', { dailyLimitMinutes: 60 } as any);
+      expect(result.dailyLimitMinutes).toBe(60);
+    });
+
+    it('should throw NotFoundException when link not found', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(null);
+      await expect(service.updateControls('parent-1', 'child-99', {} as any))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('changePin', () => {
+    it('should change PIN with correct current PIN', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      prisma.parentalControl.update.mockResolvedValue({ ...mockControl, pin: 'new-hash' });
+      const result = await service.changePin('parent-1', 'child-1', '1234', '5678');
+      expect(prisma.parentalControl.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'pc-1' },
+      }));
+      expect(result).toBeDefined();
+    });
+
+    it('should throw ForbiddenException with wrong current PIN', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(mockControl);
+      await expect(service.changePin('parent-1', 'child-1', '0000', '5678'))
+        .rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when link not found', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(null);
+      await expect(service.changePin('parent-1', 'child-99', '1234', '5678'))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('verifyPinForParent', () => {
+    it('should verify parent PIN', async () => {
+      prisma.parentalControl.findMany.mockResolvedValue([mockControl]);
+      const result = await service.verifyPinForParent('parent-1', '1234');
+      expect(result.valid).toBe(true);
+    });
+
+    it('should return invalid for wrong PIN', async () => {
+      prisma.parentalControl.findMany.mockResolvedValue([mockControl]);
+      const result = await service.verifyPinForParent('parent-1', '0000');
+      expect(result.valid).toBe(false);
+    });
+
+    it('should throw NotFoundException when no controls found', async () => {
+      prisma.parentalControl.findMany.mockResolvedValue([]);
+      await expect(service.verifyPinForParent('parent-1', '1234'))
+        .rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('verifyPin — NotFoundException', () => {
+    it('should throw NotFoundException when link not found', async () => {
+      prisma.parentalControl.findFirst.mockResolvedValue(null);
+      await expect(service.verifyPin('parent-1', 'child-99', '1234'))
+        .rejects.toThrow(NotFoundException);
+    });
   });
 });

@@ -70,4 +70,124 @@ describe('ScholarQAService', () => {
     const result = await service.submitQuestion('u1', 'qa-1', 'What is wudu?');
     expect(result.question).toBe('What is wudu?');
   });
+
+  describe('submitQuestion — not found', () => {
+    it('should throw NotFoundException when QA session not found', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValueOnce(null);
+      await expect(service.submitQuestion('u1', 'missing', 'test')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('voteQuestion', () => {
+    beforeEach(() => {
+      prisma.scholarQuestion.findUnique = jest.fn();
+      prisma.scholarQuestion.update = jest.fn();
+    });
+
+    it('should increment vote count', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', votes: 5 });
+      prisma.scholarQuestion.update.mockResolvedValue({ id: 'q-1', votes: 6 });
+      const result = await service.voteQuestion('u1', 'q-1');
+      expect(result.votes).toBe(6);
+    });
+
+    it('should throw NotFoundException for missing question', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue(null);
+      await expect(service.voteQuestion('u1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('startSession', () => {
+    it('should start a scheduled session', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue({ id: 'qa-1', scholarId: 'u1', status: 'scheduled' });
+      prisma.scholarQA.update.mockResolvedValue({ id: 'qa-1', status: 'live' });
+      const result = await service.startSession('u1', 'qa-1');
+      expect(result.status).toBe('live');
+    });
+
+    it('should throw NotFoundException for missing session', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue(null);
+      await expect(service.startSession('u1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-scholar', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue({ id: 'qa-1', scholarId: 'other' });
+      const { ForbiddenException } = require('@nestjs/common');
+      await expect(service.startSession('u1', 'qa-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('endSession', () => {
+    it('should end a live session', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue({ id: 'qa-1', scholarId: 'u1', status: 'live' });
+      prisma.scholarQA.update.mockResolvedValue({ id: 'qa-1', status: 'ended' });
+      const result = await service.endSession('u1', 'qa-1');
+      expect(result.status).toBe('ended');
+    });
+
+    it('should throw NotFoundException for missing session', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue(null);
+      await expect(service.endSession('u1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-scholar', async () => {
+      prisma.scholarQA.findUnique.mockResolvedValue({ id: 'qa-1', scholarId: 'other' });
+      const { ForbiddenException } = require('@nestjs/common');
+      await expect(service.endSession('u1', 'qa-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('markAnswered', () => {
+    beforeEach(() => {
+      prisma.scholarQuestion.findUnique = jest.fn();
+      prisma.scholarQuestion.update = jest.fn();
+    });
+
+    it('should mark question as answered', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', qa: { scholarId: 'u1' } });
+      prisma.scholarQuestion.update.mockResolvedValue({ id: 'q-1', isAnswered: true });
+      const result = await service.markAnswered('u1', 'q-1');
+      expect(result.isAnswered).toBe(true);
+    });
+
+    it('should throw NotFoundException for missing question', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue(null);
+      await expect(service.markAnswered('u1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-scholar', async () => {
+      prisma.scholarQuestion.findUnique.mockResolvedValue({ id: 'q-1', qa: { scholarId: 'other' } });
+      const { ForbiddenException } = require('@nestjs/common');
+      await expect(service.markAnswered('u1', 'q-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getRecordings', () => {
+    it('should return ended sessions with recordings', async () => {
+      prisma.scholarQA.findMany.mockResolvedValue([
+        { id: 'qa-1', status: 'ended', recordingUrl: 'https://cdn.example.com/rec.mp4' },
+      ]);
+      const result = await service.getRecordings();
+      expect(result).toHaveLength(1);
+      expect(result[0].recordingUrl).toBeDefined();
+    });
+
+    it('should return empty when no recordings', async () => {
+      prisma.scholarQA.findMany.mockResolvedValue([]);
+      const result = await service.getRecordings();
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('schedule — default language', () => {
+    it('should default language to en', async () => {
+      await service.schedule('u1', {
+        title: 'Test', category: 'fiqh',
+        scheduledAt: '2026-04-01T18:00:00Z',
+      });
+      expect(prisma.scholarQA.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ language: 'en' }),
+      }));
+    });
+  });
 });

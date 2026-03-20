@@ -93,5 +93,73 @@ describe('StoryChainsService', () => {
       expect(result.participantCount).toBe(10);
       expect(result.viewsCount).toBe(500);
     });
+
+    it('should throw NotFoundException for missing chain', async () => {
+      prisma.storyChain.findUnique.mockResolvedValue(null);
+      await expect(service.getStats('missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getTrending — pagination', () => {
+    it('should set hasMore when results exceed limit', async () => {
+      const chains = Array.from({ length: 21 }, (_, i) => ({ id: `c${i}`, participantCount: 100 - i }));
+      prisma.storyChain.findMany.mockResolvedValue(chains);
+      const result = await service.getTrending();
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.cursor).toBe('c19');
+    });
+
+    it('should return empty when no chains', async () => {
+      prisma.storyChain.findMany.mockResolvedValue([]);
+      const result = await service.getTrending();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toBeNull();
+    });
+
+    it('should pass cursor to query', async () => {
+      prisma.storyChain.findMany.mockResolvedValue([]);
+      await service.getTrending('c10', 5);
+      expect(prisma.storyChain.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: expect.objectContaining({ id: { lt: 'c10' } }),
+        take: 6,
+      }));
+    });
+  });
+
+  describe('joinChain — not found', () => {
+    it('should throw NotFoundException when chain not found', async () => {
+      prisma.storyChain.findUnique.mockResolvedValue(null);
+      await expect(service.joinChain('missing', 'u1', 's1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when story not found', async () => {
+      prisma.storyChain.findUnique.mockResolvedValue({ id: 'c1' });
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.joinChain('c1', 'u1', 'missing')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('createChain — with coverUrl', () => {
+    it('should pass coverUrl to prisma', async () => {
+      prisma.storyChain.create.mockResolvedValue({ id: 'c1', prompt: 'Test', coverUrl: 'https://img.test/cover.jpg' });
+      const result = await service.createChain('u1', { prompt: 'Test', coverUrl: 'https://img.test/cover.jpg' });
+      expect(result.coverUrl).toBe('https://img.test/cover.jpg');
+      expect(prisma.storyChain.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({ coverUrl: 'https://img.test/cover.jpg' }),
+      }));
+    });
+  });
+
+  describe('getChain — entries pagination', () => {
+    it('should set hasMore when entries exceed limit', async () => {
+      prisma.storyChain.findUnique.mockResolvedValue({ id: 'c1', prompt: 'Test' });
+      const entries = Array.from({ length: 21 }, (_, i) => ({ id: `e${i}`, storyId: `s${i}`, userId: `u${i}` }));
+      prisma.storyChainEntry.findMany.mockResolvedValue(entries);
+      const result = await service.getChain('c1');
+      expect(result.entries.meta.hasMore).toBe(true);
+      expect(result.entries.data).toHaveLength(20);
+    });
   });
 });

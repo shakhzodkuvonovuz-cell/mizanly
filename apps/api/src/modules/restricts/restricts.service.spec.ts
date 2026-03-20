@@ -84,4 +84,47 @@ describe('RestrictsService', () => {
       expect(await service.isRestricted('u1', 'u2')).toBe(false);
     });
   });
+
+  describe('getRestrictedList — pagination', () => {
+    it('should set hasMore true when results exceed limit', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({ restrictedId: `u${i}` }));
+      prisma.restrict.findMany.mockResolvedValue(items);
+      prisma.user.findMany.mockResolvedValue(items.slice(0, 20).map((r) => ({ id: r.restrictedId, username: r.restrictedId })));
+      const result = await service.getRestrictedList('u1');
+      expect(result.meta.hasMore).toBe(true);
+    });
+
+    it('should pass cursor to findMany', async () => {
+      prisma.restrict.findMany.mockResolvedValue([{ restrictedId: 'u3' }]);
+      prisma.user.findMany.mockResolvedValue([{ id: 'u3', username: 'user3' }]);
+      await service.getRestrictedList('u1', 'u2', 10);
+      expect(prisma.restrict.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        cursor: { restricterId_restrictedId: { restricterId: 'u1', restrictedId: 'u2' } },
+        skip: 1,
+        take: 11,
+      }));
+    });
+
+    it('should return empty list', async () => {
+      prisma.restrict.findMany.mockResolvedValue([]);
+      prisma.user.findMany.mockResolvedValue([]);
+      const result = await service.getRestrictedList('u1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('restrict — re-throws unknown errors', () => {
+    it('should re-throw non-P2002 errors', async () => {
+      prisma.restrict.create.mockRejectedValue(new Error('DB down'));
+      await expect(service.restrict('u1', 'u2')).rejects.toThrow('DB down');
+    });
+  });
+
+  describe('unrestrict — re-throws unknown errors', () => {
+    it('should re-throw non-P2025 errors', async () => {
+      prisma.restrict.delete.mockRejectedValue(new Error('Network error'));
+      await expect(service.unrestrict('u1', 'u2')).rejects.toThrow('Network error');
+    });
+  });
 });

@@ -142,5 +142,34 @@ describe('MutesService', () => {
         orderBy: { createdAt: 'desc' },
       });
     });
+
+    it('should set hasMore true when results exceed limit', async () => {
+      const mutes = Array.from({ length: 21 }, (_, i) => ({
+        mutedId: `user-${i}`, createdAt: new Date(),
+        muted: { id: `user-${i}`, username: `user${i}`, displayName: `User ${i}`, avatarUrl: null },
+      }));
+      prisma.mute.findMany.mockResolvedValue(mutes);
+
+      const result = await service.getMutedList('user-123');
+
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.meta.cursor).toBe('user-19');
+    });
+
+    it('should return empty list when no mutes', async () => {
+      prisma.mute.findMany.mockResolvedValue([]);
+      const result = await service.getMutedList('user-123');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+      expect(result.meta.cursor).toBeNull();
+    });
+  });
+
+  describe('mute — target not found', () => {
+    it('should throw NotFoundException when target user does not exist', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.mute('user-123', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
   });
 });

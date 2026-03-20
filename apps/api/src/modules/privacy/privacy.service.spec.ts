@@ -76,5 +76,46 @@ describe('PrivacyService', () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: true });
       await expect(service.deleteAllUserData('u1')).rejects.toThrow(NotFoundException);
     });
+
+    it('should call $transaction for soft-delete', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', isDeleted: false });
+      await service.deleteAllUserData('u1');
+      expect(prisma.$transaction).toHaveBeenCalled();
+    });
+  });
+
+  describe('exportUserData — with data', () => {
+    it('should include posts, threads, stories in export', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'user1', profileLinks: [], channel: null });
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', content: 'hello', mediaUrls: [], createdAt: new Date() }]);
+      prisma.thread.findMany.mockResolvedValue([{ id: 't1', content: 'thread', createdAt: new Date() }]);
+      prisma.story.findMany.mockResolvedValue([{ id: 's1', mediaUrl: 'url', createdAt: new Date() }]);
+      prisma.message.findMany.mockResolvedValue([{ id: 'm1', content: 'msg', createdAt: new Date() }]);
+      prisma.follow.findMany.mockResolvedValue([{ followingId: 'f1' }, { followingId: 'f2' }]);
+
+      const result = await service.exportUserData('u1');
+      expect(result.posts).toHaveLength(1);
+      expect(result.threads).toHaveLength(1);
+      expect(result.stories).toHaveLength(1);
+      expect(result.messages.count).toBe(1);
+      expect(result.following).toEqual(['f1', 'f2']);
+    });
+
+    it('should return empty arrays when user has no content', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'empty', profileLinks: [], channel: null });
+      const result = await service.exportUserData('u1');
+      expect(result.posts).toEqual([]);
+      expect(result.threads).toEqual([]);
+      expect(result.stories).toEqual([]);
+      expect(result.messages.count).toBe(0);
+      expect(result.following).toEqual([]);
+    });
+
+    it('should include exportedAt timestamp', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'u1', username: 'user1', profileLinks: [], channel: null });
+      const result = await service.exportUserData('u1');
+      expect(result.exportedAt).toBeDefined();
+      expect(typeof result.exportedAt).toBe('string');
+    });
   });
 });
