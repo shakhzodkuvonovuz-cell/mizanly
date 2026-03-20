@@ -17,7 +17,7 @@ describe('EncryptionService', () => {
           provide: PrismaService,
           useValue: {
             encryptionKey: { upsert: jest.fn(), findUnique: jest.fn(), findMany: jest.fn() },
-            conversationMember: { findUnique: jest.fn().mockResolvedValue({ userId: 'u1' }) },
+            conversationMember: { findUnique: jest.fn().mockResolvedValue({ userId: 'u1' }), findMany: jest.fn().mockResolvedValue([]) },
             conversationKeyEnvelope: { findFirst: jest.fn(), upsert: jest.fn(), create: jest.fn() },
             $transaction: jest.fn().mockImplementation((fn: (tx: any) => Promise<unknown>) => fn({
               conversationKeyEnvelope: { findFirst: jest.fn().mockResolvedValue(null), create: jest.fn() },
@@ -120,6 +120,78 @@ describe('EncryptionService', () => {
     it('should throw ForbiddenException if not member', async () => {
       prisma.conversationMember.findUnique.mockResolvedValue(null);
       await expect(service.rotateKey('c1', 'u1', [])).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('computeSafetyNumber', () => {
+    it('should return 60-digit safety number when both users have keys', async () => {
+      prisma.encryptionKey.findMany.mockResolvedValue([
+        { userId: 'user-a', keyFingerprint: 'abc123def456' },
+        { userId: 'user-b', keyFingerprint: 'xyz789ghi012' },
+      ]);
+
+      const result = await service.computeSafetyNumber('user-a', 'user-b');
+      expect(result).not.toBeNull();
+      // Should be 60 digits in groups of 5
+      const digits = result!.replace(/ /g, '');
+      expect(digits).toHaveLength(60);
+      expect(digits).toMatch(/^\d+$/);
+    });
+
+    it('should return null when one user has no key', async () => {
+      prisma.encryptionKey.findMany.mockResolvedValue([
+        { userId: 'user-a', keyFingerprint: 'abc123def456' },
+      ]);
+
+      const result = await service.computeSafetyNumber('user-a', 'user-b');
+      expect(result).toBeNull();
+    });
+
+    it('should be deterministic regardless of argument order', async () => {
+      const keys = [
+        { userId: 'user-a', keyFingerprint: 'abc123def456' },
+        { userId: 'user-b', keyFingerprint: 'xyz789ghi012' },
+      ];
+      prisma.encryptionKey.findMany.mockResolvedValue(keys);
+      const result1 = await service.computeSafetyNumber('user-a', 'user-b');
+
+      prisma.encryptionKey.findMany.mockResolvedValue(keys);
+      const result2 = await service.computeSafetyNumber('user-b', 'user-a');
+
+      expect(result1).toBe(result2);
+    });
+  });
+
+  describe('getConversationEncryptionStatus', () => {
+    it('should return encrypted=true when all members have keys', async () => {
+      prisma.conversationMember.findMany.mockResolvedValue([
+        { userId: 'user-a' },
+        { userId: 'user-b' },
+      ]);
+      prisma.encryptionKey.findMany.mockResolvedValue([
+        { userId: 'user-a' },
+        { userId: 'user-b' },
+      ]);
+
+      const result = await service.getConversationEncryptionStatus('conv-1');
+      expect(result.encrypted).toBe(true);
+      expect(result.members).toHaveLength(2);
+      expect(result.members.every(m => m.hasKey)).toBe(true);
+    });
+
+    it('should return encrypted=false when one member lacks key', async () => {
+      prisma.conversationMember.findMany.mockResolvedValue([
+        { userId: 'user-a' },
+        { userId: 'user-b' },
+      ]);
+      prisma.encryptionKey.findMany.mockResolvedValue([
+        { userId: 'user-a' },
+      ]);
+
+      const result = await service.getConversationEncryptionStatus('conv-1');
+      expect(result.encrypted).toBe(false);
+      const userB = result.members.find(m => m.userId === 'user-b');
+      expect(userB?.hasKey).toBe(false);
     });
   });
 });

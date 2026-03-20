@@ -804,4 +804,96 @@ describe('SearchService', () => {
       expect(result).toEqual(mockUsers);
     });
   });
+
+  describe('searchPosts', () => {
+    it('should return posts matching query', async () => {
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'post-1', content: 'Islamic finance tips', likesCount: 10, user: { id: 'u1' } },
+      ]);
+      const result = await service.searchPosts('finance');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].content).toContain('finance');
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty for no matches', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      const result = await service.searchPosts('xyznonexistent');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('searchThreads', () => {
+    it('should return threads matching query', async () => {
+      prisma.thread.findMany.mockResolvedValue([
+        { id: 'thread-1', content: 'Discussion about fasting', user: { id: 'u1' } },
+      ]);
+      const result = await service.searchThreads('fasting');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty for no matches', async () => {
+      prisma.thread.findMany.mockResolvedValue([]);
+      const result = await service.searchThreads('xyznonexistent');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('searchReels', () => {
+    it('should return reels matching caption or hashtag', async () => {
+      prisma.reel.findMany.mockResolvedValue([
+        { id: 'reel-1', caption: 'Beautiful quran recitation', user: { id: 'u1' } },
+      ]);
+      const result = await service.searchReels('quran');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty for no matches', async () => {
+      prisma.reel.findMany.mockResolvedValue([]);
+      const result = await service.searchReels('xyznonexistent');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('getExploreFeed', () => {
+    it('should return trending posts from last 7 days', async () => {
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'post-1', content: 'Trending', likesCount: 100, createdAt: new Date() },
+      ]);
+      const result = await service.getExploreFeed();
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty when no trending posts', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+      const result = await service.getExploreFeed();
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('getSuggestions', () => {
+    it('should return combined user and hashtag suggestions', async () => {
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u1', username: 'ahmed', displayName: 'Ahmed' },
+      ]);
+      prisma.hashtag.findMany.mockResolvedValue([
+        { name: 'ahl', postsCount: 10 },
+      ]);
+
+      const result = await service.getSuggestions('ah');
+      expect(result.users).toHaveLength(1);
+      expect(result.hashtags).toHaveLength(1);
+    });
+
+    it('should return empty when no suggestions match', async () => {
+      prisma.user.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+      const result = await service.getSuggestions('xyznonexistent');
+      expect(result.users).toEqual([]);
+      expect(result.hashtags).toEqual([]);
+    });
+  });
 });
