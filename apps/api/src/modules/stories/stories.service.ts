@@ -1,10 +1,12 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { AiService } from '../ai/ai.service';
 import { Prisma, MessageType } from '@prisma/client';
 
 const STORY_SELECT = {
@@ -39,7 +41,12 @@ const STORY_SELECT = {
 
 @Injectable()
 export class StoriesService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(StoriesService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private ai: AiService,
+  ) {}
 
   async getFeedStories(userId: string) {
     const follows = await this.prisma.follow.findMany({
@@ -115,7 +122,7 @@ export class StoriesService {
       subscribersOnly?: boolean;
     },
   ) {
-    return this.prisma.story.create({
+    const story = await this.prisma.story.create({
       data: {
         userId,
         mediaUrl: data.mediaUrl,
@@ -132,6 +139,34 @@ export class StoriesService {
       },
       select: STORY_SELECT,
     });
+
+    // Image moderation (async, non-blocking)
+    if (data.mediaType?.startsWith('image')) {
+      this.moderateStoryImage(userId, story.id, data.mediaUrl).catch((err: Error) => {
+        this.logger.error(`Story image moderation failed for ${story.id}: ${err.message}`);
+      });
+    }
+
+    return story;
+  }
+
+  private async moderateStoryImage(userId: string, storyId: string, imageUrl: string): Promise<void> {
+    try {
+      const result = await this.ai.moderateImage(imageUrl);
+      if (result.classification === 'BLOCK') {
+        await this.prisma.story.delete({ where: { id: storyId } });
+        this.logger.warn(`Story ${storyId} auto-removed: image blocked (${result.reason})`);
+      } else if (result.classification === 'WARNING') {
+        await this.prisma.story.update({
+          where: { id: storyId },
+          data: { isSensitive: true },
+        });
+        this.logger.log(`Story ${storyId} marked sensitive: ${result.reason}`);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Story image moderation error for ${storyId}: ${msg}`);
+    }
   }
 
   async getById(storyId: string) {

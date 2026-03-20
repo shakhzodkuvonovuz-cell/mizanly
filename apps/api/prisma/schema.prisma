@@ -609,6 +609,7 @@ model Story {
   blurhash         String?
   closeFriendsOnly Boolean                @default(false)
   subscribersOnly  Boolean                @default(false)
+  isSensitive      Boolean                @default(false)
   isArchived       Boolean                @default(false)
   createdAt        DateTime               @default(now())
   views            StoryView[]

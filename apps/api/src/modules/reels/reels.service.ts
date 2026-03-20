@@ -15,6 +15,7 @@ import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { GamificationService } from '../gamification/gamification.service';
+import { AiService } from '../ai/ai.service';
 import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 
@@ -65,6 +66,7 @@ export class ReelsService {
     private notifications: NotificationsService,
     private stream: StreamService,
     private gamification: GamificationService,
+    private ai: AiService,
     private jobs: AsyncJobService,
     private queueService: QueueService,
   ) {}
@@ -157,6 +159,13 @@ export class ReelsService {
     // Content moderation (if description provided)
     if (reel.description) {
       this.queueService.addModerationJob({ content: reel.description, contentType: 'reel', contentId: reel.id }).catch(() => {});
+    }
+
+    // Image moderation on thumbnail (async, non-blocking)
+    if (dto.thumbnailUrl) {
+      this.moderateReelThumbnail(userId, reel.id, dto.thumbnailUrl).catch((err: Error) => {
+        this.logger.error(`Reel thumbnail moderation failed for ${reel.id}: ${err.message}`);
+      });
     }
 
     // Search indexing
@@ -902,5 +911,27 @@ export class ReelsService {
 
   getShareLink(reelId: string) {
     return { url: `https://mizanly.app/reel/${reelId}` };
+  }
+
+  private async moderateReelThumbnail(userId: string, reelId: string, imageUrl: string): Promise<void> {
+    try {
+      const result = await this.ai.moderateImage(imageUrl);
+      if (result.classification === 'BLOCK') {
+        await this.prisma.reel.update({
+          where: { id: reelId },
+          data: { isRemoved: true, isSensitive: true },
+        });
+        this.logger.warn(`Reel ${reelId} auto-removed: thumbnail blocked (${result.reason})`);
+      } else if (result.classification === 'WARNING') {
+        await this.prisma.reel.update({
+          where: { id: reelId },
+          data: { isSensitive: true },
+        });
+        this.logger.log(`Reel ${reelId} marked sensitive: ${result.reason}`);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Reel thumbnail moderation error for ${reelId}: ${msg}`);
+    }
   }
 }
