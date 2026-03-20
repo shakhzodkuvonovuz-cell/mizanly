@@ -423,6 +423,61 @@ model User {
   creatorEarnings         CreatorEarning[]       @relation("CreatorEarnings")
   liveGuests              LiveGuest[]            @relation("LiveGuest")
 
+  // Batch 4: Relations from dangling FK fix
+  generatedStickers        GeneratedSticker[]          @relation("generatedStickers")
+  storyChains              StoryChain[]                @relation("storyChains")
+  storyChainEntries        StoryChainEntry[]           @relation("storyChainEntries")
+  reelTemplates            ReelTemplate[]              @relation("reelTemplates")
+  videoReplies             VideoReply[]                @relation("videoReplies")
+  hashtagFollows           HashtagFollow[]             @relation("hashtagFollows")
+  coinBalanceRecord        CoinBalance?                @relation("coinBalanceRecord")
+  coinTransactions         CoinTransaction[]           @relation("coinTransactions")
+  giftsSent                GiftRecord[]                @relation("giftsSent")
+  giftsReceived            GiftRecord[]                @relation("giftsReceived")
+  postPromotions           PostPromotion[]             @relation("postPromotions")
+  postReminders            PostReminder[]              @relation("postReminders")
+  quranReadingPlans        QuranReadingPlan[]          @relation("quranReadingPlans")
+  dhikrSessions            DhikrSession[]              @relation("dhikrSessions")
+  dailyTaskCompletions     DailyTaskCompletion[]       @relation("dailyTaskCompletions")
+  dhikrChallenges          DhikrChallenge[]            @relation("dhikrChallenges")
+  dhikrParticipations      DhikrChallengeParticipant[] @relation("dhikrParticipations")
+  charityDonations         CharityDonation[]           @relation("charityDonations")
+  charityDonationsReceived CharityDonation[]           @relation("charityDonationsReceived")
+  charityCampaigns         CharityCampaign[]           @relation("charityCampaigns")
+  hajjProgressRecords      HajjProgress[]              @relation("hajjProgress")
+  prayerNotifications      PrayerNotificationSetting?  @relation("prayerNotifications")
+  contentFilter            ContentFilterSetting?       @relation("contentFilter")
+  scholarVerificationApp   ScholarVerification?        @relation("scholarVerification")
+  restrictsCreated         Restrict[]                  @relation("restrictsCreated")
+  restrictsReceived        Restrict[]                  @relation("restrictsReceived")
+  dmNotes                  DMNote?                     @relation("dmNotes")
+  screenTimeLogs           ScreenTimeLog[]             @relation("screenTimeLogs")
+  quietMode                QuietModeSetting?           @relation("quietMode")
+  premiereReminders        PremiereReminder[]          @relation("premiereReminders")
+  seriesFollows            SeriesFollower[]            @relation("seriesFollows")
+  seriesProgressRecords    SeriesProgress[]            @relation("seriesProgress")
+  communityNotes           CommunityNote[]             @relation("communityNotes")
+  communityNoteRatings     CommunityNoteRating[]       @relation("communityNoteRatings")
+  collabInvitesSent        CollabInvite[]              @relation("collabInvitesSent")
+  collabInvitesReceived    CollabInvite[]              @relation("collabInvitesReceived")
+  messageChecklists        MessageChecklist[]          @relation("messageChecklists")
+  fastingLogs              FastingLog[]                @relation("fastingLogs")
+  halalRestaurantsAdded    HalalRestaurant[]           @relation("halalRestaurantsAdded")
+  halalRestaurantReviews   HalalRestaurantReview[]     @relation("halalRestaurantReviews")
+  hifzProgressRecords      HifzProgress[]              @relation("hifzProgressRecords")
+  mosqueCommunitiesCreated MosqueCommunity[]           @relation("mosqueCommunitiesCreated")
+  mosqueMemberships        MosqueMembership[]          @relation("mosqueMemberships")
+  mosquePosts              MosquePost[]                @relation("mosquePosts")
+  scholarQAs               ScholarQA[]                 @relation("scholarQAs")
+  scholarQuestions         ScholarQuestion[]           @relation("scholarQuestions")
+  duaBookmarks             DuaBookmark[]               @relation("duaBookmarks")
+  altProfileAccessGrants   AltProfileAccess[]          @relation("altProfileAccess")
+  groupTopicsCreated       GroupTopic[]                @relation("groupTopics")
+  encryptionKeyRecord      EncryptionKey?              @relation("encryptionKey")
+  conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
+  adminLogsPerformed       AdminLog[]                  @relation("adminLogs")
+  adminLogTargets          AdminLog[]                  @relation("adminLogTargets")
+
   @@index([username])
   @@index([clerkId])
   @@index([createdAt(sort: Desc)])
@@ -507,6 +562,9 @@ model Post {
   feedInteractions FeedInteraction[]
   moderationLogs   ModerationLog[]   @relation("ModPostTarget")
   collabs          PostCollab[]
+  promotions       PostPromotion[]
+  reminders        PostReminder[]
+  collabInvites    CollabInvite[]    @relation("collabInvites")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -544,6 +602,7 @@ model Story {
   createdAt        DateTime               @default(now())
   views            StoryView[]
   stickerResponses StoryStickerResponse[]
+  chainEntries     StoryChainEntry[]
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([expiresAt])
@@ -844,6 +903,7 @@ model Video {
   clips             VideoClip[]
   endScreens        EndScreen[]
   aiCaptions        AiCaption[]
+  videoChapters     VideoChapter[]     @relation("videoChapters")
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -1027,6 +1087,9 @@ model Conversation {
   members               ConversationMember[]
   messages              Message[]
   notifications         Notification[]
+  adminLogs             AdminLog[]
+  groupTopics           GroupTopic[]
+  checklists            MessageChecklist[]
 
   @@index([lastMessageAt(sort: Desc)])
   @@map("conversations")
@@ -1231,26 +1294,27 @@ enum LiveGuestStatus {
 // ============================================================
 
 model Circle {
-  id            String         @id @default(cuid())
-  name          String         @db.VarChar(100)
-  slug          String         @unique
-  description   String?        @db.VarChar(1000)
-  avatarUrl     String?
-  coverUrl      String?
-  privacy       CirclePrivacy  @default(PUBLIC)
-  ownerId       String
-  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  membersCount  Int            @default(1)
-  postsCount    Int            @default(0)
-  rules         String?
-  isBanned      Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  posts         Post[]
-  threads       Thread[]
-  members       CircleMember[]
-  invites       CircleInvite[]
-  notifications Notification[]
+  id             String          @id @default(cuid())
+  name           String          @db.VarChar(100)
+  slug           String          @unique
+  description    String?         @db.VarChar(1000)
+  avatarUrl      String?
+  coverUrl       String?
+  privacy        CirclePrivacy   @default(PUBLIC)
+  ownerId        String
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  membersCount   Int             @default(1)
+  postsCount     Int             @default(0)
+  rules          String?
+  isBanned       Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  posts          Post[]
+  threads        Thread[]
+  members        CircleMember[]
+  invites        CircleInvite[]
+  notifications  Notification[]
+  communityRoles CommunityRole[] @relation("communityRoles")
 
   @@index([slug])
   @@index([ownerId])
@@ -1769,6 +1833,7 @@ model UserStickerPack {
 model GeneratedSticker {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("generatedStickers", fields: [userId], references: [id], onDelete: Cascade)
   imageUrl  String
   prompt    String
   style     String   @default("cartoon")
@@ -1796,6 +1861,7 @@ model AltProfileAccess {
   altProfileId String
   altProfile   AltProfile @relation(fields: [altProfileId], references: [id], onDelete: Cascade)
   userId       String
+  user         User       @relation("altProfileAccess", fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())
 
   @@unique([altProfileId, userId])
@@ -2130,13 +2196,15 @@ model TwoFactorSecret {
 }
 
 model StoryChain {
-  id               String   @id @default(cuid())
-  prompt           String   @db.VarChar(300)
+  id               String            @id @default(cuid())
+  prompt           String            @db.VarChar(300)
   coverUrl         String?
   createdById      String
-  participantCount Int      @default(0)
-  viewsCount       Int      @default(0)
-  createdAt        DateTime @default(now())
+  createdBy        User              @relation("storyChains", fields: [createdById], references: [id], onDelete: Cascade)
+  participantCount Int               @default(0)
+  viewsCount       Int               @default(0)
+  createdAt        DateTime          @default(now())
+  entries          StoryChainEntry[]
 
   @@index([participantCount(sort: Desc)])
   @@index([createdById])
@@ -2144,11 +2212,14 @@ model StoryChain {
 }
 
 model StoryChainEntry {
-  id        String   @id @default(cuid())
+  id        String     @id @default(cuid())
   chainId   String
+  chain     StoryChain @relation(fields: [chainId], references: [id], onDelete: Cascade)
   storyId   String
+  story     Story      @relation(fields: [storyId], references: [id], onDelete: Cascade)
   userId    String
-  createdAt DateTime @default(now())
+  user      User       @relation("storyChainEntries", fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
 
   @@unique([chainId, userId])
   @@index([chainId])
@@ -2160,6 +2231,7 @@ model ReelTemplate {
   name         String   @db.VarChar(100)
   sourceReelId String
   userId       String
+  user         User     @relation("reelTemplates", fields: [userId], references: [id], onDelete: Cascade)
   segments     Json
   useCount     Int      @default(0)
   createdAt    DateTime @default(now())
@@ -2177,6 +2249,7 @@ model ReelTemplate {
 model VideoReply {
   id           String   @id @default(cuid())
   userId       String
+  user         User     @relation("videoReplies", fields: [userId], references: [id], onDelete: Cascade)
   commentId    String
   commentType  String   @db.VarChar(10) // 'post' or 'reel'
   mediaUrl     String
@@ -2200,6 +2273,7 @@ model VideoReply {
 model EncryptionKey {
   id             String   @id @default(cuid())
   userId         String   @unique
+  user           User     @relation("encryptionKey", fields: [userId], references: [id], onDelete: Cascade)
   publicKey      String
   keyFingerprint String
   createdAt      DateTime @default(now())
@@ -2213,6 +2287,7 @@ model ConversationKeyEnvelope {
   id             String   @id @default(cuid())
   conversationId String
   userId         String
+  user           User     @relation("conversationKeyEnvelopes", fields: [userId], references: [id], onDelete: Cascade)
   encryptedKey   String
   nonce          String
   version        Int      @default(1)
@@ -2226,6 +2301,7 @@ model ConversationKeyEnvelope {
 
 model HashtagFollow {
   userId    String
+  user      User     @relation("hashtagFollows", fields: [userId], references: [id], onDelete: Cascade)
   hashtagId String
   createdAt DateTime @default(now())
 
@@ -2243,6 +2319,7 @@ model HashtagFollow {
 model CoinBalance {
   id        String   @id @default(cuid())
   userId    String   @unique
+  user      User     @relation("coinBalanceRecord", fields: [userId], references: [id], onDelete: Cascade)
   coins     Int      @default(0)
   diamonds  Int      @default(0)
   updatedAt DateTime @updatedAt
@@ -2254,6 +2331,7 @@ model CoinBalance {
 model CoinTransaction {
   id          String   @id @default(cuid())
   userId      String
+  user        User     @relation("coinTransactions", fields: [userId], references: [id], onDelete: Cascade)
   type        String   @db.VarChar(20)
   amount      Int
   description String?
@@ -2266,7 +2344,9 @@ model CoinTransaction {
 model GiftRecord {
   id          String   @id @default(cuid())
   senderId    String
+  sender      User     @relation("giftsSent", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId  String
+  receiver    User     @relation("giftsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
   giftType    String   @db.VarChar(50)
   coinCost    Int
   contentId   String?
@@ -2286,7 +2366,9 @@ model GiftRecord {
 model PostPromotion {
   id          String   @id @default(cuid())
   postId      String
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId      String
+  user        User     @relation("postPromotions", fields: [userId], references: [id], onDelete: Cascade)
   budget      Decimal  @db.Decimal(12, 2)
   currency    String   @default("USD") @db.VarChar(3)
   targetReach Int
@@ -2304,7 +2386,9 @@ model PostPromotion {
 model PostReminder {
   id        String   @id @default(cuid())
   postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId    String
+  user      User     @relation("postReminders", fields: [userId], references: [id], onDelete: Cascade)
   remindAt  DateTime
   sent      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -2322,6 +2406,7 @@ model PostReminder {
 model QuranReadingPlan {
   id          String   @id @default(uuid())
   userId      String
+  user        User     @relation("quranReadingPlans", fields: [userId], references: [id], onDelete: Cascade)
   planType    String
   startDate   DateTime
   endDate     DateTime
@@ -2338,6 +2423,7 @@ model QuranReadingPlan {
 model DhikrSession {
   id          String    @id @default(uuid())
   userId      String
+  user        User      @relation("dhikrSessions", fields: [userId], references: [id], onDelete: Cascade)
   phrase      String
   count       Int
   target      Int       @default(33)
@@ -2351,6 +2437,7 @@ model DhikrSession {
 model DailyTaskCompletion {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("dailyTaskCompletions", fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   taskType  String   @db.VarChar(20) // dhikr | quran | reflection
   createdAt DateTime @default(now())
@@ -2361,16 +2448,18 @@ model DailyTaskCompletion {
 }
 
 model DhikrChallenge {
-  id               String    @id @default(uuid())
+  id               String                      @id @default(uuid())
   userId           String
+  user             User                        @relation("dhikrChallenges", fields: [userId], references: [id], onDelete: Cascade)
   title            String
   phrase           String
   targetTotal      Int
-  currentTotal     Int       @default(0)
-  participantCount Int       @default(0)
+  currentTotal     Int                         @default(0)
+  participantCount Int                         @default(0)
   expiresAt        DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  participants     DhikrChallengeParticipant[]
 
   @@index([createdAt(sort: Desc)])
   @@map("dhikr_challenges")
@@ -2378,9 +2467,11 @@ model DhikrChallenge {
 
 model DhikrChallengeParticipant {
   userId      String
+  user        User           @relation("dhikrParticipations", fields: [userId], references: [id], onDelete: Cascade)
   challengeId String
-  contributed Int      @default(0)
-  joinedAt    DateTime @default(now())
+  challenge   DhikrChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  contributed Int            @default(0)
+  joinedAt    DateTime       @default(now())
 
   @@id([userId, challengeId])
   @@index([challengeId])
@@ -2389,15 +2480,18 @@ model DhikrChallengeParticipant {
 }
 
 model CharityDonation {
-  id              String   @id @default(uuid())
+  id              String           @id @default(uuid())
   userId          String
+  user            User             @relation("charityDonations", fields: [userId], references: [id], onDelete: Cascade)
   recipientUserId String?
+  recipientUser   User?            @relation("charityDonationsReceived", fields: [recipientUserId], references: [id], onDelete: SetNull)
   campaignId      String?
+  campaign        CharityCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   amount          Int
-  currency        String   @default("usd")
+  currency        String           @default("usd")
   stripePaymentId String?
-  status          String   @default("pending")
-  createdAt       DateTime @default(now())
+  status          String           @default("pending")
+  createdAt       DateTime         @default(now())
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([recipientUserId])
@@ -2406,17 +2500,19 @@ model CharityDonation {
 }
 
 model CharityCampaign {
-  id           String   @id @default(uuid())
+  id           String            @id @default(uuid())
   userId       String
+  user         User              @relation("charityCampaigns", fields: [userId], references: [id], onDelete: Cascade)
   title        String
   description  String?
   goalAmount   Int
-  raisedAmount Int      @default(0)
-  donorCount   Int      @default(0)
+  raisedAmount Int               @default(0)
+  donorCount   Int               @default(0)
   imageUrl     String?
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean           @default(true)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  donations    CharityDonation[]
 
   @@index([userId])
   @@index([isActive, createdAt(sort: Desc)])
@@ -2426,6 +2522,7 @@ model CharityCampaign {
 model HajjProgress {
   id            String   @id @default(uuid())
   userId        String
+  user          User     @relation("hajjProgress", fields: [userId], references: [id], onDelete: Cascade)
   year          Int
   currentStep   Int      @default(0)
   checklistJson String   @default("{}")
@@ -2441,6 +2538,7 @@ model HajjProgress {
 model PrayerNotificationSetting {
   id              String   @id @default(uuid())
   userId          String   @unique
+  user            User     @relation("prayerNotifications", fields: [userId], references: [id], onDelete: Cascade)
   dndDuringPrayer Boolean  @default(false)
   adhanEnabled    Boolean  @default(false)
   adhanStyle      String   @default("makkah")
@@ -2455,6 +2553,7 @@ model PrayerNotificationSetting {
 model ContentFilterSetting {
   id              String   @id @default(uuid())
   userId          String   @unique
+  user            User     @relation("contentFilter", fields: [userId], references: [id], onDelete: Cascade)
   strictnessLevel String   @default("moderate")
   blurHaram       Boolean  @default(true)
   hideMusic       Boolean  @default(false)
@@ -2469,6 +2568,7 @@ model ContentFilterSetting {
 model ScholarVerification {
   id             String    @id @default(uuid())
   userId         String    @unique
+  user           User      @relation("scholarVerification", fields: [userId], references: [id], onDelete: Cascade)
   institution    String
   specialization String?
   madhab         String?
@@ -2487,7 +2587,9 @@ model ScholarVerification {
 
 model Restrict {
   restricterId String
+  restricter   User     @relation("restrictsCreated", fields: [restricterId], references: [id], onDelete: Cascade)
   restrictedId String
+  restricted   User     @relation("restrictsReceived", fields: [restrictedId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
 
   @@id([restricterId, restrictedId])
@@ -2498,6 +2600,7 @@ model Restrict {
 model DMNote {
   id        String   @id @default(uuid())
   userId    String   @unique
+  user      User     @relation("dmNotes", fields: [userId], references: [id], onDelete: Cascade)
   content   String   @db.VarChar(60)
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -2509,6 +2612,7 @@ model DMNote {
 model ScreenTimeLog {
   id           String   @id @default(uuid())
   userId       String
+  user         User     @relation("screenTimeLogs", fields: [userId], references: [id], onDelete: Cascade)
   date         DateTime @db.Date
   totalSeconds Int      @default(0)
   sessions     Int      @default(0)
@@ -2522,6 +2626,7 @@ model ScreenTimeLog {
 model QuietModeSetting {
   id          String   @id @default(uuid())
   userId      String   @unique
+  user        User     @relation("quietMode", fields: [userId], references: [id], onDelete: Cascade)
   isActive    Boolean  @default(false)
   autoReply   String?  @db.VarChar(200)
   startTime   String?
@@ -2581,6 +2686,7 @@ model VideoPremiere {
 model PremiereReminder {
   premiereId String
   userId     String
+  user       User          @relation("premiereReminders", fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime      @default(now())
   premiere   VideoPremiere @relation(fields: [premiereId], references: [id], onDelete: Cascade)
 
@@ -2828,6 +2934,7 @@ model Series {
   creator        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   episodes       SeriesEpisode[]
   followers      SeriesFollower[]
+  progress       SeriesProgress[]
 
   @@index([userId])
   @@map("series")
@@ -2856,6 +2963,7 @@ model SeriesEpisode {
 model SeriesFollower {
   seriesId   String
   userId     String
+  user       User     @relation("seriesFollows", fields: [userId], references: [id], onDelete: Cascade)
   followedAt DateTime @default(now())
   series     Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
 
@@ -2881,7 +2989,9 @@ model ThumbnailVariant {
 model SeriesProgress {
   id             String   @id @default(cuid())
   seriesId       String
+  series         Series   @relation(fields: [seriesId], references: [id], onDelete: Cascade)
   userId         String
+  user           User     @relation("seriesProgress", fields: [userId], references: [id], onDelete: Cascade)
   lastEpisodeNum Int
   lastTimestamp  Int      @default(0)
   updatedAt      DateTime @updatedAt
@@ -3354,30 +3464,35 @@ model ChatFolder {
 }
 
 model AdminLog {
-  id        String   @id @default(uuid())
+  id        String       @id @default(uuid())
   groupId   String // conversationId
+  group     Conversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
   adminId   String
+  admin     User         @relation("adminLogs", fields: [adminId], references: [id], onDelete: Cascade)
   action    String // member_added | member_removed | member_banned | title_changed | photo_changed | pin_message | unpin_message | slow_mode_changed | permissions_changed
   targetId  String? // userId or messageId affected
-  details   String?  @db.VarChar(500)
-  createdAt DateTime @default(now())
+  target    User?        @relation("adminLogTargets", fields: [targetId], references: [id], onDelete: SetNull)
+  details   String?      @db.VarChar(500)
+  createdAt DateTime     @default(now())
 
   @@index([groupId, createdAt(sort: Desc)])
   @@map("admin_logs")
 }
 
 model GroupTopic {
-  id             String    @id @default(uuid())
+  id             String       @id @default(uuid())
   conversationId String
-  name           String    @db.VarChar(100)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  name           String       @db.VarChar(100)
   iconColor      String? // hex color for topic icon
-  isPinned       Boolean   @default(false)
-  isClosed       Boolean   @default(false)
-  messageCount   Int       @default(0)
+  isPinned       Boolean      @default(false)
+  isClosed       Boolean      @default(false)
+  messageCount   Int          @default(0)
   lastMessageAt  DateTime?
   createdById    String
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdBy      User         @relation("groupTopics", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   @@index([conversationId, isPinned])
   @@map("group_topics")
@@ -3555,6 +3670,7 @@ model ViewerDemographic {
 model VideoChapter {
   id               String @id @default(cuid())
   videoId          String
+  video            Video  @relation("videoChapters", fields: [videoId], references: [id], onDelete: Cascade)
   title            String @db.VarChar(200)
   timestampSeconds Int
   order            Int    @default(0)
@@ -3570,6 +3686,7 @@ model VideoChapter {
 model CommunityRole {
   id                String   @id @default(cuid())
   communityId       String
+  community         Circle   @relation("communityRoles", fields: [communityId], references: [id], onDelete: Cascade)
   name              String   @db.VarChar(100)
   color             String?  @db.VarChar(7)
   position          Int      @default(0)
@@ -3594,6 +3711,7 @@ model CommunityRole {
 model HifzProgress {
   id             String    @id @default(cuid())
   userId         String
+  user           User      @relation("hifzProgressRecords", fields: [userId], references: [id], onDelete: Cascade)
   surahNum       Int // 1-114
   status         String    @default("not_started") // not_started, in_progress, memorized, needs_review
   lastReviewedAt DateTime?
@@ -3623,6 +3741,7 @@ model MosqueCommunity {
   imageUrl    String?
   memberCount Int      @default(0)
   createdById String
+  createdBy   User     @relation("mosqueCommunitiesCreated", fields: [createdById], references: [id], onDelete: Cascade)
   isVerified  Boolean  @default(false)
   createdAt   DateTime @default(now())
 
@@ -3639,6 +3758,7 @@ model MosqueMembership {
   mosqueId  String
   mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
   userId    String
+  user      User            @relation("mosqueMemberships", fields: [userId], references: [id], onDelete: Cascade)
   role      String          @default("member") // member, admin, imam
   createdAt DateTime        @default(now())
 
@@ -3651,6 +3771,7 @@ model MosquePost {
   mosqueId  String
   mosque    MosqueCommunity @relation(fields: [mosqueId], references: [id], onDelete: Cascade)
   userId    String
+  user      User            @relation("mosquePosts", fields: [userId], references: [id], onDelete: Cascade)
   content   String
   mediaUrls String[]
   isPinned  Boolean         @default(false)
@@ -3667,6 +3788,7 @@ model MosquePost {
 model ScholarQA {
   id           String    @id @default(cuid())
   scholarId    String
+  scholar      User      @relation("scholarQAs", fields: [scholarId], references: [id], onDelete: Cascade)
   title        String
   description  String?
   category     String // fiqh, aqeedah, tafsir, seerah, family, youth, women, converts
@@ -3690,6 +3812,7 @@ model ScholarQuestion {
   qaId       String
   qa         ScholarQA @relation(fields: [qaId], references: [id], onDelete: Cascade)
   userId     String
+  user       User      @relation("scholarQuestions", fields: [userId], references: [id], onDelete: Cascade)
   question   String
   votes      Int       @default(0)
   isAnswered Boolean   @default(false)
@@ -3707,6 +3830,7 @@ model ScholarQuestion {
 model DuaBookmark {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("duaBookmarks", fields: [userId], references: [id], onDelete: Cascade)
   duaId     String
   createdAt DateTime @default(now())
 
@@ -3724,6 +3848,7 @@ model CommunityNote {
   contentType     String   @db.VarChar(20) // post, thread, reel
   contentId       String
   authorId        String
+  author          User     @relation("communityNotes", fields: [authorId], references: [id], onDelete: Cascade)
   note            String
   status          String   @default("proposed") // proposed, helpful, not_helpful
   helpfulVotes    Int      @default(0)
@@ -3742,6 +3867,7 @@ model CommunityNoteRating {
   noteId String
   note   CommunityNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
   userId String
+  user   User          @relation("communityNoteRatings", fields: [userId], references: [id], onDelete: Cascade)
   rating String // helpful, somewhat_helpful, not_helpful
 
   @@unique([noteId, userId])
@@ -3755,8 +3881,11 @@ model CommunityNoteRating {
 model CollabInvite {
   id        String   @id @default(cuid())
   postId    String
+  post      Post     @relation("collabInvites", fields: [postId], references: [id], onDelete: Cascade)
   inviterId String
+  inviter   User     @relation("collabInvitesSent", fields: [inviterId], references: [id], onDelete: Cascade)
   inviteeId String
+  invitee   User     @relation("collabInvitesReceived", fields: [inviteeId], references: [id], onDelete: Cascade)
   status    String   @default("pending") // pending, accepted, declined
   createdAt DateTime @default(now())
 
@@ -3770,11 +3899,13 @@ model CollabInvite {
 // ============================================================
 
 model MessageChecklist {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   title          String
   createdById    String
-  createdAt      DateTime @default(now())
+  createdBy      User         @relation("messageChecklists", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
 
   items MessageChecklistItem[]
 
@@ -3801,6 +3932,7 @@ model MessageChecklistItem {
 model FastingLog {
   id        String   @id @default(cuid())
   userId    String
+  user      User     @relation("fastingLogs", fields: [userId], references: [id], onDelete: Cascade)
   date      DateTime @db.Date
   isFasting Boolean
   fastType  String   @default("ramadan") // ramadan, monday, thursday, ayyam-al-bid, arafat, ashura, qada, nafl
@@ -3835,6 +3967,7 @@ model HalalRestaurant {
   reviewCount    Int      @default(0)
   verifyVotes    Int      @default(0)
   addedById      String?
+  addedBy        User?    @relation("halalRestaurantsAdded", fields: [addedById], references: [id], onDelete: SetNull)
   isVerified     Boolean  @default(false)
   createdAt      DateTime @default(now())
 
@@ -3850,6 +3983,7 @@ model HalalRestaurantReview {
   restaurantId String
   restaurant   HalalRestaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   userId       String
+  user         User            @relation("halalRestaurantReviews", fields: [userId], references: [id], onDelete: Cascade)
   rating       Int // 1-5
   comment      String?
   createdAt    DateTime        @default(now())
