@@ -1,5 +1,19 @@
 # CLAUDE.md — Mizanly Project Guide
 
+## MANDATORY: Read All Memory Files Before Any Task
+
+At the start of every session, read ALL files in `~/.claude/projects/C--dev-mizanly/memory/`:
+- `user_shakhzod.md` — who the user is, preferences, communication style
+- `project_current_state_march21.md` — ground truth metrics, batch status, honest scores
+- `project_complete_gaps_audit_march21.md` — MASTER GAP LIST: 428 findings across 82 categories with priority tiers + user's brainstorm features
+- `reference_competitor_intel.md` — UpScrolled, Muslim Pro, market data
+- `feedback_*.md` — all feedback files (brutal honesty, no subagents, no co-author, max effort, Islamic data manual)
+- `project_audit_march2026.md` — 60-dimension audit results
+
+These files contain critical context that took 700K+ tokens of conversation to establish. Without them, you will repeat mistakes, inflate scores, use subagents, and produce shallow work. Read them FIRST.
+
+---
+
 ## What is Mizanly?
 Mizanly (ميزانلي) — a culturally intelligent social platform for the global Muslim community.
 Five "spaces" combining Instagram + TikTok + X/Twitter + WhatsApp + YouTube in one app.
