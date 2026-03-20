@@ -166,4 +166,49 @@ describe('AiService', () => {
       expect(result).toHaveLength(2);
     });
   });
+
+  describe('moderateImage', () => {
+    it('should return SAFE classification when no API key (fallback)', async () => {
+      const result = await service.moderateImage('https://example.com/image.jpg');
+      expect(result.classification).toBe('SAFE');
+      expect(result.categories).toEqual([]);
+    });
+  });
+
+  describe('generateAltText', () => {
+    it('should return generic alt text when no API key (fallback)', async () => {
+      const result = await service.generateAltText('https://example.com/image.jpg');
+      expect(result).toBeDefined();
+      expect(typeof result).toBe('string');
+    });
+  });
+
+  describe('transcribeVoiceMessage', () => {
+    it('should return null when no OpenAI API key', async () => {
+      const result = await service.transcribeVoiceMessage('msg-1', 'https://example.com/audio.ogg');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getVideoCaptions', () => {
+    it('should return captions when cached', async () => {
+      prisma.aiCaption.findUnique.mockResolvedValue({ videoId: 'v1', captionText: 'Hello world', language: 'en' });
+      const result = await service.getVideoCaptions('v1', 'en');
+      expect(result).toBeDefined();
+      expect(result?.captionText).toBe('Hello world');
+    });
+
+    it('should return null when no captions exist', async () => {
+      prisma.aiCaption.findUnique.mockResolvedValue(null);
+      const result = await service.getVideoCaptions('v1', 'en');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('generateVideoCaptions', () => {
+    it('should return empty string when no OpenAI API key', async () => {
+      const result = await service.generateVideoCaptions('v1', 'https://example.com/audio.mp3');
+      expect(result).toBe('');
+    });
+  });
 });
