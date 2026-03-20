@@ -2520,8 +2520,13 @@
     "following": "Following",
     "empty": "No series found",
     "emptySub": "Check back later for new content",
-    "noEpisodes": "No episodes yet",
-    "episodesHint": "Episodes will appear here when published"
+    "noEpisodes": "Belum ada episod",
+    "episodesHint": "Episod akan muncul di sini selepas diterbitkan",
+    "nextEpisodeIn": "Episod seterusnya dalam {{seconds}}s",
+    "playNext": "Main Seterusnya",
+    "cancel": "Batal",
+    "seriesComplete": "Siri Selesai!",
+    "shareCompletion": "Kongsi"
   },
   "gamification": {
     "streaks": {

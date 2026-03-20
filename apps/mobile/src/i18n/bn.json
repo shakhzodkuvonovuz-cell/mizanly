@@ -2520,8 +2520,13 @@
     "following": "Following",
     "empty": "No series found",
     "emptySub": "Check back later for new content",
-    "noEpisodes": "No episodes yet",
-    "episodesHint": "Episodes will appear here when published"
+    "noEpisodes": "এখনো কোনো পর্ব নেই",
+    "episodesHint": "প্রকাশিত হলে পর্বগুলো এখানে দেখা যাবে",
+    "nextEpisodeIn": "পরবর্তী পর্ব {{seconds}} সেকেন্ডে",
+    "playNext": "পরবর্তী চালান",
+    "cancel": "বাতিল",
+    "seriesComplete": "সিরিজ সম্পূর্ণ!",
+    "shareCompletion": "শেয়ার করুন"
   },
   "gamification": {
     "streaks": {

@@ -233,6 +233,9 @@ export default function VideoDetailScreen() {
     },
   });
 
+  const [showNextEpisode, setShowNextEpisode] = useState(false);
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(5);
+
   const handlePlaybackStatusUpdate = useCallback((status: AVPlaybackStatus) => {
     if (status.isLoaded) {
       if (status.durationMillis && status.durationMillis > 0) {
@@ -248,6 +251,10 @@ export default function VideoDetailScreen() {
         }
       }
       setIsPlaying(status.isPlaying ?? false);
+      // Detect video end
+      if (status.didJustFinish) {
+        setShowNextEpisode(true);
+      }
     }
   }, []);
 

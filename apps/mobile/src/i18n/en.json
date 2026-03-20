@@ -2521,7 +2521,12 @@
     "empty": "No series found",
     "emptySub": "Check back later for new content",
     "noEpisodes": "No episodes yet",
-    "episodesHint": "Episodes will appear here when published"
+    "episodesHint": "Episodes will appear here when published",
+    "nextEpisodeIn": "Next episode in {{seconds}}s",
+    "playNext": "Play Next",
+    "cancel": "Cancel",
+    "seriesComplete": "Series Complete!",
+    "shareCompletion": "Share"
   },
   "gamification": {
     "streaks": {

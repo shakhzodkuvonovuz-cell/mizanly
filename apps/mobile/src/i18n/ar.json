@@ -2353,7 +2353,12 @@
     "empty": "لا توجد مسلسلات",
     "emptySub": "تحقق لاحقاً لمحتوى جديد",
     "noEpisodes": "لا توجد حلقات بعد",
-    "episodesHint": "ستظهر الحلقات هنا عند نشرها"
+    "episodesHint": "ستظهر الحلقات هنا عند نشرها",
+    "nextEpisodeIn": "الحلقة التالية خلال {{seconds}} ث",
+    "playNext": "تشغيل التالي",
+    "cancel": "إلغاء",
+    "seriesComplete": "اكتمل المسلسل!",
+    "shareCompletion": "مشاركة"
   },
   "gamification": {
     "streaks": {

@@ -2521,7 +2521,12 @@
     "empty": "Seri bulunamadı",
     "emptySub": "Daha sonra yeni içerik için tekrar kontrol edin",
     "noEpisodes": "Henüz bölüm yok",
-    "episodesHint": "Bölümler yayınlandığında burada görünecek"
+    "episodesHint": "Bölümler yayınlandığında burada görünecek",
+    "nextEpisodeIn": "Sonraki bölüm {{seconds}} sn içinde",
+    "playNext": "Sonrakini Oynat",
+    "cancel": "İptal",
+    "seriesComplete": "Seri Tamamlandı!",
+    "shareCompletion": "Paylaş"
   },
   "gamification": {
     "streaks": {
