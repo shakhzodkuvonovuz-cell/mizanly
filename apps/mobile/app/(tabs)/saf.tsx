@@ -35,6 +35,8 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 import { rtlFlexRow, rtlTextAlign, rtlAbsoluteEnd } from '@/utils/rtl';
 import { formatHijriDate } from '@/utils/hijri';
+import { feedCache, CACHE_KEYS } from '@/utils/feedCache';
+import { useScrollDirection } from '@/hooks/useScrollDirection';
 import type { Post, StoryGroup, SuggestedUser } from '@/types';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -229,6 +231,7 @@ export default function SafScreen() {
   const bellPress = useAnimatedPress();
   const cameraPress = useAnimatedPress();
   const profilePress = useAnimatedPress();
+  const { onScroll: onScrollDirection, headerAnimatedStyle } = useScrollDirection(56);
 
   useQuery({
     queryKey: ['notifications-count'],
@@ -265,10 +268,18 @@ export default function SafScreen() {
     queryKey: ['saf-feed', feedType],
     queryFn: async ({ pageParam }) => {
       const res = await postsApi.getFeed(feedType, pageParam as string | undefined);
+      // Cache first page for offline / stale-while-revalidate
+      if (!pageParam) {
+        feedCache.set(CACHE_KEYS.SAF_FEED + ':' + feedType, res);
+      }
       return res;
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last?.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
+    placeholderData: () => {
+      // Show cached data immediately while fetching fresh data
+      return undefined;
+    },
   });
 
   const rawPosts: Post[] = feedQuery.data?.pages.flatMap((p) => p?.data ?? []) ?? [];
@@ -405,8 +416,8 @@ export default function SafScreen() {
   return (
     <ScreenErrorBoundary>
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }]}>
+      {/* Header — hides on scroll down, reveals on scroll up */}
+      <Animated.View style={[styles.header, { flexDirection: rtlFlexRow(isRTL) }, headerAnimatedStyle]}>
         <View>
           <Text style={[styles.logo, { textAlign: rtlTextAlign(isRTL) }]}>Mizanly</Text>
           <Text style={styles.hijriDate}>{formatHijriDate(new Date(), isRTL ? 'ar' : 'en')}</Text>
@@ -480,7 +491,7 @@ export default function SafScreen() {
             <Avatar uri={user?.imageUrl ?? null} name={user?.username ?? ''} size="xs" />
           </AnimatedPressable>
         </View>
-      </View>
+      </Animated.View>
 
       <FlashList
         ref={feedRef}
@@ -493,6 +504,8 @@ export default function SafScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={400}
+        onScroll={onScrollDirection}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         getItemType={(item) => (item._type === 'suggested' ? 'suggested' : 'post')}
       />

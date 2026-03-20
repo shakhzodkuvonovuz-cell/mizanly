@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../config/prisma.service';
 import { SearchService } from './search.service';
+import { MeilisearchService } from './meilisearch.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('SearchService', () => {
@@ -12,6 +13,13 @@ describe('SearchService', () => {
       providers: [
         ...globalMockProviders,
         SearchService,
+        {
+          provide: MeilisearchService,
+          useValue: {
+            search: jest.fn().mockResolvedValue(null),
+            isAvailable: jest.fn().mockReturnValue(false),
+          },
+        },
         {
           provide: PrismaService,
           useValue: {
