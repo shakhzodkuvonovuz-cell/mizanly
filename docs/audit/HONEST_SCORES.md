@@ -32,6 +32,9 @@ Scores are 1-10 where:
 **Dimensions 1-15 + 20 Average: 6.9/10**
 
 | 16 | Testing | 7.5/10 | 101 suites, 1,445 tests, 100% pass. Real business logic tests, not stubs. 6 untested modules. |
+| 17 | Islamic Data | 4.0/10 | Data is REAL and authentic, but tiny: 40 hadiths (vs 7,000), 28 tafsir verses, NO Quran text. |
+| 18 | Performance | 6.0/10 | Redis caching, video preload, take limits. 29 N+1 patterns, 31/35 components unmemoized. |
+| 19 | Accessibility | 6.5/10 | 175/208 screens labeled, font scaling capped, reduced motion hook. Contrast passes AA. |
 
 **Dimensions 1-16 + 20 Average: 7.0/10**
 
