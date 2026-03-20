@@ -2076,12 +2076,14 @@
     "streak": "{{count}} day streak",
     "todayCount": "{{count}} today",
     "shareProgress": "Share Progress",
-    "noActive": "No active challenges",
-    "stats": "Your Stats"
+    "noActive": "کوئی فعال چیلنج نہیں",
+    "stats": "آپ کے اعدادوشمار",
+    "noContributors": "ابھی تک کوئی شریک نہیں",
+    "beFirstContributor": "اس چیلنج میں سب سے پہلے شریک ہوں"
   },
   "contactSync": {
-    "title": "Find Friends",
-    "scanning": "Scanning contacts...",
+    "title": "دوست ڈھونڈیں",
+    "scanning": "رابطوں کی اسکیننگ...",
     "found": "{{count}} friends found on Mizanly",
     "noResults": "No friends found on Mizanly",
     "permissionNeeded": "Allow access to contacts to find friends",

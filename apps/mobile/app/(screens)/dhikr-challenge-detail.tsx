@@ -15,6 +15,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Avatar } from '@/components/ui/Avatar';
 import { GradientButton } from '@/components/ui/GradientButton';
 import { colors, spacing, radius, fontSize, fonts } from '@/theme';
@@ -291,6 +292,13 @@ export default function DhikrChallengeDetailScreen() {
               </Animated.View>
             )}
             ListHeaderComponent={renderHeader}
+            ListEmptyComponent={
+              <EmptyState
+                icon="users"
+                title={t('islamic.dhikr.noContributors')}
+                subtitle={t('islamic.dhikr.beFirstContributor')}
+              />
+            }
             contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl tintColor={colors.emerald} refreshing={refreshing} onRefresh={onRefresh} />

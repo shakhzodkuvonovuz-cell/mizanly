@@ -2076,7 +2076,9 @@
     "todayCount": "{{count}} today",
     "shareProgress": "Share Progress",
     "noActive": "No active challenges",
-    "stats": "Your Stats"
+    "stats": "Your Stats",
+    "noContributors": "No contributors yet",
+    "beFirstContributor": "Be the first to contribute to this challenge"
   },
   "contactSync": {
     "title": "Find Friends",

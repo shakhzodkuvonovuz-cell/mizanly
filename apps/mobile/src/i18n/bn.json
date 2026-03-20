@@ -2075,12 +2075,14 @@
     "streak": "{{count}} day streak",
     "todayCount": "{{count}} today",
     "shareProgress": "Share Progress",
-    "noActive": "No active challenges",
-    "stats": "Your Stats"
+    "noActive": "কোন সক্রিয় চ্যালেঞ্জ নেই",
+    "stats": "আপনার পরিসংখ্যান",
+    "noContributors": "এখনও কোন অবদানকারী নেই",
+    "beFirstContributor": "এই চ্যালেঞ্জে প্রথম অবদান রাখুন"
   },
   "contactSync": {
-    "title": "Find Friends",
-    "scanning": "Scanning contacts...",
+    "title": "বন্ধু খুঁজুন",
+    "scanning": "পরিচিতি স্ক্যান করা হচ্ছে...",
     "found": "{{count}} friends found on Mizanly",
     "noResults": "No friends found on Mizanly",
     "permissionNeeded": "Allow access to contacts to find friends",

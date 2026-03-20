@@ -1908,7 +1908,9 @@
     "todayCount": "{{count}} اليوم",
     "shareProgress": "مشاركة التقدم",
     "noActive": "لا توجد تحديات نشطة",
-    "stats": "إحصائياتك"
+    "stats": "إحصائياتك",
+    "noContributors": "لا يوجد مساهمون بعد",
+    "beFirstContributor": "كن أول من يساهم في هذا التحدي"
   },
   "contactSync": {
     "title": "البحث عن أصدقاء",

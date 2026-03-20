@@ -2075,12 +2075,14 @@
     "streak": "{{count}} day streak",
     "todayCount": "{{count}} today",
     "shareProgress": "Share Progress",
-    "noActive": "No active challenges",
-    "stats": "Your Stats"
+    "noActive": "Tiada cabaran aktif",
+    "stats": "Statistik Anda",
+    "noContributors": "Belum ada penyumbang",
+    "beFirstContributor": "Jadilah yang pertama menyumbang dalam cabaran ini"
   },
   "contactSync": {
-    "title": "Find Friends",
-    "scanning": "Scanning contacts...",
+    "title": "Cari Rakan",
+    "scanning": "Mengimbas kenalan...",
     "found": "{{count}} friends found on Mizanly",
     "noResults": "No friends found on Mizanly",
     "permissionNeeded": "Allow access to contacts to find friends",

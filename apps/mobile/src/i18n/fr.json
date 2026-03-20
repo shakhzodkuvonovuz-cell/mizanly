@@ -2076,12 +2076,14 @@
     "streak": "{{count}} day streak",
     "todayCount": "{{count}} today",
     "shareProgress": "Share Progress",
-    "noActive": "No active challenges",
-    "stats": "Your Stats"
+    "noActive": "Aucun défi actif",
+    "stats": "Vos statistiques",
+    "noContributors": "Aucun contributeur pour le moment",
+    "beFirstContributor": "Soyez le premier à contribuer à ce défi"
   },
   "contactSync": {
-    "title": "Find Friends",
-    "scanning": "Scanning contacts...",
+    "title": "Trouver des amis",
+    "scanning": "Recherche des contacts...",
     "found": "{{count}} friends found on Mizanly",
     "noResults": "No friends found on Mizanly",
     "permissionNeeded": "Allow access to contacts to find friends",

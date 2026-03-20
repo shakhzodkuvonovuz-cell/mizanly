@@ -2076,7 +2076,9 @@
     "todayCount": "bugün {{count}}",
     "shareProgress": "İlerlemeyi Paylaş",
     "noActive": "Aktif meydan okuma yok",
-    "stats": "İstatistikleriniz"
+    "stats": "İstatistikleriniz",
+    "noContributors": "Henüz katkıda bulunan yok",
+    "beFirstContributor": "Bu meydan okumaya ilk katkıda bulunan siz olun"
   },
   "contactSync": {
     "title": "Arkadaşları Bul",
