@@ -245,6 +245,76 @@ export class IslamicController {
     return this.islamicService.deleteReadingPlan(userId, planId);
   }
 
+  // ── Quran Text ──
+
+  @Get('quran/chapters')
+  @ApiOperation({ summary: 'List all 114 surahs with metadata' })
+  getQuranChapters() {
+    return this.islamicService.getQuranChapters();
+  }
+
+  @Get('quran/chapters/:surahNumber')
+  @ApiOperation({ summary: 'Get single surah metadata' })
+  @ApiParam({ name: 'surahNumber', description: 'Surah number (1-114)', example: 1 })
+  getQuranChapter(@Param('surahNumber', ParseIntPipe) surahNumber: number) {
+    return this.islamicService.getQuranChapter(surahNumber);
+  }
+
+  @Get('quran/chapters/:surahNumber/verses')
+  @ApiOperation({ summary: 'Get all verses in a surah (Arabic text + translation)' })
+  @ApiParam({ name: 'surahNumber', description: 'Surah number (1-114)', example: 1 })
+  @ApiQuery({ name: 'translation', required: false, description: 'Translation language (en, ar, tr, ur, bn, fr, id, ms)', example: 'en' })
+  async getQuranVerses(
+    @Param('surahNumber', ParseIntPipe) surahNumber: number,
+    @Query('translation') translation?: string,
+  ) {
+    return this.islamicService.getQuranVerses(surahNumber, translation);
+  }
+
+  @Get('quran/chapters/:surahNumber/verses/:ayahNumber')
+  @ApiOperation({ summary: 'Get a single verse (Arabic text + translation + audio)' })
+  @ApiParam({ name: 'surahNumber', description: 'Surah number (1-114)', example: 2 })
+  @ApiParam({ name: 'ayahNumber', description: 'Ayah number', example: 255 })
+  @ApiQuery({ name: 'translation', required: false, description: 'Translation language', example: 'en' })
+  async getQuranVerse(
+    @Param('surahNumber', ParseIntPipe) surahNumber: number,
+    @Param('ayahNumber', ParseIntPipe) ayahNumber: number,
+    @Query('translation') translation?: string,
+  ) {
+    return this.islamicService.getQuranVerse(surahNumber, ayahNumber, translation);
+  }
+
+  @Get('quran/juz/:juzNumber')
+  @ApiOperation({ summary: 'Get all verses in a specific juz (part)' })
+  @ApiParam({ name: 'juzNumber', description: 'Juz number (1-30)', example: 30 })
+  @ApiQuery({ name: 'translation', required: false, description: 'Translation language', example: 'en' })
+  async getQuranJuz(
+    @Param('juzNumber', ParseIntPipe) juzNumber: number,
+    @Query('translation') translation?: string,
+  ) {
+    return this.islamicService.getQuranJuz(juzNumber, translation);
+  }
+
+  @Get('quran/search')
+  @ApiOperation({ summary: 'Search Quran text (Arabic or translation)' })
+  @ApiQuery({ name: 'q', required: true, description: 'Search query', example: 'patience' })
+  @ApiQuery({ name: 'translation', required: false, description: 'Translation language', example: 'en' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Max results', example: 20 })
+  async searchQuran(
+    @Query('q') query: string,
+    @Query('translation') translation?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.islamicService.searchQuran(query, translation, limit ? parseInt(limit, 10) : undefined);
+  }
+
+  @Get('quran/random-ayah')
+  @ApiOperation({ summary: 'Get a random ayah (for Ayah of the Day)' })
+  @ApiQuery({ name: 'translation', required: false, description: 'Translation language', example: 'en' })
+  async getRandomAyah(@Query('translation') translation?: string) {
+    return this.islamicService.getRandomAyah(translation);
+  }
+
   // ── Charity / Sadaqah ──
 
   @Post('charity/campaigns')

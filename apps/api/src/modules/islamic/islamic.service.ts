@@ -10,6 +10,7 @@ import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
 import { UpdateContentFilterDto } from './dto/content-filter.dto';
 import { SaveDhikrSessionDto, CreateDhikrChallengeDto } from './dto/dhikr.dto';
 import { calculatePrayerTimes, getRamadanDatesForYear, METHOD_PARAMS } from './prayer-calculator';
+import { SURAH_METADATA, SurahMetadata, TOTAL_AYAHS, getSurahAyahOffset } from './quran-metadata';
 import * as hadiths from './data/hadiths.json';
 import * as hajjGuideData from './data/hajj-guide.json';
 import * as tafsirJson from './data/tafsir.json';
@@ -980,6 +981,320 @@ export class IslamicService {
     const surahOffsets = [0, 1, 8, 35, 92, 148, 207, 252, 296, 382, 435, 466, 495, 538, 548, 558, 578, 601, 611, 621, 636, 648, 651, 669, 693, 710, 720, 754, 779, 790, 820, 833, 856, 869, 890, 926, 953, 978, 1012, 1086, 1098, 1123, 1158, 1213, 1270, 1305, 1340, 1379, 1411, 1430, 1459, 1510, 1554, 1604, 1664, 1715, 1772, 1855, 1920, 1958, 1970, 1985, 1993, 2004, 2008, 2012, 2018, 2025, 2030, 2048, 2066, 2071, 2099, 2113, 2121, 2147, 2166, 2179, 2219, 2226, 2232, 2261, 2283, 2292, 2311, 2318, 2325, 2341, 2359, 2360, 2375, 2386, 2392, 2413, 2422, 2431, 2436, 2452, 2460, 2468, 2471, 2476, 2479, 2487, 2496, 2503, 2508, 2511, 2514, 2518, 2523, 2527, 2530, 2533];
     if (surah < 1 || surah > 114) return ayah;
     return (surahOffsets[surah - 1] || 0) + ayah;
+  }
+
+  // ── Quran Text API (Quran.com v4) ───────────────────
+
+  getQuranChapters(): SurahMetadata[] {
+    return SURAH_METADATA;
+  }
+
+  getQuranChapter(surahNumber: number): SurahMetadata {
+    const surah = SURAH_METADATA.find(s => s.number === surahNumber);
+    if (!surah) throw new NotFoundException(`Surah ${surahNumber} not found (valid: 1-114)`);
+    return surah;
+  }
+
+  async getQuranVerses(surahNumber: number, translation = 'en'): Promise<{
+    surah: SurahMetadata;
+    verses: { number: number; arabicText: string; translation: string }[];
+  }> {
+    const surah = this.getQuranChapter(surahNumber);
+
+    // Translation resource ID mapping for Quran.com API v4
+    const translationIds: Record<string, number> = {
+      en: 131,  // Dr. Mustafa Khattab (The Clear Quran)
+      ar: 0,    // Arabic only (no translation needed)
+      tr: 77,   // Diyanet
+      ur: 97,   // Fateh Muhammad Jalandhry
+      bn: 161,  // Muhiuddin Khan
+      fr: 136,  // Muhammad Hamidullah
+      id: 33,   // Indonesian - Ministry of Religious Affairs
+      ms: 39,   // Malay - Abdullah Muhammad Basmeih
+    };
+    const transId = translationIds[translation] ?? 131;
+
+    const cacheKey = `quran:verses:${surahNumber}:${translation}`;
+
+    // Check Redis cache
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Cache miss or Redis unavailable
+    }
+
+    // Fetch from Quran.com API v4
+    try {
+      const url = translation === 'ar'
+        ? `https://api.quran.com/api/v4/quran/verses/uthmani?chapter_number=${surahNumber}`
+        : `https://api.quran.com/api/v4/verses/by_chapter/${surahNumber}?language=${translation}&translations=${transId}&per_page=${surah.ayahCount}&fields=text_uthmani`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+
+      let verses: { number: number; arabicText: string; translation: string }[];
+
+      if (translation === 'ar') {
+        // Arabic-only endpoint returns { verses: [{ id, verse_key, text_uthmani }] }
+        verses = (data.verses || []).map((v: { verse_key: string; text_uthmani: string }, idx: number) => ({
+          number: idx + 1,
+          arabicText: v.text_uthmani || '',
+          translation: '',
+        }));
+      } else {
+        // Translation endpoint returns { verses: [{ verse_number, text_uthmani, translations: [{text}] }] }
+        verses = (data.verses || []).map((v: { verse_number: number; text_uthmani: string; translations: { text: string }[] }) => ({
+          number: v.verse_number,
+          arabicText: v.text_uthmani || '',
+          translation: v.translations?.[0]?.text?.replace(/<[^>]+>/g, '') || '',
+        }));
+      }
+
+      const result = { surah, verses };
+
+      // Cache for 30 days (Quran text doesn't change)
+      try {
+        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+      } catch {
+        // Non-critical
+      }
+
+      return result;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Quran.com API failed: ${msg}`);
+      throw new BadRequestException('Unable to fetch Quran verses — please try again later');
+    }
+  }
+
+  async getQuranVerse(surahNumber: number, ayahNumber: number, translation = 'en'): Promise<{
+    surah: SurahMetadata;
+    verse: { number: number; arabicText: string; translation: string };
+    audioUrl: string;
+  }> {
+    const surah = this.getQuranChapter(surahNumber);
+    if (ayahNumber < 1 || ayahNumber > surah.ayahCount) {
+      throw new BadRequestException(`Ayah ${ayahNumber} not valid for Surah ${surahNumber} (has ${surah.ayahCount} ayahs)`);
+    }
+
+    const translationIds: Record<string, number> = {
+      en: 131, ar: 0, tr: 77, ur: 97, bn: 161, fr: 136, id: 33, ms: 39,
+    };
+    const transId = translationIds[translation] ?? 131;
+    const verseKey = `${surahNumber}:${ayahNumber}`;
+    const cacheKey = `quran:verse:${verseKey}:${translation}`;
+
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Cache miss
+    }
+
+    try {
+      const url = `https://api.quran.com/api/v4/verses/by_key/${verseKey}?language=${translation}&translations=${transId}&fields=text_uthmani`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+      const v = data.verse;
+
+      const verse = {
+        number: ayahNumber,
+        arabicText: v?.text_uthmani || '',
+        translation: v?.translations?.[0]?.text?.replace(/<[^>]+>/g, '') || '',
+      };
+
+      const audio = this.getQuranAudioUrl(surahNumber, ayahNumber);
+      const result = { surah, verse, audioUrl: audio.url };
+
+      try {
+        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+      } catch {
+        // Non-critical
+      }
+
+      return result;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Quran.com API failed for verse ${verseKey}: ${msg}`);
+      throw new BadRequestException('Unable to fetch verse — please try again later');
+    }
+  }
+
+  async searchQuran(query: string, translation = 'en', limit = 20): Promise<{
+    results: { surahNumber: number; ayahNumber: number; surahName: string; arabicText: string; translationText: string }[];
+    total: number;
+  }> {
+    if (!query || query.trim().length < 2) {
+      throw new BadRequestException('Search query must be at least 2 characters');
+    }
+
+    const safeLimit = Math.min(Math.max(limit, 1), 50);
+    const cacheKey = `quran:search:${query.toLowerCase().trim()}:${translation}:${safeLimit}`;
+
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Cache miss
+    }
+
+    try {
+      const translationIds: Record<string, number> = {
+        en: 131, tr: 77, ur: 97, bn: 161, fr: 136, id: 33, ms: 39,
+      };
+      const transId = translationIds[translation] ?? 131;
+      const url = `https://api.quran.com/api/v4/search?q=${encodeURIComponent(query)}&size=${safeLimit}&language=${translation}&translations=${transId}`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+      const searchResults = data.search?.results || [];
+
+      const results = searchResults.map((r: { verse_key: string; text: string; translations: { text: string }[] }) => {
+        const [surahNum, ayahNum] = r.verse_key.split(':').map(Number);
+        const surah = SURAH_METADATA.find(s => s.number === surahNum);
+        return {
+          surahNumber: surahNum,
+          ayahNumber: ayahNum,
+          surahName: surah?.nameEnglish ?? `Surah ${surahNum}`,
+          arabicText: r.text || '',
+          translationText: r.translations?.[0]?.text?.replace(/<[^>]+>/g, '') || '',
+        };
+      });
+
+      const result = { results, total: data.search?.total_results || results.length };
+
+      try {
+        await this.redis.setex(cacheKey, 3600, JSON.stringify(result)); // 1h cache for search
+      } catch {
+        // Non-critical
+      }
+
+      return result;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Quran search failed: ${msg}`);
+      throw new BadRequestException('Unable to search Quran — please try again later');
+    }
+  }
+
+  async getRandomAyah(translation = 'en'): Promise<{
+    surahNumber: number;
+    surahName: string;
+    ayahNumber: number;
+    arabicText: string;
+    translation: string;
+    audioUrl: string;
+  }> {
+    // Pick a random surah:ayah
+    const randomIndex = Math.floor(Math.random() * TOTAL_AYAHS);
+    let cumulative = 0;
+    let surahNumber = 1;
+    let ayahNumber = 1;
+    for (const s of SURAH_METADATA) {
+      if (randomIndex < cumulative + s.ayahCount) {
+        surahNumber = s.number;
+        ayahNumber = randomIndex - cumulative + 1;
+        break;
+      }
+      cumulative += s.ayahCount;
+    }
+
+    try {
+      const result = await this.getQuranVerse(surahNumber, ayahNumber, translation);
+      const surah = SURAH_METADATA.find(s => s.number === surahNumber);
+      return {
+        surahNumber,
+        surahName: surah?.nameEnglish ?? `Surah ${surahNumber}`,
+        ayahNumber,
+        arabicText: result.verse.arabicText,
+        translation: result.verse.translation,
+        audioUrl: result.audioUrl,
+      };
+    } catch {
+      // If API fails, return a placeholder with reference
+      const surah = SURAH_METADATA.find(s => s.number === surahNumber);
+      const audio = this.getQuranAudioUrl(surahNumber, ayahNumber);
+      return {
+        surahNumber,
+        surahName: surah?.nameEnglish ?? `Surah ${surahNumber}`,
+        ayahNumber,
+        arabicText: '',
+        translation: `Surah ${surah?.nameEnglish ?? surahNumber}, Ayah ${ayahNumber}`,
+        audioUrl: audio.url,
+      };
+    }
+  }
+
+  async getQuranJuz(juzNumber: number, translation = 'en'): Promise<{
+    juz: number;
+    verses: { surahNumber: number; surahName: string; ayahNumber: number; arabicText: string; translation: string }[];
+  }> {
+    if (juzNumber < 1 || juzNumber > 30) {
+      throw new BadRequestException('Juz number must be 1-30');
+    }
+
+    const cacheKey = `quran:juz:${juzNumber}:${translation}`;
+
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) return JSON.parse(cached);
+    } catch {
+      // Cache miss
+    }
+
+    try {
+      const translationIds: Record<string, number> = {
+        en: 131, tr: 77, ur: 97, bn: 161, fr: 136, id: 33, ms: 39,
+      };
+      const transId = translationIds[translation] ?? 131;
+      const url = `https://api.quran.com/api/v4/verses/by_juz/${juzNumber}?language=${translation}&translations=${transId}&per_page=300&fields=text_uthmani`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+
+      const verses = (data.verses || []).map((v: { verse_key: string; verse_number: number; text_uthmani: string; translations: { text: string }[] }) => {
+        const [surahNum] = v.verse_key.split(':').map(Number);
+        const surah = SURAH_METADATA.find(s => s.number === surahNum);
+        return {
+          surahNumber: surahNum,
+          surahName: surah?.nameEnglish ?? `Surah ${surahNum}`,
+          ayahNumber: v.verse_number,
+          arabicText: v.text_uthmani || '',
+          translation: v.translations?.[0]?.text?.replace(/<[^>]+>/g, '') || '',
+        };
+      });
+
+      const result = { juz: juzNumber, verses };
+
+      try {
+        await this.redis.setex(cacheKey, 2592000, JSON.stringify(result));
+      } catch {
+        // Non-critical
+      }
+
+      return result;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Quran.com juz API failed: ${msg}`);
+      throw new BadRequestException('Unable to fetch juz — please try again later');
+    }
   }
 
   // ── Zakat Calculator ───────────────────────────────
