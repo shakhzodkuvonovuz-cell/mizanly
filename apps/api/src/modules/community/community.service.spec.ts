@@ -147,4 +147,75 @@ describe('CommunityService', () => {
       expect(result.eventType).toBe('eid_prayer');
     });
   });
+
+  describe('createBoard', () => {
+    it('should create local community board', async () => {
+      prisma.localBoard.create.mockResolvedValue({ id: 'lb-1', name: 'London Muslims', city: 'London' });
+      const result = await service.createBoard('user-1', { name: 'London Muslims', city: 'London' });
+      expect(result.name).toBe('London Muslims');
+      expect(result.city).toBe('London');
+    });
+  });
+
+  describe('getBoards', () => {
+    it('should return community boards', async () => {
+      prisma.localBoard.findMany.mockResolvedValue([{ id: 'lb-1', name: 'London Muslims' }]);
+      const result = await service.getBoards();
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty when no boards', async () => {
+      prisma.localBoard.findMany.mockResolvedValue([]);
+      const result = await service.getBoards();
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('createStudyCircle', () => {
+    it('should create study circle', async () => {
+      prisma.studyCircle.create.mockResolvedValue({ id: 'sc-1', topic: 'Fiqh', maxParticipants: 10 });
+      const result = await service.createStudyCircle('user-1', { topic: 'Fiqh', maxParticipants: 10 });
+      expect(result.topic).toBe('Fiqh');
+    });
+  });
+
+  describe('askFatwa', () => {
+    it('should create fatwa question', async () => {
+      prisma.fatwaQuestion.create.mockResolvedValue({ id: 'fq-1', question: 'Is X halal?', category: 'food' });
+      const result = await service.askFatwa('user-1', { question: 'Is X halal?', category: 'food' });
+      expect(result.question).toBe('Is X halal?');
+    });
+  });
+
+  describe('getFatwaQuestions', () => {
+    it('should return fatwa questions with pagination', async () => {
+      prisma.fatwaQuestion.findMany.mockResolvedValue([{ id: 'fq-1', question: 'Is X halal?' }]);
+      const result = await service.getFatwaQuestions();
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('createOpportunity', () => {
+    it('should create volunteer opportunity', async () => {
+      prisma.volunteerOpportunity.create.mockResolvedValue({ id: 'vo-1', title: 'Food Drive', location: 'NYC' });
+      const result = await service.createOpportunity('user-1', { title: 'Food Drive', location: 'NYC' });
+      expect(result.title).toBe('Food Drive');
+    });
+  });
+
+  describe('getVoicePosts', () => {
+    it('should return voice posts', async () => {
+      prisma.voicePost.findMany.mockResolvedValue([{ id: 'vp-1', audioUrl: 'https://r2/voice.ogg' }]);
+      const result = await service.getVoicePosts();
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('createWaqf', () => {
+    it('should create waqf fund', async () => {
+      prisma.waqfFund.create.mockResolvedValue({ id: 'wf-1', title: 'Masjid Fund', goalAmount: 50000 });
+      const result = await service.createWaqf('user-1', { title: 'Masjid Fund', goalAmount: 50000 });
+      expect(result.title).toBe('Masjid Fund');
+    });
+  });
 });

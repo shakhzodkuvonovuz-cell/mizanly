@@ -136,4 +136,84 @@ describe('CommerceService', () => {
       expect(result.rating).toBe(5);
     });
   });
+
+  describe('getProducts', () => {
+    it('should return active products with pagination', async () => {
+      prisma.product.findMany.mockResolvedValue([mockProduct]);
+      const result = await service.getProducts();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].title).toBe('Halal Snacks');
+    });
+
+    it('should return empty when no products', async () => {
+      prisma.product.findMany.mockResolvedValue([]);
+      const result = await service.getProducts();
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('getProduct', () => {
+    it('should return product by ID', async () => {
+      prisma.product.findUnique.mockResolvedValue(mockProduct);
+      const result = await service.getProduct('prod-1');
+      expect(result.title).toBe('Halal Snacks');
+      expect(result.price).toBe(15.99);
+    });
+
+    it('should throw NotFoundException for nonexistent product', async () => {
+      prisma.product.findUnique.mockResolvedValue(null);
+      await expect(service.getProduct('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getMyOrders', () => {
+    it('should return user orders', async () => {
+      prisma.order.findMany.mockResolvedValue([
+        { id: 'order-1', totalAmount: 15.99, status: 'completed' },
+      ]);
+      const result = await service.getMyOrders('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].status).toBe('completed');
+    });
+  });
+
+  describe('createBusiness', () => {
+    it('should create halal business listing', async () => {
+      prisma.halalBusiness.create.mockResolvedValue({
+        id: 'biz-1', name: 'Halal Mart', ownerId: 'user-1',
+      });
+      const result = await service.createBusiness('user-1', { name: 'Halal Mart', category: 'grocery' });
+      expect(result.name).toBe('Halal Mart');
+    });
+  });
+
+  describe('getBusinesses', () => {
+    it('should return businesses with pagination', async () => {
+      prisma.halalBusiness.findMany.mockResolvedValue([{ id: 'biz-1', name: 'Halal Mart' }]);
+      const result = await service.getBusinesses();
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('cancelPremium', () => {
+    it('should cancel premium subscription', async () => {
+      prisma.premiumSubscription.findUnique.mockResolvedValue({ id: 'ps-1', userId: 'user-1', status: 'active' });
+      prisma.premiumSubscription.update.mockResolvedValue({ status: 'cancelled' });
+      const result = await service.cancelPremium('user-1');
+      expect(result.status).toBe('cancelled');
+    });
+
+    it('should throw NotFoundException when no subscription', async () => {
+      prisma.premiumSubscription.findUnique.mockResolvedValue(null);
+      await expect(service.cancelPremium('user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getZakatFunds', () => {
+    it('should return active zakat funds', async () => {
+      prisma.zakatFund.findMany.mockResolvedValue([{ id: 'zf-1', title: 'Ramadan Fund' }]);
+      const result = await service.getZakatFunds();
+      expect(result.data).toHaveLength(1);
+    });
+  });
 });
