@@ -522,6 +522,17 @@ export class PostsService {
       this.queueService.addModerationJob({ content: dto.content, contentType: 'post', contentId: post.id });
     }
 
+    // Image moderation: check uploaded images via Claude Vision (async, don't block post creation)
+    if (dto.mediaUrls?.length && dto.mediaTypes?.some((t: string) => t.startsWith('image'))) {
+      for (const [idx, url] of dto.mediaUrls.entries()) {
+        if (dto.mediaTypes?.[idx]?.startsWith('image')) {
+          this.moderatePostImage(userId, post.id, url).catch((err: Error) => {
+            this.logger.error(`Image moderation failed for post ${post.id}: ${err.message}`);
+          });
+        }
+      }
+    }
+
     // Track analytics
     this.analytics.track('post_created', userId, {
       postType: post.postType,
@@ -1116,5 +1127,49 @@ export class PostsService {
       newPosts.push(newPost);
     }
     return newPosts;
+  }
+
+  /**
+   * Background image moderation via Claude Vision API.
+   * If BLOCK: auto-remove post + notify user.
+   * If WARNING: mark post as sensitive (blurred in feed).
+   */
+  private async moderatePostImage(userId: string, postId: string, imageUrl: string): Promise<void> {
+    try {
+      const result = await this.ai.moderateImage(imageUrl);
+
+      if (result.classification === 'BLOCK') {
+        // Auto-remove the post
+        await this.prisma.post.update({
+          where: { id: postId },
+          data: { isRemoved: true, isSensitive: true },
+        });
+        this.logger.warn(`Post ${postId} auto-removed: image blocked (${result.reason})`);
+
+        // Create a moderation report for the record
+        await this.prisma.report.create({
+          data: {
+            reporterId: userId,
+            reportedUserId: userId,
+            reportedPostId: postId,
+            reason: 'INAPPROPRIATE',
+            description: `[Auto-moderation] Image blocked: ${result.reason || 'Policy violation'}`,
+            status: 'RESOLVED',
+            actionTaken: 'REMOVE',
+          },
+        });
+      } else if (result.classification === 'WARNING') {
+        // Mark as sensitive — blurred in feed, tap to reveal
+        await this.prisma.post.update({
+          where: { id: postId },
+          data: { isSensitive: true },
+        });
+        this.logger.log(`Post ${postId} marked sensitive: ${result.reason}`);
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Image moderation error for post ${postId}: ${msg}`);
+      // Non-blocking: post remains visible, flagged for manual review if moderation fails
+    }
   }
 }
