@@ -264,13 +264,12 @@ describe('ChatGateway', () => {
 
     it('responds to get_online_status via Redis pipeline', async () => {
       const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-123' } };
-      // Pipeline returns: [error, result] pairs — scard returns count
       const mockPipeline = {
         scard: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue([
-          [null, 1], // user-123 online
-          [null, 1], // user-456 online
-          [null, 0], // user-789 offline
+          [null, 1],
+          [null, 1],
+          [null, 0],
         ]),
       };
       redis.pipeline.mockReturnValue(mockPipeline);
@@ -282,6 +281,173 @@ describe('ChatGateway', () => {
         { userId: 'user-456', isOnline: true },
         { userId: 'user-789', isOnline: false },
       ]);
+    });
+
+    it('does not emit offline when other sockets remain', async () => {
+      const client = { ...mockSocket, id: 'socket-1', data: { userId: 'user-123' } };
+      redis.srem.mockResolvedValue(1);
+      redis.scard.mockResolvedValue(2); // Other sockets still connected
+
+      await gateway.handleDisconnect(client as any);
+
+      expect(redis.srem).toHaveBeenCalledWith('presence:user-123', 'socket-1');
+      expect(redis.del).not.toHaveBeenCalled();
+      expect(gateway.server.emit).not.toHaveBeenCalledWith('user_offline', expect.anything());
+    });
+
+    it('caps get_online_status at 100 user IDs', async () => {
+      const client = { ...mockSocket, emit: jest.fn(), data: { userId: 'user-1' } };
+      const manyIds = Array.from({ length: 150 }, (_, i) => `user-${i}`);
+      const mockPipeline = {
+        scard: jest.fn().mockReturnThis(),
+        exec: jest.fn().mockResolvedValue(Array(100).fill([null, 0])),
+      };
+      redis.pipeline.mockReturnValue(mockPipeline);
+
+      await gateway.handleGetOnlineStatus(client as any, { userIds: manyIds });
+      // Should only emit 100 statuses (capped)
+      expect(client.emit).toHaveBeenCalledWith('online_status', expect.any(Array));
+      const emitted = client.emit.mock.calls[0][1];
+      expect(emitted).toHaveLength(100);
+    });
+  });
+
+  describe('handleConnection — error cases', () => {
+    it('should disconnect if no token provided', async () => {
+      const client = {
+        ...mockSocket,
+        data: {},
+        handshake: { auth: {}, headers: {} },
+        disconnect: jest.fn(),
+      };
+      await gateway.handleConnection(client as any);
+      expect(client.disconnect).toHaveBeenCalled();
+    });
+
+    it('should disconnect if token verification fails', async () => {
+      const client = {
+        ...mockSocket,
+        data: {},
+        handshake: { auth: { token: 'bad-token' }, headers: {} },
+        disconnect: jest.fn(),
+      };
+      (verifyToken as jest.Mock).mockRejectedValue(new Error('Invalid token'));
+      await gateway.handleConnection(client as any);
+      expect(client.disconnect).toHaveBeenCalled();
+    });
+
+    it('should disconnect if user not found in DB', async () => {
+      const client = {
+        ...mockSocket,
+        data: {},
+        handshake: { auth: { token: 'valid-token' }, headers: {} },
+        disconnect: jest.fn(),
+      };
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-unknown' });
+      prisma.user.findUnique.mockResolvedValue(null);
+      await gateway.handleConnection(client as any);
+      expect(client.disconnect).toHaveBeenCalled();
+    });
+
+    it('should extract Bearer token from authorization header', async () => {
+      const client = {
+        ...mockSocket,
+        id: 'socket-header',
+        data: {},
+        handshake: { auth: {}, headers: { authorization: 'Bearer header-token' } },
+        join: jest.fn(),
+      };
+      (verifyToken as jest.Mock).mockResolvedValue({ sub: 'clerk-1' });
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'test' });
+
+      await gateway.handleConnection(client as any);
+      expect(verifyToken).toHaveBeenCalledWith('header-token', expect.anything());
+      expect(client.data.userId).toBe('user-1');
+    });
+  });
+
+  describe('handleDisconnect — no userId', () => {
+    it('should return early when no userId on socket', async () => {
+      const client = { ...mockSocket, id: 'socket-anon', data: {} };
+      await gateway.handleDisconnect(client as any);
+      expect(redis.srem).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleCallInitiate', () => {
+    it('should throw WsException when unauthorized', async () => {
+      const client = { ...mockSocket, data: {} };
+      await expect(
+        gateway.handleCallInitiate(client as any, { targetUserId: 't1', callType: 'AUDIO', sessionId: 's1' }),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should emit error for invalid data', async () => {
+      const client = { ...mockSocket, data: { userId: 'caller-1' }, emit: jest.fn() };
+      await gateway.handleCallInitiate(client as any, {
+        targetUserId: 'not-a-uuid', callType: 'INVALID', sessionId: 'not-a-uuid',
+      });
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid call_initiate data' });
+    });
+  });
+
+  describe('handleCallAnswer', () => {
+    it('should throw WsException when unauthorized', async () => {
+      const client = { ...mockSocket, data: {} };
+      await expect(
+        gateway.handleCallAnswer(client as any, { sessionId: 's1', callerId: 'c1' }),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should emit error for invalid data', async () => {
+      const client = { ...mockSocket, data: { userId: 'u1' }, emit: jest.fn() };
+      await gateway.handleCallAnswer(client as any, { sessionId: 'bad', callerId: 'bad' });
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid call_answer data' });
+    });
+  });
+
+  describe('handleCallReject', () => {
+    it('should throw WsException when unauthorized', async () => {
+      const client = { ...mockSocket, data: {} };
+      await expect(
+        gateway.handleCallReject(client as any, { sessionId: 's1', callerId: 'c1' }),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should emit error for invalid data', async () => {
+      const client = { ...mockSocket, data: { userId: 'u1' }, emit: jest.fn() };
+      await gateway.handleCallReject(client as any, { sessionId: 'bad', callerId: 'bad' });
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid call_reject data' });
+    });
+  });
+
+  describe('handleCallEnd', () => {
+    it('should throw WsException when unauthorized', async () => {
+      const client = { ...mockSocket, data: {} };
+      await expect(
+        gateway.handleCallEnd(client as any, { sessionId: 's1', participants: ['p1'] }),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should emit error for invalid data', async () => {
+      const client = { ...mockSocket, data: { userId: 'u1' }, emit: jest.fn() };
+      await gateway.handleCallEnd(client as any, { sessionId: 'bad', participants: [] as any });
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid call_end data' });
+    });
+  });
+
+  describe('handleMessageDelivered', () => {
+    it('should throw WsException when unauthorized', async () => {
+      const client = { ...mockSocket, data: {} };
+      await expect(
+        gateway.handleMessageDelivered(client as any, { messageId: 'm1', conversationId: 'c1' }),
+      ).rejects.toThrow(WsException);
+    });
+
+    it('should emit error for missing messageId', async () => {
+      const client = { ...mockSocket, data: { userId: 'user-1' }, emit: jest.fn() };
+      await gateway.handleMessageDelivered(client as any, { messageId: '', conversationId: 'c1' });
+      expect(client.emit).toHaveBeenCalledWith('error', { message: 'Invalid message_delivered data' });
     });
   });
 });
