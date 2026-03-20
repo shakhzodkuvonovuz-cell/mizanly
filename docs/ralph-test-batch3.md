@@ -412,7 +412,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 16: commerce.service — edge cases (6 tests)
+### [x] Task 16: commerce.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/commerce/commerce.service.ts` (341 lines)
 **File to create/append:** `apps/api/src/modules/commerce/commerce.service.edge.spec.ts`
@@ -429,7 +429,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 17: events.service — edge cases (6 tests)
+### [x] Task 17: events.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/events/events.service.ts` (413 lines)
 **File to create/append:** `apps/api/src/modules/events/events.service.edge.spec.ts`
@@ -446,7 +446,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 18: communities.service — edge cases (6 tests)
+### [x] Task 18: communities.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/communities/communities.service.ts` (418 lines)
 **File to create/append:** `apps/api/src/modules/communities/communities.service.edge.spec.ts`
@@ -463,7 +463,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 19: live.service — edge cases (6 tests)
+### [x] Task 19: live.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/live/live.service.ts` (336 lines)
 **File to create/append:** `apps/api/src/modules/live/live.service.edge.spec.ts`
@@ -480,7 +480,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 20: bookmarks.service — edge cases (6 tests)
+### [x] Task 20: bookmarks.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/bookmarks/bookmarks.service.ts` (404 lines)
 **File to create/append:** `apps/api/src/modules/bookmarks/bookmarks.service.edge.spec.ts`
@@ -1922,11 +1922,11 @@ These tests verify that the app can't be exploited by malicious users. Each test
 - [x] Task 13: search.service edge cases — 8 tests
 - [x] Task 14: encryption.service edge cases — 6 tests
 - [x] Task 15: gifts.service edge cases — 6 tests
-- [ ] Task 16: commerce.service edge cases — 6 tests
-- [ ] Task 17: events.service edge cases — 6 tests
-- [ ] Task 18: communities.service edge cases — 6 tests
-- [ ] Task 19: live.service edge cases — 6 tests
-- [ ] Task 20: bookmarks.service edge cases — 6 tests
+- [x] Task 16: commerce.service edge cases — 6 tests
+- [x] Task 17: events.service edge cases — 6 tests
+- [x] Task 18: communities.service edge cases — 6 tests
+- [x] Task 19: live.service edge cases — 6 tests
+- [x] Task 20: bookmarks.service edge cases — 6 tests
 - [ ] Task 21: payments.service edge cases — 6 tests
 - [ ] Task 22: polls.service edge cases — 6 tests
 - [ ] Task 23: hashtags.service edge cases — 6 tests
