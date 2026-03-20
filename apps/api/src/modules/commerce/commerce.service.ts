@@ -110,7 +110,7 @@ export class CommerceService {
           buyerId: userId,
           productId: dto.productId,
           quantity: qty,
-          totalAmount: product.price * qty,
+          totalAmount: Number(product.price) * qty,
           currency: product.currency,
           installments,
           shippingAddress: dto.shippingAddress,
@@ -273,7 +273,7 @@ export class CommerceService {
 
     // Check if goal reached (separate query, non-critical)
     const updated = await this.prisma.zakatFund.findUnique({ where: { id: fundId } });
-    if (updated && updated.raisedAmount >= updated.goalAmount) {
+    if (updated && Number(updated.raisedAmount) >= Number(updated.goalAmount)) {
       await this.prisma.zakatFund.update({ where: { id: fundId }, data: { status: 'completed' } });
     }
 

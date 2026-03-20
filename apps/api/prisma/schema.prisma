@@ -2028,10 +2028,10 @@ model Tip {
   receiverId  String
   sender      User     @relation("TipSender", fields: [senderId], references: [id], onDelete: Cascade)
   receiver    User     @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
-  amount      Float
+  amount      Decimal  @db.Decimal(12, 2)
   currency    String   @default("USD") @db.VarChar(3)
   message     String?  @db.VarChar(500)
-  platformFee Float    @default(0)
+  platformFee Decimal  @default(0) @db.Decimal(12, 2)
   status      String   @default("completed") @db.VarChar(20)
   createdAt   DateTime @default(now())
 
@@ -2045,7 +2045,7 @@ model MembershipTier {
   userId        String
   user          User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
   name          String                   @db.VarChar(100)
-  price         Float
+  price         Decimal                  @db.Decimal(12, 2)
   currency      String                   @default("USD") @db.VarChar(3)
   benefits      String[]                 @default([])
   isActive      Boolean                  @default(true)
@@ -2287,7 +2287,7 @@ model PostPromotion {
   id          String   @id @default(cuid())
   postId      String
   userId      String
-  budget      Float
+  budget      Decimal  @db.Decimal(12, 2)
   currency    String   @default("USD") @db.VarChar(3)
   targetReach Int
   actualReach Int      @default(0)
@@ -2903,7 +2903,7 @@ model Product {
   sellerId      String
   title         String           @db.VarChar(200)
   description   String           @db.VarChar(2000)
-  price         Float
+  price         Decimal          @db.Decimal(12, 2)
   currency      String           @default("USD")
   images        String[] // array of image URLs
   category      String // food | clothing | books | art | electronics | services | other
@@ -2949,7 +2949,7 @@ model Order {
   buyerId         String
   productId       String
   quantity        Int      @default(1)
-  totalAmount     Float
+  totalAmount     Decimal  @db.Decimal(12, 2)
   currency        String   @default("USD")
   status          String   @default("pending") // pending | paid | shipped | delivered | cancelled | refunded
   stripePaymentId String?
@@ -3025,8 +3025,8 @@ model ZakatFund {
   recipientId  String
   title        String          @db.VarChar(200)
   description  String          @db.VarChar(2000)
-  goalAmount   Float
-  raisedAmount Float           @default(0)
+  goalAmount   Decimal         @db.Decimal(12, 2)
+  raisedAmount Decimal         @default(0) @db.Decimal(12, 2)
   currency     String          @default("USD")
   category     String // individual | mosque | school | disaster | orphan | other
   isVerified   Boolean         @default(false)
@@ -3044,7 +3044,7 @@ model ZakatDonation {
   id              String    @id @default(uuid())
   fundId          String
   donorId         String
-  amount          Float
+  amount          Decimal   @db.Decimal(12, 2)
   currency        String    @default("USD")
   isAnonymous     Boolean   @default(false)
   stripePaymentId String?
@@ -3062,8 +3062,8 @@ model CommunityTreasury {
   circleId      String
   title         String                 @db.VarChar(200)
   description   String?                @db.VarChar(1000)
-  goalAmount    Float
-  raisedAmount  Float                  @default(0)
+  goalAmount    Decimal                @db.Decimal(12, 2)
+  raisedAmount  Decimal                @default(0) @db.Decimal(12, 2)
   currency      String                 @default("USD")
   status        String                 @default("active") // active | completed | closed
   createdById   String
@@ -3081,7 +3081,7 @@ model TreasuryContribution {
   id         String            @id @default(uuid())
   treasuryId String
   userId     String
-  amount     Float
+  amount     Decimal           @db.Decimal(12, 2)
   createdAt  DateTime          @default(now())
   treasury   CommunityTreasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
   user       User              @relation("TreasuryContributor", fields: [userId], references: [id], onDelete: Cascade)
@@ -3293,8 +3293,8 @@ model WaqfFund {
   id           String   @id @default(uuid())
   title        String   @db.VarChar(200)
   description  String   @db.VarChar(2000)
-  goalAmount   Float
-  raisedAmount Float    @default(0)
+  goalAmount   Decimal  @db.Decimal(12, 2)
+  raisedAmount Decimal  @default(0) @db.Decimal(12, 2)
   createdById  String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -3505,7 +3505,7 @@ model Embedding {
 model CreatorEarning {
   id        String   @id @default(uuid())
   userId    String
-  amount    Float
+  amount    Decimal  @db.Decimal(12, 2)
   currency  String   @default("USD") @db.VarChar(3)
   type      String   @db.VarChar(50) // cashout | tip | gift | subscription
   diamonds  Int      @default(0)

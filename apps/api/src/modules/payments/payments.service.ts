@@ -190,7 +190,7 @@ export class PaymentsService {
       items: [{ price_data: {
           currency: tier.currency.toLowerCase(),
           product: product.id,
-          unit_amount: Math.round(tier.price * 100),
+          unit_amount: Math.round(Number(tier.price) * 100),
           recurring: { interval: 'month' },
         } }],
       metadata: { tierId, userId, mizanlyUserId: userId },

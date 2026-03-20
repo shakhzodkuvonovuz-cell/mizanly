@@ -257,8 +257,8 @@ export class StripeConnectService {
     ]);
 
     return {
-      totalEarnings: earnings._sum.amount || 0,
-      totalTips: tips._sum.amount || 0,
+      totalEarnings: Number(earnings._sum.amount || 0),
+      totalTips: Number(tips._sum.amount || 0),
       tipCount: tips._count || 0,
       coinBalance: coinBalance?.coinBalance || 0,
       diamondBalance: coinBalance?.diamondBalance || 0,

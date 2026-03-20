@@ -151,14 +151,14 @@ export class MonetizationService {
         });
         return {
           user,
-          totalAmount: supporter._sum.amount || 0,
+          totalAmount: Number(supporter._sum.amount || 0),
         };
       }),
     );
 
     return {
-      totalEarned: totalEarned._sum.amount || 0,
-      totalSent: totalSent._sum.amount || 0,
+      totalEarned: Number(totalEarned._sum.amount || 0),
+      totalSent: Number(totalSent._sum.amount || 0),
       topSupporters: supporterDetails,
     };
   }

@@ -123,7 +123,7 @@ export class CreatorService {
       totalViews,
       totalComments,
       engagementRate,
-      revenue: tipRevenue._sum.amount ?? 0,
+      revenue: Number(tipRevenue._sum.amount ?? 0),
     };
   }
 
@@ -240,12 +240,12 @@ export class CreatorService {
     });
 
     const membershipTotal = tiersWithSubscribers.reduce(
-      (sum, tier) => sum + tier.price * tier._count.subscriptions,
+      (sum, tier) => sum + Number(tier.price) * tier._count.subscriptions,
       0,
     );
 
     return {
-      tips: { total: tips._sum.amount ?? 0, count: tips._count },
+      tips: { total: Number(tips._sum.amount ?? 0), count: tips._count },
       memberships: { total: membershipTotal, count: membershipIncome },
     };
   }
