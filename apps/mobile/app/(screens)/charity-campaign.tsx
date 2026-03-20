@@ -156,6 +156,8 @@ function CampaignScreenContent() {
             label={t('charity.donateNow')}
             onPress={handleDonate}
             fullWidth
+            accessibilityLabel={t('charity.donateNow')}
+            accessibilityRole="button"
           />
         </View>
       </ScrollView>

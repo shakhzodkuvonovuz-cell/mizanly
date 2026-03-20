@@ -267,7 +267,7 @@ export default function QiblaCompassScreen() {
 
   return (
     <ScreenErrorBoundary>
-      <View style={styles.container}>
+      <View style={styles.container} accessibilityLabel={t('qibla.title')}>
         <GlassHeader
           title={t('qibla.title')}
           leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

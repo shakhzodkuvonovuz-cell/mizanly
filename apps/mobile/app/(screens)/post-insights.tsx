@@ -175,7 +175,7 @@ function PostInsightsContent() {
   }
 
   return (
-    <View style={styles.screen}>
+    <View style={styles.screen} accessibilityLabel={t('postInsights.title', 'Insights')}>
       <GlassHeader
         title={t('postInsights.title', 'Insights')}
         leftAction={{ icon: 'arrow-left', onPress: () => router.back() }}

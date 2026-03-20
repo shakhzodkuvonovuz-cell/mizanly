@@ -82,6 +82,7 @@ export default function WindDownScreen() {
       <LinearGradient
         colors={[colors.dark.bg, '#0A1628', '#061118']}
         style={styles.container}
+        accessibilityLabel={t('windDown.title')}
       >
         <SafeAreaView style={styles.safeArea}>
           {/* Header */}
