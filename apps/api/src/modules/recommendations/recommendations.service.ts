@@ -191,6 +191,7 @@ export class RecommendationsService {
     contentType: EmbeddingContentType,
     limit: number,
   ): Promise<string[]> {
+    try {
     // Stage 1: Get user interest vector and find similar content
     const interestVector = await this.embeddingsService.getUserInterestVector(userId);
     if (!interestVector) return [];
@@ -254,6 +255,11 @@ export class RecommendationsService {
     }
 
     return diversified;
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Multi-stage ranking failed, falling back to engagement sort: ${msg}`);
+      return [];
+    }
   }
 
   private async getEngagementScores(
