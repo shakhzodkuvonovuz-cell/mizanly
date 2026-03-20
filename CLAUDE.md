@@ -159,20 +159,22 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
-│   │   ├── src/modules/         # 71 feature modules
-│   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators, sentry
+│   │   ├── src/modules/         # 79 feature modules
+│   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators, sentry, queue, email
 │   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
-│   │   └── prisma/schema.prisma # 166 models, 3,461 lines
+│   │   └── prisma/schema.prisma # 187 models, 3,859 lines
 │   └── mobile/                  # React Native Expo SDK 52
 │       ├── app/
 │       │   ├── (tabs)/          # saf, majlis, risalah, bakra, minbar, create
-│       │   └── (screens)/       # 196 screens + nested route dirs
+│       │   └── (screens)/       # 208 screens + nested route dirs
 │       └── src/
-│           ├── components/ui/   # 33 components: BottomSheet, Skeleton, Icon, Avatar,
+│           ├── components/ui/   # 35 components: BottomSheet, Skeleton, Icon, Avatar,
 │           │                    # GlassHeader, GradientButton, EmptyState, VerifiedBadge,
-│           │                    # CharCountRing, VideoPlayer, ImageLightbox, DoubleTapHeart, etc.
-│           ├── components/islamic/ # EidFrame
-│           ├── hooks/           # 20 hooks: useHaptic, useTranslation, useNetworkStatus, usePiP, etc.
+│           │                    # CharCountRing, VideoPlayer, ImageLightbox, DoubleTapHeart,
+│           │                    # AuthGate, OfflineBanner, TTSMiniPlayer, Toast, etc.
+│           ├── components/islamic/ # EidFrame, IslamicThemeBanner
+│           ├── hooks/           # 23 hooks: useHaptic, useTranslation, useNetworkStatus, usePiP,
+│           │                    # useVideoPreloader, useAmbientColor, useIslamicTheme, useTTS, etc.
 │           ├── services/        # 19 API service files (api.ts, islamicApi.ts, widgetData.ts, etc.)
 │           ├── stores/index.ts  # Zustand store
 │           ├── theme/index.ts   # Design tokens
@@ -320,7 +322,7 @@ fonts.arabicBold = 'NotoNaskhArabic_700Bold'
 
 ## i18n
 - **Languages:** en (English), ar (Arabic), tr (Turkish), ur (Urdu), bn (Bengali), fr (French), id (Indonesian), ms (Malay)
-- **Keys:** 2,415 per language, all 8 files at 100% parity
+- **Keys:** 2,740 per language, all 8 files at 100% parity
 - **Config:** `src/i18n/index.ts` — auto-detects device locale, falls back to `en`
 - **Adding a language:** Create `xx.json`, import in `index.ts`, add to resources + resolveLanguage()
 - **Key structure:** Nested dot notation (`risalah.chats`, `tabs.createSheet.photoOrVideoPost`)

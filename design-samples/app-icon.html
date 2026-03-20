@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mizanly — App Icon Concepts</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0D1117;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    padding: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    color: #C8963E;
+    text-align: center;
+  }
+  h2 {
+    font-size: 18px;
+    color: #8B949E;
+    font-weight: 400;
+    margin-bottom: 8px;
+  }
+  .row {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .concept {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .concept label {
+    font-size: 14px;
+    color: #8B949E;
+  }
+
+  /* ── Icon Container ── */
+  .icon {
+    width: 200px;
+    height: 200px;
+    border-radius: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 8px 32px rgba(10, 123, 79, 0.3),
+      0 2px 8px rgba(0,0,0,0.4);
+  }
+  .icon-sm {
+    width: 60px;
+    height: 60px;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .sizes {
+    display: flex;
+    gap: 16px;
+    align-items: end;
+    margin-top: 8px;
+  }
+  .sizes .icon-xs {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+  }
+
+  /* ── Concept A: Geometric Mim ── */
+  .concept-a .icon {
+    background: linear-gradient(135deg, #0A7B4F 0%, #065F3B 50%, #0A7B4F 100%);
+  }
+  .concept-a .mim {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 110px;
+    font-weight: 700;
+    color: #C8963E;
+    line-height: 1;
+    text-shadow: 0 2px 12px rgba(200, 150, 62, 0.4);
+    position: relative;
+    z-index: 2;
+  }
+  .concept-a .pattern {
+    position: absolute;
+    inset: 0;
+    opacity: 0.08;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px),
+      repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,0.5) 18px, rgba(255,255,255,0.5) 19px),
+      repeating-linear-gradient(45deg, transparent, transparent 25px, rgba(255,255,255,0.3) 25px, rgba(255,255,255,0.3) 26px),
+      repeating-linear-gradient(-45deg, transparent, transparent 25px, rgba(255,255,255,0.3) 25px, rgba(255,255,255,0.3) 26px);
+  }
+  .concept-a .glow {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    background: radial-gradient(circle, rgba(200,150,62,0.25) 0%, transparent 70%);
+    z-index: 1;
+  }
+
+  /* ── Concept B: Crescent Balance ── */
+  .concept-b .icon {
+    background: linear-gradient(160deg, #0D1117 0%, #161B22 100%);
+    border: 2px solid rgba(200, 150, 62, 0.3);
+  }
+  .concept-b .crescent {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: transparent;
+    box-shadow: -18px -5px 0 0 #C8963E;
+    position: relative;
+    z-index: 2;
+  }
+  .concept-b .scale-beam {
+    position: absolute;
+    bottom: 55px;
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(90deg, #C8963E, #0A7B4F, #C8963E);
+    border-radius: 2px;
+    z-index: 2;
+  }
+  .concept-b .scale-center {
+    position: absolute;
+    bottom: 38px;
+    width: 3px;
+    height: 20px;
+    background: #C8963E;
+    z-index: 2;
+  }
+  .concept-b .scale-left,
+  .concept-b .scale-right {
+    position: absolute;
+    bottom: 40px;
+    width: 20px;
+    height: 14px;
+    border: 2px solid #0A7B4F;
+    border-top: none;
+    border-radius: 0 0 10px 10px;
+    z-index: 2;
+  }
+  .concept-b .scale-left { left: 48px; }
+  .concept-b .scale-right { right: 48px; }
+  .concept-b .stars {
+    position: absolute;
+    inset: 0;
+  }
+  .concept-b .star {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #C8963E;
+    border-radius: 50%;
+    opacity: 0.4;
+  }
+  .concept-b .star:nth-child(1) { top: 20px; right: 30px; }
+  .concept-b .star:nth-child(2) { top: 40px; right: 50px; opacity: 0.2; }
+  .concept-b .star:nth-child(3) { top: 25px; right: 65px; width: 2px; height: 2px; }
+  .concept-b .star:nth-child(4) { top: 50px; left: 35px; opacity: 0.3; }
+  .concept-b .star:nth-child(5) { top: 30px; left: 50px; width: 2px; height: 2px; opacity: 0.25; }
+
+  /* ── Concept C: Emerald Gem ── */
+  .concept-c .icon {
+    background: linear-gradient(150deg, #0A7B4F 0%, #086B44 40%, #065F3B 100%);
+  }
+  .concept-c .gem {
+    width: 90px;
+    height: 90px;
+    position: relative;
+    z-index: 2;
+  }
+  .concept-c .gem-top {
+    width: 0;
+    height: 0;
+    border-left: 45px solid transparent;
+    border-right: 45px solid transparent;
+    border-bottom: 35px solid #C8963E;
+    position: relative;
+  }
+  .concept-c .gem-bottom {
+    width: 0;
+    height: 0;
+    border-left: 45px solid transparent;
+    border-right: 45px solid transparent;
+    border-top: 55px solid #D4A44E;
+    position: relative;
+  }
+  .concept-c .gem-shine {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%);
+    z-index: 3;
+  }
+  .concept-c .geo-ring {
+    position: absolute;
+    inset: 15px;
+    border: 1px solid rgba(200, 150, 62, 0.15);
+    border-radius: 50%;
+  }
+  .concept-c .geo-ring-2 {
+    position: absolute;
+    inset: 30px;
+    border: 1px solid rgba(200, 150, 62, 0.1);
+    border-radius: 50%;
+  }
+
+  /* ── Concept D: Minimal M ── */
+  .concept-d .icon {
+    background: #0A7B4F;
+  }
+  .concept-d .letter-m {
+    font-family: 'Playfair Display', serif;
+    font-size: 120px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+    position: relative;
+    z-index: 2;
+  }
+  .concept-d .gold-dot {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #C8963E;
+    border-radius: 50%;
+    bottom: 48px;
+    right: 58px;
+    z-index: 3;
+    box-shadow: 0 0 12px rgba(200, 150, 62, 0.5);
+  }
+
+  /* ── Concept E: Octagonal Seal ── */
+  .concept-e .icon {
+    background: linear-gradient(135deg, #0D1117, #1C2333);
+  }
+  .concept-e .octagon {
+    width: 130px;
+    height: 130px;
+    background: linear-gradient(135deg, #0A7B4F, #086B44);
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+  .concept-e .octagon-inner {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 52px;
+    font-weight: 700;
+    color: #C8963E;
+    line-height: 1;
+  }
+  .concept-e .gold-border {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    clip-path: polygon(30% 0%, 70% 0%, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0% 70%, 0% 30%);
+    border: 2px solid rgba(200, 150, 62, 0.3);
+    z-index: 1;
+  }
+
+  /* ── Concept F: Arch & Lantern ── */
+  .concept-f .icon {
+    background: linear-gradient(180deg, #0A7B4F 0%, #065F3B 100%);
+  }
+  .concept-f .arch {
+    width: 80px;
+    height: 110px;
+    border: 4px solid #C8963E;
+    border-bottom: none;
+    border-radius: 40px 40px 0 0;
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 15px;
+  }
+  .concept-f .arch-text {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+  }
+  .concept-f .arch-base {
+    position: absolute;
+    bottom: 40px;
+    width: 88px;
+    height: 4px;
+    background: #C8963E;
+    z-index: 2;
+  }
+  .concept-f .lantern-glow {
+    position: absolute;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    background: radial-gradient(circle, rgba(200,150,62,0.2) 0%, transparent 70%);
+    z-index: 1;
+  }
+
+  .note {
+    max-width: 700px;
+    text-align: center;
+    color: #6E7781;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mizanly App Icon Concepts</h1>
+<p class="note">Six concepts exploring the brand intersection of Islamic identity (emerald + gold) with modern social platform design. Open in browser to view. All render as pure CSS — no images needed.</p>
+
+<div class="row">
+
+  <!-- Concept A: Arabic Mim -->
+  <div class="concept concept-a">
+    <h2>A. Arabic Mim (م)</h2>
+    <div class="icon">
+      <div class="pattern"></div>
+      <div class="glow"></div>
+      <span class="mim">م</span>
+    </div>
+    <label>Emerald + gold calligraphy + geometric grid</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: linear-gradient(135deg, #0A7B4F, #065F3B); font-family: 'Noto Naskh Arabic'; font-size: 34px; color: #C8963E; font-weight: 700;">م</div>
+      <div class="icon icon-sm icon-xs" style="background: linear-gradient(135deg, #0A7B4F, #065F3B); font-family: 'Noto Naskh Arabic'; font-size: 18px; color: #C8963E; font-weight: 700;">م</div>
+    </div>
+  </div>
+
+  <!-- Concept B: Crescent Balance -->
+  <div class="concept concept-b">
+    <h2>B. Crescent & Scale</h2>
+    <div class="icon">
+      <div class="stars">
+        <div class="star"></div><div class="star"></div><div class="star"></div>
+        <div class="star"></div><div class="star"></div>
+      </div>
+      <div class="crescent"></div>
+      <div class="scale-beam"></div>
+      <div class="scale-center"></div>
+      <div class="scale-left"></div>
+      <div class="scale-right"></div>
+    </div>
+    <label>Mizan (balance) + crescent on dark</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: #0D1117; border: 1.5px solid rgba(200,150,62,0.3);"><div style="width:24px;height:24px;border-radius:50%;box-shadow:-6px -2px 0 0 #C8963E;"></div></div>
+      <div class="icon icon-sm icon-xs" style="background: #0D1117; border: 1px solid rgba(200,150,62,0.3);"><div style="width:14px;height:14px;border-radius:50%;box-shadow:-4px -1px 0 0 #C8963E;"></div></div>
+    </div>
+  </div>
+
+  <!-- Concept C: Emerald Gem -->
+  <div class="concept concept-c">
+    <h2>C. Emerald Gem</h2>
+    <div class="icon">
+      <div class="geo-ring"></div>
+      <div class="geo-ring-2"></div>
+      <div class="gem">
+        <div class="gem-top"></div>
+        <div class="gem-bottom"></div>
+        <div class="gem-shine"></div>
+      </div>
+    </div>
+    <label>Precious gem = value + Islamic green</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: linear-gradient(150deg, #0A7B4F, #065F3B);"><div style="width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:11px solid #C8963E;position:relative;top:-6px;"></div></div>
+      <div class="icon icon-sm icon-xs" style="background: linear-gradient(150deg, #0A7B4F, #065F3B);"><div style="width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:6px solid #C8963E;position:relative;top:-3px;"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="row">
+
+  <!-- Concept D: Minimal M -->
+  <div class="concept concept-d">
+    <h2>D. Minimal M</h2>
+    <div class="icon">
+      <span class="letter-m">M</span>
+      <div class="gold-dot"></div>
+    </div>
+    <label>Clean serif M + gold accent dot</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: #0A7B4F; font-family: 'Playfair Display'; font-size: 36px; color: #fff; font-weight: 700; position: relative;">M<div style="position:absolute;width:5px;height:5px;background:#C8963E;border-radius:50%;bottom:14px;right:17px;"></div></div>
+      <div class="icon icon-sm icon-xs" style="background: #0A7B4F; font-family: 'Playfair Display'; font-size: 20px; color: #fff; font-weight: 700;">M</div>
+    </div>
+  </div>
+
+  <!-- Concept E: Octagonal Seal -->
+  <div class="concept concept-e">
+    <h2>E. Octagonal Seal</h2>
+    <div class="icon">
+      <div class="gold-border"></div>
+      <div class="octagon">
+        <span class="octagon-inner">م</span>
+      </div>
+    </div>
+    <label>Islamic geometric seal + Mim</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: #0D1117;"><div style="width:38px;height:38px;background:linear-gradient(135deg,#0A7B4F,#086B44);clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);display:flex;align-items:center;justify-content:center;font-family:'Noto Naskh Arabic';font-size:16px;color:#C8963E;font-weight:700;">م</div></div>
+      <div class="icon icon-sm icon-xs" style="background: #0D1117;"><div style="width:20px;height:20px;background:#0A7B4F;clip-path:polygon(30% 0%,70% 0%,100% 30%,100% 70%,70% 100%,30% 100%,0% 70%,0% 30%);"></div></div>
+    </div>
+  </div>
+
+  <!-- Concept F: Mosque Arch -->
+  <div class="concept concept-f">
+    <h2>F. Mosque Arch</h2>
+    <div class="icon">
+      <div class="lantern-glow"></div>
+      <div class="arch">
+        <span class="arch-text">م</span>
+      </div>
+      <div class="arch-base"></div>
+    </div>
+    <label>Pointed arch silhouette + Mim inside</label>
+    <div class="sizes">
+      <div class="icon icon-sm" style="background: #0A7B4F;"><div style="width:24px;height:32px;border:2px solid #C8963E;border-bottom:none;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:center;font-family:'Noto Naskh Arabic';font-size:14px;color:#fff;font-weight:700;">م</div></div>
+      <div class="icon icon-sm icon-xs" style="background: #0A7B4F;"><div style="width:14px;height:18px;border:1.5px solid #C8963E;border-bottom:none;border-radius:7px 7px 0 0;"></div></div>
+    </div>
+  </div>
+
+</div>
+
+<p class="note" style="margin-top: 20px;">
+  Each concept is shown at 200px (App Store), 60px (home screen), and 32px (notification/tab bar) to verify readability at all sizes.
+  <br>Recommended: <strong>A</strong> or <strong>E</strong> — both use the Arabic Mim (م for Mizanly), are distinctive at small sizes, and carry strong Islamic identity.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Mizanly Icon Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #111; display: flex; flex-direction: column; align-items: center; padding: 40px; gap: 40px; font-family: sans-serif; color: white; }
+  .row { display: flex; gap: 48px; flex-wrap: wrap; justify-content: center; }
+  .label { text-align: center; margin-top: 12px; color: #999; font-size: 14px; }
+  h1 { color: #C8963E; font-family: 'Playfair Display', serif; }
+  .sizes { display: flex; gap: 16px; align-items: end; margin-top: 12px; justify-content: center; }
+</style>
+</head>
+<body>
+
+<h1>Mizanly Icon — Final Concepts</h1>
+
+<div class="row">
+
+<!-- A: Mim Calligraphy -->
+<div>
+<svg width="400" height="400" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bgA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="50%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#065F3B"/>
+    </linearGradient>
+    <linearGradient id="goldA" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#E2B96A"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="0.5" cy="0.48" r="0.3">
+      <stop offset="0%" stop-color="rgba(200,150,62,0.15)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+    <pattern id="geoA" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="32" x2="64" y2="32" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="32" y1="0" x2="32" y2="64" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    </pattern>
+    <pattern id="diamA" width="48" height="48" patternUnits="userSpaceOnUse">
+      <polygon points="24,4 44,24 24,44 4,24" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bgA)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#geoA)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#diamA)"/>
+  <ellipse cx="340" cy="300" rx="280" ry="250" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="512" cy="490" r="300" fill="url(#glowA)"/>
+  <circle cx="512" cy="510" r="260" fill="none" stroke="rgba(200,150,62,0.08)" stroke-width="1.5"/>
+  <circle cx="512" cy="510" r="310" fill="none" stroke="rgba(200,150,62,0.04)" stroke-width="1"/>
+  <polygon points="152,120 168,136 152,152 136,136" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="872,120 888,136 872,152 856,136" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="152,872 168,888 152,904 136,888" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="872,872 888,888 872,904 856,888" fill="rgba(200,150,62,0.12)"/>
+  <text x="512" y="560" text-anchor="middle" dominant-baseline="central"
+    font-family="'Noto Naskh Arabic', serif" font-size="440" font-weight="700"
+    fill="url(#goldA)" style="filter: drop-shadow(0 4px 16px rgba(200,150,62,0.3))">م</text>
+  <text x="512" y="820" text-anchor="middle"
+    font-family="'Playfair Display', serif" font-size="48" font-weight="700"
+    fill="rgba(255,255,255,0.5)" letter-spacing="12">MIZANLY</text>
+</svg>
+<p class="label">A: Mim Calligraphy — emerald gradient, gold م, geometric grid</p>
+<div class="sizes">
+  <svg width="60" height="60" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" rx="224" fill="url(#bgA)"/>
+    <text x="512" y="560" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="440" font-weight="700" fill="url(#goldA)">م</text>
+  </svg>
+  <svg width="32" height="32" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" rx="224" fill="url(#bgA)"/>
+    <text x="512" y="560" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="520" font-weight="700" fill="url(#goldA)">م</text>
+  </svg>
+</div>
+</div>
+
+<!-- B: Geometric Balance (Mizan) -->
+<div>
+<svg width="400" height="400" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bgB" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="50%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#065F3B"/>
+    </linearGradient>
+    <linearGradient id="goldB" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#E2B96A"/>
+      <stop offset="50%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="gold2B" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#D4A44E"/>
+      <stop offset="100%" stop-color="#B8882E"/>
+    </linearGradient>
+    <radialGradient id="innerGlowB" cx="0.5" cy="0.45" r="0.35">
+      <stop offset="0%" stop-color="rgba(200,150,62,0.12)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+    <pattern id="starB" width="80" height="80" patternUnits="userSpaceOnUse">
+      <polygon points="40,8 46,28 66,28 50,40 56,60 40,48 24,60 30,40 14,28 34,28"
+               fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+  <rect width="1024" height="1024" rx="224" fill="url(#bgB)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#starB)"/>
+  <ellipse cx="380" cy="340" rx="260" ry="220" fill="rgba(255,255,255,0.03)"/>
+  <circle cx="512" cy="470" r="340" fill="url(#innerGlowB)"/>
+  <polygon points="512,140 740,240 824,468 740,696 512,796 284,696 200,468 284,240"
+    fill="none" stroke="rgba(200,150,62,0.1)" stroke-width="2"/>
+  <polygon points="512,200 700,285 770,468 700,651 512,736 324,651 254,468 324,285"
+    fill="rgba(200,150,62,0.06)" stroke="url(#goldB)" stroke-width="3"/>
+  <!-- Scale pillar -->
+  <rect x="506" y="340" width="12" height="200" rx="6" fill="url(#goldB)"/>
+  <ellipse cx="512" cy="545" rx="40" ry="8" fill="url(#gold2B)" opacity="0.7"/>
+  <!-- Beam -->
+  <rect x="370" y="355" width="284" height="6" rx="3" fill="url(#goldB)" transform="rotate(-3, 512, 358)"/>
+  <!-- Left pan -->
+  <path d="M 382,362 Q 370,400 360,400 Q 340,400 355,370" fill="none" stroke="url(#gold2B)" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="370" cy="402" rx="24" ry="6" fill="url(#gold2B)" opacity="0.5"/>
+  <!-- Right pan -->
+  <path d="M 642,356 Q 654,394 664,394 Q 684,394 669,364" fill="none" stroke="url(#gold2B)" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="654" cy="396" rx="24" ry="6" fill="url(#gold2B)" opacity="0.5"/>
+  <!-- Crescent -->
+  <circle cx="526" cy="275" r="36" fill="url(#goldB)" opacity="0.9"/>
+  <circle cx="540" cy="272" r="34" fill="url(#bgB)"/>
+  <polygon points="558,258 561,267 570,267 563,273 565,282 558,277 551,282 553,273 546,267 555,267"
+           fill="url(#goldB)" opacity="0.8"/>
+  <text x="512" y="660" text-anchor="middle"
+    font-family="'Playfair Display', serif" font-size="56" font-weight="700"
+    fill="rgba(255,255,255,0.55)" letter-spacing="10">MIZANLY</text>
+  <text x="512" y="710" text-anchor="middle"
+    font-family="'Noto Naskh Arabic', serif" font-size="32"
+    fill="rgba(200,150,62,0.4)">ميزانلي</text>
+</svg>
+<p class="label">B: Geometric Balance — octagon, scale (mizan), crescent & star</p>
+<div class="sizes">
+  <svg width="60" height="60" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" rx="224" fill="url(#bgB)"/>
+    <polygon points="512,200 700,285 770,468 700,651 512,736 324,651 254,468 324,285" fill="rgba(200,150,62,0.06)" stroke="url(#goldB)" stroke-width="5"/>
+    <rect x="504" y="340" width="16" height="200" rx="8" fill="url(#goldB)"/>
+    <rect x="380" y="355" width="264" height="8" rx="4" fill="url(#goldB)"/>
+    <circle cx="526" cy="275" r="36" fill="url(#goldB)" opacity="0.9"/>
+    <circle cx="540" cy="272" r="34" fill="url(#bgB)"/>
+  </svg>
+  <svg width="32" height="32" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" rx="224" fill="url(#bgB)"/>
+    <polygon points="512,200 700,285 770,468 700,651 512,736 324,651 254,468 324,285" fill="rgba(200,150,62,0.08)" stroke="url(#goldB)" stroke-width="8"/>
+    <circle cx="526" cy="275" r="40" fill="url(#goldB)" opacity="0.9"/>
+    <circle cx="544" cy="270" r="38" fill="url(#bgB)"/>
+  </svg>
+</div>
+</div>
+
+</div>
+
+<p style="color:#666; font-size: 13px; max-width: 600px; text-align: center; margin-top: 20px;">
+  Open this file in your browser (Chrome/Edge) where Arabic fonts are installed.
+  Right-click the icon you prefer → "Save image as" → save as 1024x1024 PNG for App Store.
+  Small sizes show how the icon reads on home screen (60px) and notification bar (32px).
+</p>
+
+</body>
+</html>

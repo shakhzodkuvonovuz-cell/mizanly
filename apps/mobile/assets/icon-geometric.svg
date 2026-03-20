@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="50%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#065F3B"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#E2B96A"/>
+      <stop offset="50%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+    <linearGradient id="gold2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#D4A44E"/>
+      <stop offset="100%" stop-color="#B8882E"/>
+    </linearGradient>
+    <radialGradient id="innerGlow" cx="0.5" cy="0.45" r="0.35">
+      <stop offset="0%" stop-color="rgba(200,150,62,0.12)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+    <!-- Islamic star pattern -->
+    <pattern id="starPattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+      <polygon points="40,8 46,28 66,28 50,40 56,60 40,48 24,60 30,40 14,28 34,28"
+               fill="none" stroke="rgba(255,255,255,0.02)" stroke-width="0.6"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#starPattern)"/>
+
+  <!-- Subtle light -->
+  <ellipse cx="380" cy="340" rx="260" ry="220" fill="rgba(255,255,255,0.03)"/>
+
+  <!-- Inner glow -->
+  <circle cx="512" cy="470" r="340" fill="url(#innerGlow)"/>
+
+  <!-- Outer octagon ring -->
+  <polygon
+    points="512,140 740,240 824,468 740,696 512,796 284,696 200,468 284,240"
+    fill="none"
+    stroke="rgba(200,150,62,0.1)"
+    stroke-width="2"
+  />
+
+  <!-- Inner octagon — the main shape -->
+  <polygon
+    points="512,200 700,285 770,468 700,651 512,736 324,651 254,468 324,285"
+    fill="rgba(200,150,62,0.06)"
+    stroke="url(#gold)"
+    stroke-width="3"
+  />
+
+  <!-- Central balance scale (Mizan) -->
+  <!-- Vertical pillar -->
+  <rect x="506" y="340" width="12" height="200" rx="6" fill="url(#gold)"/>
+  <!-- Base -->
+  <ellipse cx="512" cy="545" rx="40" ry="8" fill="url(#gold2)" opacity="0.7"/>
+  <!-- Beam -->
+  <rect x="370" y="355" width="284" height="6" rx="3" fill="url(#gold)" transform="rotate(-3, 512, 358)"/>
+  <!-- Left pan -->
+  <path d="M 382,362 Q 370,400 360,400 Q 340,400 355,370" fill="none" stroke="url(#gold2)" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="370" cy="402" rx="24" ry="6" fill="url(#gold2)" opacity="0.5"/>
+  <!-- Right pan -->
+  <path d="M 642,356 Q 654,394 664,394 Q 684,394 669,364" fill="none" stroke="url(#gold2)" stroke-width="2.5" stroke-linecap="round"/>
+  <ellipse cx="654" cy="396" rx="24" ry="6" fill="url(#gold2)" opacity="0.5"/>
+
+  <!-- Crescent at top -->
+  <circle cx="512" cy="280" r="48" fill="none"/>
+  <circle cx="512" cy="280" r="36" fill="url(#bg)"/>
+  <circle cx="526" cy="275" r="36" fill="url(#gold)" opacity="0.9"/>
+  <circle cx="540" cy="272" r="34" fill="url(#bg)"/>
+  <!-- Star next to crescent -->
+  <polygon points="558,258 561,267 570,267 563,273 565,282 558,277 551,282 553,273 546,267 555,267"
+           fill="url(#gold)" opacity="0.8"/>
+
+  <!-- Brand text -->
+  <text
+    x="512" y="660"
+    text-anchor="middle"
+    font-family="'Playfair Display', 'Georgia', serif"
+    font-size="56"
+    font-weight="700"
+    fill="rgba(255,255,255,0.55)"
+    letter-spacing="10"
+  >MIZANLY</text>
+
+  <!-- Arabic subtitle -->
+  <text
+    x="512" y="710"
+    text-anchor="middle"
+    font-family="'Noto Naskh Arabic', serif"
+    font-size="32"
+    fill="rgba(200,150,62,0.4)"
+  >ميزانلي</text>
+</svg>

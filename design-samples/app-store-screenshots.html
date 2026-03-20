@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mizanly — App Store Screenshots</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0D1117;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    padding: 40px;
+  }
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: #C8963E;
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .screenshots {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    padding: 20px 0 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* Screenshot frame — iPhone 15 Pro aspect ratio (6.7") */
+  .ss {
+    width: 260px;
+    height: 520px;
+    border-radius: 32px;
+    overflow: hidden;
+    position: relative;
+    flex-shrink: 0;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Top headline bar */
+  .ss-header {
+    padding: 40px 20px 16px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+  .ss-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    line-height: 1.3;
+    margin-bottom: 6px;
+  }
+  .ss-header p {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+
+  /* Mock phone content area */
+  .ss-phone {
+    flex: 1;
+    margin: 0 20px 20px;
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .ss-phone-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Screenshot 1: Feed ── */
+  .ss-1 { background: linear-gradient(180deg, #0D1117 0%, #0A7B4F 100%); }
+  .ss-1 .ss-phone { background: #0D1117; }
+  .ss-1 .mock-header {
+    height: 44px;
+    background: #161B22;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .ss-1 .mock-header .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: #C8963E;
+  }
+  .ss-1 .mock-tabs {
+    display: flex;
+    height: 32px;
+    background: #161B22;
+    border-bottom: 1px solid #30363D;
+  }
+  .ss-1 .mock-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #8B949E;
+  }
+  .ss-1 .mock-tab.active {
+    color: #0A7B4F;
+    border-bottom: 2px solid #0A7B4F;
+  }
+  .ss-1 .mock-stories {
+    height: 70px;
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px;
+    align-items: center;
+  }
+  .ss-1 .story-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #2D3548;
+    border: 2px solid #0A7B4F;
+    flex-shrink: 0;
+  }
+  .ss-1 .story-circle:first-child { border-color: #C8963E; }
+  .ss-1 .mock-post {
+    padding: 12px;
+    border-bottom: 1px solid #30363D;
+  }
+  .ss-1 .post-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .ss-1 .post-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0A7B4F, #C8963E);
+  }
+  .ss-1 .post-name {
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .ss-1 .post-image {
+    width: 100%;
+    height: 140px;
+    background: linear-gradient(135deg, #1C2333, #2D3548);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #8B949E;
+    font-size: 28px;
+  }
+  .ss-1 .post-actions {
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: #8B949E;
+  }
+
+  /* ── Screenshot 2: Reels ── */
+  .ss-2 { background: linear-gradient(180deg, #1C2333 0%, #0D1117 100%); }
+  .ss-2 .ss-phone {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ss-2 .reel-content {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0A7B4F 0%, #065F3B 40%, #0D1117 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 16px;
+  }
+  .ss-2 .reel-sidebar {
+    position: absolute;
+    right: 10px;
+    bottom: 80px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+  .ss-2 .reel-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+  }
+  .ss-2 .reel-info {
+    color: #fff;
+  }
+  .ss-2 .reel-info .name {
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .ss-2 .reel-info .caption {
+    font-size: 10px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  .ss-2 .reel-music {
+    margin-top: 8px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── Screenshot 3: Islamic ── */
+  .ss-3 { background: linear-gradient(180deg, #0A7B4F 0%, #044D2E 100%); }
+  .ss-3 .ss-header h2 { color: #fff; }
+  .ss-3 .ss-phone { background: #0D1117; }
+  .ss-3 .prayer-card {
+    margin: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #1C2333, #21283B);
+    border-radius: 14px;
+    border: 1px solid #30363D;
+  }
+  .ss-3 .prayer-title {
+    font-size: 11px;
+    color: #C8963E;
+    margin-bottom: 8px;
+  }
+  .ss-3 .prayer-time {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    color: #fff;
+  }
+  .ss-3 .prayer-name {
+    font-size: 12px;
+    color: #8B949E;
+    margin-top: 2px;
+  }
+  .ss-3 .prayer-countdown {
+    font-size: 10px;
+    color: #0A7B4F;
+    margin-top: 6px;
+  }
+  .ss-3 .prayer-list {
+    margin: 0 12px;
+  }
+  .ss-3 .prayer-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #30363D;
+    font-size: 12px;
+  }
+  .ss-3 .prayer-row span:first-child { color: #8B949E; }
+  .ss-3 .prayer-row span:last-child { color: #fff; font-weight: 500; }
+  .ss-3 .prayer-row.active span:first-child { color: #0A7B4F; }
+  .ss-3 .prayer-row.active span:last-child { color: #0A7B4F; font-weight: 700; }
+  .ss-3 .quran-card {
+    margin: 12px;
+    padding: 14px;
+    background: rgba(200, 150, 62, 0.08);
+    border-radius: 12px;
+    border: 1px solid rgba(200, 150, 62, 0.2);
+  }
+  .ss-3 .quran-card .ayah {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 16px;
+    color: #C8963E;
+    text-align: right;
+    direction: rtl;
+    line-height: 1.8;
+  }
+  .ss-3 .quran-card .ref {
+    font-size: 10px;
+    color: #8B949E;
+    margin-top: 6px;
+  }
+
+  /* ── Screenshot 4: Chat ── */
+  .ss-4 { background: linear-gradient(180deg, #0D1117 0%, #1C2333 100%); }
+  .ss-4 .ss-phone { background: #0D1117; }
+  .ss-4 .chat-header {
+    height: 50px;
+    background: #161B22;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    border-bottom: 1px solid #30363D;
+  }
+  .ss-4 .chat-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #C8963E, #0A7B4F);
+  }
+  .ss-4 .chat-name {
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .ss-4 .chat-online {
+    font-size: 10px;
+    color: #0A7B4F;
+  }
+  .ss-4 .messages {
+    flex: 1;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .ss-4 .msg {
+    max-width: 75%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .ss-4 .msg.them {
+    background: #1C2333;
+    color: #fff;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .ss-4 .msg.me {
+    background: #0A7B4F;
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .ss-4 .msg.voice {
+    background: #1C2333;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .ss-4 .voice-wave {
+    display: flex;
+    gap: 1.5px;
+    align-items: center;
+  }
+  .ss-4 .voice-wave span {
+    width: 2px;
+    background: #0A7B4F;
+    border-radius: 1px;
+  }
+  .ss-4 .chat-input {
+    height: 44px;
+    background: #161B22;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 8px;
+    border-top: 1px solid #30363D;
+  }
+  .ss-4 .chat-input-field {
+    flex: 1;
+    height: 30px;
+    background: #1C2333;
+    border-radius: 15px;
+    padding: 0 12px;
+    border: none;
+    color: #8B949E;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── Screenshot 5: Gamification ── */
+  .ss-5 { background: linear-gradient(180deg, #C8963E 0%, #0D1117 60%); }
+  .ss-5 .ss-phone { background: #0D1117; }
+  .ss-5 .profile-top {
+    text-align: center;
+    padding: 20px 16px 12px;
+    background: linear-gradient(180deg, rgba(200,150,62,0.15) 0%, transparent 100%);
+  }
+  .ss-5 .profile-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #0A7B4F, #C8963E);
+    margin: 0 auto 8px;
+    border: 3px solid #C8963E;
+  }
+  .ss-5 .profile-name {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .ss-5 .profile-level {
+    font-size: 11px;
+    color: #C8963E;
+    margin-top: 2px;
+  }
+  .ss-5 .xp-bar-bg {
+    margin: 8px 16px;
+    height: 6px;
+    background: #2D3548;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .ss-5 .xp-bar-fill {
+    height: 100%;
+    width: 65%;
+    background: linear-gradient(90deg, #0A7B4F, #C8963E);
+    border-radius: 3px;
+  }
+  .ss-5 .stats-row {
+    display: flex;
+    gap: 8px;
+    margin: 12px 12px;
+  }
+  .ss-5 .stat-card {
+    flex: 1;
+    background: #1C2333;
+    border-radius: 10px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .ss-5 .stat-card .num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #C8963E;
+  }
+  .ss-5 .stat-card .lbl {
+    font-size: 9px;
+    color: #8B949E;
+    margin-top: 2px;
+  }
+  .ss-5 .badge-row {
+    display: flex;
+    gap: 8px;
+    margin: 0 12px;
+    flex-wrap: wrap;
+  }
+  .ss-5 .badge {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(200, 150, 62, 0.1);
+    border: 1px solid rgba(200, 150, 62, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .ss-5 .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin: 12px 12px 6px;
+    color: #fff;
+  }
+  .ss-5 .streak-card {
+    margin: 0 12px;
+    padding: 10px 12px;
+    background: linear-gradient(135deg, rgba(10,123,79,0.15), rgba(200,150,62,0.1));
+    border-radius: 10px;
+    border: 1px solid rgba(10,123,79,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .ss-5 .streak-flame { font-size: 24px; }
+  .ss-5 .streak-info .days {
+    font-size: 16px;
+    font-weight: 700;
+    color: #C8963E;
+  }
+  .ss-5 .streak-info .label {
+    font-size: 10px;
+    color: #8B949E;
+  }
+
+  /* ── Screenshot 6: 5 Spaces ── */
+  .ss-6 { background: linear-gradient(135deg, #0D1117 0%, #0A7B4F 50%, #C8963E 100%); }
+  .ss-6 .ss-header h2 { color: #fff; font-size: 18px; }
+  .ss-6 .ss-phone { background: #0D1117; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .ss-6 .space-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: #1C2333;
+    border-radius: 12px;
+    border: 1px solid #30363D;
+  }
+  .ss-6 .space-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .ss-6 .space-icon.saf { background: rgba(10,123,79,0.2); }
+  .ss-6 .space-icon.majlis { background: rgba(59,130,246,0.2); }
+  .ss-6 .space-icon.risalah { background: rgba(16,185,129,0.2); }
+  .ss-6 .space-icon.bakra { background: rgba(236,72,153,0.2); }
+  .ss-6 .space-icon.minbar { background: rgba(200,150,62,0.2); }
+  .ss-6 .space-info .space-name {
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .ss-6 .space-info .space-arabic {
+    font-family: 'Noto Naskh Arabic', serif;
+    font-size: 11px;
+    color: #C8963E;
+  }
+  .ss-6 .space-info .space-desc {
+    font-size: 10px;
+    color: #8B949E;
+    margin-top: 2px;
+  }
+
+  .note {
+    text-align: center;
+    color: #6E7781;
+    font-size: 12px;
+    margin-top: 32px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<h1>App Store Screenshots</h1>
+
+<div class="screenshots">
+
+  <!-- 1. Feed -->
+  <div class="ss ss-1">
+    <div class="ss-header">
+      <h2>Your Ummah's Feed</h2>
+      <p>Stories, posts, and community — all in one place</p>
+    </div>
+    <div class="ss-phone">
+      <div class="ss-phone-content">
+        <div class="mock-header">
+          <span class="logo">Mizanly</span>
+        </div>
+        <div class="mock-tabs">
+          <div class="mock-tab active">For You</div>
+          <div class="mock-tab">Following</div>
+        </div>
+        <div class="mock-stories">
+          <div class="story-circle"></div>
+          <div class="story-circle"></div>
+          <div class="story-circle"></div>
+          <div class="story-circle"></div>
+        </div>
+        <div class="mock-post">
+          <div class="post-header">
+            <div class="post-avatar"></div>
+            <span class="post-name">@islamicart</span>
+          </div>
+          <div class="post-image" style="background: linear-gradient(135deg, #0A7B4F, #044D2E);">
+            <span style="font-family: 'Noto Naskh Arabic'; color: #C8963E;">بسم الله</span>
+          </div>
+          <div class="post-actions">
+            <span style="color:#F85149;">&#9829; 1.2K</span>
+            <span>&#128172; 89</span>
+            <span>&#8635; 234</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Reels -->
+  <div class="ss ss-2">
+    <div class="ss-header">
+      <h2>Bakra — Short Videos</h2>
+      <p>Islamic content, trending reels, full-screen experience</p>
+    </div>
+    <div class="ss-phone">
+      <div class="reel-content">
+        <div class="reel-sidebar">
+          <div class="reel-btn" style="color: #F85149;">&#9829;</div>
+          <div class="reel-btn">&#128172;</div>
+          <div class="reel-btn">&#8635;</div>
+          <div class="reel-btn">&#9733;</div>
+        </div>
+        <div class="reel-info">
+          <div class="name">@quran.daily</div>
+          <div class="caption">Beautiful recitation of Surah Ar-Rahman</div>
+        </div>
+        <div class="reel-music">&#9835; Sheikh Mishary — Ar-Rahman</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Islamic -->
+  <div class="ss ss-3">
+    <div class="ss-header">
+      <h2>Prayer Times & Quran</h2>
+      <p>Your daily Islamic companion, built right in</p>
+    </div>
+    <div class="ss-phone">
+      <div class="ss-phone-content">
+        <div class="prayer-card">
+          <div class="prayer-title">NEXT PRAYER</div>
+          <div class="prayer-time">6:42 PM</div>
+          <div class="prayer-name">Maghrib</div>
+          <div class="prayer-countdown">in 2h 14m</div>
+        </div>
+        <div class="prayer-list">
+          <div class="prayer-row"><span>Fajr</span><span>5:12 AM</span></div>
+          <div class="prayer-row"><span>Dhuhr</span><span>12:15 PM</span></div>
+          <div class="prayer-row"><span>Asr</span><span>3:30 PM</span></div>
+          <div class="prayer-row active"><span>Maghrib</span><span>6:42 PM</span></div>
+          <div class="prayer-row"><span>Isha</span><span>8:15 PM</span></div>
+        </div>
+        <div class="quran-card">
+          <div class="ayah">بِسْمِ اللَّهِ الرَّحْمَـٰنِ الرَّحِيمِ</div>
+          <div class="ref">Surah Al-Fatiha 1:1 — Verse of the Day</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Chat -->
+  <div class="ss ss-4">
+    <div class="ss-header">
+      <h2>Risalah — Messaging</h2>
+      <p>Encrypted chats, voice messages, and group conversations</p>
+    </div>
+    <div class="ss-phone">
+      <div class="ss-phone-content">
+        <div class="chat-header">
+          <div class="chat-avatar"></div>
+          <div>
+            <div class="chat-name">MSA Group Chat</div>
+            <div class="chat-online">5 members online</div>
+          </div>
+        </div>
+        <div class="messages">
+          <div class="msg them">Assalamu Alaikum! Are we meeting for iftar tonight?</div>
+          <div class="msg me">Wa Alaikum Assalam! Yes, at the usual spot inshaAllah</div>
+          <div class="msg them">Alhamdulillah, I'll bring dates</div>
+          <div class="msg them voice">
+            <span style="color:#0A7B4F;">&#9654;</span>
+            <div class="voice-wave">
+              <span style="height:6px"></span><span style="height:12px"></span><span style="height:8px"></span>
+              <span style="height:16px"></span><span style="height:10px"></span><span style="height:14px"></span>
+              <span style="height:6px"></span><span style="height:18px"></span><span style="height:8px"></span>
+              <span style="height:12px"></span><span style="height:6px"></span>
+            </div>
+            <span style="font-size:9px;color:#8B949E;">0:14</span>
+          </div>
+          <div class="msg me">See you there! JazakAllah Khair</div>
+        </div>
+        <div class="chat-input">
+          <div class="chat-input-field">Type a message...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Gamification -->
+  <div class="ss ss-5">
+    <div class="ss-header">
+      <h2>Earn & Grow</h2>
+      <p>XP, streaks, achievements, and community leaderboards</p>
+    </div>
+    <div class="ss-phone">
+      <div class="ss-phone-content">
+        <div class="profile-top">
+          <div class="profile-avatar"></div>
+          <div class="profile-name">Shakhzod</div>
+          <div class="profile-level">Level 12 — Rising Star</div>
+        </div>
+        <div class="xp-bar-bg"><div class="xp-bar-fill"></div></div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="num">847</div><div class="lbl">XP</div></div>
+          <div class="stat-card"><div class="num">12</div><div class="lbl">STREAK</div></div>
+          <div class="stat-card"><div class="num">8</div><div class="lbl">BADGES</div></div>
+        </div>
+        <div class="section-title">Achievements</div>
+        <div class="badge-row">
+          <div class="badge" style="font-family:'Noto Naskh Arabic';color:#C8963E;">م</div>
+          <div class="badge">&#9733;</div>
+          <div class="badge" style="color:#0A7B4F;">&#10003;</div>
+          <div class="badge">&#9829;</div>
+          <div class="badge" style="opacity:0.3;">&#128274;</div>
+        </div>
+        <div class="section-title">Current Streak</div>
+        <div class="streak-card">
+          <div class="streak-flame" style="filter: grayscale(0);">&#128293;</div>
+          <div class="streak-info">
+            <div class="days">12 Days</div>
+            <div class="label">Keep going! Read Quran daily to maintain</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Five Spaces -->
+  <div class="ss ss-6">
+    <div class="ss-header">
+      <h2>Five Spaces. One Ummah.</h2>
+      <p>Instagram + TikTok + Twitter + WhatsApp + YouTube</p>
+    </div>
+    <div class="ss-phone">
+      <div class="space-card">
+        <div class="space-icon saf" style="color:#0A7B4F;">&#9632;</div>
+        <div class="space-info">
+          <div class="space-name">Saf <span class="space-arabic">الصف</span></div>
+          <div class="space-desc">Feed, stories, and photo sharing</div>
+        </div>
+      </div>
+      <div class="space-card">
+        <div class="space-icon majlis" style="color:#3B82F6;">&#9998;</div>
+        <div class="space-info">
+          <div class="space-name">Majlis <span class="space-arabic">المجلس</span></div>
+          <div class="space-desc">Threads, discussions, trending topics</div>
+        </div>
+      </div>
+      <div class="space-card">
+        <div class="space-icon risalah" style="color:#10B981;">&#9993;</div>
+        <div class="space-info">
+          <div class="space-name">Risalah <span class="space-arabic">رسالة</span></div>
+          <div class="space-desc">Encrypted chats, groups, voice messages</div>
+        </div>
+      </div>
+      <div class="space-card">
+        <div class="space-icon bakra" style="color:#EC4899;">&#9654;</div>
+        <div class="space-info">
+          <div class="space-name">Bakra <span class="space-arabic">بكرة</span></div>
+          <div class="space-desc">Short-form video reels</div>
+        </div>
+      </div>
+      <div class="space-card">
+        <div class="space-icon minbar" style="color:#C8963E;">&#9654;&#9654;</div>
+        <div class="space-info">
+          <div class="space-name">Minbar <span class="space-arabic">المنبر</span></div>
+          <div class="space-desc">Long video, lectures, series</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="note">
+  6 screenshots covering: Feed, Reels, Islamic Features, Messaging, Gamification, and Five Spaces overview.
+  Open in browser, resize to iPhone dimensions, and screenshot for App Store submission.
+  All content is mock data — replace with real screenshots once the app is running on a device.
+</p>
+
+</body>
+</html>

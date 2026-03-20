@@ -1,5 +1,81 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="224" fill="#0A7B4F"/>
-  <text x="512" y="580" text-anchor="middle" dominant-baseline="central"
-    font-family="'Noto Naskh Arabic', serif" font-size="480" font-weight="700" fill="#C8963E">م</text>
+  <defs>
+    <!-- Emerald gradient background -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0E9B5F"/>
+      <stop offset="50%" stop-color="#0A7B4F"/>
+      <stop offset="100%" stop-color="#065F3B"/>
+    </linearGradient>
+
+    <!-- Gold gradient for the Mim -->
+    <linearGradient id="gold" x1="0" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#E2B96A"/>
+      <stop offset="40%" stop-color="#C8963E"/>
+      <stop offset="100%" stop-color="#A67A2E"/>
+    </linearGradient>
+
+    <!-- Subtle glow behind the letter -->
+    <radialGradient id="glow" cx="0.5" cy="0.48" r="0.3">
+      <stop offset="0%" stop-color="rgba(200,150,62,0.15)"/>
+      <stop offset="100%" stop-color="rgba(200,150,62,0)"/>
+    </radialGradient>
+
+    <!-- Geometric pattern overlay -->
+    <pattern id="geo" x="0" y="0" width="64" height="64" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="32" x2="64" y2="32" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+      <line x1="32" y1="0" x2="32" y2="64" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+    </pattern>
+
+    <!-- Diamond pattern -->
+    <pattern id="diamonds" x="0" y="0" width="48" height="48" patternUnits="userSpaceOnUse">
+      <rect width="48" height="48" fill="none"/>
+      <polygon points="24,4 44,24 24,44 4,24" fill="none" stroke="rgba(255,255,255,0.025)" stroke-width="0.8"/>
+    </pattern>
+  </defs>
+
+  <!-- Rounded square background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+
+  <!-- Geometric overlay patterns -->
+  <rect width="1024" height="1024" rx="224" fill="url(#geo)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#diamonds)"/>
+
+  <!-- Subtle top-left light reflection -->
+  <ellipse cx="340" cy="300" rx="280" ry="250" fill="rgba(255,255,255,0.04)"/>
+
+  <!-- Central glow -->
+  <circle cx="512" cy="490" r="300" fill="url(#glow)"/>
+
+  <!-- Decorative ring -->
+  <circle cx="512" cy="510" r="260" fill="none" stroke="rgba(200,150,62,0.08)" stroke-width="1.5"/>
+  <circle cx="512" cy="510" r="310" fill="none" stroke="rgba(200,150,62,0.04)" stroke-width="1"/>
+
+  <!-- Corner accents — small gold diamonds -->
+  <polygon points="152,120 168,136 152,152 136,136" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="872,120 888,136 872,152 856,136" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="152,872 168,888 152,904 136,888" fill="rgba(200,150,62,0.12)"/>
+  <polygon points="872,872 888,888 872,904 856,888" fill="rgba(200,150,62,0.12)"/>
+
+  <!-- The Mim (م) — Arabic letter, large, gold gradient -->
+  <text
+    x="512" y="560"
+    text-anchor="middle"
+    dominant-baseline="central"
+    font-family="'Noto Naskh Arabic', 'Traditional Arabic', 'Scheherazade New', serif"
+    font-size="440"
+    font-weight="700"
+    fill="url(#gold)"
+    style="filter: drop-shadow(0 4px 16px rgba(200,150,62,0.3))"
+  >م</text>
+
+  <!-- Small brand line at bottom -->
+  <text
+    x="512" y="820"
+    text-anchor="middle"
+    font-family="'Playfair Display', 'Georgia', serif"
+    font-size="48"
+    font-weight="700"
+    fill="rgba(255,255,255,0.5)"
+    letter-spacing="12"
+  >MIZANLY</text>
 </svg>

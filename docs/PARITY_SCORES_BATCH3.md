@@ -20,7 +20,7 @@ Scale: 1-10 where 10 = production competitor, 7 = functional beta, 5 = code exis
 | **Backend Quality** | 7.5 | 6.5 | +1.0 | All 81 controllers rate-limited, BullMQ wiring complete, email service, Decimal migration |
 | **Mobile Quality** | 6.5 | 6.0 | +0.5 | Islamic theming, Eid overlay, expo-location installed |
 | **i18n** | 7.0 | 7.0 | — | All 8 languages maintained with new keys added |
-| **Testing** | 5.5 | 5.5 | — | 98 test files but no new tests added this batch |
+| **Testing** | 6.0 | 5.5 | +0.5 | 101 test suites, 1,445 tests, 3 new files (halal, thumbnails, alt-profile) |
 
 ## Overall Score: **6.5/10** (up from 5.8)
 
