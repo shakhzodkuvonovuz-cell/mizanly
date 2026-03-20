@@ -29,6 +29,7 @@ describe('VideosService', () => {
             video: {
               create: jest.fn(),
               findUnique: jest.fn(),
+              findFirst: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
               findMany: jest.fn(),
@@ -58,6 +59,7 @@ describe('VideosService', () => {
             },
             videoComment: {
               create: jest.fn(),
+              findUnique: jest.fn(),
               findMany: jest.fn(),
             },
             watchHistory: {
@@ -65,6 +67,25 @@ describe('VideosService', () => {
             },
             report: {
               create: jest.fn(),
+            },
+            videoPremiere: {
+              create: jest.fn(),
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+            premiereReminder: {
+              create: jest.fn(),
+              delete: jest.fn(),
+            },
+            endScreen: {
+              create: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              deleteMany: jest.fn(),
+            },
+            videoChapter: {
+              findMany: jest.fn().mockResolvedValue([]),
+              createMany: jest.fn(),
+              deleteMany: jest.fn(),
             },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
@@ -788,6 +809,239 @@ describe('VideosService', () => {
         create: { userId, videoId, progress, completed: false, watchedAt: expect.any(Date) },
         update: { progress, completed: false, watchedAt: expect.any(Date) },
       });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getShareLink
+  // ═══════════════════════════════════════════════════════
+
+  describe('getShareLink', () => {
+    it('should return share URL for existing video', async () => {
+      prisma.video.findUnique.mockResolvedValue({ id: 'video-1' });
+      const result = await service.getShareLink('video-1');
+      expect(result.url).toContain('video-1');
+    });
+
+    it('should throw NotFoundException for nonexistent video', async () => {
+      prisma.video.findUnique.mockResolvedValue(null);
+      await expect(service.getShareLink('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Premiere
+  // ═══════════════════════════════════════════════════════
+
+  describe('createPremiere', () => {
+    it('should create premiere for owned video', async () => {
+      const future = new Date(Date.now() + 86400000).toISOString();
+      prisma.video.findFirst.mockResolvedValue({ id: 'video-1', userId: 'user-1' });
+      prisma.videoPremiere.create.mockResolvedValue({ videoId: 'video-1', scheduledAt: future });
+      prisma.video.update.mockResolvedValue({});
+
+      const result = await service.createPremiere('video-1', 'user-1', { scheduledAt: future });
+      expect(result.videoId).toBe('video-1');
+    });
+
+    it('should throw NotFoundException when video not found', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      await expect(service.createPremiere('v1', 'u1', { scheduledAt: new Date(Date.now() + 86400000).toISOString() }))
+        .rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for past scheduled time', async () => {
+      const past = new Date(Date.now() - 86400000).toISOString();
+      prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
+      await expect(service.createPremiere('v1', 'u1', { scheduledAt: past })).rejects.toThrow();
+    });
+  });
+
+  describe('getPremiere', () => {
+    it('should return premiere data', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue({ videoId: 'video-1', scheduledAt: new Date() });
+      const result = await service.getPremiere('video-1');
+      expect(result.videoId).toBe('video-1');
+    });
+
+    it('should throw NotFoundException when no premiere', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue(null);
+      await expect(service.getPremiere('video-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('setPremiereReminder', () => {
+    it('should set reminder for premiere', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue({ id: 'prem-1', videoId: 'video-1' });
+      prisma.premiereReminder.create.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.setPremiereReminder('video-1', 'user-1');
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should throw NotFoundException when premiere not found', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue(null);
+      await expect(service.setPremiereReminder('v1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('removePremiereReminder', () => {
+    it('should remove reminder', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue({ id: 'prem-1' });
+      prisma.premiereReminder.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.removePremiereReminder('video-1', 'user-1');
+      expect(result).toEqual({ success: true });
+    });
+  });
+
+  describe('startPremiere', () => {
+    it('should start premiere for video owner', async () => {
+      prisma.video.findFirst.mockResolvedValue({ id: 'video-1', userId: 'user-1' });
+      prisma.videoPremiere.update.mockResolvedValue({});
+
+      const result = await service.startPremiere('video-1', 'user-1');
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should throw NotFoundException for non-owner', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      await expect(service.startPremiere('v1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getPremiereViewerCount', () => {
+    it('should return viewer count', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue({ viewerCount: 42 });
+      const result = await service.getPremiereViewerCount('video-1');
+      expect(result).toEqual({ viewerCount: 42 });
+    });
+
+    it('should return 0 when no premiere', async () => {
+      prisma.videoPremiere.findUnique.mockResolvedValue(null);
+      const result = await service.getPremiereViewerCount('video-1');
+      expect(result).toEqual({ viewerCount: 0 });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // End Screens
+  // ═══════════════════════════════════════════════════════
+
+  describe('setEndScreens', () => {
+    it('should set end screen items', async () => {
+      prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
+      prisma.endScreen.deleteMany.mockResolvedValue({});
+      prisma.endScreen.create.mockResolvedValue({ id: 'es-1' });
+
+      const items = [{ type: 'video', label: 'Next', position: 'bottom-right', showAtSeconds: 300 }];
+      const result = await service.setEndScreens('v1', 'u1', items);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException for non-owner', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      await expect(service.setEndScreens('v1', 'u1', [])).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for more than 4 items', async () => {
+      prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
+      const items = Array(5).fill({ type: 'video', label: 'X', position: 'top', showAtSeconds: 300 });
+      await expect(service.setEndScreens('v1', 'u1', items)).rejects.toThrow();
+    });
+  });
+
+  describe('getEndScreens', () => {
+    it('should return end screens', async () => {
+      prisma.endScreen.findMany.mockResolvedValue([{ id: 'es-1', type: 'video' }]);
+      const result = await service.getEndScreens('v1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('deleteEndScreens', () => {
+    it('should delete end screens for video owner', async () => {
+      prisma.video.findFirst.mockResolvedValue({ id: 'v1', userId: 'u1' });
+      prisma.endScreen.deleteMany.mockResolvedValue({});
+      const result = await service.deleteEndScreens('v1', 'u1');
+      expect(result).toEqual({ success: true });
+    });
+
+    it('should throw NotFoundException for non-owner', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      await expect(service.deleteEndScreens('v1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Chapters
+  // ═══════════════════════════════════════════════════════
+
+  describe('getChapters', () => {
+    it('should return chapters sorted by timestamp', async () => {
+      prisma.videoChapter.findMany.mockResolvedValue([
+        { title: 'Intro', timestampSeconds: 0 },
+        { title: 'Main', timestampSeconds: 120 },
+      ]);
+      const result = await service.getChapters('v1');
+      expect(result).toHaveLength(2);
+    });
+  });
+
+  describe('parseChaptersFromDescription', () => {
+    it('should parse timestamps from description', async () => {
+      prisma.video.findFirst.mockResolvedValue({ description: '0:00 Introduction\n2:30 Main Topic\n5:00 Conclusion' });
+      prisma.videoChapter.deleteMany.mockResolvedValue({});
+      prisma.videoChapter.createMany.mockResolvedValue({ count: 3 });
+      prisma.videoChapter.findMany.mockResolvedValue([
+        { title: 'Introduction', timestampSeconds: 0 },
+        { title: 'Main Topic', timestampSeconds: 150 },
+        { title: 'Conclusion', timestampSeconds: 300 },
+      ]);
+
+      const result = await service.parseChaptersFromDescription('v1', 'u1');
+      expect(result).toHaveLength(3);
+    });
+
+    it('should return empty when video has no description', async () => {
+      prisma.video.findFirst.mockResolvedValue({ description: null });
+      const result = await service.parseChaptersFromDescription('v1', 'u1');
+      expect(result).toEqual([]);
+    });
+
+    it('should return empty when video not found', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      const result = await service.parseChaptersFromDescription('v1', 'u1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getCommentReplies
+  // ═══════════════════════════════════════════════════════
+
+  describe('getCommentReplies', () => {
+    it('should return replies for a comment', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'comment-1' });
+      prisma.videoComment.findMany.mockResolvedValue([
+        { id: 'reply-1', content: 'Great point', parentId: 'comment-1' },
+      ]);
+      const result = await service.getCommentReplies('comment-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty when no replies', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue({ id: 'comment-1' });
+      prisma.videoComment.findMany.mockResolvedValue([]);
+      const result = await service.getCommentReplies('comment-1');
+      expect(result.data).toEqual([]);
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      prisma.videoComment.findUnique.mockResolvedValue(null);
+      await expect(service.getCommentReplies('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });
