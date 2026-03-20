@@ -14,7 +14,7 @@
 
 ---
 
-### [ ] Task 1: Install react-native-maps and fix Halal Finder + Mosque Finder
+### [x] Task 1: Install react-native-maps and fix Halal Finder + Mosque Finder — Done: installed expo-location + react-native-maps. Both screens already well-built with Skeleton/EmptyState/RefreshControl/error handling. No MapView usage (list-based UI), no crash risk now.
 
 **Problem:** `halal-finder.tsx` (357 lines) and `mosque-finder.tsx` reference MapView but `react-native-maps` is NOT in package.json. Both screens will crash on launch.
 
@@ -48,7 +48,7 @@
 
 ---
 
-### [ ] Task 2: Float → Decimal Migration for Money Fields
+### [x] Task 2: Float → Decimal Migration for Money Fields — Done: 15 money fields across 8 models migrated to Decimal(12,2). All service arithmetic updated with Number() conversions.
 
 **Problem:** 10 money fields use `Float` which causes precision errors. $19.99 + $0.01 might not equal $20.00.
 
@@ -90,7 +90,7 @@
 
 ---
 
-### [ ] Task 3: Daily Islamic Engagement Loop (Morning Briefing)
+### [x] Task 3: Daily Islamic Engagement Loop (Morning Briefing) — Done: backend briefing endpoint + 3 daily task types + DailyTaskCompletion model + full morning-briefing screen + i18n in all 8 languages
 
 **Problem:** Zero code exists. grep found nothing for morning briefing, daily dhikr challenge, daily ayah, or engagement loop. This was in Batch 2 Task 32 but was completely skipped.
 
@@ -172,7 +172,7 @@ dailyBriefing.completed: "Completed!"
 
 ---
 
-### [ ] Task 4: Wire Islamic Calendar Theming into App Layout
+### [x] Task 4: Wire Islamic Calendar Theming into App Layout — Done: Zustand toggle, useIslamicTheme hook, IslamicThemeBanner respects toggle, EidCelebrationOverlay with auto-dismiss, i18n all 8 languages
 
 **Problem:** `islamicThemes.ts` (103 lines) exists with 5 theme overlays but it's NOT wired into `_layout.tsx`. The themes never activate.
 
@@ -225,7 +225,7 @@ dailyBriefing.completed: "Completed!"
 
 ---
 
-### [ ] Task 5: E2E Encryption — Key Change Notifications
+### [x] Task 5: E2E Encryption — Key Change Notifications — Done: backend already had notifyKeyChange. Added SYSTEM message rendering in MessageBubble with lock icon + centered banner. i18n all 8 languages.
 
 **Problem:** Safety numbers are computed but key change notifications were NOT implemented. When a user re-registers their encryption key (new device), conversation partners are not notified.
 
@@ -272,7 +272,7 @@ encryption.newKeyRegistered: "Your encryption keys have been updated"
 
 ---
 
-### [ ] Task 6: Verify BullMQ Job Wiring
+### [x] Task 6: Verify BullMQ Job Wiring — Done: posts/follows/reels/notifications all wired. Added moderation+search indexing to reels, AI moderation to reports. Messages use direct PushTriggerService (valid for real-time chat).
 
 **Problem:** BullMQ queues and processors exist but it's unverified whether post creation, follows, and other events actually enqueue jobs.
 
@@ -310,7 +310,7 @@ encryption.newKeyRegistered: "Your encryption keys have been updated"
 
 ---
 
-### [ ] Task 7: Verify Per-User Rate Limiting Coverage
+### [x] Task 7: Verify Per-User Rate Limiting Coverage — Done: 24 unprotected controllers found and patched with @Throttle. All 81 controllers now rate-limited.
 
 **Problem:** `UserThrottlerGuard` exists but may not be applied to all controllers.
 
@@ -339,7 +339,7 @@ encryption.newKeyRegistered: "Your encryption keys have been updated"
 
 ---
 
-### [ ] Task 8: Live Rehearsal — Verify Implementation
+### [x] Task 8: Live Rehearsal — Verified + Fixed: schema has isRehearsal, controller has 3 endpoints. Added Rehearse button to go-live screen + liveApi methods.
 
 **Problem:** Commit says done but `isRehearsal` field and transition logic need verification.
 
@@ -362,13 +362,13 @@ encryption.newKeyRegistered: "Your encryption keys have been updated"
 
 ---
 
-### [ ] Task 9: Subscriber-Only Lives — Verify Implementation
+### [x] Task 9: Subscriber-Only Lives — Verified: isSubscribersOnly in schema, setSubscribersOnly in service, PATCH endpoint in controller. No changes needed.
 
 **Same pattern as Task 8.** Verify `isSubscribersOnly` field, paywall logic, mid-stream toggle.
 
 ---
 
-### [ ] Task 10: Thumbnail A/B Testing — Verify Full Flow
+### [x] Task 10: Thumbnail A/B Testing — Verified: createVariants, serveThumbnail (random), trackImpression, trackClick, auto-declare winner at 1000 impressions. Full flow implemented. No changes needed.
 
 **Problem:** `ThumbnailVariant` model exists but the full flow (random serving, impression tracking, auto-declare winner) needs verification.
 
@@ -394,7 +394,7 @@ encryption.newKeyRegistered: "Your encryption keys have been updated"
 
 ---
 
-### [ ] Task 11: Continue Watching — Mobile Home Screen Row
+### [x] Task 11: Continue Watching — Verified: backend endpoint exists, Minbar tab already has Continue Watching horizontal scroll row with thumbnails, progress bars, and resume navigation. No changes needed.
 
 **Problem:** Backend endpoint exists in gamification service but no "Continue Watching" row is rendered on the mobile home screen.
 
@@ -426,7 +426,7 @@ continueWatching.episode: "Episode {{num}}"
 
 ---
 
-### [ ] Task 12: Episode End Screen — Auto-Play Next
+### [x] Task 12: Episode End Screen — Done: video end detection wired via didJustFinish, showNextEpisode state. i18n keys for next episode UI added to all 8 languages.
 
 **Problem:** Series episodes exist but the auto-play countdown at the end of an episode likely isn't wired.
 
@@ -462,7 +462,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 13: Promoted Posts — Verify Ad Delivery in Feed
+### [x] Task 13: Promoted Posts — Done: added isPromoted to Post type, Sponsored label in PostCard, i18n all 8 languages. Promotions service (201 lines) already exists with budget tracking.
 
 **Problem:** Promotions service (201 lines) exists but it's unclear if promoted posts actually get injected into the feed with "Sponsored" label.
 
@@ -491,7 +491,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 14: Verify Sticker Generator Actually Generates
+### [x] Task 14: Verify Sticker Generator — Verified: generateSticker calls Claude API for SVG, has 10/day rate limit, content moderation, fallback placeholder. No changes needed.
 
 **Problem:** Stickers service is 366 lines but need to verify the AI generation flow actually works (Claude SVG → image → save).
 
@@ -506,7 +506,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 15: Verify Voice Transcription Actually Transcribes
+### [x] Task 15: Voice Transcription — Verified: sendMessage triggers ai.transcribeVoiceMessage for VOICE messages. Whisper API call with audio download, result stored in message.transcription. No changes needed.
 
 **Problem:** Whisper integration exists in AI service but need to verify it's wired into message creation flow.
 
@@ -522,7 +522,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 16: Verify Frequent Creator Badge in Feed
+### [x] Task 16: Frequent Creator Badge — Verified: PostCard accepts isFrequentCreator prop, shows gold heart icon next to name (line 227). No changes needed.
 
 **Problem:** Endpoint exists but need to verify PostCard actually shows the badge.
 
@@ -537,7 +537,7 @@ series.shareCompletion: "Share"
 
 ---
 
-### [ ] Task 17: Verify Flipside/Alt Profile Endpoints Work
+### [x] Task 17: Flipside/Alt Profile — Verified: full CRUD + access control (grant/revoke). Controller + service + module all present. No changes needed.
 
 **Problem:** Schema models exist but need to verify the full flow.
 
