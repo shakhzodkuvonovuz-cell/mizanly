@@ -40,6 +40,7 @@ describe('PostsService', () => {
               create: jest.fn(),
               update: jest.fn(),
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               delete: jest.fn(),
             },
             follow: {
@@ -61,6 +62,7 @@ describe('PostsService', () => {
               create: jest.fn(),
               findUnique: jest.fn(),
               update: jest.fn(),
+              updateMany: jest.fn(),
               findMany: jest.fn(),
             },
             commentReaction: {
@@ -72,12 +74,17 @@ describe('PostsService', () => {
               create: jest.fn(),
               delete: jest.fn(),
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              upsert: jest.fn(),
             },
             feedDismissal: {
               upsert: jest.fn(),
             },
             report: {
               create: jest.fn(),
+            },
+            circleMember: {
+              findMany: jest.fn().mockResolvedValue([]),
             },
           },
         },
@@ -837,6 +844,349 @@ describe('PostsService', () => {
         update: {},
       });
       expect(result).toEqual({ dismissed: true });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // NEW TESTS — react error paths
+  // ═══════════════════════════════════════════════════════
+
+  describe('react — error paths', () => {
+    it('should throw NotFoundException if post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.react('post-456', 'user-123', 'LIKE')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException if post is removed', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-456', isRemoved: true });
+      await expect(service.react('post-456', 'user-123', 'LIKE')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should update reaction type when already reacted (not error)', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-456', userId: 'owner', isRemoved: false });
+      prisma.postReaction.findUnique.mockResolvedValue({ userId: 'user-123', postId: 'post-456', reaction: 'LIKE' });
+      prisma.postReaction.update.mockResolvedValue({ reaction: 'LOVE' });
+
+      const result = await service.react('post-456', 'user-123', 'LOVE');
+      expect(result).toEqual({ reaction: 'LOVE' });
+      expect(prisma.postReaction.update).toHaveBeenCalled();
+    });
+  });
+
+  describe('unreact — behavior', () => {
+    it('should return null reaction idempotently when no existing reaction', async () => {
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      const result = await service.unreact('post-456', 'user-123');
+      expect(result).toEqual({ reaction: null });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getById additional
+  // ═══════════════════════════════════════════════════════
+
+  describe('getById — additional', () => {
+    it('should throw NotFoundException if post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should return post with isSaved=true when user has saved', async () => {
+      const mockPost = { id: 'post-456', content: 'Test', user: { id: 'owner' }, isRemoved: false };
+      prisma.post.findUnique.mockResolvedValue(mockPost);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue({ userId: 'user-1', postId: 'post-456' });
+
+      const result = await service.getById('post-456', 'user-1');
+      expect(result.isSaved).toBe(true);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getFeed — zero follows fallback
+  // ═══════════════════════════════════════════════════════
+
+  describe('getFeed — zero follows fallback', () => {
+    it('should return trending content when user has zero follows', async () => {
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([]);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+
+      const result = await service.getFeed('user-123', 'following');
+      expect(result).toBeDefined();
+      expect(result.data).toBeDefined();
+      expect(result.meta).toBeDefined();
+    });
+
+    it('should respect cursor pagination', async () => {
+      const followingId = 'following-1';
+      prisma.follow.findMany.mockResolvedValue(
+        Array(15).fill(null).map((_, i) => ({ followingId: `following-${i}` })),
+      );
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([
+        { id: 'post-1', createdAt: new Date(), likesCount: 0, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 0, user: { id: 'u1' } },
+      ]);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+
+      const result = await service.getFeed('user-123', 'following', 'cursor-abc', 5);
+      expect(result.data).toBeDefined();
+    });
+  });
+
+  describe('getFeed — foryou', () => {
+    it('should return scored posts from foryou feed when no cache', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.post.findMany.mockResolvedValue([]);
+      prisma.postReaction.findUnique.mockResolvedValue(null);
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+
+      const result = await service.getFeed('user-123', 'foryou');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Archive
+  // ═══════════════════════════════════════════════════════
+
+  describe('archivePost', () => {
+    it('should archive post for owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1', isRemoved: false });
+      prisma.savedPost.upsert.mockResolvedValue({});
+
+      const result = await service.archivePost('post-1', 'user-1');
+      expect(result).toEqual({ archived: true });
+    });
+
+    it('should throw NotFoundException when post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.archivePost('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when post is removed', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isRemoved: true });
+      await expect(service.archivePost('post-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'other', isRemoved: false });
+      await expect(service.archivePost('post-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('unarchivePost', () => {
+    it('should unarchive post', async () => {
+      prisma.savedPost.findUnique.mockResolvedValue({ userId: 'user-1', postId: 'post-1', collectionName: 'archive' });
+      prisma.savedPost.delete.mockResolvedValue({});
+
+      const result = await service.unarchivePost('post-1', 'user-1');
+      expect(result).toEqual({ archived: false });
+    });
+
+    it('should throw NotFoundException when not archived', async () => {
+      prisma.savedPost.findUnique.mockResolvedValue(null);
+      await expect(service.unarchivePost('post-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when saved but not as archive', async () => {
+      prisma.savedPost.findUnique.mockResolvedValue({ userId: 'user-1', postId: 'post-1', collectionName: 'default' });
+      await expect(service.unarchivePost('post-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getArchived', () => {
+    it('should return archived posts with pagination', async () => {
+      prisma.savedPost.findMany.mockResolvedValue([
+        { post: { id: 'post-1', content: 'Test' }, postId: 'post-1' },
+      ]);
+
+      const result = await service.getArchived('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Pin/Unpin Comment
+  // ═══════════════════════════════════════════════════════
+
+  describe('pinComment', () => {
+    it('should pin comment on own post', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1' });
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', postId: 'post-1' });
+      prisma.comment.updateMany.mockResolvedValue({ count: 0 });
+      prisma.comment.update.mockResolvedValue({ id: 'comment-1', isPinned: true });
+
+      const result = await service.pinComment('post-1', 'comment-1', 'user-1');
+      expect(result.isPinned).toBe(true);
+    });
+
+    it('should throw NotFoundException when post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.pinComment('post-1', 'comment-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not post owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'other' });
+      await expect(service.pinComment('post-1', 'comment-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1' });
+      prisma.comment.findUnique.mockResolvedValue(null);
+      await expect(service.pinComment('post-1', 'comment-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when comment belongs to different post', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1' });
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', postId: 'post-2' });
+      await expect(service.pinComment('post-1', 'comment-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unpinComment', () => {
+    it('should unpin comment', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1' });
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', postId: 'post-1' });
+      prisma.comment.update.mockResolvedValue({ id: 'comment-1', isPinned: false });
+
+      const result = await service.unpinComment('post-1', 'comment-1', 'user-1');
+      expect(result.isPinned).toBe(false);
+    });
+
+    it('should throw ForbiddenException when not post owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'other' });
+      await expect(service.unpinComment('post-1', 'comment-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Hide/Unhide Comment
+  // ═══════════════════════════════════════════════════════
+
+  describe('hideComment', () => {
+    it('should hide comment as post owner', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', post: { userId: 'user-1' } });
+      prisma.comment.update.mockResolvedValue({ id: 'comment-1', isHidden: true });
+
+      const result = await service.hideComment('comment-1', 'user-1');
+      expect(result.isHidden).toBe(true);
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      prisma.comment.findUnique.mockResolvedValue(null);
+      await expect(service.hideComment('comment-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not post owner', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', post: { userId: 'other' } });
+      await expect(service.hideComment('comment-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('unhideComment', () => {
+    it('should unhide comment as post owner', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', post: { userId: 'user-1' } });
+      prisma.comment.update.mockResolvedValue({ id: 'comment-1', isHidden: false });
+
+      const result = await service.unhideComment('comment-1', 'user-1');
+      expect(result.isHidden).toBe(false);
+    });
+
+    it('should throw ForbiddenException when not post owner', async () => {
+      prisma.comment.findUnique.mockResolvedValue({ id: 'comment-1', post: { userId: 'other' } });
+      await expect(service.unhideComment('comment-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getHiddenComments', () => {
+    it('should return hidden comments for post owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'user-1' });
+      prisma.comment.findMany.mockResolvedValue([
+        { id: 'c-1', content: 'hidden', isHidden: true },
+      ]);
+
+      const result = await service.getHiddenComments('post-1', 'user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw NotFoundException when post not found', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.getHiddenComments('post-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not post owner', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', userId: 'other' });
+      await expect(service.getHiddenComments('post-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Share Link
+  // ═══════════════════════════════════════════════════════
+
+  describe('getShareLink', () => {
+    it('should return share URL for existing post', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isRemoved: false });
+      const result = await service.getShareLink('post-1');
+      expect(result.url).toContain('post-1');
+    });
+
+    it('should throw NotFoundException for removed post', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-1', isRemoved: true });
+      await expect(service.getShareLink('post-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException for nonexistent post', async () => {
+      prisma.post.findUnique.mockResolvedValue(null);
+      await expect(service.getShareLink('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // addComment — additional
+  // ═══════════════════════════════════════════════════════
+
+  describe('addComment — additional', () => {
+    it('should throw NotFoundException if post is removed', async () => {
+      prisma.post.findUnique.mockResolvedValue({ id: 'post-456', isRemoved: true });
+      await expect(service.addComment('post-456', 'user-123', { content: 'test' })).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getComments — additional
+  // ═══════════════════════════════════════════════════════
+
+  describe('getComments — additional', () => {
+    it('should return empty array for post with zero comments', async () => {
+      prisma.comment.findMany.mockResolvedValue([]);
+
+      const result = await service.getComments('post-456');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should detect hasMore when more comments exist', async () => {
+      const comments = Array(21).fill(null).map((_, i) => ({
+        id: `comment-${i}`,
+        content: `Comment ${i}`,
+        user: { id: 'u1' },
+        _count: { replies: 0 },
+      }));
+      prisma.comment.findMany.mockResolvedValue(comments);
+
+      const result = await service.getComments('post-456', undefined, 20);
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
     });
   });
 
