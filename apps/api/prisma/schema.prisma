@@ -2348,6 +2348,18 @@ model DhikrSession {
   @@map("dhikr_sessions")
 }
 
+model DailyTaskCompletion {
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime @db.Date
+  taskType  String   @db.VarChar(20) // dhikr | quran | reflection
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date, taskType])
+  @@index([userId, date])
+  @@map("daily_task_completions")
+}
+
 model DhikrChallenge {
   id               String    @id @default(uuid())
   userId           String

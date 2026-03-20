@@ -908,9 +908,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create Account",
+    "alreadyHaveAccount": "\u067e\u06c1\u0644\u06d2 \u0633\u06d2 \u0627\u06a9\u0627\u0624\u0646\u0679 \u06c1\u06d2\u061f",
+    "dontHaveAccount": "\u0627\u06a9\u0627\u0624\u0646\u0679 \u0646\u06c1\u06cc\u06ba \u06c1\u06d2\u061f",
+    "createAccount": "\u0627\u06a9\u0627\u0624\u0646\u0679 \u0628\u0646\u0627\u0626\u06cc\u06ba",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -3030,5 +3030,24 @@
     "stop": "رکیں",
     "speed": "رفتار",
     "readingAloud": "بلند آواز میں پڑھنا"
+  },
+  "dailyBriefing": {
+    "title": "صبح کی بریفنگ",
+    "greeting": "صبح بخیر",
+    "greetingAfternoon": "سہ پہر بخیر",
+    "greetingEvening": "شام بخیر",
+    "ayahOfTheDay": "آج کی آیت",
+    "hadithOfTheDay": "آج کی حدیث",
+    "duaOfTheDay": "آج کی دعا",
+    "dhikrChallenge": "ذکر چیلنج",
+    "dailyReflection": "روزانہ غور و فکر",
+    "tasksComplete": "{{completed}}/{{total}} ٹاسک مکمل",
+    "bonusXP": "سب مکمل کریں +{{xp}} XP حاصل کریں",
+    "gratefulPrompt": "آج آپ کس چیز کے شکرگزار ہیں؟",
+    "completed": "مکمل!",
+    "tapToComplete": "مکمل کرنے کے لیے ٹیپ کریں",
+    "submitReflection": "تأمل جمع کریں",
+    "allComplete": "تمام ٹاسک مکمل!",
+    "loadError": "بریفنگ لوڈ نہیں ہو سکی"
   }
 }

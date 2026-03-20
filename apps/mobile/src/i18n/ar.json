@@ -3029,5 +3029,24 @@
     "stop": "إيقاف",
     "speed": "السرعة",
     "readingAloud": "القراءة بصوت عالٍ"
+  },
+  "dailyBriefing": {
+    "title": "الموجز الصباحي",
+    "greeting": "صباح الخير",
+    "greetingAfternoon": "مساء الخير",
+    "greetingEvening": "مساء الخير",
+    "ayahOfTheDay": "آية اليوم",
+    "hadithOfTheDay": "حديث اليوم",
+    "duaOfTheDay": "دعاء اليوم",
+    "dhikrChallenge": "تحدي الذكر",
+    "dailyReflection": "تأمل يومي",
+    "tasksComplete": "{{completed}}/{{total}} مهام مكتملة",
+    "bonusXP": "أكمل الكل للحصول على +{{xp}} نقطة",
+    "gratefulPrompt": "ما الذي تشكر الله عليه اليوم؟",
+    "completed": "مكتمل!",
+    "tapToComplete": "انقر للإكمال",
+    "submitReflection": "إرسال التأمل",
+    "allComplete": "جميع المهام مكتملة!",
+    "loadError": "تعذر تحميل الموجز"
   }
 }

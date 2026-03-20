@@ -344,9 +344,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Sudah ada akaun?",
+    "dontHaveAccount": "Belum ada akaun?",
+    "createAccount": "Cipta Akaun",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -3029,5 +3029,24 @@
     "stop": "Berhenti",
     "speed": "Kelajuan",
     "readingAloud": "Membaca dengan kuat"
+  },
+  "dailyBriefing": {
+    "title": "Taklimat Pagi",
+    "greeting": "Selamat Pagi",
+    "greetingAfternoon": "Selamat Petang",
+    "greetingEvening": "Selamat Malam",
+    "ayahOfTheDay": "Ayat Hari Ini",
+    "hadithOfTheDay": "Hadis Hari Ini",
+    "duaOfTheDay": "Doa Hari Ini",
+    "dhikrChallenge": "Cabaran Zikir",
+    "dailyReflection": "Refleksi Harian",
+    "tasksComplete": "{{completed}}/{{total}} tugasan selesai",
+    "bonusXP": "Selesaikan semua untuk +{{xp}} XP",
+    "gratefulPrompt": "Apa yang anda syukuri hari ini?",
+    "completed": "Selesai!",
+    "tapToComplete": "Ketik untuk selesaikan",
+    "submitReflection": "Hantar Refleksi",
+    "allComplete": "Semua Tugasan Selesai!",
+    "loadError": "Tidak dapat memuatkan taklimat"
   }
 }

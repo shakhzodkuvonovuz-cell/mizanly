@@ -3029,5 +3029,24 @@
     "stop": "Stop",
     "speed": "Speed",
     "readingAloud": "Reading aloud"
+  },
+  "dailyBriefing": {
+    "title": "Morning Briefing",
+    "greeting": "Good Morning",
+    "greetingAfternoon": "Good Afternoon",
+    "greetingEvening": "Good Evening",
+    "ayahOfTheDay": "Ayah of the Day",
+    "hadithOfTheDay": "Hadith of the Day",
+    "duaOfTheDay": "Dua of the Day",
+    "dhikrChallenge": "Dhikr Challenge",
+    "dailyReflection": "Daily Reflection",
+    "tasksComplete": "{{completed}}/{{total}} tasks complete",
+    "bonusXP": "Complete all for +{{xp}} XP",
+    "gratefulPrompt": "What are you grateful for today?",
+    "completed": "Completed!",
+    "tapToComplete": "Tap to complete",
+    "submitReflection": "Submit Reflection",
+    "allComplete": "All Tasks Complete!",
+    "loadError": "Could not load briefing"
   }
 }

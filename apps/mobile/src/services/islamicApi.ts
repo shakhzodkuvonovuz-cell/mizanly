@@ -171,4 +171,12 @@ export const islamicApi = {
     api.patch(`/islamic/hifz/progress/${surahNum}`, { status }),
   getHifzStats: () => api.get('/islamic/hifz/stats'),
   getHifzReviewSchedule: () => api.get('/islamic/hifz/review-schedule'),
+
+  // ── Daily Briefing ──
+
+  getDailyBriefing: (lat?: number, lng?: number) =>
+    api.get(`/islamic/daily-briefing${qs({ lat, lng })}`),
+  completeDailyTask: (taskType: string) =>
+    api.post('/islamic/daily-tasks/complete', { taskType }),
+  getDailyTasksToday: () => api.get('/islamic/daily-tasks/today'),
 };

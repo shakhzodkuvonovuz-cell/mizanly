@@ -3029,5 +3029,24 @@
     "stop": "Durdur",
     "speed": "Hız",
     "readingAloud": "Sesli okuma"
+  },
+  "dailyBriefing": {
+    "title": "Sabah Brifing",
+    "greeting": "Günaydın",
+    "greetingAfternoon": "İyi Öğleden Sonra",
+    "greetingEvening": "İyi Akşamlar",
+    "ayahOfTheDay": "Günün Ayeti",
+    "hadithOfTheDay": "Günün Hadisi",
+    "duaOfTheDay": "Günün Duası",
+    "dhikrChallenge": "Zikir Görevi",
+    "dailyReflection": "Günlük Tefekkür",
+    "tasksComplete": "{{completed}}/{{total}} görev tamamlandı",
+    "bonusXP": "Hepsini tamamla +{{xp}} XP kazan",
+    "gratefulPrompt": "Bugün neye şükrediyorsun?",
+    "completed": "Tamamlandı!",
+    "tapToComplete": "Tamamlamak için dokun",
+    "submitReflection": "Tefekkürü Gönder",
+    "allComplete": "Tüm Görevler Tamamlandı!",
+    "loadError": "Brifing yüklenemedi"
   }
 }

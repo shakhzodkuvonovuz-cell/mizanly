@@ -610,4 +610,46 @@ export class IslamicController {
   async getHifzReviewSchedule(@CurrentUser('id') userId: string) {
     return this.islamicService.getHifzReviewSchedule(userId);
   }
+
+  // ============================================================
+  // DAILY BRIEFING
+  // ============================================================
+
+  @Get('daily-briefing')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get morning briefing with prayer times, hadith, dua, daily tasks' })
+  @ApiQuery({ name: 'lat', required: false, type: Number })
+  @ApiQuery({ name: 'lng', required: false, type: Number })
+  async getDailyBriefing(
+    @CurrentUser('id') userId: string,
+    @Query('lat') lat?: string,
+    @Query('lng') lng?: string,
+  ) {
+    return this.islamicService.getDailyBriefing(
+      userId,
+      lat ? parseFloat(lat) : undefined,
+      lng ? parseFloat(lng) : undefined,
+    );
+  }
+
+  @Post('daily-tasks/complete')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Complete a daily task (dhikr, quran, or reflection)' })
+  async completeDailyTask(
+    @CurrentUser('id') userId: string,
+    @Body() body: { taskType: string },
+  ) {
+    return this.islamicService.completeDailyTask(userId, body.taskType);
+  }
+
+  @Get('daily-tasks/today')
+  @UseGuards(ClerkAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get today\'s daily task completion status' })
+  async getDailyTasksToday(@CurrentUser('id') userId: string) {
+    return this.islamicService.getDailyTasksToday(userId);
+  }
 }

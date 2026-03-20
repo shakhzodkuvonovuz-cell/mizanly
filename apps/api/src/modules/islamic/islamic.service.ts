@@ -1171,6 +1171,190 @@ export class IslamicService {
     };
   }
 
+  // ============================================================
+  // DAILY BRIEFING
+  // ============================================================
+
+  async getDailyBriefing(userId: string, lat?: number, lng?: number) {
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Get hadith and dua of the day (deterministic per date)
+    const hadith = this.getDailyHadith();
+    const dua = this.getDuaOfTheDay();
+
+    // Ayah of the day — deterministic based on date
+    const daysSinceEpoch = Math.floor(today.getTime() / 86400000);
+    const TOTAL_AYAHS = 6236;
+    const ayahIndex = daysSinceEpoch % TOTAL_AYAHS;
+    const ayahOfTheDay = {
+      surah: this.getAyahSurahName(ayahIndex),
+      ayahNumber: this.getAyahNumber(ayahIndex),
+      arabic: hadith.arabic ? hadith.arabic.substring(0, 100) : '',
+      translation: `Reflect on verse ${ayahIndex + 1} of the Quran today`,
+    };
+
+    // Get prayer times if location provided
+    let prayerTimes: Record<string, string> | null = null;
+    if (lat && lng) {
+      try {
+        const pt = this.getPrayerTimes({ lat, lng });
+        prayerTimes = pt.timings;
+      } catch {
+        // Non-critical, continue without prayer times
+      }
+    }
+
+    // Get dhikr progress for today
+    const todayDhikrSessions = await this.prisma.dhikrSession.findMany({
+      where: {
+        userId,
+        createdAt: { gte: todayDate },
+      },
+    });
+    const dhikrTotal = todayDhikrSessions.reduce((sum, s) => sum + s.count, 0);
+
+    // Get daily task completions
+    const completions = await this.prisma.dailyTaskCompletion.findMany({
+      where: { userId, date: todayDate },
+    });
+    const completedTasks = completions.map((c) => c.taskType);
+
+    // Hijri date (computed server-side for consistency)
+    const hijriDate = this.computeHijriDateString(today);
+
+    return {
+      hijriDate,
+      prayerTimes,
+      hadithOfTheDay: {
+        text: hadith.english,
+        arabic: hadith.arabic,
+        source: hadith.source,
+        narrator: hadith.narrator,
+      },
+      ayahOfTheDay,
+      duaOfTheDay: {
+        arabic: dua.arabicText,
+        translation: dua.translation?.en || '',
+        transliteration: dua.transliteration,
+        category: dua.category,
+        source: dua.source,
+      },
+      dhikrChallenge: {
+        text: 'SubhanAllah',
+        target: 33,
+        completed: Math.min(dhikrTotal, 33),
+        streakDays: 0,
+      },
+      tasksCompleted: completedTasks.length,
+      totalTasks: 3,
+      completedTasks,
+    };
+  }
+
+  async completeDailyTask(userId: string, taskType: string) {
+    const validTypes = ['dhikr', 'quran', 'reflection'];
+    if (!validTypes.includes(taskType)) {
+      throw new BadRequestException(`Invalid task type. Must be one of: ${validTypes.join(', ')}`);
+    }
+
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    // Upsert to handle duplicate completion attempts
+    const completion = await this.prisma.dailyTaskCompletion.upsert({
+      where: {
+        userId_date_taskType: { userId, date: todayDate, taskType },
+      },
+      create: { userId, date: todayDate, taskType },
+      update: {},
+    });
+
+    // Check if all 3 tasks are now complete
+    const allCompletions = await this.prisma.dailyTaskCompletion.findMany({
+      where: { userId, date: todayDate },
+    });
+
+    const allComplete = allCompletions.length >= 3;
+
+    return {
+      taskType,
+      completed: true,
+      allTasksComplete: allComplete,
+      bonusXPAwarded: allComplete,
+    };
+  }
+
+  async getDailyTasksToday(userId: string) {
+    const today = new Date();
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    const completions = await this.prisma.dailyTaskCompletion.findMany({
+      where: { userId, date: todayDate },
+    });
+
+    return {
+      tasks: [
+        { type: 'dhikr', completed: completions.some((c) => c.taskType === 'dhikr') },
+        { type: 'quran', completed: completions.some((c) => c.taskType === 'quran') },
+        { type: 'reflection', completed: completions.some((c) => c.taskType === 'reflection') },
+      ],
+      totalCompleted: completions.length,
+      allComplete: completions.length >= 3,
+    };
+  }
+
+  private getAyahSurahName(ayahIndex: number): string {
+    // Simplified mapping — maps cumulative ayah index to surah name
+    const surahAyahCounts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+    let cumulative = 0;
+    for (let i = 0; i < surahAyahCounts.length; i++) {
+      cumulative += surahAyahCounts[i];
+      if (ayahIndex < cumulative) {
+        return `Surah ${i + 1}`;
+      }
+    }
+    return 'Surah 114';
+  }
+
+  private getAyahNumber(ayahIndex: number): number {
+    const surahAyahCounts = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6];
+    let cumulative = 0;
+    for (let i = 0; i < surahAyahCounts.length; i++) {
+      const prev = cumulative;
+      cumulative += surahAyahCounts[i];
+      if (ayahIndex < cumulative) {
+        return ayahIndex - prev + 1;
+      }
+    }
+    return 1;
+  }
+
+  private computeHijriDateString(date: Date): string {
+    // Simple Kuwaiti algorithm for Hijri date
+    const d = date.getDate();
+    const m = date.getMonth();
+    const y = date.getFullYear();
+    let jd: number;
+    if (m < 2) {
+      jd = Math.floor(365.25 * (y - 1)) + Math.floor(30.6001 * (m + 13)) + d + 1720995;
+    } else {
+      jd = Math.floor(365.25 * y) + Math.floor(30.6001 * (m + 1 + 1)) + d + 1720995;
+    }
+    const a = Math.floor(y / 100);
+    jd = jd + 2 - a + Math.floor(a / 4);
+    const l = jd - 1948440 + 10632;
+    const n = Math.floor((l - 1) / 10631);
+    const remainder = l - 10631 * n + 354;
+    const j = Math.floor((10985 - remainder) / 5316) * Math.floor((50 * remainder) / 17719) + Math.floor(remainder / 5670) * Math.floor((43 * remainder) / 15238);
+    const rl = remainder - Math.floor((30 - j) / 15) * Math.floor((17719 * j) / 50) - Math.floor(j / 16) * Math.floor((15238 * j) / 43) + 29;
+    const hijriMonth = Math.floor((24 * rl) / 709);
+    const hijriDay = rl - Math.floor((709 * hijriMonth) / 24);
+    const hijriYear = 30 * n + j - 30;
+    const MONTHS = ['Muharram', 'Safar', 'Rabi al-Awwal', 'Rabi al-Thani', 'Jumada al-Ula', 'Jumada al-Thani', 'Rajab', 'Shaban', 'Ramadan', 'Shawwal', 'Dhu al-Qadah', 'Dhu al-Hijjah'];
+    return `${hijriDay} ${MONTHS[hijriMonth - 1] || MONTHS[0]} ${hijriYear}`;
+  }
+
   async getHifzReviewSchedule(userId: string) {
     // Spaced repetition: return surahs not reviewed in the last 7 days
     const sevenDaysAgo = new Date();

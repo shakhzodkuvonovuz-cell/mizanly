@@ -344,9 +344,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create Account",
+    "alreadyHaveAccount": "ইতিমধ্যে একটি অ্যাকাউন্ট আছে?",
+    "dontHaveAccount": "অ্যাকাউন্ট নেই?",
+    "createAccount": "অ্যাকাউন্ট তৈরি করুন",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -3029,5 +3029,24 @@
     "stop": "থামান",
     "speed": "গতি",
     "readingAloud": "জোরে পড়া হচ্ছে"
+  },
+  "dailyBriefing": {
+    "title": "সকালের ব্রিফিং",
+    "greeting": "সুপ্রভাত",
+    "greetingAfternoon": "শুভ বিকাল",
+    "greetingEvening": "শুভ সন্ধ্যা",
+    "ayahOfTheDay": "আজকের আয়াত",
+    "hadithOfTheDay": "আজকের হাদিস",
+    "duaOfTheDay": "আজকের দোয়া",
+    "dhikrChallenge": "যিকির চ্যালেঞ্জ",
+    "dailyReflection": "দৈনিক চিন্তা",
+    "tasksComplete": "{{completed}}/{{total}} কাজ সম্পন্ন",
+    "bonusXP": "সব সম্পন্ন করুন +{{xp}} XP পান",
+    "gratefulPrompt": "আজ আপনি কিসের জন্য কৃতজ্ঞ?",
+    "completed": "সম্পন্ন!",
+    "tapToComplete": "সম্পন্ন করতে ট্যাপ করুন",
+    "submitReflection": "চিন্তা জমা দিন",
+    "allComplete": "সব কাজ সম্পন্ন!",
+    "loadError": "ব্রিফিং লোড হয়নি"
   }
 }

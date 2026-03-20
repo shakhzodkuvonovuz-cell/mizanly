@@ -445,9 +445,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Sudah punya akun?",
+    "dontHaveAccount": "Belum punya akun?",
+    "createAccount": "Buat Akun",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -3030,5 +3030,24 @@
     "stop": "Berhenti",
     "speed": "Kecepatan",
     "readingAloud": "Membaca dengan suara keras"
+  },
+  "dailyBriefing": {
+    "title": "Briefing Pagi",
+    "greeting": "Selamat Pagi",
+    "greetingAfternoon": "Selamat Siang",
+    "greetingEvening": "Selamat Malam",
+    "ayahOfTheDay": "Ayat Hari Ini",
+    "hadithOfTheDay": "Hadis Hari Ini",
+    "duaOfTheDay": "Doa Hari Ini",
+    "dhikrChallenge": "Tantangan Dzikir",
+    "dailyReflection": "Refleksi Harian",
+    "tasksComplete": "{{completed}}/{{total}} tugas selesai",
+    "bonusXP": "Selesaikan semua untuk +{{xp}} XP",
+    "gratefulPrompt": "Apa yang Anda syukuri hari ini?",
+    "completed": "Selesai!",
+    "tapToComplete": "Ketuk untuk menyelesaikan",
+    "submitReflection": "Kirim Refleksi",
+    "allComplete": "Semua Tugas Selesai!",
+    "loadError": "Tidak dapat memuat briefing"
   }
 }

@@ -445,9 +445,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?",
-    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Vous avez d\u00e9j\u00e0 un compte ?",
+    "dontHaveAccount": "Pas encore de compte ?",
+    "createAccount": "Cr\u00e9er un compte",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -3030,5 +3030,24 @@
     "stop": "Arrêter",
     "speed": "Vitesse",
     "readingAloud": "Lecture à voix haute"
+  },
+  "dailyBriefing": {
+    "title": "Briefing Matinal",
+    "greeting": "Bonjour",
+    "greetingAfternoon": "Bon Après-midi",
+    "greetingEvening": "Bonsoir",
+    "ayahOfTheDay": "Verset du Jour",
+    "hadithOfTheDay": "Hadith du Jour",
+    "duaOfTheDay": "Doua du Jour",
+    "dhikrChallenge": "Défi Dhikr",
+    "dailyReflection": "Réflexion Quotidienne",
+    "tasksComplete": "{{completed}}/{{total}} tâches terminées",
+    "bonusXP": "Complétez tout pour +{{xp}} XP",
+    "gratefulPrompt": "De quoi êtes-vous reconnaissant aujourd'hui ?",
+    "completed": "Terminé !",
+    "tapToComplete": "Appuyez pour terminer",
+    "submitReflection": "Soumettre la Réflexion",
+    "allComplete": "Toutes les Tâches Terminées !",
+    "loadError": "Impossible de charger le briefing"
   }
 }
