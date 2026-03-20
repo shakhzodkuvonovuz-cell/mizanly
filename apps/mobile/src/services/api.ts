@@ -932,6 +932,12 @@ export const liveApi = {
     api.post(`/live/${id}/invite-speaker/${participantId}`),
   removeParticipant: (id: string, participantId: string) =>
     api.delete(`/live/${id}/participants/${participantId}`),
+  rehearse: (data: { title: string; description?: string; liveType?: string }) =>
+    api.post<LiveSession>('/live/rehearse', data),
+  goLiveFromRehearsal: (id: string) =>
+    api.patch(`/live/${id}/go-live`),
+  endRehearsal: (id: string) =>
+    api.patch(`/live/${id}/end-rehearsal`),
 };
 
 // ── Calls ──

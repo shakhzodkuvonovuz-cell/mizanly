@@ -91,9 +91,30 @@ export default function GoLiveScreen() {
     setShowDatePicker(false);
   }, []);
 
+  const rehearseMutation = useMutation({
+    mutationFn: async () => {
+      setUploading(true);
+      return liveApi.rehearse({ title: title.trim(), description: description.trim() || undefined, liveType });
+    },
+    onSuccess: (live) => {
+      setUploading(false);
+      router.back();
+      router.push(`/(screens)/live/${live.id}`);
+    },
+    onError: (err: Error) => {
+      setUploading(false);
+      Alert.alert('Error', err.message || 'Failed to start rehearsal.');
+    },
+  });
+
   const handleGoLive = () => {
     if (!canGoLive) return;
     createMutation.mutate();
+  };
+
+  const handleRehearsal = () => {
+    if (!canGoLive) return;
+    rehearseMutation.mutate();
   };
 
   const selectedLiveType = LIVE_TYPE_OPTIONS.find(opt => opt.value === liveType)!;
@@ -231,12 +252,22 @@ export default function GoLiveScreen() {
             </LinearGradient>
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.delay(400).duration(400)}>
+          <Animated.View entering={FadeInUp.delay(400).duration(400)} style={{ gap: spacing.sm }}>
             <GradientButton
               label={createMutation.isPending ? t('live.starting') : t('live.goLive')}
               onPress={handleGoLive}
               disabled={!canGoLive}
             />
+            <Pressable
+              style={[styles.rehearseButton, !canGoLive && { opacity: 0.4 }]}
+              onPress={handleRehearsal}
+              disabled={!canGoLive}
+              accessibilityLabel={t('live.rehearse')}
+              accessibilityRole="button"
+            >
+              <Icon name="eye-off" size="sm" color={colors.text.secondary} />
+              <Text style={styles.rehearseText}>{t('live.rehearse')}</Text>
+            </Pressable>
           </Animated.View>
         </ScrollView>
 
@@ -371,4 +402,20 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', gap: spacing.md,
   },
   uploadText: { color: colors.text.primary, fontSize: fontSize.base },
+  rehearseButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.dark.border,
+    backgroundColor: colors.dark.bgElevated,
+  },
+  rehearseText: {
+    color: colors.text.secondary,
+    fontSize: fontSize.base,
+    fontWeight: '600',
+  },
 });
