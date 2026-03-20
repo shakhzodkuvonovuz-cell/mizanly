@@ -154,6 +154,19 @@ export class ReelsService {
     this.queueService.addGamificationJob({ type: 'award-xp', userId, action: 'reel_created' });
     this.queueService.addGamificationJob({ type: 'update-streak', userId, action: 'posting' });
 
+    // Content moderation (if description provided)
+    if (reel.description) {
+      this.queueService.addModerationJob({ content: reel.description, contentType: 'reel', contentId: reel.id }).catch(() => {});
+    }
+
+    // Search indexing
+    this.queueService.addSearchIndexJob({
+      action: 'index',
+      indexName: 'reels',
+      documentId: reel.id,
+      document: { id: reel.id, description: reel.description, userId, hashtags: reel.hashtags },
+    }).catch(() => {});
+
     return {
       ...reel,
       isLiked: false,

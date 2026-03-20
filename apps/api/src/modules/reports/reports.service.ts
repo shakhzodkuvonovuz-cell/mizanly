@@ -6,12 +6,16 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
+import { QueueService } from '../../common/queue/queue.service';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Prisma, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private queueService: QueueService,
+  ) {}
 
   // Submit a report — any user can report content
   async create(userId: string, dto: CreateReportDto) {
@@ -65,7 +69,7 @@ export class ReportsService {
     if (existing) throw new ConflictException('You already reported this');
 
     try {
-      return await this.prisma.report.create({
+      const report = await this.prisma.report.create({
         data: {
           reporterId: userId,
           reason: dto.reason,
@@ -76,6 +80,16 @@ export class ReportsService {
           reportedMessageId: dto.reportedMessageId,
         },
       });
+
+      // Enqueue AI moderation check for reported content
+      if (dto.reportedPostId) {
+        const post = await this.prisma.post.findUnique({ where: { id: dto.reportedPostId }, select: { content: true } });
+        if (post?.content) {
+          this.queueService.addModerationJob({ content: post.content, contentType: 'post', contentId: dto.reportedPostId }).catch(() => {});
+        }
+      }
+
+      return report;
     } catch (error) {
       // Handle P2002 (unique constraint violation) as a race-condition duplicate
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
