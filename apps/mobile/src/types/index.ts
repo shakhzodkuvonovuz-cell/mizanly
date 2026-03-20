@@ -60,6 +60,7 @@ export interface Post {
   sharedPost?: { id: string; content?: string; user: { username: string } };
   userReaction?: ReactionType | null;
   isSaved?: boolean;
+  isPromoted?: boolean;
 }
 
 export interface BlockedUser {

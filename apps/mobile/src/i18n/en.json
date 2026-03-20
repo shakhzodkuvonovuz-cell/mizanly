@@ -286,6 +286,7 @@
     }
   },
   "saf": {
+    "sponsored": "Sponsored",
     "feed": "Feed",
     "following": "Following",
     "forYou": "For You",

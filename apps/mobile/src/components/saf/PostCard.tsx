@@ -235,7 +235,10 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
                 </View>
               )}
             </View>
-            <Text style={styles.handle}>@{post.user.username} · {timeAgo}</Text>
+            <Text style={styles.handle}>
+              @{post.user.username} · {timeAgo}
+              {post.isPromoted && <Text style={styles.sponsoredLabel}> · {tr('saf.sponsored')}</Text>}
+            </Text>
           </View>
         </Pressable>
         <Pressable
@@ -476,6 +479,7 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   name: { color: colors.text.primary, fontWeight: '700', fontSize: fontSize.base },
   handle: { color: colors.text.secondary, fontSize: fontSize.xs, marginTop: 1 },
+  sponsoredLabel: { color: colors.text.tertiary, fontSize: fontSize.xs, fontWeight: '600' },
   moreBtn: { padding: spacing.sm },
   content: {
     color: colors.text.primary,
