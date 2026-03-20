@@ -40,26 +40,43 @@ Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local sola
 **Known gaps:** 418 findings documented in `docs/audit/` and memory files. Key blockers: Apple IAP not installed (App Store rejection), google-services.json missing (Android push), SQL injection in embeddings, video upload not wired from mobile, payments API unused on mobile. Full gap list in memory file `project_complete_gaps_audit_march21.md`.
 **Next: test batch 3 (edge cases + auth matrix + abuse vectors), then production deployment.**
 
-## Key Documentation Files (read as needed)
-- `STRUCTURE.md` — Complete app structure (A-Z), cross-referenced against 13 competitor platforms
-- `ARCHITECTURE.md` — Architecture guide v3, 5-space design, full stack documentation
-- `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
+## Key Documentation Files
+
+**CURRENT — Read when relevant:**
+- `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe) — still accurate
 - `docs/DEPLOY_CHECKLIST.md` — Pre-deployment verification checklist with checkboxes
-- `docs/PROJECT_HISTORY.md` — Complete development timeline and milestones
-- `docs/ONBOARDING.md` — Developer onboarding guide
 - `docs/TURN_SETUP.md` — WebRTC TURN/STUN server setup instructions
-- `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor audit (pre-batch, historical)
-- `docs/features/DATA_IMPORT_ARCHITECTURE.md` — User's brainstorm: data import from Instagram/TikTok/X/YouTube/WhatsApp
-- `docs/features/EXIT_STORY_SPEC.md` — User's brainstorm: shareable "I'm moving to Mizanly" story
-- `docs/audit/ALGORITHM_DEEP_AUDIT.md` — User's brainstorm: feed algorithm improvements (includes P0 SQL injection finding)
+- `docs/ONBOARDING.md` — Developer onboarding guide
+
+**AUDIT & ANALYSIS — Current findings:**
 - `docs/audit/COMPREHENSIVE_AUDIT_2026.md` — 60-dimension audit, all findings with line numbers
 - `docs/audit/PRIORITY_FIXES.md` — P0 and P1 items sorted by severity
 - `docs/audit/HONEST_SCORES.md` — Per-dimension scores with evidence
 - `docs/audit/MARKET_ANALYSIS.md` — Market sizing, competitor landscape, launch strategy
+- `docs/audit/ALGORITHM_DEEP_AUDIT.md` — User's brainstorm: feed algorithm improvements (includes P0 SQL injection)
+- `docs/audit/TEST_QUALITY_AUDIT.md` — Test suite quality analysis, anti-patterns found
+- `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor audit with scoring
+
+**USER'S BRAINSTORM FEATURES — Designed, not yet built:**
+- `docs/features/DATA_IMPORT_ARCHITECTURE.md` — Data import from Instagram/TikTok/X/YouTube/WhatsApp
+- `docs/features/EXIT_STORY_SPEC.md` — Shareable "I'm moving to Mizanly" story after data import
+
+**RALPH EXECUTION SYSTEM:**
 - `docs/ralph-instructions.md` — Behavioral rules for autonomous execution (no shortcuts, verify everything)
-- `docs/ralph-test-batch1.md` — Test batch 1 instructions (service unit tests)
-- `docs/ralph-test-batch2.md` — Test batch 2 instructions (controllers + expansion)
-- `docs/ralph-batch4.md` — Feature batch 4 instructions (audit fix)
+- `docs/ralph-test-batch1.md` — Test batch 1 (service unit tests) — COMPLETE
+- `docs/ralph-test-batch2.md` — Test batch 2 (controllers + expansion) — RUNNING
+- `docs/ralph-batch4.md` — Feature batch 4 (audit fix) — COMPLETE
+
+**STALE — Historical only, do NOT use as source of truth:**
+- `STRUCTURE.md` — Day 1 app structure (Mar 3). Superseded by actual codebase + this file.
+- `ARCHITECTURE.md` — Day 1 architecture (Mar 3). Superseded by this file.
+- `ANTIGRAVITY_PROMPT*.md` — Old agent system prompts (Mar 11-12). Superseded by ralph-instructions.md.
+- `BATCH_*_INSTRUCTIONS.md` — Old batch instructions (Mar 11-12). Work completed.
+- `ARCHITECT_INSTRUCTIONS*.md` — Old batch dispatching (Mar 11-18). Superseded by ralph system.
+- `MEGA_SESSION_STARTER.md` — Old session starter. Superseded by memory files.
+- `docs/COMPETITOR_ANALYSIS.md` — Early competitor analysis (Mar 13). Superseded by COMPETITOR_DEEP_AUDIT_2026.md.
+- `docs/PARITY_SCORES_BATCH85.md` — Inflated scores. Superseded by HONEST_SCORES.md.
+- `docs/PROJECT_HISTORY.md` — Only covers first 5 days. Missing 13 days of history.
 
 ---
 
