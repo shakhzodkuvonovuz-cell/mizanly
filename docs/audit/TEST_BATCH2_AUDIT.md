@@ -11,10 +11,11 @@
 | Metric | Count |
 |--------|-------|
 | Files audited | 139 |
-| Total tests (post-fix) | 2,780 |
+| Total tests (post-fix) | 2,774 |
 | Test suites | 177 |
-| Bad tests fixed | 7 |
-| Duplicate tests removed | 6 (1 replaced, 5 deleted) |
+| Bad tests fixed | 9 |
+| Duplicate tests removed | 14 (1 replaced, 13 deleted) |
+| Missing error tests added | 2 |
 | Integration test fixes | 12 (across 4 files) |
 | Service bugs found | 0 |
 | Anti-pattern violations remaining | 0 |
@@ -22,11 +23,15 @@
 
 ### Fixes Applied
 
-#### 1. Duplicate Tests (2 files, 6 tests affected)
+#### 1. Duplicate Tests (4 files, 14 tests affected)
 
 **channel-posts.service.spec.ts** — Had two `describe('pin')` blocks testing the same `service.pin()` happy path. Replaced the second with a `ForbiddenException` auth test for non-owner pin attempt.
 
 **personalized-feed.service.spec.ts** — Had two `describe('trackSessionSignal')` blocks. First block (5 tests) used weak "no throw = success" assertions. Second block (6 tests) checked internal state (`sessionSignals` map, `likedCategories`, `scrollDepth`). Removed the weaker first block entirely.
+
+**calls.service.spec.ts** — Had two `describe('decline')` blocks (lines 59-68 and 109-138). First had 1 basic test, second had 4 tests including BadRequestException, NotFoundException, ForbiddenException error paths. Removed the first (subset) block.
+
+**stories.service.spec.ts** — Had duplicate `describe` blocks for `getById`, `delete`, and `markViewed` (7 tests total). First set (lines 202-284) was more detailed with Prisma call verification. Second set (lines 328-374) was simpler but added NotFoundException tests. Removed the duplicate second set, merged the missing NotFoundException tests into the first blocks.
 
 #### 2. Integration Test Fixes (4 files, 12 fixes)
 
@@ -175,7 +180,7 @@ All service specs verified against source: method names match, mock shapes match
 | auth.service.spec.ts | 15 | OK | |
 | blocks.service.spec.ts | 15 | OK | |
 | broadcast.service.spec.ts | 33 | OK | |
-| calls.service.spec.ts | 25 | OK | |
+| calls.service.spec.ts | 24 | FIXED | Removed duplicate decline block (1 test, subset of later comprehensive block) |
 | channel-posts.service.spec.ts | 9 | FIXED | Replaced duplicate pin test with ForbiddenException auth test |
 | channels.service.spec.ts | 31 | OK | |
 | chat-export.service.spec.ts | 11 | OK | |
@@ -218,7 +223,7 @@ All service specs verified against source: method names match, mock shapes match
 | search.service.spec.ts | 29 | OK | |
 | settings.service.spec.ts | 16 | OK | |
 | stickers.service.spec.ts | 17 | OK | |
-| stories.service.spec.ts | 26 | OK | |
+| stories.service.spec.ts | 21 | FIXED | Removed 7 duplicate tests (getById/delete/markViewed), added 2 NotFoundException tests |
 | story-chains.service.spec.ts | 17 | OK | |
 | stream.service.spec.ts | 15 | OK | |
 | telegram-features.service.spec.ts | 18 | OK | |
@@ -257,9 +262,9 @@ These are methods in the source that lack dedicated test coverage. They are not 
 
 ```
 Test Suites: 177 passed, 177 total
-Tests:       2,780 passed, 2,780 total
+Tests:       2,774 passed, 2,774 total
 Snapshots:   0 total
 Time:        ~14s
 ```
 
-All 2,780 tests pass with 0 failures. 5 tests removed (duplicates), 1 test replaced with better auth test. 12 integration test fixes applied. 0 service bugs discovered.
+All 2,774 tests pass with 0 failures. 13 tests removed (duplicates), 1 test replaced with better auth test, 2 missing NotFoundException tests added. 12 integration test fixes applied across 4 files. 0 service bugs discovered.

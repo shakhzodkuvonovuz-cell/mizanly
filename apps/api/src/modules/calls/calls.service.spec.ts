@@ -56,17 +56,6 @@ describe('CallsService', () => {
     });
   });
 
-  describe('decline', () => {
-    it('should set call status to DECLINED', async () => {
-      prisma.callSession.findUnique.mockResolvedValue({
-        id: 'call1', status: 'RINGING', participants: [{ userId: 'user2' }],
-      });
-      prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'DECLINED' });
-      const result = await service.decline('call1', 'user2');
-      expect(result.status).toBe('DECLINED');
-    });
-  });
-
   describe('end', () => {
     it('should end call and calculate duration', async () => {
       const startedAt = new Date(Date.now() - 60000);
