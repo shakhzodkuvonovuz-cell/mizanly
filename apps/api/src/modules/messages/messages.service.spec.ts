@@ -37,6 +37,7 @@ describe('MessagesService', () => {
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn().mockResolvedValue(0),
             },
             block: {
               findFirst: jest.fn(),
@@ -51,6 +52,7 @@ describe('MessagesService', () => {
             },
             dMNote: {
               upsert: jest.fn(),
+              findUnique: jest.fn(),
               findMany: jest.fn().mockResolvedValue([]),
               delete: jest.fn(),
             },
@@ -863,6 +865,419 @@ describe('MessagesService', () => {
         isViewOnce: true,
       });
       expect(prisma.$transaction).toHaveBeenCalled();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // NEW TESTS — forwardMessage
+  // ═══════════════════════════════════════════════════════
+
+  describe('forwardMessage', () => {
+    it('should forward message to multiple conversations', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        conversationId: 'conv-1', content: 'Hello', messageType: 'TEXT',
+        mediaUrl: null, mediaType: null, voiceDuration: null, fileName: null, fileSize: null, forwardCount: 0,
+      });
+      prisma.message.create.mockResolvedValue({ id: 'fwd-1', content: 'Hello', isForwarded: true });
+      prisma.conversation.update.mockResolvedValue({});
+      prisma.message.update.mockResolvedValue({});
+
+      const result = await service.forwardMessage('msg-1', 'user-1', ['conv-2', 'conv-3']);
+      expect(result).toHaveLength(2);
+      expect(prisma.message.create).toHaveBeenCalledTimes(2);
+    });
+
+    it('should throw BadRequestException for more than 5 targets', async () => {
+      await expect(
+        service.forwardMessage('msg-1', 'user-1', ['c1', 'c2', 'c3', 'c4', 'c5', 'c6']),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for empty target list', async () => {
+      await expect(service.forwardMessage('msg-1', 'user-1', [])).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException when original message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.forwardMessage('nonexistent', 'user-1', ['conv-2'])).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // searchMessages
+  // ═══════════════════════════════════════════════════════
+
+  describe('searchMessages', () => {
+    it('should return matching messages', async () => {
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'msg-1', content: 'Hello world', sender: { id: 'u1' } },
+      ]);
+
+      const result = await service.searchMessages('conv-1', 'user-1', 'Hello');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should throw BadRequestException for empty query', async () => {
+      await expect(service.searchMessages('conv-1', 'user-1', '')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for whitespace-only query', async () => {
+      await expect(service.searchMessages('conv-1', 'user-1', '   ')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // markDelivered
+  // ═══════════════════════════════════════════════════════
+
+  describe('markDelivered', () => {
+    it('should update deliveredAt timestamp', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.update.mockResolvedValue({ id: 'msg-1', deliveredAt: new Date() });
+
+      const result = await service.markDelivered('msg-1', 'user-1');
+      expect(result.deliveredAt).toBeDefined();
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.markDelivered('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getMediaGallery
+  // ═══════════════════════════════════════════════════════
+
+  describe('getMediaGallery', () => {
+    it('should return media messages', async () => {
+      prisma.message.findMany.mockResolvedValue([
+        { id: 'msg-1', mediaUrl: 'https://r2.example/img.jpg', messageType: 'IMAGE' },
+      ]);
+
+      const result = await service.getMediaGallery('conv-1', 'user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty for conversation with no media', async () => {
+      prisma.message.findMany.mockResolvedValue([]);
+      const result = await service.getMediaGallery('conv-1', 'user-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // setDisappearingTimer
+  // ═══════════════════════════════════════════════════════
+
+  describe('setDisappearingTimer', () => {
+    it('should set timer duration', async () => {
+      prisma.conversation.update.mockResolvedValue({});
+      const result = await service.setDisappearingTimer('conv-1', 'user-1', 86400);
+      expect(result).toEqual({ success: true, duration: 86400 });
+    });
+
+    it('should allow null to disable', async () => {
+      prisma.conversation.update.mockResolvedValue({});
+      const result = await service.setDisappearingTimer('conv-1', 'user-1', null);
+      expect(result).toEqual({ success: true, duration: null });
+    });
+
+    it('should throw BadRequestException for zero duration', async () => {
+      await expect(service.setDisappearingTimer('conv-1', 'user-1', 0)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for negative duration', async () => {
+      await expect(service.setDisappearingTimer('conv-1', 'user-1', -100)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for non-integer duration', async () => {
+      await expect(service.setDisappearingTimer('conv-1', 'user-1', 3.5)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // scheduleMessage
+  // ═══════════════════════════════════════════════════════
+
+  describe('scheduleMessage', () => {
+    it('should create scheduled message', async () => {
+      const future = new Date(Date.now() + 86400000);
+      prisma.message.create.mockResolvedValue({ id: 'msg-1', isScheduled: true, scheduledAt: future });
+
+      const result = await service.scheduleMessage('conv-1', 'user-1', 'Hello later', future);
+      expect(result.isScheduled).toBe(true);
+    });
+
+    it('should throw BadRequestException for empty content', async () => {
+      const future = new Date(Date.now() + 86400000);
+      await expect(service.scheduleMessage('conv-1', 'user-1', '', future)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException for past time', async () => {
+      const past = new Date(Date.now() - 86400000);
+      await expect(service.scheduleMessage('conv-1', 'user-1', 'Hello', past)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // pinMessage / unpinMessage / getPinnedMessages
+  // ═══════════════════════════════════════════════════════
+
+  describe('pinMessage', () => {
+    it('should pin a message', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.count.mockResolvedValue(0);
+      prisma.message.update.mockResolvedValue({ id: 'msg-1', isPinned: true });
+
+      const result = await service.pinMessage('conv-1', 'msg-1', 'user-1');
+      expect(result.isPinned).toBe(true);
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.pinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when message belongs to different conversation', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-2' });
+      await expect(service.pinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when max 3 pinned messages reached', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.count.mockResolvedValue(3);
+      await expect(service.pinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('unpinMessage', () => {
+    it('should unpin a message', async () => {
+      prisma.message.findUnique.mockResolvedValue({ id: 'msg-1', conversationId: 'conv-1' });
+      prisma.message.update.mockResolvedValue({ id: 'msg-1', isPinned: false });
+
+      const result = await service.unpinMessage('conv-1', 'msg-1', 'user-1');
+      expect(result.isPinned).toBe(false);
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.unpinMessage('conv-1', 'msg-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getPinnedMessages', () => {
+    it('should return pinned messages', async () => {
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', isPinned: true }]);
+      const result = await service.getPinnedMessages('conv-1', 'user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // markViewOnceViewed
+  // ═══════════════════════════════════════════════════════
+
+  describe('markViewOnceViewed', () => {
+    it('should mark view-once message as viewed', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        conversationId: 'conv-1', senderId: 'other-user', isViewOnce: true, viewedAt: null,
+      });
+      prisma.message.update.mockResolvedValue({ viewedAt: new Date() });
+
+      const result = await service.markViewOnceViewed('msg-1', 'user-1');
+      expect(result.viewedAt).toBeDefined();
+    });
+
+    it('should throw NotFoundException when message not found', async () => {
+      prisma.message.findUnique.mockResolvedValue(null);
+      await expect(service.markViewOnceViewed('msg-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException for non-view-once message', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        conversationId: 'conv-1', senderId: 'other', isViewOnce: false, viewedAt: null,
+      });
+      await expect(service.markViewOnceViewed('msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when sender views own message', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        conversationId: 'conv-1', senderId: 'user-1', isViewOnce: true, viewedAt: null,
+      });
+      await expect(service.markViewOnceViewed('msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw BadRequestException when already viewed', async () => {
+      prisma.message.findUnique.mockResolvedValue({
+        conversationId: 'conv-1', senderId: 'other', isViewOnce: true, viewedAt: new Date(),
+      });
+      await expect(service.markViewOnceViewed('msg-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Admin roles
+  // ═══════════════════════════════════════════════════════
+
+  describe('promoteToAdmin', () => {
+    it('should promote member to admin when actor is owner', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'owner' });
+      prisma.conversationMember.update.mockResolvedValue({ role: 'admin' });
+
+      const result = await service.promoteToAdmin('conv-1', 'user-1', 'user-2');
+      expect(result.role).toBe('admin');
+    });
+
+    it('should throw ForbiddenException when actor is regular member', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'member' });
+      await expect(service.promoteToAdmin('conv-1', 'user-1', 'user-2')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw ForbiddenException when actor not found', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue(null);
+      await expect(service.promoteToAdmin('conv-1', 'user-1', 'user-2')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('demoteFromAdmin', () => {
+    it('should demote admin to member when actor is owner', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'owner' });
+      prisma.conversationMember.update.mockResolvedValue({ role: 'member' });
+
+      const result = await service.demoteFromAdmin('conv-1', 'user-1', 'user-2');
+      expect(result.role).toBe('member');
+    });
+
+    it('should throw ForbiddenException when actor is admin (not owner)', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'admin' });
+      await expect(service.demoteFromAdmin('conv-1', 'user-1', 'user-2')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('banMember', () => {
+    it('should ban member when actor is admin', async () => {
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ role: 'admin' })  // actor
+        .mockResolvedValueOnce({ role: 'member' }); // target
+      prisma.conversationMember.update.mockResolvedValue({ isBanned: true });
+
+      const result = await service.banMember('conv-1', 'user-1', 'user-2');
+      expect(result.isBanned).toBe(true);
+    });
+
+    it('should throw ForbiddenException when actor is regular member', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValue({ role: 'member' });
+      await expect(service.banMember('conv-1', 'user-1', 'user-2')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when target not found', async () => {
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ role: 'owner' })
+        .mockResolvedValueOnce(null);
+      await expect(service.banMember('conv-1', 'user-1', 'user-2')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when trying to ban owner', async () => {
+      prisma.conversationMember.findUnique
+        .mockResolvedValueOnce({ role: 'owner' })
+        .mockResolvedValueOnce({ role: 'owner' });
+      await expect(service.banMember('conv-1', 'user-1', 'user-2')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Wallpaper & Tone
+  // ═══════════════════════════════════════════════════════
+
+  describe('setConversationWallpaper', () => {
+    it('should set wallpaper URL', async () => {
+      prisma.conversationMember.update.mockResolvedValue({ wallpaperUrl: 'https://r2.example/bg.jpg' });
+      const result = await service.setConversationWallpaper('conv-1', 'user-1', 'https://r2.example/bg.jpg');
+      expect(result.wallpaperUrl).toBe('https://r2.example/bg.jpg');
+    });
+
+    it('should clear wallpaper with null', async () => {
+      prisma.conversationMember.update.mockResolvedValue({ wallpaperUrl: null });
+      const result = await service.setConversationWallpaper('conv-1', 'user-1', null as any);
+      expect(result.wallpaperUrl).toBeNull();
+    });
+  });
+
+  describe('setCustomTone', () => {
+    it('should set custom notification tone', async () => {
+      prisma.conversationMember.update.mockResolvedValue({ customTone: 'chime' });
+      const result = await service.setCustomTone('conv-1', 'user-1', 'chime');
+      expect(result.customTone).toBe('chime');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // DM Notes
+  // ═══════════════════════════════════════════════════════
+
+  describe('createDMNote', () => {
+    it('should create a DM note', async () => {
+      prisma.dMNote.upsert.mockResolvedValue({ userId: 'user-1', content: 'My note', expiresAt: expect.any(Date) });
+      const result = await service.createDMNote('user-1', 'My note');
+      expect(result.content).toBe('My note');
+    });
+  });
+
+  describe('getDMNote', () => {
+    it('should return user DM note when not expired', async () => {
+      const future = new Date(Date.now() + 86400000);
+      prisma.dMNote.findUnique.mockResolvedValue({ userId: 'user-1', content: 'Note', expiresAt: future });
+      const result = await service.getDMNote('user-1');
+      expect(result).toBeDefined();
+      expect(result?.content).toBe('Note');
+    });
+
+    it('should return null when note expired', async () => {
+      const past = new Date(Date.now() - 86400000);
+      prisma.dMNote.findUnique.mockResolvedValue({ userId: 'user-1', content: 'Note', expiresAt: past });
+      const result = await service.getDMNote('user-1');
+      expect(result).toBeNull();
+    });
+
+    it('should return null when no note exists', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue(null);
+      const result = await service.getDMNote('user-1');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('deleteDMNote', () => {
+    it('should delete DM note', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue({ userId: 'user-1', content: 'Note' });
+      prisma.dMNote.delete.mockResolvedValue({});
+      const result = await service.deleteDMNote('user-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw NotFoundException when note not found', async () => {
+      prisma.dMNote.findUnique.mockResolvedValue(null);
+      await expect(service.deleteDMNote('user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getStarredMessages
+  // ═══════════════════════════════════════════════════════
+
+  describe('getStarredMessages', () => {
+    it('should return starred messages with pagination', async () => {
+      prisma.message.findMany.mockResolvedValue([{ id: 'msg-1', starredBy: ['user-1'] }]);
+      const result = await service.getStarredMessages('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should return empty when no starred messages', async () => {
+      prisma.message.findMany.mockResolvedValue([]);
+      const result = await service.getStarredMessages('user-1');
+      expect(result.data).toEqual([]);
     });
   });
 
