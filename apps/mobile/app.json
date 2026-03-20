@@ -10,7 +10,7 @@
     "splash": {
       "image": "./assets/images/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0D1117"
+      "backgroundColor": "#0A7B4F"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -29,7 +29,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#0D1117"
+        "backgroundColor": "#0A7B4F"
       },
       "package": "app.mizanly.mobile",
       "intentFilters": [
