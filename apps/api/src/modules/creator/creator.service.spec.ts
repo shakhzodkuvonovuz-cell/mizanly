@@ -116,5 +116,65 @@ describe('CreatorService', () => {
       expect(result.tips.count).toBe(10);
       expect(result.memberships.total).toBe(80); // 10*3 + 25*2
     });
+
+    it('should handle zero revenue', async () => {
+      prisma.tip.aggregate.mockResolvedValue({ _sum: { amount: null }, _count: 0 });
+      prisma.membershipSubscription.count.mockResolvedValue(0);
+      prisma.membershipTier.findMany.mockResolvedValue([]);
+      const result = await service.getRevenueSummary('u1');
+      expect(result.tips.total).toBe(0);
+      expect(result.memberships.total).toBe(0);
+    });
+  });
+
+  describe('getReelInsights — errors', () => {
+    it('should throw NotFoundException when reel not found', async () => {
+      prisma.reel.findUnique.mockResolvedValue(null);
+      await expect(service.getReelInsights('r1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.reel.findUnique.mockResolvedValue({ userId: 'other' });
+      await expect(service.getReelInsights('r1', 'u1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should return 0 engagement rate for zero views', async () => {
+      prisma.reel.findUnique.mockResolvedValue({
+        userId: 'u1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, createdAt: new Date(),
+      });
+      const result = await service.getReelInsights('r1', 'u1');
+      expect(result.engagementRate).toBe('0');
+    });
+  });
+
+  describe('getPostInsights — zero views', () => {
+    it('should return 0 engagement rate for zero views', async () => {
+      prisma.post.findUnique.mockResolvedValue({
+        userId: 'u1', likesCount: 5, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 0, createdAt: new Date(),
+      });
+      const result = await service.getPostInsights('p1', 'u1');
+      expect(result.engagementRate).toBe('0');
+    });
+  });
+
+  describe('getGrowthTrends — empty', () => {
+    it('should return zero followers when none in period', async () => {
+      prisma.follow.findMany.mockResolvedValue([]);
+      const result = await service.getGrowthTrends('u1');
+      expect(result.totalNewFollowers).toBe(0);
+      expect(result.daily).toEqual({});
+    });
+  });
+
+  describe('getDashboardOverview — zero engagement', () => {
+    it('should return 0 engagement rate with zero views', async () => {
+      prisma.user.findUnique.mockResolvedValue({ followersCount: 0, postsCount: 0, reelsCount: 0 });
+      prisma.post.aggregate.mockResolvedValue({ _sum: { likesCount: 0, commentsCount: 0, viewsCount: 0 } });
+      prisma.reel.aggregate.mockResolvedValue({ _sum: { likesCount: 0, commentsCount: 0, viewsCount: 0 } });
+      prisma.tip.aggregate.mockResolvedValue({ _sum: { amount: null } });
+      const result = await service.getDashboardOverview('u1');
+      expect(result.engagementRate).toBe('0');
+      expect(result.revenue).toBe(0);
+    });
   });
 });

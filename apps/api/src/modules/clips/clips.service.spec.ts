@@ -165,4 +165,66 @@ describe('ClipsService', () => {
       await expect(service.getShareLink('clip-1')).rejects.toThrow(NotFoundException);
     });
   });
+
+  describe('getByUser', () => {
+    it('should return paginated clips for a user', async () => {
+      prisma.videoClip.findMany.mockResolvedValue([mockClip]);
+
+      const result = await service.getByUser('user-1');
+
+      expect(prisma.videoClip.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 'user-1' },
+        take: 21,
+      }));
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should apply cursor for pagination', async () => {
+      prisma.videoClip.findMany.mockResolvedValue([]);
+
+      await service.getByUser('user-1', 'cursor-123');
+
+      expect(prisma.videoClip.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { userId: 'user-1', id: { lt: 'cursor-123' } },
+      }));
+    });
+
+    it('should return hasMore true when results exceed limit', async () => {
+      const clips = Array(21).fill(mockClip).map((c, i) => ({ ...c, id: `clip-${i}` }));
+      prisma.videoClip.findMany.mockResolvedValue(clips);
+
+      const result = await service.getByUser('user-1');
+
+      expect(result.data).toHaveLength(20);
+      expect(result.meta.hasMore).toBe(true);
+    });
+  });
+
+  describe('create — edge cases', () => {
+    it('should use default title when none provided', async () => {
+      prisma.video.findUnique.mockResolvedValue(mockVideo);
+      prisma.videoClip.create.mockResolvedValue(mockClip);
+
+      await service.create('user-1', 'video-1', { startTime: 0, endTime: 30 } as any);
+
+      expect(prisma.videoClip.create).toHaveBeenCalledWith(expect.objectContaining({
+        data: expect.objectContaining({
+          title: 'Clip from Test Video',
+        }),
+      }));
+    });
+  });
+
+  describe('getByVideo — cursor', () => {
+    it('should apply cursor for pagination', async () => {
+      prisma.videoClip.findMany.mockResolvedValue([]);
+
+      await service.getByVideo('video-1', 'cursor-123');
+
+      expect(prisma.videoClip.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        where: { sourceVideoId: 'video-1', id: { lt: 'cursor-123' } },
+      }));
+    });
+  });
 });
