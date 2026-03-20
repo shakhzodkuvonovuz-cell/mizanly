@@ -26,6 +26,7 @@ describe('GamificationService', () => {
             series: { create: jest.fn(), findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
             seriesEpisode: { create: jest.fn(), findFirst: jest.fn() },
             seriesFollower: { create: jest.fn(), delete: jest.fn() },
+            seriesProgress: { findMany: jest.fn().mockResolvedValue([]), findUnique: jest.fn(), upsert: jest.fn() },
             profileCustomization: { findUnique: jest.fn(), create: jest.fn(), upsert: jest.fn() },
             comment: { groupBy: jest.fn() },
             user: { findMany: jest.fn() },
@@ -192,6 +193,159 @@ describe('GamificationService', () => {
         accentColor: '#FF5733', layoutStyle: 'grid',
       });
       expect(result.accentColor).toBe('#FF5733');
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getXPHistory
+  // ═══════════════════════════════════════════════════════
+
+  describe('getXPHistory', () => {
+    it('should return XP history entries', async () => {
+      prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId: 'user-1' });
+      prisma.xPHistory.findMany.mockResolvedValue([
+        { id: 'h1', amount: 10, reason: 'post_created', createdAt: new Date() },
+      ]);
+
+      const result = await service.getXPHistory('user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty when no XP record exists', async () => {
+      prisma.userXP.findUnique.mockResolvedValue(null);
+      const result = await service.getXPHistory('user-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Achievements
+  // ═══════════════════════════════════════════════════════
+
+  describe('getAchievements', () => {
+    it('should return all achievements with unlock status', async () => {
+      prisma.achievement.findMany.mockResolvedValue([
+        { id: 'ach-1', key: 'first_post', name: 'First Post', category: 'content', xpReward: 50 },
+        { id: 'ach-2', key: 'first_follow', name: 'First Follow', category: 'social', xpReward: 25 },
+      ]);
+      prisma.userAchievement.findMany.mockResolvedValue([
+        { achievementId: 'ach-1', unlockedAt: new Date() },
+      ]);
+
+      const result = await service.getAchievements('user-1');
+      expect(result).toHaveLength(2);
+      expect(result[0].unlocked).toBe(true);
+      expect(result[1].unlocked).toBe(false);
+    });
+  });
+
+  describe('unlockAchievement', () => {
+    it('should unlock achievement and award XP', async () => {
+      prisma.achievement.findUnique.mockResolvedValue({ id: 'ach-1', key: 'first_post', xpReward: 50 });
+      prisma.userAchievement.create.mockResolvedValue({});
+      prisma.userXP.findUnique.mockResolvedValue({ id: 'xp-1', userId: 'user-1', totalXP: 0 });
+      prisma.userXP.upsert.mockResolvedValue({ totalXP: 50 });
+      prisma.xPHistory.create.mockResolvedValue({});
+
+      const result = await service.unlockAchievement('user-1', 'first_post');
+      expect(result).toBeDefined();
+      expect(result?.key).toBe('first_post');
+    });
+
+    it('should return null for nonexistent achievement', async () => {
+      prisma.achievement.findUnique.mockResolvedValue(null);
+      const result = await service.unlockAchievement('user-1', 'nonexistent');
+      expect(result).toBeNull();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Challenges
+  // ═══════════════════════════════════════════════════════
+
+  describe('getChallenges', () => {
+    it('should return challenges with pagination', async () => {
+      prisma.challenge.findMany.mockResolvedValue([
+        { id: 'ch-1', title: 'Post Daily', category: 'content' },
+      ]);
+
+      const result = await service.getChallenges();
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('createChallenge', () => {
+    it('should create challenge', async () => {
+      prisma.challenge.create.mockResolvedValue({
+        id: 'ch-1', title: '7 Day Streak', userId: 'user-1',
+      });
+
+      const result = await service.createChallenge('user-1', {
+        title: '7 Day Streak', description: 'Post 7 days in a row',
+        type: 'streak', targetCount: 7, xpReward: 200,
+      });
+      expect(result.title).toBe('7 Day Streak');
+    });
+  });
+
+  describe('getMyChallenges', () => {
+    it('should return user challenges', async () => {
+      prisma.challengeParticipant.findMany.mockResolvedValue([
+        { challenge: { id: 'ch-1', title: 'Post Daily' }, progress: 3 },
+      ]);
+
+      const result = await service.getMyChallenges('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // Series
+  // ═══════════════════════════════════════════════════════
+
+  describe('createSeries', () => {
+    it('should create series', async () => {
+      prisma.series.create.mockResolvedValue({ id: 's-1', title: 'Learn Arabic', userId: 'user-1' });
+
+      const result = await service.createSeries('user-1', {
+        title: 'Learn Arabic', description: 'A beginner series',
+      });
+      expect(result.title).toBe('Learn Arabic');
+    });
+  });
+
+  describe('getSeries', () => {
+    it('should return series with episodes', async () => {
+      prisma.series.findUnique.mockResolvedValue({
+        id: 's-1', title: 'Learn Arabic', episodes: [{ id: 'ep-1' }],
+      });
+
+      const result = await service.getSeries('s-1');
+      expect(result).toBeDefined();
+    });
+
+    it('should throw NotFoundException when series not found', async () => {
+      prisma.series.findUnique.mockResolvedValue(null);
+      await expect(service.getSeries('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getContinueWatching', () => {
+    it('should return series in progress', async () => {
+      prisma.series.findMany.mockResolvedValue([]);
+      const result = await service.getContinueWatching('user-1');
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe('getDiscoverSeries', () => {
+    it('should return discoverable series', async () => {
+      prisma.series.findMany.mockResolvedValue([
+        { id: 's-1', title: 'Top Series', _count: { followers: 100 } },
+      ]);
+
+      const result = await service.getDiscoverSeries();
+      expect(result.data).toBeDefined();
     });
   });
 });
