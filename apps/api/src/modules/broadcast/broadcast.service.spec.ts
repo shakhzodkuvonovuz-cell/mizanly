@@ -103,4 +103,79 @@ describe('BroadcastService', () => {
       expect(result.deleted).toBe(true);
     });
   });
+
+  describe('getBySlug', () => {
+    it('should return channel by slug', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue({ id: 'ch1', slug: 'test-channel', name: 'Test' });
+      const result = await service.getBySlug('test-channel');
+      expect(result.slug).toBe('test-channel');
+    });
+
+    it('should throw NotFoundException for invalid slug', async () => {
+      prisma.broadcastChannel.findUnique.mockResolvedValue(null);
+      await expect(service.getBySlug('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unsubscribe', () => {
+    it('should remove subscriber and return unsubscribed true', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ userId: 'u1', channelId: 'ch1', role: 'SUBSCRIBER' });
+      prisma.channelMember.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+      const result = await service.unsubscribe('ch1', 'u1');
+      expect(result).toEqual({ unsubscribed: true });
+    });
+
+    it('should return unsubscribed true idempotently when not a member', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue(null);
+      const result = await service.unsubscribe('ch1', 'u1');
+      expect(result).toEqual({ unsubscribed: true });
+    });
+  });
+
+  describe('getMessages', () => {
+    it('should return broadcast messages with pagination', async () => {
+      prisma.broadcastMessage.findMany.mockResolvedValue([
+        { id: 'msg1', content: 'Announcement', createdAt: new Date() },
+      ]);
+      const result = await service.getMessages('ch1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('getSubscribers', () => {
+    it('should return subscribers list with pagination', async () => {
+      prisma.channelMember.findMany.mockResolvedValue([
+        { user: { id: 'u1', username: 'ali' }, role: 'SUBSCRIBER' },
+      ]);
+      const result = await service.getSubscribers('ch1');
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('update', () => {
+    it('should update channel for owner', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'OWNER' });
+      prisma.broadcastChannel.update.mockResolvedValue({ id: 'ch1', name: 'Updated' });
+      const result = await service.update('ch1', 'owner1', { name: 'Updated' });
+      expect(result.name).toBe('Updated');
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.channelMember.findUnique.mockResolvedValue({ role: 'SUBSCRIBER' });
+      await expect(service.update('ch1', 'u1', { name: 'X' })).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('discover', () => {
+    it('should return discoverable channels', async () => {
+      prisma.broadcastChannel.findMany.mockResolvedValue([
+        { id: 'ch1', name: 'News Channel', subscriberCount: 100 },
+      ]);
+      const result = await service.discover();
+      expect(result.data).toHaveLength(1);
+    });
+  });
 });
