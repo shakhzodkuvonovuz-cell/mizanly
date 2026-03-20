@@ -28,6 +28,14 @@ describe('SettingsService', () => {
               findUnique: jest.fn(),
               delete: jest.fn(),
             },
+            quietModeSetting: {
+              findUnique: jest.fn(),
+              upsert: jest.fn(),
+            },
+            screenTimeLog: {
+              upsert: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+            },
           },
         },
       ],
@@ -208,6 +216,38 @@ describe('SettingsService', () => {
       prisma.blockedKeyword.findUnique.mockResolvedValue(mockKeyword);
 
       await expect(service.removeBlockedKeyword(userId, keywordId)).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getQuietMode', () => {
+    it('should return quiet mode settings', async () => {
+      prisma.quietModeSetting.findUnique.mockResolvedValue({ userId: 'user-1', enabled: true, startTime: '22:00', endTime: '07:00' });
+      const result = await service.getQuietMode('user-1');
+      expect(result.enabled).toBe(true);
+    });
+  });
+
+  describe('updateQuietMode', () => {
+    it('should upsert quiet mode settings', async () => {
+      prisma.quietModeSetting.upsert.mockResolvedValue({ userId: 'user-1', enabled: true });
+      const result = await service.updateQuietMode('user-1', { enabled: true, startTime: '22:00', endTime: '07:00' } as any);
+      expect(result.enabled).toBe(true);
+    });
+  });
+
+  describe('logScreenTime', () => {
+    it('should upsert screen time log entry', async () => {
+      prisma.screenTimeLog.upsert.mockResolvedValue({ userId: 'user-1', seconds: 300 });
+      const result = await service.logScreenTime('user-1', 300);
+      expect(result.seconds).toBe(300);
+    });
+  });
+
+  describe('setScreenTimeLimit', () => {
+    it('should set screen time limit via userSettings upsert', async () => {
+      prisma.userSettings.upsert.mockResolvedValue({ userId: 'user-1', screenTimeLimit: 120 });
+      const result = await service.setScreenTimeLimit('user-1', 120);
+      expect(result.screenTimeLimit).toBe(120);
     });
   });
 });
