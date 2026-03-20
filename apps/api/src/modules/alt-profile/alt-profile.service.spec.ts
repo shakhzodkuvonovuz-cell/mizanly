@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AltProfileService } from './alt-profile.service';
 import { PrismaService } from '../../config/prisma.service';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('AltProfileService', () => {
   let service: AltProfileService;
@@ -17,6 +17,9 @@ describe('AltProfileService', () => {
       findUnique: jest.fn().mockResolvedValue(null),
       create: jest.fn(),
       delete: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
+    },
+    user: {
       findMany: jest.fn().mockResolvedValue([]),
     },
   };
@@ -112,11 +115,10 @@ describe('AltProfileService', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null when viewer has no access', async () => {
+    it('should throw ForbiddenException when viewer has no access', async () => {
       mockPrisma.altProfile.findUnique.mockResolvedValue({ id: 'ap-1', userId: 'target', isActive: true });
       mockPrisma.altProfileAccess.findUnique.mockResolvedValue(null);
-      const result = await service.getForUser('target', 'viewer');
-      expect(result).toBeNull();
+      await expect(service.getForUser('target', 'viewer')).rejects.toThrow();
     });
   });
 
