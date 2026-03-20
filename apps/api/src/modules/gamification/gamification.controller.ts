@@ -1,5 +1,5 @@
 import {
-  Controller, Post, Get, Patch, Delete,
+  Controller, Post, Get, Put, Patch, Delete,
   Body, Param, Query, UseGuards, BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
