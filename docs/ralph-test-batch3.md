@@ -650,7 +650,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 30: remaining small services — edge cases (15 tests)
+### [x] Task 30: remaining small services — edge cases (15 tests) — Done, 15 tests passing
 
 **Files to create/append:** One edge spec per service listed below.
 **For EACH service, write 3 edge case tests (minimum).**
