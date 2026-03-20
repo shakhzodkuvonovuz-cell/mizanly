@@ -1100,13 +1100,21 @@ describe('UsersService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getAnalytics', () => {
-    it('should return user analytics', async () => {
-      prisma.user.findUnique.mockResolvedValue({
-        id: 'user-1', followersCount: 100, followingCount: 50, postsCount: 20, reelsCount: 5,
-      });
+    it('should return creator stats for last 30 days', async () => {
+      prisma.creatorStat.findMany.mockResolvedValue([
+        { date: new Date(), views: 100, likes: 50 },
+        { date: new Date(), views: 80, likes: 40 },
+      ]);
 
       const result = await service.getAnalytics('user-1');
-      expect(result).toBeDefined();
+      expect(result.stats).toHaveLength(2);
+      expect(result.stats[0].views).toBe(100);
+    });
+
+    it('should return empty stats for new creator', async () => {
+      prisma.creatorStat.findMany.mockResolvedValue([]);
+      const result = await service.getAnalytics('user-1');
+      expect(result.stats).toEqual([]);
     });
   });
 });

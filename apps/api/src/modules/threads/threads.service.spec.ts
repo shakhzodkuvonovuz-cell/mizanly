@@ -697,7 +697,7 @@ describe('ThreadsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getFeed', () => {
-    it('should return following feed for user with follows', async () => {
+    it('should return empty feed for user with follows but no posts', async () => {
       prisma.follow.findMany.mockResolvedValue(
         Array(15).fill(null).map((_, i) => ({ followingId: `f-${i}` })),
       );
@@ -708,18 +708,19 @@ describe('ThreadsService', () => {
       prisma.threadBookmark.findUnique.mockResolvedValue(null);
 
       const result = await service.getFeed('user-1', 'following');
-      expect(result.data).toBeDefined();
-      expect(result.meta).toBeDefined();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
 
-    it('should return trending when user has zero follows', async () => {
+    it('should fall back to trending when user has zero follows', async () => {
       prisma.follow.findMany.mockResolvedValue([]);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.thread.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed('user-1', 'following');
-      expect(result.data).toBeDefined();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 
@@ -728,12 +729,13 @@ describe('ThreadsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getUserThreads', () => {
-    it('should return threads by username', async () => {
+    it('should return empty threads for user with no threads', async () => {
       prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'testuser' });
       prisma.thread.findMany.mockResolvedValue([]);
 
       const result = await service.getUserThreads('testuser');
-      expect(result.data).toBeDefined();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
 
     it('should throw NotFoundException for non-existent user', async () => {

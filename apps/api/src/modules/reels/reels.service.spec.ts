@@ -928,22 +928,27 @@ describe('ReelsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getTrendingReels', () => {
-    it('should return trending reels scored by engagement', async () => {
+    it('should return trending reels scored by engagement, higher engagement first', async () => {
       prisma.reel.findMany.mockResolvedValue([
-        { id: 'reel-1', createdAt: new Date(), likesCount: 100, commentsCount: 50, sharesCount: 20, viewsCount: 1000, user: { id: 'u1' } },
-        { id: 'reel-2', createdAt: new Date(), likesCount: 10, commentsCount: 5, sharesCount: 2, viewsCount: 100, user: { id: 'u2' } },
+        { id: 'reel-low', createdAt: new Date(), likesCount: 10, commentsCount: 5, sharesCount: 2, viewsCount: 100, user: { id: 'u2' } },
+        { id: 'reel-high', createdAt: new Date(), likesCount: 100, commentsCount: 50, sharesCount: 20, viewsCount: 1000, user: { id: 'u1' } },
       ]);
 
       const result = await service.getTrendingReels();
-      expect(result.data).toBeDefined();
-      expect(result.meta).toBeDefined();
+      expect(result.data).toHaveLength(2);
+      expect(result.meta.hasMore).toBe(false);
+      // Higher engagement should be first after scoring
+      if (result.data.length === 2) {
+        expect(result.data[0].id).toBe('reel-high');
+      }
     });
 
-    it('should return empty when no recent reels', async () => {
+    it('should return empty data and hasMore=false when no recent reels', async () => {
       prisma.reel.findMany.mockResolvedValue([]);
 
       const result = await service.getTrendingReels();
       expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 });

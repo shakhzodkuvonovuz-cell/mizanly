@@ -907,7 +907,7 @@ describe('PostsService', () => {
   // ═══════════════════════════════════════════════════════
 
   describe('getFeed — zero follows fallback', () => {
-    it('should return trending content when user has zero follows', async () => {
+    it('should return empty trending fallback when user has zero follows and no content', async () => {
       prisma.follow.findMany.mockResolvedValue([]);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
@@ -916,13 +916,11 @@ describe('PostsService', () => {
       prisma.savedPost.findUnique.mockResolvedValue(null);
 
       const result = await service.getFeed('user-123', 'following');
-      expect(result).toBeDefined();
-      expect(result.data).toBeDefined();
-      expect(result.meta).toBeDefined();
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
     });
 
-    it('should respect cursor pagination', async () => {
-      const followingId = 'following-1';
+    it('should return posts with cursor-based pagination', async () => {
       prisma.follow.findMany.mockResolvedValue(
         Array(15).fill(null).map((_, i) => ({ followingId: `following-${i}` })),
       );
@@ -931,25 +929,29 @@ describe('PostsService', () => {
       prisma.post.findMany.mockResolvedValue([
         { id: 'post-1', createdAt: new Date(), likesCount: 0, commentsCount: 0, sharesCount: 0, savesCount: 0, viewsCount: 0, user: { id: 'u1' } },
       ]);
-      prisma.postReaction.findUnique.mockResolvedValue(null);
-      prisma.savedPost.findUnique.mockResolvedValue(null);
+      prisma.postReaction.findMany.mockResolvedValue([]);
+      prisma.savedPost.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed('user-123', 'following', 'cursor-abc', 5);
-      expect(result.data).toBeDefined();
+      expect(result.data).toHaveLength(1);
+      expect(result.meta.hasMore).toBe(false);
     });
   });
 
   describe('getFeed — foryou', () => {
-    it('should return scored posts from foryou feed when no cache', async () => {
+    it('should return empty array and cache the result when no posts in DB', async () => {
       redis.get.mockResolvedValue(null);
       prisma.block.findMany.mockResolvedValue([]);
       prisma.mute.findMany.mockResolvedValue([]);
       prisma.post.findMany.mockResolvedValue([]);
-      prisma.postReaction.findUnique.mockResolvedValue(null);
-      prisma.savedPost.findUnique.mockResolvedValue(null);
+      prisma.postReaction.findMany.mockResolvedValue([]);
+      prisma.savedPost.findMany.mockResolvedValue([]);
 
       const result = await service.getFeed('user-123', 'foryou');
       expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+      // Should have attempted to cache the result
+      expect(redis.setex).toHaveBeenCalled();
     });
   });
 

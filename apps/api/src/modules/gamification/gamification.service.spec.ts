@@ -331,21 +331,29 @@ describe('GamificationService', () => {
   });
 
   describe('getContinueWatching', () => {
-    it('should return series in progress', async () => {
-      prisma.series.findMany.mockResolvedValue([]);
+    it('should return empty array when no progress', async () => {
+      prisma.seriesProgress.findMany.mockResolvedValue([]);
       const result = await service.getContinueWatching('user-1');
-      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(0);
     });
   });
 
   describe('getDiscoverSeries', () => {
-    it('should return discoverable series', async () => {
+    it('should return discoverable series sorted by followers', async () => {
       prisma.series.findMany.mockResolvedValue([
         { id: 's-1', title: 'Top Series', _count: { followers: 100 } },
       ]);
 
       const result = await service.getDiscoverSeries();
-      expect(result.data).toBeDefined();
+      expect(result.data).toHaveLength(1);
+      expect(result.meta).toEqual(expect.objectContaining({ hasMore: false }));
+    });
+
+    it('should return empty data when no series exist', async () => {
+      prisma.series.findMany.mockResolvedValue([]);
+      const result = await service.getDiscoverSeries();
+      expect(result.data).toEqual([]);
     });
   });
 });
