@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -59,6 +59,7 @@ describe('ThreadsService', () => {
             },
             block: {
               findMany: jest.fn(),
+              findFirst: jest.fn(),
             },
             mute: {
               findMany: jest.fn(),
@@ -68,6 +69,9 @@ describe('ThreadsService', () => {
             },
             report: {
               create: jest.fn(),
+            },
+            feedDismissal: {
+              upsert: jest.fn(),
             },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
@@ -469,6 +473,272 @@ describe('ThreadsService', () => {
         },
       });
       expect(result).toEqual({ reported: true });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getById
+  // ═══════════════════════════════════════════════════════
+
+  describe('getById', () => {
+    const mockThread = {
+      id: 'thread-1', content: 'Test thread', isRemoved: false,
+      likesCount: 10, repliesCount: 5, repostsCount: 2,
+      user: { id: 'owner', username: 'owner', displayName: 'Owner', avatarUrl: null, isVerified: false },
+    };
+
+    it('should return thread with viewer reaction and bookmark status', async () => {
+      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.threadReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
+      prisma.threadBookmark.findUnique.mockResolvedValue({ userId: 'viewer' });
+
+      const result = await service.getById('thread-1', 'viewer');
+      expect(result.id).toBe('thread-1');
+      expect(result.userReaction).toBe('LIKE');
+      expect(result.isBookmarked).toBe(true);
+    });
+
+    it('should return thread without viewer context', async () => {
+      prisma.thread.findUnique.mockResolvedValue(mockThread);
+
+      const result = await service.getById('thread-1');
+      expect(result.userReaction).toBeNull();
+      expect(result.isBookmarked).toBe(false);
+    });
+
+    it('should throw NotFoundException when not found', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when removed', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ ...mockThread, isRemoved: true });
+      await expect(service.getById('thread-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when viewer is blocked', async () => {
+      prisma.thread.findUnique.mockResolvedValue(mockThread);
+      prisma.block.findFirst.mockResolvedValue({ blockerId: 'viewer', blockedId: 'owner' });
+      await expect(service.getById('thread-1', 'viewer')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // like / unlike
+  // ═══════════════════════════════════════════════════════
+
+  describe('like', () => {
+    it('should like thread (self-like, no notification)', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'user-1', isRemoved: false });
+      prisma.threadReaction.findUnique.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue([{}, {}]);
+
+      const result = await service.like('thread-1', 'user-1');
+      expect(result).toEqual({ liked: true });
+    });
+
+    it('should throw NotFoundException for removed thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', isRemoved: true });
+      await expect(service.like('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ConflictException if already liked', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'owner', isRemoved: false });
+      prisma.threadReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
+      await expect(service.like('thread-1', 'user-1')).rejects.toThrow(ConflictException);
+    });
+  });
+
+  describe('unlike', () => {
+    it('should unlike thread', async () => {
+      prisma.threadReaction.findUnique.mockResolvedValue({ reaction: 'LIKE' });
+      prisma.$transaction.mockResolvedValue([{}, 1]);
+
+      const result = await service.unlike('thread-1', 'user-1');
+      expect(result).toEqual({ liked: false });
+    });
+
+    it('should throw NotFoundException if not liked', async () => {
+      prisma.threadReaction.findUnique.mockResolvedValue(null);
+      await expect(service.unlike('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // bookmark / unbookmark
+  // ═══════════════════════════════════════════════════════
+
+  describe('bookmark', () => {
+    it('should bookmark thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', isRemoved: false });
+      prisma.threadBookmark.create.mockResolvedValue({});
+      const result = await service.bookmark('thread-1', 'user-1');
+      expect(result).toEqual({ bookmarked: true });
+    });
+
+    it('should throw NotFoundException for removed thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', isRemoved: true });
+      await expect(service.bookmark('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when thread not found', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.bookmark('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unbookmark', () => {
+    it('should unbookmark thread', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue({ userId: 'user-1', threadId: 'thread-1' });
+      prisma.threadBookmark.delete.mockResolvedValue({});
+      const result = await service.unbookmark('thread-1', 'user-1');
+      expect(result).toEqual({ bookmarked: false });
+    });
+
+    it('should throw NotFoundException if not bookmarked', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue(null);
+      await expect(service.unbookmark('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getReplies
+  // ═══════════════════════════════════════════════════════
+
+  describe('getReplies', () => {
+    it('should return replies with pagination', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.threadReply.findMany.mockResolvedValue([
+        { id: 'reply-1', content: 'Good point', user: { id: 'u1' } },
+      ]);
+      prisma.threadReplyLike.findMany.mockResolvedValue([]);
+
+      const result = await service.getReplies('thread-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty for thread with no replies', async () => {
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.threadReply.findMany.mockResolvedValue([]);
+
+      const result = await service.getReplies('thread-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // deleteReply
+  // ═══════════════════════════════════════════════════════
+
+  describe('deleteReply', () => {
+    it('should delete own reply', async () => {
+      prisma.threadReply.findUnique.mockResolvedValue({ id: 'reply-1', userId: 'user-1', threadId: 'thread-1' });
+      prisma.threadReply.update.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.deleteReply('reply-1', 'user-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw ForbiddenException for non-author', async () => {
+      prisma.threadReply.findUnique.mockResolvedValue({ id: 'reply-1', userId: 'other', threadId: 'thread-1' });
+      await expect(service.deleteReply('reply-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when reply not found', async () => {
+      prisma.threadReply.findUnique.mockResolvedValue(null);
+      await expect(service.deleteReply('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // dismiss
+  // ═══════════════════════════════════════════════════════
+
+  describe('dismiss', () => {
+    it('should dismiss thread from feed', async () => {
+      prisma.feedDismissal = { upsert: jest.fn().mockResolvedValue({}) };
+      const result = await service.dismiss('thread-1', 'user-1');
+      expect(result).toEqual({ dismissed: true });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getShareLink / isBookmarked
+  // ═══════════════════════════════════════════════════════
+
+  describe('getShareLink', () => {
+    it('should return share URL', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', isRemoved: false });
+      const result = await service.getShareLink('thread-1');
+      expect(result.url).toContain('thread-1');
+    });
+  });
+
+  describe('isBookmarked', () => {
+    it('should return bookmarked true when bookmarked', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue({ userId: 'user-1', threadId: 'thread-1' });
+      const result = await service.isBookmarked('thread-1', 'user-1');
+      expect(result).toEqual({ bookmarked: true });
+    });
+
+    it('should return bookmarked false when not bookmarked', async () => {
+      prisma.threadBookmark.findUnique.mockResolvedValue(null);
+      const result = await service.isBookmarked('thread-1', 'user-1');
+      expect(result).toEqual({ bookmarked: false });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getFeed
+  // ═══════════════════════════════════════════════════════
+
+  describe('getFeed', () => {
+    it('should return following feed for user with follows', async () => {
+      prisma.follow.findMany.mockResolvedValue(
+        Array(15).fill(null).map((_, i) => ({ followingId: `f-${i}` })),
+      );
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.thread.findMany.mockResolvedValue([]);
+      prisma.threadReaction.findUnique.mockResolvedValue(null);
+      prisma.threadBookmark.findUnique.mockResolvedValue(null);
+
+      const result = await service.getFeed('user-1', 'following');
+      expect(result.data).toBeDefined();
+      expect(result.meta).toBeDefined();
+    });
+
+    it('should return trending when user has zero follows', async () => {
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+      prisma.thread.findMany.mockResolvedValue([]);
+
+      const result = await service.getFeed('user-1', 'following');
+      expect(result.data).toBeDefined();
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // getUserThreads
+  // ═══════════════════════════════════════════════════════
+
+  describe('getUserThreads', () => {
+    it('should return threads by username', async () => {
+      prisma.user.findUnique.mockResolvedValue({ id: 'user-1', username: 'testuser' });
+      prisma.thread.findMany.mockResolvedValue([]);
+
+      const result = await service.getUserThreads('testuser');
+      expect(result.data).toBeDefined();
+    });
+
+    it('should throw NotFoundException for non-existent user', async () => {
+      prisma.user.findUnique.mockResolvedValue(null);
+      await expect(service.getUserThreads('nonexistent')).rejects.toThrow(NotFoundException);
     });
   });
 });
