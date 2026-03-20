@@ -163,4 +163,34 @@ describe('PaymentsService', () => {
       expect(prisma.tip.update).not.toHaveBeenCalled();
     });
   });
+
+  describe('handleSubscriptionDeleted', () => {
+    it('should mark subscription cancelled and cleanup Redis', async () => {
+      redis.get.mockResolvedValue('sub-internal-1');
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      redis.del.mockResolvedValue(1);
+
+      await service.handleSubscriptionDeleted({ id: 'sub_stripe_1' } as any);
+
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith({
+        where: { id: 'sub-internal-1' },
+        data: { status: 'cancelled', endDate: expect.any(Date) },
+      });
+      expect(redis.del).toHaveBeenCalled();
+    });
+
+    it('should skip gracefully when no internal subscription mapped', async () => {
+      redis.get.mockResolvedValue(null);
+      await service.handleSubscriptionDeleted({ id: 'sub_unknown' } as any);
+      expect(prisma.membershipSubscription.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handlePaymentMethodAttached', () => {
+    it('should not throw — logs only', async () => {
+      await expect(
+        service.handlePaymentMethodAttached({ id: 'pm_123' } as any),
+      ).resolves.not.toThrow();
+    });
+  });
 });

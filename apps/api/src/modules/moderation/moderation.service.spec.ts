@@ -129,4 +129,68 @@ describe('ModerationService', () => {
       expect(result.data).toHaveLength(1);
     });
   });
+
+  describe('flagContent', () => {
+    it('should create a report record from flagged content', async () => {
+      prisma.report.create.mockResolvedValue({ id: 'r1', status: 'PENDING' });
+
+      await service.flagContent({
+        reporterId: 'user-1',
+        text: 'bad word here',
+        context: 'post',
+        categories: ['HATE_SPEECH'],
+        severity: 'HIGH',
+        matches: ['bad word'],
+        reportedPostId: 'post-1',
+      });
+
+      expect(prisma.report.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reporterId: 'user-1',
+            reportedPostId: 'post-1',
+            status: 'PENDING',
+            actionTaken: 'NONE',
+          }),
+        }),
+      );
+    });
+
+    it('should create report with auto-flagged metadata', async () => {
+      prisma.report.create.mockResolvedValue({});
+      await service.flagContent({
+        reporterId: 'u1',
+        categories: ['SPAM'],
+        severity: 'LOW',
+        matches: ['buy now'],
+        autoFlagged: true,
+      });
+      expect(prisma.report.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            reporterId: 'u1',
+            status: 'PENDING',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('getMyAppeals', () => {
+    it('should return paginated appeals for user', async () => {
+      prisma.moderationLog.findMany.mockResolvedValue([
+        { id: 'ml1', action: 'CONTENT_REMOVED', appealStatus: 'PENDING', targetUserId: 'u1' },
+      ]);
+
+      const result = await service.getMyAppeals('u1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].appealStatus).toBe('PENDING');
+    });
+
+    it('should return empty when no appeals', async () => {
+      prisma.moderationLog.findMany.mockResolvedValue([]);
+      const result = await service.getMyAppeals('u1');
+      expect(result.data).toEqual([]);
+    });
+  });
 });
