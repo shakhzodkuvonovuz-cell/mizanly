@@ -71,4 +71,74 @@ describe('MosquesService', () => {
     const result = await service.join('u1', 'mosque-1');
     expect(result).toBeDefined();
   });
+
+  describe('leave', () => {
+    it('should leave mosque community', async () => {
+      prisma.mosqueMembership.findUnique.mockResolvedValue({ userId: 'u1', mosqueId: 'mosque-1' });
+      prisma.mosqueMembership.delete.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.leave('u1', 'mosque-1');
+      expect(result).toEqual({ left: true });
+    });
+
+    it('should return left true even when not a member (graceful)', async () => {
+      prisma.mosqueMembership.delete.mockRejectedValue(new Error('Record not found'));
+      const result = await service.leave('u1', 'mosque-1');
+      expect(result).toEqual({ left: true });
+    });
+  });
+
+  describe('getFeed', () => {
+    it('should return mosque posts with pagination', async () => {
+      prisma.mosquePost.findMany.mockResolvedValue([
+        { id: 'post-1', content: 'Announcement', createdAt: new Date() },
+      ]);
+
+      const result = await service.getFeed('mosque-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should return empty when no posts', async () => {
+      prisma.mosquePost.findMany.mockResolvedValue([]);
+      const result = await service.getFeed('mosque-1');
+      expect(result.data).toEqual([]);
+    });
+  });
+
+  describe('createPost', () => {
+    it('should create mosque post when member', async () => {
+      prisma.mosqueMembership.findUnique.mockResolvedValue({ userId: 'u1', mosqueId: 'mosque-1' });
+      prisma.mosquePost.create.mockResolvedValue({ id: 'post-1', content: 'New post' });
+      const result = await service.createPost('u1', 'mosque-1', 'New post');
+      expect(result.content).toBe('New post');
+    });
+
+    it('should throw ForbiddenException when not a member', async () => {
+      prisma.mosqueMembership.findUnique.mockResolvedValue(null);
+      await expect(service.createPost('u1', 'mosque-1', 'content')).rejects.toThrow();
+    });
+  });
+
+  describe('getMembers', () => {
+    it('should return mosque members with pagination', async () => {
+      prisma.mosqueMembership.findMany = jest.fn().mockResolvedValue([
+        { user: { id: 'u1', username: 'ali', displayName: 'Ali', avatarUrl: null } },
+      ]);
+
+      const result = await service.getMembers('mosque-1');
+      expect(result.data).toHaveLength(1);
+    });
+  });
+
+  describe('getMyMosques', () => {
+    it('should return user mosque memberships', async () => {
+      prisma.mosqueMembership.findMany = jest.fn().mockResolvedValue([
+        { mosque: { id: 'mosque-1', name: 'Local Mosque' } },
+      ]);
+
+      const result = await service.getMyMosques('u1');
+      expect(result).toHaveLength(1);
+    });
+  });
 });

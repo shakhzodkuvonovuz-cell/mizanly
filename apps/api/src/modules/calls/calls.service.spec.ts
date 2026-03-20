@@ -111,4 +111,129 @@ describe('CallsService', () => {
       }
     });
   });
+
+  describe('decline', () => {
+    it('should decline a ringing call', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'RINGING', participants: [{ userId: 'user1' }, { userId: 'user2' }],
+      });
+      prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'DECLINED' });
+
+      const result = await service.decline('call1', 'user1');
+      expect(result.status).toBe('DECLINED');
+    });
+
+    it('should throw if call is not ringing', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ACTIVE', participants: [{ userId: 'user1' }],
+      });
+      await expect(service.decline('call1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw NotFoundException for nonexistent call', async () => {
+      prisma.callSession.findUnique.mockResolvedValue(null);
+      await expect(service.decline('nonexistent', 'user1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-participant', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'RINGING', participants: [{ userId: 'user2' }],
+      });
+      await expect(service.decline('call1', 'user1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('missedCall', () => {
+    it('should mark call as missed', async () => {
+      prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'MISSED' });
+      const result = await service.missedCall('call1');
+      expect(result.status).toBe('MISSED');
+    });
+  });
+
+  describe('getActiveCall', () => {
+    it('should return active call for user', async () => {
+      prisma.callParticipant.findFirst.mockResolvedValue({
+        session: { id: 'call1', status: 'ACTIVE', participants: [] },
+      });
+      const result = await service.getActiveCall('user1');
+      expect(result).toBeDefined();
+      expect(result?.id).toBe('call1');
+    });
+
+    it('should return null when no active call', async () => {
+      prisma.callParticipant.findFirst.mockResolvedValue(null);
+      const result = await service.getActiveCall('user1');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('getIceServers', () => {
+    it('should return STUN servers', () => {
+      const result = service.getIceServers();
+      expect(result.iceServers).toBeDefined();
+      expect(result.iceServers.length).toBeGreaterThanOrEqual(3);
+      expect(result.iceServers[0].urls).toContain('stun:');
+    });
+  });
+
+  describe('createGroupCall', () => {
+    it('should create group call with up to 8 participants', async () => {
+      prisma.callSession.create.mockResolvedValue({
+        id: 'call1', callType: 'VIDEO', status: 'RINGING', participants: [],
+      });
+      const result = await service.createGroupCall('conv1', 'user1', ['user2', 'user3']);
+      expect(result.status).toBe('RINGING');
+    });
+
+    it('should throw BadRequestException for more than 8 participants', async () => {
+      const tooMany = Array(8).fill('u').map((_, i) => `user-${i}`);
+      await expect(service.createGroupCall('conv1', 'user1', tooMany)).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('shareScreen', () => {
+    it('should enable screen sharing', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ACTIVE', isScreenSharing: false, participants: [{ userId: 'user1' }],
+      });
+      prisma.callSession.update.mockResolvedValue({ isScreenSharing: true, screenShareUserId: 'user1' });
+
+      const result = await service.shareScreen('call1', 'user1');
+      expect(result.isScreenSharing).toBe(true);
+    });
+
+    it('should throw if someone already sharing', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ACTIVE', isScreenSharing: true, participants: [{ userId: 'user1' }],
+      });
+      await expect(service.shareScreen('call1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw if call not active', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ENDED', isScreenSharing: false, participants: [{ userId: 'user1' }],
+      });
+      await expect(service.shareScreen('call1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('stopScreenShare', () => {
+    it('should stop screen sharing', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ACTIVE', screenShareUserId: 'user1', participants: [{ userId: 'user1' }],
+      });
+      prisma.callSession.update.mockResolvedValue({ isScreenSharing: false, screenShareUserId: null });
+
+      const result = await service.stopScreenShare('call1', 'user1');
+      expect(result.isScreenSharing).toBe(false);
+    });
+
+    it('should throw ForbiddenException if not the screen sharer', async () => {
+      prisma.callSession.findUnique.mockResolvedValue({
+        id: 'call1', status: 'ACTIVE', screenShareUserId: 'other', participants: [{ userId: 'user1' }],
+      });
+      await expect(service.stopScreenShare('call1', 'user1')).rejects.toThrow(ForbiddenException);
+    });
+  });
 });
