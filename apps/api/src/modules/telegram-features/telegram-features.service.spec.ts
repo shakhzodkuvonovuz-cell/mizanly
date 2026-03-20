@@ -59,6 +59,7 @@ describe('TelegramFeaturesService', () => {
               findUnique: jest.fn().mockResolvedValue({ id: 'topic-1', conversationId: 'conv-1' }),
               update: jest.fn(),
               delete: jest.fn(),
+              count: jest.fn().mockResolvedValue(0),
             },
             customEmojiPack: {
               create: jest.fn().mockResolvedValue({ id: 'pack-1', name: 'TestPack' }),
@@ -132,6 +133,61 @@ describe('TelegramFeaturesService', () => {
       expect(prisma.conversation.update).toHaveBeenCalledWith(
         expect.objectContaining({ data: { slowModeSeconds: 30 } }),
       );
+    });
+  });
+
+  describe('Topics', () => {
+    it('should create topic in group conversation', async () => {
+      const result = await service.createTopic('conv-1', 'user-1', { name: 'Fiqh Discussion' });
+      expect(result.id).toBe('topic-1');
+    });
+
+    it('should get topics for conversation', async () => {
+      prisma.groupTopic.findMany.mockResolvedValue([{ id: 'topic-1', name: 'General' }]);
+      const result = await service.getTopics('conv-1');
+      expect(result).toHaveLength(1);
+    });
+
+    it('should update topic', async () => {
+      prisma.groupTopic.update.mockResolvedValue({ id: 'topic-1', name: 'Updated' });
+      const result = await service.updateTopic('topic-1', 'user-1', { name: 'Updated' });
+      expect(result.name).toBe('Updated');
+    });
+
+    it('should delete topic for admin and return deleted record', async () => {
+      prisma.groupTopic.findUnique.mockResolvedValueOnce({ id: 'topic-1', conversationId: 'conv-1' });
+      prisma.conversationMember.findUnique.mockResolvedValueOnce({ userId: 'user-1', role: 'owner' });
+      prisma.groupTopic.delete.mockResolvedValue({ id: 'topic-1' });
+      const result = await service.deleteTopic('topic-1', 'user-1');
+      expect(result.id).toBe('topic-1');
+    });
+  });
+
+  describe('Emoji Packs', () => {
+    it('should create emoji pack', async () => {
+      const result = await service.createEmojiPack('user-1', { name: 'TestPack' });
+      expect(result.name).toBe('TestPack');
+    });
+
+    it('should get user emoji packs', async () => {
+      prisma.customEmojiPack.findMany.mockResolvedValue([{ id: 'pack-1', name: 'TestPack' }]);
+      const result = await service.getMyEmojiPacks('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('Admin Log', () => {
+    it('should log admin action', async () => {
+      prisma.adminLog.create.mockResolvedValue({ id: 'log-1', action: 'KICK' });
+      await service.logAdminAction('conv-1', 'user-1', 'KICK', { targetUserId: 'user-2' });
+      expect(prisma.adminLog.create).toHaveBeenCalled();
+    });
+
+    it('should get admin log entries for admin user', async () => {
+      prisma.conversationMember.findUnique.mockResolvedValueOnce({ userId: 'user-1', role: 'owner' });
+      prisma.adminLog.findMany.mockResolvedValue([{ id: 'log-1', action: 'KICK' }]);
+      const result = await service.getAdminLog('conv-1', 'user-1');
+      expect(result.data).toHaveLength(1);
     });
   });
 });

@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { StickersService } from './stickers.service';
 import { PrismaService } from '../../config/prisma.service';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { globalMockProviders } from '../../common/test/mock-providers';
 
 describe('StickersService', () => {
@@ -101,13 +101,50 @@ describe('StickersService', () => {
     });
   });
 
-  describe('search', () => {
-    it('should search stickers by keyword', async () => {
-      prisma.stickerPack.findMany.mockResolvedValue([{ id: 'p1', name: 'Happy' }]);
-      if (typeof service.search === 'function') {
-        const result = await service.search('happy');
-        expect(result).toBeDefined();
-      }
+  describe('searchPacks', () => {
+    it('should search sticker packs by keyword', async () => {
+      prisma.stickerPack.findMany.mockResolvedValue([{ id: 'p1', name: 'Happy Eid' }]);
+      const result = await service.searchPacks('happy');
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Happy Eid');
+    });
+
+    it('should return empty for no matches', async () => {
+      prisma.stickerPack.findMany.mockResolvedValue([]);
+      const result = await service.searchPacks('xyznonexistent');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getRecentStickers', () => {
+    it('should return recent stickers from user packs', async () => {
+      prisma.userStickerPack.findMany.mockResolvedValue([
+        { pack: { id: 'p1', stickers: [{ id: 's1', url: 'a.png' }] } },
+      ]);
+      const result = await service.getRecentStickers('user-1');
+      expect(result).toHaveLength(1);
+    });
+
+    it('should return empty when user has no packs', async () => {
+      prisma.userStickerPack.findMany.mockResolvedValue([]);
+      const result = await service.getRecentStickers('user-1');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getFeaturedPacks', () => {
+    it('should return free featured sticker packs', async () => {
+      prisma.stickerPack.findMany.mockResolvedValue([{ id: 'p1', name: 'Featured', isFree: true }]);
+      const result = await service.getFeaturedPacks();
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('deletePack', () => {
+    it('should delete sticker pack', async () => {
+      prisma.stickerPack.delete.mockResolvedValue({});
+      const result = await service.deletePack('p1');
+      expect(result).toEqual({ deleted: true });
     });
   });
 });

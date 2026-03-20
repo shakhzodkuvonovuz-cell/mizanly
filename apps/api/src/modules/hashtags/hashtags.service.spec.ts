@@ -31,6 +31,11 @@ describe('HashtagsService', () => {
             reel: {
               findMany: jest.fn(),
             },
+            hashtagFollow: {
+              upsert: jest.fn(),
+              deleteMany: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+            },
             thread: {
               findMany: jest.fn(),
             },
@@ -210,6 +215,45 @@ describe('HashtagsService', () => {
     it('should not throw if update fails', async () => {
       prisma.hashtag.update.mockRejectedValue(new Error());
       await expect(service.decrementCount('test', 'postsCount')).resolves.not.toThrow();
+    });
+  });
+
+  describe('followHashtag', () => {
+    it('should follow hashtag', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue({ id: 'h1', name: 'islam' });
+      prisma.hashtagFollow.upsert.mockResolvedValue({});
+      const result = await service.followHashtag('user-1', 'h1');
+      expect(result).toEqual({ followed: true });
+    });
+
+    it('should throw NotFoundException for nonexistent hashtag', async () => {
+      prisma.hashtag.findUnique.mockResolvedValue(null);
+      await expect(service.followHashtag('user-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unfollowHashtag', () => {
+    it('should unfollow hashtag', async () => {
+      prisma.hashtagFollow.deleteMany.mockResolvedValue({ count: 1 });
+      const result = await service.unfollowHashtag('user-1', 'h1');
+      expect(result).toEqual({ followed: false });
+    });
+  });
+
+  describe('getFollowedHashtags', () => {
+    it('should return followed hashtags with pagination', async () => {
+      prisma.hashtagFollow.findMany.mockResolvedValue([{ hashtagId: 'h1' }]);
+      prisma.hashtag.findMany.mockResolvedValue([{ id: 'h1', name: 'islam', postsCount: 100 }]);
+      const result = await service.getFollowedHashtags('user-1');
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].name).toBe('islam');
+    });
+
+    it('should return empty when user follows no hashtags', async () => {
+      prisma.hashtagFollow.findMany.mockResolvedValue([]);
+      prisma.hashtag.findMany.mockResolvedValue([]);
+      const result = await service.getFollowedHashtags('user-1');
+      expect(result.data).toHaveLength(0);
     });
   });
 });
