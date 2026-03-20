@@ -73,6 +73,18 @@ describe('ThreadsService', () => {
             feedDismissal: {
               upsert: jest.fn(),
             },
+            pollOption: {
+              findUnique: jest.fn(),
+              update: jest.fn(),
+            },
+            pollVote: {
+              findUnique: jest.fn(),
+              findFirst: jest.fn(),
+              create: jest.fn(),
+            },
+            poll: {
+              update: jest.fn(),
+            },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
@@ -80,7 +92,7 @@ describe('ThreadsService', () => {
         {
           provide: NotificationsService,
           useValue: {
-            create: jest.fn(),
+            create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
           },
         },
         {
@@ -741,6 +753,106 @@ describe('ThreadsService', () => {
     it('should throw NotFoundException for non-existent user', async () => {
       prisma.user.findUnique.mockResolvedValue(null);
       await expect(service.getUserThreads('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // repost / unrepost
+  // ═══════════════════════════════════════════════════════
+
+  describe('repost', () => {
+    it('should create repost and increment repostsCount', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'owner', isRemoved: false });
+      prisma.thread.findFirst.mockResolvedValue(null);
+      const repostThread = { id: 'repost-1', userId: 'user-1', repostOfId: 'thread-1', user: { id: 'user-1' } };
+      prisma.$transaction.mockResolvedValue([repostThread, {}]);
+
+      const result = await service.repost('thread-1', 'user-1');
+      expect(result.repostOfId).toBe('thread-1');
+    });
+
+    it('should throw BadRequestException when reposting own thread', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'user-1', isRemoved: false });
+      await expect(service.repost('thread-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ConflictException when already reposted', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'owner', isRemoved: false });
+      prisma.thread.findFirst.mockResolvedValue({ id: 'repost-1' });
+      await expect(service.repost('thread-1', 'user-1')).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw NotFoundException when thread not found', async () => {
+      prisma.thread.findUnique.mockResolvedValue(null);
+      await expect(service.repost('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw NotFoundException when thread is removed', async () => {
+      prisma.thread.findUnique.mockResolvedValue({ id: 'thread-1', userId: 'owner', isRemoved: true });
+      await expect(service.repost('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('unrepost', () => {
+    it('should remove repost and decrement count', async () => {
+      prisma.thread.findFirst.mockResolvedValue({ id: 'repost-1', userId: 'user-1', repostOfId: 'thread-1' });
+      prisma.$transaction.mockResolvedValue([{}, 1]);
+
+      const result = await service.unrepost('thread-1', 'user-1');
+      expect(result).toEqual({ reposted: false });
+    });
+
+    it('should throw NotFoundException when no repost exists', async () => {
+      prisma.thread.findFirst.mockResolvedValue(null);
+      await expect(service.unrepost('thread-1', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // votePoll
+  // ═══════════════════════════════════════════════════════
+
+  describe('votePoll', () => {
+    const mockOption = {
+      id: 'opt-1', pollId: 'poll-1', text: 'Option A', votesCount: 0,
+      poll: { id: 'poll-1', endsAt: null, allowMultiple: false, totalVotes: 0 },
+    };
+
+    it('should cast vote and increment counts', async () => {
+      prisma.pollOption.findUnique.mockResolvedValue(mockOption);
+      prisma.pollVote.findUnique.mockResolvedValue(null);
+      prisma.pollVote.findFirst.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue([{}, {}, {}]);
+
+      const result = await service.votePoll('opt-1', 'user-1');
+      expect(result).toEqual({ voted: true });
+    });
+
+    it('should throw NotFoundException for nonexistent option', async () => {
+      prisma.pollOption.findUnique.mockResolvedValue(null);
+      await expect(service.votePoll('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when poll has ended', async () => {
+      const expiredOption = {
+        ...mockOption,
+        poll: { ...mockOption.poll, endsAt: new Date(Date.now() - 86400000) },
+      };
+      prisma.pollOption.findUnique.mockResolvedValue(expiredOption);
+      await expect(service.votePoll('opt-1', 'user-1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw ConflictException when already voted on same option', async () => {
+      prisma.pollOption.findUnique.mockResolvedValue(mockOption);
+      prisma.pollVote.findUnique.mockResolvedValue({ userId: 'user-1', optionId: 'opt-1' });
+      await expect(service.votePoll('opt-1', 'user-1')).rejects.toThrow(ConflictException);
+    });
+
+    it('should throw ConflictException when already voted on poll (single choice)', async () => {
+      prisma.pollOption.findUnique.mockResolvedValue(mockOption);
+      prisma.pollVote.findUnique.mockResolvedValue(null);
+      prisma.pollVote.findFirst.mockResolvedValue({ userId: 'user-1', optionId: 'opt-2' });
+      await expect(service.votePoll('opt-1', 'user-1')).rejects.toThrow(ConflictException);
     });
   });
 });
