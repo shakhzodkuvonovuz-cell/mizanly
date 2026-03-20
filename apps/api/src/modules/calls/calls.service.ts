@@ -161,6 +161,7 @@ export class CallsService {
     const iceServers: { urls: string; username?: string; credential?: string }[] = [
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
     ];
 
     const turnUrl = this.config.get<string>('TURN_SERVER_URL');
