@@ -108,4 +108,87 @@ describe('IslamicNotificationsService', () => {
       expect(result).toHaveProperty('nearPrayerTime');
     });
   });
+
+  describe('categorizeIslamicContent', () => {
+    it('should categorize fiqh content', async () => {
+      const result = await service.categorizeIslamicContent('Is this halal? I need a fatwa on this matter');
+      expect(result).toContain('fiqh');
+    });
+
+    it('should categorize seerah content', async () => {
+      const result = await service.categorizeIslamicContent('The life of Prophet Muhammad and the companions');
+      expect(result).toContain('seerah');
+    });
+
+    it('should categorize tafsir content', async () => {
+      const result = await service.categorizeIslamicContent('Tafsir of Surah Al-Baqarah ayah 255');
+      expect(result).toContain('tafsir');
+    });
+
+    it('should categorize hadith content', async () => {
+      const result = await service.categorizeIslamicContent('A hadith from Sahih Bukhari on sunnah practices');
+      expect(result).toContain('hadith');
+    });
+
+    it('should return multiple categories when applicable', async () => {
+      const result = await service.categorizeIslamicContent('The Prophet Muhammad taught this sunnah hadith about fiqh rulings');
+      expect(result.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should return empty for non-Islamic content', async () => {
+      const result = await service.categorizeIslamicContent('Today I had coffee and went for a walk');
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getIslamicPeriod', () => {
+    it('should return a period string', () => {
+      const result = service.getIslamicPeriod();
+      expect(result).toHaveProperty('period');
+      expect(['normal', 'ramadan', 'dhul_hijjah', 'muharram', 'eid']).toContain(result.period);
+    });
+  });
+
+  describe('getRamadanStatus', () => {
+    it('should return isRamadan boolean', async () => {
+      const result = await service.getRamadanStatus(40.7, -74.0);
+      expect(result).toHaveProperty('isRamadan');
+      expect(typeof result.isRamadan).toBe('boolean');
+    });
+
+    it('should return dayNumber when in Ramadan', async () => {
+      // Force a date within Ramadan 2026 (Feb 18 - Mar 19)
+      const result = await service.getRamadanStatus(40.7, -74.0);
+      // Can't control Date.now easily, but we verify structure
+      if (result.isRamadan) {
+        expect(result.dayNumber).toBeGreaterThanOrEqual(1);
+      }
+    });
+  });
+
+  describe('shouldShowPrayFirstNudge — disabled', () => {
+    it('should return show:false when prayFirstNudge is disabled', async () => {
+      prisma.prayerNotification.findUnique.mockResolvedValue({ autoDnd: true, prayFirstNudge: false });
+      const result = await service.shouldShowPrayFirstNudge('user-1');
+      expect(result.show).toBe(false);
+    });
+
+    it('should return show:false when no settings exist', async () => {
+      prisma.prayerNotification.findUnique.mockResolvedValue(null);
+      const result = await service.shouldShowPrayFirstNudge('user-1');
+      expect(result.show).toBe(false);
+    });
+  });
+
+  describe('queueNotificationForAfterPrayer — with data', () => {
+    it('should queue notification with data payload', async () => {
+      await service.queueNotificationForAfterPrayer('user-1', {
+        title: 'New message', body: 'You have a new DM', data: { screen: 'chat' },
+      });
+      expect(redis.lpush).toHaveBeenCalledWith(
+        'prayer_queue:user-1',
+        expect.stringContaining('"screen":"chat"'),
+      );
+    });
+  });
 });

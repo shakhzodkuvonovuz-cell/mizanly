@@ -77,7 +77,6 @@ describe('WebhooksService', () => {
 
   describe('deliver', () => {
     it('should compute HMAC-SHA256 signature and send payload', async () => {
-      // Mock fetch to return success
       const originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
 
@@ -94,6 +93,89 @@ describe('WebhooksService', () => {
 
       const result = await service.deliver('https://example.com/webhook', 'secret', { event: 'test' });
       expect(result.success).toBe(false);
+
+      global.fetch = originalFetch;
+    });
+
+    it('should include X-Mizanly-Signature header', async () => {
+      const originalFetch = global.fetch;
+      const mockFetchFn = jest.fn().mockResolvedValue({ ok: true, status: 200 });
+      global.fetch = mockFetchFn as any;
+
+      await service.deliver('https://example.com/hook', 'secret', { event: 'test' });
+      expect(mockFetchFn).toHaveBeenCalledWith('https://example.com/hook', expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-Mizanly-Signature': expect.stringContaining('sha256='),
+        }),
+      }));
+
+      global.fetch = originalFetch;
+    });
+
+    it('should succeed on second attempt after first failure', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn()
+        .mockRejectedValueOnce(new Error('Timeout'))
+        .mockResolvedValueOnce({ ok: true, status: 200 }) as any;
+
+      const result = await service.deliver('https://example.com/hook', 'secret', { event: 'test' });
+      expect(result.success).toBe(true);
+      expect(result.statusCode).toBe(200);
+
+      global.fetch = originalFetch;
+    });
+
+    it('should return success=false for non-ok HTTP responses', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: false, status: 500 }) as any;
+
+      const result = await service.deliver('https://example.com/hook', 'secret', { event: 'test' });
+      expect(result.success).toBe(false);
+
+      global.fetch = originalFetch;
+    });
+  });
+
+  describe('dispatch', () => {
+    it('should dispatch to matching webhooks', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+
+      prisma.webhook.findMany.mockResolvedValue([
+        { id: 'wh-1', url: 'https://example.com/hook1', secret: 'sec1', events: ['post.created'], isActive: true },
+        { id: 'wh-2', url: 'https://example.com/hook2', secret: 'sec2', events: ['member.joined'], isActive: true },
+      ]);
+
+      const result = await service.dispatch('c1', 'post.created', { postId: 'p1' });
+      expect(result.dispatched).toBe(1);
+
+      global.fetch = originalFetch;
+    });
+
+    it('should dispatch 0 when no matching webhooks', async () => {
+      prisma.webhook.findMany.mockResolvedValue([
+        { id: 'wh-1', url: 'https://example.com/hook', secret: 'sec', events: ['member.joined'], isActive: true },
+      ]);
+
+      const result = await service.dispatch('c1', 'post.created', { postId: 'p1' });
+      expect(result.dispatched).toBe(0);
+    });
+
+    it('should dispatch 0 when no webhooks exist', async () => {
+      prisma.webhook.findMany.mockResolvedValue([]);
+      const result = await service.dispatch('c1', 'live.started', {});
+      expect(result.dispatched).toBe(0);
+    });
+  });
+
+  describe('test — with url', () => {
+    it('should deliver test payload', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+
+      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'sec' });
+      const result = await service.test('wh-1', 'u1');
+      expect(result.success).toBe(true);
 
       global.fetch = originalFetch;
     });
