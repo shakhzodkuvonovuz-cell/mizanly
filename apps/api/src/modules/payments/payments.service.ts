@@ -51,11 +51,18 @@ export class PaymentsService {
     }
 
     // Create Stripe customer
-    const customer = await this.stripe.customers.create({
-      email: user.email,
-      name: user.displayName || user.username,
-      metadata: { userId, mizanlyUserId: userId },
-    });
+    let customer: Stripe.Customer;
+    try {
+      customer = await this.stripe.customers.create({
+        email: user.email,
+        name: user.displayName || user.username,
+        metadata: { userId, mizanlyUserId: userId },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe customer creation failed: ${msg}`);
+      throw new BadRequestException('Failed to set up payment account');
+    }
 
     // Store in Redis with 30-day expiry
     await this.redis.setex(redisKey, 60 * 60 * 24 * 30, customer.id);
@@ -117,19 +124,26 @@ export class PaymentsService {
     const customerId = await this.getOrCreateStripeCustomer(senderId);
 
     // Create PaymentIntent on Stripe
-    const paymentIntent = await this.stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // convert to cents
-      currency: currency.toLowerCase(),
-      customer: customerId,
-      metadata: {
-        senderId,
-        receiverId,
-        amount: amount.toString(),
-        currency,
-        type: 'tip',
-      },
-      automatic_payment_methods: { enabled: true },
-    });
+    let paymentIntent: Stripe.PaymentIntent;
+    try {
+      paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // convert to cents
+        currency: currency.toLowerCase(),
+        customer: customerId,
+        metadata: {
+          senderId,
+          receiverId,
+          amount: amount.toString(),
+          currency,
+          type: 'tip',
+        },
+        automatic_payment_methods: { enabled: true },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe payment intent creation failed: ${msg}`);
+      throw new BadRequestException('Payment processing failed — please try again');
+    }
 
     // Create a pending tip record in our DB
     const tip = await this.prisma.tip.create({
@@ -171,35 +185,46 @@ export class PaymentsService {
     // Get Stripe customer for user
     const customerId = await this.getOrCreateStripeCustomer(userId);
 
-    // Attach payment method to customer (if not already)
-    await this.stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
-
-    // Set as default payment method
-    await this.stripe.customers.update(customerId, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
+    // Attach payment method and create subscription
+    try {
+      await this.stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+      await this.stripe.customers.update(customerId, {
+        invoice_settings: { default_payment_method: paymentMethodId },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe payment method attach failed: ${msg}`);
+      throw new BadRequestException('Failed to set up payment method');
+    }
 
     // Create Stripe product for this tier, then create subscription
-    const product = await this.stripe.products.create({
-      name: tier.name,
-      metadata: { tierId, mizanlyTierId: tierId },
-    });
+    let subscription: Stripe.Subscription;
+    try {
+      const product = await this.stripe.products.create({
+        name: tier.name,
+        metadata: { tierId, mizanlyTierId: tierId },
+      });
 
-    const subscription = await this.stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price_data: {
-          currency: tier.currency.toLowerCase(),
-          product: product.id,
-          unit_amount: Math.round(Number(tier.price) * 100),
-          recurring: { interval: 'month' },
-        } }],
-      metadata: { tierId, userId, mizanlyUserId: userId },
-      payment_settings: {
-        payment_method_types: ['card'],
-        save_default_payment_method: 'on_subscription',
-      },
-      expand: ['latest_invoice.payment_intent'],
-    });
+      subscription = await this.stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price_data: {
+            currency: tier.currency.toLowerCase(),
+            product: product.id,
+            unit_amount: Math.round(Number(tier.price) * 100),
+            recurring: { interval: 'month' },
+          } }],
+        metadata: { tierId, userId, mizanlyUserId: userId },
+        payment_settings: {
+          payment_method_types: ['card'],
+          save_default_payment_method: 'on_subscription',
+        },
+        expand: ['latest_invoice.payment_intent'],
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe subscription creation failed: ${msg}`);
+      throw new BadRequestException('Failed to create subscription');
+    }
 
     // Create or update our subscription record
     const existing = await this.prisma.membershipSubscription.findUnique({
@@ -270,7 +295,13 @@ export class PaymentsService {
 
     // Cancel on Stripe if we have a Stripe subscription ID
     if (stripeSubscriptionId) {
-      await this.stripe.subscriptions.cancel(stripeSubscriptionId);
+      try {
+        await this.stripe.subscriptions.cancel(stripeSubscriptionId);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Stripe subscription cancel failed: ${msg}`);
+        // Continue with local cancellation even if Stripe fails
+      }
     }
 
     // Update our record
@@ -290,18 +321,25 @@ export class PaymentsService {
 
   async listPaymentMethods(userId: string) {
     const customerId = await this.getOrCreateStripeCustomer(userId);
-    const paymentMethods = await this.stripe.paymentMethods.list({
-      customer: customerId,
-      type: 'card',
-    });
 
-    return paymentMethods.data.map((pm) => ({
-      id: pm.id,
-      brand: pm.card?.brand || 'unknown',
-      last4: pm.card?.last4 || '',
-      expiryMonth: pm.card?.exp_month || 0,
-      expiryYear: pm.card?.exp_year || 0,
-    }));
+    try {
+      const paymentMethods = await this.stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card',
+      });
+
+      return paymentMethods.data.map((pm) => ({
+        id: pm.id,
+        brand: pm.card?.brand || 'unknown',
+        last4: pm.card?.last4 || '',
+        expiryMonth: pm.card?.exp_month || 0,
+        expiryYear: pm.card?.exp_year || 0,
+      }));
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Stripe list payment methods failed: ${msg}`);
+      return [];
+    }
   }
 
   async attachPaymentMethod(userId: string, paymentMethodId: string) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../config/prisma.service';
 import { MeilisearchService } from './meilisearch.service';
@@ -143,6 +143,8 @@ export interface SearchResults {
 
 @Injectable()
 export class SearchService {
+  private readonly logger = new Logger(SearchService.name);
+
   constructor(
     private prisma: PrismaService,
     private meilisearch: MeilisearchService,
@@ -154,6 +156,14 @@ export class SearchService {
     cursor?: string,
     limit = 20,
   ) {
+    if (!query || query.trim().length === 0) {
+      throw new BadRequestException('Search query is required');
+    }
+    if (query.length > 200) {
+      throw new BadRequestException('Search query must be under 200 characters');
+    }
+    const safeLimit = Math.min(Math.max(limit, 1), 50);
+
     // Try Meilisearch first (faster, typo tolerant, Arabic-aware)
     if (this.meilisearch.isAvailable() && type && !cursor) {
       const indexMap: Record<string, string> = {
