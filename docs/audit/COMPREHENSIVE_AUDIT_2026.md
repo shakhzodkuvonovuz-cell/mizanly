@@ -739,6 +739,128 @@ The data is **real and authentic** — not placeholder text. Sources are properl
 
 ---
 
+# PART B: FEATURE DEPTH COMPARISON (Dimensions 21-40)
+
+## DIMENSION 21: FEED ALGORITHM (vs Instagram/TikTok)
+
+**What Mizanly has:**
+- Engagement-weighted scoring (likes×3 + comments×5 + shares×7 + saves×2 + views×0.1)
+- Time-decay factor (score / ageHours^1.5)
+- Zero-follow fallback to trending
+- Few-follows blended feed (50% following + 50% trending)
+- Redis caching (30s TTL for "for you")
+- Session-aware mid-scroll adaptation (PersonalizedFeedService)
+- Islamic hashtag boosting (30 Islamic hashtags get priority)
+- pgvector embeddings for content similarity
+- Block/mute exclusion
+
+**What Instagram has that Mizanly doesn't:**
+- Two Towers neural network ranking
+- Computer vision for image/video understanding
+- Billions of training data points
+- Multi-stage ML ranking pipeline
+- DM sends as strongest engagement signal
+- Interest graph across 8+ billion parameters
+
+**Honest comparison:** Mizanly's algorithm is a **solid SQL/Redis-based scoring system** with smart heuristics. Instagram's is a multi-billion-dollar ML pipeline. Mizanly is closer to early-2015 Instagram (engagement score + time decay) than 2026 Instagram. But for an MVP, it's functional and won't show garbage content.
+
+### DIMENSION 21 SCORE: 5.0/10 (vs competitors)
+
+---
+
+## DIMENSION 22-26: CONTENT SPACE COMPARISONS
+
+### Stories (vs Instagram): 6/10
+- Has: creation with stickers (poll, question, quiz, countdown, emoji slider, music, location, mention), close friends, highlights, subscriber-only, viewing with progress bar, archive
+- Missing: AR effects, filters, drawing tools, cube transition animation
+
+### Short Video (vs TikTok): 5/10
+- Has: vertical feed, autoplay, duet/stitch, sound page, templates, photo carousel
+- Missing: AR effects, face tracking, green screen (screen exists but no real camera processing), transition effects, TikTok-level creation tools
+
+### Threading (vs X/Twitter): 6.5/10
+- Has: text/image/video/poll, quote/repost, reply chains, lists, community notes, for you/following/trending
+- Missing: Spaces (audio rooms exist separately), Grok-level AI integration
+
+### Messaging (vs WhatsApp): 7/10
+- Has: text formatting, voice messages, media sharing, groups, reactions, disappearing, view once, spoiler text, forward, edit, pin, star, checklists, slow mode, chat lock, saved messages, chat folders
+- Missing: E2E encryption (architecture exists but not verified), payments in chat, business catalog
+
+### Long Video (vs YouTube): 5.5/10
+- Has: upload, player with quality/speed/PiP, playlists, comments (threaded, pinned), subscriptions with bell, premiere, chapters, creator dashboard, clips, end screens
+- Missing: YouTube-level recommendation engine, content ID, super chat, shorts integration, picture quality auto-adapt
+
+---
+
+## DIMENSION 27: ISLAMIC FEATURES (vs Muslim Pro + Athan + Quran.com)
+
+This is the CRITICAL comparison. The Islamic features are why this app exists.
+
+| Feature | Mizanly | Muslim Pro | Quran.com |
+|---------|---------|-----------|-----------|
+| Prayer times | **MOCK (hardcoded)** | ✓ (8+ methods, GPS) | ✓ (via API) |
+| Quran text | **NONE** | ✓ (full + 40 translations) | ✓ (full + 40+ translations) |
+| Quran audio | ✓ (4 reciters via CDN) | ✓ (20+ reciters) | ✓ (80+ reciters) |
+| Hadith | 40 hadiths | 7,000+ | N/A |
+| Duas | 42 (authentic) | 200+ | N/A |
+| 99 Names | ✓ (complete) | ✓ | ✓ |
+| Tafsir | 28 verses | Full Quran | Full Quran (10+ tafsirs) |
+| Qibla compass | UI exists | ✓ (compass sensor) | N/A |
+| Fasting tracker | ✓ (DB-backed) | ✓ | N/A |
+| Zakat calculator | ✓ (hardcoded prices) | ✓ (live prices) | N/A |
+| Mosque finder | **MOCK (8 famous mosques)** | ✓ (GPS + database) | N/A |
+| Halal finder | DB model exists | N/A | N/A |
+| Hifz tracker | ✓ (114 surahs) | N/A | N/A |
+| Dhikr counter | ✓ + challenges + leaderboard | ✓ (basic) | N/A |
+| Islamic calendar | ✓ (Kuwaiti algorithm) | ✓ | N/A |
+| Hajj guide | ✓ (7 steps) | ✓ | N/A |
+| Social features | ✓ (full 5-space social) | Basic community | N/A |
+
+**What Muslim Pro has that Mizanly doesn't:**
+1. Working prayer times (THE most important feature)
+2. Full Quran text with 40+ translations
+3. 20+ audio reciters
+4. 7,000+ hadiths
+5. Full tafsir for every verse
+6. GPS-based mosque finder with real data
+7. Live gold/silver prices for zakat
+
+**What Mizanly has that NO competitor has:**
+1. Full social media platform (Instagram + TikTok + Twitter + WhatsApp + YouTube in one)
+2. Gamified Islamic practice (streaks, XP, achievements, leaderboards)
+3. Dhikr challenges (social/competitive dhikr)
+4. Islamic content algorithm boosting
+5. Quran reading rooms (live group study via Socket.io)
+6. Scholar verification + live Q&A
+7. Community notes (crowd-sourced fact-checking)
+8. Mosque social graph
+
+### DIMENSION 27 SCORE: 3.5/10 (vs competitors)
+
+**Rationale:** The Islamic features that work (dhikr, fasting tracker, hifz, daily briefing, gamification) are genuinely unique and well-built. But the **three most important Islamic features** (prayer times, Quran text, mosque finder) are mocked/missing. A Muslim user cannot use this app to know when to pray.
+
+---
+
+## DIMENSIONS 28-40: SUMMARY SCORES
+
+| # | Dimension | Score | Key Evidence |
+|---|-----------|-------|-------------|
+| 28 | Gamification | 7.0/10 | Streaks, XP, levels, achievements, challenges, leaderboards — genuinely unique |
+| 29 | Commerce | 5.0/10 | Product listings, Stripe Connect, virtual currency exist. Untested in production. |
+| 30 | Content Creation | 4.5/10 | Post/reel/story creation exist but no real video editing (CapCut-level missing) |
+| 31 | Notifications | 6.0/10 | Push pipeline exists, 23 notification types. Smart timing not implemented. |
+| 32 | Search & Discovery | 6.5/10 | Meilisearch backend, typo tolerance, autocomplete, trending. Arabic tokenization unclear. |
+| 33 | Profile | 7.0/10 | Full profile with cover, bio, links, grid, highlights, customization, QR, alt profile |
+| 34 | Privacy & Safety | 7.0/10 | Block, mute, restrict, close friends, disappearing, view once, chat lock, 2FA, parental |
+| 35 | Live Streaming | 5.0/10 | UI exists with multi-guest (4), rehearsal, recording. No actual streaming server. |
+| 36 | Calls | 3.0/10 | UI exists. No WebRTC TURN/STUN. Calls will NOT work. |
+| 37 | Onboarding | 6.5/10 | 4-step flow: signup → interests → profile → suggested follows. Clerk auth (email/phone/Apple/Google) |
+| 38 | Retention | 6.0/10 | Streaks, daily tasks, "caught up" card, morning briefing. No re-engagement push. |
+| 39 | Moderation | 4.5/10 | Text moderation works. Image moderation stub. No AI content detection. |
+| 40 | Accessibility (vs guidelines) | 6.0/10 | Font scaling, reduced motion, labels on most screens. No audio descriptions. |
+
+---
+
 # SESSION 1 FINAL STATUS
 
 **Dimensions completed:** 1-16, 20
