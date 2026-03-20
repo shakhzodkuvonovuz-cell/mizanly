@@ -27,7 +27,7 @@ import { MiniPlayer } from '@/components/ui/MiniPlayer';
 import { TTSMiniPlayer } from '@/components/ui/TTSMiniPlayer';
 import { useStore } from '@/store';
 import { colors } from '@/theme';
-import { getActiveIslamicTheme, isEidToday } from '@/theme/islamicThemes';
+import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
 import { initSentry, setSentryUser } from '@/config/sentry';
 
 // Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
@@ -51,10 +51,11 @@ const CLERK_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
 /**
  * Islamic calendar theme banner.
- * Shows Eid/Ramadan banners and applies accent color overrides.
+ * Shows Eid/Ramadan banners — respects user's islamicThemeEnabled setting.
  */
 function IslamicThemeBanner() {
-  const theme = getActiveIslamicTheme();
+  const theme = useIslamicTheme();
+  const { t } = useTranslation();
   if (!theme || !theme.bannerTextKey) return null;
 
   return (
@@ -65,7 +66,54 @@ function IslamicThemeBanner() {
       alignItems: 'center',
     }}>
       <Text style={{ color: '#fff', fontWeight: '700', fontSize: 13 }}>
-        {theme.bannerTextKey === 'themes.eidMubarak' ? 'Eid Mubarak! 🌙' : 'Ramadan Kareem 🌙'}
+        {theme.bannerTextKey === 'themes.eidMubarak'
+          ? t('themes.eidMubarak')
+          : t('themes.ramadanKareem')}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Eid celebration overlay — shows a brief celebration on first open per day.
+ * Uses AsyncStorage to prevent repeat shows.
+ */
+function EidCelebrationOverlay() {
+  const isEid = useIsEidToday();
+  const [showCelebration, setShowCelebration] = useState(false);
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    if (!isEid) return;
+    const checkAndShow = async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const lastShown = await SecureStore.getItemAsync('lastEidCelebrationDate');
+      if (lastShown !== today) {
+        setShowCelebration(true);
+        await SecureStore.setItemAsync('lastEidCelebrationDate', today);
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => setShowCelebration(false), 3000);
+      }
+    };
+    checkAndShow();
+  }, [isEid]);
+
+  if (!showCelebration) return null;
+
+  return (
+    <View style={{
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.7)',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10000,
+    }}>
+      <Text style={{ fontSize: 48 }}>🎉</Text>
+      <Text style={{ color: colors.gold, fontSize: 28, fontWeight: '700', marginTop: 16 }}>
+        {t('themes.eidMubarak')}
+      </Text>
+      <Text style={{ color: colors.text.secondary, fontSize: 16, marginTop: 8 }}>
+        {t('themes.eidGreeting')}
       </Text>
     </View>
   );
@@ -301,6 +349,7 @@ export default function RootLayout() {
               <AppStateHandler />
               <ShareIntentHandler />
               <BiometricLockOverlay />
+              <EidCelebrationOverlay />
               <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
                 <Stack.Screen name="(auth)" options={{ presentation: 'modal' }} />

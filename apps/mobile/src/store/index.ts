@@ -133,6 +133,10 @@ interface AppState {
   storyViewerData: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null;
   setStoryViewerData: (data: { groups: unknown[]; startIndex: number; isOwn?: boolean } | null) => void;
 
+  // Islamic calendar themes
+  islamicThemeEnabled: boolean;
+  setIslamicThemeEnabled: (enabled: boolean) => void;
+
   // TTS (Text-to-Speech)
   ttsText: string | null;
   ttsTitle: string | null;
@@ -297,6 +301,10 @@ export const useStore = create<AppState>()(
       storyViewerData: null,
       setStoryViewerData: (storyViewerData) => set({ storyViewerData }),
 
+      // Islamic calendar themes
+      islamicThemeEnabled: true,
+      setIslamicThemeEnabled: (islamicThemeEnabled) => set({ islamicThemeEnabled }),
+
       // TTS (Text-to-Speech)
       ttsText: null,
       ttsTitle: null,
@@ -353,6 +361,7 @@ export const useStore = create<AppState>()(
         screenTimeLimitMinutes: state.screenTimeLimitMinutes,
         autoPlaySetting: state.autoPlaySetting,
         ambientModeEnabled: state.ambientModeEnabled,
+        islamicThemeEnabled: state.islamicThemeEnabled,
       }),
     }
   )
@@ -389,5 +398,6 @@ export const usePiPVideoId = () => useStore((s) => s.pipVideoId);
 export const useAmbientModeEnabled = () => useStore((s) => s.ambientModeEnabled);
 export const useIsChildAccount = () => useStore((s) => s.isChildAccount);
 export const useParentalRestrictions = () => useStore((s) => s.parentalRestrictions);
+export const useIslamicThemeEnabled = () => useStore((s) => s.islamicThemeEnabled);
 export const useTTSActive = () => useStore((s) => !!s.ttsText);
 export const useTTSPlaying = () => useStore((s) => s.ttsPlaying);
