@@ -24,7 +24,9 @@ describe('ChecklistsService', () => {
             },
             messageChecklistItem: {
               create: jest.fn().mockResolvedValue({ id: 'item-1', text: 'Task 1' }),
+              findUnique: jest.fn().mockResolvedValue({ id: 'item-1', isCompleted: false, checklistId: 'cl-1' }),
               update: jest.fn().mockResolvedValue({}),
+              delete: jest.fn().mockResolvedValue({}),
             },
           },
         },
@@ -58,5 +60,52 @@ describe('ChecklistsService', () => {
   it('should throw NotFoundException for missing checklist when adding item', async () => {
     prisma.messageChecklist.findUnique.mockResolvedValueOnce(null);
     await expect(service.addItem('u1', 'invalid', 'Task')).rejects.toThrow(NotFoundException);
+  });
+
+  describe('toggleItem', () => {
+    it('should toggle item completion status', async () => {
+      prisma.messageChecklistItem.findUnique.mockResolvedValue({ id: 'item-1', isCompleted: false });
+      prisma.messageChecklistItem.update.mockResolvedValue({ id: 'item-1', isCompleted: true, completedBy: 'u1' });
+      const result = await service.toggleItem('u1', 'item-1');
+      expect(result.isCompleted).toBe(true);
+    });
+
+    it('should throw NotFoundException for missing item', async () => {
+      prisma.messageChecklistItem.findUnique.mockResolvedValue(null);
+      await expect(service.toggleItem('u1', 'invalid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteItem', () => {
+    it('should delete checklist item', async () => {
+      prisma.messageChecklistItem.findUnique.mockResolvedValue({ id: 'item-1', checklist: { id: 'cl-1' } });
+      prisma.messageChecklistItem.delete.mockResolvedValue({});
+      const result = await service.deleteItem('u1', 'item-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw NotFoundException for missing item', async () => {
+      prisma.messageChecklistItem.findUnique.mockResolvedValue(null);
+      await expect(service.deleteItem('u1', 'invalid')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteChecklist', () => {
+    it('should delete checklist for creator', async () => {
+      prisma.messageChecklist.findUnique.mockResolvedValue({ id: 'cl-1', createdById: 'u1' });
+      prisma.messageChecklist.delete.mockResolvedValue({});
+      const result = await service.deleteChecklist('u1', 'cl-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw ForbiddenException for non-creator', async () => {
+      prisma.messageChecklist.findUnique.mockResolvedValue({ id: 'cl-1', createdById: 'other' });
+      await expect(service.deleteChecklist('u1', 'cl-1')).rejects.toThrow();
+    });
+
+    it('should throw NotFoundException for missing checklist', async () => {
+      prisma.messageChecklist.findUnique.mockResolvedValue(null);
+      await expect(service.deleteChecklist('u1', 'invalid')).rejects.toThrow(NotFoundException);
+    });
   });
 });

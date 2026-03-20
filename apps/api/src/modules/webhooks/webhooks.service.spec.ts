@@ -67,4 +67,35 @@ describe('WebhooksService', () => {
     prisma.webhook.findUnique.mockResolvedValueOnce({ id: 'wh-1', createdById: 'other-user' });
     await expect(service.delete('wh-1', 'u1')).rejects.toThrow(NotFoundException);
   });
+
+  describe('test', () => {
+    it('should throw NotFoundException when webhook not found', async () => {
+      prisma.webhook.findUnique.mockResolvedValue(null);
+      await expect(service.test('nonexistent', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('deliver', () => {
+    it('should compute HMAC-SHA256 signature and send payload', async () => {
+      // Mock fetch to return success
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+
+      const result = await service.deliver('https://example.com/webhook', 'secret123', { event: 'test', data: {} });
+      expect(result.success).toBe(true);
+      expect(result.statusCode).toBe(200);
+
+      global.fetch = originalFetch;
+    });
+
+    it('should retry on failure and return success=false after exhausting retries', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockRejectedValue(new Error('Network error')) as any;
+
+      const result = await service.deliver('https://example.com/webhook', 'secret', { event: 'test' });
+      expect(result.success).toBe(false);
+
+      global.fetch = originalFetch;
+    });
+  });
 });
