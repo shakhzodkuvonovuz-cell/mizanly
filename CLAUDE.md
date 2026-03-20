@@ -286,6 +286,14 @@ socket.on('user_typing', ({ userId, isTyping }) => ...)
 - User: `coverUrl` (NOT coverPhotoUrl) | `website` (NOT websiteUrl)
 - Follow: composite PK [followerId, followingId]
 
+### Naming Convention Exceptions (documented, not bugs)
+These models use semantically meaningful field names instead of `userId`:
+- `ForumThread.authorId`, `ForumReply.authorId`, `CommunityNote.authorId` — `authorId` conveys authorship
+- `Circle.ownerId`, `MajlisList.ownerId`, `HalalBusiness.ownerId` — `ownerId` conveys ownership
+- `CustomEmojiPack.creatorId` — `creatorId` conveys creation role
+- `GiftRecord.senderId`/`receiverId`, `Restrict.restricterId`/`restrictedId` — role-specific FKs
+These are NOT violations — they're intentional semantic naming for multi-FK models.
+
 ---
 
 ## Zustand Store
