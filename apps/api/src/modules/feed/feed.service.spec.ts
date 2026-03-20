@@ -77,4 +77,90 @@ describe('FeedService', () => {
       expect(result.meta.hasMore).toBe(false);
     });
   });
+
+  describe('logInteraction — update existing', () => {
+    it('should update existing interaction', async () => {
+      prisma.feedInteraction.findFirst.mockResolvedValue({ id: 'fi-existing' });
+      prisma.feedInteraction.update.mockResolvedValue({ id: 'fi-existing', liked: true });
+      await service.logInteraction('u1', { postId: 'p1', space: 'SAF', liked: true });
+      expect(prisma.feedInteraction.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: 'fi-existing' },
+      }));
+    });
+  });
+
+  describe('undismiss', () => {
+    it('should undismiss content', async () => {
+      prisma.feedDismissal.delete = jest.fn().mockResolvedValue({});
+      const result = await service.undismiss('u1', 'p1', 'post');
+      expect(result).toEqual({ undismissed: true });
+    });
+  });
+
+  describe('getUserInterests', () => {
+    it('should compute interest scores from interactions', async () => {
+      prisma.feedInteraction.findMany = jest.fn().mockResolvedValue([
+        { space: 'SAF', viewDurationMs: 30000, liked: true, commented: false, shared: false, saved: false },
+        { space: 'SAF', viewDurationMs: 10000, liked: false, commented: true, shared: false, saved: false },
+        { space: 'MAJLIS', viewDurationMs: 5000, liked: false, commented: false, shared: true, saved: false },
+      ]);
+      const result = await service.getUserInterests('u1');
+      expect(result.SAF).toBeGreaterThan(0);
+      expect(result.MAJLIS).toBeGreaterThan(0);
+    });
+
+    it('should return empty scores for no interactions', async () => {
+      prisma.feedInteraction.findMany = jest.fn().mockResolvedValue([]);
+      const result = await service.getUserInterests('u1');
+      expect(result).toEqual({});
+    });
+  });
+
+  describe('getContentFilter', () => {
+    beforeEach(() => {
+      (prisma as any).contentFilterSetting = { findUnique: jest.fn() };
+    });
+
+    it('should return content filter settings', async () => {
+      (prisma as any).contentFilterSetting.findUnique.mockResolvedValue({ userId: 'u1', hideMusic: true, strictnessLevel: 'strict' });
+      const result = await service.getContentFilter('u1');
+      expect(result.hideMusic).toBe(true);
+    });
+
+    it('should return null when no settings', async () => {
+      (prisma as any).contentFilterSetting.findUnique.mockResolvedValue(null);
+      const result = await service.getContentFilter('u1');
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('featurePost', () => {
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn(), update: jest.fn() };
+    });
+
+    it('should feature a post', async () => {
+      (prisma as any).post.update.mockResolvedValue({ id: 'p1', isFeatured: true, featuredAt: new Date() });
+      const result = await service.featurePost('p1', true);
+      expect(result.isFeatured).toBe(true);
+    });
+
+    it('should unfeature a post', async () => {
+      (prisma as any).post.update.mockResolvedValue({ id: 'p1', isFeatured: false, featuredAt: null });
+      const result = await service.featurePost('p1', false);
+      expect(result.isFeatured).toBe(false);
+    });
+  });
+
+  describe('getUserFollowingCount', () => {
+    beforeEach(() => {
+      (prisma as any).follow = { count: jest.fn() };
+    });
+
+    it('should return follow count', async () => {
+      (prisma as any).follow.count.mockResolvedValue(42);
+      const result = await service.getUserFollowingCount('u1');
+      expect(result).toBe(42);
+    });
+  });
 });

@@ -131,5 +131,119 @@ describe('LiveService', () => {
       const result = await service.getHostSessions('user1');
       expect(result.data).toHaveLength(1);
     });
+
+    it('returns empty when no sessions', async () => {
+      prisma.liveSession.findMany.mockResolvedValue([]);
+      const result = await service.getHostSessions('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('getById', () => {
+    it('returns session with participants', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', status: 'LIVE', host: {}, participants: [] });
+      const result = await service.getById('live1');
+      expect(result.id).toBe('live1');
+    });
+
+    it('throws NotFoundException for missing session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('startLive', () => {
+    it('starts a scheduled session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1', status: 'SCHEDULED' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', status: 'LIVE' });
+      const result = await service.startLive('live1', 'user1');
+      expect(result.status).toBe('LIVE');
+    });
+
+    it('throws BadRequestException for already live session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1', status: 'LIVE' });
+      await expect(service.startLive('live1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws ForbiddenException for non-host', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'other', status: 'SCHEDULED' });
+      await expect(service.startLive('live1', 'user1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('cancelLive', () => {
+    it('cancels a scheduled session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1', status: 'SCHEDULED' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', status: 'CANCELLED' });
+      const result = await service.cancelLive('live1', 'user1');
+      expect(result.status).toBe('CANCELLED');
+    });
+
+    it('throws BadRequestException for ended session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1', status: 'ENDED' });
+      await expect(service.cancelLive('live1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('endLive — edge cases', () => {
+    it('throws BadRequestException for non-live session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1', status: 'SCHEDULED' });
+      await expect(service.endLive('live1', 'user1')).rejects.toThrow(BadRequestException);
+    });
+
+    it('throws NotFoundException for missing session', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue(null);
+      await expect(service.endLive('nonexistent', 'user1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('leave — edge cases', () => {
+    it('returns left true when participant not found', async () => {
+      prisma.liveParticipant.findUnique.mockResolvedValue(null);
+      const result = await service.leave('live1', 'user1');
+      expect(result).toEqual({ left: true });
+    });
+
+    it('returns left true when already left', async () => {
+      prisma.liveParticipant.findUnique.mockResolvedValue({ id: 'lp1', leftAt: new Date() });
+      const result = await service.leave('live1', 'user1');
+      expect(result).toEqual({ left: true });
+    });
+  });
+
+  describe('raiseHand', () => {
+    it('should update participant role to raised_hand', async () => {
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'raised_hand' });
+      const result = await service.raiseHand('live1', 'user1');
+      expect(result.role).toBe('raised_hand');
+    });
+  });
+
+  describe('promoteToSpeaker', () => {
+    it('should promote participant to speaker', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'speaker' });
+      const result = await service.promoteToSpeaker('live1', 'host1', 'user1');
+      expect(result.role).toBe('speaker');
+    });
+  });
+
+  describe('demoteToViewer', () => {
+    it('should demote participant to viewer', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'host1' });
+      prisma.liveParticipant.update.mockResolvedValue({ role: 'viewer' });
+      const result = await service.demoteToViewer('live1', 'host1', 'user1');
+      expect(result.role).toBe('viewer');
+    });
+  });
+
+  describe('updateRecording', () => {
+    it('should update recording URL', async () => {
+      prisma.liveSession.findUnique.mockResolvedValue({ id: 'live1', hostId: 'user1' });
+      prisma.liveSession.update.mockResolvedValue({ id: 'live1', recordingUrl: 'https://cdn.example.com/rec.mp4' });
+      const result = await service.updateRecording('live1', 'user1', 'https://cdn.example.com/rec.mp4');
+      expect(result.recordingUrl).toBe('https://cdn.example.com/rec.mp4');
+    });
   });
 });

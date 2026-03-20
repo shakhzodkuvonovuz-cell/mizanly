@@ -194,5 +194,28 @@ describe('DevicesService', () => {
       const result = await service.cleanupStaleTokens(90);
       expect(result).toBe(5);
     });
+
+    it('should return 0 when no stale tokens found', async () => {
+      prisma.device.deleteMany.mockResolvedValue({ count: 0 });
+      const result = await service.cleanupStaleTokens(30);
+      expect(result).toBe(0);
+    });
+
+    it('should return 0 on database error', async () => {
+      prisma.device.deleteMany.mockRejectedValue(new Error('DB error'));
+      const result = await service.cleanupStaleTokens();
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('touchSession — with ip', () => {
+    it('should only set lastActiveAt when no ipAddress', async () => {
+      prisma.device.update.mockResolvedValue({});
+      await service.touchSession('device-1');
+      expect(prisma.device.update).toHaveBeenCalledWith({
+        where: { id: 'device-1' },
+        data: { lastActiveAt: expect.any(Date) },
+      });
+    });
   });
 });
