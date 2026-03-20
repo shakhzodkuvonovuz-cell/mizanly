@@ -2832,7 +2832,8 @@
     "securityCodeChanged": "Le code de sécurité a changé pour {{name}}",
     "tapToVerify": "Appuyez pour vérifier",
     "encrypted": "Les messages sont chiffrés de bout en bout",
-    "notEncrypted": "Chiffrement non configuré"
+    "notEncrypted": "Chiffrement non configuré",
+    "newKeyRegistered": "Vos clés de chiffrement ont été mises à jour"
   },
   "videoEditor": {
     "editVideo": "Éditer la vidéo",

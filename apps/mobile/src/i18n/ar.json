@@ -2831,7 +2831,8 @@
     "securityCodeChanged": "تغير رمز الأمان لـ {{name}}",
     "tapToVerify": "انقر للتحقق",
     "encrypted": "الرسائل مشفرة من طرف إلى طرف",
-    "notEncrypted": "التشفير غير مُعد"
+    "notEncrypted": "التشفير غير مُعد",
+    "newKeyRegistered": "تم تحديث مفاتيح التشفير الخاصة بك"
   },
   "videoEditor": {
     "editVideo": "تعديل الفيديو",

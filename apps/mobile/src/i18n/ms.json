@@ -2831,7 +2831,8 @@
     "securityCodeChanged": "Kod keselamatan berubah untuk {{name}}",
     "tapToVerify": "Ketik untuk mengesahkan",
     "encrypted": "Mesej disulitkan hujung ke hujung",
-    "notEncrypted": "Penyulitan belum disediakan"
+    "notEncrypted": "Penyulitan belum disediakan",
+    "newKeyRegistered": "Kunci penyulitan anda telah dikemas kini"
   },
   "videoEditor": {
     "editVideo": "Edit Video",

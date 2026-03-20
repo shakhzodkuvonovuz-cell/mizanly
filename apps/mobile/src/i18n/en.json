@@ -2831,7 +2831,8 @@
     "securityCodeChanged": "Security code changed for {{name}}",
     "tapToVerify": "Tap to verify",
     "encrypted": "Messages are end-to-end encrypted",
-    "notEncrypted": "Encryption not set up"
+    "notEncrypted": "Encryption not set up",
+    "newKeyRegistered": "Your encryption keys have been updated"
   },
   "videoEditor": {
     "editVideo": "Edit Video",

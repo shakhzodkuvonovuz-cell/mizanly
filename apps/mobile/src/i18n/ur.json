@@ -2832,7 +2832,8 @@
     "securityCodeChanged": "{{name}} کا سیکیورٹی کوڈ تبدیل ہو گیا",
     "tapToVerify": "تصدیق کے لیے ٹیپ کریں",
     "encrypted": "پیغامات اینڈ ٹو اینڈ انکرپٹڈ ہیں",
-    "notEncrypted": "انکرپشن سیٹ اپ نہیں ہے"
+    "notEncrypted": "انکرپشن سیٹ اپ نہیں ہے",
+    "newKeyRegistered": "آپ کی انکرپشن کیز اپڈیٹ ہو گئی ہیں"
   },
   "videoEditor": {
     "editVideo": "ویڈیو ایڈٹ کریں",

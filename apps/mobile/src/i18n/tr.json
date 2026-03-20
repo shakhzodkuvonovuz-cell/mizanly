@@ -2831,7 +2831,8 @@
     "securityCodeChanged": "{{name}} için güvenlik kodu değişti",
     "tapToVerify": "Doğrulamak için dokunun",
     "encrypted": "Mesajlar uçtan uca şifrelenmiştir",
-    "notEncrypted": "Şifreleme ayarlanmadı"
+    "notEncrypted": "Şifreleme ayarlanmadı",
+    "newKeyRegistered": "Şifreleme anahtarlarınız güncellendi"
   },
   "videoEditor": {
     "editVideo": "Video Düzenle",

@@ -2831,7 +2831,8 @@
     "securityCodeChanged": "{{name}} এর নিরাপত্তা কোড পরিবর্তিত হয়েছে",
     "tapToVerify": "যাচাই করতে ট্যাপ করুন",
     "encrypted": "বার্তাগুলি এন্ড-টু-এন্ড এনক্রিপ্টেড",
-    "notEncrypted": "এনক্রিপশন সেট আপ করা হয়নি"
+    "notEncrypted": "এনক্রিপশন সেট আপ করা হয়নি",
+    "newKeyRegistered": "আপনার এনক্রিপশন কী আপডেট হয়েছে"
   },
   "videoEditor": {
     "editVideo": "ভিডিও সম্পাদনা",

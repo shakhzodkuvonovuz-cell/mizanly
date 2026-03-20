@@ -2832,7 +2832,8 @@
     "securityCodeChanged": "Kode keamanan berubah untuk {{name}}",
     "tapToVerify": "Ketuk untuk memverifikasi",
     "encrypted": "Pesan dienkripsi ujung ke ujung",
-    "notEncrypted": "Enkripsi belum diatur"
+    "notEncrypted": "Enkripsi belum diatur",
+    "newKeyRegistered": "Kunci enkripsi Anda telah diperbarui"
   },
   "videoEditor": {
     "editVideo": "Edit Video",

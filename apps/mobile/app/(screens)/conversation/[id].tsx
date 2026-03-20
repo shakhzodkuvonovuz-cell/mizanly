@@ -401,6 +401,21 @@ function MessageBubble({
     }
   }, [isNew, translateY]);
 
+  // System message (e.g., security code changed)
+  if (message.messageType === 'SYSTEM') {
+    const isSecurityMsg = message.content?.includes('Security code changed');
+    return (
+      <View style={styles.systemMessageWrap}>
+        <View style={styles.systemMessageBubble}>
+          <Icon name={isSecurityMsg ? 'lock' : 'bell'} size="xs" color={colors.text.tertiary} />
+          <Text style={styles.systemMessageText}>
+            {message.content}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   if (message.isDeleted) {
     return (
       <View style={[styles.bubbleWrap, isOwn && styles.bubbleWrapOwn, !isGroupEnd && styles.bubbleWrapGrouped]}>
@@ -1986,6 +2001,26 @@ const styles = StyleSheet.create({
   bubbleOwn: { backgroundColor: 'transparent' },
   bubbleOther: { backgroundColor: colors.dark.surface, borderWidth: 1, borderColor: colors.dark.borderLight },
   deletedMsg: { color: colors.text.tertiary, fontSize: fontSize.sm, fontStyle: 'italic', paddingVertical: spacing.xs },
+  systemMessageWrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+  },
+  systemMessageBubble: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  systemMessageText: {
+    color: colors.text.tertiary,
+    fontSize: fontSize.xs,
+    fontStyle: 'italic',
+    flex: 1,
+  },
   replyPreview: {
     borderLeftWidth: 3, borderLeftColor: 'rgba(255,255,255,0.4)',
     paddingLeft: spacing.xs, marginBottom: spacing.xs,
