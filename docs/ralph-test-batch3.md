@@ -283,7 +283,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 9: channels.service — edge cases (8 tests)
+### [x] Task 9: channels.service — edge cases (8 tests) — Done, 8 tests passing
 
 **File to read first:** `apps/api/src/modules/channels/channels.service.ts` (504 lines)
 **File to create/append:** `apps/api/src/modules/channels/channels.service.edge.spec.ts`
@@ -302,7 +302,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 10: follows.service — edge cases (8 tests)
+### [x] Task 10: follows.service — edge cases (8 tests) — Done, 8 tests passing
 
 **File to read first:** `apps/api/src/modules/follows/follows.service.ts` (420 lines)
 **File to create/append:** `apps/api/src/modules/follows/follows.service.edge.spec.ts`
@@ -321,7 +321,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 11: gamification.service — edge cases (8 tests)
+### [x] Task 11: gamification.service — edge cases (8 tests) — Done, 8 tests passing
 
 **File to read first:** `apps/api/src/modules/gamification/gamification.service.ts` (584 lines)
 **File to create/append:** `apps/api/src/modules/gamification/gamification.service.edge.spec.ts`
@@ -340,7 +340,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 12: ai.service — edge cases (8 tests)
+### [x] Task 12: ai.service — edge cases (8 tests) — Done, 8 tests passing
 
 **File to read first:** `apps/api/src/modules/ai/ai.service.ts` (603 lines)
 **File to create/append:** `apps/api/src/modules/ai/ai.service.edge.spec.ts`
@@ -359,7 +359,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 13: search.service — edge cases (8 tests)
+### [x] Task 13: search.service — edge cases (8 tests) — Done, 8 tests passing
 
 **File to read first:** `apps/api/src/modules/search/search.service.ts` (583 lines)
 **File to create/append:** `apps/api/src/modules/search/search.service.edge.spec.ts`
@@ -378,7 +378,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 14: encryption.service — edge cases (6 tests)
+### [x] Task 14: encryption.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/encryption/encryption.service.ts` (309 lines)
 **File to create/append:** `apps/api/src/modules/encryption/encryption.service.edge.spec.ts`
@@ -395,7 +395,7 @@ describe('ServiceName — edge cases', () => {
 
 ---
 
-### [ ] Task 15: gifts.service — edge cases (6 tests)
+### [x] Task 15: gifts.service — edge cases (6 tests) — Done, 6 tests passing
 
 **File to read first:** `apps/api/src/modules/gifts/gifts.service.ts` (275 lines)
 **File to create/append:** `apps/api/src/modules/gifts/gifts.service.edge.spec.ts`
@@ -1907,21 +1907,21 @@ These tests verify that the app can't be exploited by malicious users. Each test
 **RALPH: DO NOT claim completion until ALL of these conditions are true. Every. Single. One.**
 
 ### Section 1: Edge Cases (Tasks 1-30)
-- [ ] Task 1: posts.service edge cases — 10 tests
-- [ ] Task 2: threads.service edge cases — 10 tests
-- [ ] Task 3: messages.service edge cases — 10 tests
-- [ ] Task 4: reels.service edge cases — 10 tests
-- [ ] Task 5: videos.service edge cases — 10 tests
-- [ ] Task 6: stories.service edge cases — 8 tests
-- [ ] Task 7: users.service edge cases — 10 tests
-- [ ] Task 8: islamic.service edge cases — 15 tests
-- [ ] Task 9: channels.service edge cases — 8 tests
-- [ ] Task 10: follows.service edge cases — 8 tests
-- [ ] Task 11: gamification.service edge cases — 8 tests
-- [ ] Task 12: ai.service edge cases — 8 tests
-- [ ] Task 13: search.service edge cases — 8 tests
-- [ ] Task 14: encryption.service edge cases — 6 tests
-- [ ] Task 15: gifts.service edge cases — 6 tests
+- [x] Task 1: posts.service edge cases — 10 tests
+- [x] Task 2: threads.service edge cases — 10 tests
+- [x] Task 3: messages.service edge cases — 11 tests
+- [x] Task 4: reels.service edge cases — 10 tests
+- [x] Task 5: videos.service edge cases — 10 tests
+- [x] Task 6: stories.service edge cases — 8 tests
+- [x] Task 7: users.service edge cases — 10 tests
+- [x] Task 8: islamic.service edge cases — 15 tests
+- [x] Task 9: channels.service edge cases — 8 tests
+- [x] Task 10: follows.service edge cases — 8 tests
+- [x] Task 11: gamification.service edge cases — 8 tests
+- [x] Task 12: ai.service edge cases — 8 tests
+- [x] Task 13: search.service edge cases — 8 tests
+- [x] Task 14: encryption.service edge cases — 6 tests
+- [x] Task 15: gifts.service edge cases — 6 tests
 - [ ] Task 16: commerce.service edge cases — 6 tests
 - [ ] Task 17: events.service edge cases — 6 tests
 - [ ] Task 18: communities.service edge cases — 6 tests
