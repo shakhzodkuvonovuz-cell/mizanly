@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Mizanly — 10 Icon Concepts</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&family=Noto+Kufi+Arabic:wght@700&family=Playfair+Display:wght@700&family=DM+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#08090C;color:#fff;font-family:'DM Sans',sans-serif;padding:40px 20px}
+h1{text-align:center;font-family:'Playfair Display',serif;font-size:32px;color:#C8963E;margin-bottom:8px}
+.sub{text-align:center;color:#6E7781;font-size:13px;margin-bottom:40px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:32px;max-width:1400px;margin:0 auto}
+@media(max-width:1200px){.grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.grid{grid-template-columns:repeat(2,1fr)}}
+.card{display:flex;flex-direction:column;align-items:center;gap:12px}
+.card .num{font-size:12px;color:#C8963E;font-weight:700;letter-spacing:2px}
+.card .name{font-size:14px;font-weight:700;color:#fff}
+.card .desc{font-size:11px;color:#6E7781;text-align:center;line-height:1.4;max-width:200px}
+.sizes{display:flex;gap:8px;align-items:end;margin-top:4px}
+svg{display:block}
+</style>
+</head>
+<body>
+
+<h1>Mizanly — 10 Icon Concepts</h1>
+<p class="sub">Each explores a different design direction. View at 200px (App Store), 48px (home screen), and 28px (tab bar).</p>
+
+<div class="grid">
+
+<!-- ━━━ 1. LIQUID GLASS ━━━ -->
+<div class="card">
+<span class="num">01</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g1bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0FB86E"/><stop offset="100%" stop-color="#065F3B"/></linearGradient>
+    <linearGradient id="g1gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F0D080"/><stop offset="50%" stop-color="#C8963E"/><stop offset="100%" stop-color="#9A7030"/></linearGradient>
+    <filter id="glass1"><feGaussianBlur in="SourceGraphic" stdDeviation="8"/></filter>
+    <radialGradient id="g1glow" cx="0.45" cy="0.4" r="0.5"><stop offset="0%" stop-color="rgba(255,255,255,0.12)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g1bg)"/>
+  <ellipse cx="75" cy="70" rx="80" ry="70" fill="url(#g1glow)"/>
+  <!-- Glass card -->
+  <rect x="35" y="45" width="130" height="110" rx="20" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.15)" stroke-width="0.5"/>
+  <rect x="40" y="50" width="120" height="100" rx="17" fill="rgba(255,255,255,0.04)" filter="url(#glass1)"/>
+  <!-- Mim -->
+  <text x="100" y="108" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="72" font-weight="700" fill="url(#g1gold)" opacity="0.95">م</text>
+  <!-- Bottom shine line -->
+  <line x1="60" y1="155" x2="140" y2="155" stroke="url(#g1gold)" stroke-width="1.5" stroke-linecap="round" opacity="0.3"/>
+</svg>
+<span class="name">Liquid Glass</span>
+<span class="desc">2026 trend — frosted glass card, floating Mim, subtle depth</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g1bg)"/><rect x="35" y="45" width="130" height="110" rx="20" fill="rgba(255,255,255,0.08)"/><text x="100" y="108" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="72" font-weight="700" fill="url(#g1gold)">م</text></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g1bg)"/><text x="100" y="110" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="90" font-weight="700" fill="url(#g1gold)">م</text></svg>
+</div>
+</div>
+
+<!-- ━━━ 2. DARK SEAL ━━━ -->
+<div class="card">
+<span class="num">02</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g2bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#141920"/><stop offset="100%" stop-color="#0D1117"/></linearGradient>
+    <linearGradient id="g2gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8C468"/><stop offset="100%" stop-color="#A67A2E"/></linearGradient>
+    <linearGradient id="g2em" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0FB86E"/><stop offset="100%" stop-color="#0A7B4F"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g2bg)"/>
+  <!-- Outer ring -->
+  <circle cx="100" cy="97" r="68" fill="none" stroke="url(#g2gold)" stroke-width="1.2" opacity="0.3"/>
+  <!-- Inner octagon -->
+  <polygon points="100,38 145,58 162,97 145,136 100,156 55,136 38,97 55,58" fill="rgba(10,123,79,0.12)" stroke="url(#g2gold)" stroke-width="1.5"/>
+  <!-- Mim -->
+  <text x="100" y="104" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="62" font-weight="700" fill="url(#g2gold)">م</text>
+  <!-- Brand -->
+  <text x="100" y="180" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="11" font-weight="700" fill="rgba(200,150,62,0.4)" letter-spacing="3">MIZANLY</text>
+</svg>
+<span class="name">Dark Seal</span>
+<span class="desc">Premium dark mode, gold octagonal seal, regal authority</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g2bg)"/><polygon points="100,38 145,58 162,97 145,136 100,156 55,136 38,97 55,58" fill="rgba(10,123,79,0.12)" stroke="url(#g2gold)" stroke-width="2.5"/><text x="100" y="104" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="62" font-weight="700" fill="url(#g2gold)">م</text></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g2bg)"/><polygon points="100,38 145,58 162,97 145,136 100,156 55,136 38,97 55,58" fill="rgba(10,123,79,0.15)" stroke="url(#g2gold)" stroke-width="4"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 3. EIGHT-POINTED STAR ━━━ -->
+<div class="card">
+<span class="num">03</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g3bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0A7B4F"/><stop offset="100%" stop-color="#044D2E"/></linearGradient>
+    <linearGradient id="g3gold" x1="0.3" y1="0" x2="0.7" y2="1"><stop offset="0%" stop-color="#F0D080"/><stop offset="100%" stop-color="#B8882E"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g3bg)"/>
+  <!-- Rub el Hizb — 8-pointed star from two overlapping squares -->
+  <rect x="62" y="62" width="76" height="76" fill="none" stroke="url(#g3gold)" stroke-width="2.5" transform="rotate(0,100,100)"/>
+  <rect x="62" y="62" width="76" height="76" fill="none" stroke="url(#g3gold)" stroke-width="2.5" transform="rotate(45,100,100)"/>
+  <!-- Center circle -->
+  <circle cx="100" cy="100" r="22" fill="url(#g3gold)" opacity="0.15"/>
+  <circle cx="100" cy="100" r="22" fill="none" stroke="url(#g3gold)" stroke-width="1"/>
+  <!-- Mim center -->
+  <text x="100" y="106" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="30" font-weight="700" fill="url(#g3gold)">م</text>
+  <!-- Outer thin circle -->
+  <circle cx="100" cy="100" r="72" fill="none" stroke="rgba(200,150,62,0.12)" stroke-width="0.8"/>
+</svg>
+<span class="name">Rub el Hizb</span>
+<span class="desc">Islamic 8-pointed star (۞), classic sacred geometry, scholarly</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g3bg)"/><rect x="62" y="62" width="76" height="76" fill="none" stroke="url(#g3gold)" stroke-width="4"/><rect x="62" y="62" width="76" height="76" fill="none" stroke="url(#g3gold)" stroke-width="4" transform="rotate(45,100,100)"/><circle cx="100" cy="100" r="22" fill="url(#g3gold)" opacity="0.2"/></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g3bg)"/><rect x="55" y="55" width="90" height="90" fill="none" stroke="url(#g3gold)" stroke-width="6"/><rect x="55" y="55" width="90" height="90" fill="none" stroke="url(#g3gold)" stroke-width="6" transform="rotate(45,100,100)"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 4. KUFIC GRID ━━━ -->
+<div class="card">
+<span class="num">04</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g4bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D1117"/><stop offset="100%" stop-color="#161B22"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g4bg)"/>
+  <!-- Square Kufic-inspired م using geometric blocks -->
+  <!-- This is a geometric/pixel art interpretation of Mim in Kufic style -->
+  <g fill="#0A7B4F">
+    <!-- Bottom horizontal bar -->
+    <rect x="50" y="120" width="100" height="14" rx="2"/>
+    <!-- Left vertical -->
+    <rect x="50" y="70" width="14" height="50" rx="2"/>
+    <!-- Right vertical -->
+    <rect x="136" y="70" width="14" height="50" rx="2"/>
+    <!-- Top horizontal connector -->
+    <rect x="50" y="70" width="50" height="14" rx="2"/>
+    <!-- Dot (the distinguishing mark of م) -->
+    <circle cx="100" cy="145" r="7" fill="#C8963E"/>
+  </g>
+  <!-- Subtle grid lines -->
+  <g stroke="rgba(200,150,62,0.06)" stroke-width="0.5">
+    <line x1="50" y1="0" x2="50" y2="200"/><line x1="100" y1="0" x2="100" y2="200"/><line x1="150" y1="0" x2="150" y2="200"/>
+    <line x1="0" y1="70" x2="200" y2="70"/><line x1="0" y1="120" x2="200" y2="120"/>
+  </g>
+</svg>
+<span class="name">Kufic Grid</span>
+<span class="desc">Square Kufic calligraphy — م as geometric blocks, modernist, technical</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g4bg)"/><rect x="50" y="120" width="100" height="14" rx="2" fill="#0A7B4F"/><rect x="50" y="70" width="14" height="50" rx="2" fill="#0A7B4F"/><rect x="136" y="70" width="14" height="50" rx="2" fill="#0A7B4F"/><rect x="50" y="70" width="50" height="14" rx="2" fill="#0A7B4F"/><circle cx="100" cy="145" r="7" fill="#C8963E"/></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g4bg)"/><rect x="45" y="115" width="110" height="18" rx="3" fill="#0A7B4F"/><rect x="45" y="65" width="18" height="55" rx="3" fill="#0A7B4F"/><rect x="137" y="65" width="18" height="55" rx="3" fill="#0A7B4F"/><rect x="45" y="65" width="55" height="18" rx="3" fill="#0A7B4F"/><circle cx="100" cy="148" r="9" fill="#C8963E"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 5. MIHRAB ARCH ━━━ -->
+<div class="card">
+<span class="num">05</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g5bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0E9B5F"/><stop offset="50%" stop-color="#0A7B4F"/><stop offset="100%" stop-color="#065F3B"/></linearGradient>
+    <linearGradient id="g5gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0D080"/><stop offset="100%" stop-color="#A67A2E"/></linearGradient>
+    <radialGradient id="g5light" cx="0.5" cy="0.3" r="0.4"><stop offset="0%" stop-color="rgba(255,255,255,0.08)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g5bg)"/>
+  <circle cx="100" cy="80" r="80" fill="url(#g5light)"/>
+  <!-- Pointed arch (mihrab) -->
+  <path d="M 60,155 L 60,85 Q 60,40 100,35 Q 140,40 140,85 L 140,155" fill="none" stroke="url(#g5gold)" stroke-width="3" stroke-linecap="round"/>
+  <!-- Inner arch -->
+  <path d="M 72,150 L 72,90 Q 72,52 100,48 Q 128,52 128,90 L 128,150" fill="rgba(200,150,62,0.06)" stroke="url(#g5gold)" stroke-width="1.2" opacity="0.5"/>
+  <!-- Hanging lamp (lantern) -->
+  <line x1="100" y1="48" x2="100" y2="75" stroke="url(#g5gold)" stroke-width="1.2"/>
+  <ellipse cx="100" cy="82" rx="8" ry="10" fill="none" stroke="url(#g5gold)" stroke-width="1.5"/>
+  <circle cx="100" cy="82" r="3" fill="url(#g5gold)" opacity="0.6"/>
+  <!-- Light rays from lamp -->
+  <circle cx="100" cy="82" r="18" fill="rgba(200,150,62,0.08)"/>
+  <!-- Base line -->
+  <line x1="55" y1="155" x2="145" y2="155" stroke="url(#g5gold)" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
+</svg>
+<span class="name">Mihrab & Lantern</span>
+<span class="desc">Prayer niche with hanging lantern — warmth, spiritual depth, mosque identity</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g5bg)"/><path d="M 60,155 L 60,85 Q 60,40 100,35 Q 140,40 140,85 L 140,155" fill="none" stroke="url(#g5gold)" stroke-width="5"/><circle cx="100" cy="82" r="5" fill="url(#g5gold)" opacity="0.6"/></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g5bg)"/><path d="M 55,155 L 55,80 Q 55,35 100,30 Q 145,35 145,80 L 145,155" fill="none" stroke="url(#g5gold)" stroke-width="8"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 6. GRADIENT ORB ━━━ -->
+<div class="card">
+<span class="num">06</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g6bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#044D2E"/><stop offset="100%" stop-color="#0D1117"/></linearGradient>
+    <radialGradient id="g6orb" cx="0.45" cy="0.42" r="0.35"><stop offset="0%" stop-color="#0FB86E"/><stop offset="60%" stop-color="#0A7B4F"/><stop offset="100%" stop-color="#065F3B"/></radialGradient>
+    <linearGradient id="g6goldT" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0D080"/><stop offset="100%" stop-color="#C8963E"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g6bg)"/>
+  <!-- Glowing orb -->
+  <circle cx="100" cy="95" r="60" fill="url(#g6orb)"/>
+  <circle cx="100" cy="95" r="60" fill="none" stroke="rgba(200,150,62,0.2)" stroke-width="1.5"/>
+  <!-- Orb shine -->
+  <ellipse cx="88" cy="78" rx="25" ry="18" fill="rgba(255,255,255,0.1)"/>
+  <!-- Mim on orb -->
+  <text x="100" y="102" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="56" font-weight="700" fill="url(#g6goldT)">م</text>
+  <!-- Glow halo -->
+  <circle cx="100" cy="95" r="75" fill="none" stroke="rgba(15,184,110,0.1)" stroke-width="1"/>
+  <circle cx="100" cy="95" r="85" fill="none" stroke="rgba(15,184,110,0.05)" stroke-width="0.8"/>
+  <!-- Brand -->
+  <text x="100" y="172" text-anchor="middle" font-family="'DM Sans',sans-serif" font-size="11" font-weight="700" fill="rgba(255,255,255,0.3)" letter-spacing="3">MIZANLY</text>
+</svg>
+<span class="name">Emerald Orb</span>
+<span class="desc">Glowing sphere with depth — modern, clean, dimensional, app-like</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g6bg)"/><circle cx="100" cy="95" r="60" fill="url(#g6orb)"/><circle cx="100" cy="95" r="60" fill="none" stroke="rgba(200,150,62,0.2)" stroke-width="2.5"/><text x="100" y="102" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="56" font-weight="700" fill="url(#g6goldT)">م</text></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g6bg)"/><circle cx="100" cy="95" r="65" fill="url(#g6orb)"/><text x="100" y="102" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="70" font-weight="700" fill="url(#g6goldT)">م</text></svg>
+</div>
+</div>
+
+<!-- ━━━ 7. TESSELLATION ━━━ -->
+<div class="card">
+<span class="num">07</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g7bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0A7B4F"/><stop offset="100%" stop-color="#065F3B"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g7bg)"/>
+  <!-- Islamic tessellation pattern — interlocking hexagons -->
+  <g stroke="#C8963E" stroke-width="0.8" fill="none" opacity="0.25">
+    <polygon points="100,30 130,47 130,83 100,100 70,83 70,47"/>
+    <polygon points="100,100 130,117 130,153 100,170 70,153 70,117"/>
+    <polygon points="40,65 70,47 70,83 40,100 10,83 10,47"/>
+    <polygon points="160,65 190,47 190,83 160,100 130,83 130,47"/>
+    <polygon points="40,135 70,117 70,153 40,170 10,153 10,117"/>
+    <polygon points="160,135 190,117 190,153 160,170 130,153 130,117"/>
+  </g>
+  <!-- Center highlight hex -->
+  <polygon points="100,55 122,67 122,91 100,103 78,91 78,67" fill="rgba(200,150,62,0.1)" stroke="#C8963E" stroke-width="1.5" opacity="0.5"/>
+  <!-- Mim -->
+  <text x="100" y="87" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="38" font-weight="700" fill="#C8963E" opacity="0.9">م</text>
+  <!-- Bottom glow -->
+  <ellipse cx="100" cy="170" rx="50" ry="15" fill="rgba(200,150,62,0.06)"/>
+</svg>
+<span class="name">Tessellation</span>
+<span class="desc">Islamic hexagonal tiling — mathematical beauty, infinite pattern, cultural DNA</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g7bg)"/><polygon points="100,45 135,65 135,105 100,125 65,105 65,65" fill="rgba(200,150,62,0.1)" stroke="#C8963E" stroke-width="2.5"/><text x="100" y="92" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="44" font-weight="700" fill="#C8963E">م</text></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g7bg)"/><polygon points="100,40 140,65 140,110 100,135 60,110 60,65" fill="rgba(200,150,62,0.15)" stroke="#C8963E" stroke-width="4"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 8. CRESCENT NEGATIVE SPACE ━━━ -->
+<div class="card">
+<span class="num">08</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g8bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0D1117"/><stop offset="100%" stop-color="#1C2333"/></linearGradient>
+    <linearGradient id="g8em" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0FB86E"/><stop offset="100%" stop-color="#0A7B4F"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g8bg)"/>
+  <!-- Large crescent formed by two overlapping circles -->
+  <circle cx="95" cy="95" r="55" fill="url(#g8em)"/>
+  <circle cx="115" cy="88" r="48" fill="url(#g8bg)"/>
+  <!-- Star -->
+  <polygon points="145,60 148,70 158,70 150,76 153,86 145,80 137,86 140,76 132,70 142,70" fill="#C8963E" opacity="0.85"/>
+  <!-- Small stars -->
+  <circle cx="155" cy="48" r="1.5" fill="#C8963E" opacity="0.4"/>
+  <circle cx="165" cy="65" r="1" fill="#C8963E" opacity="0.3"/>
+  <circle cx="140" cy="45" r="1" fill="#C8963E" opacity="0.25"/>
+  <!-- Brand -->
+  <text x="100" y="172" text-anchor="middle" font-family="'Playfair Display',serif" font-size="14" font-weight="700" fill="rgba(200,150,62,0.4)" letter-spacing="4">MIZANLY</text>
+</svg>
+<span class="name">Crescent Moon</span>
+<span class="desc">Classic Islamic crescent + star on dark — instantly recognizable, timeless</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g8bg)"/><circle cx="90" cy="90" r="58" fill="url(#g8em)"/><circle cx="112" cy="82" r="50" fill="url(#g8bg)"/><polygon points="148,58 151,68 161,68 153,74 156,84 148,78 140,84 143,74 135,68 145,68" fill="#C8963E"/></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g8bg)"/><circle cx="85" cy="88" r="62" fill="url(#g8em)"/><circle cx="110" cy="80" r="55" fill="url(#g8bg)"/><polygon points="150,55 154,68 166,68 156,76 160,88 150,80 140,88 144,76 134,68 146,68" fill="#C8963E"/></svg>
+</div>
+</div>
+
+<!-- ━━━ 9. DUAL GRADIENT ━━━ -->
+<div class="card">
+<span class="num">09</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g9bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#0A7B4F"/><stop offset="40%" stop-color="#086B44"/><stop offset="100%" stop-color="#C8963E"/></linearGradient>
+    <linearGradient id="g9white" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="rgba(255,255,255,0.8)"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g9bg)"/>
+  <!-- Top light -->
+  <ellipse cx="80" cy="60" rx="70" ry="50" fill="rgba(255,255,255,0.06)"/>
+  <!-- Large white Mim — bold, modern -->
+  <text x="100" y="108" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="90" font-weight="700" fill="url(#g9white)">م</text>
+</svg>
+<span class="name">Emerald→Gold Gradient</span>
+<span class="desc">Bold diagonal gradient, white Mim — Instagram-inspired, modern, eye-catching</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g9bg)"/><text x="100" y="108" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="90" font-weight="700" fill="url(#g9white)">م</text></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g9bg)"/><text x="100" y="110" text-anchor="middle" dominant-baseline="central" font-family="'Noto Naskh Arabic',serif" font-size="110" font-weight="700" fill="url(#g9white)">م</text></svg>
+</div>
+</div>
+
+<!-- ━━━ 10. DOME SILHOUETTE ━━━ -->
+<div class="card">
+<span class="num">10</span>
+<svg width="200" height="200" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="g10bg" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#0A7B4F"/><stop offset="60%" stop-color="#065F3B"/><stop offset="100%" stop-color="#0D1117"/></linearGradient>
+    <linearGradient id="g10gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#F0D080"/><stop offset="100%" stop-color="#C8963E"/></linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="44" fill="url(#g10bg)"/>
+  <!-- Night sky dots -->
+  <circle cx="45" cy="35" r="1" fill="#C8963E" opacity="0.3"/><circle cx="155" cy="28" r="1.2" fill="#C8963E" opacity="0.25"/>
+  <circle cx="170" cy="50" r="0.8" fill="#C8963E" opacity="0.2"/><circle cx="30" cy="55" r="0.8" fill="#C8963E" opacity="0.2"/>
+  <circle cx="80" cy="25" r="1" fill="#C8963E" opacity="0.15"/><circle cx="130" cy="40" r="0.8" fill="#C8963E" opacity="0.2"/>
+  <!-- Mosque dome -->
+  <path d="M 50,145 L 50,100 Q 50,50 100,40 Q 150,50 150,100 L 150,145" fill="rgba(200,150,62,0.08)" stroke="url(#g10gold)" stroke-width="2"/>
+  <!-- Minaret left -->
+  <rect x="42" y="70" width="8" height="75" fill="none" stroke="url(#g10gold)" stroke-width="1.5" rx="2"/>
+  <path d="M 42,70 L 46,58 L 50,70" fill="none" stroke="url(#g10gold)" stroke-width="1.5"/>
+  <!-- Minaret right -->
+  <rect x="150" y="70" width="8" height="75" fill="none" stroke="url(#g10gold)" stroke-width="1.5" rx="2"/>
+  <path d="M 150,70 L 154,58 L 158,70" fill="none" stroke="url(#g10gold)" stroke-width="1.5"/>
+  <!-- Crescent on dome -->
+  <circle cx="100" cy="38" r="6" fill="url(#g10gold)" opacity="0.8"/>
+  <circle cx="103" cy="36" r="5" fill="url(#g10bg)"/>
+  <!-- Ground line -->
+  <line x1="30" y1="145" x2="170" y2="145" stroke="url(#g10gold)" stroke-width="1.5" opacity="0.3"/>
+  <!-- Brand -->
+  <text x="100" y="168" text-anchor="middle" font-family="'Playfair Display',serif" font-size="13" font-weight="700" fill="rgba(255,255,255,0.35)" letter-spacing="3">MIZANLY</text>
+</svg>
+<span class="name">Mosque at Night</span>
+<span class="desc">Dome + minarets silhouette against night sky — spiritual, community, home</span>
+<div class="sizes">
+  <svg width="48" height="48" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g10bg)"/><path d="M 50,145 L 50,95 Q 50,45 100,35 Q 150,45 150,95 L 150,145" fill="rgba(200,150,62,0.1)" stroke="url(#g10gold)" stroke-width="3.5"/><circle cx="100" cy="33" r="8" fill="url(#g10gold)" opacity="0.7"/><circle cx="104" cy="30" r="7" fill="url(#g10bg)"/></svg>
+  <svg width="28" height="28" viewBox="0 0 200 200"><rect width="200" height="200" rx="44" fill="url(#g10bg)"/><path d="M 45,150 L 45,90 Q 45,35 100,25 Q 155,35 155,90 L 155,150" fill="rgba(200,150,62,0.12)" stroke="url(#g10gold)" stroke-width="6"/></svg>
+</div>
+</div>
+
+</div>
+
+<p style="text-align:center;color:#6E7781;font-size:12px;margin-top:40px;max-width:700px;margin-left:auto;margin-right:auto;line-height:1.6">
+Each concept shown at 200px (App Store listing), 48px (home screen), and 28px (notification bar).<br>
+Right-click any icon → "Save Image As" → save as PNG for App Store submission.<br>
+Pick your favorite or use as reference for a professional designer.
+</p>
+
+</body>
+</html>
