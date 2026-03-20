@@ -162,7 +162,7 @@ export class IslamicController {
   @Get('ramadan')
   @ApiOperation({ summary: 'Get Ramadan information' })
   @ApiResponse({ status: 200, description: 'Ramadan details', type: Object })
-  getRamadanInfo(@Query() query: RamadanInfoQueryDto): RamadanInfoResponse {
+  async getRamadanInfo(@Query() query: RamadanInfoQueryDto): Promise<RamadanInfoResponse> {
     return this.islamicService.getRamadanInfo({
       year: query.year,
       lat: query.lat,

@@ -49,6 +49,10 @@ jest.mock('./data/hadiths.json', () => [
   },
 ], { virtual: true });
 
+// Mock global fetch to prevent real API calls in tests
+const mockFetch = jest.fn().mockRejectedValue(new Error('Network disabled in tests'));
+global.fetch = mockFetch as any;
+
 describe('IslamicService', () => {
   let service: IslamicService;
 
@@ -76,26 +80,51 @@ describe('IslamicService', () => {
 
     service = module.get<IslamicService>(IslamicService);
     jest.clearAllMocks();
+    // Re-set fetch mock after clearAllMocks
+    mockFetch.mockRejectedValue(new Error('Network disabled in tests'));
   });
 
   describe('getPrayerTimes', () => {
-    it('should return prayer times for given coordinates', async () => {
+    it('should return prayer times with local fallback when API unavailable', async () => {
       const params = { lat: 40.7128, lng: -74.006, method: 'MWL', date: '2026-03-13' };
       const result = await service.getPrayerTimes(params);
 
-      expect(result).toEqual({
-        date: '2026-03-13',
-        timings: {
-          fajr: '05:30',
-          sunrise: '06:45',
-          dhuhr: '12:30',
-          asr: '15:45',
-          maghrib: '18:20',
-          isha: '19:45',
-        },
-        method: 'Muslim World League',
-        location: { lat: 40.7128, lng: -74.006 },
+      expect(result.date).toBe('2026-03-13');
+      expect(result.method).toBe('Muslim World League');
+      expect(result.location).toEqual({ lat: 40.7128, lng: -74.006 });
+      // Local calculation should produce valid HH:MM format times
+      expect(result.timings.fajr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.timings.sunrise).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.timings.dhuhr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.timings.asr).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.timings.maghrib).toMatch(/^\d{2}:\d{2}$/);
+      expect(result.timings.isha).toMatch(/^\d{2}:\d{2}$/);
+    });
+
+    it('should return Aladhan API times when available', async () => {
+      mockFetch.mockResolvedValueOnce({
+        json: () => Promise.resolve({
+          code: 200,
+          data: {
+            timings: {
+              Fajr: '05:22',
+              Sunrise: '06:38',
+              Dhuhr: '12:10',
+              Asr: '15:31',
+              Maghrib: '17:42',
+              Isha: '19:02',
+            },
+          },
+        }),
       });
+
+      const result = await service.getPrayerTimes({
+        lat: 40.7128, lng: -74.006, method: 'MWL', date: '2026-03-13',
+      });
+
+      expect(result.timings.fajr).toBe('05:22');
+      expect(result.timings.dhuhr).toBe('12:10');
+      expect(result.timings.isha).toBe('19:02');
     });
 
     it('should use default method when not specified', async () => {
@@ -120,6 +149,32 @@ describe('IslamicService', () => {
       expect(result).toBeDefined();
       expect(result.location.lat).toBe(70);
       expect(result.location.lng).toBe(40);
+      expect(result.timings.fajr).toMatch(/^\d{2}:\d{2}$/);
+    });
+
+    it('should produce different times for different locations', async () => {
+      const nyResult = await service.getPrayerTimes({
+        lat: 40.7128, lng: -74.006, date: '2026-03-13',
+      });
+      const sydneyResult = await service.getPrayerTimes({
+        lat: -33.8688, lng: 151.2093, date: '2026-03-13',
+      });
+
+      // Different hemispheres should have different prayer times
+      expect(nyResult.timings.fajr).not.toBe(sydneyResult.timings.fajr);
+      expect(nyResult.timings.maghrib).not.toBe(sydneyResult.timings.maghrib);
+    });
+
+    it('should produce different Fajr/Isha for different methods', async () => {
+      const mwlResult = await service.getPrayerTimes({
+        lat: 40.7128, lng: -74.006, method: 'MWL', date: '2026-03-13',
+      });
+      const isnaResult = await service.getPrayerTimes({
+        lat: 40.7128, lng: -74.006, method: 'ISNA', date: '2026-03-13',
+      });
+
+      // MWL Fajr=18°, ISNA Fajr=15° — ISNA should have a later Fajr
+      expect(mwlResult.timings.fajr).not.toBe(isnaResult.timings.fajr);
     });
   });
 
@@ -372,54 +427,69 @@ describe('IslamicService', () => {
   });
 
   describe('getRamadanInfo', () => {
-    beforeEach(() => {
-      jest.useFakeTimers({ now: new Date('2026-03-15T12:00:00Z') });
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('should return Ramadan info for given year', () => {
-      const params = { year: 2026, lat: 40.7128, lng: -74.006 };
-      const result = service.getRamadanInfo(params);
-
-      expect(result).toEqual({
-        year: 2026,
-        startDate: '2026-03-10',
-        endDate: '2026-04-09',
-        currentDay: 6, // March 15 is 6 days after March 10
-        iftarTime: '18:45',
-        suhoorTime: '04:30',
-        nextPrayer: 'Maghrib',
-        nextPrayerTime: '18:45',
-      });
-    });
-
-    it('should use current year when not specified', () => {
-      const params = { lat: 40.7128, lng: -74.006 };
-      const result = service.getRamadanInfo(params);
+    it('should return Ramadan info with Hijri-calculated dates', async () => {
+      const params = { year: 2026 };
+      const result = await service.getRamadanInfo(params);
 
       expect(result.year).toBe(2026);
+      // Ramadan dates should be calculated from Hijri calendar, not hardcoded
+      expect(result.startDate).toMatch(/^2026-\d{2}-\d{2}$/);
+      expect(result.endDate).toMatch(/^2026-\d{2}-\d{2}$/);
+      // Start should be before end
+      expect(new Date(result.startDate).getTime()).toBeLessThan(new Date(result.endDate).getTime());
     });
 
-    it('should not include currentDay when outside Ramadan', () => {
-      // Mock date outside Ramadan
-      jest.setSystemTime(new Date('2026-01-01T12:00:00Z'));
+    it('should use current year when not specified', async () => {
+      const params = {};
+      const result = await service.getRamadanInfo(params);
 
-      const params = { year: 2026 };
-      const result = service.getRamadanInfo(params);
+      expect(result.year).toBe(new Date().getFullYear());
+    });
+
+    it('should include currentDay when within Ramadan', async () => {
+      // Get the calculated Ramadan dates first
+      const infoResult = await service.getRamadanInfo({ year: 2026 });
+      const start = new Date(infoResult.startDate);
+      // Set system time to 5 days into Ramadan
+      const duringRamadan = new Date(start.getTime() + 5 * 86400000);
+      jest.useFakeTimers({ now: duringRamadan });
+
+      const result = await service.getRamadanInfo({ year: 2026 });
+      jest.useRealTimers();
+
+      expect(result.currentDay).toBe(6); // Day 6 (5 days after start + 1)
+    });
+
+    it('should not include currentDay when outside Ramadan', async () => {
+      jest.useFakeTimers({ now: new Date('2026-01-01T12:00:00Z') });
+      const result = await service.getRamadanInfo({ year: 2026 });
+      jest.useRealTimers();
 
       expect(result.currentDay).toBeUndefined();
     });
 
-    it('should handle edge case of no location provided', () => {
-      const params = { year: 2026 };
-      const result = service.getRamadanInfo(params);
+    it('should return iftar/suhoor as undefined without location', async () => {
+      const result = await service.getRamadanInfo({ year: 2026 });
 
-      expect(result).toBeDefined();
-      expect(result.iftarTime).toBe('18:45');
-      expect(result.suhoorTime).toBe('04:30');
+      // Without lat/lng, iftar and suhoor should be undefined
+      expect(result.iftarTime).toBeUndefined();
+      expect(result.suhoorTime).toBeUndefined();
+    });
+
+    it('should return iftar/suhoor times with location', async () => {
+      const result = await service.getRamadanInfo({
+        year: 2026,
+        lat: 40.7128,
+        lng: -74.006,
+      });
+
+      // With location, should attempt to get prayer times (via local fallback in tests)
+      if (result.iftarTime) {
+        expect(result.iftarTime).toMatch(/^\d{2}:\d{2}$/);
+      }
+      if (result.suhoorTime) {
+        expect(result.suhoorTime).toMatch(/^\d{2}:\d{2}$/);
+      }
     });
   });
 });

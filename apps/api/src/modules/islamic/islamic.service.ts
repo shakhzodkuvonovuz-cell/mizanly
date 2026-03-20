@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
 import { UpdatePrayerNotificationDto } from './dto/prayer-notification.dto';
 import { CreateQuranPlanDto, UpdateQuranPlanDto } from './dto/quran-plan.dto';
@@ -8,6 +9,7 @@ import { CreateHajjProgressDto, UpdateHajjProgressDto } from './dto/hajj.dto';
 import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
 import { UpdateContentFilterDto } from './dto/content-filter.dto';
 import { SaveDhikrSessionDto, CreateDhikrChallengeDto } from './dto/dhikr.dto';
+import { calculatePrayerTimes, getRamadanDatesForYear, METHOD_PARAMS } from './prayer-calculator';
 import * as hadiths from './data/hadiths.json';
 import * as hajjGuideData from './data/hajj-guide.json';
 import * as tafsirJson from './data/tafsir.json';
@@ -145,7 +147,12 @@ export interface RamadanInfoResponse {
 
 @Injectable()
 export class IslamicService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(IslamicService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    @Inject('REDIS') private readonly redis: Redis,
+  ) {}
 
   private readonly hadiths: Hadith[] = hadiths;
   private readonly prayerMethods: CalculationMethod[] = [
@@ -184,26 +191,97 @@ export class IslamicService {
 
   async getPrayerTimes(params: PrayerTimesRequest): Promise<PrayerTimesResponse> {
     const { lat, lng, method = 'MWL', date = new Date().toISOString().split('T')[0] } = params;
-    // For simplicity, we'll compute approximate timings based on solar calculations.
-    // This is a placeholder implementation; real implementation would use proper astronomy formulas.
+
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw new BadRequestException('Latitude must be -90..90, longitude must be -180..180');
+    }
+
     const methodObj = this.prayerMethods.find(m => m.id === method) || this.prayerMethods[0];
 
-    // Mock timings (in reality, compute based on latitude, longitude, date, and method)
-    const timings = {
-      fajr: '05:30',
-      sunrise: '06:45',
-      dhuhr: '12:30',
-      asr: '15:45',
-      maghrib: '18:20',
-      isha: '19:45',
+    // Resolve Aladhan method number from our method ID
+    const aladhanMethodMap: Record<string, number> = {
+      MWL: 3, ISNA: 2, Egypt: 5, Makkah: 4, Karachi: 1, Tehran: 7, JAKIM: 11, DIYANET: 13,
     };
+    const aladhanMethod = aladhanMethodMap[method] ?? 3;
 
-    return {
+    // Cache key: rounded coordinates (2 decimal places ≈ 1.1km precision)
+    const cacheKey = `prayer:${lat.toFixed(2)}:${lng.toFixed(2)}:${date}:${method}`;
+
+    // 1. Check Redis cache
+    try {
+      const cached = await this.redis.get(cacheKey);
+      if (cached) {
+        return JSON.parse(cached);
+      }
+    } catch {
+      // Redis unavailable — continue without cache
+    }
+
+    // 2. Try Aladhan API (free, no API key needed)
+    try {
+      const timestamp = Math.floor(new Date(date + 'T12:00:00Z').getTime() / 1000);
+      const url = `https://api.aladhan.com/v1/timings/${timestamp}?latitude=${lat}&longitude=${lng}&method=${aladhanMethod}`;
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8000);
+
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeout);
+
+      const data = await response.json();
+      if (data.code === 200 && data.data?.timings) {
+        const t = data.data.timings;
+        const result: PrayerTimesResponse = {
+          date,
+          timings: {
+            fajr: t.Fajr?.replace(/\s*\(.*\)/, '') ?? '',
+            sunrise: t.Sunrise?.replace(/\s*\(.*\)/, '') ?? '',
+            dhuhr: t.Dhuhr?.replace(/\s*\(.*\)/, '') ?? '',
+            asr: t.Asr?.replace(/\s*\(.*\)/, '') ?? '',
+            maghrib: t.Maghrib?.replace(/\s*\(.*\)/, '') ?? '',
+            isha: t.Isha?.replace(/\s*\(.*\)/, '') ?? '',
+          },
+          method: methodObj.name,
+          location: { lat, lng },
+        };
+
+        // Cache for 24 hours
+        try {
+          await this.redis.setex(cacheKey, 86400, JSON.stringify(result));
+        } catch {
+          // Redis write failed — non-critical
+        }
+
+        return result;
+      }
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.warn(`Aladhan API failed, falling back to local calculation: ${msg}`);
+    }
+
+    // 3. Fallback: local solar angle calculation
+    const localTimes = calculatePrayerTimes(new Date(date), lat, lng, method);
+    const result: PrayerTimesResponse = {
       date,
-      timings,
+      timings: {
+        fajr: localTimes.fajr,
+        sunrise: localTimes.sunrise,
+        dhuhr: localTimes.dhuhr,
+        asr: localTimes.asr,
+        maghrib: localTimes.maghrib,
+        isha: localTimes.isha,
+      },
       method: methodObj.name,
       location: { lat, lng },
     };
+
+    // Cache local result for 1 hour (less reliable than API)
+    try {
+      await this.redis.setex(cacheKey, 3600, JSON.stringify(result));
+    } catch {
+      // Redis write failed — non-critical
+    }
+
+    return result;
   }
 
   getPrayerMethods(): CalculationMethod[] {
@@ -344,12 +422,12 @@ export class IslamicService {
     };
   }
 
-  getRamadanInfo(params: RamadanInfoRequest): RamadanInfoResponse {
+  async getRamadanInfo(params: RamadanInfoRequest): Promise<RamadanInfoResponse> {
     const year = params.year || new Date().getFullYear();
-    // Simple approximation: Ramadan start = first day of lunar month 9 (approximated)
-    // This is a placeholder; real calculation requires Hijri calendar conversion.
-    const startDate = `${year}-03-10`; // dummy
-    const endDate = `${year}-04-09`; // dummy
+
+    // Calculate Ramadan dates from Hijri calendar (not hardcoded)
+    const { startDate, endDate } = getRamadanDatesForYear(year);
+
     const today = new Date();
     const ramadanStart = new Date(startDate);
     const ramadanEnd = new Date(endDate);
@@ -357,9 +435,38 @@ export class IslamicService {
     if (today >= ramadanStart && today <= ramadanEnd) {
       currentDay = Math.floor((today.getTime() - ramadanStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     }
-    // Mock iftar/suhoor times based on location (simplified)
-    const iftarTime = '18:45';
-    const suhoorTime = '04:30';
+
+    // Get real iftar/suhoor times from prayer calculation if location provided
+    let iftarTime: string | undefined;
+    let suhoorTime: string | undefined;
+    let nextPrayer = 'Maghrib';
+    let nextPrayerTime: string | undefined;
+
+    if (params.lat !== undefined && params.lng !== undefined) {
+      try {
+        const prayerResult = await this.getPrayerTimes({
+          lat: params.lat,
+          lng: params.lng,
+          date: today.toISOString().split('T')[0],
+        });
+        // Iftar = Maghrib time, Suhoor end = Fajr time minus 10 minutes
+        iftarTime = prayerResult.timings.maghrib;
+        const fajrParts = prayerResult.timings.fajr.split(':').map(Number);
+        let suhoorMinutes = fajrParts[0] * 60 + fajrParts[1] - 10;
+        if (suhoorMinutes < 0) suhoorMinutes += 1440;
+        const sh = Math.floor(suhoorMinutes / 60);
+        const sm = suhoorMinutes % 60;
+        suhoorTime = `${sh.toString().padStart(2, '0')}:${sm.toString().padStart(2, '0')}`;
+
+        // Determine next prayer
+        const window = this.getCurrentPrayerWindow(prayerResult.timings);
+        nextPrayer = window.nextPrayer;
+        nextPrayerTime = prayerResult.timings[nextPrayer as keyof typeof prayerResult.timings];
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        this.logger.warn(`Failed to get prayer times for Ramadan info: ${msg}`);
+      }
+    }
 
     return {
       year,
@@ -368,8 +475,8 @@ export class IslamicService {
       currentDay,
       iftarTime,
       suhoorTime,
-      nextPrayer: 'Maghrib',
-      nextPrayerTime: iftarTime,
+      nextPrayer,
+      nextPrayerTime,
     };
   }
 
@@ -1198,7 +1305,7 @@ export class IslamicService {
     let prayerTimes: Record<string, string> | null = null;
     if (lat && lng) {
       try {
-        const pt = this.getPrayerTimes({ lat, lng });
+        const pt = await this.getPrayerTimes({ lat, lng });
         prayerTimes = pt.timings;
       } catch {
         // Non-critical, continue without prayer times
