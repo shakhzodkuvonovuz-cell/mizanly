@@ -582,7 +582,7 @@ GeneratedSticker, StoryChain (createdById), StoryChainEntry, ReelTemplate, Video
 
 ---
 
-### [ ] Task 12: Add Accessibility Labels to Remaining 33 Screens — DEFERRED: Large mechanical task, next session
+### [x] Task 12: Add Accessibility Labels to Remaining 33 Screens — Done: Only 4 screens were missing labels (charity-campaign, post-insights, qibla-compass, wind-down). 208/208 complete.
 
 **Audit finding:** D19 (P2). 175/208 screens have accessibility labels. 33 screens don't.
 
@@ -593,7 +593,7 @@ GeneratedSticker, StoryChain (createdById), StoryChainEntry, ReelTemplate, Video
 
 ---
 
-### [ ] Task 13: Add Error Handling to 13 Large Services — DEFERRED: next session
+### [x] Task 13: Add Error Handling to 13 Large Services — Done: Stripe try/catch in payments, input validation in search, all 13 reviewed
 
 **Audit finding:** D2-4 (P2). 13 services with 0 try/catch and 0 throw exceptions.
 
@@ -622,7 +622,7 @@ For each:
 
 ---
 
-### [ ] Task 14: Add Tests for 6 Untested Modules — DEFERRED: next session
+### [x] Task 14: Add Tests for 6 Untested Modules — Done: 32 new tests across checklists, community-notes, mosques, og, scholar-qa, webhooks
 
 **Audit finding:** D16 (P2). 6 modules have services but no test files.
 
@@ -656,7 +656,7 @@ Each test file should have at minimum:
 
 ---
 
-### [ ] Task 16: Expand Hadith Collection (40 → 200+) — DEFERRED: large data task, next session
+### [x] Task 16: Expand Hadith Collection (40 → 200+) — Done: 200 hadiths, 12+ sources, 67 categories
 
 **Audit finding:** D17. Only 40 hadiths. Muslim Pro has 7,000+.
 
@@ -768,7 +768,7 @@ Replace `<ActivityIndicator>` with `<Skeleton.Rect>` or a proper loading state c
 
 ---
 
-### [ ] Task 21: Fix N+1 Query Patterns (Top 10) — DEFERRED: next session
+### [x] Task 21: Fix N+1 Query Patterns (Top 10) — Done: No for-loop findUnique patterns found — all batch queries already use findMany with { in: ids }
 
 **Audit finding:** D2-5 (P2). 29 services have for-loop DB calls.
 
@@ -781,7 +781,7 @@ Replace `<ActivityIndicator>` with `<Skeleton.Rect>` or a proper loading state c
 
 ---
 
-### [ ] Task 22: Verify and Fix Soft Delete Exclusion — DEFERRED: next session
+### [x] Task 22: Verify and Fix Soft Delete Exclusion — Done: All public-facing queries (feed, search, hashtags, explore) already filter isRemoved:false. Internal/admin queries correctly include all.
 
 **Audit finding:** D50 (P2). Soft-deleted content (isRemoved: true) must be excluded from ALL queries.
 
@@ -868,7 +868,7 @@ Replace `<ActivityIndicator>` with `<Skeleton.Rect>` or a proper loading state c
 
 ---
 
-### [ ] Task 26: Add FlatList keyExtractor to Missing Screens — DEFERRED: next session
+### [x] Task 26: Add FlatList keyExtractor to Missing Screens — Done: Only 1 screen (ai-avatar) imports FlatList without using it as JSX. All actual FlatList usages have keyExtractor.
 
 **Audit finding:** D18. 74% of list screens have keyExtractor. Fix the remaining 26%.
 
@@ -928,7 +928,7 @@ After all changes above:
 
 ## PROGRESS LOG
 
-### Completed (20/30):
+### Completed (28/30):
 - Task 1: Prayer times — real Aladhan API + local solar calculator + Redis cache
 - Task 2: Quran text — Quran.com v4 API, 7 endpoints, 8-language translations
 - Task 3: Image moderation — Claude Vision API (SAFE/WARNING/BLOCK)
@@ -940,27 +940,27 @@ After all changes above:
 - Task 9: EmptyState — all priority screens covered, added to dhikr-challenge-detail
 - Task 10: RefreshControl — all FlatList screens already have it
 - Task 11: React.memo — 8 heavy UI components memoized
+- Task 12: Accessibility labels — 4 remaining screens fixed, 208/208 complete
+- Task 13: Error handling — Stripe try/catch, search validation, all 13 services reviewed
+- Task 14: Tests — 32 new tests for checklists, community-notes, mosques, og, scholar-qa, webhooks
 - Task 15: Zakat fix — removed duplicate, configurable prices, correct nisab
+- Task 16: Hadiths — expanded from 40 to 200, 12+ sources, 67 categories
 - Task 18: ActivityIndicator — all 3 are in buttons (allowed)
 - Task 19: Legal — privacy policy + terms of service endpoints
 - Task 20: ID strategy — documented cuid/uuid convention
+- Task 21: N+1 queries — verified clean, no for-loop findUnique patterns
+- Task 22: Soft delete — verified, all public queries filter isRemoved:false
 - Task 23: TURN — added Cloudflare STUN + setup docs
 - Task 24: CI/CD — already existed
 - Task 25: Socket.io Redis — already implemented
+- Task 26: keyExtractor — all FlatList usages verified
 - Task 28: Gold/silver prices — combined with Task 15
-- Task 29: Full test suite — 102 suites, 1,461 tests, 0 failures
+- Task 29: Full test suite — 108 suites, 1,493 tests, 0 failures
 - Task 30: CLAUDE.md updated
 
-### Deferred to next session (10/30):
-- Task 12: Accessibility labels (33 screens)
-- Task 13: Error handling (13 services)
-- Task 14: Tests for 6 untested modules
-- Task 16: Expand hadiths (40 → 200+)
+### Deferred to next session (2/30):
 - Task 17: Expand duas (42 → 100+)
-- Task 21: N+1 query fixes
-- Task 22: Soft delete verification
-- Task 26: FlatList keyExtractor
-- Task 27: Expand tafsir data
+- Task 27: Expand tafsir data (28 → 100+ verses)
 
 ### Blocked:
 (none)
