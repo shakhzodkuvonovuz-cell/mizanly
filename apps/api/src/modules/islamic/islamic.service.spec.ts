@@ -359,53 +359,45 @@ describe('IslamicService', () => {
 
   describe('calculateZakat', () => {
     it('should calculate zakat correctly when nisab is met', () => {
-      const assets = [
-        { type: 'cash', value: 10000 },
-        { type: 'gold', value: 6800 },
-        { type: 'silver', value: 410 },
-        { type: 'investments', value: 5000 },
-      ];
+      const params = { cash: 10000, gold: 100, silver: 500, investments: 5000, debts: 0 };
+      const result = service.calculateZakat(params);
 
-      const result = service.calculateZakat(assets as any);
-
-      // Total: 22210 >= nisab silver (476) ✓
-      expect(result.meetsNisab).toBe(true);
-      expect(result.totalZakat).toBeGreaterThan(0);
-      expect(result.breakdown).toHaveLength(4);
-      expect(result.totalValue).toBe(22210);
+      expect(result.nisabMet).toBe(true);
+      expect(result.zakatDue).toBeGreaterThan(0);
+      expect(result.totalAssets).toBeGreaterThan(0);
+      expect(result.breakdown.cash).toBe(10000);
+      expect(result.goldPricePerGram).toBeGreaterThan(0);
+      expect(result.silverPricePerGram).toBeGreaterThan(0);
     });
 
     it('should return 0 zakat when nisab is not met', () => {
-      const assets = [
-        { type: 'cash', value: 50 },
-        { type: 'savings', value: 20 },
-      ];
+      const params = { cash: 10, gold: 0, silver: 0, investments: 0, debts: 0 };
+      const result = service.calculateZakat(params);
 
-      const result = service.calculateZakat(assets as any);
-
-      // Total: 70 < nisab silver (476)
-      expect(result.meetsNisab).toBe(false);
-      expect(result.totalZakat).toBe(0);
+      expect(result.nisabMet).toBe(false);
+      expect(result.zakatDue).toBe(0);
     });
 
-    it('should handle edge case of exactly at nisab threshold', () => {
-      // Silver nisab = 595 * 0.8 = 476
-      const assets = [{ type: 'cash', value: 476 }];
+    it('should subtract debts from total assets', () => {
+      const params = { cash: 5000, gold: 0, silver: 0, investments: 0, debts: 4500 };
+      const result = service.calculateZakat(params);
 
-      const result = service.calculateZakat(assets as any);
+      // Net wealth = 5000 - 4500 = 500, which may or may not meet nisab depending on prices
+      expect(result.totalAssets).toBe(5000);
+      expect(result.breakdown.debts).toBe(4500);
+    });
 
-      expect(result.meetsNisab).toBe(true);
-      expect(result.totalZakat).toBeCloseTo(476 * 0.025, 2);
+    it('should throw on negative values', () => {
+      expect(() => service.calculateZakat({ cash: -1, gold: 0, silver: 0, investments: 0, debts: 0 }))
+        .toThrow('All values must be non-negative');
     });
 
     it('should handle zero values', () => {
-      const assets: { type: string; value: number }[] = [];
+      const result = service.calculateZakat({ cash: 0, gold: 0, silver: 0, investments: 0, debts: 0 });
 
-      const result = service.calculateZakat(assets as any);
-
-      expect(result.totalValue).toBe(0);
-      expect(result.meetsNisab).toBe(false);
-      expect(result.totalZakat).toBe(0);
+      expect(result.totalAssets).toBe(0);
+      expect(result.nisabMet).toBe(false);
+      expect(result.zakatDue).toBe(0);
     });
   });
 

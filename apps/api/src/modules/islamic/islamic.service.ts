@@ -418,14 +418,20 @@ export class IslamicService {
     if (params.cash < 0 || params.gold < 0 || params.silver < 0 || params.investments < 0 || params.debts < 0) {
       throw new BadRequestException('All values must be non-negative');
     }
-    const goldPricePerGram = 68; // USD per gram
-    const silverPricePerGram = 0.82; // USD per gram
+
+    // Configurable via env vars, fallback to approximate market values
+    const goldPricePerGram = parseFloat(process.env.GOLD_PRICE_PER_GRAM || '92');
+    const silverPricePerGram = parseFloat(process.env.SILVER_PRICE_PER_GRAM || '1.05');
+
     const goldValue = params.gold * goldPricePerGram;
     const silverValue = params.silver * silverPricePerGram;
     const totalAssets = params.cash + goldValue + silverValue + params.investments;
-    const nisabGold = 85 * goldPricePerGram; // 85g of gold
-    const nisabSilver = 595 * silverPricePerGram; // 595g of silver
-    const nisab = Math.min(nisabGold, nisabSilver); // use the lower threshold
+
+    // Nisab: 87.48g gold OR 612.36g silver (standard Islamic thresholds)
+    const nisabGold = 87.48 * goldPricePerGram;
+    const nisabSilver = 612.36 * silverPricePerGram;
+    const nisab = Math.min(nisabGold, nisabSilver); // use the lower threshold (more inclusive)
+
     const nisabMet = totalAssets - params.debts >= nisab;
     const zakatDue = nisabMet ? (totalAssets - params.debts) * 0.025 : 0;
 
@@ -1318,34 +1324,6 @@ export class IslamicService {
       this.logger.warn(`Quran.com juz API failed: ${msg}`);
       throw new BadRequestException('Unable to fetch juz — please try again later');
     }
-  }
-
-  // ── Zakat Calculator ───────────────────────────────
-
-  calculateZakat(assets: { type: string; value: number; currency?: string }[]) {
-    const nisabGold = 85 * 60; // 85g gold × ~$60/g (approximate)
-    const nisabSilver = 595 * 0.8; // 595g silver × ~$0.80/g (approximate)
-
-    let totalValue = 0;
-    const breakdown: { type: string; value: number; zakat: number }[] = [];
-
-    for (const asset of assets) {
-      const zakatAmount = asset.value * 0.025; // 2.5%
-      breakdown.push({ type: asset.type, value: asset.value, zakat: zakatAmount });
-      totalValue += asset.value;
-    }
-
-    const totalZakat = totalValue * 0.025;
-    const meetsNisab = totalValue >= nisabSilver; // Use silver nisab (lower, more inclusive)
-
-    return {
-      totalValue,
-      totalZakat: meetsNisab ? totalZakat : 0,
-      meetsNisab,
-      nisabGold,
-      nisabSilver,
-      breakdown,
-    };
   }
 
   // ============================================================
