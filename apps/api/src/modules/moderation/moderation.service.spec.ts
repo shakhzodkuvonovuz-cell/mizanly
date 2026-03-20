@@ -50,9 +50,10 @@ describe('ModerationService', () => {
   });
 
   describe('checkImage', () => {
-    it('should return safe (placeholder)', async () => {
+    it('should return SAFE when AI classifies image as safe', async () => {
       const result = await service.checkImage('u1', { imageUrl: 'https://cdn.test/img.jpg' });
       expect(result.safe).toBe(true);
+      expect(result.classification).toBe('SAFE');
     });
   });
 

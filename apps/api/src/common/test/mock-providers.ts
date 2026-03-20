@@ -51,9 +51,12 @@ export const mockAiService = {
   provide: AiService,
   useValue: {
     moderateContent: jest.fn().mockResolvedValue({ safe: true, flags: [], confidence: 0 }),
+    moderateImage: jest.fn().mockResolvedValue({ classification: 'SAFE', reason: null, categories: [] }),
+    isAvailable: jest.fn().mockReturnValue(true),
     suggestCaptions: jest.fn().mockResolvedValue([]),
     suggestHashtags: jest.fn().mockResolvedValue([]),
     translateText: jest.fn().mockResolvedValue({ translatedText: '' }),
+    generateAltText: jest.fn().mockResolvedValue('Image'),
   },
 };
 

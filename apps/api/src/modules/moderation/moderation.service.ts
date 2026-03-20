@@ -8,6 +8,7 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma, ReportReason, ReportStatus, ModerationAction, UserRole } from '@prisma/client';
 import { checkText, TextCheckResult } from './word-filter';
+import { AiService } from '../ai/ai.service';
 
 export interface CheckTextDto {
   text: string;
@@ -33,7 +34,10 @@ export interface SubmitAppealDto {
 export class ModerationService {
   private readonly logger = new Logger(ModerationService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
 
   async checkText(userId: string, dto: CheckTextDto): Promise<TextCheckResult> {
     // Run word filter
@@ -60,10 +64,51 @@ export class ModerationService {
     return result;
   }
 
-  async checkImage(_userId: string, _dto: CheckImageDto): Promise<{ safe: boolean; categories?: string[] }> {
-    // Placeholder for image moderation
-    // In production, integrate with AWS Rekognition, Google Vision, etc.
-    return { safe: true };
+  async checkImage(userId: string, dto: CheckImageDto): Promise<{
+    safe: boolean;
+    classification: 'SAFE' | 'WARNING' | 'BLOCK';
+    reason: string | null;
+    categories: string[];
+    isSensitive?: boolean;
+  }> {
+    // Use Claude Vision API for image content moderation
+    const result = await this.aiService.moderateImage(dto.imageUrl);
+
+    if (result.classification === 'BLOCK') {
+      // Auto-flag blocked content for moderation queue
+      await this.flagContent({
+        reporterId: userId,
+        text: `[Image moderation] ${result.reason || 'Blocked by AI'}`,
+        context: 'post',
+        categories: result.categories.length > 0 ? result.categories : ['image-violation'],
+        severity: 'high',
+        matches: [],
+        autoFlagged: true,
+        reportedUserId: userId,
+      });
+
+      this.logger.warn(`Image BLOCKED for user ${userId}: ${result.reason}`);
+      return { safe: false, classification: 'BLOCK', reason: result.reason, categories: result.categories };
+    }
+
+    if (result.classification === 'WARNING') {
+      // Queue for manual review but allow with sensitive flag
+      await this.flagContent({
+        reporterId: userId,
+        text: `[Image moderation WARNING] ${result.reason || 'Flagged by AI'}`,
+        context: 'post',
+        categories: result.categories.length > 0 ? result.categories : ['image-warning'],
+        severity: 'medium',
+        matches: [],
+        autoFlagged: true,
+        reportedUserId: userId,
+      });
+
+      this.logger.log(`Image flagged WARNING for user ${userId}: ${result.reason}`);
+      return { safe: true, classification: 'WARNING', reason: result.reason, categories: result.categories, isSensitive: true };
+    }
+
+    return { safe: true, classification: 'SAFE', reason: null, categories: [] };
   }
 
   async flagContent(data: {

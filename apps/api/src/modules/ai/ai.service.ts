@@ -463,6 +463,91 @@ Only respond with the summary, nothing else.`;
     });
   }
 
+  // ── Image Content Moderation (Vision) ───────────────────
+
+  /**
+   * Moderate an image using Claude Vision API.
+   * Returns classification: SAFE, WARNING (sensitive content), or BLOCK (violating content).
+   */
+  async moderateImage(imageUrl: string): Promise<{
+    classification: 'SAFE' | 'WARNING' | 'BLOCK';
+    reason: string | null;
+    categories: string[];
+  }> {
+    if (!this.apiAvailable || !this.apiKey) {
+      this.logger.warn('AI not available for image moderation — defaulting to manual review');
+      return { classification: 'SAFE', reason: 'AI unavailable — queued for manual review', categories: [] };
+    }
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': this.apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 200,
+          messages: [{
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: { type: 'url', url: imageUrl },
+              },
+              {
+                type: 'text',
+                text: `Analyze this image for content moderation on a family-friendly Muslim social platform.
+Classify as one of: SAFE, WARNING, BLOCK
+Check for:
+- Nudity or sexual content → BLOCK
+- Graphic violence or gore → BLOCK
+- Hate symbols or extremist imagery → BLOCK
+- Alcohol, drugs, gambling imagery → WARNING
+- Suggestive but not explicit content → WARNING
+- Religious mockery or offensive content → WARNING
+Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories": []}`,
+              },
+            ],
+          }],
+        }),
+      });
+
+      if (!response.ok) {
+        this.logger.error(`Image moderation API error: ${response.status}`);
+        return { classification: 'SAFE', reason: 'Moderation check failed — queued for review', categories: [] };
+      }
+
+      const data = await response.json();
+      const text = data.content?.[0]?.text?.trim() || '';
+
+      // Extract JSON from response (Claude sometimes wraps in markdown)
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return { classification: 'SAFE', reason: 'Could not parse moderation result', categories: [] };
+      }
+
+      const result = JSON.parse(jsonMatch[0]);
+      return {
+        classification: (['SAFE', 'WARNING', 'BLOCK'].includes(result.classification)) ? result.classification : 'SAFE',
+        reason: result.reason || null,
+        categories: Array.isArray(result.categories) ? result.categories : [],
+      };
+    } catch (error) {
+      this.logger.error('Image moderation error', error instanceof Error ? error.message : error);
+      return { classification: 'SAFE', reason: 'Moderation check failed — queued for review', categories: [] };
+    }
+  }
+
+  /**
+   * Check if AI service is operational.
+   */
+  isAvailable(): boolean {
+    return this.apiAvailable;
+  }
+
   // ── AI Alt Text (Accessibility) ───────────────────────────
 
   /**
