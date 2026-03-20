@@ -1,922 +1,1147 @@
-# RALPH — Comprehensive Full-Stack Audit
-## Every file. Every screen. Every endpoint. Every dimension. No shortcuts.
+# RALPH — Total Audit: Every File, Every Feature, Every Competitor
+## This audit has 60 dimensions, 500+ checkpoints, and requires reading 700+ files.
 
-> **This is not a "check a few key areas" audit.** This is a line-by-line, file-by-file, screen-by-screen audit of the entire Mizanly codebase. You will read hundreds of files. You will check every endpoint. You will verify every screen. You will compare against real competitors. You will spend the entire session doing nothing but auditing and documenting findings.
+> **You will spend the ENTIRE session auditing. Not fixing. Not building. AUDITING.**
+> You will read files, compare against competitors, document every finding, and produce the most honest assessment of this codebase that has ever been written.
 
 > **Read `CLAUDE.md` first** for architecture, rules, and component patterns.
-> **Read `docs/ralph-instructions.md`** for behavioral rules (no shortcuts, no subagents, verify everything).
+> **Read `docs/ralph-instructions.md`** for behavioral rules.
 
 ---
 
-## ABSOLUTE RULES FOR THIS AUDIT
+## ABSOLUTE RULES
 
-1. **NO SUBAGENTS.** Do all work personally. Read every file yourself. Do not dispatch agents.
-2. **NO SURFACE-LEVEL SUMMARIES.** Don't say "the feed looks good." Say exactly what you found — which files, which lines, what's wrong, what's right.
-3. **NO BATCH SCANNING.** Don't grep for a pattern and declare "X instances found, looks fine." Read the actual code around each instance.
-4. **NO SKIPPING.** Every section below must be completed. If you run out of context, commit your findings so far and note where to resume.
-5. **READ BEFORE JUDGING.** Don't assess a file from its name or import list. Read the implementation.
-6. **COMPARE AGAINST REAL COMPETITORS.** When auditing a feature, compare against how Instagram/TikTok/YouTube/WhatsApp/X actually implements it, not against "does the code exist."
-7. **BE BRUTALLY HONEST.** Previous agents rated this app 10/10 when it was 5/10. You will not do that. If something is a stub, say it's a stub. If something won't work in production, say so.
-8. **DOCUMENT EVERYTHING.** Write all findings to `docs/audit/COMPREHENSIVE_AUDIT_2026.md` as you go. Update it after each section.
-9. **CATEGORIZE FINDINGS.** Every finding must be categorized as:
-   - **P0 CRITICAL** — App will crash, data will be lost, or security is compromised
-   - **P1 HIGH** — Feature doesn't work as expected, user will notice
-   - **P2 MEDIUM** — Quality issue, inconsistency, or missing polish
-   - **P3 LOW** — Nitpick, style issue, or minor improvement
-10. **FIX AS YOU GO.** If you find a P0 or P1 during audit, fix it immediately. Commit the fix. Then continue auditing.
+1. **NO SUBAGENTS.** Do all work personally. Read every file yourself.
+2. **NO SURFACE-LEVEL SUMMARIES.** "Looks good" is not a finding. File name, line number, specific issue.
+3. **NO BATCH SCANNING.** Don't grep for a pattern and declare "X instances found." Read the code around each match.
+4. **NO SKIPPING.** Every dimension must be completed.
+5. **READ BEFORE JUDGING.** Don't assess a file from its name. Read the implementation.
+6. **COMPARE AGAINST REAL COMPETITORS.** Use web search for current 2026 features. Compare against Instagram/TikTok/YouTube/WhatsApp/X as they are TODAY, not as they were in 2024.
+7. **BE BRUTALLY HONEST.** The user explicitly wants harsh truth. Sugarcoating disrespects them.
+8. **FIX P0s IMMEDIATELY.** If you find a crash bug, fix it, commit, then continue auditing.
+9. **DOCUMENT EVERYTHING** in `docs/audit/COMPREHENSIVE_AUDIT_2026.md`. Update after each dimension.
+10. **CATEGORIZE EVERY FINDING:** P0 (crash/security), P1 (broken feature), P2 (quality), P3 (nitpick).
 
 ---
 
-## OUTPUT FORMAT
+## OUTPUT FILES
 
-Create `docs/audit/COMPREHENSIVE_AUDIT_2026.md` with this structure:
+Create these files as you go:
+- `docs/audit/COMPREHENSIVE_AUDIT_2026.md` — master report, all findings
+- `docs/audit/PRIORITY_FIXES.md` — P0 and P1 items in severity order
+- `docs/audit/COMPETITOR_MATRIX.md` — feature-by-feature comparison tables
+- `docs/audit/HONEST_SCORES.md` — per-dimension scores with evidence
+- `docs/audit/SCREEN_BY_SCREEN.md` — audit results for every screen
+- `docs/audit/ENDPOINT_BY_ENDPOINT.md` — audit results for every endpoint
 
-```markdown
-# Comprehensive Audit — Mizanly
-## Date: [today]
-## Auditor: Claude
-## Scope: Every dimension, every file, every screen
+---
 
-### Executive Summary
-[Overall honest assessment — 2-3 paragraphs]
+# PART A: CODE INTEGRITY (Dimensions 1-20)
 
-### Findings by Dimension
-[Each dimension below gets its own section with numbered findings]
+---
 
-### Score Card
-[Honest per-dimension scores with evidence]
+## DIMENSION 1: PRISMA SCHEMA — EVERY MODEL
 
-### Priority Fix List
-[All P0 and P1 items in order of severity]
+Read `apps/api/prisma/schema.prisma` — ALL 3,859 lines. For EVERY one of the 187 models, check:
 
-### Competitor Gap Analysis
-[Detailed comparison per space]
+1. Has `id String @id @default(cuid())`?
+2. Has `createdAt DateTime @default(now())`?
+3. Every foreign key has `onDelete` rule? (Cascade, SetNull, or Restrict — not missing)
+4. Every `@@index` matches actual query patterns in the corresponding service?
+5. Every `@@unique` is correct and won't cause unexpected constraint violations?
+6. `userId` naming (not `authorId`, `ownerId`, `creatorId`) — consistent?
+7. Boolean fields use `isX` prefix consistently?
+8. Money fields use `Decimal @db.Decimal(12,2)` not `Float`?
+9. String fields storing fixed values (status, type, role) — should they be enums?
+10. Every relation has both sides defined (no dangling `userId String` without `user User @relation(...)`)?
+11. Default values: counters=0, booleans=false, timestamps=now()?
+12. No circular dependencies that would break migrations?
+
+**Produce a table of EVERY model with issues found.**
+
+---
+
+## DIMENSION 2: BACKEND SERVICES — EVERY MODULE
+
+There are 79 modules. For EACH module that has a service file, read the FULL service file and document:
+
+1. Total lines of code
+2. Number of public methods
+3. For each method:
+   - Has input validation?
+   - Has error handling (try/catch or proper NestJS exceptions)?
+   - Has authorization check (user owns the resource)?
+   - Uses `select` clause (not fetching full models)?
+   - Has pagination for list methods?
+   - Has `take` limit on findMany?
+4. N+1 query patterns (loops making individual DB calls)?
+5. Race conditions (concurrent requests causing data inconsistency)?
+6. Stub methods (return empty array, `// TODO`, hardcoded data)?
+7. Dead code (methods never called from any controller)?
+8. Transaction usage for multi-table operations?
+
+**The 79 modules to audit (read EVERY service file):**
+```
+admin, ai, alt-profile, audio-rooms, audio-tracks, auth, blocks, bookmarks,
+broadcast, calls, channel-posts, channels, chat-export, checklists, circles,
+clips, collabs, commerce, communities, community, community-notes, creator,
+devices, discord-features, downloads, drafts, embeddings, encryption, events,
+feed, follows, gamification, gifts, halal, hashtags, health, islamic, live,
+majlis-lists, messages, moderation, monetization, mosques, mutes, notifications,
+og, parental-controls, payments, playlists, polls, posts, privacy, profile-links,
+promotions, recommendations, reel-templates, reels, reports, restricts, retention,
+scheduling, scholar-qa, search, settings, stickers, stories, story-chains, stream,
+subtitles, telegram-features, threads, thumbnails, two-factor, upload, users,
+video-replies, videos, watch-history, webhooks
 ```
 
 ---
 
-## AUDIT DIMENSIONS — Complete all 25
+## DIMENSION 3: CONTROLLERS — EVERY ENDPOINT
 
-You must complete every single dimension below. Each dimension has specific instructions on what to check, how many files to read, and what to compare against.
+There are 81 controllers. For EACH endpoint in EACH controller, verify:
 
----
+1. Correct HTTP method (GET for reads, POST for creates, etc.)
+2. Has `@UseGuards(ClerkAuthGuard)` or `@UseGuards(OptionalClerkAuthGuard)` — which, and is it correct?
+3. Has `@Throttle()` rate limiting with appropriate limits?
+4. Has `@ApiOperation()` Swagger documentation?
+5. Has `@ApiBearerAuth()` if auth required?
+6. Uses `@CurrentUser('id')` not `@CurrentUser()` without 'id'?
+7. Every POST/PUT/PATCH has a DTO with class-validator decorators?
+8. No GETs that modify data?
+9. Response format consistent?
 
-### DIMENSION 1: PRISMA SCHEMA INTEGRITY
-
-**What to check:**
-Read `apps/api/prisma/schema.prisma` — the ENTIRE file (3,859 lines). Not just a sample. The whole thing.
-
-**Specific checks:**
-1. **Every model** — does it have an `id` field? Is it `@id @default(cuid())`?
-2. **Every relation** — does it have an `onDelete` rule? Models without `onDelete` on foreign key relations will cause orphan data or cascade failures.
-3. **Every `@@index`** — are the indexes on fields that are actually queried? Check the corresponding service file and verify the indexed fields match query patterns.
-4. **Every `@@unique`** — are the unique constraints correct? Could they cause unexpected constraint violations?
-5. **Field naming consistency:**
-   - Is it always `userId` (not `authorId`, `ownerId`, `creatorId`)?
-   - Is it always `createdAt` and `updatedAt`?
-   - Are boolean fields named `isX` consistently (e.g., `isRemoved`, `isActive`, `isFeatured`)?
-6. **Money fields** — verify ALL money fields use `Decimal @db.Decimal(12,2)`, not `Float`. Check every single one.
-7. **String fields that should be enums** — are there string fields storing fixed values (like `status`, `type`, `role`) that should be Prisma enums for type safety?
-8. **Missing relations** — are there fields like `userId String` without a corresponding `user User @relation(...)` line?
-9. **Circular dependencies** — any models that reference each other in a way that could cause migration issues?
-10. **Default values** — do counters default to 0? Do booleans default to false? Do timestamps default to `now()`?
-
-**For each issue found, record:**
-- Model name
-- Field name
-- What's wrong
-- Severity (P0-P3)
-- Suggested fix
+**Produce a table: Module | Endpoint | Method | Auth | Rate Limited | DTO | Issues**
 
 ---
 
-### DIMENSION 2: BACKEND SERVICE LOGIC DEPTH
+## DIMENSION 4: MOBILE SCREENS — EVERY SINGLE ONE
 
-**What to check:**
-Read EVERY service file in `apps/api/src/modules/`. There are 79 modules. For each module that has a service file:
+There are 208 screen files. Read EVERY ONE and check:
 
-1. **Read the full service file** — not just the first 50 lines. The ENTIRE file.
-2. **Check each public method:**
-   - Does it have proper input validation (or rely on DTO validation)?
-   - Does it have error handling (try/catch, or throwing proper NestJS exceptions)?
-   - Does it have authorization checks (verify the requesting user owns/can access the resource)?
-   - Does it use `select` clauses to avoid fetching unnecessary data?
-   - Does it have pagination (cursor-based) for list endpoints?
-   - Does it have `take` limits on `findMany` calls to prevent unbounded queries?
-3. **Check for N+1 queries** — loops that make individual database calls instead of batch queries with `include` or `in`.
-4. **Check for race conditions** — concurrent requests that could cause data inconsistency (e.g., two users liking the same post simultaneously → count goes wrong).
-5. **Check for stubs** — methods that return empty arrays, hardcoded data, or `// TODO` comments.
-6. **Check for dead code** — methods that are never called from any controller.
-7. **Check for proper transaction usage** — operations that modify multiple tables should use `$transaction`.
+**CLAUDE.md Rules (for each screen):**
+1. Uses `<BottomSheet>` not RN `<Modal>`?
+2. Uses `<Skeleton.*>` for loading not `<ActivityIndicator>` (except buttons)?
+3. Uses `<EmptyState>` for empty lists not bare `<Text>`?
+4. Uses `<Icon name="arrow-left">` for back not text/emoji?
+5. Uses `<Icon name="x">` for close not text/emoji?
+6. Uses `radius.*` from theme not hardcoded borderRadius?
+7. Uses `expo-linear-gradient` not CSS gradient strings?
+8. Has `<RefreshControl>` on every FlatList?
+9. Wrapped with `<ScreenErrorBoundary>`?
+10. Uses `useTranslation()` for ALL user-facing strings?
 
-**Priority services to audit deeply (read every line):**
-- `feed.service.ts` and `personalized-feed.service.ts` — the core algorithm
-- `messages.service.ts` — the messaging engine
-- `posts.service.ts` — content creation
-- `users.service.ts` — user management
-- `islamic.service.ts` — Islamic features
-- `reels.service.ts` — video reels
-- `threads.service.ts` — Majlis threads
-- `stories.service.ts` — Stories
-- `payments.service.ts` — money handling
-- `encryption.service.ts` — security
-- `notifications/push.service.ts` — push delivery
-- `gamification.service.ts` — XP/streaks
-- `moderation.service.ts` or equivalent — content safety
-- `search.service.ts` — search
-- `live/live.service.ts` — live streaming
-- `calls/calls.service.ts` — voice/video calls
+**Quality Checks (for each screen):**
+11. Has loading state (Skeleton)?
+12. Has empty state (EmptyState component)?
+13. Has error state?
+14. Has proper navigation (back button works)?
+15. Uses design tokens (colors.*, spacing.*, fontSize.*, fonts.*)?
+16. No hardcoded hex colors?
+17. No hardcoded spacing numbers?
+18. Has accessibility labels on interactive elements?
+19. Has `accessibilityRole` on buttons?
+20. RTL support (uses rtlFlexRow, rtlTextAlign where needed)?
 
-For each of these, produce a mini-report:
-- Lines of code
-- Number of public methods
-- Methods that are stubs or incomplete
-- Methods that have no error handling
-- N+1 query patterns found
-- Missing authorization checks
-- Overall depth assessment (shallow/adequate/deep)
+**Here is EVERY screen file to audit. Do not skip any:**
+
+**Auth (4 screens):**
+- `(auth)/_layout.tsx`
+- `(auth)/forgot-password.tsx`
+- `(auth)/sign-in.tsx`
+- `(auth)/sign-up.tsx`
+
+**Onboarding (4 screens):**
+- `onboarding/_layout.tsx`
+- `onboarding/interests.tsx`
+- `onboarding/profile.tsx`
+- `onboarding/suggested.tsx`
+- `onboarding/username.tsx`
+
+**Tabs (7 screens):**
+- `(tabs)/_layout.tsx`
+- `(tabs)/saf.tsx`
+- `(tabs)/majlis.tsx`
+- `(tabs)/risalah.tsx`
+- `(tabs)/bakra.tsx`
+- `(tabs)/minbar.tsx`
+- `(tabs)/create.tsx`
+
+**Core Content Screens (15):**
+- `post/[id].tsx`, `reel/[id].tsx`, `thread/[id].tsx`, `video/[id].tsx`
+- `profile/[username].tsx`
+- `conversation/[id].tsx`
+- `story-viewer.tsx`
+- `search.tsx`, `search-results.tsx`, `discover.tsx`
+- `notifications.tsx`
+- `settings.tsx`
+- `edit-profile.tsx`
+- `hashtag/[tag].tsx`, `hashtag-explore.tsx`
+
+**Content Creation (14):**
+- `create-post.tsx`, `create-reel.tsx`, `create-story.tsx`, `create-thread.tsx`, `create-video.tsx`
+- `create-broadcast.tsx`, `create-clip.tsx`, `create-event.tsx`, `create-group.tsx`, `create-playlist.tsx`
+- `video-editor.tsx`, `image-editor.tsx`, `caption-editor.tsx`, `green-screen-editor.tsx`
+
+**Messaging & Communication (18):**
+- `new-conversation.tsx`, `conversation-info.tsx`, `conversation-media.tsx`
+- `call/[id].tsx`, `call-history.tsx`
+- `live/[id].tsx`, `go-live.tsx`, `schedule-live.tsx`
+- `audio-room.tsx`
+- `pinned-messages.tsx`, `starred-messages.tsx`, `saved-messages.tsx`
+- `chat-export.tsx`, `chat-folders.tsx`, `chat-lock.tsx`, `chat-theme-picker.tsx`, `chat-wallpaper.tsx`
+- `dm-note-editor.tsx`
+
+**Islamic Features (20):**
+- `prayer-times.tsx`, `qibla-compass.tsx`, `islamic-calendar.tsx`
+- `quran-room.tsx`, `quran-reading-plan.tsx`, `quran-share.tsx`, `tafsir-viewer.tsx`
+- `hadith.tsx`
+- `dhikr-counter.tsx`, `dhikr-challenges.tsx`, `dhikr-challenge-detail.tsx`
+- `mosque-finder.tsx`, `halal-finder.tsx`
+- `dua-collection.tsx`, `names-of-allah.tsx`, `hifz-tracker.tsx`, `fasting-tracker.tsx`
+- `morning-briefing.tsx`, `ramadan-mode.tsx`, `eid-cards.tsx`
+- `hajj-companion.tsx`, `hajj-step.tsx`
+- `nasheed-mode.tsx`
+- `zakat-calculator.tsx`, `waqf.tsx`, `donate.tsx`, `charity-campaign.tsx`
+- `scholar-verification.tsx`, `fatwa-qa.tsx`
+
+**Profile & Social (14):**
+- `followers/[userId].tsx`, `following/[userId].tsx`, `mutual-followers.tsx`
+- `follow-requests.tsx`, `blocked.tsx`, `muted.tsx`, `restricted.tsx`
+- `circles.tsx`, `close-friends.tsx`
+- `share-profile.tsx`, `qr-code.tsx`, `qr-scanner.tsx`
+- `profile-customization.tsx`
+- `contact-sync.tsx`
+
+**Gamification (6):**
+- `achievements.tsx`, `challenges.tsx`, `streaks.tsx`, `leaderboard.tsx`
+- `xp-history.tsx`
+- `wind-down.tsx`
+
+**Commerce & Monetization (12):**
+- `marketplace.tsx`, `product-detail.tsx`, `product/[id].tsx`, `orders.tsx`
+- `creator-dashboard.tsx`, `creator-storefront.tsx`, `analytics.tsx`, `post-insights.tsx`
+- `cashout.tsx`, `revenue.tsx`, `enable-tips.tsx`, `send-tip.tsx`
+- `gift-shop.tsx`
+- `boost-post.tsx`, `branded-content.tsx`
+- `membership-tiers.tsx`
+
+**Settings & Privacy (16):**
+- `account-settings.tsx`, `account-switcher.tsx`
+- `content-settings.tsx`, `content-filter-settings.tsx`, `media-settings.tsx`
+- `disappearing-settings.tsx`, `disappearing-default.tsx`
+- `notification-tones.tsx`
+- `status-privacy.tsx`
+- `parental-controls.tsx`, `link-child-account.tsx`
+- `biometric-lock.tsx`
+- `manage-data.tsx`, `storage-management.tsx`
+- `screen-time.tsx`, `quiet-mode.tsx`
+- `theme-settings.tsx`
+
+**Media & Content Tools (12):**
+- `camera.tsx`, `disposable-camera.tsx`, `photo-music.tsx`
+- `audio-library.tsx`, `trending-audio.tsx`, `sound/[id].tsx`
+- `sticker-browser.tsx`
+- `reel-remix.tsx`, `reel-templates.tsx`, `duet-create.tsx`, `stitch-create.tsx`
+- `end-screen-editor.tsx`
+- `voice-post-create.tsx`, `voice-recorder.tsx`
+
+**Community & Discovery (12):**
+- `communities.tsx`, `community-posts.tsx`
+- `local-boards.tsx`, `volunteer-board.tsx`, `mentorship.tsx`
+- `event-detail.tsx`
+- `channel/[handle].tsx`, `edit-channel.tsx`
+- `broadcast-channels.tsx`, `manage-broadcast.tsx`
+- `watch-party.tsx`, `watch-history.tsx`
+
+**Misc (10):**
+- `archive.tsx`, `saved.tsx`, `bookmark-collections.tsx`, `bookmark-folders.tsx`
+- `downloads.tsx`, `drafts.tsx`
+- `report.tsx`, `reports/[id].tsx`, `my-reports.tsx`, `appeal-moderation.tsx`
+- `why-showing.tsx`, `cross-post.tsx`
+- `ai-assistant.tsx`, `ai-avatar.tsx`
+- `verify-encryption.tsx`
+- `location-picker.tsx`
+- `majlis-lists.tsx`, `majlis-list/[id].tsx`
+- `playlists/[channelId].tsx`, `playlist/[id].tsx`, `save-to-playlist.tsx`
+- `series-detail.tsx`, `series-discover.tsx`, `series/[id].tsx`
+- `video-premiere.tsx`
+- `share-receive.tsx`
+- `followed-topics.tsx`
+- `2fa-setup.tsx`, `2fa-verify.tsx`
+- `collab-requests.tsx`
+
+**Produce: `docs/audit/SCREEN_BY_SCREEN.md` with a row per screen documenting violations found.**
 
 ---
 
-### DIMENSION 3: CONTROLLER & ENDPOINT AUDIT
+## DIMENSION 5: UI COMPONENTS — ALL 35
 
-**What to check:**
-Read EVERY controller file in `apps/api/src/modules/`. There are 81 controllers.
-
-For each controller:
-1. **Every endpoint must have:**
-   - `@UseGuards(ClerkAuthGuard)` or `@UseGuards(OptionalClerkAuthGuard)` — which is it and is it correct?
-   - `@ApiOperation({ summary: '...' })` — is the Swagger doc meaningful?
-   - `@ApiBearerAuth()` if auth is required
-   - `@Throttle()` rate limiting — is it present? Is the limit appropriate?
-   - `@CurrentUser('id')` for authenticated endpoints (NOT `@CurrentUser()` without `'id'`)
-2. **HTTP method correctness:**
-   - GET for reads (never modifies data)
-   - POST for creates
-   - PUT/PATCH for updates
-   - DELETE for deletes
-   - Are there any GETs that modify data? (P0)
-3. **DTO validation:**
-   - Does every POST/PUT/PATCH have a DTO with class-validator decorators?
-   - Are DTOs using proper validators (`@IsString()`, `@IsOptional()`, `@Length()`, etc.)?
-   - Are there endpoints that accept raw body without DTO validation? (P1)
-4. **Response format:**
-   - Does the TransformInterceptor apply to all responses?
-   - Are responses consistent (`{ data, success, timestamp }`)?
-
-**Produce a table:**
-| Module | Endpoints | Auth Guard | Rate Limited | DTO Validated | Issues |
-|--------|-----------|-----------|-------------|--------------|--------|
-
----
-
-### DIMENSION 4: MOBILE SCREEN CONSISTENCY AUDIT
-
-**What to check:**
-Read at minimum 50 screen files from `apps/mobile/app/(screens)/`. Prioritize the most important ones, but also sample from less common ones.
-
-For EACH screen, verify:
-
-1. **CLAUDE.md rules compliance:**
-   - Uses `<BottomSheet>` not RN `<Modal>` — search for `Modal` import
-   - Uses `<Skeleton.*>` for loading states not `<ActivityIndicator>` (exception: buttons)
-   - Uses `<EmptyState>` for empty lists not bare `<Text>`
-   - Uses `<Icon name="arrow-left">` for back, not text/emoji
-   - Uses `<Icon name="x">` for close, not text/emoji
-   - Uses `radius.*` from theme, not hardcoded `borderRadius`
-   - Uses `expo-linear-gradient`, not CSS gradient strings
-   - Has `<RefreshControl>` on every FlatList/ScrollView
-   - Uses `<ScreenErrorBoundary>` wrapper
-   - Uses `useTranslation()` for all user-facing strings (no hardcoded English)
-
-2. **Design token usage:**
-   - Colors from `colors.*` theme, not hardcoded hex values
-   - Spacing from `spacing.*` theme, not hardcoded numbers
-   - Font sizes from `fontSize.*` theme, not hardcoded
-   - Font families from `fonts.*`, not string literals
-   - Border radius from `radius.*`, not numbers >= 6
-
-3. **Accessibility:**
-   - `accessibilityLabel` on every `Pressable`/`TouchableOpacity`
-   - `accessibilityRole` on interactive elements
-   - No images without `accessibilityLabel`
-
-4. **Navigation:**
-   - Does the back button work? (uses `router.back()` or `router.push()`)
-   - Are route params properly typed?
-   - Can the screen receive deep links?
-
-5. **i18n:**
-   - ZERO hardcoded English strings in the JSX
-   - All user-facing text uses `t('key.path')`
-   - Error messages are i18n'd
-   - Button labels are i18n'd
-
-6. **Error handling:**
-   - What happens if the API call fails? Does it show a meaningful error?
-   - What happens if the screen loads with no data?
-   - Is there a retry mechanism?
-
-**Screens to audit (MUST read all of these — not a sample, ALL of them):**
+Read every file in `apps/mobile/src/components/ui/`:
 ```
-saf.tsx (tab)
-bakra.tsx (tab)
-majlis.tsx (tab)
-risalah.tsx (tab)
-minbar.tsx (tab)
-create-post.tsx
-create-reel.tsx
-create-story.tsx
-create-thread.tsx
-create-video.tsx
-post/[id].tsx
-reel/[id].tsx
-thread/[id].tsx
-video/[id].tsx
-profile/[id].tsx
-conversation/[id].tsx
-story-viewer.tsx
-search.tsx
-search-results.tsx
-discover.tsx
-notifications.tsx
-settings.tsx
-edit-profile.tsx
-prayer-times.tsx
-qibla-compass.tsx
-quran-room.tsx
-dhikr-counter.tsx
-mosque-finder.tsx
-halal-finder.tsx
-dua-collection.tsx
-fasting-tracker.tsx
-names-of-allah.tsx
-hifz-tracker.tsx
-morning-briefing.tsx
-go-live.tsx
-audio-room.tsx
-analytics.tsx
-creator-dashboard.tsx
-marketplace.tsx
-zakat-calculator.tsx
-challenges.tsx
-streaks.tsx
-achievements.tsx
-leaderboard.tsx
-account-settings.tsx
-privacy.tsx (if exists)
-blocked.tsx
-muted.tsx
+ActionButton, AuthGate, Autocomplete, Avatar, Badge, BottomSheet, CaughtUpCard,
+CharCountRing, DoubleTapHeart, EmptyState, EndScreenOverlay, FadeIn, FloatingHearts,
+GlassHeader, GradientButton, Icon, ImageCarousel, ImageGallery, ImageLightbox,
+LinkPreview, LocationPicker, MiniPlayer, OfflineBanner, PremiereCountdown, RichText,
+ScreenErrorBoundary, Skeleton, TTSMiniPlayer, TabBarIndicator, TabSelector,
+ToastNotification, VerifiedBadge, VideoControls, VideoPlayer, WebSafeBlurView
 ```
 
-That's 48 screens minimum. Read each one fully. Document violations.
+For each: Props typed? Memoized? Accessible? RTL? Theme tokens? Animations use Reanimated?
 
 ---
 
-### DIMENSION 5: UI COMPONENT LIBRARY AUDIT
+## DIMENSION 6: NON-UI COMPONENTS
 
-**What to check:**
-Read EVERY component in `apps/mobile/src/components/ui/` (35 components).
+Read every component NOT in `/ui/`:
+- `apps/mobile/src/components/saf/` — PostCard, StoryBubble, StoryRow, etc.
+- `apps/mobile/src/components/risalah/` — MessageBubble, StickerPackBrowser, etc.
+- `apps/mobile/src/components/story/` — PollSticker, etc.
+- `apps/mobile/src/components/islamic/` — EidFrame, etc.
+- Any other component directories
 
-For each component:
-1. **Props interface** — is it properly typed with TypeScript? No `any` types?
-2. **Default props** — are defaults sensible?
-3. **Memoization** — is `React.memo` used where appropriate (list items, heavy renders)?
-4. **Accessibility** — does it pass through `accessibilityLabel`?
-5. **RTL support** — does it use `rtlFlexRow`, `rtlTextAlign`, `rtlMargin` where needed?
-6. **Theme compliance** — uses design tokens, not hardcoded values?
-7. **Animation quality** — uses Reanimated spring animations, not `Animated` API?
-8. **Haptic feedback** — does it call `useHaptic()` on interactions?
-
-**Key components to read every line:**
-- `BottomSheet.tsx` — the modal replacement
-- `Skeleton.tsx` — loading states
-- `Icon.tsx` — icon system
-- `Avatar.tsx` — user avatars
-- `EmptyState.tsx` — empty list states
-- `GradientButton.tsx` — primary CTA
-- `VideoPlayer.tsx` — video playback
-- `DoubleTapHeart.tsx` — like animation
-- `AuthGate.tsx` — anonymous auth gate
-- `OfflineBanner.tsx` — network status
-- `TTSMiniPlayer.tsx` — read-aloud player
-- `Toast.tsx` — notifications
-- `CharCountRing.tsx` — character limit indicator
+For each: same checks as UI components.
 
 ---
 
-### DIMENSION 6: HOOKS AUDIT
+## DIMENSION 7: HOOKS — ALL 23
 
-**What to check:**
-Read EVERY hook in `apps/mobile/src/hooks/` (23 hooks).
+Read every file in `apps/mobile/src/hooks/`:
+```
+useAmbientColor, useAnimatedPress, useBackgroundUpload, useChatLock,
+useEntranceAnimation, useFpsMonitor, useHaptic, useIsWeb, useIslamicTheme,
+useNetworkStatus, usePayment, usePiP, usePulseGlow, usePushNotificationHandler,
+usePushNotifications, useReducedMotion, useResponsive, useScrollDirection,
+useTTS, useTranslation, useVideoPreload, useVideoPreloader, useWebKeyboardShortcuts
+```
 
-For each hook:
-1. **Does it clean up?** — `useEffect` cleanup functions for subscriptions, timers, listeners
-2. **Dependency arrays** — are they correct? Missing deps = stale closures. Extra deps = unnecessary rerenders.
-3. **Memory leaks** — does it unsubscribe from events on unmount?
-4. **Error handling** — does it handle failures gracefully?
-5. **Naming** — follows `useX` convention?
-
-**Key hooks to read every line:**
-- `useHaptic.ts`
-- `useTranslation.ts`
-- `useNetworkStatus.ts`
-- `useVideoPreloader.ts`
-- `useAmbientColor.ts`
-- `useIslamicTheme.ts`
-- `useTTS.ts`
-- `useAnimatedPress.ts`
-- `usePushNotifications.ts`
-- `usePushNotificationHandler.ts`
-- `useScrollDirection.ts` (if exists)
+For each:
+1. Cleanup function in useEffect?
+2. Correct dependency arrays?
+3. Memory leak potential?
+4. Error handling?
+5. Is it actually used anywhere? (grep for import)
 
 ---
 
-### DIMENSION 7: API SERVICE LAYER (MOBILE)
+## DIMENSION 8: API SERVICES — ALL 19
 
-**What to check:**
-Read EVERY file in `apps/mobile/src/services/` (19 files).
+Read every file in `apps/mobile/src/services/`:
+```
+api, audioRoomsApi, chatExportApi, communitiesApi, creatorApi, downloadManager,
+encryption, encryptionApi, eventsApi, giftsApi, islamicApi, monetizationApi,
+offlineCache, paymentsApi, promotionsApi, pushNotifications, reelTemplatesApi,
+twoFactorApi, widgetData
+```
 
-For each service file:
-1. **API base URL** — is it configurable (env var) or hardcoded?
-2. **Auth token** — is the Clerk JWT attached to every authenticated request?
-3. **Error handling** — do API calls handle network errors, 401s (token expired), 429s (rate limited), 500s?
-4. **Response typing** — are responses properly typed? Or using `any`?
-5. **Pagination** — do list APIs support cursor-based pagination?
-6. **Consistency** — do all services follow the same pattern (fetch → parse → return typed data)?
-7. **Missing endpoints** — are there backend endpoints with no corresponding mobile service call?
-8. **Stale endpoints** — are there mobile service calls to endpoints that don't exist in the backend?
-
----
-
-### DIMENSION 8: STATE MANAGEMENT (ZUSTAND STORE)
-
-**What to check:**
-Read `apps/mobile/src/stores/index.ts` completely.
-
-1. **Store shape** — is it flat or deeply nested? (Flat is better for performance)
-2. **Actions** — are all setters properly defined? Any direct mutations?
-3. **Selectors** — are components selecting minimal state (not the entire store)?
-4. **Persistence** — is any state persisted to AsyncStorage? Should it be?
-5. **Type safety** — is the store fully typed?
-6. **Stale state** — are there store fields that are set but never read?
-7. **Missing state** — are there pieces of app state managed in local useState that should be global?
+For each:
+1. Base URL configurable?
+2. Auth token attached?
+3. Error handling (network errors, 401, 429, 500)?
+4. Response typing (no `any`)?
+5. Pagination support?
+6. Missing endpoints (backend has it but mobile doesn't call it)?
+7. Stale endpoints (mobile calls it but backend doesn't have it)?
 
 ---
 
-### DIMENSION 9: NAVIGATION & ROUTING
+## DIMENSION 9: UTILITY FILES — ALL 14
 
-**What to check:**
-1. Read `apps/mobile/app/_layout.tsx` — the root layout
-2. Read `apps/mobile/app/(tabs)/_layout.tsx` — tab configuration
-3. Read `apps/mobile/app/(screens)/_layout.tsx` — screen stack configuration
-4. Read `apps/mobile/app/(auth)/_layout.tsx` — auth flow
+Read every file in `apps/mobile/src/utils/`:
+```
+blurhash, deepLinking, feedCache, hijri, image, lazily, localeFormat,
+navigation, offlineQueue, performance, platform, registerServiceWorker, rtl, sentry
+```
 
-**Specific checks:**
-1. **Auth flow** — can unauthenticated users access the feed? (Anonymous browsing from Batch 1)
-2. **Deep linking** — are all major screens reachable via URL? Check `expo-router` route definitions.
-3. **Tab bar** — correct 5 tabs (Saf, Majlis, Risalah, Bakra, Minbar)? Correct icons? Badge counts?
-4. **Screen transitions** — default push/pop? Any custom transitions?
-5. **Back behavior** — does back always work? Any screens where back is broken or leads to wrong screen?
-6. **Route type safety** — are route params typed? Search for `as never` route casts (known limitation, but count them).
-7. **Orphan screens** — are there screen files that are not reachable from any navigation path? How would a user get to `scholar-verification.tsx` or `eid-cards.tsx`?
+For each: correct implementation? Used? Error handling? Edge cases?
 
 ---
 
-### DIMENSION 10: INTERNATIONALIZATION DEPTH
+## DIMENSION 10: ZUSTAND STORE
 
-**What to check:**
-1. Read ALL 8 language files: `en.json`, `ar.json`, `tr.json`, `ur.json`, `bn.json`, `fr.json`, `id.json`, `ms.json`
-2. Run the audit script: `node apps/mobile/scripts/audit-i18n.js`
-
-**Specific checks:**
-1. **Key parity** — all 8 files must have identical key sets. ANY missing key = P1.
-2. **Interpolation variables** — every `{{variable}}` in `en.json` must exist in all 7 other files. Missing = P1 (crash at runtime).
-3. **Empty values** — any key with `""` empty string value = P2.
-4. **Untranslated** — any value in a non-English file that's identical to the English value = P2 (likely untranslated).
-5. **Arabic RTL** — check 20 random Arabic values for proper text direction. Mixed Arabic+numbers should have directional markers if needed.
-6. **Pluralization** — does the app handle plural forms? (Arabic has 6 plural forms — singular, dual, plural few, plural many, etc.)
-7. **Date/time/number formatting** — are dates, times, and numbers formatted per locale? Or always English format?
-8. **Islamic terminology consistency** — check these terms across all 8 languages:
-   - "Salah" / "Prayer" — is usage consistent within each language?
-   - "Du'a" / "Supplication"
-   - "Jumu'ah" / "Friday Prayer"
-   - "Quran" — should never be translated, always "Quran" or "القرآن"
-   - "Ramadan", "Hajj", "Eid" — universal or localized?
+Read `apps/mobile/src/stores/index.ts` completely:
+1. Shape flat vs nested?
+2. All setters defined?
+3. Type safety?
+4. Persistence to AsyncStorage?
+5. Stale fields (set but never read)?
+6. Missing state (should be global but isn't)?
 
 ---
 
-### DIMENSION 11: REAL-TIME SYSTEM (SOCKET.IO)
+## DIMENSION 11: TYPE DEFINITIONS
 
-**What to check:**
-Read `apps/api/src/gateways/chat.gateway.ts` completely. Also read any DTO files in `src/gateways/dto/`.
-
-1. **Authentication** — is the JWT verified on connection? Can unauthenticated users connect?
-2. **Room management** — how are conversation rooms joined/left? Any room leak (joining without leaving)?
-3. **Event handling** — list every event the gateway handles. For each:
-   - Is the payload validated?
-   - Is the sender authorized (member of conversation)?
-   - Is the response properly formatted?
-4. **Typing indicators** — do they work? Is there a timeout (auto-stop after 5s)?
-5. **Presence tracking** — is online/offline status tracked? How? Redis or in-memory?
-6. **Message delivery** — is delivery confirmed? Read receipts?
-7. **Reconnection** — what happens when a client disconnects and reconnects? Do they miss messages?
-8. **Quran rooms** — how do they work? Audio streaming? Text follow-along?
-9. **Call signaling** — is there WebRTC signaling? Or just database records?
-10. **Scaling** — is the Redis adapter configured for multi-instance deployment? Check `apps/api/src/config/socket-io-adapter.ts`.
+Read `apps/mobile/src/types/index.ts` and any other type files:
+1. Do types match Prisma models?
+2. Any `any` types?
+3. Are API response types accurate?
+4. Missing types?
 
 ---
 
-### DIMENSION 12: SECURITY & PRIVACY
+## DIMENSION 12: NAVIGATION & ROUTING
 
-**What to check:**
+Read all layout files:
+- `app/_layout.tsx`
+- `app/(tabs)/_layout.tsx`
+- `app/(screens)/_layout.tsx`
+- `app/(auth)/_layout.tsx`
+- `app/onboarding/_layout.tsx`
 
-1. **Authentication audit:**
-   - Read `apps/api/src/common/guards/clerk-auth.guard.ts` — how does it verify JWTs?
-   - Read `apps/api/src/common/guards/optional-clerk-auth.guard.ts` — what happens if token is invalid vs missing?
-   - Read `apps/api/src/modules/auth/webhooks.controller.ts` — how are Clerk webhooks verified?
-   - Check: can any endpoint be accessed without auth that shouldn't be?
-
-2. **Authorization audit:**
-   - For each write endpoint: does it verify the requesting user owns the resource they're modifying?
-   - Example: can User A edit User B's post? Check `posts.service.ts` update/delete methods.
-   - Can User A read User B's private messages? Check `messages.service.ts`.
-   - Can a non-admin access admin endpoints?
-
-3. **Input validation:**
-   - Check 10 random DTOs — do they have proper validation decorators?
-   - Check for SQL injection risk — are there any raw SQL queries with string concatenation? (Note: `$executeRaw` tagged templates are safe per CLAUDE.md)
-   - Check for XSS — is user content sanitized before storage/display?
-
-4. **Encryption:**
-   - Read `encryption.service.ts` completely — what does it actually encrypt?
-   - Are messages encrypted at rest in the database? Or only in transit?
-   - Are encryption keys properly managed?
-
-5. **Data exposure:**
-   - Do any endpoints return more data than needed? (e.g., returning password hashes, internal IDs, other users' emails)
-   - Are `select` clauses used to limit returned fields?
-
-6. **Rate limiting:**
-   - Verify ALL 81 controllers have rate limiting
-   - Check sensitive endpoints (login, password reset, search) have stricter limits
-
-7. **CORS:**
-   - Read `apps/api/src/main.ts` — what origins are allowed?
-   - Is `*` used? (P1 in production)
-
-8. **Environment variables:**
-   - Read `.env.example` — are all secrets properly documented?
-   - Check no secrets are hardcoded in source files
+Check:
+1. Auth flow — anonymous browsing works?
+2. Deep linking — all screens reachable by URL?
+3. Tab bar — 5 tabs, correct icons, badges?
+4. Back behavior — always works?
+5. `as never` route casts — count them
+6. Orphan screens — screens not reachable from any navigation path?
 
 ---
 
-### DIMENSION 13: TESTING DEPTH
+## DIMENSION 13: i18n — ALL 8 LANGUAGES
 
-**What to check:**
-Read at minimum 20 test files. For each:
-
-1. **Coverage quality** — does it test actual logic or just "service is defined"?
-2. **Mock quality** — are mocks realistic? Or using `as any` for everything?
-3. **Edge cases** — does it test error paths? Unauthorized access? Invalid input?
-4. **Missing tests** — for each module, check if a test file exists. List modules with no tests.
-5. **Test isolation** — do tests depend on each other? Can they run in any order?
-6. **Snapshot testing** — is it used? Should it be?
-
-**Key test files to read deeply:**
-- `feed.service.spec.ts`
-- `messages.service.spec.ts`
-- `posts.service.spec.ts`
-- `users.service.spec.ts`
-- `threads.service.spec.ts`
-- `islamic.service.spec.ts`
-- `encryption.service.spec.ts`
-- `chat.gateway.spec.ts`
-
-**Run the full test suite** and record: total suites, total tests, pass rate, any warnings.
+Read ALL 8 JSON files. Run audit script. Check:
+1. Key parity (all 8 have identical keys)
+2. Interpolation variables ({{var}} present in all translations)
+3. Empty values
+4. Untranslated values (identical to English)
+5. Arabic RTL correctness
+6. Islamic term consistency across languages
+7. Pluralization handling
+8. Date/time/number locale formatting
 
 ---
 
-### DIMENSION 14: ISLAMIC FEATURES DEPTH
+## DIMENSION 14: SOCKET.IO GATEWAY
 
-This is Mizanly's core differentiator. Audit it ruthlessly.
-
-**What to check:**
-
-1. **Prayer times:**
-   - Read `islamic.service.ts` — how are prayer times calculated? External API or local calculation?
-   - Are times accurate for the user's location?
-   - Do 8 calculation methods actually produce different results?
-   - Do 6 adhan reciters actually have different audio URLs?
-
-2. **Quran:**
-   - Read Quran-related code — is there actual Quran text data? Or just placeholder?
-   - Do the 4 reciters have real audio source URLs?
-   - Does the reading plan actually track progress?
-   - Does tafsir viewer have real tafsir content?
-
-3. **Hadith:**
-   - Read `apps/api/src/modules/islamic/data/hadiths.json` — how many hadiths? Are they authentic? Do they have proper source references (Bukhari, Muslim, etc.)?
-
-4. **Dua collection:**
-   - Read `apps/api/src/modules/islamic/data/duas.json` — how many duas? Are they categorized? Do they have Arabic + transliteration + translation + source?
-   - Are there at least 5 duas per major category (morning, evening, eating, travel, etc.)?
-
-5. **99 Names:**
-   - Read `apps/api/src/modules/islamic/data/asma-ul-husna.json` — are all 99 names present? Do they have Arabic, transliteration, English meaning, and explanation?
-
-6. **Fasting tracker:**
-   - Does it calculate iftar/suhoor times based on location?
-   - Can it track Sunnah fasts (Monday/Thursday)?
-   - Does it integrate with gamification (XP for streaks)?
-
-7. **Zakat calculator:**
-   - Is it multi-asset (gold, silver, cash, stocks, property)?
-   - Is the nisab threshold correct and dynamic (based on current gold/silver prices)?
-   - Does it use Decimal arithmetic (not Float)?
-
-8. **Mosque finder:**
-   - What's the data source? Database only or external API?
-   - If database only — is there seed data? How many mosques?
-
-9. **Halal finder:**
-   - Same question — data source? Seed data?
-   - How many restaurants in the database?
-
-10. **Morning briefing:**
-    - Read `morning-briefing.tsx` — does it actually pull prayer times, hadith, ayah, dua?
-    - Does the dhikr challenge actually count and award XP?
-
-11. **Islamic calendar theming:**
-    - Read `islamicThemes.ts` — are the 5 themes visually distinct?
-    - Read `useIslamicTheme.ts` — does Hijri date detection work?
-    - Is it actually wired in `_layout.tsx`?
-
-12. **Hajj companion:**
-    - Read `hajj-companion.tsx` and `hajj-step.tsx` — is there real Hajj guide content?
-    - Read `apps/api/src/modules/islamic/data/hajj-guide.json` — is it comprehensive?
+Read `apps/api/src/gateways/chat.gateway.ts` and all DTOs. Check:
+1. JWT auth on connection
+2. Room management (join/leave, no leaks)
+3. Every event: payload validated? Sender authorized? Response formatted?
+4. Typing indicators with timeout
+5. Presence tracking (Redis vs in-memory)
+6. Delivery confirmation / read receipts
+7. Reconnection handling
+8. Quran rooms functionality
+9. Call signaling — is there actual WebRTC?
+10. Redis adapter for multi-instance scaling
 
 ---
 
-### DIMENSION 15: COMPETITOR FEATURE-BY-FEATURE COMPARISON
+## DIMENSION 15: SECURITY
 
-**This is the research-heavy section.** For each of Mizanly's 5 spaces, do a deep comparison against the real competitor app.
-
-**Saf (Instagram) — Check these features:**
-1. Feed algorithm — does Saf have: For You / Following tabs? Trending fallback for new users?
-2. Stories — creation, viewing, highlights, interactive stickers (poll, question, quiz, countdown, emoji slider)?
-3. Post creation — photo/video, filters, caption, hashtags, mentions, location?
-4. Post interactions — like (double-tap), comment, share, save, report?
-5. Profile — bio, avatar, cover, follower/following counts, post grid, story highlights?
-6. Explore/Discover — trending content, search, hashtag feeds?
-7. What Instagram has that Saf doesn't — Reels tab in feed, Shopping, Guides, Collab posts, Close Friends stories, Notes, Broadcast Channels?
-
-**Bakra (TikTok) — Check these features:**
-1. Video feed — full-screen vertical scroll? Autoplay? Sound on by default?
-2. Video creation — record, trim, speed, effects, music, text, filters?
-3. Duet/Stitch — do they actually work?
-4. Sound page — tap a sound → see all videos using it?
-5. Video interactions — like, comment, share, save, duet, stitch?
-6. What TikTok has that Bakra doesn't — LIVE shopping, Creator Marketplace, Photo mode, Playlists, Series?
-
-**Majlis (X/Twitter) — Check these features:**
-1. Thread creation — text, media, polls?
-2. Thread interactions — like, reply, repost, quote, bookmark?
-3. Thread feed — For You / Following / Trending tabs?
-4. Lists — create lists of accounts to follow?
-5. What X has that Majlis doesn't — Spaces (live audio), Communities, X Premium features, Grok AI, Video tab?
-
-**Risalah (WhatsApp) — Check these features:**
-1. DM — text, voice message, image, video, file, location, contact?
-2. Group chat — create, admin controls, member management?
-3. Voice/video calls — do they actually work (WebRTC)?
-4. Status (Stories) — 24h disappearing status updates?
-5. Encryption — E2E? Safety numbers? Key verification?
-6. What WhatsApp has that Risalah doesn't — Channels, Communities, Business API, Payments, Flows?
-
-**Minbar (YouTube) — Check these features:**
-1. Video upload — long-form, thumbnail, title, description, tags?
-2. Video player — play/pause, seek, speed, quality, PiP, fullscreen?
-3. Playlists — create, add videos, reorder?
-4. Comments — threaded? Like/dislike? Pin?
-5. Creator dashboard — analytics, revenue, subscribers?
-6. What YouTube has that Minbar doesn't — Shorts, Live, Premiere, Memberships, Super Chat, Community posts, YouTube Music?
-
-**For each comparison, produce a table:**
-| Feature | Competitor | Mizanly Has? | Quality (1-10) | Gap Description |
-|---------|-----------|-------------|----------------|-----------------|
+1. **Auth guards** — read both guard files, verify JWT verification
+2. **Authorization** — for every write endpoint, can User A modify User B's data?
+3. **Input validation** — read 20 random DTOs, check validators
+4. **SQL injection** — any raw SQL with string concatenation?
+5. **XSS** — is user content sanitized?
+6. **Encryption** — read encryption service fully, what does it actually encrypt?
+7. **Data exposure** — do endpoints return sensitive fields (password hashes, emails of other users)?
+8. **CORS** — read main.ts, what origins allowed?
+9. **Rate limiting** — verify all 81 controllers
+10. **Secrets in code** — any hardcoded API keys, tokens, passwords?
+11. **Clerk webhook verification** — is the signature verified?
+12. **File upload** — is the upload folder whitelisted? File type validation?
 
 ---
 
-### DIMENSION 16: THIRD-PARTY INTEGRATION STATUS
+## DIMENSION 16: TESTING
 
-**What to check:**
-For every third-party service in `.env.example`, verify:
-
-1. **Is the SDK installed?** (check package.json)
-2. **Is there actual integration code?** (not just env var reference)
-3. **Does it have a fallback if the service is unavailable?**
-4. **Has it been tested with real credentials?**
-
-**Services to verify:**
-- Clerk (auth)
-- Neon PostgreSQL (database)
-- Cloudflare R2 (storage)
-- Cloudflare Stream (video)
-- Cloudflare Images
-- Upstash Redis (cache)
-- Stripe (payments)
-- Anthropic Claude (AI)
-- OpenAI Whisper (transcription)
-- Gemini (embeddings)
-- Meilisearch (search)
-- Resend (email)
-- Sentry (monitoring)
-- Expo Push (notifications)
-- Firebase/FCM (Android push)
-- TURN server (WebRTC)
-
-For each, document: installed? integrated? fallback? tested? status (working/partial/broken/missing).
+Read at minimum 30 test files. Run the full suite. Check:
+1. Total suites, tests, pass rate
+2. Coverage quality (real logic or just "service is defined"?)
+3. Mock quality (realistic or `as any` everywhere?)
+4. Edge case testing (error paths, unauthorized, invalid input?)
+5. Modules with NO test file — list every one
+6. Integration tests — do they exist? Do they work?
+7. Test isolation (no inter-test dependencies?)
 
 ---
 
-### DIMENSION 17: PERFORMANCE AUDIT
+## DIMENSION 17: DATA FILES — ISLAMIC CONTENT
 
-**What to check:**
+Read every data file in `apps/api/src/modules/islamic/data/`:
+1. `hadiths.json` — how many? Authentic sources? References?
+2. `duas.json` — how many? Categories? Arabic + transliteration + translation + source?
+3. `asma-ul-husna.json` — all 99? Arabic + meaning + explanation?
+4. `hajj-guide.json` — comprehensive? Step-by-step?
+5. `tafsir.json` (if exists) — source? Depth?
+6. Any other data files
 
-1. **Database queries:**
-   - Read the 5 heaviest services (feed, messages, posts, threads, search)
-   - Identify queries that could be slow at scale (full table scans, missing indexes, no pagination)
-   - Check for `findMany` without `take` (unbounded queries)
-
-2. **Frontend performance:**
-   - Are lists using `FlatList` with proper `keyExtractor`, `getItemLayout`, `maxToRenderPerBatch`?
-   - Are heavy components wrapped in `React.memo`?
-   - Are images using `expo-image` with caching?
-   - Are there any inline `renderItem` functions that should be extracted?
-   - Is Hermes engine enabled?
-
-3. **Bundle size:**
-   - Are all 8 language files loaded at startup? (Should lazy-load)
-   - Are there unused dependencies in package.json?
-   - Are screens lazy-loaded?
-
-4. **API response size:**
-   - Do endpoints use `select` to return minimal data?
-   - Are there endpoints returning full user objects when only id+name is needed?
-
-5. **Caching:**
-   - What's cached in Redis? What should be but isn't?
-   - What's cached on mobile? (feedCache, AsyncStorage)
-   - Are cache TTLs appropriate?
+For each: is the data real and useful, or placeholder?
 
 ---
 
-### DIMENSION 18: ACCESSIBILITY COMPLIANCE
+## DIMENSION 18: PERFORMANCE
 
-**What to check:**
-
-1. **Read 20 screens** and verify every interactive element has:
-   - `accessibilityLabel`
-   - `accessibilityRole`
-   - `accessibilityHint` (for non-obvious actions)
-
-2. **Color contrast:**
-   - Check the 5 most common text/background combinations against WCAG AA (4.5:1):
-     - `colors.text.primary` (#FFF) on `colors.dark.bg` (#0D1117)
-     - `colors.text.secondary` (#8B949E) on `colors.dark.bg` (#0D1117)
-     - `colors.text.tertiary` (#6E7781) on `colors.dark.bg` (#0D1117)
-     - `colors.emerald` (#0A7B4F) on `colors.dark.bg` (#0D1117)
-     - `colors.gold` (#C8963E) on `colors.dark.bg` (#0D1117)
-
-3. **Touch targets:**
-   - Are all tappable elements at least 44x44 points?
-   - Check 10 screens for small icons without `hitSlop`
-
-4. **Font scaling:**
-   - Is `maxFontSizeMultiplier` set? (Should be — set to 1.5x in Batch 1)
-   - Would the layout break at 1.5x font size?
-
-5. **Reduced motion:**
-   - Does the app respect `prefers-reduced-motion`?
-   - Can animations be disabled?
+1. **Database queries** — identify the 10 slowest-looking queries (no indexes, full scans, no select)
+2. **Frontend lists** — FlatList with keyExtractor, getItemLayout, maxToRenderPerBatch?
+3. **Memoization** — React.memo on list items?
+4. **Image loading** — expo-image with caching?
+5. **Bundle size** — unused dependencies? All 8 i18n files loaded at startup?
+6. **Video preloading** — does Bakra actually preload next videos?
+7. **Caching** — what's in Redis? What's in AsyncStorage? What should be cached but isn't?
+8. **API response size** — endpoints returning full objects when minimal fields needed?
 
 ---
 
-### DIMENSION 19: ERROR HANDLING & EDGE CASES
+## DIMENSION 19: ACCESSIBILITY
 
-**What to check:**
-
-1. **API error responses:**
-   - Read `apps/api/src/common/filters/http-exception.filter.ts` — how are errors formatted?
-   - Are all errors consistent format?
-   - Are 500 errors logged to Sentry?
-
-2. **Network failure on mobile:**
-   - What happens when API is unreachable? Does the app crash or show an error?
-   - Does the offline banner appear?
-   - Can the user retry failed requests?
-
-3. **Auth expiry:**
-   - What happens when the Clerk JWT expires mid-session?
-   - Does the app redirect to login? Or show cryptic 401 errors?
-   - Is there a token refresh mechanism?
-
-4. **Edge cases to verify:**
-   - What happens if a user has 0 posts, 0 followers, 0 following? (Empty profile)
-   - What happens if a post has 0 comments? 10,000 comments?
-   - What happens if a conversation has 0 messages?
-   - What happens if the feed returns 0 results?
-   - What if someone sends a message with 10,000 characters?
-   - What if someone uploads a 500MB video?
-   - What happens on the 7th language if a key is missing in that language file?
+1. Check 30 screens for `accessibilityLabel` on every interactive element
+2. Color contrast — 5 most common text/bg combos against WCAG AA 4.5:1
+3. Touch targets — all >= 44x44pt?
+4. Font scaling — maxFontSizeMultiplier set?
+5. Reduced motion — prefers-reduced-motion respected?
+6. Screen reader flow — logical tab order?
+7. No images without accessibilityLabel?
 
 ---
 
-### DIMENSION 20: CODE QUALITY & TYPESCRIPT STRICTNESS
+## DIMENSION 20: CODE QUALITY
 
-**What to check:**
-
-1. **`any` types:** Search for `as any` in non-test code. Count = must be 0.
-2. **`@ts-ignore` / `@ts-expect-error`:** Search in non-test code. Count = must be 0.
-3. **`as never`:** Count all instances. These are route cast workarounds — document the count.
-4. **`console.log`:** Search for `console.log` in non-test, non-debug code. Should be 0 or wrapped in `__DEV__`.
-5. **`TODO` / `FIXME`:** Search across entire codebase. Count and list each one.
-6. **Dead imports:** Check 20 random files for unused imports.
-7. **Inconsistent naming:** Check for mixed naming conventions (camelCase vs snake_case, `isX` vs `hasX`).
-8. **Magic numbers:** Check for hardcoded numbers that should be constants (timeouts, limits, thresholds).
+1. `as any` in non-test code: count (must be 0)
+2. `@ts-ignore` / `@ts-expect-error`: count (must be 0)
+3. `as never`: count (route casts — known limitation)
+4. `console.log` in production code: count (must be 0 or `__DEV__` gated)
+5. `TODO` / `FIXME`: count and list every one
+6. Dead imports in 30 random files
+7. Inconsistent naming (camelCase vs snake_case)
+8. Magic numbers (hardcoded timeouts, limits, thresholds)
 
 ---
 
-### DIMENSION 21: DATA INTEGRITY & MIGRATION SAFETY
+# PART B: FEATURE DEPTH COMPARISON (Dimensions 21-40)
 
-**What to check:**
-
-1. **Prisma migrations:**
-   - Read `apps/api/prisma/migrations/` — how many migrations exist?
-   - Is there a clean migration path from empty database to current schema?
-   - Are there any destructive migrations (dropping columns/tables)?
-
-2. **Seed data:**
-   - Is there a seed script? What data does it create?
-   - Would the app be functional on a completely empty database?
-   - Islamic data files (hadiths.json, duas.json, asma-ul-husna.json, hajj-guide.json) — are they complete?
-
-3. **Soft deletes:**
-   - Are deletions soft (setting `isRemoved: true`) or hard (actually deleting rows)?
-   - Is soft-deleted content properly excluded from all queries?
+For EACH dimension below, compare against the REAL competitor app feature-by-feature. Use web search to verify current 2026 features.
 
 ---
 
-### DIMENSION 22: DEPLOYMENT & INFRASTRUCTURE
+## DIMENSION 21: FEED ALGORITHM (vs Instagram/TikTok)
 
-**What to check:**
-
-1. **Railway deployment:**
-   - Is there a `Procfile`, `railway.toml`, or `nixpacks.toml`?
-   - What's the start command?
-   - Is the health check endpoint working?
-
-2. **Environment configuration:**
-   - Are all required env vars documented in `.env.example`?
-   - Are there env vars in code that aren't in `.env.example`?
-
-3. **Database:**
-   - Is Neon connection configured for both pooled and direct URLs?
-   - Is connection pooling configured?
-
-4. **CI/CD:**
-   - Read `scripts/ci-test.sh` and `scripts/ci-lint.sh` — are they comprehensive?
-   - Is there a GitHub Actions workflow?
-
-5. **Monitoring:**
-   - Read Sentry configuration — is it properly initialized on both API and mobile?
-   - Are source maps configured for readable stack traces?
+Read `feed.service.ts`, `personalized-feed.service.ts`, `recommendations.service.ts` fully.
+Compare:
+1. Instagram: Two Towers neural networks, audition system, watch time #1 signal, DM sends strongest
+2. TikTok: Interest graph, multi-stage ML ranking, computer vision for content understanding, 30-min cold start
+3. Mizanly: What does the algorithm ACTUALLY do? Is it SQL weights or real ML?
+4. Cold start: what does a zero-follow user see?
+5. Diversity injection: are bubbles prevented?
+6. Real-time adaptation: does the feed change mid-session?
 
 ---
 
-### DIMENSION 23: MONETIZATION READINESS
+## DIMENSION 22: STORIES (vs Instagram Stories)
 
-**What to check:**
-
-1. **Stripe integration:**
-   - Read `payments.service.ts` — can it create customers, process payments?
-   - Read `stripe-connect.service.ts` — can it onboard creators?
-   - Read `stripe-webhook.controller.ts` — does it handle webhooks properly?
-   - Is Stripe in test mode or live mode?
-
-2. **Virtual currency:**
-   - Read the gift/coin models — is the buy→gift→cashout flow complete?
-   - Is there fraud detection? Can someone self-gift?
-
-3. **Promoted posts:**
-   - Read `promotions.service.ts` — can a post be boosted? Is budget tracked?
-   - Is there ad delivery logic in the feed?
-
-4. **Membership tiers:**
-   - Can a creator set up paid tiers?
-   - Can a user subscribe?
-   - Does subscriber-only content work?
+Compare every aspect:
+1. Creation: text, drawing, stickers (poll, question, quiz, countdown, emoji slider, music, location, mention), filters, AR effects
+2. Viewing: progress bar, tap navigation, swipe between users, long-press pause, cube transition
+3. Interactive responses: reply, quick reactions
+4. Highlights: save to profile, cover image, naming
+5. Close friends stories
+6. Subscriber-only stories
+7. Story analytics (views, interactions)
 
 ---
 
-### DIMENSION 24: BRANDING & MARKETING READINESS
+## DIMENSION 23: SHORT VIDEO (vs TikTok)
 
-**What to check:**
-
-1. **App icon** — does a production-ready icon exist? (1024x1024 PNG)
-2. **Splash screen** — is it configured in app.json?
-3. **App Store metadata** — does `apps/mobile/app-store-metadata/metadata.json` exist with description, keywords, category?
-4. **Privacy policy** — is there a URL?
-5. **Terms of service** — is there a URL?
-6. **Notification sounds** — are there custom sounds? Or just placeholders?
-7. **Landing page** — is there a web landing page?
-8. **Open Graph** — does sharing a Mizanly link produce a rich preview card?
-
----
-
-### DIMENSION 25: COMPREHENSIVE COMPETITOR RESEARCH
-
-**This is the research dimension.** Use web search extensively.
-
-1. **UpScrolled (March 2026):**
-   - What's their current user count?
-   - What features have they added since February?
-   - Are they still struggling with moderation?
-   - Have they added any Islamic features?
-   - What's their App Store rating now?
-
-2. **Muslim Pro (March 2026):**
-   - Any new features?
-   - Have they improved their social features?
-   - What's their download count now?
-   - Are they a potential acquirer or competitor?
-
-3. **Instagram (March 2026):**
-   - Any new features since our last research?
-   - Flipside update? Short dramas?
-   - New creator tools?
-
-4. **TikTok (March 2026):**
-   - Local feed update?
-   - Shop features?
-   - US ownership status?
-
-5. **Other Muslim apps:**
-   - Alfafaa, Muslamica, Deenify, Ummah — any growth or new features?
-   - Any NEW Muslim social apps launched?
-
-6. **Emerging trends:**
-   - AI integration in social apps
-   - Decentralized social (Bluesky, Mastodon)
-   - Short-form video evolution
-   - Creator economy changes
-   - Privacy legislation (EU Digital Services Act, etc.)
-
-**For each competitor, produce:**
-- Feature count comparison table
-- Strengths Mizanly has over them
-- Strengths they have over Mizanly
-- Strategic recommendation
+Compare:
+1. Feed: full-screen vertical scroll, autoplay, sound on
+2. Creation: record, trim, speed, transitions, effects, green screen, music, text, filters, templates
+3. Duet/Stitch: side-by-side or sequenced
+4. Sound system: trending sounds, sound page, use this sound
+5. Effects/filters: AR, face tracking
+6. Analytics: views, shares, completion rate
+7. Shopping: product tags, shop from video
+8. Live from Shorts: go live from short video creation
 
 ---
 
-## FINAL DELIVERABLE
+## DIMENSION 24: THREADING (vs X/Twitter)
 
-After completing ALL 25 dimensions, produce:
-
-1. **`docs/audit/COMPREHENSIVE_AUDIT_2026.md`** — full audit report with all findings
-2. **`docs/audit/PRIORITY_FIXES.md`** — all P0 and P1 items sorted by severity
-3. **`docs/audit/COMPETITOR_MATRIX.md`** — feature comparison tables
-4. **`docs/audit/HONEST_SCORES.md`** — per-dimension scores with evidence
-
-**Commit all audit documents when complete.**
+Compare:
+1. Post types: text, image, video, poll, quote, repost
+2. Threading: reply chains, nested threads
+3. Engagement: like, reply, repost, quote, bookmark, share
+4. Feed: For You, Following, Trending tabs
+5. Lists: create curated follow lists
+6. Spaces (live audio): scheduled, spontaneous
+7. Community Notes: crowd-sourced fact-checking
+8. X Chat: standalone messaging
+9. Grok AI integration
 
 ---
 
-## EXECUTION ORDER
+## DIMENSION 25: MESSAGING (vs WhatsApp)
 
-1. Start with Dimension 1 (Schema) — it's the foundation everything depends on
-2. Then Dimensions 2-3 (Backend logic + Controllers) — the core API
-3. Then Dimensions 4-6 (Mobile screens + Components + Hooks) — the user-facing app
-4. Then Dimensions 7-11 (Services, State, Navigation, i18n, Sockets) — the glue
-5. Then Dimensions 12-13 (Security + Testing) — trust & safety
-6. Then Dimension 14 (Islamic features) — the differentiator
-7. Then Dimensions 15-25 (Competitor, Performance, a11y, etc.) — the context
+Compare:
+1. Text messages: formatting (bold, italic, strikethrough, monospace)
+2. Voice messages: record, playback speed, transcription
+3. Media: image, video, document, contact, location sharing
+4. Group features: admin controls, member limits, description, invite links
+5. Encryption: E2E, safety numbers, key verification
+6. Disappearing messages: timer options
+7. View once: photos and voice messages
+8. Reactions: emoji reactions on messages
+9. Status (Stories): text, photo, video status updates
+10. Communities: multi-group organization
+11. Channels: broadcast channels
+12. Calls: voice, video, group (up to 32)
+13. Payments: in-chat payments
+14. Business features: catalogs, flows, auto-replies
 
-**If you run out of context window:**
-- Commit findings so far to `docs/audit/COMPREHENSIVE_AUDIT_2026.md`
-- Note exactly which dimension you stopped at
-- The user will start a new session to continue from that point
+---
+
+## DIMENSION 26: LONG VIDEO (vs YouTube)
+
+Compare:
+1. Upload: long-form, title, description, tags, thumbnail, chapters
+2. Player: quality selection, speed, PiP, fullscreen, ambient mode, theater mode
+3. Playlists: create, add, reorder, collaborative
+4. Comments: threaded, pinned, hearted by creator, sort by top/new
+5. Subscriptions: subscribe, bell notification levels
+6. Premiere: scheduled premiere with countdown
+7. Creator tools: Studio, analytics, revenue, memberships, Super Chat
+8. Shorts: integrated into long-form
+9. Live: go live with chat, Super Chat, moderation
+10. Community posts: text + image posts on channel
+
+---
+
+## DIMENSION 27: ISLAMIC FEATURES (vs Muslim Pro + Athan + Quran.com)
+
+This is THE differentiator. Audit ruthlessly:
+1. Prayer times: accuracy, calculation methods, location-based, notifications, adhan audio
+2. Quran: full text? Audio? Multiple reciters? Tafsir? Bookmarks? Reading progress?
+3. Hadith: collection size? Sources? Authentication status (sahih/hasan/da'if)?
+4. Dua: how many? Categorized? Arabic + transliteration + translation + source?
+5. 99 Names: all present? Explanations? Audio?
+6. Fasting: tracker, iftar/suhoor times, streak, sunnah fasts
+7. Zakat: calculator accuracy, multi-asset, nisab source
+8. Mosque finder: data source, how many mosques, reviews
+9. Halal finder: data source, how many restaurants, reviews
+10. Qibla: compass accuracy, visual quality
+11. Islamic calendar: Hijri conversion accuracy, event reminders
+12. Hajj/Umrah: guide completeness
+13. What Muslim Pro has that Mizanly doesn't
+14. What Athan app has that Mizanly doesn't
+15. What Quran.com has that Mizanly doesn't
+16. What Mizanly has that NONE of them have
+
+---
+
+## DIMENSION 28: GAMIFICATION (vs Duolingo/Snapchat streaks)
+
+Compare:
+1. Streaks: daily login streaks, prayer streaks, reading streaks
+2. XP system: what earns XP? How much? Is it balanced?
+3. Levels: how many? What do they unlock?
+4. Achievements/badges: how many? Meaningful or trivial?
+5. Leaderboards: daily, weekly, all-time, friends, mosque community
+6. Challenges: types, duration, rewards
+7. Daily tasks: morning briefing completion rewards
+8. Social proof: visible to others?
+
+---
+
+## DIMENSION 29: COMMERCE (vs TikTok Shop/Instagram Shopping)
+
+Compare:
+1. Product listings: images, description, price, variants
+2. Checkout: payment flow, Stripe integration
+3. Seller dashboard: orders, revenue, analytics
+4. In-feed shopping: product tags on posts/reels
+5. Virtual currency: coins, gifts, diamonds, cashout
+6. Tipping: send/receive tips
+7. Memberships: tiered subscriptions
+8. Promoted posts: boost, targeting, budget, reporting
+9. What TikTok Shop has that Mizanly doesn't
+10. What Instagram Shopping has that Mizanly doesn't
+
+---
+
+## DIMENSION 30: CONTENT CREATION TOOLS (vs CapCut/Instagram Create)
+
+Compare:
+1. Photo editing: filters, adjustments, crop, text, stickers
+2. Video editing: trim, split, speed, transitions, text overlay, music, export
+3. Story creation: canvas, stickers (interactive), drawing, text, music
+4. Reel creation: multi-clip, effects, green screen, templates
+5. Audio: music library, sound sync, original audio
+6. AI tools: auto-captions, content suggestions, hashtag suggestions, thumbnail generation
+7. Collaboration: collab posts, duet, stitch
+8. Scheduling: schedule posts for later
+
+---
+
+## DIMENSION 31: NOTIFICATIONS (vs Instagram/WhatsApp)
+
+Compare:
+1. Push notification types: what triggers a push?
+2. In-app notification types: what appears in the notifications tab?
+3. Notification grouping: "10 people liked your post" vs 10 individual notifications
+4. Notification channels (Android): separate for messages, social, Islamic?
+5. Quiet hours / DND: time-based suppression?
+6. Per-category toggle: can user disable specific types?
+7. Smart timing: does it respect prayer times?
+8. Creator analytics notifications: "Your post got X views"?
+9. Streak reminders?
+
+---
+
+## DIMENSION 32: SEARCH & DISCOVERY (vs TikTok Explore/Instagram Search)
+
+Compare:
+1. Search types: users, posts, hashtags, sounds, locations
+2. Search engine: SQL LIKE vs Meilisearch?
+3. Typo tolerance
+4. Arabic-aware tokenization
+5. Autocomplete / suggestions as you type
+6. Recent searches
+7. Trending searches
+8. Explore/Discover feed: curated content for discovery
+9. Hashtag pages: feed of posts with that hashtag
+10. Sound pages: feed of videos using that sound
+
+---
+
+## DIMENSION 33: PROFILE (vs Instagram Profile)
+
+Compare:
+1. Profile header: avatar, cover, bio, website, follower/following counts
+2. Post grid: 3-column grid, switch to list view
+3. Story highlights: circular covers at top
+4. Profile tabs: posts, reels, tagged, saved
+5. Profile actions: follow/unfollow, message, block, report, mute
+6. Edit profile: all fields editable
+7. QR code: share profile via QR
+8. Flipside / alt profile
+9. Profile customization: themes, badges
+10. Verified badge
+
+---
+
+## DIMENSION 34: PRIVACY & SAFETY (vs WhatsApp/Instagram)
+
+Compare:
+1. Private account: who can see your content?
+2. Block: block users from seeing/contacting you
+3. Mute: mute without unfollowing
+4. Restrict: restrict comments without blocking
+5. Content filtering: blocked keywords
+6. Close friends: story sharing to select group
+7. Disappearing messages: timer settings
+8. View once: send-once media
+9. Chat lock: lock conversations behind biometric/PIN
+10. Two-factor auth: setup and recovery
+11. Data export: GDPR compliance
+12. Account deletion: grace period, data purge
+13. Parental controls: child accounts, PIN protection
+14. Screen time: usage tracking and limits
+
+---
+
+## DIMENSION 35: LIVE STREAMING (vs Instagram Live/YouTube Live/TikTok LIVE)
+
+Compare:
+1. Go live: camera setup, title, description
+2. Rehearsal mode: test before going public
+3. Multi-guest: how many guests?
+4. Chat: real-time comments during live
+5. Gifts/donations: send gifts during live
+6. Subscribers-only: restrict to paid subscribers
+7. Recording: save live to video
+8. Schedule: schedule future live
+9. Analytics: viewer count, peak viewers, engagement
+10. Moderation: pin comments, block users, keyword filters
+11. Screen sharing: share device screen
+
+---
+
+## DIMENSION 36: CALLS (vs WhatsApp/FaceTime)
+
+Compare:
+1. Voice call: 1-on-1
+2. Video call: 1-on-1
+3. Group voice call: how many participants?
+4. Group video call: how many?
+5. Screen sharing during call
+6. Call history
+7. WebRTC: is there ACTUAL peer-to-peer audio/video? Or just UI?
+8. TURN server: configured for NAT traversal?
+9. End-to-end encryption on calls?
+10. Call quality: bitrate, codec?
+
+---
+
+## DIMENSION 37: ONBOARDING (vs TikTok/Instagram)
+
+Compare:
+1. Sign up flow: how many steps?
+2. Account creation: email, phone, Apple, Google?
+3. Interest selection: does it affect the feed?
+4. Suggested follows: based on what?
+5. Anonymous browsing: can you browse without account?
+6. Contact sync: find friends from phone contacts?
+7. Skip option: can you skip onboarding?
+8. Cold start: what does day 1 feed look like?
+
+---
+
+## DIMENSION 38: RETENTION MECHANICS (vs TikTok/Snapchat)
+
+Compare:
+1. Infinite scroll: autoplay next content?
+2. "One more" psychology: what keeps users scrolling?
+3. Vanity metrics: "Your post got X views" notifications?
+4. Streaks: penalty for breaking?
+5. Daily tasks: morning briefing, dhikr challenge?
+6. FOMO: stories expire after 24h?
+7. Social proof: "X people from your community joined"?
+8. Re-engagement: "You haven't posted in 3 days" notifications?
+9. Completion satisfaction: "You're all caught up"?
+10. Prayer-time-aware: notifications respect salah?
+
+---
+
+## DIMENSION 39: MODERATION (vs Instagram/TikTok/X)
+
+Compare:
+1. AI moderation: automatic content detection?
+2. Human review queue: manual moderation?
+3. Report system: what can users report?
+4. Appeal process: can users contest decisions?
+5. NSFW detection: image classification?
+6. Hate speech detection: text analysis?
+7. Islamic context awareness: Quran recitation ≠ music?
+8. Community Notes: crowd-sourced fact-checking?
+9. Forward limits: misinformation prevention?
+10. Content warnings: sensitive content blur?
+11. User-level moderation: blocked keywords per user?
+12. Auto-action tiers: auto-remove vs flag for review?
+13. Moderation transparency: public reports?
+
+---
+
+## DIMENSION 40: ACCESSIBILITY (vs Apple/Google guidelines)
+
+Compare against Apple HIG accessibility guidelines AND Material Design accessibility:
+1. VoiceOver/TalkBack full support?
+2. Dynamic Type / font scaling?
+3. Color contrast WCAG AA?
+4. Reduced motion support?
+5. High contrast mode?
+6. Keyboard navigation (web)?
+7. Focus indicators?
+8. Screen reader logical flow?
+9. Alt text on all images?
+10. Audio descriptions for video?
+11. Haptic feedback (meaningful, not decorative)?
+12. Touch target sizes ≥ 44pt?
+
+---
+
+# PART C: INFRASTRUCTURE & READINESS (Dimensions 41-50)
+
+---
+
+## DIMENSION 41: THIRD-PARTY INTEGRATION STATUS
+
+For EVERY service in `.env.example`:
+- Clerk, Neon, R2, Stream, Images, Redis, Stripe, Claude, Whisper, Gemini, Meilisearch, Resend, Sentry, Expo Push, Firebase, TURN
+
+For each: Installed? Integrated? Fallback? Tested? Status: working/partial/broken/missing.
+
+---
+
+## DIMENSION 42: DEPLOYMENT & INFRASTRUCTURE
+
+1. Railway config — start command, health check, scaling?
+2. Neon — connection pooling, read replicas?
+3. Redis — session store, cache, job queue?
+4. Multi-region? Single region?
+5. CDN cache headers on media?
+6. WebSocket clustering for Socket.io?
+7. Background jobs (BullMQ) actually running?
+8. Health endpoint returning correct status?
+9. CI/CD pipeline — GitHub Actions?
+10. Zero-downtime deployment possible?
+
+---
+
+## DIMENSION 43: DATABASE QUERIES AT SCALE
+
+For the 10 most important services:
+1. What happens with 100K users? 1M posts?
+2. Are there full table scans?
+3. Missing indexes on queried fields?
+4. Unbounded `findMany` without `take`?
+5. N+1 patterns?
+6. Estimated query time at 100K rows?
+
+---
+
+## DIMENSION 44: ERROR HANDLING END-TO-END
+
+1. API error filter — consistent format?
+2. Network failure on mobile — crash or graceful?
+3. Auth expiry — redirect or cryptic 401?
+4. Offline mode — cache works?
+5. Empty states — every possible empty screen handled?
+6. Server 500 — user sees what?
+7. Rate limited — user sees what?
+
+---
+
+## DIMENSION 45: MONETIZATION PIPELINE
+
+1. Stripe customer creation — tested?
+2. Stripe payment — tested?
+3. Stripe Connect onboarding — tested?
+4. Stripe webhook handling — tested?
+5. Virtual currency buy flow — coins purchase works?
+6. Gift sending — deducts coins, adds diamonds?
+7. Cashout — diamonds to money?
+8. Revenue split — 70/30 implemented?
+9. Promoted post — budget tracking works?
+10. Fraud detection — self-gifting prevention?
+
+---
+
+## DIMENSION 46: EMAIL SYSTEM
+
+1. Email service exists?
+2. Resend SDK installed?
+3. Welcome email sent on sign up?
+4. Security alert on new device?
+5. Weekly digest for creators?
+6. Templates branded?
+7. Fallback if Resend unavailable?
+
+---
+
+## DIMENSION 47: PUSH NOTIFICATION PIPELINE
+
+1. expo-notifications installed?
+2. Token registration flow works?
+3. Android channels configured?
+4. iOS permissions flow?
+5. Backend PushService sends via Expo Push API?
+6. FCM configured (google-services.json)?
+7. APNs configured (Apple Developer)?
+8. Has any notification ever been delivered to a real device?
+9. Prayer time notifications scheduled?
+10. Smart timing (no push during salah)?
+
+---
+
+## DIMENSION 48: BRANDING & MARKETING
+
+1. App icon — production-ready PNG?
+2. Splash screen — configured?
+3. Notification sounds — real or placeholder?
+4. App Store description — complete?
+5. App Store screenshots — real device captures?
+6. Privacy policy URL?
+7. Terms of service URL?
+8. Landing page deployed?
+9. Open Graph meta tags — sharing produces rich previews?
+10. Social media accounts created?
+
+---
+
+## DIMENSION 49: LEGAL COMPLIANCE
+
+1. GDPR — data export, right to deletion, consent management?
+2. CCPA — California privacy requirements?
+3. Apple App Store guidelines — likely rejection reasons?
+4. Google Play policies — content policy compliance?
+5. Age rating — content appropriate for stated rating?
+6. Copyright — any unlicensed content (music, images)?
+7. Privacy policy — exists, comprehensive, accessible?
+8. Terms of service — exists, comprehensive?
+9. Cookie consent — if web version exists?
+
+---
+
+## DIMENSION 50: DATA INTEGRITY
+
+1. Prisma migrations — clean path from empty to current?
+2. Seed data — Islamic data files complete?
+3. Soft delete — isRemoved excluded from all queries?
+4. Orphan data — what happens when a user is deleted?
+5. Data consistency — counters (likesCount) match actual records?
+
+---
+
+# PART D: COMPETITOR DEEP RESEARCH (Dimensions 51-60)
+
+Use web search extensively. Get current 2026 data.
+
+---
+
+## DIMENSION 51: UPSCROLLED — MARCH 2026 UPDATE
+
+Search for latest UpScrolled news. Document:
+1. Current user count
+2. New features since February
+3. Moderation improvements?
+4. Islamic features added?
+5. App Store rating now
+6. Team growth?
+7. Funding status?
+8. Technical improvements?
+
+---
+
+## DIMENSION 52: MUSLIM PRO — MARCH 2026 UPDATE
+
+Search for latest Muslim Pro features:
+1. Social features — have they improved?
+2. Download count now
+3. New Islamic features
+4. Monetization changes
+5. Community features
+6. Potential acquisition threat?
+
+---
+
+## DIMENSION 53: INSTAGRAM — MARCH 2026 FEATURES
+
+Search for latest Instagram updates:
+1. Flipside update
+2. Short dramas
+3. AI features
+4. Creator tools
+5. Edits app evolution
+6. Algorithm transparency tool
+
+---
+
+## DIMENSION 54: TIKTOK — MARCH 2026 FEATURES
+
+Search for latest TikTok updates:
+1. US ownership final status
+2. Local feed rollout
+3. Shop features
+4. Creator rewards changes
+5. New content formats
+6. Moderation changes
+
+---
+
+## DIMENSION 55: YOUTUBE — MARCH 2026 FEATURES
+
+Search for latest YouTube updates:
+1. Shorts monetization
+2. AI tools (Veo, Make Me Move)
+3. AskStudio updates
+4. Thumbnail testing
+5. Live streaming features
+6. Creator tools
+
+---
+
+## DIMENSION 56: WHATSAPP — MARCH 2026 FEATURES
+
+Search for latest WhatsApp updates:
+1. Username system launch status
+2. AI image features
+3. Custom sticker generator
+4. Voice transcription improvements
+5. Business features
+6. Community updates
+
+---
+
+## DIMENSION 57: X/TWITTER — MARCH 2026 FEATURES
+
+Search for latest X updates:
+1. X Chat (standalone DM app)
+2. Video tab evolution
+3. Grok AI integration depth
+4. Community Notes expansion
+5. Creator monetization changes
+
+---
+
+## DIMENSION 58: TELEGRAM — MARCH 2026 FEATURES
+
+Search for latest:
+1. AI summaries rollout
+2. Liquid Glass on iOS 26
+3. Gift crafting/auctions
+4. Passkeys adoption
+5. New features
+
+---
+
+## DIMENSION 59: EMERGING MUSLIM APPS
+
+Search for:
+1. Alfafaa growth?
+2. Muslamica updates?
+3. Deenify updates?
+4. Any NEW Muslim social apps launched in 2026?
+5. Muslim Pro competitors?
+6. Islamic fintech apps?
+
+---
+
+## DIMENSION 60: MARKET TRENDS & OPPORTUNITIES
+
+Research:
+1. Islamic app market size 2026
+2. Muslim digital economy trends
+3. AI in social media trends
+4. Decentralized social (Bluesky, Mastodon, AT Protocol)
+5. Privacy legislation affecting social apps
+6. Creator economy evolution
+7. Short-form video market
+8. Ramadan 2026/2027 — timing for launch?
+9. Islamic events calendar 2026-2027 — opportunities?
+10. Muslim population demographics — where are the biggest markets?
+
+---
+
+# FINAL DELIVERABLES
+
+After completing ALL 60 dimensions:
+
+1. **`docs/audit/COMPREHENSIVE_AUDIT_2026.md`** — master report
+2. **`docs/audit/SCREEN_BY_SCREEN.md`** — every screen audited
+3. **`docs/audit/ENDPOINT_BY_ENDPOINT.md`** — every endpoint audited
+4. **`docs/audit/PRIORITY_FIXES.md`** — P0 and P1 items
+5. **`docs/audit/COMPETITOR_MATRIX.md`** — feature comparison tables
+6. **`docs/audit/HONEST_SCORES.md`** — scores with evidence
+7. **`docs/audit/MARKET_ANALYSIS.md`** — competitor research + opportunities
+
+---
+
+# SESSION MANAGEMENT
+
+This audit is too large for one session. Expected: 3-5 sessions.
+
+**At end of each session:**
+1. Commit all findings so far
+2. Note exactly which dimension you stopped at
+3. Note any P0 issues found but not yet fixed
+4. The user will start a new session with: "Continue audit from Dimension X"
+
+**Session 1:** Dimensions 1-10 (Schema, Backend, Controllers, Screens batch 1)
+**Session 2:** Dimensions 11-25 (Mobile internals, Navigation, Security, Feature comparisons batch 1)
+**Session 3:** Dimensions 26-40 (Feature comparisons batch 2, Accessibility, Moderation)
+**Session 4:** Dimensions 41-50 (Infrastructure, Monetization, Legal)
+**Session 5:** Dimensions 51-60 (Competitor research, Market analysis)
 
 ---
 
 ## REMEMBER
 
-- **You are not here to praise the app.** You are here to find every flaw, inconsistency, and gap.
-- **"Looks good" is not a finding.** Specific file, specific line, specific issue.
+- **You are not here to praise the app.**
+- **"Looks good" is not a finding.**
+- **Every finding needs: file, line, issue, severity.**
 - **Compare against Instagram/TikTok, not against "does the file exist."**
+- **The user handles harsh criticism well and wants it.**
 - **If it would embarrass you in a code review, flag it.**
-- **The user handles harsh criticism well. They WANT it. Sugarcoating disrespects them.**
 
-**BEGIN.**
+**BEGIN WITH DIMENSION 1.**
