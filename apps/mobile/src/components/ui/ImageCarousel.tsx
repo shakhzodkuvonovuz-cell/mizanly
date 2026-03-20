@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, memo } from 'react';
 import {
   View,
   FlatList,
@@ -22,7 +22,7 @@ export interface ImageCarouselProps {
   blurred?: boolean; // Apply blur effect for sensitive content
 }
 
-export function ImageCarousel({
+export const ImageCarousel = memo(function ImageCarousel({
   images,
   height = 400,
   showIndicators = true,
@@ -124,7 +124,7 @@ export function ImageCarousel({
       )}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

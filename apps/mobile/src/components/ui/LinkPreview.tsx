@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -60,7 +60,7 @@ function generateMockMetadata(url: string): LinkMetadata {
   };
 }
 
-export function LinkPreview({ url, onPress }: LinkPreviewProps) {
+export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPreviewProps) {
   const [metadata, setMetadata] = useState<LinkMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -193,7 +193,7 @@ export function LinkPreview({ url, onPress }: LinkPreviewProps) {
       </Animated.View>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

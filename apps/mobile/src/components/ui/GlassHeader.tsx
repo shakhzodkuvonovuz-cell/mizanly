@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   View,
   Text,
@@ -74,7 +74,7 @@ function HeaderButton({ icon, onPress, accessibilityLabel, badge }: HeaderAction
   );
 }
 
-export function GlassHeader({
+export const GlassHeader = memo(function GlassHeader({
   title,
   titleComponent,
   leftAction,
@@ -154,7 +154,7 @@ export function GlassHeader({
       {headerContent}
     </View>
   );
-}
+});
 
 const BUTTON_SIZE = 44;
 

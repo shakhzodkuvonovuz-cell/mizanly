@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import React, { useCallback, useRef, useState, useMemo, useEffect, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -33,7 +33,7 @@ export interface ImageGalleryProps {
   onClose: () => void;
 }
 
-export function ImageGallery({
+export const ImageGallery = memo(function ImageGallery({
   images,
   initialIndex = 0,
   visible,
@@ -319,7 +319,7 @@ export function ImageGallery({
       </GestureDetector>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   backdrop: {

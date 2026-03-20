@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinkPreview } from '@/components/ui/LinkPreview';
@@ -11,7 +12,7 @@ interface Props {
   onPostPress?: () => void;
 }
 
-export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
+export const RichText = memo(function RichText({ text, style, numberOfLines, onPostPress }: Props) {
   const router = useRouter();
   const haptic = useHaptic();
 
@@ -119,7 +120,7 @@ export function RichText({ text, style, numberOfLines, onPostPress }: Props) {
       {firstUrl && <LinkPreview url={firstUrl} />}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   base: {

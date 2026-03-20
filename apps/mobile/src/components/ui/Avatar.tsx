@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -28,7 +29,7 @@ interface AvatarProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function Avatar({
+export const Avatar = memo(function Avatar({
   uri,
   name,
   size = 'md',
@@ -185,7 +186,7 @@ export function Avatar({
   }
 
   return <View style={styles.container}>{content}</View>;
-}
+});
 
 const styles = StyleSheet.create({
   container: { position: 'relative' },

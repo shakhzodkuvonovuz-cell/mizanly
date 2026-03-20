@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import {
   View,
@@ -38,7 +38,7 @@ interface VideoPlayerProps {
   onPiPEnter?: () => void;
 }
 
-export function VideoPlayer({
+export const VideoPlayer = memo(function VideoPlayer({
   uri,
   hlsUrl,
   thumbnailUrl,
@@ -387,7 +387,7 @@ export function VideoPlayer({
       </BottomSheet>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

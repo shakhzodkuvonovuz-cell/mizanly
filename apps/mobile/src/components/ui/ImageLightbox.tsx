@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState, useMemo, useEffect } from 'react';
+import { useCallback, useRef, useState, useMemo, useEffect, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -28,7 +28,7 @@ export interface ImageLightboxProps {
   onClose: () => void;
 }
 
-export function ImageLightbox({ visible, images, initialIndex = 0, onClose }: ImageLightboxProps) {
+export const ImageLightbox = memo(function ImageLightbox({ visible, images, initialIndex = 0, onClose }: ImageLightboxProps) {
   const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const flatListRef = useRef<FlatList<string>>(null);
@@ -278,7 +278,7 @@ export function ImageLightbox({ visible, images, initialIndex = 0, onClose }: Im
       </GestureDetector>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   backdrop: {
