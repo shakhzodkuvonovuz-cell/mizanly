@@ -36,7 +36,31 @@ Scores are 1-10 where:
 | 18 | Performance | 6.0/10 | Redis caching, video preload, take limits. 29 N+1 patterns, 31/35 components unmemoized. |
 | 19 | Accessibility | 6.5/10 | 175/208 screens labeled, font scaling capped, reduced motion hook. Contrast passes AA. |
 
-**Dimensions 1-16 + 20 Average: 7.0/10**
+| 21 | Feed Algorithm | 5.0/10 | SQL scoring + session adaptation. No ML. Early-2015 Instagram level. |
+| 22 | Stories vs Instagram | 6.0/10 | Stickers, highlights, close friends. No AR, no filters, no drawing. |
+| 23 | Short Video vs TikTok | 5.0/10 | Vertical feed, duet, stitch. No AR, no effects, no real video editing. |
+| 24 | Threading vs X | 6.5/10 | Quote, repost, polls, community notes. Missing Spaces-level audio. |
+| 25 | Messaging vs WhatsApp | 7.0/10 | Comprehensive: voice, media, groups, folders, lock, forward, edit. |
+| 26 | Long Video vs YouTube | 5.5/10 | Player, playlists, chapters, premiere. No recommendation engine. |
+| 27 | Islamic vs Muslim Pro | 3.5/10 | Prayer times MOCK, NO Quran text, mosque finder MOCK. Critical failure. |
+| 28 | Gamification | 7.0/10 | Streaks, XP, achievements, challenges, leaderboards — genuinely unique. |
+| 29 | Commerce | 5.0/10 | Stripe Connect exists, untested in production. |
+| 30 | Content Creation | 4.5/10 | Basic creation. No real video editing. |
+| 31 | Notifications | 6.0/10 | Push pipeline exists, 23 types. Smart timing not done. |
+| 32 | Search & Discovery | 6.5/10 | Meilisearch with typo tolerance. |
+| 33 | Profile | 7.0/10 | Full profile, highlights, customization, QR, alt profile. |
+| 34 | Privacy & Safety | 7.0/10 | Block, mute, restrict, disappearing, view once, 2FA, parental. |
+| 35 | Live Streaming | 5.0/10 | UI only, no stream server. |
+| 36 | Calls | 3.0/10 | UI only, NO WebRTC. |
+| 37 | Onboarding | 6.5/10 | 4-step flow, Clerk auth. |
+| 38 | Retention | 6.0/10 | Streaks, daily tasks, caught-up. |
+| 39 | Moderation | 4.5/10 | Text works, image stub. |
+| 40 | Accessibility | 6.0/10 | Font scaling, reduced motion, labels. |
+| 41 | Third-party Integrations | 6.5/10 | Clerk + Neon + Redis working. Stripe/AI partial. No TURN. |
+| 42 | Deployment | 5.5/10 | Railway config, health check. No CI/CD. Socket won't scale. |
+| 43-50 | Infrastructure | 4.8/10 | See detailed scores. Legal compliance critical gap. |
+
+**Overall Dimensions 1-50 Average: 5.8/10**
 
 The pattern is clear: **infrastructure and frontend are strong (7-8/10), but the Islamic differentiator and data integrity are weak (5/10)**. The app has a solid skeleton built to enterprise standards, but the features that make it unique (prayer times, mosques, halal finder) are mock stubs.
 
