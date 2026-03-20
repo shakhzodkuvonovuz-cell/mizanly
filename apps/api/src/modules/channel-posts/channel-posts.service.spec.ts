@@ -49,33 +49,27 @@ describe('ChannelPostsService', () => {
     });
   });
 
-  describe('list', () => {
+  describe('getFeed', () => {
     it('should list posts by channel', async () => {
       prisma.channelPost.findMany.mockResolvedValue([{ id: 'cp1' }, { id: 'cp2' }]);
-      if (typeof service.list === 'function') {
-        const result = await service.list('ch1');
-        expect(result).toHaveLength(2);
-      }
+      const result = await service.getFeed('ch1');
+      expect(result.data).toHaveLength(2);
     });
 
     it('should return empty array for channel with no posts', async () => {
       prisma.channelPost.findMany.mockResolvedValue([]);
-      if (typeof service.list === 'function') {
-        const result = await service.list('ch1');
-        expect(result).toEqual([]);
-      }
+      const result = await service.getFeed('ch1');
+      expect(result.data).toEqual([]);
     });
   });
 
-  describe('update', () => {
-    it('should update post content', async () => {
-      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+  describe('pin', () => {
+    it('should pin a channel post', async () => {
       prisma.channelPost.findUnique.mockResolvedValue({ id: 'cp1', channelId: 'ch1' });
-      prisma.channelPost.update.mockResolvedValue({ id: 'cp1', content: 'Updated' });
-      if (typeof service.update === 'function') {
-        const result = await service.update('cp1', 'user1', { content: 'Updated' });
-        expect(result.content).toBe('Updated');
-      }
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch1', userId: 'user1' });
+      prisma.channelPost.update.mockResolvedValue({ id: 'cp1', isPinned: true });
+      const result = await service.pin('cp1', 'user1');
+      expect(result.isPinned).toBe(true);
     });
   });
 
@@ -87,10 +81,8 @@ describe('ChannelPostsService', () => {
         channel: { id: 'ch1', handle: 'ch1', name: 'Channel 1' },
       });
       prisma.channelPost.delete.mockResolvedValue({ id: 'cp1' });
-      if (typeof service.delete === 'function') {
-        await service.delete('cp1', 'user1');
-        expect(prisma.channelPost.delete).toHaveBeenCalled();
-      }
+      await service.delete('cp1', 'user1');
+      expect(prisma.channelPost.delete).toHaveBeenCalled();
     });
   });
 

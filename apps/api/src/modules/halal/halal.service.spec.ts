@@ -42,6 +42,7 @@ describe('HalalService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+    expect(service).toBeInstanceOf(HalalService);
   });
 
   describe('findNearby', () => {

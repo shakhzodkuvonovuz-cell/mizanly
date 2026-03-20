@@ -69,7 +69,8 @@ describe('MosquesService', () => {
 
   it('should join a mosque community', async () => {
     const result = await service.join('u1', 'mosque-1');
-    expect(result).toBeDefined();
+    expect(prisma.mosqueMembership.create).toHaveBeenCalled();
+    expect(result).toHaveProperty('joined', true);
   });
 
   describe('leave', () => {

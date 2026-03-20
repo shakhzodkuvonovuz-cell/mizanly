@@ -86,7 +86,7 @@ describe('TelegramFeaturesService', () => {
 
     it('should get saved messages', async () => {
       const result = await service.getSavedMessages('user-1');
-      expect(result.data).toBeDefined();
+      expect(Array.isArray(result.data)).toBe(true);
     });
 
     it('should toggle pin on saved message', async () => {

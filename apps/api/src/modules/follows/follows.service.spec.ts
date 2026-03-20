@@ -258,7 +258,7 @@ describe('FollowsService', () => {
       prisma.follow.deleteMany.mockResolvedValue({ count: 0 });
       prisma.followRequest.deleteMany.mockResolvedValue({ count: 0 });
       const result = await service.unfollow(currentUserId, targetUserId);
-      expect(result).toBeDefined();
+      expect(result).toHaveProperty('message', 'Unfollowed');
     });
   });
 
@@ -507,7 +507,8 @@ describe('FollowsService', () => {
       ]);
 
       const result = await service.getSuggestions('user-1');
-      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result).toHaveLength(1);
     });
   });
 });

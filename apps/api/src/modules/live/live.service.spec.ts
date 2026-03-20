@@ -88,10 +88,8 @@ describe('LiveService', () => {
       prisma.liveParticipant.findUnique.mockResolvedValue({ id: 'lp1' });
       prisma.liveParticipant.update.mockResolvedValue({});
       prisma.$executeRaw.mockResolvedValue(1);
-      if (typeof service.leave === 'function') {
-        await service.leave('live1', 'user1');
-        expect(prisma.$executeRaw).toHaveBeenCalled();
-      }
+      await service.leave('live1', 'user1');
+      expect(prisma.$executeRaw).toHaveBeenCalled();
     });
   });
 
@@ -116,10 +114,9 @@ describe('LiveService', () => {
       prisma.liveSession.findMany.mockResolvedValue([
         { id: 'live1', status: 'LIVE', currentViewers: 50 },
       ]);
-      if (typeof service.getActive === 'function') {
-        const result = await service.getActive();
-        expect(result).toBeDefined();
-      }
+      const result = await service.getActive();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('live1');
     });
   });
 

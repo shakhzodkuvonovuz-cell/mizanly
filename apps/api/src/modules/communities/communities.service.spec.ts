@@ -52,7 +52,8 @@ describe('CommunitiesService', () => {
       prisma.circleMember.findMany.mockResolvedValue([{ circleId: 'c2' }]);
       prisma.circle.findMany.mockResolvedValue([{ id: 'c1', createdAt: new Date() }]);
       const result = await service.list('u1');
-      expect(result.data).toBeDefined();
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data).toHaveLength(1);
     });
   });
 

@@ -54,8 +54,8 @@ describe('WebhooksService', () => {
   });
 
   it('should delete a webhook', async () => {
-    const result = await service.delete('wh-1', 'u1');
-    expect(result).toBeDefined();
+    await service.delete('wh-1', 'u1');
+    expect(prisma.webhook.delete).toHaveBeenCalledWith({ where: { id: 'wh-1' } });
   });
 
   it('should throw NotFoundException when deleting non-existent webhook', async () => {

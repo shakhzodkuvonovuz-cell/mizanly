@@ -33,6 +33,7 @@ describe('CallsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(CallsController);
   });
 
   describe('initiate', () => {

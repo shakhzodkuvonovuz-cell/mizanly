@@ -1483,7 +1483,9 @@ describe('IslamicService', () => {
   describe('getHajjGuide', () => {
     it('should return hajj guide data', () => {
       const result = service.getHajjGuide();
-      expect(result).toBeDefined();
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBeGreaterThan(0);
+      expect(result[0]).toHaveProperty('name');
     });
   });
 

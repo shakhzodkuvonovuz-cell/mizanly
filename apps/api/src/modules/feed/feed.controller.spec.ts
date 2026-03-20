@@ -55,6 +55,7 @@ describe('FeedController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(FeedController);
   });
 
   describe('log', () => {
@@ -96,40 +97,29 @@ describe('FeedController', () => {
   });
 
   describe('getPersonalized', () => {
-    it('should return personalized feed', async () => {
-      mockService.getPersonalized.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } });
-      if (typeof controller.getPersonalized === 'function') {
-        const result = await controller.getPersonalized('user-1');
-        expect(result).toBeDefined();
-      }
-    });
-
-    it('should handle pagination cursor', async () => {
-      mockService.getPersonalized.mockResolvedValue({ data: [{ id: 'p1' }], meta: { cursor: 'p1', hasMore: true } });
-      if (typeof controller.getPersonalized === 'function') {
-        const result = await controller.getPersonalized('user-1', 'cursor-1' as any);
-        expect(result).toBeDefined();
-      }
+    it('should call personalizedFeed.getPersonalizedFeed', async () => {
+      mockPersonalizedFeed.getPersonalizedFeed.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } });
+      const result = await controller.getPersonalized(undefined, 'saf');
+      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20);
+      expect(result.data).toEqual([]);
     });
   });
 
-  describe('getExplore', () => {
-    it('should return explore feed', async () => {
-      mockService.getExplore.mockResolvedValue({ data: [], meta: { cursor: null, hasMore: false } });
-      if (typeof controller.getExplore === 'function') {
-        const result = await controller.getExplore('user-1');
-        expect(result).toBeDefined();
-      }
+  describe('trackSessionSignal', () => {
+    it('should call personalizedFeed.trackSessionSignal and return success', async () => {
+      const body = { contentId: 'p1', action: 'like' as const };
+      const result = await controller.trackSessionSignal('user-1', body);
+      expect(mockPersonalizedFeed.trackSessionSignal).toHaveBeenCalledWith('user-1', body);
+      expect(result).toEqual({ success: true });
     });
   });
 
-  describe('getDismissed', () => {
-    it('should return dismissed items', async () => {
-      mockService.getDismissed.mockResolvedValue([{ id: 'p1', type: 'post' }]);
-      if (typeof controller.getDismissed === 'function') {
-        const result = await controller.getDismissed('user-1');
-        expect(result).toBeDefined();
-      }
+  describe('explainPost', () => {
+    it('should call transparency.explainPost', async () => {
+      mockTransparency.explainPost.mockResolvedValue({ reasons: ['Recommended for you'] });
+      const result = await controller.explainPost('user-1', 'post-1');
+      expect(mockTransparency.explainPost).toHaveBeenCalledWith('user-1', 'post-1');
+      expect(result.reasons).toContain('Recommended for you');
     });
   });
 });

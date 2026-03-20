@@ -66,6 +66,7 @@ describe('HealthController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(HealthController);
   });
 
   describe('GET /health', () => {
@@ -154,7 +155,7 @@ describe('HealthController', () => {
     it('should report redis status', async () => {
       prisma.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
       const result = await controller.check();
-      expect(result.services.redis).toBeDefined();
+      expect(['up', 'down']).toContain(result.services.redis);
     });
 
     it('should handle all services healthy', async () => {

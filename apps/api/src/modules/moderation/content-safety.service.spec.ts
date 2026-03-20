@@ -47,6 +47,7 @@ describe('ContentSafetyService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+    expect(service).toBeInstanceOf(ContentSafetyService);
   });
 
   describe('moderateText', () => {

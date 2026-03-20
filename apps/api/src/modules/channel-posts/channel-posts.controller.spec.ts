@@ -34,6 +34,7 @@ describe('ChannelPostsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(ChannelPostsController);
   });
 
   describe('create', () => {

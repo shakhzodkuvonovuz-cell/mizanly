@@ -73,6 +73,7 @@ describe('PlaylistsService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+    expect(service).toBeInstanceOf(PlaylistsService);
   });
 
   describe('create', () => {

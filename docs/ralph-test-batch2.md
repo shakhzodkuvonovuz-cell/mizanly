@@ -490,7 +490,7 @@ Events to test:
 
 ## SECTION 4: ANTI-PATTERN CLEANUP (Tasks 93-94)
 
-### [ ] Task 93: Replace all sole-assertion `toBeDefined()` tests
+### [x] Task 93: Replace all sole-assertion `toBeDefined()` tests — fixed 40 tests across 30+ files
 
 There are 20+ tests where the ONLY assertion is `expect(X).toBeDefined()`. For each:
 1. Find the test
@@ -502,7 +502,7 @@ Files with sole `toBeDefined()`:
 
 **For each file:** Read the first test, if it's just `expect(service/controller).toBeDefined()`, add a meaningful test alongside it. The `toBeDefined` can stay but must NOT be the only test in the describe block.
 
-### [ ] Task 94: Replace `.length > 0` assertions where inappropriate
+### [x] Task 94: Replace `.length > 0` assertions — 1 replaced, 14 kept (legitimate API response checks)
 
 15 remaining `.length > 0` checks. Review each:
 - If it tests a mock return value → replace with `toEqual` on actual expected data

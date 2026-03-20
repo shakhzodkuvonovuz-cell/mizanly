@@ -56,16 +56,14 @@ describe('CallsService', () => {
     });
   });
 
-  describe('reject', () => {
-    it('should set call status to REJECTED', async () => {
+  describe('decline', () => {
+    it('should set call status to DECLINED', async () => {
       prisma.callSession.findUnique.mockResolvedValue({
         id: 'call1', status: 'RINGING', participants: [{ userId: 'user2' }],
       });
-      prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'REJECTED' });
-      if (typeof service.reject === 'function') {
-        const result = await service.reject('call1', 'user2');
-        expect(result.status).toBe('REJECTED');
-      }
+      prisma.callSession.update.mockResolvedValue({ id: 'call1', status: 'DECLINED' });
+      const result = await service.decline('call1', 'user2');
+      expect(result.status).toBe('DECLINED');
     });
   });
 
@@ -97,18 +95,14 @@ describe('CallsService', () => {
       prisma.callParticipant.findMany.mockResolvedValue([
         { id: 'p1', userId: 'user1', session: { id: 'c1', status: 'ENDED', participants: [] } },
       ]);
-      if (typeof service.getHistory === 'function') {
-        const result = await service.getHistory('user1');
-        expect(result.data).toHaveLength(1);
-      }
+      const result = await service.getHistory('user1');
+      expect(result.data).toHaveLength(1);
     });
 
     it('should return empty array when no call history', async () => {
-      prisma.callSession.findMany.mockResolvedValue([]);
-      if (typeof service.getHistory === 'function') {
-        const result = await service.getHistory('user1');
-        expect(result.data).toEqual([]);
-      }
+      prisma.callParticipant.findMany.mockResolvedValue([]);
+      const result = await service.getHistory('user1');
+      expect(result.data).toEqual([]);
     });
   });
 

@@ -266,7 +266,8 @@ describe('EventsService', () => {
       mockPrismaService.eventRSVP.findUnique.mockResolvedValue(null);
 
       const result = await service.getEvent('event1', 'owner');
-      expect(result).toBeDefined();
+      expect(result).toHaveProperty('id', 'event1');
+      expect(result.goingCount).toBe(0);
     });
   });
 
@@ -388,7 +389,8 @@ describe('EventsService', () => {
       mockPrismaService.event.findUnique.mockResolvedValue(privateEvent);
       mockPrismaService.eventRSVP.upsert.mockResolvedValue({ status: 'going' });
 
-      await expect(service.rsvpToEvent('owner', 'event1', 'going')).resolves.toBeDefined();
+      const result = await service.rsvpToEvent('owner', 'event1', 'going');
+      expect(result).toHaveProperty('status', 'going');
     });
 
     it('should throw BadRequestException for past events', async () => {

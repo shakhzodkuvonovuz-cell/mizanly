@@ -52,8 +52,10 @@ describe('CommunityNotesService', () => {
   });
 
   it('should rate a note', async () => {
+    prisma.communityNote.update.mockResolvedValue({ id: 'cn-1', helpfulVotes: 6, notHelpfulVotes: 2 });
     const result = await service.rateNote('u1', 'cn-1', 'helpful');
-    expect(result).toBeDefined();
+    expect(prisma.communityNoteRating.create).toHaveBeenCalled();
+    expect(result).toHaveProperty('rated', true);
   });
 
   it('should throw on invalid rating', async () => {

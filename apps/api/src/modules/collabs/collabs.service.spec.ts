@@ -62,25 +62,21 @@ describe('CollabsService', () => {
     });
   });
 
-  describe('reject', () => {
-    it('rejects a pending collab', async () => {
+  describe('decline', () => {
+    it('declines a pending collab', async () => {
       prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING' });
-      prisma.postCollab.update.mockResolvedValue({ id: 'c1', status: 'REJECTED' });
-      if (typeof service.reject === 'function') {
-        const result = await service.reject('c1', 'user2');
-        expect(result.status).toBe('REJECTED');
-      }
+      prisma.postCollab.update.mockResolvedValue({ id: 'c1', status: 'DECLINED' });
+      const result = await service.decline('c1', 'user2');
+      expect(result.status).toBe('DECLINED');
     });
   });
 
-  describe('cancel', () => {
-    it('cancels a pending invite as post owner', async () => {
-      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', status: 'PENDING', post: { userId: 'user1' } });
+  describe('remove', () => {
+    it('removes a collab by the invited user', async () => {
+      prisma.postCollab.findUnique.mockResolvedValue({ id: 'c1', userId: 'user2', status: 'PENDING', postId: 'post1' });
       prisma.postCollab.delete.mockResolvedValue({ id: 'c1' });
-      if (typeof service.cancel === 'function') {
-        await service.cancel('c1', 'user1');
-        expect(prisma.postCollab.delete).toHaveBeenCalled();
-      }
+      await service.remove('c1', 'user2');
+      expect(prisma.postCollab.delete).toHaveBeenCalled();
     });
   });
 
@@ -104,7 +100,8 @@ describe('CollabsService', () => {
         { id: 'c1', status: 'ACCEPTED', post: { id: 'p1' } },
       ]);
       const result = await service.getAcceptedCollabs('user2');
-      expect(result.data).toBeDefined();
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].id).toBe('c1');
     });
   });
 });

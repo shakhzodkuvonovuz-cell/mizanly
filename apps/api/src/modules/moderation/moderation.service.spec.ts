@@ -45,7 +45,7 @@ describe('ModerationService', () => {
       prisma.report.create.mockResolvedValue({});
       const result = await service.checkText('u1', { text: 'kill yourself you worthless piece of trash' });
       expect(result.flagged).toBe(true);
-      expect(result.categories.length).toBeGreaterThan(0);
+      expect(result.categories).toEqual(expect.arrayContaining([expect.any(String)]));
     });
   });
 

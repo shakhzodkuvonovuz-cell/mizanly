@@ -55,6 +55,7 @@ describe('VideosController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(VideosController);
   });
 
   describe('create', () => {

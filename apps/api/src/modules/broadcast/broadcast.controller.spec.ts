@@ -46,6 +46,7 @@ describe('BroadcastController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+    expect(controller).toBeInstanceOf(BroadcastController);
   });
 
   describe('create', () => {

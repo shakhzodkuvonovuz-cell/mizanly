@@ -66,10 +66,8 @@ describe('StickersService', () => {
   describe('removeFromCollection', () => {
     it('should remove pack from user collection', async () => {
       prisma.userStickerPack.delete.mockResolvedValue({});
-      if (typeof service.removeFromCollection === 'function') {
-        await service.removeFromCollection('user1', 'pack1');
-        expect(prisma.userStickerPack.delete).toHaveBeenCalled();
-      }
+      await service.removeFromCollection('user1', 'pack1');
+      expect(prisma.userStickerPack.delete).toHaveBeenCalled();
     });
   });
 
@@ -77,13 +75,13 @@ describe('StickersService', () => {
     it('should return paginated pack list', async () => {
       prisma.stickerPack.findMany.mockResolvedValue([{ id: 'p1' }, { id: 'p2' }]);
       const result = await service.browsePacks();
-      expect(result.data).toBeDefined();
+      expect(result.data).toHaveLength(2);
     });
 
     it('should handle cursor pagination', async () => {
       prisma.stickerPack.findMany.mockResolvedValue([{ id: 'p3' }]);
       const result = await service.browsePacks('p2');
-      expect(result).toBeDefined();
+      expect(result.data).toHaveLength(1);
     });
   });
 

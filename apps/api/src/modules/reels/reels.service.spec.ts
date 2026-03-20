@@ -148,6 +148,7 @@ describe('ReelsService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+    expect(service).toBeInstanceOf(ReelsService);
   });
 
   describe('create', () => {
