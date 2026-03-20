@@ -86,9 +86,10 @@ Mizanly is organized into five distinct "spaces" (فضاءات), each named in A
 
 | Metric | Count |
 |--------|-------|
-| Lines of Code (TS/TSX) | 90,619 |
-| Lines of Data (JSON/Prisma) | 36,040 |
-| **Total Lines** | **126,777** |
+| Lines of Code (TS + TSX) | 202,470 |
+| Lines of Data (JSON + Prisma + SQL) | 40,252 |
+| Scripts (JS) | 18,199 |
+| **Total Lines** | **260,921** |
 | Mobile Screens | 208 |
 | Backend Modules | 79 |
 | Backend Controllers | 82 |
