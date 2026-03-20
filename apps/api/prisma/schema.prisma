@@ -477,6 +477,14 @@ model User {
   conversationKeyEnvelopes ConversationKeyEnvelope[]   @relation("conversationKeyEnvelopes")
   adminLogsPerformed       AdminLog[]                  @relation("adminLogs")
   adminLogTargets          AdminLog[]                  @relation("adminLogTargets")
+  storyViews               StoryView[]                 @relation("storyViews")
+  conversationLastMessages Conversation[]              @relation("conversationLastMessage")
+  pinnedMessages           Message[]                   @relation("messagePinner")
+  reportReviews            Report[]                    @relation("reportReviewer")
+  altProfileRecord         AltProfile?                 @relation("altProfile")
+  callScreenShares         CallSession[]               @relation("callScreenShare")
+  playlistCollabsAdded     PlaylistCollaborator[]      @relation("playlistCollabAdder")
+  zakatFundsVerified       ZakatFund[]                 @relation("zakatFundVerifier")
 
   @@index([username])
   @@index([clerkId])
@@ -565,6 +573,9 @@ model Post {
   promotions       PostPromotion[]
   reminders        PostReminder[]
   collabInvites    CollabInvite[]    @relation("collabInvites")
+  productTags      PostProductTag[]  @relation("productTags")
+  reportedInReports Report[]        @relation("reportedPosts")
+  seriesEpisodes   SeriesEpisode[]  @relation("seriesEpisodePosts")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -612,6 +623,7 @@ model Story {
 model StoryView {
   storyId   String
   viewerId  String
+  viewer    User     @relation("storyViews", fields: [viewerId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
 
@@ -679,6 +691,7 @@ model Reel {
   notifications   Notification[]
   duets           Reel[]            @relation("DuetOf")
   stitches        Reel[]            @relation("StitchOf")
+  seriesEpisodes  SeriesEpisode[]   @relation("seriesEpisodeReels")
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([createdAt(sort: Desc)])
@@ -843,7 +856,8 @@ model Channel {
   playlists        Playlist[]
   subscribers      Subscription[]
   channelPosts     ChannelPost[]
-  trailerVideoId   String?
+  trailerVideoId     String?
+  viewerDemographics ViewerDemographic[] @relation("viewerDemographics")
 
   @@index([handle])
   @@index([subscribersCount(sort: Desc)])
@@ -904,6 +918,9 @@ model Video {
   endScreens        EndScreen[]
   aiCaptions        AiCaption[]
   videoChapters     VideoChapter[]     @relation("videoChapters")
+  watchParties      WatchParty[]       @relation("watchParties")
+  viewerDemographics ViewerDemographic[] @relation("viewerDemographics")
+  seriesEpisodes    SeriesEpisode[]    @relation("seriesEpisodeVideos")
 
   @@index([channelId, publishedAt(sort: Desc)])
   @@index([status, publishedAt(sort: Desc)])
@@ -1016,7 +1033,8 @@ model Comment {
   updatedAt      DateTime          @updatedAt
   reactions      CommentReaction[]
   notifications  Notification[]
-  moderationLogs ModerationLog[]   @relation("ModCommentTarget")
+  moderationLogs  ModerationLog[]   @relation("ModCommentTarget")
+  reportedReports Report[]          @relation("reportedComments")
 
   @@index([postId, createdAt])
   @@index([userId, createdAt(sort: Desc)])
@@ -1078,6 +1096,7 @@ model Conversation {
   lastMessageText       String?
   lastMessageAt         DateTime?
   lastMessageById       String?
+  lastMessageBy         User?                @relation("conversationLastMessage", fields: [lastMessageById], references: [id], onDelete: SetNull)
   disappearingDuration  Int?
   slowModeSeconds       Int? // 0 = off, 30, 60, 300, 900, 3600
   lockCode              String? // Secret code to unlock this conversation
@@ -1090,6 +1109,7 @@ model Conversation {
   adminLogs             AdminLog[]
   groupTopics           GroupTopic[]
   checklists            MessageChecklist[]
+  keyEnvelopes          ConversationKeyEnvelope[] @relation("keyEnvelopes")
 
   @@index([lastMessageAt(sort: Desc)])
   @@map("conversations")
@@ -1144,6 +1164,7 @@ model Message {
   isPinned        Boolean           @default(false)
   pinnedAt        DateTime?
   pinnedById      String?
+  pinnedBy        User?             @relation("messagePinner", fields: [pinnedById], references: [id], onDelete: SetNull)
   isViewOnce      Boolean           @default(false)
   viewedAt        DateTime?
   isSpoiler       Boolean           @default(false)
@@ -1155,7 +1176,8 @@ model Message {
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender          User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
   moderationLogs  ModerationLog[]   @relation("ModMessageTarget")
-  reactions       MessageReaction[]
+  reactions        MessageReaction[]
+  reportedReports  Report[]           @relation("reportedMessages")
 
   @@index([conversationId, createdAt(sort: Desc)])
   @@index([senderId])
@@ -1314,7 +1336,12 @@ model Circle {
   members        CircleMember[]
   invites        CircleInvite[]
   notifications  Notification[]
-  communityRoles CommunityRole[] @relation("communityRoles")
+  communityRoles       CommunityRole[]      @relation("communityRoles")
+  forumThreads         ForumThread[]        @relation("forumThreads")
+  webhooks             Webhook[]            @relation("webhooks")
+  stageSessions        StageSession[]       @relation("stageSessions")
+  communityEvents      Event[]              @relation("communityEvents")
+  communityTreasuries  CommunityTreasury[]  @relation("communityTreasuries")
 
   @@index([slug])
   @@index([ownerId])
@@ -1399,12 +1426,16 @@ model Report {
   reporterId            String
   reportedUserId        String?
   reportedPostId        String?
+  reportedPost          Post?            @relation("reportedPosts", fields: [reportedPostId], references: [id], onDelete: SetNull)
   reportedCommentId     String?
+  reportedComment       Comment?         @relation("reportedComments", fields: [reportedCommentId], references: [id], onDelete: SetNull)
   reportedMessageId     String?
+  reportedMessage       Message?         @relation("reportedMessages", fields: [reportedMessageId], references: [id], onDelete: SetNull)
   reason                ReportReason
   description           String?          @db.VarChar(1000)
   status                ReportStatus     @default(PENDING)
   reviewedById          String?
+  reviewedBy            User?            @relation("reportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
   reviewedAt            DateTime?
   actionTaken           ModerationAction @default(NONE)
   moderatorNotes        String?
@@ -1772,6 +1803,7 @@ model CallSession {
   maxParticipants   Int               @default(2)
   isScreenSharing   Boolean           @default(false)
   screenShareUserId String?
+  screenShareUser   User?             @relation("callScreenShare", fields: [screenShareUserId], references: [id], onDelete: SetNull)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   participants      CallParticipant[]
@@ -1848,6 +1880,7 @@ model GeneratedSticker {
 model AltProfile {
   id          String             @id @default(cuid())
   userId      String             @unique
+  user        User               @relation("altProfile", fields: [userId], references: [id], onDelete: Cascade)
   displayName String
   bio         String?            @db.VarChar(500)
   avatarUrl   String?
@@ -2067,6 +2100,7 @@ model Event {
   userId      String
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   communityId String?
+  community   Circle?     @relation("communityEvents", fields: [communityId], references: [id], onDelete: SetNull)
   rsvps       EventRSVP[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
@@ -2286,10 +2320,11 @@ model EncryptionKey {
 }
 
 model ConversationKeyEnvelope {
-  id             String   @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
+  conversation   Conversation @relation("keyEnvelopes", fields: [conversationId], references: [id], onDelete: Cascade)
   userId         String
-  user           User     @relation("conversationKeyEnvelopes", fields: [userId], references: [id], onDelete: Cascade)
+  user           User         @relation("conversationKeyEnvelopes", fields: [userId], references: [id], onDelete: Cascade)
   encryptedKey   String
   nonce          String
   version        Int      @default(1)
@@ -2742,6 +2777,7 @@ model PlaylistCollaborator {
   userId     String
   role       String   @default("editor")
   addedById  String
+  addedBy    User     @relation("playlistCollabAdder", fields: [addedById], references: [id], onDelete: Cascade)
   addedAt    DateTime @default(now())
   playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
   user       User     @relation("PlaylistCollaborators", fields: [userId], references: [id], onDelete: Cascade)
@@ -2952,8 +2988,11 @@ model SeriesEpisode {
   thumbnailUrl String?
   duration     Int? // seconds
   postId       String?
+  post         Post?     @relation("seriesEpisodePosts", fields: [postId], references: [id], onDelete: SetNull)
   reelId       String?
+  reel         Reel?     @relation("seriesEpisodeReels", fields: [reelId], references: [id], onDelete: SetNull)
   videoId      String?
+  video        Video?    @relation("seriesEpisodeVideos", fields: [videoId], references: [id], onDelete: SetNull)
   releasedAt   DateTime?
   createdAt    DateTime  @default(now())
   series       Series    @relation(fields: [seriesId], references: [id], onDelete: Cascade)
@@ -3094,6 +3133,7 @@ model Order {
 
 model PostProductTag {
   postId    String
+  post      Post     @relation("productTags", fields: [postId], references: [id], onDelete: Cascade)
   productId String
   position  String? // x,y coordinates on image
   createdAt DateTime @default(now())
@@ -3157,6 +3197,7 @@ model ZakatFund {
   category     String // individual | mosque | school | disaster | orphan | other
   isVerified   Boolean         @default(false)
   verifiedById String?
+  verifiedBy   User?           @relation("zakatFundVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
   status       String          @default("active") // active | completed | closed
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
@@ -3186,6 +3227,7 @@ model ZakatDonation {
 model CommunityTreasury {
   id            String                 @id @default(uuid())
   circleId      String
+  circle        Circle                 @relation("communityTreasuries", fields: [circleId], references: [id], onDelete: Cascade)
   title         String                 @db.VarChar(200)
   description   String?                @db.VarChar(1000)
   goalAmount    Decimal                @db.Decimal(12, 2)
@@ -3388,6 +3430,7 @@ model WatchParty {
   id          String    @id @default(uuid())
   hostId      String
   videoId     String
+  video       Video     @relation("watchParties", fields: [videoId], references: [id], onDelete: Cascade)
   title       String    @db.VarChar(200)
   isActive    Boolean   @default(false)
   viewerCount Int       @default(0)
@@ -3536,6 +3579,7 @@ model CustomEmojiPack {
 model ForumThread {
   id          String       @id @default(uuid())
   circleId    String // community/server
+  circle      Circle       @relation("forumThreads", fields: [circleId], references: [id], onDelete: Cascade)
   title       String       @db.VarChar(200)
   content     String       @db.Text
   authorId    String
@@ -3570,6 +3614,7 @@ model ForumReply {
 model Webhook {
   id              String    @id @default(uuid())
   circleId        String
+  circle          Circle    @relation("webhooks", fields: [circleId], references: [id], onDelete: Cascade)
   name            String    @db.VarChar(100)
   avatarUrl       String?
   token           String    @unique @default(uuid())
@@ -3590,6 +3635,7 @@ model Webhook {
 model StageSession {
   id            String    @id @default(uuid())
   circleId      String
+  circle        Circle    @relation("stageSessions", fields: [circleId], references: [id], onDelete: Cascade)
   title         String    @db.VarChar(200)
   hostId        String
   status        String    @default("scheduled") // scheduled | live | ended
@@ -3656,7 +3702,9 @@ model CreatorEarning {
 model ViewerDemographic {
   id        String   @id @default(cuid())
   videoId   String?
+  video     Video?   @relation("viewerDemographics", fields: [videoId], references: [id], onDelete: SetNull)
   channelId String?
+  channel   Channel? @relation("viewerDemographics", fields: [channelId], references: [id], onDelete: SetNull)
   country   String   @db.VarChar(2)
   ageRange  String   @db.VarChar(10) // 13-17, 18-24, 25-34, 35-44, 45-54, 55+
   gender    String   @db.VarChar(10) // male, female, other
