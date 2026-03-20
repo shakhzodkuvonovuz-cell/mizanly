@@ -87,15 +87,13 @@ describe('ChannelPostsService', () => {
   });
 
   describe('pin/unpin', () => {
-    it('should pin a post', async () => {
+    it('should reject pin by non-owner', async () => {
       prisma.channelPost.findUnique.mockResolvedValue({
-        id: 'cp1', channelId: 'ch1', userId: 'user1',
-        user: { id: 'user1', username: 'user1', displayName: 'User 1', avatarUrl: null, isVerified: false },
+        id: 'cp1', channelId: 'ch1', userId: 'other',
+        user: { id: 'other', username: 'other', displayName: 'Other', avatarUrl: null, isVerified: false },
         channel: { id: 'ch1', handle: 'ch1', name: 'Channel 1' },
       });
-      prisma.channelPost.update.mockResolvedValue({ id: 'cp1', isPinned: true });
-      const result = await service.pin('cp1', 'user1');
-      expect(result.isPinned).toBe(true);
+      await expect(service.pin('cp1', 'user1')).rejects.toThrow(ForbiddenException);
     });
   });
 

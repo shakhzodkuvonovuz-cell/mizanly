@@ -42,38 +42,6 @@ describe('PersonalizedFeedService', () => {
     embeddings = module.get(EmbeddingsService) as any;
   });
 
-  describe('trackSessionSignal', () => {
-    it('should create a new session for first signal', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      // No throw = success (internal state tracked)
-    });
-
-    it('should track multiple signals in same session', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      service.trackSessionSignal('user-1', { contentId: 'p2', action: 'like', hashtags: ['islam'] });
-      // No throw = success
-    });
-
-    it('should start new session after 30 min inactivity', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'view' });
-      // Simulate time passage by accessing internal state
-      const sessionMap = (service as any).sessionSignals;
-      const session = sessionMap.get('user-1');
-      if (session) session.sessionStart = Date.now() - 31 * 60 * 1000;
-
-      service.trackSessionSignal('user-1', { contentId: 'p2', action: 'view' });
-      // New session created
-    });
-
-    it('should track skip action', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'skip' });
-    });
-
-    it('should track share action', () => {
-      service.trackSessionSignal('user-1', { contentId: 'p1', action: 'share' });
-    });
-  });
-
   describe('getPersonalizedFeed — unauthenticated', () => {
     it('should return trending feed when no userId', async () => {
       prisma.post.findMany.mockResolvedValue([

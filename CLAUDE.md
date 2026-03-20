@@ -40,6 +40,27 @@ Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local sola
 **Known gaps:** 418 findings documented in `docs/audit/` and memory files. Key blockers: Apple IAP not installed (App Store rejection), google-services.json missing (Android push), SQL injection in embeddings, video upload not wired from mobile, payments API unused on mobile. Full gap list in memory file `project_complete_gaps_audit_march21.md`.
 **Next: test batch 3 (edge cases + auth matrix + abuse vectors), then production deployment.**
 
+## Key Documentation Files (read as needed)
+- `STRUCTURE.md` — Complete app structure (A-Z), cross-referenced against 13 competitor platforms
+- `ARCHITECTURE.md` — Architecture guide v3, 5-space design, full stack documentation
+- `docs/DEPLOYMENT.md` — Production deployment guide (Railway, Neon, Cloudflare, Clerk, Stripe)
+- `docs/DEPLOY_CHECKLIST.md` — Pre-deployment verification checklist with checkboxes
+- `docs/PROJECT_HISTORY.md` — Complete development timeline and milestones
+- `docs/ONBOARDING.md` — Developer onboarding guide
+- `docs/TURN_SETUP.md` — WebRTC TURN/STUN server setup instructions
+- `docs/COMPETITOR_DEEP_AUDIT_2026.md` — 15-dimension competitor audit (pre-batch, historical)
+- `docs/features/DATA_IMPORT_ARCHITECTURE.md` — User's brainstorm: data import from Instagram/TikTok/X/YouTube/WhatsApp
+- `docs/features/EXIT_STORY_SPEC.md` — User's brainstorm: shareable "I'm moving to Mizanly" story
+- `docs/audit/ALGORITHM_DEEP_AUDIT.md` — User's brainstorm: feed algorithm improvements (includes P0 SQL injection finding)
+- `docs/audit/COMPREHENSIVE_AUDIT_2026.md` — 60-dimension audit, all findings with line numbers
+- `docs/audit/PRIORITY_FIXES.md` — P0 and P1 items sorted by severity
+- `docs/audit/HONEST_SCORES.md` — Per-dimension scores with evidence
+- `docs/audit/MARKET_ANALYSIS.md` — Market sizing, competitor landscape, launch strategy
+- `docs/ralph-instructions.md` — Behavioral rules for autonomous execution (no shortcuts, verify everything)
+- `docs/ralph-test-batch1.md` — Test batch 1 instructions (service unit tests)
+- `docs/ralph-test-batch2.md` — Test batch 2 instructions (controllers + expansion)
+- `docs/ralph-batch4.md` — Feature batch 4 instructions (audit fix)
+
 ---
 
 ## CRITICAL STUBS — ALL RESOLVED
