@@ -186,5 +186,44 @@ describe('UploadService', () => {
       expect(serviceAsAny.getExtension('audio/mpeg')).toBe('mp3');
       expect(serviceAsAny.getExtension('unknown/type')).toBe('bin');
     });
+
+    it('should return correct audio extensions', () => {
+      const serviceAsAny = service as any;
+      expect(serviceAsAny.getExtension('audio/wav')).toBe('wav');
+      expect(serviceAsAny.getExtension('audio/mp4')).toBe('m4a');
+    });
+  });
+
+  describe('getPresignedUrl — folder restrictions', () => {
+    it('should reject video type in avatars folder', async () => {
+      await expect(
+        service.getPresignedUrl('user-123', 'video/mp4', 'avatars'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject audio type in reels folder', async () => {
+      await expect(
+        service.getPresignedUrl('user-123', 'audio/mpeg', 'reels'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should reject oversized maxFileSize', async () => {
+      (getSignedUrl as jest.Mock).mockResolvedValue('https://presigned.url');
+      await expect(
+        service.getPresignedUrl('user-123', 'image/jpeg', 'avatars', 300, 100 * 1024 * 1024),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should include image variants for image uploads', async () => {
+      (getSignedUrl as jest.Mock).mockResolvedValue('https://presigned.url');
+      const result = await service.getPresignedUrl('user-123', 'image/jpeg', 'posts');
+      expect(result).toHaveProperty('variants');
+    });
+
+    it('should not include variants for video uploads', async () => {
+      (getSignedUrl as jest.Mock).mockResolvedValue('https://presigned.url');
+      const result = await service.getPresignedUrl('user-123', 'video/mp4', 'posts');
+      expect(result).not.toHaveProperty('variants');
+    });
   });
 });

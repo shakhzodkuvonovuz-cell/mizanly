@@ -92,4 +92,82 @@ describe('ThumbnailsService', () => {
       expect(result).toEqual({ tracked: true });
     });
   });
+
+  describe('trackClick', () => {
+    it('should increment clicks', async () => {
+      mockPrisma.thumbnailVariant.update.mockResolvedValue({ id: '1', clicks: 5 });
+      const result = await service.trackClick('1');
+      expect(result).toEqual({ tracked: true });
+      expect(mockPrisma.thumbnailVariant.update).toHaveBeenCalledWith({
+        where: { id: '1' },
+        data: { clicks: { increment: 1 } },
+      });
+    });
+  });
+
+  describe('getVariants', () => {
+    it('should return variants with CTR stats', async () => {
+      mockPrisma.thumbnailVariant.findMany.mockResolvedValue([
+        { id: '1', thumbnailUrl: 'url1', impressions: 1000, clicks: 50, isWinner: false, createdAt: new Date() },
+        { id: '2', thumbnailUrl: 'url2', impressions: 1000, clicks: 80, isWinner: true, createdAt: new Date() },
+      ]);
+      const result = await service.getVariants('post', 'post-1');
+      expect(result).not.toBeNull();
+      expect(result!.variants).toHaveLength(2);
+      expect(result!.variants[0].ctr).toBe(5);
+      expect(result!.variants[1].ctr).toBe(8);
+      expect(result!.testComplete).toBe(true);
+      expect(result!.winner!.id).toBe('2');
+      expect(result!.totalImpressions).toBe(2000);
+    });
+
+    it('should return null when no variants exist', async () => {
+      mockPrisma.thumbnailVariant.findMany.mockResolvedValue([]);
+      const result = await service.getVariants('post', 'missing');
+      expect(result).toBeNull();
+    });
+
+    it('should show testComplete false when no winner', async () => {
+      mockPrisma.thumbnailVariant.findMany.mockResolvedValue([
+        { id: '1', thumbnailUrl: 'url1', impressions: 100, clicks: 5, isWinner: false, createdAt: new Date() },
+        { id: '2', thumbnailUrl: 'url2', impressions: 100, clicks: 10, isWinner: false, createdAt: new Date() },
+      ]);
+      const result = await service.getVariants('post', 'post-1');
+      expect(result!.testComplete).toBe(false);
+      expect(result!.winner).toBeNull();
+    });
+  });
+
+  describe('serveThumbnail — random assignment', () => {
+    it('should return a URL from one of the variants', async () => {
+      mockPrisma.thumbnailVariant.findMany.mockResolvedValue([
+        { id: '1', thumbnailUrl: 'url1', isWinner: false },
+        { id: '2', thumbnailUrl: 'url2', isWinner: false },
+      ]);
+      const result = await service.serveThumbnail('post', 'post-1');
+      expect(['url1', 'url2']).toContain(result);
+    });
+  });
+
+  describe('createVariants — 3 variants', () => {
+    it('should create 3 variants successfully', async () => {
+      mockPrisma.thumbnailVariant.count.mockResolvedValue(0);
+      mockPrisma.thumbnailVariant.create
+        .mockResolvedValueOnce({ id: '1', thumbnailUrl: 'url1' })
+        .mockResolvedValueOnce({ id: '2', thumbnailUrl: 'url2' })
+        .mockResolvedValueOnce({ id: '3', thumbnailUrl: 'url3' });
+      const result = await service.createVariants('reel', 'r1', ['url1', 'url2', 'url3']);
+      expect(result).toHaveLength(3);
+    });
+  });
+
+  describe('getVariants — zero impressions CTR', () => {
+    it('should return 0 CTR when impressions is 0', async () => {
+      mockPrisma.thumbnailVariant.findMany.mockResolvedValue([
+        { id: '1', thumbnailUrl: 'url1', impressions: 0, clicks: 0, isWinner: false, createdAt: new Date() },
+      ]);
+      const result = await service.getVariants('post', 'post-1');
+      expect(result!.variants[0].ctr).toBe(0);
+    });
+  });
 });

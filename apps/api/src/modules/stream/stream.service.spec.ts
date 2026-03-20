@@ -244,5 +244,102 @@ describe('StreamService', () => {
         data: { status: 'FAILED' },
       });
     });
+
+    it('should handle neither video nor reel found', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      prisma.reel.findFirst.mockResolvedValue(null);
+      // Should not throw
+      await service.handleStreamError('orphan-stream', 'some error');
+      expect(prisma.video.update).not.toHaveBeenCalled();
+      expect(prisma.reel.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleStreamReady — no match', () => {
+    it('should handle neither video nor reel found gracefully', async () => {
+      prisma.video.findFirst.mockResolvedValue(null);
+      prisma.reel.findFirst.mockResolvedValue(null);
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          result: {
+            uid: 'orphan',
+            playback: { hls: 'https://hls.url', dash: 'https://dash.url' },
+            input: { width: 1920, height: 1080 },
+          },
+        }),
+      });
+
+      await service.handleStreamReady('orphan');
+      expect(prisma.video.update).not.toHaveBeenCalled();
+      expect(prisma.reel.update).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPlaybackUrls — error', () => {
+    it('should throw on API failure', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        json: () => Promise.resolve({ errors: [{ message: 'Not found' }] }),
+      });
+      await expect(service.getPlaybackUrls('bad-id')).rejects.toThrow('Failed to get Stream status');
+    });
+  });
+
+  describe('getPlaybackUrls — quality levels', () => {
+    it('should include 4k for 2160p+ video', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          result: {
+            uid: 'stream-4k',
+            playback: { hls: 'https://hls.url', dash: 'https://dash.url' },
+            input: { width: 3840, height: 2160 },
+          },
+        }),
+      });
+      const result = await service.getPlaybackUrls('stream-4k');
+      expect(result.qualities).toEqual(['360p', '720p', '1080p', '4k']);
+    });
+
+    it('should only have 360p for low-res video', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          success: true,
+          result: {
+            uid: 'stream-lowres',
+            playback: { hls: 'https://hls.url', dash: 'https://dash.url' },
+            input: { width: 480, height: 360 },
+          },
+        }),
+      });
+      const result = await service.getPlaybackUrls('stream-lowres');
+      expect(result.qualities).toEqual(['360p']);
+    });
+  });
+
+  describe('deleteVideo — failure', () => {
+    it('should not throw on delete failure', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: false });
+      // Should not throw, just log warning
+      await service.deleteVideo('stream-uid-123');
+      expect(mockFetch).toHaveBeenCalled();
+    });
+  });
+
+  describe('uploadFromUrl — success false', () => {
+    it('should throw when API returns success: false', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({ success: false, errors: [{ message: 'Bad file' }] }),
+      });
+      await expect(
+        service.uploadFromUrl('https://example.com/vid.mp4', { title: 'Test', creatorId: 'u1' }),
+      ).rejects.toThrow('Cloudflare Stream upload failed');
+    });
   });
 });

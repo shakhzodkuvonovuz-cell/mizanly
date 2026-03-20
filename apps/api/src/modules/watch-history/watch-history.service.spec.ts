@@ -203,4 +203,77 @@ describe('WatchHistoryService', () => {
       expect(result).toEqual({ inWatchLater: true });
     });
   });
+
+  describe('recordWatch — defaults', () => {
+    it('should use default progress 0 and completed false', async () => {
+      prisma.video.findUnique.mockResolvedValue({ id: 'video1' });
+      prisma.watchHistory.upsert.mockResolvedValue({
+        userId: 'user1', videoId: 'video1', progress: 0, completed: false,
+      });
+      const result = await service.recordWatch('user1', 'video1');
+      expect(prisma.watchHistory.upsert).toHaveBeenCalledWith(expect.objectContaining({
+        create: expect.objectContaining({ progress: 0, completed: false }),
+      }));
+      expect(result.progress).toBe(0);
+    });
+  });
+
+  describe('getHistory — pagination', () => {
+    it('should set hasMore when results exceed limit', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        id: `wh${i}`, progress: 50, completed: false, watchedAt: new Date(),
+        video: { id: `v${i}`, title: `Video ${i}`, thumbnailUrl: null, duration: 60, viewsCount: 0, createdAt: new Date(), channel: null },
+      }));
+      prisma.watchHistory.findMany.mockResolvedValue(items);
+      const result = await service.getHistory('user1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+    });
+
+    it('should return empty when no history', async () => {
+      prisma.watchHistory.findMany.mockResolvedValue([]);
+      const result = await service.getHistory('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+
+    it('should pass cursor to findMany', async () => {
+      prisma.watchHistory.findMany.mockResolvedValue([]);
+      await service.getHistory('user1', 'wh5', 10);
+      expect(prisma.watchHistory.findMany).toHaveBeenCalledWith(expect.objectContaining({
+        cursor: { id: 'wh5' },
+        skip: 1,
+        take: 11,
+      }));
+    });
+  });
+
+  describe('getWatchLater — pagination', () => {
+    it('should set hasMore when results exceed limit', async () => {
+      const items = Array.from({ length: 21 }, (_, i) => ({
+        videoId: `v${i}`,
+        video: { id: `v${i}`, title: `Video ${i}`, thumbnailUrl: null, duration: 60, viewsCount: 0, createdAt: new Date(), channel: null },
+      }));
+      prisma.watchLater.findMany.mockResolvedValue(items);
+      const result = await service.getWatchLater('user1');
+      expect(result.meta.hasMore).toBe(true);
+      expect(result.data).toHaveLength(20);
+    });
+
+    it('should return empty when no watch later items', async () => {
+      prisma.watchLater.findMany.mockResolvedValue([]);
+      const result = await service.getWatchLater('user1');
+      expect(result.data).toEqual([]);
+      expect(result.meta.hasMore).toBe(false);
+    });
+  });
+
+  describe('addToWatchLater — returns added', () => {
+    it('should return { added: true }', async () => {
+      prisma.video.findUnique.mockResolvedValue({ id: 'v1' });
+      prisma.watchLater.upsert.mockResolvedValue({});
+      const result = await service.addToWatchLater('user1', 'v1');
+      expect(result).toEqual({ added: true });
+    });
+  });
 });
