@@ -24,11 +24,13 @@ describe('StoriesService', () => {
               findUnique: jest.fn(),
               create: jest.fn(),
               update: jest.fn(),
+              delete: jest.fn(),
             },
             storyView: {
               findMany: jest.fn(),
               findUnique: jest.fn(),
               create: jest.fn(),
+              upsert: jest.fn(),
             },
             user: {
               findMany: jest.fn(),
@@ -42,6 +44,7 @@ describe('StoriesService', () => {
               count: jest.fn(),
             },
             $transaction: jest.fn(),
+            $executeRaw: jest.fn(),
           },
         },
       ],
@@ -322,5 +325,125 @@ describe('StoriesService', () => {
     });
   });
 
-  // Additional tests for getViewers, getHighlights, createHighlight, updateHighlight, deleteHighlight, addStoryToHighlight
+  describe('getById', () => {
+    it('should return story when found', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'user-1', isArchived: false });
+      const result = await service.getById('story-1');
+      expect(result.id).toBe('story-1');
+    });
+
+    it('should throw NotFoundException when not found', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.getById('nonexistent')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete story for owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'user-1' });
+      prisma.story.delete.mockResolvedValue({});
+      const result = await service.delete('story-1', 'user-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'other' });
+      await expect(service.delete('story-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException when not found', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.delete('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('markViewed', () => {
+    it('should create view record', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'owner' });
+      prisma.storyView.upsert.mockResolvedValue({});
+      prisma.$executeRaw.mockResolvedValue(1);
+
+      const result = await service.markViewed('story-1', 'viewer-1');
+      expect(result).toEqual({ viewed: true });
+    });
+
+    it('should throw NotFoundException when story not found', async () => {
+      prisma.story.findUnique.mockResolvedValue(null);
+      await expect(service.markViewed('nonexistent', 'viewer-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getViewers', () => {
+    it('should return viewers for story owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'user-1' });
+      prisma.storyView.findMany.mockResolvedValue([
+        { viewerId: 'v1', createdAt: new Date() },
+      ]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'v1', username: 'viewer', displayName: 'Viewer', avatarUrl: null, isVerified: false },
+      ]);
+
+      const result = await service.getViewers('story-1', 'user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'other' });
+      await expect(service.getViewers('story-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getHighlights', () => {
+    it('should return user highlights', async () => {
+      prisma.storyHighlightAlbum.findMany.mockResolvedValue([
+        { id: 'hl-1', title: 'Travel', stories: [{ id: 'story-1' }] },
+      ]);
+      const result = await service.getHighlights('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('createHighlight', () => {
+    it('should create highlight album', async () => {
+      prisma.storyHighlightAlbum.create.mockResolvedValue({ id: 'hl-1', title: 'Travel' });
+      const result = await service.createHighlight('user-1', 'Travel');
+      expect(result.title).toBe('Travel');
+    });
+  });
+
+  describe('deleteHighlight', () => {
+    it('should delete highlight for owner', async () => {
+      prisma.storyHighlightAlbum.findUnique.mockResolvedValue({ id: 'hl-1', userId: 'user-1' });
+      prisma.storyHighlightAlbum.delete.mockResolvedValue({});
+      const result = await service.deleteHighlight('hl-1', 'user-1');
+      expect(result).toEqual({ deleted: true });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.storyHighlightAlbum.findUnique.mockResolvedValue({ id: 'hl-1', userId: 'other' });
+      await expect(service.deleteHighlight('hl-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getArchived', () => {
+    it('should return archived stories', async () => {
+      prisma.story.findMany.mockResolvedValue([{ id: 'story-1', isArchived: true }]);
+      const result = await service.getArchived('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('unarchive', () => {
+    it('should unarchive story for owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'user-1', isArchived: true });
+      prisma.story.update.mockResolvedValue({});
+      const result = await service.unarchive('story-1', 'user-1');
+      expect(result).toEqual({ unarchived: true });
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.story.findUnique.mockResolvedValue({ id: 'story-1', userId: 'other' });
+      await expect(service.unarchive('story-1', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
 });

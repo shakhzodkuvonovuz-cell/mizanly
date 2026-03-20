@@ -29,11 +29,14 @@ describe('ChannelsService', () => {
             },
             subscription: {
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              count: jest.fn().mockResolvedValue(0),
               create: jest.fn(),
               delete: jest.fn(),
             },
             video: {
-              findMany: jest.fn(),
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             block: {
               findMany: jest.fn(),
@@ -444,6 +447,70 @@ describe('ChannelsService', () => {
 
       expect(result).toHaveLength(1);
       expect(result[0].isSubscribed).toBe(false);
+    });
+  });
+
+  describe('getAnalytics', () => {
+    it('should return channel analytics for owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'user-1', handle: 'test' });
+      prisma.subscription.findMany.mockResolvedValue([]);
+      prisma.video.findMany.mockResolvedValue([{ viewsCount: 100, likesCount: 10 }]);
+
+      const result = await service.getAnalytics('test', 'user-1');
+      expect(result).toBeDefined();
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'other', handle: 'test' });
+      await expect(service.getAnalytics('test', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should throw NotFoundException for non-existent channel', async () => {
+      prisma.channel.findUnique.mockResolvedValue(null);
+      await expect(service.getAnalytics('nonexistent', 'user-1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('getSubscribers', () => {
+    it('should return subscribers for channel owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'user-1', handle: 'test' });
+      prisma.subscription.findMany.mockResolvedValue([
+        { user: { id: 'u1', username: 'sub1', displayName: 'Subscriber', avatarUrl: null } },
+      ]);
+
+      const result = await service.getSubscribers('test', 'user-1');
+      expect(result.data).toHaveLength(1);
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'other', handle: 'test' });
+      await expect(service.getSubscribers('test', 'user-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('setTrailer', () => {
+    it('should set trailer for channel owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'user-1', handle: 'test' });
+      prisma.video.findUnique.mockResolvedValue({ id: 'video-1', channelId: 'ch-1' });
+      prisma.channel.update.mockResolvedValue({ trailerVideoId: 'video-1' });
+
+      const result = await service.setTrailer('test', 'user-1', 'video-1');
+      expect(result.trailerVideoId).toBe('video-1');
+    });
+
+    it('should throw ForbiddenException for non-owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'other', handle: 'test' });
+      await expect(service.setTrailer('test', 'user-1', 'video-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('removeTrailer', () => {
+    it('should remove trailer for channel owner', async () => {
+      prisma.channel.findUnique.mockResolvedValue({ id: 'ch-1', userId: 'user-1', handle: 'test' });
+      prisma.channel.update.mockResolvedValue({ trailerVideoId: null });
+
+      const result = await service.removeTrailer('test', 'user-1');
+      expect(result.trailerVideoId).toBeNull();
     });
   });
 });
