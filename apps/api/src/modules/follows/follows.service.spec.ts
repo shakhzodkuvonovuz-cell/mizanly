@@ -31,6 +31,7 @@ describe('FollowsService', () => {
             },
             followRequest: {
               findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
               create: jest.fn(),
               update: jest.fn(),
               delete: jest.fn(),
@@ -39,6 +40,11 @@ describe('FollowsService', () => {
             block: {
               findFirst: jest.fn(),
             },
+            user: {
+              findUnique: jest.fn(),
+              findMany: jest.fn().mockResolvedValue([]),
+              update: jest.fn(),
+            },
             $transaction: jest.fn(),
             $executeRaw: jest.fn(),
           },
@@ -46,7 +52,7 @@ describe('FollowsService', () => {
         {
           provide: NotificationsService,
           useValue: {
-            create: jest.fn(),
+            create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
           },
         },
       ],
@@ -397,6 +403,111 @@ describe('FollowsService', () => {
       const result = await service.checkFollowing(currentUserId, targetUserId);
 
       expect(result).toEqual({ isFollowing: false });
+    });
+  });
+
+  describe('acceptRequest', () => {
+    it('should accept pending request (self-accept, no notification issue)', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-1', receiverId: 'user-1', status: 'PENDING',
+      });
+      prisma.block.findFirst.mockResolvedValue(null);
+      prisma.$transaction.mockResolvedValue([]);
+
+      const result = await service.acceptRequest('user-1', 'req-1');
+      expect(result.message).toContain('accepted');
+    });
+
+    it('should throw NotFoundException when request not found', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue(null);
+      await expect(service.acceptRequest('user-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not the receiver', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-2', receiverId: 'other', status: 'PENDING',
+      });
+      await expect(service.acceptRequest('user-1', 'req-1')).rejects.toThrow(ForbiddenException);
+    });
+
+    it('should return success for already accepted request', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-2', receiverId: 'user-1', status: 'ACCEPTED',
+      });
+      const result = await service.acceptRequest('user-1', 'req-1');
+      expect(result.message).toContain('accepted');
+    });
+
+    it('should throw ForbiddenException when blocked', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-2', receiverId: 'user-1', status: 'PENDING',
+      });
+      prisma.block.findFirst.mockResolvedValue({ blockerId: 'user-1', blockedId: 'user-2' });
+      prisma.followRequest.update.mockResolvedValue({});
+      await expect(service.acceptRequest('user-1', 'req-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('declineRequest', () => {
+    it('should decline pending request', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-2', receiverId: 'user-1', status: 'PENDING',
+      });
+      prisma.followRequest.update.mockResolvedValue({});
+      const result = await service.declineRequest('user-1', 'req-1');
+      expect(result.message).toContain('declined');
+    });
+
+    it('should throw NotFoundException when request not found', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue(null);
+      await expect(service.declineRequest('user-1', 'nonexistent')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException when not the receiver', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-2', receiverId: 'other',
+      });
+      await expect(service.declineRequest('user-1', 'req-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('cancelRequest', () => {
+    it('should cancel own request', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'user-1', receiverId: 'user-2',
+      });
+      prisma.followRequest.delete.mockResolvedValue({});
+      const result = await service.cancelRequest('user-1', 'req-1');
+      expect(result.message).toContain('cancelled');
+    });
+
+    it('should throw ForbiddenException when not the sender', async () => {
+      prisma.followRequest.findUnique.mockResolvedValue({
+        id: 'req-1', senderId: 'other', receiverId: 'user-2',
+      });
+      await expect(service.cancelRequest('user-1', 'req-1')).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('getOwnRequests', () => {
+    it('should return pending follow requests', async () => {
+      prisma.followRequest.findMany.mockResolvedValue([
+        { id: 'req-1', sender: { id: 'user-2', username: 'requester' }, status: 'PENDING' },
+      ]);
+      const result = await service.getOwnRequests('user-1');
+      expect(result).toHaveLength(1);
+    });
+  });
+
+  describe('getSuggestions', () => {
+    it('should return user suggestions', async () => {
+      prisma.follow.findMany.mockResolvedValue([]);
+      prisma.user.findMany.mockResolvedValue([
+        { id: 'u2', username: 'suggested', displayName: 'Suggested', avatarUrl: null, isVerified: false },
+      ]);
+
+      const result = await service.getSuggestions('user-1');
+      expect(result).toBeDefined();
     });
   });
 });
