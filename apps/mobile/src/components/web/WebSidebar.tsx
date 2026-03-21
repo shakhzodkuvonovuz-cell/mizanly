@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Platform, Dimensions } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { Icon } from '@/components/ui/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     borderRightColor: colors.dark.border,
     paddingTop: spacing.xl,
     paddingBottom: spacing.base,
-    height: '100%' as unknown as number,
+    height: Dimensions.get('window').height,
   },
   sidebarCollapsed: {
     width: SIDEBAR_COLLAPSED_WIDTH,

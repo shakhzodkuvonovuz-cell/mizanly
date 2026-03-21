@@ -91,7 +91,8 @@ export class StoriesService {
       if (!grouped.has(key)) {
         grouped.set(key, { user: story.user, stories: [], hasUnread: false });
       }
-      grouped.get(key)!.stories.push(story);
+      const group = grouped.get(key);
+      if (group) group.stories.push(story);
     }
 
     // Check which stories the current user has already seen

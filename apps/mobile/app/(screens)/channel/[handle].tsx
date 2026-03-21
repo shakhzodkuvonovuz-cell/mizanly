@@ -202,7 +202,7 @@ export default function ChannelScreen() {
 // Fetch playlists (only when playlists tab active)
 const playlistsQuery = useInfiniteQuery({
   queryKey: ['channel-playlists', channel?.id],
-  queryFn: ({ pageParam }) => playlistsApi.getByChannel(channel!.id, pageParam),
+  queryFn: ({ pageParam }) => playlistsApi.getByChannel(channel?.id ?? '', pageParam),
   initialPageParam: undefined as string | undefined,
   getNextPageParam: (last) => last.meta?.hasMore ? last.meta.cursor ?? undefined : undefined,
   enabled: activeTab === 'playlists' && !!channel,
@@ -390,7 +390,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
             accessibilityRole="button"
             style={styles.trailerCard}
            
-            onPress={() => router.push(`/(screens)/video/${channel.trailerVideo!.id}`)}
+            onPress={() => channel.trailerVideo && router.push(`/(screens)/video/${channel.trailerVideo.id}`)}
           >
             {channel.trailerVideo.thumbnailUrl ? (
               <Image source={{ uri: channel.trailerVideo.thumbnailUrl }} style={styles.trailerThumbnail} />

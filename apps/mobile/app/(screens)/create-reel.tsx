@@ -194,7 +194,7 @@ export default function CreateReelScreen() {
         const videoUploadRes = await fetch(presign.uploadUrl, {
           method: 'PUT',
           headers: { 'Content-Type': 'video/mp4' },
-          body: await fetch(video!.uri).then(r => r.blob()),
+          body: await fetch(video?.uri ?? '').then(r => r.blob()),
         });
         if (!videoUploadRes.ok) throw new Error('Video upload failed');
 
@@ -205,7 +205,7 @@ export default function CreateReelScreen() {
         return await reelsApi.create({
           videoUrl: presign.publicUrl,
           thumbnailUrl,
-          duration: video!.duration,
+          duration: video?.duration ?? 0,
           caption,
           hashtags,
           mentions,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, Dimensions } from 'react-native';
 import { WebSidebar, SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './WebSidebar';
 import { useResponsive } from '@/hooks/useResponsive';
 import { colors } from '@/theme';
@@ -55,23 +55,23 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     backgroundColor: colors.dark.bg,
-    height: '100%' as unknown as number,
+    height: Dimensions.get('window').height,
   },
   main: {
     flex: 1,
     flexDirection: 'row',
-    height: '100%' as unknown as number,
+    height: Dimensions.get('window').height,
   },
   content: {
     flex: 1,
     maxWidth: 640,
     alignSelf: 'flex-start',
-    height: '100%' as unknown as number,
+    height: Dimensions.get('window').height,
   },
   rightPanel: {
     width: 320,
     borderLeftWidth: 1,
     borderLeftColor: colors.dark.border,
-    height: '100%' as unknown as number,
+    height: Dimensions.get('window').height,
   },
 });

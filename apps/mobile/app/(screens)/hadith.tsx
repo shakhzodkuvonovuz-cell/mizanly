@@ -184,7 +184,7 @@ export default function HadithScreen() {
       }
       return next;
     });
-    setCurrentHadith(prev => ({ ...prev!, isBookmarked: !prev!.isBookmarked }));
+    setCurrentHadith(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : prev);
     setHadiths(prev => prev.map(h => h.id === hadithId ? { ...h, isBookmarked: !h.isBookmarked } : h));
     scaleAnim.value = withSpring(1.1, { damping: 10, stiffness: 400 }, () => {
       scaleAnim.value = withSpring(1);

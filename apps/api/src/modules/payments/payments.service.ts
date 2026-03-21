@@ -268,10 +268,13 @@ export class PaymentsService {
     // Store mapping
     await this.storeSubscriptionMapping(subscription.id, dbSubscription.id);
 
+    // Stripe expand returns nested objects. Access safely via index signature.
     const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
-    const paymentIntent = (latestInvoice as unknown as { payment_intent?: Stripe.PaymentIntent | null })?.payment_intent ?? null;
+    const paymentIntent = latestInvoice && typeof latestInvoice === 'object' && 'payment_intent' in latestInvoice
+      ? (latestInvoice.payment_intent as Stripe.PaymentIntent | null) : null;
 
-    const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+    const periodEnd = 'current_period_end' in subscription
+      ? (subscription.current_period_end as number) : undefined;
     return {
       subscriptionId: subscription.id,
       status: subscription.status,
@@ -411,7 +414,7 @@ export class PaymentsService {
   }
 
   async handleInvoicePaid(invoice: Stripe.Invoice) {
-    const subscriptionId = String((invoice as unknown as { subscription?: string }).subscription ?? '');
+    const subscriptionId = 'subscription' in invoice ? String(invoice.subscription ?? '') : '';
     if (!subscriptionId) return;
 
     let dbSubscriptionId = await this.redis.get(`subscription:${subscriptionId}`);
@@ -439,7 +442,7 @@ export class PaymentsService {
     // Update subscription end date (extend by one period)
     try {
       const subscription = await this.stripe.subscriptions.retrieve(subscriptionId);
-      const periodEnd = (subscription as unknown as { current_period_end?: number }).current_period_end;
+      const periodEnd = 'current_period_end' in subscription ? (subscription.current_period_end as number) : undefined;
       const endDate = periodEnd ? new Date(periodEnd * 1000) : new Date();
 
       await this.prisma.membershipSubscription.update({

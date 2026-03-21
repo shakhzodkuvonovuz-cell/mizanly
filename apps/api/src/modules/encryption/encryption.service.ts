@@ -97,7 +97,7 @@ export class EncryptionService {
     digits = digits.slice(0, 60);
 
     // Format as groups of 5 digits
-    return digits.match(/.{5}/g)!.join(' ');
+    return (digits.match(/.{5}/g) ?? []).join(' ');
   }
 
   /**

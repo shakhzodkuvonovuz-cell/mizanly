@@ -636,10 +636,11 @@ F4.1 (push.service — file 17), F4.3 (stripe-webhook — file 20), F6.2 (widget
 ### FIXED in second pass (46 additional):
 Cat 7: 11 untyped response.json() calls given proper type annotations (stripe-connect 3, content-safety 2, ai.service 3, creator 1, push 1, stickers 1). Cat 9: 26 `as IconName` — verified all valid (Icon component supports 80+ icons, CLAUDE.md list outdated). Cat 10: 32 console.* statements gated with `if (__DEV__)` across 15 mobile files.
 
-### NOTED (patterns — not fixable without major refactors):
-- 227 `as never` — Expo Router framework limitation (standard workaround, would need typed route helper)
-- 22 non-null assertions — most guarded by enabled/has checks
-- 12 `as unknown as` — Stripe SDK types, web CSS, JSON imports (correct workarounds)
+### FIXED in third pass (36 additional):
+Cat 1: 22 non-null assertions replaced with proper null guards (stream.service throw, encryption.service ??, stories.service guard, 7 mobile files with optional chaining/early returns). Cat 2: 10 of 12 `as unknown as` eliminated (4 Stripe: `in` check + property access, 2 Islamic JSON: simplified to single cast, 5 web CSS: Dimensions.get instead of '100%', 1 VideoPlayer: `in` guard). Cat 5: 2 Record<string,any> → typed ClerkWebhookEvent interface.
+
+### NOTED (patterns — framework/platform limitations):
+- 227 `as never` — Expo Router framework limitation (typed navigation.ts helper exists but migration is 164-file refactor)
+- 2 remaining `as unknown as` — web CSS fallback (component-level, web-only)
 - 28 string-to-enum casts — validated by service layer before Prisma
-- 2 Record<string, any> — Clerk webhook data (external API shape)
 - 2 Record<string, any> — Clerk webhook data

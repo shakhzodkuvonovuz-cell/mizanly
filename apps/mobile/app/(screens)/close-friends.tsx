@@ -133,7 +133,7 @@ export default function CloseFriendsScreen() {
   // Fetch members of Close Friends circle
   const membersQuery = useQuery<CircleMember[]>({
     queryKey: ['circle-members', closeFriendsCircle?.id],
-    queryFn: () => circlesApi.getMembers(closeFriendsCircle!.id),
+    queryFn: () => circlesApi.getMembers(closeFriendsCircle?.id ?? ''),
     enabled: !!closeFriendsCircle,
   });
 
@@ -145,7 +145,7 @@ export default function CloseFriendsScreen() {
   // Fetch followers of current user
   const followersQuery = useInfiniteQuery<PaginatedResponse<User>>({
     queryKey: ['followers', currentUserId],
-    queryFn: ({ pageParam }) => followsApi.getFollowers(currentUserId!, pageParam as string | undefined),
+    queryFn: ({ pageParam }) => followsApi.getFollowers(currentUserId ?? '', pageParam as string | undefined),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.meta.hasMore ? last.meta.cursor ?? undefined : undefined,
     enabled: !!currentUserId,
@@ -155,10 +155,12 @@ export default function CloseFriendsScreen() {
 
   // Toggle close friend status
   const toggleMemberMutation = useMutation({
-    mutationFn: ({ userId, add }: { userId: string; add: boolean }) =>
-      add
-        ? circlesApi.addMembers(closeFriendsCircle!.id, [userId])
-        : circlesApi.removeMembers(closeFriendsCircle!.id, [userId]),
+    mutationFn: ({ userId, add }: { userId: string; add: boolean }) => {
+      if (!closeFriendsCircle) return Promise.reject(new Error('Circle not ready'));
+      return add
+        ? circlesApi.addMembers(closeFriendsCircle.id, [userId])
+        : circlesApi.removeMembers(closeFriendsCircle.id, [userId]);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['circle-members', closeFriendsCircle?.id] });
     },

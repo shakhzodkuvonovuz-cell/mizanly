@@ -170,7 +170,11 @@ export const VideoPlayer = memo(function VideoPlayer({
   const toggleFullscreen = useCallback(async () => {
     if (!videoRef.current) return;
     haptic.light();
-    await (videoRef.current as unknown as { presentFullscreenPlayer: () => Promise<void> }).presentFullscreenPlayer();
+    // presentFullscreenPlayer exists on Video at runtime but isn't in Expo AV types
+    const ref = videoRef.current;
+    if ('presentFullscreenPlayer' in ref) {
+      await (ref as Record<string, () => Promise<void>>).presentFullscreenPlayer();
+    }
     resetControlsTimeout();
   }, [haptic, resetControlsTimeout]);
 

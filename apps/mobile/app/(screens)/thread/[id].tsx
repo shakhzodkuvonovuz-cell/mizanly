@@ -111,7 +111,7 @@ function ReplyRow({
           >
             <Icon name="message-circle" size={20} color={colors.text.secondary} />
             {(reply._count?.replies ?? 0) > 0 && (
-              <Text style={styles.replyActionCount}>{reply._count!.replies}</Text>
+              <Text style={styles.replyActionCount}>{reply._count?.replies ?? 0}</Text>
             )}
           </Pressable>
           <Pressable

@@ -1356,7 +1356,8 @@ export class IslamicService {
   // ============================================================
 
   private get duas(): DuaEntry[] {
-    return duasData as unknown as DuaEntry[];
+    // JSON imports are typed at compile time; runtime shape validated by usage
+    return duasData as DuaEntry[];
   }
 
   getDuasByCategory(category?: string): DuaEntry[] {
@@ -1494,7 +1495,7 @@ export class IslamicService {
   // ============================================================
 
   private get namesOfAllah(): NameOfAllah[] {
-    return asmaUlHusnaData as unknown as NameOfAllah[];
+    return asmaUlHusnaData as NameOfAllah[];
   }
 
   getAllNamesOfAllah(): NameOfAllah[] {

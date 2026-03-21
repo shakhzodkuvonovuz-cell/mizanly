@@ -51,14 +51,26 @@ export class WebhooksController {
     }
 
     const wh = new Webhook(secret);
-    let event: { type: string; data: Record<string, any> };
+    interface ClerkWebhookEvent {
+      type: string;
+      data: {
+        id: string;
+        email_addresses?: Array<{ email_address: string }>;
+        first_name?: string;
+        last_name?: string;
+        username?: string;
+        image_url?: string;
+        [key: string]: unknown;
+      };
+    }
+    let event: ClerkWebhookEvent;
 
     try {
       event = wh.verify(rawBody.toString(), {
         'svix-id': svixId,
         'svix-timestamp': svixTimestamp,
         'svix-signature': svixSignature,
-      }) as { type: string; data: Record<string, any> };
+      }) as ClerkWebhookEvent;
     } catch (err) {
       this.logger.warn('Invalid Clerk webhook signature');
       throw new BadRequestException('Invalid webhook signature');

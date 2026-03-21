@@ -236,18 +236,24 @@ export default function ProfileScreen() {
 
   const highlightsQuery = useQuery({
     queryKey: ['highlights', profile?.id],
-    queryFn: () => storiesApi.getHighlights(profile!.id),
+    queryFn: () => storiesApi.getHighlights(profile?.id ?? ''),
     enabled: !!profile,
   });
   const highlights: StoryHighlightAlbum[] = (highlightsQuery.data as StoryHighlightAlbum[]) ?? [];
 
   const followMutation = useMutation({
-    mutationFn: () => isFollowing ? followsApi.unfollow(profile!.id) : followsApi.follow(profile!.id),
+    mutationFn: () => {
+      if (!profile) return Promise.reject(new Error('Profile not loaded'));
+      return isFollowing ? followsApi.unfollow(profile.id) : followsApi.follow(profile.id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile', username] }),
   });
 
   const blockMutation = useMutation({
-    mutationFn: () => blocksApi.block(profile!.id),
+    mutationFn: () => {
+      if (!profile) return Promise.reject(new Error('Profile not loaded'));
+      return blocksApi.block(profile.id);
+    },
     onSuccess: () => {
       setShowMenu(false);
       Alert.alert(t('profile.blockedTitle'), t('profile.blockedMessage', { username }));
@@ -256,7 +262,10 @@ export default function ProfileScreen() {
   });
 
   const muteMutation = useMutation({
-    mutationFn: () => mutesApi.mute(profile!.id),
+    mutationFn: () => {
+      if (!profile) return Promise.reject(new Error('Profile not loaded'));
+      return mutesApi.mute(profile.id);
+    },
     onSuccess: () => {
       setShowMenu(false);
       Alert.alert(t('profile.mutedTitle'), t('profile.mutedMessage', { username }));
@@ -274,7 +283,8 @@ export default function ProfileScreen() {
   const handleReport = () => {
     setShowMenu(false);
     const sendReport = (reason: string) => {
-      usersApi.report(profile!.id, reason).catch(() => {});
+      if (!profile) return;
+      usersApi.report(profile.id, reason).catch(() => {});
       Alert.alert(t('profile.reportSentTitle'), t('profile.reportSentMessage'));
     };
     Alert.alert(t('profile.reportAccountTitle'), t('profile.reportAccountMessage'), [
@@ -462,7 +472,7 @@ export default function ProfileScreen() {
           <Pressable
             style={[styles.websiteRow, { flexDirection: rtlFlexRow(isRTL) }]}
             onPress={() => {
-              const url = profile.website!.startsWith('http') ? profile.website! : `https://${profile.website}`;
+              const url = (profile.website ?? '').startsWith('http') ? profile.website ?? '' : `https://${profile.website ?? ''}`;
               Linking.openURL(url).catch(() => Alert.alert(t('common.error'), t('common.couldNotOpenLink')));
             }}
             accessibilityLabel={`Visit website: ${profile.website}`}
@@ -475,7 +485,7 @@ export default function ProfileScreen() {
         {profile.channel && (
           <Pressable
             style={[styles.channelRow, { flexDirection: rtlFlexRow(isRTL) }]}
-            onPress={() => router.push(`/(screens)/channel/${profile.channel!.handle}`)}
+            onPress={() => profile.channel && router.push(`/(screens)/channel/${profile.channel.handle}`)}
             accessibilityLabel={t('profile.viewChannelAccessibility')}
             accessibilityRole="link"
           >

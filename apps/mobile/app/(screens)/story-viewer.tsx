@@ -129,7 +129,7 @@ export default function StoryViewerScreen() {
 
   const viewersQuery = useQuery({
     queryKey: ['story-viewers', story?.id],
-    queryFn: () => storiesApi.getViewers(story!.id),
+    queryFn: () => storiesApi.getViewers(story?.id ?? ''),
     enabled: ownStory && showViewers && !!story?.id,
   });
 
@@ -311,7 +311,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
 
   const replyMutation = useMutation({
     mutationFn: async () => {
-      const convo = await messagesApi.createDM(group!.user.id);
+      if (!group) throw new Error('Story group not available');
+      const convo = await messagesApi.createDM(group.user.id);
       await messagesApi.sendMessage(convo.id, { content: replyText });
     },
     onSuccess: () => {
@@ -322,7 +323,8 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
   });
   const reactionMutation = useMutation({
     mutationFn: async (emoji: string) => {
-      const convo = await messagesApi.createDM(group!.user.id);
+      if (!group) throw new Error('Story group not available');
+      const convo = await messagesApi.createDM(group.user.id);
       await messagesApi.sendMessage(convo.id, { content: emoji });
     },
     onError: (err: Error) => Alert.alert(t('common.error'), err.message),

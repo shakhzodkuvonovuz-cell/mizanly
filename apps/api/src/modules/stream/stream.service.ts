@@ -96,7 +96,10 @@ export class StreamService {
       );
     }
 
-    return data.result!.uid;
+    if (!data.result) {
+      throw new InternalServerErrorException('Cloudflare Stream returned no result');
+    }
+    return data.result.uid;
   }
 
   async getPlaybackUrls(streamId: string): Promise<PlaybackUrls> {
