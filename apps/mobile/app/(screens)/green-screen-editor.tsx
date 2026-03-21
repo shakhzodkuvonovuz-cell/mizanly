@@ -523,7 +523,7 @@ export default function GreenScreenEditorScreen() {
             <Pressable style={styles.cancelButton} onPress={() => router.back()}>
               <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable style={styles.applyButton} onPress={() => router.push('/camera' as never)}>
+            <Pressable style={styles.applyButton} onPress={() => router.push('/(screens)/camera' as never)}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.applyButtonGradient}

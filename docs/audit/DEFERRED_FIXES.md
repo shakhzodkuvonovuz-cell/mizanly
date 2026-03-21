@@ -503,3 +503,12 @@ C1 (SearchIndexingProcessor created — processes index/update/delete jobs via M
 - [19] m8 Webhook concurrency 10 — acceptable for low-volume platform
 - [19] m9 JobQueueService polls on construction — dead code
 - [19] m10 Scheduling getScheduled query formatting — works correctly
+
+## From Audit 22 (Mobile Navigation/Routing) — 28 findings
+### FIXED directly (20 findings):
+F3 (8 broken routes: added /(screens)/ prefix to discover 4 routes, duet-create, stitch-create, green-screen-editor, search), F4 (series-detail: query params → path params for video/reel/post), F5 (series-detail + product-detail: profile?username= → profile/${username}), F6 (WebSidebar: profile route includes user.username), F7 (conversation-info: conversationId → id param match), F8 (leaderboard 2 + product + series: userId → username for profile), F9 (analytics: create redirect → create-post), F12 (sticker-browser: reads conversationId param), F13 (WebSidebar: removed wrong badge from Majlis), F14 (notifications: added reel/video/comment/conversation routes), F17 (i18n: Cancel/Next → t()), F18 (duplicate accessibilityRole removed)
+
+### Deferred:
+- [22] F1/F2 Deep link utility — needs comprehensive integration — OPEN
+- [22] F10 10 orphan screens — need nav paths — OPEN
+- [22] F11/F15/F16/F19-F28 Architecture/cosmetic — NOTED

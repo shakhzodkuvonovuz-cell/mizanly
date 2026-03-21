@@ -298,7 +298,7 @@ export default function DuetCreateScreen() {
                   { id: 'top-bottom', icon: 'layers' as IconName, label: 'Top & Bottom' },
                   { id: 'react', icon: 'user' as IconName, label: 'React' },
                 ].map((layout) => (
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     key={layout.id}
                     style={styles.layoutButton}
                     onPress={() => setLayoutMode(layout.id as LayoutMode)}
@@ -388,7 +388,7 @@ export default function DuetCreateScreen() {
               </Pressable>
 
               {/* Flash Toggle */}
-              <Pressable accessibilityRole="button" accessibilityRole="button"
+              <Pressable accessibilityRole="button"
                 style={styles.controlButton}
                 onPress={() => setFlashOn(!flashOn)}
               >
@@ -426,7 +426,7 @@ export default function DuetCreateScreen() {
                     </LinearGradient>
                   </View>
                   <Text style={styles.audioTitle}>Audio Settings</Text>
-                  <Pressable accessibilityRole="button" accessibilityRole="button"
+                  <Pressable accessibilityRole="button"
                     style={[styles.muteButton, isMuted && styles.muteButtonActive]}
                     onPress={() => setIsMuted(!isMuted)}
                   >
@@ -460,15 +460,15 @@ export default function DuetCreateScreen() {
 
           {/* Next Button */}
           <Animated.View entering={FadeInUp.delay(350).duration(400)}>
-            <Pressable accessibilityRole="button" accessibilityRole="button"
+            <Pressable accessibilityRole="button"
               style={styles.nextButton}
-              onPress={() => router.push('/create-reel')}
+              onPress={() => router.push('/(screens)/create-reel' as never)}
             >
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}
               >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>{t('common.next')}</Text>
                 <Icon name="chevron-right" size="sm" color="#FFF" />
               </LinearGradient>
             </Pressable>

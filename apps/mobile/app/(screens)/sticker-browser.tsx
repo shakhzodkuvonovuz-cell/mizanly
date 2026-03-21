@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, RefreshControl, TextInput, Pressable, ScrollView, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
@@ -83,6 +83,7 @@ function PackCard({ pack, onPress, onAdd, onRemove, index }: { pack: StickerPack
 export default function StickerBrowserScreen() {
   const { t, isRTL } = useTranslation();
   const router = useRouter();
+  const { conversationId } = useLocalSearchParams<{ conversationId?: string }>();
   const insets = useSafeAreaInsets();
   const haptic = useHaptic();
   const queryClient = useQueryClient();

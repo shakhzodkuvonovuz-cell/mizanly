@@ -70,6 +70,10 @@ function notificationIcon(type: string): { name: NotifIconName; color: string } 
 function notificationTarget(n: Notification): string | null {
   if (n.postId) return `/(screens)/post/${n.postId}`;
   if (n.threadId) return `/(screens)/thread/${n.threadId}`;
+  if (n.reelId) return `/(screens)/reel/${n.reelId}`;
+  if (n.videoId) return `/(screens)/video/${n.videoId}`;
+  if (n.commentId && n.postId) return `/(screens)/post/${n.postId}`;
+  if (n.conversationId) return `/(screens)/conversation/${n.conversationId}`;
   if (n.actor?.username) return `/(screens)/profile/${n.actor.username}`;
   return null;
 }

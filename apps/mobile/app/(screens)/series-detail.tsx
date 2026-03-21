@@ -112,11 +112,11 @@ function SeriesDetailContent() {
   const handleEpisodePress = (episode: Episode) => {
     haptic.light();
     if (episode.videoId) {
-      router.push(`/(screens)/video?id=${episode.videoId}` as never);
+      router.push(`/(screens)/video/${episode.videoId}` as never);
     } else if (episode.reelId) {
-      router.push(`/(screens)/reel?id=${episode.reelId}` as never);
+      router.push(`/(screens)/reel/${episode.reelId}` as never);
     } else if (episode.postId) {
-      router.push(`/(screens)/post?id=${episode.postId}` as never);
+      router.push(`/(screens)/post/${episode.postId}` as never);
     }
   };
 
@@ -244,7 +244,7 @@ function SeriesDetailContent() {
         {/* Creator Card */}
         <Pressable
           style={styles.creatorCard}
-          onPress={() => router.push(`/(screens)/profile?username=${series.creator.username}` as never)}
+          onPress={() => router.push(`/(screens)/profile/${series.creator.username}` as never)}
           accessibilityRole="button"
         >
           <Avatar

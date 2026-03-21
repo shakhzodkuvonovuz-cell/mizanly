@@ -420,7 +420,7 @@ export default function ConversationInfoScreen() {
                   <Text style={styles.actionText}>{t('screens.pinned-messages.title')}</Text>
                 </View>
               </Pressable>
-              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/conversation-media?conversationId=${convo?.id}` as never)}>
+              <Pressable style={styles.actionRow} onPress={() => router.push(`/(screens)/conversation-media?id=${convo?.id}` as never)}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
                   <LinearGradient colors={['rgba(200,150,62,0.2)', 'rgba(200,150,62,0.1)']} style={styles.actionIconBg}>
                     <Icon name="image" size="xs" color={colors.gold} />

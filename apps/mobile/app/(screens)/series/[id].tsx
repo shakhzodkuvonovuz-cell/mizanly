@@ -212,7 +212,7 @@ function SeriesDetailScreen() {
       {/* Creator info */}
       <Animated.View entering={FadeIn.duration(400)} style={styles.creatorCard}>
         <Pressable
-          onPress={() => router.push(`/(screens)/profile/${data.creator.id}` as never)}
+          onPress={() => router.push(`/(screens)/profile/${data.creator.username}` as never)}
           style={[styles.creatorRow, { flexDirection: rtlFlexRow(isRTL) }]}
           accessibilityLabel={`View ${data.creator.displayName}'s profile`}
           accessibilityRole="button"

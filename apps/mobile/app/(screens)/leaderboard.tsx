@@ -65,7 +65,7 @@ function PodiumCard({
       style={[styles.podiumCard, { height }]}
     >
       <Pressable
-        onPress={() => router.push(`/(screens)/profile/${entry.userId}`)}
+        onPress={() => router.push(`/(screens)/profile/${entry.username}`)}
         accessibilityLabel={`${entry.displayName}, rank ${position}`}
         accessibilityRole="button"
       >
@@ -105,7 +105,7 @@ function LeaderboardRow({
   return (
     <Animated.View entering={FadeInUp.delay(Math.min(index * 60, 600)).duration(400)}>
       <Pressable
-        onPress={() => router.push(`/(screens)/profile/${entry.userId}`)}
+        onPress={() => router.push(`/(screens)/profile/${entry.username}`)}
         accessibilityLabel={`${entry.displayName}, rank ${entry.rank}, score ${entry.score}`}
         accessibilityRole="button"
       >

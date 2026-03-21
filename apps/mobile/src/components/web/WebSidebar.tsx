@@ -28,12 +28,13 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
   const pathname = usePathname();
   const unreadNotifications = useStore(s => s.unreadNotifications);
   const unreadMessages = useStore(s => s.unreadMessages);
+  const user = useStore(s => s.user);
 
   if (Platform.OS !== 'web') return null;
 
   const mainNavItems: NavItem[] = [
     { key: 'saf', icon: 'home', label: t('tabs.saf'), route: '/(tabs)/saf' },
-    { key: 'majlis', icon: 'message-circle', label: t('tabs.majlis'), route: '/(tabs)/majlis', badge: unreadNotifications || undefined },
+    { key: 'majlis', icon: 'message-circle', label: t('tabs.majlis'), route: '/(tabs)/majlis' },
     { key: 'risalah', icon: 'mail', label: t('tabs.risalah'), route: '/(tabs)/risalah', badge: unreadMessages || undefined },
     { key: 'bakra', icon: 'play', label: t('tabs.bakra'), route: '/(tabs)/bakra' },
     { key: 'minbar', icon: 'video', label: t('tabs.minbar'), route: '/(tabs)/minbar' },
@@ -43,7 +44,7 @@ export function WebSidebar({ collapsed = false }: WebSidebarProps) {
     { key: 'search', icon: 'search', label: t('common.search'), route: '/(screens)/search' },
     { key: 'create', icon: 'plus', label: t('common.create'), route: '/(screens)/create-post' },
     { key: 'notifications', icon: 'bell', label: t('common.notifications'), route: '/(screens)/notifications', badge: unreadNotifications || undefined },
-    { key: 'profile', icon: 'user', label: t('common.profile'), route: '/(screens)/profile' },
+    { key: 'profile', icon: 'user', label: t('common.profile'), route: `/(screens)/profile/${user?.username || 'me'}` },
     { key: 'settings', icon: 'settings', label: t('common.settings'), route: '/(screens)/settings' },
   ];
 

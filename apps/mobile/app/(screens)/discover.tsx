@@ -236,13 +236,13 @@ function ExploreGridItem({ item }: { item: ExploreItem }) {
 
   const handlePress = () => {
     if (isReel) {
-      router.push(`/reel/${item.id}`);
+      router.push(`/(screens)/reel/${item.id}` as never);
     } else if (isPost) {
-      router.push(`/post/${item.id}`);
+      router.push(`/(screens)/post/${item.id}` as never);
     } else if (isThread) {
-      router.push(`/thread/${item.id}`);
+      router.push(`/(screens)/thread/${item.id}` as never);
     } else if (isVideo) {
-      router.push(`/video/${item.id}`);
+      router.push(`/(screens)/video/${item.id}` as never);
     }
   };
 

@@ -679,7 +679,7 @@ export default function SearchScreen() {
               renderItem={({ item }) => (
                 <Pressable
                   style={styles.exploreItem}
-                  onPress={() => router.push(`/post/${item.id}`)}
+                  onPress={() => router.push(`/(screens)/post/${item.id}` as never)}
                   accessibilityRole="button"
                   accessibilityLabel={t('accessibility.viewPost')}
                 >

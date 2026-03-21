@@ -354,7 +354,7 @@ function ProductDetailScreen() {
               Seller
             </Text>
             <Pressable
-              onPress={() => router.push(`/(screens)/profile/${data.seller.id}` as never)}
+              onPress={() => router.push(`/(screens)/profile/${data.seller.username}` as never)}
               accessibilityLabel={`View ${data.seller.displayName}'s profile`}
             >
               <LinearGradient

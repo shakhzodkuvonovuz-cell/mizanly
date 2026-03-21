@@ -293,7 +293,7 @@ function ProductDetailContent() {
         <Animated.View entering={FadeInUp.delay(200).duration(300)} style={styles.sellerCard}>
           <Pressable
             style={styles.sellerInner}
-            onPress={() => router.push(`/(screens)/profile?username=${product.seller.username}` as never)}
+            onPress={() => router.push(`/(screens)/profile/${product.seller.username}` as never)}
             accessibilityRole="button"
           >
             <Avatar

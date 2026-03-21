@@ -448,14 +448,14 @@ export default function StitchCreateScreen() {
             style={styles.bottomBarGradient}
           >
             <Pressable accessibilityRole="button" style={styles.cancelButton} onPress={() => router.back()}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => router.push('/create-reel')}>
+            <Pressable accessibilityRole="button" style={styles.nextButton} onPress={() => router.push('/(screens)/create-reel' as never)}>
               <LinearGradient
                 colors={['rgba(10,123,79,0.9)', 'rgba(6,107,66,0.95)']}
                 style={styles.nextButtonGradient}
               >
-                <Text style={styles.nextButtonText}>Next</Text>
+                <Text style={styles.nextButtonText}>{t('common.next')}</Text>
                 <Icon name="chevron-right" size="sm" color="#FFF" />
               </LinearGradient>
             </Pressable>

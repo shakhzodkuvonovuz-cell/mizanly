@@ -234,7 +234,7 @@ export default function AnalyticsScreen() {
               title={t('analytics.noDataYet')}
               subtitle={t('analytics.noDataSubtitle')}
               actionLabel={t('analytics.startCreating')}
-              onAction={() => router.push('/(tabs)/create')}
+              onAction={() => router.push('/(screens)/create-post' as never)}
             />
           ) : (
             <>
