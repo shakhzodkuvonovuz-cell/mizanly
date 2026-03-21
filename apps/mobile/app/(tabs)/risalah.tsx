@@ -260,7 +260,7 @@ export default function RisalahScreen() {
     return () => { socket?.disconnect(); };
   }, [getToken, queryClient]);
 
-  const { data: conversations, isLoading, isRefetching, refetch } = useQuery({
+  const { data: conversations, isLoading, isError, isRefetching, refetch } = useQuery({
     queryKey: ['conversations'],
     queryFn: () => messagesApi.getConversations(),
   });
@@ -292,7 +292,9 @@ export default function RisalahScreen() {
   const archivedCount = useStore((s) => s.archivedConversationsCount);
 
   const listEmpty = useMemo(() => (
-    isLoading ? (
+    isError ? (
+      <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => refetch()} />
+    ) : isLoading ? (
       <View>
         <Skeleton.ConversationItem />
         <Skeleton.ConversationItem />

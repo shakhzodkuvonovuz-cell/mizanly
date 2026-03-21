@@ -141,7 +141,9 @@ export default function MajlisScreen() {
     : allThreads;
 
   const listEmpty = useMemo(() => (
-    feedQuery.isLoading ? (
+    feedQuery.isError ? (
+      <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
+    ) : feedQuery.isLoading ? (
       <View>
         <Skeleton.ThreadCard />
         <Skeleton.ThreadCard />

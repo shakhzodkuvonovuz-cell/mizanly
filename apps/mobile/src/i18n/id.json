@@ -6,6 +6,8 @@
     "loading": "Memuat...",
     "error": "Terjadi kesalahan",
     "retry": "Coba lagi",
+    "somethingWentWrong": "Terjadi kesalahan",
+    "pullToRetry": "Tarik untuk menyegarkan atau coba lagi",
     "done": "Selesai",
     "next": "Berikutnya",
     "back": "Kembali",

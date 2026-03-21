@@ -336,6 +336,9 @@ export default function MinbarScreen() {
         />
       );
     }
+    if (feedQuery.isError) {
+      return <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />;
+    }
     return feedQuery.isLoading ? (
       <View>
         {[1, 2, 3].map((i) => (

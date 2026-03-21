@@ -310,7 +310,7 @@ export default function CreateStoryScreen() {
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['stories'] });
+      queryClient.invalidateQueries({ queryKey: ['stories-feed'] });
       router.back();
     },
     onError: () => Alert.alert(t('common.error'), t('stories.failedToPublish')),

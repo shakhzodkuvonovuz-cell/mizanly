@@ -680,7 +680,9 @@ export default function BakraScreen() {
     index,
   }), []);
 
-  const listEmpty = feedQuery.isLoading ? (
+  const listEmpty = feedQuery.isError ? (
+    <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
+  ) : feedQuery.isLoading ? (
     <View style={styles.skeletonContainer}>
       <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
     </View>

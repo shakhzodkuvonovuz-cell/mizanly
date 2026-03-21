@@ -6,6 +6,8 @@
     "loading": "Yükleniyor...",
     "error": "Bir hata oluştu",
     "retry": "Tekrar Dene",
+    "somethingWentWrong": "Bir şeyler ters gitti",
+    "pullToRetry": "Yenilemek için çekin veya tekrar deneyin",
     "done": "Tamam",
     "next": "İleri",
     "back": "Geri",

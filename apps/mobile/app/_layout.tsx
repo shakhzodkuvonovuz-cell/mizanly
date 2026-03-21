@@ -4,7 +4,7 @@ import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-rout
 import { useTranslation } from '@/hooks/useTranslation';
 import { StatusBar } from 'expo-status-bar';
 import { ClerkProvider, ClerkLoaded, useAuth, useUser } from '@clerk/clerk-expo';
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQueryClient, focusManager } from '@tanstack/react-query';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SecureStore from 'expo-secure-store';
 import * as SplashScreen from 'expo-splash-screen';
@@ -120,18 +120,29 @@ function EidCelebrationOverlay() {
   );
 }
 
-// Query cache persistence deferred — requires @tanstack/react-query-persist-client package install
+// Wire React Query focus manager to React Native AppState
+// This enables refetchOnWindowFocus when the app comes to foreground
+focusManager.setEventListener((handleFocus) => {
+  const sub = AppState.addEventListener('change', (state) => {
+    handleFocus(state === 'active');
+  });
+  return () => sub.remove();
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: true,
       retry: 3,
       retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
       onError: (error: Error) => {
-        // Show a toast/alert for failed mutations
-        Alert.alert('Error', error.message);
+        // Only show alert if error is not already handled by the mutation's own onError
+        if (!(error as { _handled?: boolean })._handled) {
+          Alert.alert('Error', error.message);
+        }
       },
       retry: (failureCount, error) => {
         // Retry network errors up to 3 times

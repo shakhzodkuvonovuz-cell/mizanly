@@ -382,7 +382,15 @@ export default function SafScreen() {
   ), [storyGroups, feedType, setFeedType, user?.id, router, feedTypeAnimStyle, bannerDismissed, dismissBanner]);
 
   const listEmpty = useMemo(() => (
-    feedQuery.isLoading ? (
+    feedQuery.isError ? (
+      <EmptyState
+        icon="globe"
+        title={t('common.somethingWentWrong')}
+        subtitle={t('common.pullToRetry')}
+        actionLabel={t('common.retry')}
+        onAction={() => feedQuery.refetch()}
+      />
+    ) : feedQuery.isLoading ? (
       <View>
         <Skeleton.PostCard />
         <Skeleton.PostCard />

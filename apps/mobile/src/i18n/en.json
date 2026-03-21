@@ -6,6 +6,8 @@
     "loading": "Loading...",
     "error": "Something went wrong",
     "retry": "Retry",
+    "somethingWentWrong": "Something went wrong",
+    "pullToRetry": "Pull down to refresh or tap retry",
     "done": "Done",
     "next": "Next",
     "back": "Back",
