@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { View, StyleSheet, useWindowDimensions, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { colors, radius } from '@/theme';
@@ -13,7 +13,7 @@ interface Props {
   blurred?: boolean;
 }
 
-export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred }: Props) {
+export const PostMedia = memo(function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, blurred }: Props) {
   const { width: SCREEN_WIDTH } = useWindowDimensions();
   const [galleryVisible, setGalleryVisible] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
@@ -70,7 +70,7 @@ export function PostMedia({ mediaUrls, mediaTypes, thumbnailUrl, aspectRatio, bl
       />
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   single: { width: '100%' },

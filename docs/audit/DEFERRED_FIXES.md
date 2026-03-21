@@ -596,4 +596,17 @@ A1-01 (tertiary text: #6E7781 → #8B949E, WCAG AA compliant), A1-05 (glass opac
 - [27] A5-01/A5-02 Image alt text: needs backend alt text field + mobile rendering
 - [27] A6-02/A6-03/A6-04/A6-05 Gesture alternatives: pinch-zoom buttons, sheet close button, slider role
 - [27] A7-03/A8-01/A8-02 Focus management: RTL order, sheet focus, autocomplete announce
+
+## From Audit 28 (Mobile Performance) — 47 findings
+### FIXED directly (16 findings):
+F1 (Bakra: snapToInterval={SCREEN_H} + snapToAlignment="start" + decelerationRate="fast" — reels now snap), F5 (Minbar: RN Image → expo-image for cached thumbnails), F6 (Bakra: RN Image → expo-image), F7 (MessageBubble wrapped in React.memo — prevents hundreds of re-renders), F9 (PostMedia wrapped in React.memo), F10 (ActionButton wrapped in React.memo), F12 (ExploreGridItem wrapped in React.memo), F13 (GridItem in profile wrapped in React.memo)
+
+### NOTED (31 remaining — optimization, not bugs):
+- [28] F2 getItemLayout dead code — FlashList uses estimatedItemSize instead
+- [28] F3 renderItem re-creates on currentIndex — needs ref-based isActive
+- [28] F4/F14 Inline styles in hot paths — refactor, 50+ style objects
+- [28] F8/F11 Inline renderItem + CommentsSheet memo — needs refactor
+- [28] F15 handleViewableItemsChanged stale closure — needs ref
+- [28] F16-F33 P2 items — useMemo deps, windowSize, hooks in list items, animations
+- [28] F34-F47 P3 items — formatDate in render, module state, inline styles
 - [27] A9-01 remaining hardcoded labels: VideoControls, MiniPlayer, Autocomplete, LinkPreview

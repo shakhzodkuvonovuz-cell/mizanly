@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, memo } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -25,7 +25,7 @@ interface ActionButtonProps {
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-export function ActionButton({
+export const ActionButton = memo(function ActionButton({
   icon,
   activeIcon,
   count,
@@ -79,7 +79,7 @@ export function ActionButton({
       )}
     </AnimatedPressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

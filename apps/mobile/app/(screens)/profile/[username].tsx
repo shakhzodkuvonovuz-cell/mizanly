@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import {
   View, Text, StyleSheet,
   FlatList, RefreshControl, ScrollView, Dimensions, Pressable, Alert, Linking, Share,
@@ -41,7 +41,7 @@ const COVER_HEIGHT = 160;
 type Tab = 'posts' | 'threads' | 'reels' | 'liked';
 
 
-function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
+const GridItem = memo(function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
   const scale = useSharedValue(1);
   const animStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -87,7 +87,7 @@ function GridItem({ post, onPress }: { post: Post; onPress: () => void }) {
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 function StatItem({ num, label, onPress }: { num: number; label: string; onPress?: () => void }) {
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.92 });

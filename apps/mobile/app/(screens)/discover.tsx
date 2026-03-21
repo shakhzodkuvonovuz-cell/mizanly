@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import {
   View,
   Text,
@@ -215,7 +215,7 @@ function FeaturedSection({ items }: { items: FeaturedItem[] }) {
 
 type ExploreItem = Post | Reel | Thread | Video;
 
-function ExploreGridItem({ item }: { item: ExploreItem }) {
+const ExploreGridItem = memo(function ExploreGridItem({ item }: { item: ExploreItem }) {
   const router = useRouter();
   const { onPressIn, onPressOut, animatedStyle } = useAnimatedPress({ scaleTo: 0.96 });
 
@@ -267,7 +267,7 @@ function ExploreGridItem({ item }: { item: ExploreItem }) {
       )}
     </AnimatedPressable>
   );
-}
+});
 
 function ExploreGridSkeleton() {
   const items = Array.from({ length: 9 }, (_, i) => i);

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, memo } from 'react';
-import { View, Text, StyleSheet, Dimensions, Pressable, Image, type ViewToken, Alert, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
 import { useScrollToTop } from '@react-navigation/native';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -772,6 +773,9 @@ export default function BakraScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={SCREEN_H}
+        snapToInterval={SCREEN_H}
+        snapToAlignment="start"
+        decelerationRate="fast"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
       {commentsReel && (

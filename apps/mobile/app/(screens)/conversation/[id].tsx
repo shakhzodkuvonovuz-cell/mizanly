@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect, memo } from 'react';
 import {
   View, Text, StyleSheet, Pressable, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Alert, LayoutAnimation, RefreshControl,
@@ -358,7 +358,7 @@ const getMessageStatus = (msg: Message, readByMembers: ConversationMember[], del
   return 'sent';
 };
 
-function MessageBubble({
+const MessageBubble = memo(function MessageBubble({
   message, isOwn, isGroupStart, isGroupEnd, onLongPress, isNew = false,
   searchQuery = '', onSearchResultPress, readByMembers = [],
   conversationId, deliveredMessages = new Set<string>(),
@@ -659,7 +659,7 @@ function MessageBubble({
       </Pressable>
     </Animated.View>
   );
-}
+});
 
 function conversationName(convo: Conversation, myId?: string, t?: (key: string) => string): string {
   if (convo.isGroup) return convo.groupName ?? (t ? t('common.group') : 'Group');
