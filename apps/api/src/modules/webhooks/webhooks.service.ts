@@ -28,8 +28,15 @@ export class WebhooksService {
     }
   }
 
+  private static readonly VALID_EVENTS: WebhookEvent[] = ['post.created', 'member.joined', 'member.left', 'message.sent', 'live.started', 'live.ended'];
+
   async create(userId: string, data: { circleId: string; name: string; url: string; events: string[] }) {
     this.validateWebhookUrl(data.url);
+    // Validate events against allowed values
+    const validatedEvents = data.events.filter(e => WebhooksService.VALID_EVENTS.includes(e as WebhookEvent));
+    if (validatedEvents.length === 0) {
+      throw new NotFoundException('At least one valid event type is required');
+    }
     const secret = randomBytes(32).toString('hex');
     return this.prisma.webhook.create({
       data: {
@@ -37,7 +44,7 @@ export class WebhooksService {
         name: data.name,
         url: data.url,
         secret,
-        events: data.events,
+        events: validatedEvents,
         createdById: userId,
       },
     });

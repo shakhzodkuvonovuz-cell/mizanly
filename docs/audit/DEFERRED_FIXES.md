@@ -613,3 +613,15 @@ F4 (Bakra ReelItem: ALL 16 inline styles extracted to StyleSheet — zero inline
 ### NOTED (1 remaining — intentionally not changed):
 - [28] F27 Dimensions.get at module scope in 66 files — app is portrait-locked, module-scope dimensions are stable and used by StyleSheet.create blocks. Changing to useWindowDimensions would break StyleSheet references.
 - [27] A9-01 remaining hardcoded labels: VideoControls, MiniPlayer, Autocomplete, LinkPreview
+
+## From Audit 29 (OWASP Security) — 52 findings
+### Already fixed in prior audit files (47):
+F1-3 (SQL injection), F4-5 (2FA auth guards), F7 (banned check), F8 (admin flags), F9-14 (SSRF + DTO validation), F15 (free coins), F16-17 (moderation), F19-20 (SVG XSS + sticker terms), F21 (embeddings admin), F22-27 (OG + feed + view-once + privacy), F28-31 (API key + export + push token), F33 (stream webhook), F38 (Stripe ConfigService), F41 (ApiError), F42-44 (online status + calls), F46-49 (mosque + halal + resolveReport + session signals)
+
+### FIXED directly (2):
+F52 (webhook events validated against VALID_EVENTS whitelist)
+
+### NOTED (3 — tracked in CLAUDE.md):
+- [29] F6 TOTP plaintext — needs encryption (tracked in file 03)
+- [29] F18 Prompt injection — needs XML delimiters (tracked in file 10)
+- [29] F28/F50 Gemini API key in URL — Google API requirement

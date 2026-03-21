@@ -42,7 +42,7 @@ describe('WebhooksService', () => {
   it('should create a webhook', async () => {
     const result = await service.create('u1', {
       circleId: 'c1', name: 'Test Hook',
-      url: 'https://example.com/hook', events: ['message.created'],
+      url: 'https://example.com/hook', events: ['message.sent'],
     });
     expect(result.name).toBe('Test Hook');
     expect(result.secret).toBeDefined();
@@ -225,6 +225,33 @@ describe('WebhooksService', () => {
       expect(result.success).toBe(true);
 
       global.fetch = originalFetch;
+    });
+  });
+
+  describe('webhook event validation', () => {
+    it('should filter invalid event names', async () => {
+      await service.create('u1', {
+        circleId: 'c1', name: 'Test',
+        url: 'https://example.com/hook',
+        events: ['post.created', 'invalid.event', 'member.joined'],
+      });
+      expect(prisma.webhook.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            events: ['post.created', 'member.joined'],
+          }),
+        }),
+      );
+    });
+
+    it('should reject if no valid events provided', async () => {
+      await expect(
+        service.create('u1', {
+          circleId: 'c1', name: 'Test',
+          url: 'https://example.com/hook',
+          events: ['invalid', 'also.invalid'],
+        }),
+      ).rejects.toThrow();
     });
   });
 });
