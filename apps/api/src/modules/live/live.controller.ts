@@ -27,7 +27,8 @@ export class LiveController {
   @Post()
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Create live session' })
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Create live session (3/hour)' })
   async create(@CurrentUser('id') userId: string, @Body() dto: CreateLiveDto) {
     return this.live.create(userId, dto);
   }
@@ -180,7 +181,8 @@ export class LiveController {
   @Post('rehearse')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Start a rehearsal (private, no notifications)' })
+  @Throttle({ default: { limit: 5, ttl: 3600000 } })
+  @ApiOperation({ summary: 'Start a rehearsal (5/hour)' })
   async startRehearsal(@CurrentUser('id') userId: string, @Body() body: StartRehearsalDto) {
     return this.live.startRehearsal(userId, body);
   }

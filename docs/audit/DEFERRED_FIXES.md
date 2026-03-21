@@ -413,24 +413,19 @@ F1 (chat lock verify-code 5/5min), F2 (2FA validate 5/5min from 5/1min), F3 (2FA
 ### Already fixed in previous files:
 F7 (embeddings admin guard — file 07), F8 partial (feed throttles — file 07), F24 (webhook SkipThrottle — no conflict exists, code correct), F41 (Stripe webhook SkipThrottle — correct pattern)
 
+### FIXED in second pass (11 additional):
+F5 remaining (call_answer/reject/end rate limited, leave_quran_room, quran_verse_sync 30/min, quran_reciter_change 10/min — all 13 WS events now protected), F20 (Telegram class-level 30/min), F21 (Broadcast class-level 30/min), F22 (Live create 3/hour, rehearse 5/hour), F23 (Islamic: charity campaigns 5/min, donate 5/min, scholar verification 1/day, dhikr challenges 5/min, quran plans 5/min), F31 (health metrics admin-only with auth guard + role check), F35 (scholar QA start/end 5/min), F39/F40 (WebSocket connection rate limit 10/min/IP with x-forwarded-for)
+
 ### Deferred — architecture/design:
 - [18] F37 Per-target-user throttle keying for unauthenticated sensitive endpoints — needs custom decorator — OPEN
-- [18] F38 Per-event-type WebSocket rate limits — partially fixed (per-event keys now used) — NOTED
-- [18] F39 WebSocket connection rate limiting — needs IP tracking before auth — OPEN
-- [18] F40 IP-based WebSocket rate limiting — needs pre-auth middleware — OPEN
+- [18] F38 Per-event-type WebSocket rate limits — FIXED (per-event keys now used)
 
 ### NOTED (acceptable/by-design/minor):
-- [18] F20 Telegram features — global limit sufficient for MVP
-- [18] F21 Broadcast — class throttle sufficient
-- [18] F22 Live — class throttle sufficient for MVP
-- [18] F23 Islamic writes — class 30/min acceptable since most writes are personal data
 - [18] F26 Creator AI 20/hour — acceptable cost control
 - [18] F27 Admin flags — admin role check already added in file 13
-- [18] F31 Health metrics info disclosure — dev/staging only, acceptable
 - [18] F32 OG scraping — 60/min is standard for metadata endpoints
 - [18] F33 Audio rooms — uniform 10/min is fine
 - [18] F34 Mosque/halal — method-level throttles present
-- [18] F35 Scholar Q&A — scholar role check needed, separate from rate limiting
 - [18] F36 Various controllers — global 100/min sufficient for low-traffic features
 
 ---

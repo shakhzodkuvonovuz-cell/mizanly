@@ -95,6 +95,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   async handleConnection(client: Socket) {
     try {
+      // Rate limit connections per IP (max 10/min) to prevent connection floods
+      const ip = client.handshake.headers['x-forwarded-for']?.toString().split(',')[0]?.trim()
+        || client.handshake.address || 'unknown';
+      const connKey = `ws:conn:${ip}`;
+      const connCount = await this.redis.incr(connKey);
+      if (connCount === 1) await this.redis.expire(connKey, 60);
+      if (connCount > 10) {
+        this.logger.warn(`WebSocket connection flood from IP ${ip}: ${connCount}/min`);
+        client.disconnect();
+        return;
+      }
+
       const token = this.extractToken(client);
       if (!token) {
         client.disconnect();
@@ -347,6 +359,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('call_answer')
   async handleCallAnswer(@ConnectedSocket() client: Socket, @MessageBody() data: { sessionId: string; callerId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'call', 10, 60))) return;
     const dto = plainToInstance(WsCallAnswerDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {
@@ -360,6 +373,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('call_reject')
   async handleCallReject(@ConnectedSocket() client: Socket, @MessageBody() data: { sessionId: string; callerId: string }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'call', 10, 60))) return;
     const dto = plainToInstance(WsCallRejectDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {
@@ -373,6 +387,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('call_end')
   async handleCallEnd(@ConnectedSocket() client: Socket, @MessageBody() data: { sessionId: string; participants: string[] }) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'call', 10, 60))) return;
     const dto = plainToInstance(WsCallEndDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {
@@ -479,6 +494,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'quran_leave', 10, 60))) return;
     const dto = plainToInstance(LeaveQuranRoomDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {
@@ -515,6 +531,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'quran_sync', 30, 60))) return;
     const dto = plainToInstance(QuranRoomVerseSyncDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {
@@ -543,6 +560,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @ConnectedSocket() client: Socket,
   ) {
     if (!client.data.userId) throw new WsException('Unauthorized');
+    if (!(await this.checkRateLimit(client.data.userId, 'quran_reciter', 10, 60))) return;
     const dto = plainToInstance(QuranRoomReciterChangeDto, data);
     const errors = await validate(dto);
     if (errors.length > 0) {

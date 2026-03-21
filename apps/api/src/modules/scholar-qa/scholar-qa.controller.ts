@@ -77,6 +77,7 @@ export class ScholarQAController {
 
   @UseGuards(ClerkAuthGuard)
   @Put(':id/start')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Start Q&A session (scholar only)' })
   async startSession(@CurrentUser('id') scholarId: string, @Param('id') qaId: string) {
     return this.scholarQAService.startSession(scholarId, qaId);
@@ -84,6 +85,7 @@ export class ScholarQAController {
 
   @UseGuards(ClerkAuthGuard)
   @Put(':id/end')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'End Q&A session (scholar only)' })
   async endSession(@CurrentUser('id') scholarId: string, @Param('id') qaId: string) {
     return this.scholarQAService.endSession(scholarId, qaId);

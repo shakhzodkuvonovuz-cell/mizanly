@@ -17,6 +17,7 @@ import {
 @Controller()
 @UseGuards(ClerkAuthGuard)
 @ApiBearerAuth()
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class TelegramFeaturesController {
   constructor(private service: TelegramFeaturesService) {}
 

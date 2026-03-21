@@ -19,7 +19,7 @@ describe('HealthController', () => {
 
     const mockPrismaService = {
       $queryRaw: jest.fn(),
-      user: { count: jest.fn() },
+      user: { count: jest.fn(), findUnique: jest.fn().mockResolvedValue({ role: 'ADMIN' }) },
       post: { count: jest.fn() },
       thread: { count: jest.fn() },
       reel: { count: jest.fn() },
@@ -103,7 +103,7 @@ describe('HealthController', () => {
       prisma.thread.count.mockResolvedValue(200);
       prisma.reel.count.mockResolvedValue(150);
 
-      const result = await controller.metrics();
+      const result = await controller.metrics('admin-user-id');
 
       expect(result).toEqual(expect.objectContaining({
         timestamp: expect.any(String),
@@ -123,7 +123,7 @@ describe('HealthController', () => {
       prisma.thread.count.mockResolvedValue(0);
       prisma.reel.count.mockResolvedValue(0);
 
-      const result = await controller.metrics();
+      const result = await controller.metrics('admin-user-id');
       expect(result.memory).toBeDefined();
       expect(result.memory.heapUsedMB).toBeDefined();
     });
@@ -134,7 +134,7 @@ describe('HealthController', () => {
       prisma.thread.count.mockResolvedValue(0);
       prisma.reel.count.mockResolvedValue(0);
 
-      const result = await controller.metrics();
+      const result = await controller.metrics('admin-user-id');
       expect(result.uptime).toBeGreaterThanOrEqual(0);
     });
   });
@@ -171,7 +171,7 @@ describe('HealthController', () => {
       prisma.thread.count.mockResolvedValue(0);
       prisma.reel.count.mockResolvedValue(0);
 
-      const result = await controller.metrics();
+      const result = await controller.metrics('admin-user-id');
       expect(result.counts.users).toBe(0);
       expect(result.counts.posts).toBe(0);
     });

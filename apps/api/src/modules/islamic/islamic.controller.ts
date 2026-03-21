@@ -226,6 +226,7 @@ export class IslamicController {
   @Post('quran-plans')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a Quran reading plan' })
   async createReadingPlan(
     @CurrentUser('id') userId: string,
@@ -352,6 +353,7 @@ export class IslamicController {
   @Post('charity/campaigns')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a charity campaign' })
   async createCampaign(@CurrentUser('id') userId: string, @Body() dto: CreateCampaignDto) {
     return this.islamicService.createCampaign(userId, dto);
@@ -372,6 +374,7 @@ export class IslamicController {
   @Post('charity/donate')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Make a donation' })
   async createDonation(@CurrentUser('id') userId: string, @Body() dto: CreateDonationDto) {
     return this.islamicService.createDonation(userId, dto);
@@ -444,7 +447,8 @@ export class IslamicController {
   @Post('scholar-verification/apply')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Apply for scholar verification' })
+  @Throttle({ default: { limit: 1, ttl: 86400000 } })
+  @ApiOperation({ summary: 'Apply for scholar verification (1/day)' })
   async applyScholarVerification(@CurrentUser('id') userId: string, @Body() dto: ApplyScholarVerificationDto) {
     return this.islamicService.applyScholarVerification(userId, dto);
   }
@@ -502,6 +506,7 @@ export class IslamicController {
   @Post('dhikr/challenges')
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Create a dhikr challenge' })
   async createDhikrChallenge(@CurrentUser('id') userId: string, @Body() dto: CreateDhikrChallengeDto) {
     return this.islamicService.createDhikrChallenge(userId, dto);

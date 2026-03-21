@@ -1,5 +1,5 @@
 import { Throttle } from '@nestjs/throttler';
-import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException } from '@nestjs/common';
+import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException, ForbiddenException } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
@@ -81,8 +81,17 @@ export class HealthController {
   }
 
   @Get('metrics')
-  @ApiOperation({ summary: 'API metrics (counts, system health, job stats)' })
-  async metrics() {
+  @UseGuards(OptionalClerkAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'API metrics — admin only' })
+  async metrics(@CurrentUser('id') userId?: string) {
+    // Only allow authenticated admin users to see operational metrics
+    if (userId) {
+      const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
+      if (user?.role !== 'ADMIN') throw new ForbiddenException('Admin access required');
+    } else {
+      throw new ForbiddenException('Authentication required');
+    }
     const [userCount, postCount, threadCount, reelCount] = await Promise.all([
       this.prisma.user.count(),
       this.prisma.post.count(),

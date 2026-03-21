@@ -15,6 +15,7 @@ class MuteChannelDto {
 
 @ApiTags('Broadcast Channels')
 @Controller('broadcast')
+@Throttle({ default: { limit: 30, ttl: 60000 } })
 export class BroadcastController {
   constructor(private broadcast: BroadcastService) {}
 
