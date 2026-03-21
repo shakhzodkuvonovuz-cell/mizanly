@@ -104,7 +104,7 @@ export class FeedController {
   @Get('personalized')
   @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get personalized feed (pgvector + Islamic boost + session signals)' })
-  @ApiQuery({ name: 'space', required: true, enum: ['saf', 'bakra', 'majlis'] })
+  @ApiQuery({ name: 'space', required: true, enum: ['saf', 'bakra', 'majlis', 'minbar'] })
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getPersonalized(
@@ -113,7 +113,7 @@ export class FeedController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    const validSpaces = ['saf', 'bakra', 'majlis'] as const;
+    const validSpaces = ['saf', 'bakra', 'majlis', 'minbar'] as const;
     const safeSpace = validSpaces.includes(space as typeof validSpaces[number]) ? space : 'saf';
     const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
     return this.personalizedFeed.getPersonalizedFeed(

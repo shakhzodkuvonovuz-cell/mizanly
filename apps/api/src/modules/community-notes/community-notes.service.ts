@@ -11,6 +11,17 @@ export class CommunityNotesService {
       throw new BadRequestException(`contentType must be one of: ${validTypes.join(', ')}`);
     }
 
+    // Verify content exists
+    let contentExists = false;
+    if (contentType === 'post') {
+      contentExists = !!(await this.prisma.post.findUnique({ where: { id: contentId }, select: { id: true } }));
+    } else if (contentType === 'thread') {
+      contentExists = !!(await this.prisma.thread.findUnique({ where: { id: contentId }, select: { id: true } }));
+    } else if (contentType === 'reel') {
+      contentExists = !!(await this.prisma.reel.findUnique({ where: { id: contentId }, select: { id: true } }));
+    }
+    if (!contentExists) throw new NotFoundException('Content not found');
+
     return this.prisma.communityNote.create({
       data: { contentType, contentId, authorId, note },
     });

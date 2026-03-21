@@ -33,7 +33,7 @@ describe('FeedTransparencyService', () => {
   describe('explainPost', () => {
     it('should return follow reason when user follows author', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 5, commentsCount: 2, content: 'Hello',
+        userId: 'author-1', likesCount: 5, commentsCount: 2, sharesCount: 0, viewsCount: 10, content: 'Hello', hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue({ id: 'f1' });
@@ -44,7 +44,7 @@ describe('FeedTransparencyService', () => {
 
     it('should return popularity reason for high likes', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 150, commentsCount: 50, content: 'Popular',
+        userId: 'author-1', likesCount: 150, commentsCount: 50, sharesCount: 0, viewsCount: 500, content: 'Popular', hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -55,7 +55,7 @@ describe('FeedTransparencyService', () => {
 
     it('should return engagement reason for moderate likes', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 25, commentsCount: 3, content: 'Nice',
+        userId: 'author-1', likesCount: 25, commentsCount: 3, sharesCount: 0, viewsCount: 100, content: 'Nice', hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -73,7 +73,7 @@ describe('FeedTransparencyService', () => {
 
     it('should handle post with hashtags', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: '#islam #prayer',
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: '#islam #prayer', hashtags: ['islam', 'prayer'], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -84,7 +84,7 @@ describe('FeedTransparencyService', () => {
 
     it('should handle post with null content', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: null,
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: null, hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -95,7 +95,7 @@ describe('FeedTransparencyService', () => {
 
     it('should include multiple reasons when applicable', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 200, commentsCount: 50, content: '#trending',
+        userId: 'author-1', likesCount: 200, commentsCount: 50, sharesCount: 0, viewsCount: 1000, content: '#trending', hashtags: ['trending'], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue({ id: 'f1' });
@@ -106,7 +106,7 @@ describe('FeedTransparencyService', () => {
 
     it('should not include follow reason when user does not follow', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 5, commentsCount: 0, content: 'test',
+        userId: 'author-1', likesCount: 5, commentsCount: 0, sharesCount: 0, viewsCount: 10, content: 'test', hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -117,7 +117,7 @@ describe('FeedTransparencyService', () => {
 
     it('should handle low engagement post with no reasons', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: 'boring',
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: 'boring', hashtags: [], createdAt: new Date(Date.now() - 48 * 3600000),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -128,7 +128,7 @@ describe('FeedTransparencyService', () => {
 
     it('should format username correctly in follow reason', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: '',
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: '', hashtags: [], createdAt: new Date(),
         user: { username: 'test_user' },
       });
       prisma.follow.findUnique.mockResolvedValue({ id: 'f1' });
@@ -139,7 +139,7 @@ describe('FeedTransparencyService', () => {
 
     it('should include interests reason when user has interests', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: 'test post',
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: 'test post', hashtags: [], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);
@@ -151,7 +151,7 @@ describe('FeedTransparencyService', () => {
 
     it('should cap reasons at 3', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 200, commentsCount: 50, content: '#trending #viral',
+        userId: 'author-1', likesCount: 200, commentsCount: 50, sharesCount: 10, viewsCount: 2000, content: '#trending #viral', hashtags: ['trending', 'viral'], createdAt: new Date(),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue({ id: 'f1' });
@@ -163,7 +163,7 @@ describe('FeedTransparencyService', () => {
 
     it('should return "Recommended for you" when no other reasons', async () => {
       prisma.post.findUnique.mockResolvedValue({
-        userId: 'author-1', likesCount: 0, commentsCount: 0, content: null,
+        userId: 'author-1', likesCount: 0, commentsCount: 0, sharesCount: 0, viewsCount: 0, content: null, hashtags: [], createdAt: new Date(Date.now() - 48 * 3600000),
         user: { username: 'author' },
       });
       prisma.follow.findUnique.mockResolvedValue(null);

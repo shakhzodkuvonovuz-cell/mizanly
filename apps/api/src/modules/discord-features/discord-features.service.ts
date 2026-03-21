@@ -124,8 +124,21 @@ export class DiscordFeaturesService {
   }
 
   async deleteWebhook(webhookId: string, userId: string) {
-    const webhook = await this.prisma.webhook.findFirst({ where: { id: webhookId, createdById: userId } });
+    // Allow deletion by creator OR community admin/owner
+    const webhook = await this.prisma.webhook.findUnique({ where: { id: webhookId } });
     if (!webhook) throw new NotFoundException();
+
+    if (webhook.createdById !== userId) {
+      // Check if user is admin/owner of the community
+      const membership = await this.prisma.circleMember.findUnique({
+        where: { circleId_userId: { circleId: webhook.circleId, userId } },
+        select: { role: true },
+      });
+      if (!membership || !['OWNER', 'ADMIN'].includes(membership.role)) {
+        throw new ForbiddenException('Only the creator or community admin can delete webhooks');
+      }
+    }
+
     return this.prisma.webhook.delete({ where: { id: webhookId } });
   }
 

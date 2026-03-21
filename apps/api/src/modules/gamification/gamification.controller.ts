@@ -111,6 +111,13 @@ export class GamificationController {
     return this.gamificationService.updateChallengeProgress(userId, id, dto.progress);
   }
 
+  @Delete('challenges/:id/leave')
+  @UseGuards(ClerkAuthGuard)
+  @ApiOperation({ summary: 'Leave a challenge' })
+  leaveChallenge(@CurrentUser('id') userId: string, @Param('id') id: string) {
+    return this.gamificationService.leaveChallenge(userId, id);
+  }
+
   @Get('challenges/me')
   @UseGuards(ClerkAuthGuard)
   @ApiOperation({ summary: 'Get my challenges' })

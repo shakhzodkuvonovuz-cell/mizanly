@@ -78,22 +78,18 @@ export class GamificationService {
     const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays === 1) {
-      // Continue streak — use atomic increment to prevent race conditions
-      const updated = await this.prisma.userStreak.update({
+      // Continue streak — atomic increment + conditional longestDays update in single query
+      await this.prisma.$executeRaw`
+        UPDATE user_streaks
+        SET "currentDays" = "currentDays" + 1,
+            "lastActiveDate" = ${today},
+            "longestDays" = GREATEST("longestDays", "currentDays" + 1)
+        WHERE "userId" = ${userId} AND "streakType" = ${streakType}
+      `;
+      const updated = await this.prisma.userStreak.findUnique({
         where: { userId_streakType: { userId, streakType } },
-        data: {
-          currentDays: { increment: 1 },
-          lastActiveDate: today,
-        },
       });
-
-      // Update longestDays if needed
-      if (updated.currentDays > updated.longestDays) {
-        await this.prisma.userStreak.update({
-          where: { userId_streakType: { userId, streakType } },
-          data: { longestDays: updated.currentDays },
-        });
-      }
+      if (!updated) return streak;
 
       // Award XP for milestone streaks (async, non-blocking)
       if (updated.currentDays === 7) this.awardXP(userId, 'streak_milestone_7').catch((e) => this.logger.error('Streak XP award failed', e));
@@ -385,6 +381,37 @@ export class GamificationService {
       },
       take: 50,
     });
+  }
+
+  async leaveChallenge(userId: string, challengeId: string) {
+    const participant = await this.prisma.challengeParticipant.findUnique({
+      where: { challengeId_userId: { challengeId, userId } },
+    });
+    if (!participant) throw new NotFoundException('Not participating in this challenge');
+    if (participant.completed) throw new BadRequestException('Cannot leave a completed challenge');
+
+    try {
+      await this.prisma.$transaction([
+        this.prisma.challengeParticipant.delete({
+          where: { challengeId_userId: { challengeId, userId } },
+        }),
+        this.prisma.challenge.update({
+          where: { id: challengeId },
+          data: { participantCount: { decrement: 1 } },
+        }),
+      ]);
+    } catch (err: unknown) {
+      if (err && typeof err === 'object' && 'code' in err && err.code === 'P2025') {
+        return { success: true };
+      }
+      throw err;
+    }
+    // Ensure count doesn't go negative
+    await this.prisma.challenge.updateMany({
+      where: { id: challengeId, participantCount: { lt: 0 } },
+      data: { participantCount: 0 },
+    });
+    return { success: true };
   }
 
   // ── Series (Micro-drama) ────────────────────────────────

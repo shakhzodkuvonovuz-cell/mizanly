@@ -17,6 +17,7 @@ import {
 
 @ApiTags('Community')
 @Controller()
+@Throttle({ default: { ttl: 60000, limit: 30 } })
 export class CommunityController {
   constructor(private communityService: CommunityService) {}
 

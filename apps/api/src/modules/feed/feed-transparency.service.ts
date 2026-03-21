@@ -42,6 +42,12 @@ const ENHANCED_POST_SELECT = {
 export class FeedTransparencyService {
   constructor(private prisma: PrismaService) {}
 
+  private static readonly ISLAMIC_TAGS = new Set([
+    'quran', 'hadith', 'sunnah', 'islam', 'muslim', 'dua', 'salah', 'ramadan',
+    'jummah', 'eid', 'hajj', 'umrah', 'zakat', 'sadaqah', 'dawah', 'seerah',
+    'tafsir', 'fiqh', 'aqeedah', 'dhikr', 'halal', 'masjid', 'islamic',
+  ]);
+
   async explainPost(userId: string, postId: string): Promise<ExplainResult> {
     const reasons: string[] = [];
     const post = await this.prisma.post.findUnique({
@@ -50,7 +56,11 @@ export class FeedTransparencyService {
         userId: true,
         likesCount: true,
         commentsCount: true,
+        sharesCount: true,
+        viewsCount: true,
         content: true,
+        hashtags: true,
+        createdAt: true,
         user: { select: { username: true } },
       },
     });
@@ -76,10 +86,24 @@ export class FeedTransparencyService {
       reasons.push('Engaging post in your network');
     }
 
+    // Check Islamic content boost
+    const hasIslamicTag = (post.hashtags || []).some(tag =>
+      FeedTransparencyService.ISLAMIC_TAGS.has(tag.toLowerCase().replace('#', '')),
+    );
+    if (hasIslamicTag) {
+      reasons.push('Islamic content — boosted for the community');
+    }
+
     // Check hashtags
     const hashtagMatches = post.content?.match(/#\w+/g) || [];
-    if (hashtagMatches.length > 0) {
+    if (hashtagMatches.length > 0 && !hasIslamicTag) {
       reasons.push(`Tagged with ${hashtagMatches.slice(0, 2).join(', ')}`);
+    }
+
+    // Recency signal
+    const ageHours = (Date.now() - post.createdAt.getTime()) / 3600000;
+    if (ageHours < 4) {
+      reasons.push('Recently posted');
     }
 
     // Check user interests

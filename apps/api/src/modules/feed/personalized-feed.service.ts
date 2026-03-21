@@ -5,7 +5,7 @@ import { EmbeddingContentType, PostVisibility, ReelStatus } from '@prisma/client
 
 interface FeedItem {
   id: string;
-  type: 'post' | 'reel' | 'thread';
+  type: 'post' | 'reel' | 'thread' | 'video';
   score: number;
   reasons: string[];
   content?: Record<string, unknown>;
@@ -200,7 +200,7 @@ export class PersonalizedFeedService {
    */
   async getPersonalizedFeed(
     userId: string | undefined,
-    space: 'saf' | 'bakra' | 'majlis',
+    space: 'saf' | 'bakra' | 'majlis' | 'minbar',
     cursor?: string,
     limit = 20,
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
@@ -348,7 +348,7 @@ export class PersonalizedFeedService {
 
   private async getColdStartFeed(
     userId: string,
-    space: 'saf' | 'bakra' | 'majlis',
+    space: 'saf' | 'bakra' | 'majlis' | 'minbar',
     cursor?: string,
     limit = 20,
     excludedUserIds: string[] = [],
@@ -384,7 +384,7 @@ export class PersonalizedFeedService {
   }
 
   private async getIslamicEditorialPicks(
-    space: 'saf' | 'bakra' | 'majlis',
+    space: 'saf' | 'bakra' | 'majlis' | 'minbar',
     limit: number,
     excludedUserIds: string[] = [],
   ): Promise<FeedItem[]> {
@@ -438,7 +438,7 @@ export class PersonalizedFeedService {
   }
 
   private async getTrendingFeed(
-    space: 'saf' | 'bakra' | 'majlis',
+    space: 'saf' | 'bakra' | 'majlis' | 'minbar',
     cursor?: string,
     limit = 20,
     excludedUserIds: string[] = [],
@@ -494,6 +494,28 @@ export class PersonalizedFeedService {
       return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
     }
 
+    if (space === 'minbar') {
+      const videos = await this.prisma.video.findMany({
+        where: {
+          status: 'PUBLISHED',
+          createdAt: { gte: since },
+          user: { isDeactivated: false, ...userFilter },
+          ...(cursor ? { id: { lt: cursor } } : {}),
+        },
+        select: { id: true, tags: true },
+        orderBy: [{ viewsCount: 'desc' }, { createdAt: 'desc' }],
+        take: limit + 1,
+      });
+      const hasMore = videos.length > limit;
+      const data = videos.slice(0, limit).map(v => ({
+        id: v.id,
+        type: 'video' as const,
+        score: 1,
+        reasons: ['Trending'],
+      }));
+      return { data, meta: { hasMore, cursor: data.length ? data[data.length - 1].id : undefined } };
+    }
+
     // majlis
     const threads = await this.prisma.thread.findMany({
       where: {
@@ -520,19 +542,21 @@ export class PersonalizedFeedService {
 
   // ── Helpers ───────────────────────────────────────────────
 
-  private spaceToContentType(space: 'saf' | 'bakra' | 'majlis'): EmbeddingContentType {
+  private spaceToContentType(space: 'saf' | 'bakra' | 'majlis' | 'minbar'): EmbeddingContentType {
     switch (space) {
       case 'saf': return EmbeddingContentType.POST;
       case 'bakra': return EmbeddingContentType.REEL;
       case 'majlis': return EmbeddingContentType.THREAD;
+      case 'minbar': return EmbeddingContentType.VIDEO;
     }
   }
 
-  private contentTypeToFeedType(ct: EmbeddingContentType): 'post' | 'reel' | 'thread' {
+  private contentTypeToFeedType(ct: EmbeddingContentType): 'post' | 'reel' | 'thread' | 'video' {
     switch (ct) {
       case EmbeddingContentType.POST: return 'post';
       case EmbeddingContentType.REEL: return 'reel';
       case EmbeddingContentType.THREAD: return 'thread';
+      case EmbeddingContentType.VIDEO: return 'video';
       default: return 'post';
     }
   }
@@ -601,7 +625,15 @@ export class PersonalizedFeedService {
       const reelMap = new Map(reels.map(r => [r.id, r]));
       return items.map(item => ({ ...item, content: reelMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
     }
-    // THREAD
+    if (contentType === EmbeddingContentType.VIDEO) {
+      const videos = await this.prisma.video.findMany({
+        where: { id: { in: ids } },
+        select: { id: true, title: true, description: true, thumbnailUrl: true, duration: true, viewsCount: true, likesCount: true, createdAt: true, user: { select: USER_SELECT } },
+      });
+      const videoMap = new Map(videos.map(v => [v.id, v]));
+      return items.map(item => ({ ...item, content: videoMap.get(item.id) as Record<string, unknown> | undefined })).filter(i => i.content);
+    }
+    // THREAD (default)
     const threads = await this.prisma.thread.findMany({
       where: { id: { in: ids } },
       select: { id: true, content: true, mediaUrls: true, likesCount: true, repliesCount: true, createdAt: true, user: { select: USER_SELECT } },

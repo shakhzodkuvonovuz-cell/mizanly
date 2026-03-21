@@ -137,13 +137,20 @@ describe('DiscordFeaturesService', () => {
     });
 
     it('should delete webhook by owner', async () => {
+      prisma.webhook.findUnique.mockResolvedValueOnce({ id: 'wh-1', circleId: 'c1', createdById: 'user-1' });
       await service.deleteWebhook('wh-1', 'user-1');
       expect(prisma.webhook.delete).toHaveBeenCalled();
     });
 
-    it('should throw NotFoundException when deleting non-owned webhook', async () => {
-      prisma.webhook.findFirst.mockResolvedValue(null);
+    it('should throw NotFoundException when webhook not found', async () => {
+      prisma.webhook.findUnique.mockResolvedValueOnce(null);
       await expect(service.deleteWebhook('wh-1', 'user-2')).rejects.toThrow(NotFoundException);
+    });
+
+    it('should throw ForbiddenException for non-owner non-admin', async () => {
+      prisma.webhook.findUnique.mockResolvedValueOnce({ id: 'wh-1', circleId: 'c1', createdById: 'other-user' });
+      prisma.circleMember.findUnique.mockResolvedValueOnce({ role: 'MEMBER' });
+      await expect(service.deleteWebhook('wh-1', 'user-2')).rejects.toThrow(ForbiddenException);
     });
   });
 

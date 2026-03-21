@@ -107,8 +107,19 @@ export class StickersService {
   }
 
   async getRecentStickers(userId: string) {
-    const packs = await this.getMyPacks(userId);
-    return packs.flatMap(p => p.stickers).slice(0, 30);
+    // Direct query for stickers from user's packs, ordered by most recently added
+    const userPacks = await this.prisma.userStickerPack.findMany({
+      where: { userId },
+      select: { packId: true },
+      take: 50,
+    });
+    if (userPacks.length === 0) return [];
+
+    return this.prisma.sticker.findMany({
+      where: { packId: { in: userPacks.map(p => p.packId) } },
+      orderBy: { position: 'desc' },
+      take: 30,
+    });
   }
 
   async getFeaturedPacks() {

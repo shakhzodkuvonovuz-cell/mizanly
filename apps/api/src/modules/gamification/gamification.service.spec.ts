@@ -65,13 +65,13 @@ describe('GamificationService', () => {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
-      prisma.userStreak.findUnique.mockResolvedValue({
-        id: 's1', currentDays: 5, longestDays: 10, lastActiveDate: yesterday,
-      });
-      prisma.userStreak.update.mockResolvedValue({ currentDays: 6, longestDays: 10 });
+      prisma.userStreak.findUnique
+        .mockResolvedValueOnce({ id: 's1', currentDays: 5, longestDays: 10, lastActiveDate: yesterday })
+        .mockResolvedValueOnce({ id: 's1', currentDays: 6, longestDays: 10, lastActiveDate: new Date() });
+      prisma.$executeRaw.mockResolvedValue(1);
 
       const result = await service.updateStreak('user-1', 'posting');
-      expect(prisma.userStreak.update).toHaveBeenCalled();
+      expect(prisma.$executeRaw).toHaveBeenCalled();
     });
 
     it('should reset streak when more than 1 day gap', async () => {
@@ -282,7 +282,8 @@ describe('GamificationService', () => {
 
       const result = await service.createChallenge('user-1', {
         title: '7 Day Streak', description: 'Post 7 days in a row',
-        type: 'streak', targetCount: 7, xpReward: 200,
+        challengeType: 'daily', category: 'fitness', targetCount: 7, xpReward: 200,
+        startDate: '2026-03-20', endDate: '2026-03-27',
       });
       expect(result.title).toBe('7 Day Streak');
     });

@@ -98,21 +98,32 @@ describe('FeedService', () => {
   });
 
   describe('getUserInterests', () => {
-    it('should compute interest scores from interactions', async () => {
+    beforeEach(() => {
+      (prisma as any).post = { findMany: jest.fn().mockResolvedValue([]) };
+    });
+
+    it('should compute interest scores by space and hashtag', async () => {
       prisma.feedInteraction.findMany = jest.fn().mockResolvedValue([
-        { space: 'SAF', viewDurationMs: 30000, liked: true, commented: false, shared: false, saved: false },
-        { space: 'SAF', viewDurationMs: 10000, liked: false, commented: true, shared: false, saved: false },
-        { space: 'MAJLIS', viewDurationMs: 5000, liked: false, commented: false, shared: true, saved: false },
+        { space: 'SAF', viewDurationMs: 30000, liked: true, commented: false, shared: false, saved: false, postId: 'p1' },
+        { space: 'SAF', viewDurationMs: 10000, liked: false, commented: true, shared: false, saved: false, postId: 'p2' },
+        { space: 'MAJLIS', viewDurationMs: 5000, liked: false, commented: false, shared: true, saved: false, postId: 'p3' },
+      ]);
+      (prisma as any).post.findMany.mockResolvedValue([
+        { id: 'p1', hashtags: ['quran'] },
+        { id: 'p2', hashtags: ['islam'] },
+        { id: 'p3', hashtags: [] },
       ]);
       const result = await service.getUserInterests('u1');
-      expect(result.SAF).toBeGreaterThan(0);
-      expect(result.MAJLIS).toBeGreaterThan(0);
+      expect(result.bySpace.SAF).toBeGreaterThan(0);
+      expect(result.bySpace.MAJLIS).toBeGreaterThan(0);
+      expect(result.byHashtag.quran).toBeGreaterThan(0);
     });
 
     it('should return empty scores for no interactions', async () => {
       prisma.feedInteraction.findMany = jest.fn().mockResolvedValue([]);
       const result = await service.getUserInterests('u1');
-      expect(result).toEqual({});
+      expect(result.bySpace).toEqual({});
+      expect(result.byHashtag).toEqual({});
     });
   });
 

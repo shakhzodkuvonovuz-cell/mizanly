@@ -116,9 +116,8 @@ describe('StickersService', () => {
 
   describe('getRecentStickers', () => {
     it('should return recent stickers from user packs', async () => {
-      prisma.userStickerPack.findMany.mockResolvedValue([
-        { pack: { id: 'p1', stickers: [{ id: 's1', url: 'a.png' }] } },
-      ]);
+      prisma.userStickerPack.findMany.mockResolvedValue([{ packId: 'p1' }]);
+      prisma.sticker.findMany.mockResolvedValue([{ id: 's1', url: 'a.png', packId: 'p1' }]);
       const result = await service.getRecentStickers('user-1');
       expect(result).toHaveLength(1);
     });

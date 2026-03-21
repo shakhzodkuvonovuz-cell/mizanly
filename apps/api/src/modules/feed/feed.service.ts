@@ -97,14 +97,31 @@ export class FeedService {
     return d.map(x => x.contentId);
   }
 
-  async getUserInterests(userId: string): Promise<Record<string, number>> {
-    const interactions = await this.prisma.feedInteraction.findMany({ where: { userId, viewed: true }, select: { space: true, viewDurationMs: true, liked: true, commented: true, shared: true, saved: true }, orderBy: { createdAt: 'desc' }, take: 200 });
-    const scores: Record<string, number> = {};
+  async getUserInterests(userId: string): Promise<{ bySpace: Record<string, number>; byHashtag: Record<string, number> }> {
+    const interactions = await this.prisma.feedInteraction.findMany({
+      where: { userId, OR: [{ liked: true }, { saved: true }, { viewDurationMs: { gte: 5000 } }] },
+      select: { space: true, viewDurationMs: true, liked: true, commented: true, shared: true, saved: true, postId: true },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    const bySpace: Record<string, number> = {};
+    const postIds = interactions.map(i => i.postId);
+    // Fetch hashtags for interacted posts
+    const posts = postIds.length > 0
+      ? await this.prisma.post.findMany({ where: { id: { in: postIds } }, select: { id: true, hashtags: true } })
+      : [];
+    const hashtagMap = new Map(posts.map(p => [p.id, p.hashtags]));
+    const byHashtag: Record<string, number> = {};
+
     for (const i of interactions) {
       const w = (i.liked ? 2 : 0) + (i.commented ? 3 : 0) + (i.shared ? 4 : 0) + (i.saved ? 3 : 0) + Math.min(i.viewDurationMs / 10000, 5);
-      scores[i.space] = (scores[i.space] || 0) + w;
+      bySpace[i.space] = (bySpace[i.space] || 0) + w;
+      const tags = hashtagMap.get(i.postId) || [];
+      for (const tag of tags) {
+        byHashtag[tag] = (byHashtag[tag] || 0) + w;
+      }
     }
-    return scores;
+    return { bySpace, byHashtag };
   }
 
   async undismiss(userId: string, contentId: string, contentType: string) {
