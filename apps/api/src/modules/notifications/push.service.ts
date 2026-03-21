@@ -66,6 +66,7 @@ export class PushService {
       body: notification.body,
       data: notification.data,
       sound: 'default' as const,
+      badge: 1,
       priority: 'high' as const,
     }));
     await this.sendBatch(messages);
@@ -110,11 +111,16 @@ export class PushService {
     tickets.forEach((ticket, index) => {
       if (ticket.status === 'error') {
         const error = ticket.details?.error;
-        if (error === 'DeviceNotRegistered' || error === 'InvalidCredentials') {
-          // Token is expired or invalid, mark device inactive
+        if (error === 'DeviceNotRegistered' || error === 'InvalidCredentials' || error === 'MismatchSenderId') {
           invalidTokens.push(batch[index].to);
         }
-        this.logger.warn(`Push ticket error: ${error}`, ticket.message);
+        if (error === 'MessageTooBig') {
+          this.logger.error(`Push message too big for token ${batch[index].to}`);
+        } else if (error === 'MessageRateExceeded') {
+          this.logger.warn(`Push rate exceeded for token ${batch[index].to}`);
+        } else {
+          this.logger.warn(`Push ticket error: ${error}`, ticket.message);
+        }
       }
     });
     if (invalidTokens.length > 0) {

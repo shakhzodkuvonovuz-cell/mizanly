@@ -36,12 +36,12 @@ describe('NotificationsController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('getNotifications', () => {
-    it('should call notificationsService.getNotifications with userId, filter, and cursor', async () => {
+    it('should call notificationsService.getNotifications with validated params', async () => {
       service.getNotifications.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
       await controller.getNotifications(userId, 'mentions', 'cursor-1');
 
-      expect(service.getNotifications).toHaveBeenCalledWith(userId, 'mentions', 'cursor-1');
+      expect(service.getNotifications).toHaveBeenCalledWith(userId, 'mentions', 'cursor-1', 30);
     });
 
     it('should default filter to undefined when not provided', async () => {
@@ -49,7 +49,15 @@ describe('NotificationsController', () => {
 
       await controller.getNotifications(userId);
 
-      expect(service.getNotifications).toHaveBeenCalledWith(userId, undefined, undefined);
+      expect(service.getNotifications).toHaveBeenCalledWith(userId, undefined, undefined, 30);
+    });
+
+    it('should reject invalid filter values', async () => {
+      service.getNotifications.mockResolvedValue({ data: [] } as any);
+
+      await controller.getNotifications(userId, 'invalid');
+
+      expect(service.getNotifications).toHaveBeenCalledWith(userId, undefined, undefined, 30);
     });
   });
 

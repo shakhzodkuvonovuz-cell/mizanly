@@ -27,16 +27,26 @@ export class NotificationsController {
   @ApiOperation({ summary: 'Get notifications (all | mentions | verified)' })
   getNotifications(
     @CurrentUser('id') userId: string,
-    @Query('filter') filter?: 'all' | 'mentions' | 'verified',
+    @Query('filter') filter?: string,
     @Query('cursor') cursor?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.notificationsService.getNotifications(userId, filter, cursor);
+    const validFilters = ['all', 'mentions', 'verified'];
+    const safeFilter = filter && validFilters.includes(filter) ? filter as 'all' | 'mentions' | 'verified' : undefined;
+    const safeLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) || 30 : 30), 50);
+    return this.notificationsService.getNotifications(userId, safeFilter, cursor, safeLimit);
   }
 
   @Get('unread')
   @ApiOperation({ summary: 'Get unread notification count' })
   getUnreadCount(@CurrentUser('id') userId: string) {
     return this.notificationsService.getUnreadCount(userId);
+  }
+
+  @Get('unread-counts')
+  @ApiOperation({ summary: 'Get unread counts by type' })
+  getUnreadCounts(@CurrentUser('id') userId: string) {
+    return this.notificationsService.getUnreadCounts(userId);
   }
 
   @Post(':id/read')

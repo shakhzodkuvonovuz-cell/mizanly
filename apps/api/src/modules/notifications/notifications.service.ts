@@ -1,17 +1,13 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
-import { DevicesService } from '../devices/devices.service';
 import { PushTriggerService } from './push-trigger.service';
 import { NotificationType, Prisma } from '@prisma/client';
-
-const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   constructor(
     private prisma: PrismaService,
-    private devices: DevicesService,
     private pushTrigger: PushTriggerService,
   ) {}
 
@@ -81,6 +77,20 @@ export class NotificationsService {
       where: { userId, isRead: false },
     });
     return { unread: count };
+  }
+
+  async getUnreadCounts(userId: string): Promise<Record<string, number>> {
+    const groups = await this.prisma.notification.groupBy({
+      by: ['type'],
+      where: { userId, isRead: false },
+      _count: true,
+    });
+    const counts: Record<string, number> = {};
+    for (const g of groups) {
+      counts[g.type] = g._count;
+    }
+    counts.total = Object.values(counts).reduce((a, b) => a + b, 0);
+    return counts;
   }
 
   async deleteNotification(notificationId: string, userId: string) {
