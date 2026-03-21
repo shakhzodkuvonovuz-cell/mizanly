@@ -182,6 +182,75 @@ describe('EmbeddingsService', () => {
     });
   });
 
+  describe('SQL injection prevention', () => {
+    it('should strip invalid filterTypes in findSimilar', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilar('p1', 'POST' as any, 10, [
+        'POST' as any,
+        "'; DROP TABLE embeddings; --" as any,
+      ]);
+
+      const sql = prisma.$queryRawUnsafe.mock.calls[0][0];
+      expect(sql).toContain("'POST'");
+      expect(sql).not.toContain('DROP TABLE');
+    });
+
+    it('should strip invalid excludeIds in findSimilarByVector', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilarByVector(
+        [0.1, 0.2],
+        10,
+        ['POST' as any],
+        ['valid-id-123', "'; DROP TABLE --"],
+      );
+
+      const sql = prisma.$queryRawUnsafe.mock.calls[0][0];
+      expect(sql).toContain("'valid-id-123'");
+      expect(sql).not.toContain('DROP TABLE');
+    });
+
+    it('should accept all valid EmbeddingContentType values', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilar('p1', 'POST' as any, 10, [
+        'POST' as any, 'REEL' as any, 'THREAD' as any, 'VIDEO' as any,
+      ]);
+
+      const sql = prisma.$queryRawUnsafe.mock.calls[0][0];
+      expect(sql).toContain("'POST'");
+      expect(sql).toContain("'REEL'");
+      expect(sql).toContain("'THREAD'");
+      expect(sql).toContain("'VIDEO'");
+    });
+
+    it('should skip type filter when all types are invalid', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilar('p1', 'POST' as any, 10, [
+        'INVALID' as any, "'; DROP TABLE --" as any,
+      ]);
+
+      const sql = prisma.$queryRawUnsafe.mock.calls[0][0];
+      expect(sql).not.toContain('IN (');
+    });
+
+    it('should skip excludeIds filter when all IDs are invalid', async () => {
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
+
+      await service.findSimilarByVector(
+        [0.1],
+        10,
+        undefined,
+        ["'; DROP --", '<script>alert(1)</script>'],
+      );
+
+      const sql = prisma.$queryRawUnsafe.mock.calls[0][0];
+      expect(sql).not.toContain('NOT IN');
+    });
+  });
+
   describe('getUserInterestVector', () => {
     it('should return null when user has no interactions', async () => {
       prisma.feedInteraction.findMany.mockResolvedValue([]);

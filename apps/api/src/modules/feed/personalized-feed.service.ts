@@ -23,6 +23,9 @@ export class PersonalizedFeedService {
   private readonly logger = new Logger(PersonalizedFeedService.name);
 
   // In-memory session signal store (per-user, resets on service restart)
+  // Capped at 10,000 sessions to prevent unbounded memory growth
+  private static readonly MAX_SESSIONS = 10000;
+  private static readonly MAX_VIEWED_IDS = 1000;
   private sessionSignals = new Map<string, {
     likedCategories: Map<string, number>;
     viewedIds: Set<string>;
@@ -34,6 +37,31 @@ export class PersonalizedFeedService {
     private prisma: PrismaService,
     private embeddingsService: EmbeddingsService,
   ) {}
+
+  /** Get user IDs to exclude from feeds (blocked in both directions + muted) */
+  private async getExcludedUserIds(userId: string): Promise<string[]> {
+    const [blocks, mutes] = await Promise.all([
+      this.prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      }),
+      this.prisma.mute.findMany({
+        where: { userId },
+        select: { mutedId: true },
+        take: 50,
+      }),
+    ]);
+    const excluded = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excluded.add(b.blockedId);
+      else excluded.add(b.blockerId);
+    }
+    for (const m of mutes) {
+      excluded.add(m.mutedId);
+    }
+    return [...excluded];
+  }
 
   // ── Session-aware adaptation (72.7) ───────────────────────
 
@@ -55,10 +83,18 @@ export class PersonalizedFeedService {
         sessionStart: Date.now(),
         scrollDepth: 0,
       };
+      // Evict oldest sessions if at capacity
+      if (this.sessionSignals.size >= PersonalizedFeedService.MAX_SESSIONS) {
+        const oldestKey = this.sessionSignals.keys().next().value;
+        if (oldestKey) this.sessionSignals.delete(oldestKey);
+      }
       this.sessionSignals.set(userId, session);
     }
 
-    session.viewedIds.add(signal.contentId);
+    // Cap viewedIds to prevent unbounded growth within a session
+    if (session.viewedIds.size < PersonalizedFeedService.MAX_VIEWED_IDS) {
+      session.viewedIds.add(signal.contentId);
+    }
     if (signal.scrollPosition) session.scrollDepth = signal.scrollPosition;
 
     // Boost categories from liked/saved content
@@ -127,15 +163,33 @@ export class PersonalizedFeedService {
   }
 
   private isRamadanPeriod(date: Date): boolean {
-    // Approximate Ramadan dates — in production, compute from Hijri calendar
-    // 2026: Feb 18 - Mar 19, 2027: Feb 8 - Mar 9
-    const year = date.getFullYear();
-    const month = date.getMonth(); // 0-indexed
-    const day = date.getDate();
+    // Known Ramadan start dates (1st of Ramadan in Gregorian)
+    // Islamic year shifts ~10-11 days earlier each Gregorian year
+    const knownDates: Record<number, [number, number]> = {
+      2026: [1, 18],  // Feb 18
+      2027: [1, 8],   // Feb 8
+      2028: [0, 28],  // Jan 28
+      2029: [0, 16],  // Jan 16
+      2030: [0, 6],   // Jan 6
+      2031: [11, 26], // Dec 26
+    };
 
-    if (year === 2026 && ((month === 1 && day >= 18) || (month === 2 && day <= 19))) return true;
-    if (year === 2027 && ((month === 1 && day >= 8) || (month === 2 && day <= 9))) return true;
-    return false;
+    const year = date.getFullYear();
+    const known = knownDates[year];
+    if (known) {
+      const start = new Date(year, known[0], known[1]);
+      const end = new Date(start.getTime() + 30 * 24 * 60 * 60 * 1000);
+      return date >= start && date <= end;
+    }
+
+    // For years beyond known dates, approximate using lunar cycle shift
+    // Ramadan 2026 starts ~Feb 18; each year shifts back ~10.87 days
+    const baseYear = 2026;
+    const baseStart = new Date(2026, 1, 18);
+    const yearDiff = year - baseYear;
+    const approxStart = new Date(baseStart.getTime() - yearDiff * 10.87 * 24 * 60 * 60 * 1000);
+    const approxEnd = new Date(approxStart.getTime() + 30 * 24 * 60 * 60 * 1000);
+    return date >= approxStart && date <= approxEnd;
   }
 
   // ── Personalized feed endpoint (72.9) ─────────────────────
@@ -154,6 +208,9 @@ export class PersonalizedFeedService {
       return this.getTrendingFeed(space, cursor, limit);
     }
 
+    // Get excluded user IDs (blocked both directions + muted)
+    const excludedUserIds = await this.getExcludedUserIds(userId);
+
     // Check if user has enough interactions for personalization
     const interactionCount = await this.prisma.feedInteraction.count({
       where: { userId },
@@ -161,7 +218,7 @@ export class PersonalizedFeedService {
 
     if (interactionCount < 10) {
       // Cold start: trending + editorial picks (72.11)
-      return this.getColdStartFeed(userId, space, cursor, limit);
+      return this.getColdStartFeed(userId, space, cursor, limit, excludedUserIds);
     }
 
     // Full personalized pipeline
@@ -169,7 +226,7 @@ export class PersonalizedFeedService {
     const interestVector = await this.embeddingsService.getUserInterestVector(userId);
 
     if (!interestVector) {
-      return this.getTrendingFeed(space, cursor, limit);
+      return this.getTrendingFeed(space, cursor, limit, excludedUserIds);
     }
 
     // Get session-viewed IDs to exclude
@@ -188,11 +245,20 @@ export class PersonalizedFeedService {
     const feedItems: FeedItem[] = [];
     const contentIds = candidates.map(c => c.contentId);
 
-    const engagementData = await this.getContentMetadata(contentIds, contentType);
+    const [engagementData, authorMapFull] = await Promise.all([
+      this.getContentMetadata(contentIds, contentType),
+      this.getAuthorMap(contentIds, contentType),
+    ]);
+
+    const excludedSet = new Set(excludedUserIds);
 
     for (const candidate of candidates) {
       const meta = engagementData.get(candidate.contentId);
       if (!meta) continue;
+
+      // Filter out content from blocked/muted users
+      const author = authorMapFull.get(candidate.contentId);
+      if (author && excludedSet.has(author)) continue;
 
       const reasons: string[] = [];
       let score = candidate.similarity * 0.35;
@@ -229,17 +295,38 @@ export class PersonalizedFeedService {
     // Sort by score
     feedItems.sort((a, b) => b.score - a.score);
 
-    // Diversity injection: no same-author back-to-back
-    const authorMap = await this.getAuthorMap(feedItems.slice(0, limit * 3).map(f => f.id), contentType);
+    // Diversity injection: no same-author back-to-back, with backfill from skipped items
+    const diversifyAuthorMap = await this.getAuthorMap(feedItems.slice(0, limit * 3).map(f => f.id), contentType);
     const diversified: FeedItem[] = [];
+    const skipped: FeedItem[] = [];
     let lastAuthor = '';
 
     for (const item of feedItems) {
       if (diversified.length >= limit) break;
-      const author = authorMap.get(item.id) || '';
-      if (author === lastAuthor && diversified.length < feedItems.length - 1) continue;
+      const itemAuthor = diversifyAuthorMap.get(item.id) || '';
+      if (itemAuthor === lastAuthor) {
+        skipped.push(item);
+        continue;
+      }
       diversified.push(item);
-      lastAuthor = author;
+      lastAuthor = itemAuthor;
+    }
+
+    // Backfill from skipped items if diversified list is short
+    if (diversified.length < limit && skipped.length > 0) {
+      for (const item of skipped) {
+        if (diversified.length >= limit) break;
+        diversified.push(item);
+      }
+    }
+
+    // Mark served items as viewed in session to prevent re-serving on next page
+    if (session) {
+      for (const item of diversified) {
+        if (session.viewedIds.size < PersonalizedFeedService.MAX_VIEWED_IDS) {
+          session.viewedIds.add(item.id);
+        }
+      }
     }
 
     const hasMore = feedItems.length > diversified.length;
@@ -260,12 +347,13 @@ export class PersonalizedFeedService {
     space: 'saf' | 'bakra' | 'majlis',
     cursor?: string,
     limit = 20,
+    excludedUserIds: string[] = [],
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
     // Mix of trending content + editorial Islamic picks
-    const trending = await this.getTrendingFeed(space, cursor, Math.ceil(limit * 0.7));
+    const trending = await this.getTrendingFeed(space, cursor, Math.ceil(limit * 0.7), excludedUserIds);
 
     // Add Islamic editorial picks
-    const islamicPicks = await this.getIslamicEditorialPicks(space, Math.floor(limit * 0.3));
+    const islamicPicks = await this.getIslamicEditorialPicks(space, Math.floor(limit * 0.3), excludedUserIds);
 
     // Merge and deduplicate
     const seenIds = new Set(trending.data.map(t => t.id));
@@ -277,12 +365,12 @@ export class PersonalizedFeedService {
       }
     }
 
-    // Shuffle slightly to mix trending with Islamic picks
-    for (let i = merged.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      if (Math.random() > 0.7) { // Only shuffle 30% of items
-        [merged[i], merged[j]] = [merged[j], merged[i]];
-      }
+    // Partial Fisher-Yates: swap ~30% of items to mix trending with Islamic picks
+    const swapCount = Math.floor(merged.length * 0.3);
+    for (let k = 0; k < swapCount; k++) {
+      const i = Math.floor(Math.random() * merged.length);
+      const j = Math.floor(Math.random() * merged.length);
+      [merged[i], merged[j]] = [merged[j], merged[i]];
     }
 
     return {
@@ -294,8 +382,10 @@ export class PersonalizedFeedService {
   private async getIslamicEditorialPicks(
     space: 'saf' | 'bakra' | 'majlis',
     limit: number,
+    excludedUserIds: string[] = [],
   ): Promise<FeedItem[]> {
-    const islamicTagArray = [...ISLAMIC_HASHTAGS].slice(0, 10);
+    const islamicTagArray = [...ISLAMIC_HASHTAGS];
+    const userFilter = excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {};
 
     if (space === 'saf') {
       const posts = await this.prisma.post.findMany({
@@ -303,7 +393,7 @@ export class PersonalizedFeedService {
           isRemoved: false,
           visibility: PostVisibility.PUBLIC,
           hashtags: { hasSome: islamicTagArray },
-          user: { isVerified: true, isDeactivated: false },
+          user: { isVerified: true, isDeactivated: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { likesCount: 'desc' },
@@ -318,7 +408,7 @@ export class PersonalizedFeedService {
           isRemoved: false,
           status: ReelStatus.READY,
           hashtags: { hasSome: islamicTagArray },
-          user: { isDeactivated: false },
+          user: { isDeactivated: false, ...userFilter },
         },
         select: { id: true },
         orderBy: { viewsCount: 'desc' },
@@ -334,7 +424,7 @@ export class PersonalizedFeedService {
         visibility: 'PUBLIC',
         isChainHead: true,
         hashtags: { hasSome: islamicTagArray },
-        user: { isDeactivated: false },
+        user: { isDeactivated: false, ...userFilter },
       },
       select: { id: true },
       orderBy: { likesCount: 'desc' },
@@ -347,8 +437,10 @@ export class PersonalizedFeedService {
     space: 'saf' | 'bakra' | 'majlis',
     cursor?: string,
     limit = 20,
+    excludedUserIds: string[] = [],
   ): Promise<{ data: FeedItem[]; meta: { cursor?: string; hasMore: boolean } }> {
     const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const userFilter = excludedUserIds.length > 0 ? { id: { notIn: excludedUserIds } } : {};
 
     if (space === 'saf') {
       const posts = await this.prisma.post.findMany({
@@ -357,7 +449,7 @@ export class PersonalizedFeedService {
           visibility: PostVisibility.PUBLIC,
           scheduledAt: null,
           createdAt: { gte: since },
-          user: { isDeactivated: false, isPrivate: false },
+          user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, hashtags: true },
@@ -381,7 +473,7 @@ export class PersonalizedFeedService {
           status: ReelStatus.READY,
           scheduledAt: null,
           createdAt: { gte: since },
-          user: { isDeactivated: false, isPrivate: false },
+          user: { isDeactivated: false, isPrivate: false, ...userFilter },
           ...(cursor ? { id: { lt: cursor } } : {}),
         },
         select: { id: true, hashtags: true },
@@ -405,7 +497,7 @@ export class PersonalizedFeedService {
         visibility: 'PUBLIC',
         isChainHead: true,
         createdAt: { gte: since },
-        user: { isDeactivated: false },
+        user: { isDeactivated: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: { id: true, hashtags: true },

@@ -151,6 +151,36 @@ F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F6
 - [06] F60-F62 Encryption items — resolved in audit 03
 - [06] F63-F66, F68-F69, F72, F74-F75 — P3 minor items
 
+## From Audit 07 (Feed/Algorithm/Recommendations) — 54 findings
+### FIXED directly (43 findings):
+F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F-004 (trending block/mute), F-005 (featured block/mute), F-006 (admin guard featurePost), F-007 (misplaced take:50), F-008 (trending pagination offset-based), F-010 (session memory leak cap), F-011 (viewedIds cap 1000), F-013 (double prefix embeddings), F-014 (admin guard backfill), F-015 (bidirectional blocks recommendations), F-016 (limit cap feed endpoints), F-017 (limit cap recommendations), F-018 (session signal DTO), F-020 (diversity backfill), F-022 (Ramadan future years), F-024 (lat/lng validation), F-025 (logInteraction only update defined fields), F-026 (logInteraction race condition note), F-029 (buildContentFilterWhere documented — dead code), F-032 (suggested users block/mute), F-033 (frequent creators block/mute), F-034 (all 29 Islamic hashtags), F-035 (bidirectional blocks consistency), F-037 (space DTO normalize uppercase), F-039 (space query param validation), F-040 (search char filter > 1 for Arabic), F-043 (re-throw critical errors), F-044 (suggestedThreads endpoint), F-045 (FeaturePostDto), F-046 (contentType validation), F-047 (scheduledAt in featured), F-049 (viewedIds pagination), F-051 (Fisher-Yates shuffle), F-054 (throttle all endpoints)
+
+### Deferred — cross-file scope:
+- [07] F-027 FeedInteraction @@unique([userId, postId]) — needs schema migration — fix in file 15 — OPEN
+- [07] F-050 Embedding table no FK — orphaned rows, needs cleanup job or schema migration — fix in file 15 — OPEN
+
+### NOTED (acceptable/by-design/architecture):
+- [07] F-009 Trending fetches 200 rows — acceptable for scoring pipeline, offset pagination now prevents duplicates
+- [07] F-012 Nearby feed ignores coordinates — documented limitation (no lat/lng on Post model), needs PostGIS or geo columns
+- [07] F-019 Personalized feed returns IDs only — architecture decision, client can hydrate
+- [07] F-021 Diversity logic duplicated — minor DRY issue, each has slight differences
+- [07] F-023 Friday boost is correct (dayOfWeek=5=Friday)
+- [07] F-028 getUserInterests dead method — returns space-level scores, kept for future use
+- [07] F-030 getFrequentCreatorIds N+1 query — acceptable for take:500 at current scale
+- [07] F-031 suggestedPeople take:50 truncation — acceptable for friends-of-friends at current scale
+- [07] F-036 IVFFlat index — requires REINDEX after data load, documented
+- [07] F-038 MINBAR in DTO but not in personalized feed — logged for MINBAR interactions, personalization pending video feed
+- [07] F-041 getUserInterestVector postId only — FeedInteraction FK is postId, content-type aware lookup needs schema change
+- [07] F-042 Sequential queries in personalized feed — already parallelized getContentMetadata + getAuthorMap with Promise.all
+- [07] F-048 Prayer time server timezone — noted, would need user timezone param for per-user accuracy
+- [07] F-052 Transparency explanations shallow — feature enhancement, current generic reasons work
+- [07] F-053 Test coverage gaps — FIXED: added 12+ new tests for block/mute filtering, admin guard, limit caps
+
+### Resolved deferred items from previous files:
+- [04] P0-2 Personalized feed no blocks — RESOLVED in F-003
+- [04] P0-3 Trending feed no blocks — RESOLVED in F-004
+- [04] P0-4 FeedService trending/featured no blocks — RESOLVED in F-004, F-005
+
 ---
 
 ## Summary

@@ -142,7 +142,7 @@ export class FeedTransparencyService {
     const keywords = query
       .toLowerCase()
       .split(/\s+/)
-      .filter((w) => w.length > 2);
+      .filter((w) => w.length > 1);
     if (keywords.length === 0) {
       return { data: [], meta: { cursor: null, hasMore: false } };
     }
@@ -154,13 +154,13 @@ export class FeedTransparencyService {
         this.prisma.block.findMany({
           where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
           select: { blockerId: true, blockedId: true },
-      take: 50,
-    }),
+          take: 50,
+        }),
         this.prisma.mute.findMany({
           where: { userId },
           select: { mutedId: true },
-      take: 50,
-    }),
+          take: 50,
+        }),
       ]);
       const blockedIds = new Set<string>();
       for (const b of blocks) {
@@ -180,8 +180,7 @@ export class FeedTransparencyService {
         visibility: 'PUBLIC',
         OR: keywords.map((kw) => ({
           content: { contains: kw, mode: 'insensitive' as const },
-      take: 50,
-    })),
+        })),
         ...(excludedUserIds.length > 0
           ? { userId: { notIn: excludedUserIds } }
           : {}),

@@ -1,10 +1,15 @@
 import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { ContentSpace } from '@prisma/client';
+import { Transform } from 'class-transformer';
 
 export class LogInteractionDto {
   @ApiProperty() @IsString() postId: string;
-  @ApiProperty({ enum: ['SAF', 'BAKRA', 'MAJLIS', 'MINBAR'] }) @IsEnum(['SAF', 'BAKRA', 'MAJLIS', 'MINBAR']) space: string;
+
+  @ApiProperty({ enum: ['SAF', 'BAKRA', 'MAJLIS', 'MINBAR'] })
+  @Transform(({ value }) => typeof value === 'string' ? value.toUpperCase() : value)
+  @IsEnum(['SAF', 'BAKRA', 'MAJLIS', 'MINBAR'])
+  space: string;
+
   @IsBoolean() @IsOptional() viewed?: boolean;
   @IsNumber() @IsOptional() viewDurationMs?: number;
   @IsNumber() @IsOptional() completionRate?: number;

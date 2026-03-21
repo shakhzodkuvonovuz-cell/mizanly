@@ -116,8 +116,8 @@ describe('RecommendationsService', () => {
     it('should exclude already-followed users, private, and deactivated users', async () => {
       const userId = 'user123';
       const excludedIds = ['blocked1', 'muted1'];
-      // Mock block and mute
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked1' }]);
+      // Mock block and mute — now bidirectional
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: 'blocked1' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted1' }]);
       // First follow.findMany call: get myFollowing
       prisma.follow.findMany.mockResolvedValueOnce([
@@ -153,10 +153,10 @@ describe('RecommendationsService', () => {
 
       const result = await service.suggestedPeople(userId, 20);
 
-      // Check excluded IDs are used
+      // Check excluded IDs are used — now bidirectional
       expect(prisma.block.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: { blockerId: userId },
-        select: { blockedId: true },
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
       }));
       expect(prisma.mute.findMany).toHaveBeenCalledWith(expect.objectContaining({
         where: { userId },
@@ -181,14 +181,6 @@ describe('RecommendationsService', () => {
           id: { in: ['suggested1', 'suggested2'], notIn: excludedIds },
           isDeactivated: false,
           isPrivate: false,
-        },
-        select: {
-          id: true,
-          username: true,
-          displayName: true,
-          avatarUrl: true,
-          isVerified: true,
-          bio: true,
         },
       }));
       // Check mutual followers count attached and sorted
@@ -259,7 +251,7 @@ describe('RecommendationsService', () => {
     it('should exclude blocked and muted users when userId provided', async () => {
       const userId = 'user123';
       const excludedIds = ['blocked1', 'muted1'];
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked1' }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: 'blocked1' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted1' }]);
       prisma.post.findMany.mockResolvedValue([]);
 
@@ -336,7 +328,7 @@ describe('RecommendationsService', () => {
     it('should exclude blocked and muted users when userId provided', async () => {
       const userId = 'user123';
       const excludedIds = ['blocked1', 'muted1'];
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked1' }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: 'blocked1' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted1' }]);
       prisma.reel.findMany.mockResolvedValue([]);
 
@@ -402,7 +394,7 @@ describe('RecommendationsService', () => {
     it('should exclude own channel and blocked/muted users when userId provided', async () => {
       const userId = 'user123';
       const excludedIds = ['blocked1', 'muted1'];
-      prisma.block.findMany.mockResolvedValue([{ blockedId: 'blocked1' }]);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: userId, blockedId: 'blocked1' }]);
       prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted1' }]);
       prisma.channel.findMany.mockResolvedValue([]);
 

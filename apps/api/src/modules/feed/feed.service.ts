@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { ContentSpace, PostVisibility, Prisma } from '@prisma/client';
 
@@ -45,39 +45,43 @@ export class FeedService {
   constructor(private prisma: PrismaService) {}
 
   async logInteraction(userId: string, data: { postId: string; space: string; viewed?: boolean; viewDurationMs?: number; completionRate?: number | null; liked?: boolean; commented?: boolean; shared?: boolean; saved?: boolean }) {
-    // Find existing interaction
+    // Build only defined update fields to avoid overwriting with undefined
+    const updateData: Record<string, unknown> = {};
+    if (data.viewed !== undefined) updateData.viewed = data.viewed;
+    if (data.viewDurationMs !== undefined) updateData.viewDurationMs = data.viewDurationMs;
+    if (data.completionRate !== undefined) updateData.completionRate = data.completionRate;
+    if (data.liked !== undefined) updateData.liked = data.liked;
+    if (data.commented !== undefined) updateData.commented = data.commented;
+    if (data.shared !== undefined) updateData.shared = data.shared;
+    if (data.saved !== undefined) updateData.saved = data.saved;
+
+    // Use findFirst + update/create since FeedInteraction lacks @@unique([userId, postId])
+    // (adding the constraint requires schema migration — deferred to file 15)
     const existing = await this.prisma.feedInteraction.findFirst({
       where: { userId, postId: data.postId },
     });
+
     if (existing) {
       return this.prisma.feedInteraction.update({
         where: { id: existing.id },
-        data: {
-          viewed: data.viewed,
-          viewDurationMs: data.viewDurationMs,
-          completionRate: data.completionRate,
-          liked: data.liked,
-          commented: data.commented,
-          shared: data.shared,
-          saved: data.saved,
-        },
-      });
-    } else {
-      return this.prisma.feedInteraction.create({
-        data: {
-          userId,
-          postId: data.postId,
-          space: data.space as ContentSpace,
-          viewed: data.viewed ?? false,
-          viewDurationMs: data.viewDurationMs ?? 0,
-          completionRate: data.completionRate,
-          liked: data.liked ?? false,
-          commented: data.commented ?? false,
-          shared: data.shared ?? false,
-          saved: data.saved ?? false,
-        },
+        data: updateData,
       });
     }
+
+    return this.prisma.feedInteraction.create({
+      data: {
+        userId,
+        postId: data.postId,
+        space: data.space as ContentSpace,
+        viewed: data.viewed ?? false,
+        viewDurationMs: data.viewDurationMs ?? 0,
+        completionRate: data.completionRate,
+        liked: data.liked ?? false,
+        commented: data.commented ?? false,
+        shared: data.shared ?? false,
+        saved: data.saved ?? false,
+      },
+    });
   }
 
   async dismiss(userId: string, contentId: string, contentType: string) {
@@ -149,12 +153,49 @@ export class FeedService {
     return where;
   }
 
+  /** Get user IDs to exclude from feeds (blocked both directions + muted) */
+  private async getExcludedUserIds(userId: string): Promise<string[]> {
+    const [blocks, mutes] = await Promise.all([
+      this.prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      }),
+      this.prisma.mute.findMany({
+        where: { userId },
+        select: { mutedId: true },
+        take: 50,
+      }),
+    ]);
+    const excluded = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excluded.add(b.blockedId);
+      else excluded.add(b.blockerId);
+    }
+    for (const m of mutes) {
+      excluded.add(m.mutedId);
+    }
+    return [...excluded];
+  }
+
   /**
    * Trending feed — posts from last 7 days scored by engagement rate.
    * Works without auth (for anonymous browsing + new user cold start).
    */
-  async getTrendingFeed(cursor?: string, limit = 20) {
+  async getTrendingFeed(cursor?: string, limit = 20, userId?: string) {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    // Build block/mute filter when authenticated
+    let userFilter = {};
+    if (userId) {
+      const excludedIds = await this.getExcludedUserIds(userId);
+      if (excludedIds.length > 0) {
+        userFilter = { id: { notIn: excludedIds } };
+      }
+    }
+
+    // Parse cursor as page offset for score-sorted feeds
+    const offset = cursor ? parseInt(cursor, 10) || 0 : 0;
 
     const posts = await this.prisma.post.findMany({
       where: {
@@ -162,8 +203,7 @@ export class FeedService {
         visibility: PostVisibility.PUBLIC,
         scheduledAt: null,
         createdAt: { gte: sevenDaysAgo },
-        user: { isDeactivated: false, isPrivate: false },
-        ...(cursor ? { id: { lt: cursor } } : {}),
+        user: { isDeactivated: false, isPrivate: false, ...userFilter },
       },
       select: FEED_POST_SELECT,
       orderBy: { createdAt: 'desc' },
@@ -183,7 +223,9 @@ export class FeedService {
     });
 
     scored.sort((a, b) => b._score - a._score);
-    const page = scored.slice(0, limit + 1);
+
+    // Offset-based pagination for score-sorted results
+    const page = scored.slice(offset, offset + limit + 1);
     const hasMore = page.length > limit;
     const data = (hasMore ? page.slice(0, limit) : page).map(
       ({ _score, ...post }) => post,
@@ -193,7 +235,7 @@ export class FeedService {
       data,
       meta: {
         hasMore,
-        cursor: data.length > 0 ? data[data.length - 1].id : undefined,
+        cursor: hasMore ? String(offset + limit) : undefined,
       },
     };
   }
@@ -201,13 +243,22 @@ export class FeedService {
   /**
    * Featured / staff-picked posts — editorial control over what new users see.
    */
-  async getFeaturedFeed(cursor?: string, limit = 20) {
+  async getFeaturedFeed(cursor?: string, limit = 20, userId?: string) {
+    let userFilter = {};
+    if (userId) {
+      const excludedIds = await this.getExcludedUserIds(userId);
+      if (excludedIds.length > 0) {
+        userFilter = { id: { notIn: excludedIds } };
+      }
+    }
+
     const posts = await this.prisma.post.findMany({
       where: {
         isFeatured: true,
         isRemoved: false,
         visibility: PostVisibility.PUBLIC,
-        user: { isDeactivated: false },
+        scheduledAt: null,
+        user: { isDeactivated: false, ...userFilter },
         ...(cursor ? { id: { lt: cursor } } : {}),
       },
       select: FEED_POST_SELECT,
@@ -230,7 +281,16 @@ export class FeedService {
   /**
    * Feature or unfeature a post (admin only).
    */
-  async featurePost(postId: string, featured: boolean) {
+  async featurePost(postId: string, featured: boolean, userId?: string) {
+    if (userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
+      if (!user || user.role !== 'ADMIN') {
+        throw new ForbiddenException('Admin access required');
+      }
+    }
     return this.prisma.post.update({
       where: { id: postId },
       data: {
@@ -246,15 +306,19 @@ export class FeedService {
    * Works without auth for anonymous users.
    */
   async getSuggestedUsers(userId?: string, limit = 5) {
-    // Get IDs to exclude: the user's own ID + already followed
+    // Get IDs to exclude: the user's own ID + already followed + blocked/muted
     const excludeIds: string[] = userId ? [userId] : [];
     if (userId) {
-      const following = await this.prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-        take: 50,
-      });
+      const [following, blockedMutedIds] = await Promise.all([
+        this.prisma.follow.findMany({
+          where: { followerId: userId },
+          select: { followingId: true },
+          take: 50,
+        }),
+        this.getExcludedUserIds(userId),
+      ]);
       excludeIds.push(...following.map((f) => f.followingId));
+      excludeIds.push(...blockedMutedIds);
     }
 
     const users = await this.prisma.user.findMany({
@@ -389,8 +453,13 @@ export class FeedService {
     const frequentIds = await this.getFrequentCreatorIds(userId);
     if (frequentIds.size === 0) return [];
 
+    // Exclude blocked/muted users
+    const excludedIds = await this.getExcludedUserIds(userId);
+    const filteredIds = [...frequentIds].filter(id => !excludedIds.includes(id));
+    if (filteredIds.length === 0) return [];
+
     return this.prisma.user.findMany({
-      where: { id: { in: [...frequentIds] } },
+      where: { id: { in: filteredIds } },
       select: {
         id: true,
         username: true,

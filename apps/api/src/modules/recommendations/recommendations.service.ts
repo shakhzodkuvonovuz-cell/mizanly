@@ -166,17 +166,26 @@ export class RecommendationsService {
 
   private async getExcludedUserIds(userId: string): Promise<string[]> {
     const [blocks, mutes] = await Promise.all([
-      this.prisma.block.findMany({ where: { blockerId: userId }, select: { blockedId: true },
-      take: 50,
-    }),
-      this.prisma.mute.findMany({ where: { userId }, select: { mutedId: true },
-      take: 50,
-    }),
+      this.prisma.block.findMany({
+        where: { OR: [{ blockerId: userId }, { blockedId: userId }] },
+        select: { blockerId: true, blockedId: true },
+        take: 50,
+      }),
+      this.prisma.mute.findMany({
+        where: { userId },
+        select: { mutedId: true },
+        take: 50,
+      }),
     ]);
-    return [
-      ...blocks.map(b => b.blockedId),
-      ...mutes.map(m => m.mutedId),
-    ];
+    const excluded = new Set<string>();
+    for (const b of blocks) {
+      if (b.blockerId === userId) excluded.add(b.blockedId);
+      else excluded.add(b.blockerId);
+    }
+    for (const m of mutes) {
+      excluded.add(m.mutedId);
+    }
+    return [...excluded];
   }
 
   // ── Multi-stage ranking pipeline ──────────────────────────
@@ -257,6 +266,11 @@ export class RecommendationsService {
     return diversified;
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
+      // Re-throw critical errors (SQL, null pointer), only swallow embeddings-not-available
+      if (msg.includes('SQL') || msg.includes('null') || msg.includes('Cannot read')) {
+        this.logger.error(`Multi-stage ranking critical error: ${msg}`);
+        throw error;
+      }
       this.logger.warn(`Multi-stage ranking failed, falling back to engagement sort: ${msg}`);
       return [];
     }

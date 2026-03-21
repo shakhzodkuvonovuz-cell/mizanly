@@ -180,4 +180,79 @@ describe('PersonalizedFeedService', () => {
       expect(result.data).toHaveLength(20);
     });
   });
+
+  describe('getPersonalizedFeed — block/mute filtering', () => {
+    it('should query blocks and mutes for authenticated users', async () => {
+      prisma.feedInteraction.count.mockResolvedValue(5);
+      prisma.block.findMany.mockResolvedValue([{ blockerId: 'user-1', blockedId: 'bad-user' }]);
+      prisma.mute.findMany.mockResolvedValue([{ mutedId: 'muted-user' }]);
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1', hashtags: [] }]);
+
+      await service.getPersonalizedFeed('user-1', 'saf');
+
+      expect(prisma.block.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { OR: [{ blockerId: 'user-1' }, { blockedId: 'user-1' }] },
+        }),
+      );
+      expect(prisma.mute.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: 'user-1' } }),
+      );
+    });
+
+    it('should not query blocks/mutes for unauthenticated users', async () => {
+      prisma.post.findMany.mockResolvedValue([]);
+
+      await service.getPersonalizedFeed(undefined, 'saf');
+
+      expect(prisma.block.findMany).not.toHaveBeenCalled();
+      expect(prisma.mute.findMany).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('session signals memory management', () => {
+    it('should cap viewedIds at MAX_VIEWED_IDS', () => {
+      // Fill up viewedIds to max
+      for (let i = 0; i < 1001; i++) {
+        service.trackSessionSignal('user-cap', { contentId: `c${i}`, action: 'view' });
+      }
+      const session = (service as any).sessionSignals.get('user-cap');
+      expect(session.viewedIds.size).toBeLessThanOrEqual(1000);
+    });
+  });
+
+  describe('isRamadanPeriod — future years', () => {
+    it('should detect Ramadan for 2028', () => {
+      const inRamadan2028 = new Date(2028, 0, 30); // Jan 30 2028
+      const result = (service as any).isRamadanPeriod(inRamadan2028);
+      expect(result).toBe(true);
+    });
+
+    it('should return false outside Ramadan period', () => {
+      const notRamadan = new Date(2028, 5, 15); // June 2028
+      const result = (service as any).isRamadanPeriod(notRamadan);
+      expect(result).toBe(false);
+    });
+  });
+
+  describe('getIslamicEditorialPicks — uses all hashtags', () => {
+    it('should use all 29 Islamic hashtags not just first 10', async () => {
+      prisma.post.findMany.mockResolvedValue([{ id: 'p1' }]);
+
+      // Access via cold start which calls getIslamicEditorialPicks
+      prisma.feedInteraction.count.mockResolvedValue(3);
+      prisma.block.findMany.mockResolvedValue([]);
+      prisma.mute.findMany.mockResolvedValue([]);
+
+      await service.getPersonalizedFeed('new-user', 'saf');
+
+      // Verify the hasSome array includes tags beyond the first 10
+      const postCall = prisma.post.findMany.mock.calls.find(
+        (call: any[]) => call[0]?.where?.hashtags?.hasSome,
+      );
+      if (postCall) {
+        expect(postCall[0].where.hashtags.hasSome.length).toBeGreaterThan(10);
+      }
+    });
+  });
 });

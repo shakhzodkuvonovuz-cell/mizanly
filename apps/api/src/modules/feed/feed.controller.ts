@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, Query, UseGuards, HttpCode, HttpStatus, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
@@ -8,6 +8,8 @@ import { FeedService } from './feed.service';
 import { FeedTransparencyService } from './feed-transparency.service';
 import { PersonalizedFeedService } from './personalized-feed.service';
 import { LogInteractionDto } from './dto/log-interaction.dto';
+import { FeaturePostDto } from './dto/feature-post.dto';
+import { TrackSessionSignalDto } from './dto/track-session-signal.dto';
 
 @ApiTags('Feed Intelligence')
 @ApiBearerAuth()
@@ -21,6 +23,7 @@ export class FeedController {
 
   @UseGuards(ClerkAuthGuard)
   @Post('interaction') @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: 'Log interaction' })
   async log(@CurrentUser('id') userId: string, @Body() dto: LogInteractionDto) {
     return this.feed.logInteraction(userId, dto);
@@ -28,28 +31,39 @@ export class FeedController {
 
   @UseGuards(ClerkAuthGuard)
   @Post('dismiss/:contentType/:contentId') @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Dismiss content' })
   async dismiss(
     @CurrentUser('id') userId: string,
     @Param('contentType') t: string,
     @Param('contentId') id: string,
   ) {
+    const validTypes = ['post', 'reel', 'thread', 'video'];
+    if (!validTypes.includes(t)) {
+      throw new BadRequestException(`Invalid contentType: ${t}. Must be one of: ${validTypes.join(', ')}`);
+    }
     return this.feed.dismiss(userId, id, t);
   }
 
   @UseGuards(ClerkAuthGuard)
   @Delete('dismiss/:contentType/:contentId') @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Undismiss' })
   async undismiss(
     @CurrentUser('id') userId: string,
     @Param('contentType') t: string,
     @Param('contentId') id: string,
   ) {
+    const validTypes = ['post', 'reel', 'thread', 'video'];
+    if (!validTypes.includes(t)) {
+      throw new BadRequestException(`Invalid contentType: ${t}. Must be one of: ${validTypes.join(', ')}`);
+    }
     return this.feed.undismiss(userId, id, t);
   }
 
   @UseGuards(ClerkAuthGuard)
   @Get('explain/post/:postId')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Explain why a post appeared in feed' })
   async explainPost(
     @CurrentUser('id') userId: string,
@@ -60,6 +74,7 @@ export class FeedController {
 
   @UseGuards(ClerkAuthGuard)
   @Get('explain/thread/:threadId')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Explain why a thread appeared in feed' })
   async explainThread(
     @CurrentUser('id') userId: string,
@@ -70,6 +85,7 @@ export class FeedController {
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('search/enhanced')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Enhanced keyword search across posts' })
   @ApiQuery({ name: 'q', required: true, type: String })
   @ApiQuery({ name: 'cursor', required: false, type: String })
@@ -80,12 +96,13 @@ export class FeedController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+    const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
     return this.transparency.enhancedSearch(q, cursor, parsedLimit, userId);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('personalized')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get personalized feed (pgvector + Islamic boost + session signals)' })
   @ApiQuery({ name: 'space', required: true, enum: ['saf', 'bakra', 'majlis'] })
   @ApiQuery({ name: 'cursor', required: false, type: String })
@@ -96,20 +113,24 @@ export class FeedController {
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
+    const validSpaces = ['saf', 'bakra', 'majlis'] as const;
+    const safeSpace = validSpaces.includes(space as typeof validSpaces[number]) ? space : 'saf';
+    const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
     return this.personalizedFeed.getPersonalizedFeed(
       userId,
-      space,
+      safeSpace as 'saf' | 'bakra' | 'majlis',
       cursor,
-      limit ? parseInt(limit, 10) : 20,
+      parsedLimit,
     );
   }
 
   @UseGuards(ClerkAuthGuard)
   @Post('session-signal') @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { ttl: 60000, limit: 60 } })
   @ApiOperation({ summary: 'Track in-session feed signal for real-time adaptation' })
   async trackSessionSignal(
     @CurrentUser('id') userId: string,
-    @Body() body: { contentId: string; action: 'view' | 'like' | 'save' | 'share' | 'skip'; hashtags?: string[]; scrollPosition?: number },
+    @Body() body: TrackSessionSignalDto,
   ) {
     this.personalizedFeed.trackSessionSignal(userId, body);
     return { success: true };
@@ -122,10 +143,12 @@ export class FeedController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getTrending(
+    @CurrentUser('id') userId: string | undefined,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.feed.getTrendingFeed(cursor, limit ? parseInt(limit, 10) : 20);
+    const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
+    return this.feed.getTrendingFeed(cursor, parsedLimit, userId);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
@@ -135,10 +158,12 @@ export class FeedController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   async getFeatured(
+    @CurrentUser('id') userId: string | undefined,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
   ) {
-    return this.feed.getFeaturedFeed(cursor, limit ? parseInt(limit, 10) : 20);
+    const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 20), 50);
+    return this.feed.getFeaturedFeed(cursor, parsedLimit, userId);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
@@ -150,11 +175,13 @@ export class FeedController {
     @CurrentUser('id') userId: string | undefined,
     @Query('limit') limit?: string,
   ) {
-    return this.feed.getSuggestedUsers(userId, limit ? parseInt(limit, 10) : 5);
+    const parsedLimit = Math.min(Math.max(1, limit ? parseInt(limit, 10) : 5), 50);
+    return this.feed.getSuggestedUsers(userId, parsedLimit);
   }
 
   @UseGuards(ClerkAuthGuard)
   @Get('frequent-creators')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get creators the user frequently engages with' })
   async getFrequentCreators(@CurrentUser('id') userId: string) {
     return this.feed.getFrequentCreators(userId);
@@ -162,16 +189,18 @@ export class FeedController {
 
   @UseGuards(ClerkAuthGuard)
   @Put('admin/posts/:id/feature')
-  @ApiOperation({ summary: 'Feature or unfeature a post (admin)' })
+  @ApiOperation({ summary: 'Feature or unfeature a post (admin only)' })
   async featurePost(
+    @CurrentUser('id') userId: string,
     @Param('id') postId: string,
-    @Body() body: { featured: boolean },
+    @Body() body: FeaturePostDto,
   ) {
-    return this.feed.featurePost(postId, body.featured);
+    return this.feed.featurePost(postId, body.featured, userId);
   }
 
   @UseGuards(OptionalClerkAuthGuard)
   @Get('nearby')
+  @Throttle({ default: { ttl: 60000, limit: 30 } })
   @ApiOperation({ summary: 'Get nearby content based on location' })
   @ApiQuery({ name: 'lat', required: true, type: Number })
   @ApiQuery({ name: 'lng', required: true, type: Number })
@@ -184,10 +213,13 @@ export class FeedController {
     @Query('radiusKm') radiusKm?: string,
     @Query('cursor') cursor?: string,
   ) {
+    const parsedLat = Math.max(-90, Math.min(90, parseFloat(lat) || 0));
+    const parsedLng = Math.max(-180, Math.min(180, parseFloat(lng) || 0));
+    const parsedRadius = Math.max(1, Math.min(500, radiusKm ? parseFloat(radiusKm) : 25));
     return this.feed.getNearbyContent(
-      parseFloat(lat),
-      parseFloat(lng),
-      radiusKm ? parseFloat(radiusKm) : 25,
+      parsedLat,
+      parsedLng,
+      parsedRadius,
       cursor,
       userId,
     );

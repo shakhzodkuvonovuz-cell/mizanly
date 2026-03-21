@@ -243,6 +243,20 @@ export class EmbeddingsService {
     return true;
   }
 
+  /** Validate filterTypes against the EmbeddingContentType enum to prevent SQL injection */
+  private validateFilterTypes(filterTypes?: EmbeddingContentType[]): EmbeddingContentType[] {
+    if (!filterTypes?.length) return [];
+    const valid = Object.values(EmbeddingContentType);
+    return filterTypes.filter(t => valid.includes(t));
+  }
+
+  /** Validate IDs are safe alphanumeric/dash/underscore strings (cuid or uuid format) */
+  private validateIds(ids?: string[]): string[] {
+    if (!ids?.length) return [];
+    const safePattern = /^[a-zA-Z0-9_-]+$/;
+    return ids.filter(id => safePattern.test(id));
+  }
+
   /**
    * Find similar content using pgvector KNN cosine similarity
    */
@@ -252,8 +266,9 @@ export class EmbeddingsService {
     limit = 20,
     filterTypes?: EmbeddingContentType[],
   ): Promise<Array<{ contentId: string; contentType: EmbeddingContentType; similarity: number }>> {
-    const typeFilter = filterTypes?.length
-      ? `AND e2."contentType" IN (${filterTypes.map(t => `'${t}'`).join(',')})`
+    const safeTypes = this.validateFilterTypes(filterTypes);
+    const typeFilter = safeTypes.length
+      ? `AND e2."contentType" IN (${safeTypes.map(t => `'${t}'`).join(',')})`
       : '';
 
     const results = await this.prisma.$queryRawUnsafe<
@@ -286,11 +301,13 @@ export class EmbeddingsService {
     const vectorStr = `[${vector.join(',')}]`;
     const conditions: string[] = [];
 
-    if (filterTypes?.length) {
-      conditions.push(`"contentType" IN (${filterTypes.map(t => `'${t}'`).join(',')})`);
+    const safeTypes = this.validateFilterTypes(filterTypes);
+    if (safeTypes.length) {
+      conditions.push(`"contentType" IN (${safeTypes.map(t => `'${t}'`).join(',')})`);
     }
-    if (excludeIds?.length) {
-      conditions.push(`"contentId" NOT IN (${excludeIds.map(id => `'${id}'`).join(',')})`);
+    const safeExcludeIds = this.validateIds(excludeIds);
+    if (safeExcludeIds.length) {
+      conditions.push(`"contentId" NOT IN (${safeExcludeIds.map(id => `'${id}'`).join(',')})`);
     }
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';

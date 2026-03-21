@@ -22,6 +22,7 @@ describe('RecommendationsController', () => {
             suggestedPosts: jest.fn(),
             suggestedReels: jest.fn(),
             suggestedChannels: jest.fn(),
+            suggestedThreads: jest.fn(),
           },
         },
         { provide: OptionalClerkAuthGuard, useValue: { canActivate: jest.fn(() => true) } },
@@ -35,43 +36,62 @@ describe('RecommendationsController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('suggestedPeople', () => {
-    it('should call recommendationsService.suggestedPeople with userId and limit', async () => {
+    it('should call service with capped limit', async () => {
       service.suggestedPeople.mockResolvedValue([{ id: 'user-2' }] as any);
-
       const result = await controller.suggestedPeople(userId, 10);
-
       expect(service.suggestedPeople).toHaveBeenCalledWith(userId, 10);
       expect(result).toHaveLength(1);
+    });
+
+    it('should cap limit at 50', async () => {
+      service.suggestedPeople.mockResolvedValue([]);
+      await controller.suggestedPeople(userId, 999);
+      expect(service.suggestedPeople).toHaveBeenCalledWith(userId, 50);
+    });
+
+    it('should default to 20 when no limit', async () => {
+      service.suggestedPeople.mockResolvedValue([]);
+      await controller.suggestedPeople(userId);
+      expect(service.suggestedPeople).toHaveBeenCalledWith(userId, 20);
     });
   });
 
   describe('suggestedPosts', () => {
-    it('should call recommendationsService.suggestedPosts with userId and limit', async () => {
+    it('should call service with capped limit', async () => {
       service.suggestedPosts.mockResolvedValue([{ id: 'post-1' }] as any);
-
       await controller.suggestedPosts(userId, 5);
-
       expect(service.suggestedPosts).toHaveBeenCalledWith(userId, 5);
     });
   });
 
   describe('suggestedReels', () => {
-    it('should call recommendationsService.suggestedReels with userId and limit', async () => {
+    it('should call service with capped limit', async () => {
       service.suggestedReels.mockResolvedValue([{ id: 'reel-1' }] as any);
-
       await controller.suggestedReels(userId, 10);
-
       expect(service.suggestedReels).toHaveBeenCalledWith(userId, 10);
     });
   });
 
   describe('suggestedChannels', () => {
-    it('should call recommendationsService.suggestedChannels with userId and limit', async () => {
+    it('should call service with capped limit', async () => {
       service.suggestedChannels.mockResolvedValue([{ id: 'ch-1' }] as any);
-
       await controller.suggestedChannels(userId, 10);
-
       expect(service.suggestedChannels).toHaveBeenCalledWith(userId, 10);
+    });
+  });
+
+  describe('suggestedThreads', () => {
+    it('should call service with capped limit', async () => {
+      service.suggestedThreads.mockResolvedValue([{ id: 't-1' }] as any);
+      const result = await controller.suggestedThreads(userId, 10);
+      expect(service.suggestedThreads).toHaveBeenCalledWith(userId, 10);
+      expect(result).toHaveLength(1);
+    });
+
+    it('should cap limit at 50', async () => {
+      service.suggestedThreads.mockResolvedValue([]);
+      await controller.suggestedThreads(userId, 100);
+      expect(service.suggestedThreads).toHaveBeenCalledWith(userId, 50);
     });
   });
 });

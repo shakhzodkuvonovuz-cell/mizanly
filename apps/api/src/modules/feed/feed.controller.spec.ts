@@ -122,4 +122,62 @@ describe('FeedController', () => {
       expect(result.reasons).toContain('Recommended for you');
     });
   });
+
+  describe('getTrending', () => {
+    it('should pass userId and capped limit to service', async () => {
+      mockService.getTrendingFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getTrending('user-1', undefined, '100');
+      expect(mockService.getTrendingFeed).toHaveBeenCalledWith(undefined, 50, 'user-1');
+    });
+
+    it('should default limit to 20 and pass undefined userId', async () => {
+      mockService.getTrendingFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getTrending(undefined);
+      expect(mockService.getTrendingFeed).toHaveBeenCalledWith(undefined, 20, undefined);
+    });
+  });
+
+  describe('getFeatured', () => {
+    it('should pass userId and capped limit to service', async () => {
+      mockService.getFeaturedFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getFeatured('user-1', undefined, '999');
+      expect(mockService.getFeaturedFeed).toHaveBeenCalledWith(undefined, 50, 'user-1');
+    });
+  });
+
+  describe('featurePost', () => {
+    it('should pass userId to service for admin check', async () => {
+      mockService.featurePost.mockResolvedValue({ id: 'p1', isFeatured: true });
+      await controller.featurePost('admin-1', 'p1', { featured: true } as any);
+      expect(mockService.featurePost).toHaveBeenCalledWith('p1', true, 'admin-1');
+    });
+  });
+
+  describe('dismiss — contentType validation', () => {
+    it('should reject invalid contentType', async () => {
+      await expect(controller.dismiss('user-1', 'invalid', 'id-1')).rejects.toThrow('Invalid contentType');
+    });
+
+    it('should accept valid contentType', async () => {
+      mockService.dismiss.mockResolvedValue({ dismissed: true });
+      await controller.dismiss('user-1', 'post', 'id-1');
+      expect(mockService.dismiss).toHaveBeenCalled();
+    });
+  });
+
+  describe('getNearby — lat/lng validation', () => {
+    it('should clamp lat/lng to valid range', async () => {
+      mockService.getNearbyContent.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getNearby(undefined, '999', '-999', '1000');
+      expect(mockService.getNearbyContent).toHaveBeenCalledWith(90, -180, 500, undefined, undefined);
+    });
+  });
+
+  describe('getPersonalized — space validation', () => {
+    it('should default to saf for invalid space', async () => {
+      mockPersonalizedFeed.getPersonalizedFeed.mockResolvedValue({ data: [], meta: { hasMore: false } });
+      await controller.getPersonalized(undefined, 'invalid' as any);
+      expect(mockPersonalizedFeed.getPersonalizedFeed).toHaveBeenCalledWith(undefined, 'saf', undefined, 20);
+    });
+  });
 });
