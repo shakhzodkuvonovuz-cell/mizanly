@@ -1,14 +1,14 @@
 import { Throttle } from '@nestjs/throttler';
 import { Controller, Post, Get, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, Matches } from 'class-validator';
 import { DevicesService } from './devices.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class RegisterDeviceDto {
-  @IsString() @IsNotEmpty() pushToken: string;
-  @IsString() @IsNotEmpty() platform: string;
+  @IsString() @IsNotEmpty() @Matches(/^ExponentPushToken\[.+\]$|^[a-zA-Z0-9:_-]{20,}$/, { message: 'Invalid push token format' }) pushToken: string;
+  @IsString() @IsIn(['ios', 'android', 'web']) platform: string;
   @IsString() @IsOptional() deviceId?: string;
 }
 

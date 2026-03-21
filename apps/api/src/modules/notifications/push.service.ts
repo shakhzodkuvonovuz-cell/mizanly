@@ -150,7 +150,7 @@ export class PushService {
     const devices = await this.prisma.device.findMany({
       where: { userId: { in: userIds }, isActive: true },
       select: { pushToken: true },
-      take: 50,
+      take: 1000,
     });
     return devices.map(d => d.pushToken);
   }
@@ -212,7 +212,7 @@ export class PushService {
     return {
       title: 'Repost',
       body: `${actorName} reposted your post`,
-      data: { type: 'like', postId, actorName },
+      data: { type: 'repost', postId, actorName },
     };
   }
 
@@ -220,7 +220,7 @@ export class PushService {
     return {
       title: 'Quote post',
       body: `${actorName} quoted your post`,
-      data: { type: 'like', postId, actorName },
+      data: { type: 'quote_post', postId, actorName },
     };
   }
 
@@ -228,7 +228,7 @@ export class PushService {
     return {
       title: 'New like',
       body: `${actorName} liked your reel`,
-      data: { type: 'like', reelId, actorName },
+      data: { type: 'reel_like', reelId, actorName },
     };
   }
 
@@ -244,7 +244,7 @@ export class PushService {
     return {
       title: 'New like',
       body: `${actorName} liked your video`,
-      data: { type: 'like', videoId, actorName },
+      data: { type: 'video_like', videoId, actorName },
     };
   }
 
@@ -260,7 +260,7 @@ export class PushService {
     return {
       title: 'New video',
       body: `${actorName} published: ${videoTitle}`,
-      data: { type: 'like', videoId, actorName },
+      data: { type: 'video_published', videoId, actorName },
     };
   }
 
@@ -276,7 +276,7 @@ export class PushService {
     return {
       title: channelName,
       body: `${actorName} posted in ${channelName}`,
-      data: { type: 'like', postId, actorName },
+      data: { type: 'channel_post', postId, actorName },
     };
   }
 
@@ -308,7 +308,7 @@ export class PushService {
     return {
       title: 'Poll vote',
       body: `${actorName} voted on your poll`,
-      data: { type: 'like', postId, actorName },
+      data: { type: 'poll_vote', postId, actorName },
     };
   }
 

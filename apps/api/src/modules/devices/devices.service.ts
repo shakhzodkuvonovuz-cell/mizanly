@@ -8,7 +8,16 @@ export class DevicesService {
   constructor(private prisma: PrismaService) {}
 
   async register(userId: string, pushToken: string, platform: string, deviceId?: string) {
-    // If the token was previously deactivated, re-activate it for the current user
+    // Check if token is already registered to another active user
+    const existing = await this.prisma.device.findUnique({ where: { pushToken } });
+    if (existing && existing.userId !== userId && existing.isActive) {
+      // Token belongs to another active user — deactivate their old record first
+      await this.prisma.device.update({
+        where: { pushToken },
+        data: { isActive: false },
+      });
+    }
+
     return this.prisma.device.upsert({
       where: { pushToken },
       create: { userId, pushToken, platform, deviceId, isActive: true },

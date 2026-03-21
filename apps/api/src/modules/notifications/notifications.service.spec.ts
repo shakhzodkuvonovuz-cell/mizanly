@@ -31,6 +31,8 @@ describe('NotificationsService', () => {
             },
             block: { findFirst: jest.fn().mockResolvedValue(null) },
             mute: { findFirst: jest.fn().mockResolvedValue(null) },
+            settings: { findUnique: jest.fn().mockResolvedValue(null) },
+            user: { findUnique: jest.fn().mockResolvedValue({ notificationsOn: true }) },
           },
         },
         {

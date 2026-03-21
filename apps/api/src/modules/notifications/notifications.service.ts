@@ -111,6 +111,31 @@ export class NotificationsService {
   }) {
     if (params.userId === params.actorId) return null; // No self-notifications
 
+    // Check user's per-type notification settings
+    const settings = await this.prisma.settings.findUnique({
+      where: { userId: params.userId },
+      select: { notifyLikes: true, notifyComments: true, notifyFollows: true, notifyMentions: true, notifyMessages: true, notifyLiveStreams: true },
+    });
+    if (settings) {
+      const typeToSetting: Record<string, keyof typeof settings> = {
+        LIKE: 'notifyLikes', REEL_LIKE: 'notifyLikes', VIDEO_LIKE: 'notifyLikes',
+        COMMENT: 'notifyComments', REEL_COMMENT: 'notifyComments', VIDEO_COMMENT: 'notifyComments', REPLY: 'notifyComments', THREAD_REPLY: 'notifyComments',
+        FOLLOW: 'notifyFollows', FOLLOW_REQUEST: 'notifyFollows', FOLLOW_REQUEST_ACCEPTED: 'notifyFollows',
+        MENTION: 'notifyMentions',
+        MESSAGE: 'notifyMessages', STORY_REPLY: 'notifyMessages',
+        LIVE_STARTED: 'notifyLiveStreams',
+      };
+      const settingKey = typeToSetting[params.type];
+      if (settingKey && settings[settingKey] === false) return null;
+    }
+
+    // Check if user has global notifications disabled
+    const user = await this.prisma.user.findUnique({
+      where: { id: params.userId },
+      select: { notificationsOn: true },
+    });
+    if (user && !user.notificationsOn) return null;
+
     // Don't notify if recipient has blocked or muted the actor
     const [blockExists, muteExists] = await Promise.all([
       this.prisma.block.findFirst({

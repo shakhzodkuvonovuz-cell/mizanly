@@ -11,6 +11,7 @@ describe('DevicesService', () => {
     // Create mock prisma with jest.fn() for each method used
     prisma = {
       device: {
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn(),
         update: jest.fn(),
         updateMany: jest.fn(),

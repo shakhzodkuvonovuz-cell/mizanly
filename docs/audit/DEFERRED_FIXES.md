@@ -343,6 +343,24 @@ F03 (resolveReport now actually removes content when CONTENT_REMOVED), F04 (reso
 - [13] F35 AdminModule no explicit FeatureFlagsModule import — global module works
 - [13] F36-F42 Test quality items — test improvements, not production bugs
 
+## From Audit 14 (Notifications) — 31 findings
+### FIXED directly (14 findings):
+C-01 (per-type notification settings checked before creation), C-04 (push token hijacking prevented), C-06 (global notificationsOn toggle checked), C-07 (reel LIKE/COMMENT push triggers handle reelId), M-05 (7 push data types corrected), M-06 (broadcast token limit 50→1000), M-13 (platform @IsIn + pushToken format regex)
+
+### Deferred — architecture/external:
+- [14] C-02 Wire 8 dead notification types — needs cross-module changes — OPEN
+- [14] C-03 Real-time socket delivery — needs gateway integration — OPEN
+- [14] C-05 Notification dedup — needs Redis-based dedup — OPEN
+- [14] C-08 Expo access token — needs env var — OPEN
+- [14] M-07 Cleanup/retention — needs scheduled job — OPEN
+- [14] M-09 unread-counts endpoint — needs controller route — OPEN
+
+### NOTED (mobile-side/minor/cosmetic):
+- [14] M-01/M-02/M-03/M-04 Dead code/duplication — minor
+- [14] M-08/M-10/M-11 Mobile-side UI gaps
+- [14] M-12/M-14 Architecture/cleanup items
+- [14] m-01 to m-09 Minor items
+
 ---
 
 ## Summary
