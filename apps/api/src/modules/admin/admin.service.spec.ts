@@ -180,6 +180,7 @@ describe('AdminService', () => {
   describe('resolveReport', () => {
     it('should update report with WARN action', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({ reportedPostId: null, reportedCommentId: null, reportedUserId: null });
       prisma.report.update.mockResolvedValue({ id: 'report-1', status: 'RESOLVED' });
 
       const result = await service.resolveReport('admin-id', 'report-1', 'WARN', 'Warning note');
@@ -198,6 +199,7 @@ describe('AdminService', () => {
 
     it('should update report with DISMISS action', async () => {
       prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.report.findUnique.mockResolvedValue({ reportedPostId: null, reportedCommentId: null, reportedUserId: null });
       prisma.report.update.mockResolvedValue({ id: 'report-1', status: 'DISMISSED' });
 
       const result = await service.resolveReport('admin-id', 'report-1', 'DISMISS');
@@ -262,7 +264,9 @@ describe('AdminService', () => {
 
   describe('banUser', () => {
     it('should deactivate user with reason', async () => {
-      prisma.user.findUnique.mockResolvedValue({ role: 'ADMIN' });
+      prisma.user.findUnique
+        .mockResolvedValueOnce({ role: 'ADMIN' }) // admin check
+        .mockResolvedValueOnce({ id: 'user-1', role: 'USER' }); // target check
       prisma.user.update.mockResolvedValue({ id: 'user-1', isDeactivated: true });
 
       const result = await service.banUser('admin-id', 'user-1', 'Spam', 24);

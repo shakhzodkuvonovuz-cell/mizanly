@@ -315,6 +315,34 @@ F01 (safeLimit now used everywhere — was computed but dead), F02 (limit parsed
 ### Resolved deferred items:
 - [04] P1-14 Search no block filter — users now filtered by isBanned/isDeactivated/isDeleted
 
+## From Audit 13 (Admin/Moderation) — 42 findings
+### Already fixed in previous sessions:
+F01/F02 (auth guard ban checks), F08 (feature flag admin checks), F14 (moderation fail-closed), F15 (word filter real patterns), F16 (ContentSafetyService dead code noted), F17 (autoRemoveContent schema fix), F20 (moderation DTOs classes)
+
+### FIXED directly (17 findings):
+F03 (resolveReport now actually removes content when CONTENT_REMOVED), F04 (resolveReport now actually bans user when BAN_USER), F05 (reports controller double prefix → 'reports'), F06 (reports resolve DTO with @IsEnum validation), F10 (temp ban auto-unban in auth guard when banExpiresAt expired), F11 (check-text/check-image rate limit 5/min), F22 (banUser rejects banning other admins), F23 (banUser checks target exists), F32 (CreateReportDto @MaxLength(1000)), F34 (word filter URL pattern removed — URLs are legitimate content)
+
+### Deferred:
+- [13] F07 Reports service resolve no content removal — same pattern as F03, but reports.service is separate from admin.service — OPEN
+- [13] F09 Feature flag value validation — OPEN (minor)
+- [13] F12/F13 SSRF/prompt injection in moderation — addressed in file 10 (fail-closed) — NOTED
+- [13] F18 autoRemoveContent ignores comments — OPEN
+- [13] F19 Admin getReports Date cursor — NOTED (functional)
+- [13] F21 Admin resolveReport no ModerationLog — OPEN
+- [13] F24 Ban no session invalidation — needs Clerk API integration — NOTED
+- [13] F27 Duplicate moderation systems — architecture, needs consolidation — NOTED
+- [13] F28 flagContent sets reporterId to content creator — OPEN
+- [13] F29 No appeal resolution workflow — feature gap — OPEN
+- [13] F30 Reports service doesn't handle WARN/BAN — OPEN
+
+### NOTED (acceptable/already addressed):
+- [13] F25 getReports status validation — Prisma rejects invalid enum values
+- [13] F26 Moderator identity exposed — intentional for transparency
+- [13] F31 /health/config flag names — flag names are not sensitive
+- [13] F33 autoFlagged string search — fragile but functional
+- [13] F35 AdminModule no explicit FeatureFlagsModule import — global module works
+- [13] F36-F42 Test quality items — test improvements, not production bugs
+
 ---
 
 ## Summary

@@ -17,7 +17,7 @@ const PROHIBITED_PATTERNS: { pattern: RegExp; category: string; severity: 'low' 
   // Spam patterns (repeated chars, known spam phrases)
   { pattern: /(.)\1{10,}/, category: 'spam', severity: 'low' }, // repeated character 10+ times
   { pattern: /\b(buy\s+followers|cheap\s+likes|instagram\s+growth|free\s+money|click\s+here)\b/i, category: 'spam', severity: 'medium' },
-  { pattern: /(http|https):\/\/[^\s]+/g, category: 'spam', severity: 'low' }, // URLs
+  // URLs not flagged as spam — legitimate link sharing is a core social feature
   // NSFW text patterns
   { pattern: /\b(p[o0]rn|h[e3]nt[a4]i|xxx|nsfw|n[u0]d[e3]s|s[e3]xt[i1]ng)\b/i, category: 'nsfw_text', severity: 'high' },
   { pattern: /\b(f[u\*]ck|sh[i1\*]t|c[u\*]nt|d[i1]ck|p[u\*]ssy|c[o0]ck)\b/i, category: 'nsfw_text', severity: 'medium' },

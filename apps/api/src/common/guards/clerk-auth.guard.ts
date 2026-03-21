@@ -44,6 +44,7 @@ export class ClerkAuthGuard implements CanActivate {
         isBanned: true,
         isDeactivated: true,
         isDeleted: true,
+        banExpiresAt: true,
       },
     });
 
@@ -52,7 +53,15 @@ export class ClerkAuthGuard implements CanActivate {
     }
 
     if (user.isBanned) {
-      throw new ForbiddenException('Account has been banned');
+      // Auto-unban if temp ban has expired
+      if (user.banExpiresAt && user.banExpiresAt < new Date()) {
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { isBanned: false, banExpiresAt: null },
+        });
+      } else {
+        throw new ForbiddenException('Account has been banned');
+      }
     }
 
     if (user.isDeactivated || user.isDeleted) {

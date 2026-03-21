@@ -117,6 +117,28 @@ export class AdminService {
       actionTaken = 'PERMANENT_BAN';
     }
 
+    // Fetch report to get target content/user IDs
+    const report = await this.prisma.report.findUnique({
+      where: { id: reportId },
+      select: { reportedPostId: true, reportedCommentId: true, reportedUserId: true },
+    });
+    if (!report) throw new NotFoundException('Report not found');
+
+    // Actually remove content when action is REMOVE_CONTENT
+    if (actionTaken === 'CONTENT_REMOVED') {
+      if (report.reportedPostId) {
+        await this.prisma.post.update({ where: { id: report.reportedPostId }, data: { isRemoved: true } }).catch(() => {});
+      }
+      if (report.reportedCommentId) {
+        await this.prisma.comment.update({ where: { id: report.reportedCommentId }, data: { isRemoved: true } }).catch(() => {});
+      }
+    }
+
+    // Actually ban user when action is BAN_USER
+    if (actionTaken === 'PERMANENT_BAN' && report.reportedUserId) {
+      await this.banUser(adminId, report.reportedUserId, note || 'Banned via report resolution');
+    }
+
     return this.prisma.report.update({
       where: { id: reportId },
       data: {
@@ -146,6 +168,14 @@ export class AdminService {
 
   async banUser(adminId: string, targetId: string, reason: string, duration?: number) {
     await this.assertAdmin(adminId);
+
+    // Verify target exists and is not an admin
+    const target = await this.prisma.user.findUnique({
+      where: { id: targetId },
+      select: { id: true, role: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+    if (target.role === 'ADMIN') throw new ForbiddenException('Cannot ban an admin user');
 
     const banExpiresAt = duration ? new Date(Date.now() + duration * 3600000) : null;
 

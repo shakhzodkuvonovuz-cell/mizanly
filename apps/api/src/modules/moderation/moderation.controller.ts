@@ -25,6 +25,7 @@ export class ModerationController {
   constructor(private moderationService: ModerationService) {}
 
   @Post('check-text')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Check text for violations' })
   checkText(
     @CurrentUser('id') userId: string,
@@ -34,6 +35,7 @@ export class ModerationController {
   }
 
   @Post('check-image')
+  @Throttle({ default: { ttl: 60000, limit: 5 } })
   @ApiOperation({ summary: 'Check image URL for violations' })
   checkImage(
     @CurrentUser('id') userId: string,

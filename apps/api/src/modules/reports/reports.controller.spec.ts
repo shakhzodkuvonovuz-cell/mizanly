@@ -70,12 +70,12 @@ describe('ReportsController', () => {
   });
 
   describe('resolve', () => {
-    it('should call reportsService.resolve with id, adminId, and actionTaken', async () => {
+    it('should call reportsService.resolve with id, adminId, and actionTaken from DTO', async () => {
       service.resolve.mockResolvedValue({ resolved: true } as any);
 
-      await controller.resolve(userId, 'rep-1', 'REMOVE' as any);
+      await controller.resolve(userId, 'rep-1', { actionTaken: 'CONTENT_REMOVED' } as any);
 
-      expect(service.resolve).toHaveBeenCalledWith('rep-1', userId, 'REMOVE');
+      expect(service.resolve).toHaveBeenCalledWith('rep-1', userId, 'CONTENT_REMOVED');
     });
   });
 

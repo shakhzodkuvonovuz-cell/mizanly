@@ -10,17 +10,24 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ModerationAction } from '@prisma/client';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { IsEnum } from 'class-validator';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ReportsService } from './reports.service';
 import { CreateReportDto } from './dto/create-report.dto';
 
+class ResolveReportDto {
+  @ApiProperty({ enum: ModerationAction })
+  @IsEnum(ModerationAction)
+  actionTaken: ModerationAction;
+}
+
 @ApiTags('Reports')
 @ApiBearerAuth()
 @UseGuards(ClerkAuthGuard)
 @Throttle({ default: { limit: 60, ttl: 60000 } })
-@Controller('api/v1/reports')
+@Controller('reports')
 export class ReportsController {
   constructor(private service: ReportsService) {}
 
@@ -61,9 +68,9 @@ export class ReportsController {
   resolve(
     @CurrentUser('id') adminId: string,
     @Param('id') id: string,
-    @Body('actionTaken') actionTaken: ModerationAction,
+    @Body() body: ResolveReportDto,
   ) {
-    return this.service.resolve(id, adminId, actionTaken);
+    return this.service.resolve(id, adminId, body.actionTaken);
   }
 
   @Patch(':id/dismiss')
