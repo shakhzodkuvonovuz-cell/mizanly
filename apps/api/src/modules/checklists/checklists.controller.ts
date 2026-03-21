@@ -3,16 +3,16 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString } from 'class-validator';
+import { IsString, MaxLength } from 'class-validator';
 import { ChecklistsService } from './checklists.service';
 
 class CreateChecklistDto {
-  @IsString() conversationId: string;
-  @IsString() title: string;
+  @IsString() @MaxLength(50) conversationId: string;
+  @IsString() @MaxLength(200) title: string;
 }
 
 class AddItemDto {
-  @IsString() text: string;
+  @IsString() @MaxLength(500) text: string;
 }
 
 @ApiTags('Message Checklists')

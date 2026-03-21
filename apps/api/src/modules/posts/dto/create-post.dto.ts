@@ -1,6 +1,6 @@
 import {
   IsString, IsOptional, IsEnum, IsArray,
-  MaxLength, IsBoolean, IsUrl, ArrayMaxSize, IsNumber,
+  MaxLength, IsBoolean, IsUrl, ArrayMaxSize, IsNumber, Min, Max,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -47,16 +47,22 @@ export class CreatePostDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
+  @Min(1)
+  @Max(10000)
   mediaWidth?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
+  @Min(1)
+  @Max(10000)
   mediaHeight?: number;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(600)
   videoDuration?: number;
 
   @ApiProperty({ required: false, type: [String], maxItems: 20 })
@@ -69,7 +75,9 @@ export class CreatePostDto {
   @ApiProperty({ required: false, type: [String] })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(50)
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   mentions?: string[];
 
   @ApiProperty({ required: false })

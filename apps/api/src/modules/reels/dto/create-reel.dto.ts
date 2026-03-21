@@ -8,6 +8,8 @@ import {
   MaxLength,
   IsUUID,
   ArrayMaxSize,
+  Min,
+  Max,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -23,6 +25,8 @@ export class CreateReelDto {
 
   @ApiProperty()
   @IsNumber()
+  @Min(1)
+  @Max(180)
   duration: number;
 
   @ApiProperty({ required: false, maxLength: 500 })

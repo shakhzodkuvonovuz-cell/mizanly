@@ -9,6 +9,8 @@ import {
   MaxLength,
   IsUUID,
   ArrayMaxSize,
+  Min,
+  Max,
 } from 'class-validator';
 import { VideoCategory } from '@prisma/client';
 import { ApiProperty } from '@nestjs/swagger';
@@ -40,6 +42,8 @@ export class CreateVideoDto {
 
   @ApiProperty()
   @IsNumber()
+  @Min(1)
+  @Max(43200)
   duration: number;
 
   @ApiProperty({ required: false, enum: VideoCategory })

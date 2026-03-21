@@ -18,16 +18,16 @@ export class ReorderChatFoldersDto {
 
 export class CreateChatFolderDto {
   @ApiProperty() @IsString() @MaxLength(50) name: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() icon?: string;
-  @ApiPropertyOptional() @IsOptional() @IsArray() @IsString({ each: true }) conversationIds?: string[];
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) icon?: string;
+  @ApiPropertyOptional() @IsOptional() @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) conversationIds?: string[];
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeGroups?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeChannels?: boolean;
 }
 
 export class UpdateChatFolderDto {
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(50) name?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() icon?: string;
-  @ApiPropertyOptional() @IsOptional() @IsArray() @IsString({ each: true }) conversationIds?: string[];
+  @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(20) icon?: string;
+  @ApiPropertyOptional() @IsOptional() @IsArray() @ArrayMaxSize(200) @IsString({ each: true }) conversationIds?: string[];
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeGroups?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() includeChannels?: boolean;
 }

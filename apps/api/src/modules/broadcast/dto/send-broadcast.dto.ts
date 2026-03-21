@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsUrl, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SendBroadcastDto {
@@ -14,12 +14,13 @@ export class SendBroadcastDto {
   messageType?: string;
 
   @ApiProperty({ required: false })
-  @IsString()
+  @IsUrl()
   @IsOptional()
   mediaUrl?: string;
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
+  @MaxLength(30)
   mediaType?: string;
 }

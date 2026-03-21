@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsUrl, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, MaxLength, IsUrl, IsBoolean, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProfileDto {
@@ -32,16 +32,19 @@ export class UpdateProfileDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(100)
   location?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @MaxLength(5)
   language?: string;
 
   @ApiProperty({ required: false })
   @IsOptional()
   @IsString()
+  @IsIn(['dark', 'light', 'system'])
   theme?: string;
 
   @ApiProperty({ required: false })

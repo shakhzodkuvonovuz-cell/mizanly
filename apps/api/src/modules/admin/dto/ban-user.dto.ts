@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, MaxLength, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, MaxLength, Min, Max } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class BanUserDto {
@@ -11,5 +11,6 @@ export class BanUserDto {
   @IsOptional()
   @IsNumber()
   @Min(1)
+  @Max(8760)
   duration?: number;
 }

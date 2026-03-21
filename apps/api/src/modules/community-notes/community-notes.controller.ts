@@ -4,17 +4,17 @@ import { Throttle } from '@nestjs/throttler';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { IsString } from 'class-validator';
+import { IsString, IsIn, MaxLength } from 'class-validator';
 import { CommunityNotesService } from './community-notes.service';
 
 class CreateNoteDto {
-  @IsString() contentType: string;
-  @IsString() contentId: string;
-  @IsString() note: string;
+  @IsString() @IsIn(['post', 'thread', 'reel']) contentType: string;
+  @IsString() @MaxLength(50) contentId: string;
+  @IsString() @MaxLength(2000) note: string;
 }
 
 class RateNoteDto {
-  @IsString() rating: string; // helpful, somewhat_helpful, not_helpful
+  @IsString() @IsIn(['helpful', 'somewhat_helpful', 'not_helpful']) rating: string;
 }
 
 @ApiTags('Community Notes')
