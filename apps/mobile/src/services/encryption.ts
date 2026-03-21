@@ -51,9 +51,8 @@ class EncryptionService {
       // Register public key with server
       await this.registerPublicKey();
       this.initialized = true;
-    } catch {
-      // Initialization failed — encryption won't be available
-      // This is OK, app works without encryption
+    } catch (err) {
+      console.warn('[Encryption] Initialization failed — E2E encryption unavailable:', err instanceof Error ? err.message : err);
       this.initialized = false;
     }
   }

@@ -559,5 +559,9 @@ F05/F06 (double prefix retention/embeddings), F09/F37/F38/F39/F46/F47/F50 (file 
 ### FIXED directly (18):
 F01 (bookmarks double prefix → bookmarks), F02 (downloads double prefix → downloads), F07 (broadcast /broadcast-channels/ → /broadcast/, mine → my), F08 (channel posts path alignment), F10 (halal finder query string), F12 (blocked keyword field), F13 (wellbeing field name), F14 (account export endpoint), F29/F30/F31 (bookmarks /saved → /status), F34 (daily reminder endpoint), F40 (slow log before return)
 
-### NOTED:
-- [25] F11/F15-F28/F32/F33/F35/F36/F41-F45/F48/F49/F51/F52 — feature gaps, integration needs, minor types
+### FIXED in second pass (12 additional):
+F11 (bookmarks savePost: body with postId instead of URL param), F33 (moveToCollection: /:bookmarkId/collection → /posts/:postId/move), F35 (thread/video save: removed ignored collectionName body), F44 (encryption init: logs warning instead of silent catch), F48 (islamicApi Zakat: clean param conversion instead of double cast), F49 (islamicApi: 20+ untyped endpoints given proper return types — duas, fasting, names of Allah, hifz, daily briefing, dhikr sessions/challenges), F52 (Content-Type only sent with body — GET requests no longer include it)
+
+### NOTED (genuinely feature gaps):
+- [25] F15-F28 14 backend modules with no mobile service layer — feature build
+- [25] F32/F36/F41-F43 Integration gaps — feature work not code fixes

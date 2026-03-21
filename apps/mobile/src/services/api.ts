@@ -183,7 +183,7 @@ class ApiClient {
       res = await fetch(`${API_URL}${path}`, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
+          ...(options.body ? { 'Content-Type': 'application/json' } : {}),
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...options.headers,
         },
@@ -1179,15 +1179,15 @@ export const hashtagsApi = {
 // ── Bookmarks ──
 export const bookmarksApi = {
   savePost: (postId: string, collectionName?: string) =>
-    api.post(`/bookmarks/posts/${postId}`, { collectionName }),
+    api.post('/bookmarks/posts', { postId, collectionName }),
   unsavePost: (postId: string) =>
     api.delete(`/bookmarks/posts/${postId}`),
-  saveThread: (threadId: string, collectionName?: string) =>
-    api.post(`/bookmarks/threads/${threadId}`, { collectionName }),
+  saveThread: (threadId: string) =>
+    api.post(`/bookmarks/threads/${threadId}`),
   unsaveThread: (threadId: string) =>
     api.delete(`/bookmarks/threads/${threadId}`),
-  saveVideo: (videoId: string, collectionName?: string) =>
-    api.post(`/bookmarks/videos/${videoId}`, { collectionName }),
+  saveVideo: (videoId: string) =>
+    api.post(`/bookmarks/videos/${videoId}`),
   unsaveVideo: (videoId: string) =>
     api.delete(`/bookmarks/videos/${videoId}`),
   getSavedPosts: (collectionName?: string, cursor?: string) =>
@@ -1198,8 +1198,8 @@ export const bookmarksApi = {
     api.get<PaginatedResponse<Video>>(`/bookmarks/videos${qs({ collectionName, cursor })}`),
   getCollections: () =>
     api.get<BookmarkCollection[]>('/bookmarks/collections'),
-  moveToCollection: (bookmarkId: string, collectionName: string) =>
-    api.patch(`/bookmarks/${bookmarkId}/collection`, { collectionName }),
+  moveToCollection: (postId: string, collectionName: string) =>
+    api.patch(`/bookmarks/posts/${postId}/move`, { collectionName }),
   isPostSaved: (postId: string) =>
     api.get<{ saved: boolean }>(`/bookmarks/posts/${postId}/status`),
   isThreadSaved: (threadId: string) =>

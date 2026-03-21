@@ -41,8 +41,13 @@ export const islamicApi = {
   getMosques: (lat: number, lng: number, radius?: number) =>
     api.get<Mosque[]>(`/islamic/mosques${qs({ lat, lng, radius })}`),
 
-  calculateZakat: (input: ZakatCalculationInput) =>
-    api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(input as unknown as Record<string, string | number | undefined>)}`),
+  calculateZakat: (input: ZakatCalculationInput) => {
+    const params: Record<string, string | number | undefined> = {};
+    for (const [k, v] of Object.entries(input)) {
+      if (v !== undefined && v !== null) params[k] = v as string | number;
+    }
+    return api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(params)}`);
+  },
 
   getRamadanInfo: (year?: number, lat?: number, lng?: number) =>
     api.get<RamadanInfo>(`/islamic/ramadan${qs({ year, lat, lng })}`),
@@ -116,7 +121,7 @@ export const islamicApi = {
   // ── Dhikr Social ──
 
   saveDhikrSession: (data: { phrase: string; count: number; target?: number }) =>
-    api.post('/islamic/dhikr/sessions', data),
+    api.post<{ id: string }>('/islamic/dhikr/sessions', data),
   getDhikrStats: () => api.get<DhikrStats>('/islamic/dhikr/stats'),
   getDhikrLeaderboard: (period?: string) =>
     api.get<DhikrLeaderboardEntry[]>(`/islamic/dhikr/leaderboard${period ? `?period=${period}` : ''}`),
@@ -127,48 +132,48 @@ export const islamicApi = {
   getDhikrChallenge: (id: string) =>
     api.get<DhikrChallengeDetail>(`/islamic/dhikr/challenges/${id}`),
   joinDhikrChallenge: (id: string) =>
-    api.post(`/islamic/dhikr/challenges/${id}/join`, {}),
+    api.post<{ success: boolean }>(`/islamic/dhikr/challenges/${id}/join`, {}),
   contributeToDhikrChallenge: (id: string, count: number) =>
-    api.post(`/islamic/dhikr/challenges/${id}/contribute`, { count }),
+    api.post<{ success: boolean }>(`/islamic/dhikr/challenges/${id}/contribute`, { count }),
 
   // ── Dua Collection ──
 
   getDuas: (category?: string) =>
-    api.get(`/islamic/duas${category ? `?category=${category}` : ''}`),
-  getDuaOfTheDay: () => api.get('/islamic/duas/daily'),
+    api.get<Array<{ id: string; arabic: string; transliteration: string; translation: string; category: string }>>(`/islamic/duas${category ? `?category=${category}` : ''}`),
+  getDuaOfTheDay: () => api.get<{ id: string; arabic: string; transliteration: string; translation: string }>('/islamic/duas/daily'),
   getDuaCategories: () => api.get<string[]>('/islamic/duas/categories'),
-  getDuaById: (id: string) => api.get(`/islamic/duas/${id}`),
-  bookmarkDua: (duaId: string) => api.post(`/islamic/duas/${duaId}/bookmark`, {}),
-  unbookmarkDua: (duaId: string) => api.delete(`/islamic/duas/${duaId}/bookmark`),
-  getBookmarkedDuas: () => api.get('/islamic/duas/bookmarked'),
+  getDuaById: (id: string) => api.get<{ id: string; arabic: string; transliteration: string; translation: string; category: string; reference: string }>(`/islamic/duas/${id}`),
+  bookmarkDua: (duaId: string) => api.post<{ success: boolean }>(`/islamic/duas/${duaId}/bookmark`, {}),
+  unbookmarkDua: (duaId: string) => api.delete<{ success: boolean }>(`/islamic/duas/${duaId}/bookmark`),
+  getBookmarkedDuas: () => api.get<Array<{ id: string; arabic: string; translation: string }>>('/islamic/duas/bookmarked'),
 
   // ── Fasting Tracker ──
 
   logFast: (data: { date: string; isFasting: boolean; fastType?: string; reason?: string }) =>
-    api.post('/islamic/fasting/log', data),
+    api.post<{ id: string }>('/islamic/fasting/log', data),
   getFastingLog: (month: string) =>
-    api.get(`/islamic/fasting/log?month=${month}`),
-  getFastingStats: () => api.get('/islamic/fasting/stats'),
+    api.get<Array<{ date: string; isFasting: boolean; fastType?: string }>>(`/islamic/fasting/log?month=${month}`),
+  getFastingStats: () => api.get<{ totalDays: number; currentStreak: number }>('/islamic/fasting/stats'),
 
   // ── 99 Names of Allah ──
 
-  getNamesOfAllah: () => api.get('/islamic/names-of-allah'),
-  getDailyNameOfAllah: () => api.get('/islamic/names-of-allah/daily'),
-  getNameOfAllah: (num: number) => api.get(`/islamic/names-of-allah/${num}`),
+  getNamesOfAllah: () => api.get<Array<{ number: number; arabic: string; transliteration: string; meaning: string }>>('/islamic/names-of-allah'),
+  getDailyNameOfAllah: () => api.get<{ number: number; arabic: string; transliteration: string; meaning: string }>('/islamic/names-of-allah/daily'),
+  getNameOfAllah: (num: number) => api.get<{ number: number; arabic: string; transliteration: string; meaning: string; description: string }>(`/islamic/names-of-allah/${num}`),
 
   // ── Hifz (Quran Memorization) Tracker ──
 
-  getHifzProgress: () => api.get('/islamic/hifz/progress'),
+  getHifzProgress: () => api.get<Array<{ surahNumber: number; status: string; lastReviewed?: string }>>('/islamic/hifz/progress'),
   updateHifzProgress: (surahNum: number, status: string) =>
-    api.patch(`/islamic/hifz/progress/${surahNum}`, { status }),
-  getHifzStats: () => api.get('/islamic/hifz/stats'),
-  getHifzReviewSchedule: () => api.get('/islamic/hifz/review-schedule'),
+    api.patch<{ surahNumber: number; status: string }>(`/islamic/hifz/progress/${surahNum}`, { status }),
+  getHifzStats: () => api.get<{ memorized: number; inProgress: number; notStarted: number }>('/islamic/hifz/stats'),
+  getHifzReviewSchedule: () => api.get<Array<{ surahNumber: number; nextReviewDate: string }>>('/islamic/hifz/review-schedule'),
 
   // ── Daily Briefing ──
 
   getDailyBriefing: (lat?: number, lng?: number) =>
-    api.get(`/islamic/daily-briefing${qs({ lat, lng })}`),
+    api.get<{ greeting: string; date: string; hijriDate: string; prayerTimes?: Record<string, string>; dailyVerse?: { arabic: string; translation: string }; tasks: Array<{ type: string; completed: boolean }> }>(`/islamic/daily-briefing${qs({ lat, lng })}`),
   completeDailyTask: (taskType: string) =>
-    api.post('/islamic/daily-tasks/complete', { taskType }),
-  getDailyTasksToday: () => api.get('/islamic/daily-tasks/today'),
+    api.post<{ success: boolean }>('/islamic/daily-tasks/complete', { taskType }),
+  getDailyTasksToday: () => api.get<Array<{ type: string; label: string; completed: boolean; xpReward: number }>>('/islamic/daily-tasks/today'),
 };
