@@ -1,5 +1,5 @@
 import {
-  IsString, IsNumber, IsOptional, IsBoolean, IsIn, IsUrl,
+  IsString, IsNumber, IsOptional, IsBoolean, IsIn, IsUrl, IsDateString,
   MaxLength, Min, Max, IsInt,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -41,19 +41,19 @@ export class AnswerFatwaDto {
 export class CreateOpportunityDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(2000) description: string;
-  @ApiProperty() @IsString() category: string;
+  @ApiProperty() @IsString() @MaxLength(50) category: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(300) location?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() date?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() date?: string;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(1) @Max(1000) spotsTotal?: number;
 }
 
 export class CreateEventDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(2000) description?: string;
-  @ApiProperty() @IsString() eventType: string;
+  @ApiProperty() @IsString() @MaxLength(30) eventType: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(300) location?: string;
-  @ApiProperty() @IsString() startDate: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() endDate?: string;
+  @ApiProperty() @IsDateString() startDate: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() endDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnline?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsUrl() coverUrl?: string;
 }

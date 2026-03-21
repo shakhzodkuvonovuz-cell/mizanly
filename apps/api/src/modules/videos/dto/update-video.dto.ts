@@ -5,18 +5,19 @@ import {
   IsEnum,
   IsArray,
   MaxLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { VideoCategory } from '@prisma/client';
 
 export class UpdateVideoDto {
   @IsOptional()
   @IsString()
-  @MaxLength(200)
+  @MaxLength(100)
   title?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(10000)
+  @MaxLength(5000)
   description?: string;
 
   @IsOptional()
@@ -29,6 +30,8 @@ export class UpdateVideoDto {
 
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   @IsString({ each: true })
+  @MaxLength(50, { each: true })
   tags?: string[];
 }

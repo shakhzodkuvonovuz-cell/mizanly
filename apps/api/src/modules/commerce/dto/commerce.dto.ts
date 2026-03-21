@@ -11,7 +11,7 @@ export class CreateProductDto {
   @ApiProperty() @IsString() @MaxLength(2000) description: string;
   @ApiProperty() @IsNumber() @Min(0.01) @Max(1_000_000) price: number;
   @ApiProperty() @IsArray() @IsUrl({}, { each: true }) @ArrayMaxSize(10) images: string[];
-  @ApiProperty() @IsString() category: string;
+  @ApiProperty() @IsString() @MaxLength(50) category: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isHalal?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isMuslimOwned?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsInt() @Min(0) @Max(100_000) stock?: number;
@@ -40,7 +40,7 @@ export class UpdateOrderStatusDto {
 export class CreateBusinessDto {
   @ApiProperty() @IsString() @MaxLength(200) name: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(1000) description?: string;
-  @ApiProperty() @IsString() category: string;
+  @ApiProperty() @IsString() @MaxLength(50) category: string;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(500) address?: string;
   @ApiPropertyOptional() @IsOptional() @IsNumber() lat?: number;
   @ApiPropertyOptional() @IsOptional() @IsNumber() lng?: number;
@@ -54,7 +54,7 @@ export class CreateZakatFundDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
   @ApiProperty() @IsString() @MaxLength(2000) description: string;
   @ApiProperty() @IsNumber() @Min(1) @Max(10_000_000) goalAmount: number;
-  @ApiProperty() @IsString() category: string;
+  @ApiProperty() @IsString() @MaxLength(50) category: string;
 }
 
 export class DonateZakatDto {

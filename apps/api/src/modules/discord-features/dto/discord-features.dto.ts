@@ -1,5 +1,5 @@
 import {
-  IsString, IsOptional, IsArray, MaxLength, ArrayMaxSize, IsUrl,
+  IsString, IsOptional, IsArray, MaxLength, ArrayMaxSize, IsUrl, IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -26,7 +26,7 @@ export class ExecuteWebhookDto {
 
 export class CreateStageSessionDto {
   @ApiProperty() @IsString() @MaxLength(200) title: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() scheduledAt?: string;
+  @ApiPropertyOptional() @IsOptional() @IsDateString() scheduledAt?: string;
 }
 
 export class InviteSpeakerDto {

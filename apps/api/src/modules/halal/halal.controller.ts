@@ -25,7 +25,7 @@ class CreateRestaurantDto {
 
 class AddReviewDto {
   @IsNumber() @Min(1) @Max(5) rating: number;
-  @IsOptional() @IsString() comment?: string;
+  @IsOptional() @IsString() @MaxLength(2000) comment?: string;
 }
 
 @ApiTags('Halal Finder')
