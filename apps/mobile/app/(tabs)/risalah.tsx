@@ -172,10 +172,10 @@ export default function RisalahScreen() {
   const { t, isRTL } = useTranslation();
   const queryClient = useQueryClient();
 
-  const TABS = [
+  const TABS = useMemo(() => [
     { key: 'chats', label: t('risalah.chats') },
     { key: 'groups', label: t('risalah.groups') },
-  ];
+  ], [t]);
   const setUnreadMessages = useStore((s) => s.setUnreadMessages);
   const { getToken } = useAuth();
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());

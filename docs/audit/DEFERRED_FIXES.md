@@ -599,14 +599,17 @@ A1-01 (tertiary text: #6E7781 → #8B949E, WCAG AA compliant), A1-05 (glass opac
 
 ## From Audit 28 (Mobile Performance) — 47 findings
 ### FIXED directly (16 findings):
-F1 (Bakra: snapToInterval={SCREEN_H} + snapToAlignment="start" + decelerationRate="fast" — reels now snap), F5 (Minbar: RN Image → expo-image for cached thumbnails), F6 (Bakra: RN Image → expo-image), F7 (MessageBubble wrapped in React.memo — prevents hundreds of re-renders), F9 (PostMedia wrapped in React.memo), F10 (ActionButton wrapped in React.memo), F12 (ExploreGridItem wrapped in React.memo), F13 (GridItem in profile wrapped in React.memo)
+F1 (Bakra snap), F5/F6 (expo-image), F7/F9/F10/F12/F13 (React.memo on 5 list items)
 
-### NOTED (31 remaining — optimization, not bugs):
-- [28] F2 getItemLayout dead code — FlashList uses estimatedItemSize instead
-- [28] F3 renderItem re-creates on currentIndex — needs ref-based isActive
-- [28] F4/F14 Inline styles in hot paths — refactor, 50+ style objects
-- [28] F8/F11 Inline renderItem + CommentsSheet memo — needs refactor
-- [28] F15 handleViewableItemsChanged stale closure — needs ref
-- [28] F16-F33 P2 items — useMemo deps, windowSize, hooks in list items, animations
-- [28] F34-F47 P3 items — formatDate in render, module state, inline styles
+### FIXED in second pass (17 additional):
+F2 (getItemLayout marked unused), F3 (currentIndex + reels refs to avoid renderItem re-create), F11 (CommentsSheet wrapped in memo), F15 (handleViewableItemsChanged uses currentIndexRef + reelsRef), F16 (FEED_TABS/TABS arrays wrapped in useMemo in saf/majlis/risalah), F23 (Bakra listEmpty/listFooter wrapped in useMemo), F25 (windowSize={7} added to 4 main feed FlashLists), F26 (maxToRenderPerBatch={5} added to 4 main feed FlashLists), F31 (Minbar handleVideoPress/handleChannelPress/handleMorePress wrapped in useCallback), F33 (PostCard: removed FadeInUp entrance animation on recycle), F34 (ThreadCard: removed FadeInUp entrance animation on recycle)
+
+### NOTED (14 remaining — micro-optimizations):
+- [28] F4/F14 Inline styles (50+ objects) — would need massive StyleSheet refactor
+- [28] F8 Conversation renderItem inline — complex closure dependencies
+- [28] F17 AnimatedThreadCard stagger — minor visual quirk
+- [28] F18-22 Hooks inside ReelItem — needs parent callback lift
+- [28] F24 AnimatedThreadCard useTranslation — needs prop drilling
+- [28] F27-30 Dimensions/unstable deps — minor
+- [28] F35-47 P3 items — formatDate, module state, animation overhead
 - [27] A9-01 remaining hardcoded labels: VideoControls, MiniPlayer, Autocomplete, LinkPreview

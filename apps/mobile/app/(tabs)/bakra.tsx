@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, memo } from 'react';
+import { useCallback, useEffect, useRef, useState, memo, useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions, Pressable, type ViewToken, Alert, RefreshControl } from 'react-native';
 import { Image } from 'expo-image';
 import { FlashList, type FlashListRef } from '@shopify/flash-list';
@@ -470,6 +470,10 @@ export default function BakraScreen() {
   const haptic = useHaptic();
   const [refreshing, setRefreshing] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const currentIndexRef = useRef(0);
+  const reelsRef = useRef(reels);
+  useEffect(() => { currentIndexRef.current = currentIndex; }, [currentIndex]);
+  useEffect(() => { reelsRef.current = reels; }, [reels]);
   const [commentsReel, setCommentsReel] = useState<Reel | null>(null);
   const [heartTrigger, setHeartTrigger] = useState(0);
   const videoRefs = useRef<{ [key: string]: Video }>({});
@@ -511,23 +515,23 @@ export default function BakraScreen() {
   const handleViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
     if (viewableItems.length > 0) {
       const rawIndex = viewableItems[0].index;
-      if (rawIndex != null && rawIndex !== currentIndex) {
+      if (rawIndex != null && rawIndex !== currentIndexRef.current) {
         const idx: number = rawIndex;
+        const currentReels = reelsRef.current;
         // Pause previous video
-        const prevReel = reels[currentIndex];
+        const prevReel = currentReels[currentIndexRef.current];
         if (prevReel && videoRefs.current[prevReel.id]) {
           videoRefs.current[prevReel.id].pauseAsync();
         }
         // Play new video and track view
-        const newReel = reels[idx];
+        const newReel = currentReels[idx];
         if (newReel && videoRefs.current[newReel.id]) {
           videoRefs.current[newReel.id].playAsync();
-          // Track view (fire-and-forget)
           reelsApi.view(newReel.id).catch(() => {});
         }
         setCurrentIndex(idx);
-        // Preload next 2 videos via enhanced preloader
-        const videoUrls = reels.map(r => r.hlsUrl || r.videoUrl);
+        // Preload next 2 videos
+        const videoUrls = currentReels.map(r => r.hlsUrl || r.videoUrl);
         onViewableChange(idx, videoUrls);
         // Mark current video as playing
         const currentUrl = videoUrls[idx];
@@ -676,13 +680,14 @@ export default function BakraScreen() {
   ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
-  const getItemLayout = useCallback((_: ArrayLike<Reel> | null | undefined, index: number) => ({
+  // FlashList uses estimatedItemSize instead of getItemLayout
+  const _getItemLayout = useCallback((_: ArrayLike<Reel> | null | undefined, index: number) => ({
     length: SCREEN_H,
     offset: SCREEN_H * index,
     index,
   }), []);
 
-  const listEmpty = feedQuery.isError ? (
+  const listEmpty = useMemo(() => feedQuery.isError ? (
     <EmptyState icon="globe" title={t('common.somethingWentWrong')} subtitle={t('common.pullToRetry')} actionLabel={t('common.retry')} onAction={() => feedQuery.refetch()} />
   ) : feedQuery.isLoading ? (
     <View style={styles.skeletonContainer}>
@@ -696,13 +701,13 @@ export default function BakraScreen() {
       actionLabel={t('bakra.emptyFeed.actionLabel')}
       onAction={() => router.push('/(screens)/create-reel')}
     />
-  );
+  ), [feedQuery.isError, feedQuery.isLoading, t, router]);
 
-  const listFooter = feedQuery.isFetchingNextPage ? (
+  const listFooter = useMemo(() => feedQuery.isFetchingNextPage ? (
     <View style={styles.footer}>
       <Skeleton.Rect width={SCREEN_W} height={SCREEN_H} borderRadius={0} />
     </View>
-  ) : null;
+  ) : null, [feedQuery.isFetchingNextPage]);
 
   return (
     <ScreenErrorBoundary>
@@ -773,6 +778,8 @@ export default function BakraScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={SCREEN_H}
+        windowSize={7}
+        maxToRenderPerBatch={5}
         snapToInterval={SCREEN_H}
         snapToAlignment="start"
         decelerationRate="fast"

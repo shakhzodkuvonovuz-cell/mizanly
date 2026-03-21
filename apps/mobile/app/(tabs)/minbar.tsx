@@ -222,20 +222,20 @@ export default function MinbarScreen() {
     }
   }, [feedQuery.hasNextPage, feedQuery.isFetchingNextPage, feedQuery.fetchNextPage]);
 
-  const handleVideoPress = (video: Video) => {
+  const handleVideoPress = useCallback((video: Video) => {
     haptic.light();
     router.push(`/(screens)/video/${video.id}`);
-  };
+  }, [haptic, router]);
 
-  const handleChannelPress = (handle: string) => {
+  const handleChannelPress = useCallback((handle: string) => {
     haptic.light();
     router.push(`/(screens)/channel/${handle}`);
-  };
+  }, [haptic, router]);
 
-  const handleMorePress = (video: Video) => {
+  const handleMorePress = useCallback((video: Video) => {
     haptic.light();
     setSelectedVideoId(video.id);
-  };
+  }, [haptic]);
 
   const handleSaveToWatchLater = async (videoId: string) => {
     haptic.light();
@@ -446,6 +446,8 @@ export default function MinbarScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={350}
+        windowSize={7}
+        maxToRenderPerBatch={5}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
       />
       <BottomSheet

@@ -8,7 +8,6 @@ import Animated, {
   withTiming,
   withDelay,
   runOnJS,
-  FadeInUp,
 } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -209,7 +208,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
   if (dismissed) return null;
 
   return (
-    <Animated.View entering={FadeInUp.duration(400).springify()} style={styles.card}>
+    <Animated.View style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
         <Pressable

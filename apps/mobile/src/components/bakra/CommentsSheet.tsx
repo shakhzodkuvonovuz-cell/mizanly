@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { View, Text, StyleSheet, TextInput, FlatList, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import Animated, {
@@ -31,7 +31,7 @@ interface CommentsSheetProps {
   onClose: () => void;
 }
 
-export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
+export const CommentsSheet = memo(function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
   const queryClient = useQueryClient();
@@ -257,7 +257,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
       </KeyboardAvoidingView>
     </BottomSheet>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

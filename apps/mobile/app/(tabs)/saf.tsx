@@ -212,10 +212,10 @@ export default function SafScreen() {
     AsyncStorage.setItem(EXPLORE_BANNER_KEY, 'true');
   }, []);
 
-  const FEED_TABS = [
+  const FEED_TABS = useMemo(() => [
     { key: 'following', label: t('saf.following') },
     { key: 'foryou', label: t('saf.forYou') },
-  ];
+  ], [t]);
 
   const feedRef = useRef<FlashListRef<Post | { _type: 'suggested' }>>(null);
   useScrollToTop(feedRef as React.RefObject<FlashListRef<Post | { _type: 'suggested' }>>);
@@ -512,6 +512,8 @@ export default function SafScreen() {
         ListEmptyComponent={listEmpty}
         ListFooterComponent={listFooter}
         estimatedItemSize={400}
+        windowSize={7}
+        maxToRenderPerBatch={5}
         onScroll={onScrollDirection}
         scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}

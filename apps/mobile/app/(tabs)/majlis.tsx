@@ -80,12 +80,12 @@ export default function MajlisScreen() {
   const setFeedType = useStore((s) => s.setMajlisFeedType);
   const [refreshing, setRefreshing] = useState(false);
 
-  const TABS = [
+  const TABS = useMemo(() => [
     { key: 'foryou', label: t('majlis.forYou') },
     { key: 'following', label: t('majlis.following') },
     { key: 'trending', label: t('majlis.trending') },
     { key: 'video', label: t('majlis.video') },
-  ];
+  ], [t]);
 
   // Feed transition animation
   const feedOpacity = useSharedValue(1);
@@ -285,6 +285,8 @@ export default function MajlisScreen() {
           ListEmptyComponent={listEmpty}
           ListFooterComponent={listFooter}
           estimatedItemSize={200}
+          windowSize={7}
+          maxToRenderPerBatch={5}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.emerald} />}
         />
       </Animated.View>
