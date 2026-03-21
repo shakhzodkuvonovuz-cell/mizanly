@@ -21,7 +21,11 @@ export function CharCountRing({ current, max, size = 28 }: CharCountRingProps) {
   const color = ratio >= 1 ? colors.error : ratio >= 0.9 ? colors.gold : colors.emerald;
 
   return (
-    <View style={[styles.wrap, { width: size, height: size }]}>
+    <View
+      style={[styles.wrap, { width: size, height: size }]}
+      accessibilityLabel={`${remaining} characters remaining`}
+      accessibilityRole="text"
+    >
       <Svg width={size} height={size} viewBox="0 0 28 28">
         <Circle
           cx={14} cy={14} r={R}

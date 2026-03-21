@@ -197,7 +197,7 @@ export const ImageLightbox = memo(function ImageLightbox({ visible, images, init
   if (!visible || images.length === 0) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+    <View style={StyleSheet.absoluteFill} pointerEvents="box-none" accessibilityViewIsModal={true}>
       {/* Dark backdrop */}
       <Animated.View style={[styles.backdrop, backdropAnimatedStyle]} />
 
@@ -209,6 +209,8 @@ export const ImageLightbox = memo(function ImageLightbox({ visible, images, init
           onPressIn={closePress.onPressIn}
           onPressOut={closePress.onPressOut}
           hitSlop={16}
+          accessibilityLabel="Close"
+          accessibilityRole="button"
         >
           <Icon name="x" size="lg" color={colors.text.primary} />
         </Pressable>
@@ -222,6 +224,8 @@ export const ImageLightbox = memo(function ImageLightbox({ visible, images, init
           onPressIn={sharePress.onPressIn}
           onPressOut={sharePress.onPressOut}
           hitSlop={16}
+          accessibilityLabel="Share"
+          accessibilityRole="button"
         >
           <Icon name="share" size="lg" color={colors.text.primary} />
         </Pressable>
@@ -270,6 +274,9 @@ export const ImageLightbox = memo(function ImageLightbox({ visible, images, init
                   key={index}
                   style={[styles.dot, index === currentIndex && styles.dotActive]}
                   onPress={() => goToIndex(index)}
+                  hitSlop={18}
+                  accessibilityLabel={`Go to image ${index + 1}`}
+                  accessibilityRole="button"
                 />
               ))}
             </View>

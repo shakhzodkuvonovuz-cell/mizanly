@@ -250,6 +250,7 @@ export function MiniPlayer() {
             <Pressable
               onPress={handlePlayPause}
               style={styles.actionButton}
+              hitSlop={4}
               accessibilityLabel={miniPlayerPlaying ? 'Pause' : 'Play'}
               accessibilityRole="button"
             >
@@ -264,6 +265,7 @@ export function MiniPlayer() {
             <Pressable
               onPress={handleClose}
               style={styles.actionButton}
+              hitSlop={4}
               accessibilityLabel={t('common.close')}
               accessibilityRole="button"
             >

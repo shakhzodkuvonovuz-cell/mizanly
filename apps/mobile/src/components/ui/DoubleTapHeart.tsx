@@ -107,9 +107,19 @@ export const DoubleTapHeart = memo(function DoubleTapHeart({
     opacity: particle2.value > 0 ? 1 - particle2.value : 0,
   }));
 
+  const handleAccessibilityAction = useCallback((event: { nativeEvent: { actionName: string } }) => {
+    if (event.nativeEvent.actionName === 'activate' && !disabled) {
+      triggerAnimation();
+    }
+  }, [disabled, triggerAnimation]);
+
   return (
     <GestureDetector gesture={doubleTap}>
-      <View style={styles.container}>
+      <View
+        style={styles.container}
+        accessibilityActions={[{ name: 'activate', label: 'Like' }]}
+        onAccessibilityAction={handleAccessibilityAction}
+      >
         {children}
         {/* Heart overlay */}
         <View style={styles.heartContainer} pointerEvents="none">

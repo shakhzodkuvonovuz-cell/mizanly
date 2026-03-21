@@ -14,7 +14,7 @@ interface BadgeProps {
   style?: object;
 }
 
-export function Badge({ count, color = colors.error, size = 'sm', style }: BadgeProps) {
+export function Badge({ count, color = colors.error, size = 'sm', style, accessibilityLabel }: BadgeProps & { accessibilityLabel?: string }) {
   const scale = useSharedValue(0);
 
   useEffect(() => {
@@ -37,8 +37,13 @@ export function Badge({ count, color = colors.error, size = 'sm', style }: Badge
   const h = isSm ? 16 : 20;
   const fs = isSm ? 9 : 11;
 
+  const displayText = count > 99 ? '99+' : String(count);
+  const defaultLabel = `${displayText} ${count === 1 ? 'notification' : 'notifications'}`;
+
   return (
     <Animated.View
+      accessibilityLabel={accessibilityLabel || defaultLabel}
+      accessibilityRole="text"
       style={[
         styles.badge,
         {
@@ -57,7 +62,7 @@ export function Badge({ count, color = colors.error, size = 'sm', style }: Badge
       ]}
     >
       <Text style={[styles.text, { fontSize: fs }]}>
-        {count > 99 ? '99+' : count}
+        {displayText}
       </Text>
     </Animated.View>
   );

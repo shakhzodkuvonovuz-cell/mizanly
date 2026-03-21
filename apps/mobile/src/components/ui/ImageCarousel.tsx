@@ -52,6 +52,8 @@ export const ImageCarousel = memo(function ImageCarousel({
       style={[styles.imageWrapper, { width: screenWidth, height }]}
       onPress={() => onImagePress?.(index)}
       disabled={!onImagePress}
+      accessibilityLabel={`Image ${index + 1} of ${images.length}`}
+      accessibilityRole="image"
     >
       <Image
         source={{ uri: item }}
@@ -118,6 +120,9 @@ export const ImageCarousel = memo(function ImageCarousel({
               key={index}
               style={[styles.dotBase, index === currentIndex && styles.dotActive]}
               onPress={() => goToIndex(index)}
+              hitSlop={18}
+              accessibilityLabel={`Go to image ${index + 1}`}
+              accessibilityRole="button"
             />
           ))}
         </View>

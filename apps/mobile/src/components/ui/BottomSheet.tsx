@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Platform, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
@@ -111,7 +111,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
       </Animated.View>
 
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]} accessibilityViewIsModal={true}>
           {Platform.OS === 'ios' ? (
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (

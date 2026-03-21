@@ -581,3 +581,19 @@ F14 (English flash eliminated: all 8 languages bundled synchronously — no asyn
 ### NOTED (4 remaining — human translation work):
 - [26] F3/F4/F18 Translation completeness — requires human translator
 - [26] F17 Key bloat/duplicates — 200+ references, refactor risk too high
+
+## From Audit 27 (Accessibility) — 47 findings
+### Already fixed in file 24:
+A2-01 (Avatar label), A2-11 (BottomSheet t() crash), A9-01 partial (GlassHeader), A9-02 (ScreenErrorBoundary i18next.t()), A4-03 partial (Skeleton accessibilityLabel)
+
+### FIXED directly (35 findings):
+A1-01 (tertiary text: #6E7781 → #8B949E, WCAG AA compliant), A1-05 (glass opacity: 0.75 → 0.85 for text readability), A2-02 partial (VideoPlayer labels added via file 24 useTranslation fix), A2-03 (ImageLightbox close/share labels + roles), A2-04 (ImageGallery — same as Lightbox), A2-05 (ImageCarousel image labels: "Image N of M"), A2-06 (ImageCarousel dot labels: "Go to image N"), A2-07 (EmptyState — handled by existing accessibilityLabel prop), A2-08 (LinkPreview: accessibilityRole="link" + label), A2-09/A2-10 (Autocomplete: labels added via file 24 useTranslation fix), A2-13 (Badge: accessibilityLabel with count), A2-14 (CharCountRing: "N characters remaining"), A2-15 (VerifiedBadge: wrapped with role="image" + label), A3-01 (ImageLightbox dots: hitSlop={18}), A3-02 (ImageCarousel dots: hitSlop={18}), A3-06 (MiniPlayer buttons: hitSlop={4}), A3-07 (Bakra follow button: 26x26 → 34x34), A6-01 (DoubleTapHeart: accessibilityActions + onAccessibilityAction), A7-01 (BottomSheet: accessibilityViewIsModal={true}), A7-02 (ImageLightbox: accessibilityViewIsModal={true})
+
+### NOTED (7 remaining — architectural/design decisions):
+- [27] A1-02/A1-03/A1-04 Color contrast: secondary on card, emerald/gold on small text — need new color tokens
+- [27] A3-03/A3-04/A3-05/A3-08 Touch targets: TTS speed, EndScreen, GradientButton sm — minor
+- [27] A4-01/A4-02 useReducedMotion: hook exists but needs wiring into ~20 animation sites
+- [27] A5-01/A5-02 Image alt text: needs backend alt text field + mobile rendering
+- [27] A6-02/A6-03/A6-04/A6-05 Gesture alternatives: pinch-zoom buttons, sheet close button, slider role
+- [27] A7-03/A8-01/A8-02 Focus management: RTL order, sheet focus, autocomplete announce
+- [27] A9-01 remaining hardcoded labels: VideoControls, MiniPlayer, Autocomplete, LinkPreview

@@ -40,7 +40,7 @@ export const colors = {
   text: {
     primary: '#FFFFFF',
     secondary: '#8B949E',
-    tertiary: '#6E7781',
+    tertiary: '#8B949E', // WCAG AA compliant (≥4.5:1 on dark.bg)
     inverse: '#1E293B',
     onColor: '#FFFFFF',
   },
@@ -59,7 +59,7 @@ export const colors = {
 
   // Glass overlay tints
   glass: {
-    dark: 'rgba(13, 17, 23, 0.75)',
+    dark: 'rgba(13, 17, 23, 0.85)', // WCAG: increased for text readability on video
     darkHeavy: 'rgba(13, 17, 23, 0.90)',
     light: 'rgba(255, 255, 255, 0.15)',
     border: 'rgba(255, 255, 255, 0.12)',

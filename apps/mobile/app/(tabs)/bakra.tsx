@@ -282,7 +282,7 @@ const ReelItem = memo(function ReelItem({
                   style={{
                     position: 'absolute',
                     bottom: -6, alignSelf: 'center',
-                    width: 26, height: 26, borderRadius: radius.full,
+                    width: 34, height: 34, borderRadius: radius.full,
                     overflow: 'hidden',
                     borderWidth: 1.5, borderColor: colors.dark.bg,
                   }}
@@ -290,7 +290,7 @@ const ReelItem = memo(function ReelItem({
                   {item.user?.isFollowing ? (
                     <View
                       style={{
-                        width: 26, height: 26,
+                        width: 34, height: 34,
                         justifyContent: 'center', alignItems: 'center',
                         backgroundColor: colors.emerald,
                       }}
@@ -303,11 +303,11 @@ const ReelItem = memo(function ReelItem({
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
                       style={{
-                        width: 26, height: 26,
+                        width: 34, height: 34,
                         justifyContent: 'center', alignItems: 'center',
                       }}
                     >
-                      <Icon name="plus" size={14} color="#fff" />
+                      <Icon name="plus" size={16} color="#fff" />
                     </LinearGradient>
                   )}
                 </Pressable>

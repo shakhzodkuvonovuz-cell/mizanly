@@ -90,7 +90,11 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
   if (error) {
     // Fallback to simple link display
     return (
-      <Pressable onPress={handlePress}>
+      <Pressable
+        onPress={handlePress}
+        accessibilityRole="link"
+        accessibilityLabel={`Link to ${url}`}
+      >
         <View style={styles.errorContainer}>
           <Icon name="link" size="sm" color={colors.emerald} />
           <Text style={styles.errorText} numberOfLines={1}>
@@ -102,7 +106,11 @@ export const LinkPreview = memo(function LinkPreview({ url, onPress }: LinkPrevi
   }
 
   return (
-    <Pressable onPress={handlePress}>
+    <Pressable
+      onPress={handlePress}
+      accessibilityRole="link"
+      accessibilityLabel={metadata ? `Link to ${metadata.domain}: ${metadata.title}` : `Link to ${url}`}
+    >
       <Animated.View entering={FadeInUp.duration(400)} style={styles.container}>
         <LinearGradient
           colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
