@@ -10,6 +10,7 @@ import { Icon } from './Icon';
 import { Skeleton } from './Skeleton';
 import { colors, spacing, fontSize, radius } from '@/theme';
 import { searchApi } from '@/services/api';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { User } from '@/types';
 
 interface HashtagResult {
@@ -27,6 +28,7 @@ interface AutocompleteProps {
 }
 
 export function Autocomplete({ visible, type, query, onSelect, onClose }: AutocompleteProps) {
+  const { t } = useTranslation();
   const [results, setResults] = useState<User[] | HashtagResult[]>([]);
   const [loading, setLoading] = useState(false);
   const translateY = useSharedValue(-10);

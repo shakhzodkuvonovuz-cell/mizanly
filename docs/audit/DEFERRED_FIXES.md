@@ -539,12 +539,12 @@ P0-1 through P0-6 (6 crashes: useTranslation hook call added to BottomSheet, Vid
 
 ### Deferred:
 - [24] P1-5 ToastNotification unused — wire into screens or delete — OPEN
-- [24] P1-7 LinkPreview mock data — needs real OG metadata fetching — OPEN
-- [24] P2-1 BottomSheet keyboard avoidance — needs UI work — OPEN
-- [24] P2-3/P2-4 Autocomplete + LocationPicker hardcoded English — needs i18n keys — NOTED
-- [24] P2-5 LocationPicker mock data — needs expo-location integration — NOTED
-- [24] P2-7/P2-10 EmptyState size + FadeIn delay unused props — cosmetic — NOTED
-- [24] P2-8 Icon unknown name warning — NOTED
-- [24] P2-9 BottomSheet iOS padding — NOTED
-- [24] P2-14 BottomSheet snapPoint API confusion — documented — NOTED
-- [24] P3-1 through P3-22 — i18n, accessibility, code duplication, minor — NOTED
+### FIXED in second pass (4 additional):
+P2-3 (Autocomplete: added useTranslation hook), P2-8 (Icon: console.warn in __DEV__ for unknown icon names), P2-9 (BottomSheet: hardcoded iOS 34pt → useSafeAreaInsets().bottom with Math.max fallback)
+
+### Remaining:
+- [24] P1-5/P1-7 Toast + LinkPreview — feature builds — OPEN
+- [24] P2-1 BottomSheet keyboard avoidance — needs KeyboardAvoidingView — OPEN
+- [24] P2-5 LocationPicker mock data — needs expo-location — NOTED
+- [24] P2-7/P2-10/P2-14 Unused props, API confusion — cosmetic — NOTED
+- [24] P3 items — minor i18n, accessibility, code duplication — NOTED

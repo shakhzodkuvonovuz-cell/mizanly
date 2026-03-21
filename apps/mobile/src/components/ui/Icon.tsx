@@ -146,7 +146,10 @@ const MIRROR_IN_RTL: Set<IconName> = new Set(['arrow-left', 'chevron-left', 'che
 
 export function Icon({ name, size = 'md', color, strokeWidth = 1.75, fill, style }: IconProps) {
   const LucideIcon = iconMap[name];
-  if (!LucideIcon) return null;
+  if (!LucideIcon) {
+    if (__DEV__) console.warn(`[Icon] Unknown icon name: "${name}"`);
+    return null;
+  }
 
   const dim = typeof size === 'number' ? size : iconSizes[size];
   const isFilled = filledIcons.has(name);

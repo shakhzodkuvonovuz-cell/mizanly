@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef, memo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { View, StyleSheet, Pressable, useWindowDimensions, Platform } from 'react-native';
+import { View, StyleSheet, Pressable, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -27,6 +28,7 @@ interface BottomSheetProps {
 export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdrop }: BottomSheetProps) {
   const { t } = useTranslation();
   const haptic = useHaptic();
+  const insets = useSafeAreaInsets();
   const { height: SCREEN_HEIGHT } = useWindowDimensions();
   const translateY = useSharedValue(SCREEN_HEIGHT);
   const backdropOpacity = useSharedValue(0);
@@ -109,7 +111,7 @@ export function BottomSheet({ visible, onClose, children, snapPoint, blurBackdro
       </Animated.View>
 
       <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined]}>
+        <Animated.View style={[styles.sheet, sheetStyle, maxHeight ? { maxHeight } : undefined, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
           {Platform.OS === 'ios' ? (
             <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill} />
           ) : (
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
     overflow: 'hidden',
-    paddingBottom: Platform.OS === 'ios' ? 34 : spacing.lg,
+    paddingBottom: spacing.lg, // Overridden by inline style with safe area insets
   },
   handleContainer: {
     alignItems: 'center',
