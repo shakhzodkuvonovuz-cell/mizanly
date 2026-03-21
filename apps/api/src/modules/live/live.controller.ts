@@ -5,7 +5,18 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { LiveService } from './live.service';
+import { IsString, IsBoolean, IsOptional, IsUrl, MaxLength } from 'class-validator';
 import { CreateLiveDto } from './dto/create-live.dto';
+
+class StartRehearsalDto {
+  @IsString() @MaxLength(200) title: string;
+  @IsOptional() @IsString() @MaxLength(1000) description?: string;
+  @IsOptional() @IsUrl() thumbnailUrl?: string;
+}
+
+class SetSubscribersOnlyDto {
+  @IsBoolean() subscribersOnly: boolean;
+}
 
 @ApiTags('Live Sessions')
 @Throttle({ default: { limit: 30, ttl: 60000 } })
@@ -170,7 +181,7 @@ export class LiveController {
   @UseGuards(ClerkAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Start a rehearsal (private, no notifications)' })
-  async startRehearsal(@CurrentUser('id') userId: string, @Body() body: { title: string; description?: string; thumbnailUrl?: string }) {
+  async startRehearsal(@CurrentUser('id') userId: string, @Body() body: StartRehearsalDto) {
     return this.live.startRehearsal(userId, body);
   }
 
@@ -199,7 +210,7 @@ export class LiveController {
   async setSubscribersOnly(
     @Param('id') id: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { subscribersOnly: boolean },
+    @Body() body: SetSubscribersOnlyDto,
   ) {
     return this.live.setSubscribersOnly(id, userId, body.subscribersOnly);
   }

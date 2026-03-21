@@ -13,6 +13,16 @@ import { StoryChainsService } from './story-chains.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { IsString, IsOptional, IsUrl, MaxLength } from 'class-validator';
+
+class CreateChainDto {
+  @IsString() @MaxLength(300) prompt: string;
+  @IsOptional() @IsUrl() coverUrl?: string;
+}
+
+class JoinChainDto {
+  @IsString() @MaxLength(50) storyId: string;
+}
 
 @ApiTags('Story Chains')
 @Throttle({ default: { limit: 60, ttl: 60000 } })
@@ -26,7 +36,7 @@ export class StoryChainsController {
   @ApiOperation({ summary: 'Create a new story chain (Add Yours)' })
   createChain(
     @CurrentUser('id') userId: string,
-    @Body() body: { prompt: string; coverUrl?: string },
+    @Body() body: CreateChainDto,
   ) {
     return this.storyChainsService.createChain(userId, body);
   }
@@ -55,7 +65,7 @@ export class StoryChainsController {
   joinChain(
     @Param('chainId') chainId: string,
     @CurrentUser('id') userId: string,
-    @Body() body: { storyId: string },
+    @Body() body: JoinChainDto,
   ) {
     return this.storyChainsService.joinChain(chainId, userId, body.storyId);
   }

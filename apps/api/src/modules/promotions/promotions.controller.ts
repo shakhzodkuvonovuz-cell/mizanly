@@ -11,24 +11,25 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { IsString, IsNumber, IsDateString, Min, Max, MaxLength } from 'class-validator';
 import { PromotionsService } from './promotions.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class BoostPostDto {
-  postId: string;
-  budget: number;
-  duration: number;
+  @IsString() @MaxLength(50) postId: string;
+  @IsNumber() @Min(1) @Max(10000) budget: number;
+  @IsNumber() @Min(1) @Max(720) duration: number;
 }
 
 class SetReminderDto {
-  postId: string;
-  remindAt: string;
+  @IsString() @MaxLength(50) postId: string;
+  @IsDateString() remindAt: string;
 }
 
 class MarkBrandedDto {
-  postId: string;
-  partnerName: string;
+  @IsString() @MaxLength(50) postId: string;
+  @IsString() @MaxLength(200) partnerName: string;
 }
 
 @ApiTags('Promotions')

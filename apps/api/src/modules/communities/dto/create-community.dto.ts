@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsUrl, MaxLength, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateCommunityDto {
@@ -15,7 +15,7 @@ export class CreateCommunityDto {
 
   @ApiProperty({ description: 'Cover image URL', required: false })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   coverUrl?: string;
 
   @ApiProperty({ description: 'Community rules', required: false, maxLength: 2000 })

@@ -12,7 +12,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { IsString, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsIn, Min, Max, MaxLength } from 'class-validator';
 import { SettingsService } from './settings.service';
 import { UpdatePrivacyDto } from './dto/update-privacy.dto';
 import { UpdateNotificationsDto } from './dto/update-notifications.dto';
@@ -23,9 +23,19 @@ import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class AddKeywordDto {
-  @IsString()
-  @MaxLength(100)
-  keyword: string;
+  @IsString() @MaxLength(100) keyword: string;
+}
+
+class AutoPlayDto {
+  @IsString() @IsIn(['wifi', 'always', 'never']) autoPlaySetting: string;
+}
+
+class LogScreenTimeDto {
+  @IsNumber() @Min(1) @Max(86400) seconds: number;
+}
+
+class SetScreenTimeLimitDto {
+  @IsOptional() @IsNumber() @Min(1) @Max(1440) limitMinutes: number | null;
 }
 
 @ApiTags('Settings')
@@ -88,7 +98,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update auto-play setting (wifi | always | never)' })
   updateAutoPlay(
     @CurrentUser('id') userId: string,
-    @Body() body: { autoPlaySetting: string },
+    @Body() body: AutoPlayDto,
   ) {
     return this.settingsService.updateAutoPlaySetting(userId, body.autoPlaySetting);
   }
@@ -122,7 +132,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Log a screen time session' })
   logScreenTime(
     @CurrentUser('id') userId: string,
-    @Body() body: { seconds: number },
+    @Body() body: LogScreenTimeDto,
   ) {
     return this.settingsService.logScreenTime(userId, body.seconds);
   }
@@ -137,7 +147,7 @@ export class SettingsController {
   @ApiOperation({ summary: 'Set daily screen time limit' })
   setScreenTimeLimit(
     @CurrentUser('id') userId: string,
-    @Body() body: { limitMinutes: number | null },
+    @Body() body: SetScreenTimeLimitDto,
   ) {
     return this.settingsService.setScreenTimeLimit(userId, body.limitMinutes);
   }

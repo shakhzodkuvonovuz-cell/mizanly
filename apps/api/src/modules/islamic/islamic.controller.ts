@@ -36,6 +36,22 @@ import { CreateHajjProgressDto, UpdateHajjProgressDto } from './dto/hajj.dto';
 import { ApplyScholarVerificationDto } from './dto/scholar-verification.dto';
 import { UpdateContentFilterDto } from './dto/content-filter.dto';
 import { SaveDhikrSessionDto, CreateDhikrChallengeDto, ContributeDhikrDto } from './dto/dhikr.dto';
+import { IsBoolean, IsDateString, MaxLength } from 'class-validator';
+
+class LogFastDto {
+  @IsDateString() date: string;
+  @IsBoolean() isFasting: boolean;
+  @IsOptional() @IsString() @IsIn(['obligatory', 'sunnah', 'voluntary', 'makeup']) fastType?: string;
+  @IsOptional() @IsString() @MaxLength(500) reason?: string;
+}
+
+class UpdateHifzStatusDto {
+  @IsString() @IsIn(['not_started', 'in_progress', 'memorized', 'needs_review']) status: string;
+}
+
+class CompleteDailyTaskDto {
+  @IsString() @IsIn(['dhikr', 'quran', 'reflection', 'dua', 'charity']) taskType: string;
+}
 
 class PrayerTimesQueryDto {
   @ApiProperty({ description: 'Latitude', example: 24.7136 })
@@ -551,7 +567,7 @@ export class IslamicController {
   @ApiOperation({ summary: 'Log a fast (or not fasting with reason)' })
   async logFast(
     @CurrentUser('id') userId: string,
-    @Body() body: { date: string; isFasting: boolean; fastType?: string; reason?: string },
+    @Body() body: LogFastDto,
   ) {
     return this.islamicService.logFast(userId, body);
   }
@@ -676,7 +692,7 @@ export class IslamicController {
   async updateHifzProgress(
     @CurrentUser('id') userId: string,
     @Param('surahNum', ParseIntPipe) surahNum: number,
-    @Body() body: { status: string },
+    @Body() body: UpdateHifzStatusDto,
   ) {
     return this.islamicService.updateHifzProgress(userId, surahNum, body.status);
   }
@@ -726,7 +742,7 @@ export class IslamicController {
   @ApiOperation({ summary: 'Complete a daily task (dhikr, quran, or reflection)' })
   async completeDailyTask(
     @CurrentUser('id') userId: string,
-    @Body() body: { taskType: string },
+    @Body() body: CompleteDailyTaskDto,
   ) {
     return this.islamicService.completeDailyTask(userId, body.taskType);
   }

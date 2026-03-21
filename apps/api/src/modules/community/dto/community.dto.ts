@@ -1,5 +1,5 @@
 import {
-  IsString, IsNumber, IsOptional, IsBoolean, IsIn,
+  IsString, IsNumber, IsOptional, IsBoolean, IsIn, IsUrl,
   MaxLength, Min, Max, IsInt,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -55,11 +55,11 @@ export class CreateEventDto {
   @ApiProperty() @IsString() startDate: string;
   @ApiPropertyOptional() @IsOptional() @IsString() endDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnline?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() coverUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUrl() coverUrl?: string;
 }
 
 export class CreateVoicePostDto {
-  @ApiProperty() @IsString() audioUrl: string;
+  @ApiProperty() @IsUrl() audioUrl: string;
   @ApiProperty() @IsNumber() @Min(1) @Max(300) duration: number;
   @ApiPropertyOptional() @IsOptional() @IsString() @MaxLength(5000) transcript?: string;
 }

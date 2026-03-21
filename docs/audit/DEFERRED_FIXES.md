@@ -378,6 +378,19 @@ P0-CASCADE-01 (Message.sender→SetNull), P0-CASCADE-02 (Tip.sender/receiver→S
 - [15] P2-* (39 findings) — Missing indexes, enums, design patterns — OPEN (batch)
 - [15] P3-* (12 findings) — Redundant indexes, minor — NOTED
 
+## From Audit 16 (DTO Validation) — 142 findings
+### Already fixed in previous sessions (26):
+C-01/C-02/C-03/C-04/C-05/H-09/H-10/H-18 + C-08 items from files 07-11
+
+### FIXED directly (38):
+C-06 (promotions DTOs validated), C-07 (subtitles @IsUrl/@MaxLength), C-08 remaining: Islamic 3 DTOs, Live 2 DTOs, Settings 3 DTOs, StoryChains 2 DTOs, H-07/H-08/H-20/H-21 (coverUrl/audioUrl → @IsUrl)
+
+### Remaining (batch across 40+ files — tracked separately):
+- 6 remaining C-08 inline types
+- 15+ HIGH URL validation items
+- 52 MEDIUM @MaxLength/@ArrayMaxSize items
+- 21 LOW naming/documentation items
+
 ---
 
 ## Summary

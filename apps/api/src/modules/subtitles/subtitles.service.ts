@@ -7,10 +7,12 @@ import {
 import { PrismaService } from '../../config/prisma.service';
 import { VideoStatus } from '@prisma/client';
 
+import { IsString, IsUrl, MaxLength } from 'class-validator';
+
 export class CreateSubtitleTrackDto {
-  label: string;
-  language: string;
-  srtUrl: string;
+  @IsString() @MaxLength(100) label: string;
+  @IsString() @MaxLength(10) language: string;
+  @IsUrl() srtUrl: string;
 }
 
 @Injectable()
