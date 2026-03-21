@@ -376,7 +376,7 @@ ${topPostsSummary || 'No posts in the last 30 days.'}
         throw new Error('AI service unavailable');
       }
 
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       const answer = data.content?.[0]?.text || 'Unable to analyze your data right now.';
 
       return { answer, dataUsed };

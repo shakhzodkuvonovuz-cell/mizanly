@@ -94,7 +94,7 @@ export class PushService {
           continue;
         }
         // Expo returns { data: ExpoPushTicket[] }
-        const result = await response.json();
+        const result: { data?: Array<{ status: string; id?: string; message?: string; details?: { error: string } }> } = await response.json();
         const tickets: ExpoPushTicket[] = result.data || result;
         await this.handlePushResponse(batch, tickets);
         allTickets.push(...tickets);

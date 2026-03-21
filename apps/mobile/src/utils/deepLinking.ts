@@ -45,7 +45,7 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
       const parsed = new URL(url);
       path = parsed.pathname + parsed.search;
     } else {
-      console.warn('Unsupported deep link URL:', url);
+      if (__DEV__) console.warn('Unsupported deep link URL:', url);
       return null;
     }
 
@@ -112,13 +112,13 @@ export function parseDeepLink(url: string): ParsedDeepLink | null {
       'hashtag',
     ];
     if (!validScreens.includes(screen)) {
-      console.warn(`Unknown deep link screen: ${screen}`);
+      if (__DEV__) console.warn(`Unknown deep link screen: ${screen}`);
       return { screen: 'post', params };
     }
 
     return { screen, params };
   } catch (error) {
-    console.error('Error parsing deep link:', error, url);
+    if (__DEV__) console.error('Error parsing deep link:', error, url);
     return null;
   }
 }
@@ -263,7 +263,7 @@ export function navigateToDeepLink(url: string): boolean {
       break;
 
     default:
-      console.warn(`Unhandled deep link screen: ${screen}`);
+      if (__DEV__) console.warn(`Unhandled deep link screen: ${screen}`);
       return false;
   }
 

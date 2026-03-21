@@ -63,7 +63,7 @@ function SignInScreenContent() {
         router.push('/(screens)/2fa-verify' as never);
       }
     } catch (err: unknown) {
-      console.error('Sign in error:', JSON.stringify(err, null, 2));
+      if (__DEV__) console.error('Sign in error:', JSON.stringify(err, null, 2));
       const e = err as { errors?: Array<{ longMessage?: string; message?: string }>; message?: string };
       setError(e.errors?.[0]?.longMessage || e.errors?.[0]?.message || e.message || 'Sign in failed');
     } finally {

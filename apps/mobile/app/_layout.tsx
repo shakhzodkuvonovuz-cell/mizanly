@@ -190,7 +190,7 @@ function AuthGuard() {
   useEffect(() => {
     api.setTokenGetter(async () => {
       const token = await getToken();
-      if (!token) console.warn('[API] No auth token from Clerk');
+      if (!token && __DEV__) console.warn('[API] No auth token from Clerk');
       return token;
     });
   }, [getToken]);

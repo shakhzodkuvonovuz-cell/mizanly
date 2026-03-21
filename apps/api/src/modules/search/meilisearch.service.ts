@@ -111,7 +111,7 @@ export class MeilisearchService implements OnModuleInit {
         this.logger.warn(`Meilisearch search failed for ${indexName}: ${response.status}`);
         return null;
       }
-      return response.json();
+      return response.json() as Promise<MeilisearchSearchResult>;
     } catch (error) {
       this.logger.error(`Meilisearch search error for ${indexName}`, error instanceof Error ? error.message : error);
       return null;

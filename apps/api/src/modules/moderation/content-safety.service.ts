@@ -63,7 +63,7 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
       });
 
       if (!response.ok) return { safe: false, confidence: 0, flags: ['api_error'], action: 'flag' };
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       const text = data.content?.[0]?.text || '';
       try {
         const parsed = JSON.parse(text);
@@ -112,7 +112,7 @@ Respond as JSON: {"safe": boolean, "confidence": 0-1, "flags": ["nudity"|"violen
       });
 
       if (!response.ok) return { safe: false, flags: ['api_error'] };
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       try {
         const parsed = JSON.parse(data.content?.[0]?.text || '{}');
         return {

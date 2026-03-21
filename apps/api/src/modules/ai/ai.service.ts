@@ -93,7 +93,7 @@ export class AiService {
         return this.getFallbackResponse(prompt);
       }
 
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       return data.content?.[0]?.text || this.getFallbackResponse(prompt);
     } catch (error) {
       this.logger.error('Claude API call failed', error instanceof Error ? error.message : error);
@@ -545,7 +545,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
         return { classification: 'WARNING', reason: 'Moderation API error — flagged for review', categories: ['moderation_error'] };
       }
 
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       const text = data.content?.[0]?.text?.trim() || '';
 
       // Extract JSON from response (Claude sometimes wraps in markdown)
@@ -618,7 +618,7 @@ Respond ONLY with JSON: {"classification": "SAFE", "reason": null, "categories":
         return 'Image';
       }
 
-      const data = await response.json();
+      const data: { content?: Array<{ text?: string }> } = await response.json();
       const altText = data.content?.[0]?.text?.trim() || 'Image';
       // Truncate to 125 chars for WCAG best practice
       return altText.slice(0, 125);

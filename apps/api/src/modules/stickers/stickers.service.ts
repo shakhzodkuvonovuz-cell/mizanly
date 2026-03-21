@@ -367,7 +367,7 @@ export class StickersService {
       throw new Error(`Claude API error: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: { content?: Array<{ text?: string }> } = await response.json();
     const text = data.content?.[0]?.text || '';
 
     // Extract SVG from response (it might be wrapped in markdown code blocks)

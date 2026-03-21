@@ -182,7 +182,7 @@ export default function SavedScreen() {
           setFolderItems([]);
         }
       } catch (error) {
-        console.error('Failed to load folder:', error);
+        if (__DEV__) console.error('Failed to load folder:', error);
         setFolderItems([]);
       } finally {
         setFolderLoading(false);

@@ -56,7 +56,7 @@ export default function BroadcastChannelScreen() {
       setChannel(data);
       setIsAdmin(data.role === 'owner' || data.role === 'admin');
     } catch (error) {
-      console.error('Failed to load channel', error);
+      if (__DEV__) console.error('Failed to load channel', error);
     }
   }, [id]);
 
@@ -70,7 +70,7 @@ export default function BroadcastChannelScreen() {
       setCursor(response.meta.cursor);
       setHasMore(response.meta.hasMore);
     } catch (error) {
-      console.error('Failed to load messages', error);
+      if (__DEV__) console.error('Failed to load messages', error);
     } finally {
       setLoading(false);
       if (refresh) setRefreshing(false);
@@ -97,7 +97,7 @@ export default function BroadcastChannelScreen() {
       setMessages(prev => [sent, ...prev]);
       setNewMessage('');
     } catch (error) {
-      console.error('Failed to send message', error);
+      if (__DEV__) console.error('Failed to send message', error);
     } finally {
       setSending(false);
     }
@@ -114,7 +114,7 @@ export default function BroadcastChannelScreen() {
         setChannel({ ...channel, isMuted: true });
       }
     } catch (error) {
-      console.error('Failed to toggle mute', error);
+      if (__DEV__) console.error('Failed to toggle mute', error);
     }
   }, [channel]);
 
@@ -129,7 +129,7 @@ export default function BroadcastChannelScreen() {
         setChannel({ ...channel, isSubscribed: true, subscribersCount: channel.subscribersCount + 1 });
       }
     } catch (error) {
-      console.error('Failed to toggle subscription', error);
+      if (__DEV__) console.error('Failed to toggle subscription', error);
     }
   }, [channel]);
 
@@ -150,7 +150,7 @@ export default function BroadcastChannelScreen() {
       }
       setMessageSheetVisible(false);
     } catch (error) {
-      console.error('Failed to pin/unpin message', error);
+      if (__DEV__) console.error('Failed to pin/unpin message', error);
     }
   }, [selectedMessage, channel]);
 
@@ -161,7 +161,7 @@ export default function BroadcastChannelScreen() {
       setMessages(prev => prev.filter(m => m.id !== selectedMessage.id));
       setMessageSheetVisible(false);
     } catch (error) {
-      console.error('Failed to delete message', error);
+      if (__DEV__) console.error('Failed to delete message', error);
     }
   }, [selectedMessage, channel]);
 

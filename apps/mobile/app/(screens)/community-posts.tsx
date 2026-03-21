@@ -186,7 +186,7 @@ export default function CommunityPostsScreen() {
     },
     onError: (error) => {
       Alert.alert(t('common.error'), t('communityPosts.createError'));
-      console.error('Create post error:', error);
+      if (__DEV__) console.error('Create post error:', error);
     },
   });
 
@@ -223,7 +223,7 @@ export default function CommunityPostsScreen() {
     },
     onError: (error) => {
       Alert.alert(t('common.error'), t('communityPosts.deleteError'));
-      console.error('Delete post error:', error);
+      if (__DEV__) console.error('Delete post error:', error);
     },
   });
 

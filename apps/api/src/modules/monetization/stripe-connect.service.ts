@@ -69,7 +69,7 @@ export class StripeConnectService {
       throw new BadRequestException('Failed to create payment account');
     }
 
-    const account = await response.json();
+    const account: { id?: string; [key: string]: unknown } = await response.json();
     const accountId = account.id;
     if (!accountId) {
       throw new BadRequestException('Stripe returned invalid account');
@@ -101,7 +101,7 @@ export class StripeConnectService {
       throw new BadRequestException('Failed to generate onboarding link');
     }
 
-    const link = await linkResponse.json();
+    const link: { url?: string; [key: string]: unknown } = await linkResponse.json();
     return { accountId, onboardingUrl: link.url };
   }
 
@@ -150,7 +150,7 @@ export class StripeConnectService {
         throw new BadRequestException('Payment processing failed');
       }
 
-      const pi = await response.json();
+      const pi: { id?: string; [key: string]: unknown } = await response.json();
       paymentIntentId = pi.id;
     }
 

@@ -186,7 +186,7 @@ export const ImageLightbox = memo(function ImageLightbox({ visible, images, init
         message: images[currentIndex],
       });
     } catch (error) {
-      console.error('Error sharing image:', error);
+      if (__DEV__) console.error('Error sharing image:', error);
     }
   }, [images, currentIndex]);
 

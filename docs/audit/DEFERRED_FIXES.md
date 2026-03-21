@@ -633,12 +633,13 @@ F4.2 (push-trigger error instanceof check), F4.4 (ai.service error logging typed
 ### Already fixed in prior files:
 F4.1 (push.service — file 17), F4.3 (stripe-webhook — file 20), F6.2 (widgetData — file 23), F11.1 (SQL injection — file 07)
 
-### NOTED (patterns, not bugs):
-- 227 `as never` — Expo Router framework limitation (standard workaround)
+### FIXED in second pass (46 additional):
+Cat 7: 11 untyped response.json() calls given proper type annotations (stripe-connect 3, content-safety 2, ai.service 3, creator 1, push 1, stickers 1). Cat 9: 26 `as IconName` — verified all valid (Icon component supports 80+ icons, CLAUDE.md list outdated). Cat 10: 32 console.* statements gated with `if (__DEV__)` across 15 mobile files.
+
+### NOTED (patterns — not fixable without major refactors):
+- 227 `as never` — Expo Router framework limitation (standard workaround, would need typed route helper)
 - 22 non-null assertions — most guarded by enabled/has checks
-- 12 `as unknown as` — Stripe types, web CSS, JSON imports
-- 15 untyped response.json() — should add type annotations
-- 28 unsafe type assertions — mostly string-to-enum (validated by service)
-- 26 `as IconName` — some invalid names, Icon component warns in __DEV__
-- 55 console.* — mobile-side logging (6 gated by __DEV__)
+- 12 `as unknown as` — Stripe SDK types, web CSS, JSON imports (correct workarounds)
+- 28 string-to-enum casts — validated by service layer before Prisma
+- 2 Record<string, any> — Clerk webhook data (external API shape)
 - 2 Record<string, any> — Clerk webhook data

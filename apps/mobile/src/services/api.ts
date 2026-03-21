@@ -169,7 +169,7 @@ class ApiClient {
     try {
       token = this.getToken ? await this.getToken() : null;
     } catch (e) {
-      console.error('[API] Token getter failed — request will proceed without auth:', e);
+      if (__DEV__) console.error('[API] Token getter failed — request will proceed without auth:', e);
       // Don't throw here — unauthenticated endpoints should still work.
       // Protected endpoints will return 401 which is now properly typed as ApiError.isAuth
     }
@@ -201,7 +201,7 @@ class ApiClient {
 
     if (!res.ok) {
       const error = await res.json().catch(() => ({ message: 'Request failed' }));
-      console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
+      if (__DEV__) console.error(`[API] ${options.method || 'GET'} ${path} → ${res.status}`, error);
       throw new ApiError(error.message || `HTTP ${res.status}`, res.status);
     }
 

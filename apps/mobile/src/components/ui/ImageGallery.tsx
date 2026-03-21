@@ -226,7 +226,7 @@ export const ImageGallery = memo(function ImageGallery({
         message: images[currentIndex],
       });
     } catch (error) {
-      console.error('Error sharing image:', error);
+      if (__DEV__) console.error('Error sharing image:', error);
     }
   }, [images, currentIndex]);
 

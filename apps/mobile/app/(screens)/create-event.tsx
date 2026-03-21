@@ -80,7 +80,7 @@ export default function CreateEventScreen() {
         setCommunities(items);
       } catch (err) {
         // Silently fail - communities optional for event creation
-        console.error('Failed to fetch communities:', err);
+        if (__DEV__) console.error('Failed to fetch communities:', err);
       } finally {
         setCommunitiesLoading(false);
       }

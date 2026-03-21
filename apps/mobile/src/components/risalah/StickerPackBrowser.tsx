@@ -74,7 +74,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       );
       setFeaturedPacks(localFeatured);
     } catch (error) {
-      console.error('Failed to load featured packs', error);
+      if (__DEV__) console.error('Failed to load featured packs', error);
     }
   }, []);
 
@@ -97,7 +97,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       setCursor(result.meta.cursor);
       setHasMore(result.meta.hasMore);
     } catch (error) {
-      console.error('Failed to load packs', error);
+      if (__DEV__) console.error('Failed to load packs', error);
     }
   }, []);
 
@@ -123,7 +123,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       setCursor(null);
       setHasMore(false);
     } catch (error) {
-      console.error('Search failed', error);
+      if (__DEV__) console.error('Search failed', error);
     } finally {
       setLoading(false);
     }
@@ -172,7 +172,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
         pack.id === packId ? { ...pack, isOwned: !currentlyOwned } : pack
       ));
     } catch (error) {
-      console.error('Failed to toggle pack ownership', error);
+      if (__DEV__) console.error('Failed to toggle pack ownership', error);
     }
   }, []);
 
@@ -182,7 +182,7 @@ export function StickerPackBrowser({ onClose }: StickerPackBrowserProps) {
       setSelectedPack(pack);
       setShowDetailSheet(true);
     } catch (error) {
-      console.error('Failed to fetch pack details', error);
+      if (__DEV__) console.error('Failed to fetch pack details', error);
     }
   }, []);
 

@@ -82,7 +82,7 @@ export default function BroadcastChannelsScreen() {
       setDiscoverCursor(response.meta.cursor);
       setDiscoverHasMore(response.meta.hasMore);
     } catch (error) {
-      console.error('Failed to load discover channels', error);
+      if (__DEV__) console.error('Failed to load discover channels', error);
       setDiscoverError(true);
     } finally {
       setDiscoverLoading(false);
@@ -98,7 +98,7 @@ export default function BroadcastChannelsScreen() {
       const channels = await broadcastApi.getMyChannels();
       setMyChannels(channels);
     } catch (error) {
-      console.error('Failed to load my channels', error);
+      if (__DEV__) console.error('Failed to load my channels', error);
       setMyChannelsError(true);
     } finally {
       setMyChannelsLoading(false);
@@ -143,7 +143,7 @@ export default function BroadcastChannelsScreen() {
         setMyChannels(prev => [...prev, { ...channel, isSubscribed: true }]);
       }
     } catch (error) {
-      console.error('Failed to toggle subscription', error);
+      if (__DEV__) console.error('Failed to toggle subscription', error);
     }
   }, []);
 

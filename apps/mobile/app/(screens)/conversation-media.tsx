@@ -208,7 +208,7 @@ export default function ConversationMediaScreen() {
   }, []);
 
   const handleOpenLink = useCallback((url: string) => {
-    Linking.openURL(url).catch(err => console.error('Failed to open link:', err));
+    Linking.openURL(url).catch(err => { if (__DEV__) console.error('Failed to open link:', err); });
   }, []);
 
   const handleLoadMore = useCallback(() => {

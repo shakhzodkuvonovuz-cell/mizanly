@@ -64,7 +64,7 @@ export default function PinnedMessagesScreen() {
       await messagesApi.removeReaction(conversationId, messageId, '\u{1F4CC}');
       refetch();
     } catch (err) {
-      console.error('Failed to unpin message', err);
+      if (__DEV__) console.error('Failed to unpin message', err);
     }
   };
 

@@ -70,7 +70,7 @@ export default function StarredMessagesScreen() {
       await messagesApi.removeReaction(conversationId, messageId, '\u2B50');
       refetch();
     } catch (err) {
-      console.error('Failed to unstar message', err);
+      if (__DEV__) console.error('Failed to unstar message', err);
     }
   };
 
