@@ -128,25 +128,23 @@ export class CreatorService {
   }
 
   async getAudienceDemographics(userId: string) {
-    // Get follower locations (sample up to 1000)
-    const followers = await this.prisma.follow.findMany({
-      where: { followingId: userId },
-      select: { follower: { select: { location: true, createdAt: true } } },
-      take: 1000,
-    });
+    // Use SQL aggregation instead of loading 1000 follower records into memory
+    const [topLocations, totalCount] = await Promise.all([
+      this.prisma.$queryRawUnsafe<Array<{ location: string; count: bigint }>>(
+        `SELECT COALESCE(u."location", 'Unknown') as location, COUNT(*) as count
+         FROM "Follow" f JOIN "User" u ON f."followerId" = u.id
+         WHERE f."followingId" = $1
+         GROUP BY COALESCE(u."location", 'Unknown')
+         ORDER BY count DESC LIMIT 10`,
+        userId,
+      ),
+      this.prisma.follow.count({ where: { followingId: userId } }),
+    ]);
 
-    const locationCounts: Record<string, number> = {};
-    for (const f of followers) {
-      const loc = f.follower.location || 'Unknown';
-      locationCounts[loc] = (locationCounts[loc] || 0) + 1;
-    }
-
-    const topLocations = Object.entries(locationCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([location, count]) => ({ location, count }));
-
-    return { topLocations, totalFollowers: followers.length };
+    return {
+      topLocations: topLocations.map(r => ({ location: r.location, count: Number(r.count) })),
+      totalFollowers: totalCount,
+    };
   }
 
   async getContentPerformance(userId: string) {

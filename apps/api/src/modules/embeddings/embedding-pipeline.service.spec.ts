@@ -41,40 +41,34 @@ describe('EmbeddingPipelineService', () => {
 
   describe('backfillAll', () => {
     it('should process all content types and return counts', async () => {
-      prisma.post.findMany
-        .mockResolvedValueOnce([{ id: 'p1' }])
-        .mockResolvedValueOnce([]);
-      prisma.reel.findMany.mockResolvedValue([]);
-      prisma.thread.findMany.mockResolvedValue([]);
-      prisma.video.findMany.mockResolvedValue([]);
+      // backfill now uses $queryRawUnsafe with NOT EXISTS for each content type
+      prisma.$queryRawUnsafe
+        .mockResolvedValueOnce([{ id: 'p1' }]) // backfillPosts batch 1
+        .mockResolvedValueOnce([])              // backfillPosts batch 2 (done)
+        .mockResolvedValueOnce([])              // backfillReels batch 1 (done)
+        .mockResolvedValueOnce([])              // backfillThreads batch 1 (done)
+        .mockResolvedValueOnce([]);             // backfillVideos batch 1 (done)
 
       const result = await service.backfillAll();
       expect(result.posts).toBe(1);
       expect(result.reels).toBe(0);
+      expect(embeddings.embedPost).toHaveBeenCalledWith('p1');
     });
 
-    it('should skip already-embedded content', async () => {
-      prisma.$queryRawUnsafe.mockResolvedValue([{ contentId: 'p1' }]);
-      prisma.post.findMany
-        .mockResolvedValueOnce([{ id: 'p1' }])
-        .mockResolvedValueOnce([]);
-      prisma.reel.findMany.mockResolvedValue([]);
-      prisma.thread.findMany.mockResolvedValue([]);
-      prisma.video.findMany.mockResolvedValue([]);
+    it('should skip already-embedded content via NOT EXISTS query', async () => {
+      // NOT EXISTS in SQL handles skipping — when query returns empty, no embeds happen
+      prisma.$queryRawUnsafe.mockResolvedValue([]);
 
       const result = await service.backfillAll();
       expect(result.posts).toBe(0);
+      expect(result.reels).toBe(0);
       expect(embeddings.embedPost).not.toHaveBeenCalled();
     });
 
     it('should prevent concurrent runs', async () => {
-      prisma.post.findMany.mockImplementation(() =>
+      prisma.$queryRawUnsafe.mockImplementation(() =>
         new Promise(resolve => setTimeout(() => resolve([]), 50)),
       );
-      prisma.reel.findMany.mockResolvedValue([]);
-      prisma.thread.findMany.mockResolvedValue([]);
-      prisma.video.findMany.mockResolvedValue([]);
-
       const first = service.backfillAll();
       const second = await service.backfillAll();
 
@@ -83,12 +77,12 @@ describe('EmbeddingPipelineService', () => {
     });
 
     it('should handle embedding errors gracefully', async () => {
-      prisma.post.findMany
+      prisma.$queryRawUnsafe
         .mockResolvedValueOnce([{ id: 'p1' }])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
         .mockResolvedValueOnce([]);
-      prisma.reel.findMany.mockResolvedValue([]);
-      prisma.thread.findMany.mockResolvedValue([]);
-      prisma.video.findMany.mockResolvedValue([]);
       embeddings.embedPost.mockResolvedValue(false);
 
       const result = await service.backfillAll();

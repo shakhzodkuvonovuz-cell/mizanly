@@ -154,7 +154,8 @@ export class TelegramFeaturesService {
       }
     }
 
-    await Promise.all(
+    // Batch reorder in a single transaction instead of N individual queries
+    await this.prisma.$transaction(
       folderIds.map((id, index) =>
         this.prisma.chatFolder.updateMany({ where: { id, userId }, data: { position: index } }),
       ),

@@ -7,7 +7,7 @@ describe('FeedService', () => {
   let service: FeedService;
   let prisma: Record<string, any>;
   beforeEach(async () => {
-    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() } };
+    prisma = { feedInteraction: { findFirst: jest.fn(), create: jest.fn(), update: jest.fn() }, feedDismissal: { upsert: jest.fn(), findMany: jest.fn(), delete: jest.fn() }, $queryRawUnsafe: jest.fn().mockResolvedValue([]) };
     const module = await Test.createTestingModule({ providers: [
         ...globalMockProviders,FeedService, { provide: PrismaService, useValue: prisma }] }).compile();
     service = module.get(FeedService);

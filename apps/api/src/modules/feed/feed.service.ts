@@ -425,45 +425,22 @@ export class FeedService {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    // Count interactions per post creator in last 7 days
-    const interactions = await this.prisma.feedInteraction.findMany({
-      where: {
-        userId,
-        createdAt: { gte: sevenDaysAgo },
-        OR: [
-          { viewed: true },
-          { liked: true },
-          { commented: true },
-          { shared: true },
-          { saved: true },
-        ],
-      },
-      select: {
-        post: {
-          select: { userId: true },
-        },
-      },
-      take: 500,
-    });
+    // Use SQL aggregation instead of loading 500 interactions into JS
+    const results = await this.prisma.$queryRawUnsafe<Array<{ creatorId: string }>>(
+      `SELECT p."userId" as "creatorId"
+       FROM "FeedInteraction" fi
+       JOIN "Post" p ON fi."postId" = p.id
+       WHERE fi."userId" = $1
+         AND fi."createdAt" >= $2
+         AND (fi."viewed" = true OR fi."liked" = true OR fi."commented" = true OR fi."shared" = true OR fi."saved" = true)
+         AND p."userId" != $1
+       GROUP BY p."userId"
+       HAVING COUNT(*) >= 10`,
+      userId,
+      sevenDaysAgo,
+    );
 
-    // Aggregate by creator
-    const creatorCounts = new Map<string, number>();
-    for (const interaction of interactions) {
-      if (!interaction.post) continue;
-      const creatorId = interaction.post.userId;
-      if (creatorId === userId) continue; // Skip self
-      creatorCounts.set(creatorId, (creatorCounts.get(creatorId) || 0) + 1);
-    }
-
-    // Threshold: 10+ interactions
-    const frequentIds = new Set<string>();
-    for (const [creatorId, count] of creatorCounts) {
-      if (count >= 10) {
-        frequentIds.add(creatorId);
-      }
-    }
-
-    return frequentIds;
+    return new Set(results.map(r => r.creatorId));
   }
 
   /**

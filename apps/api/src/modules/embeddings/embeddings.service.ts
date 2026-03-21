@@ -333,6 +333,9 @@ export class EmbeddingsService {
    * Compute average vector from a user's recent interactions (user interest profile)
    */
   async getUserInterestVector(userId: string): Promise<number[] | null> {
+    // Skip DB queries entirely when embeddings API is not configured
+    if (!this.apiAvailable) return null;
+
     // Get recent liked/saved/long-viewed content IDs
     const interactions = await this.prisma.feedInteraction.findMany({
       where: {
