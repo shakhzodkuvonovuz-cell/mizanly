@@ -242,8 +242,28 @@ class ApiClient {
 
 export const api = new ApiClient();
 
+/** Retry a function with exponential backoff (for non-React-Query API calls) */
+export async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 2,
+  baseDelayMs = 1000,
+): Promise<T> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      if (attempt === maxRetries) throw err;
+      // Only retry on network errors, not on 4xx
+      if (err instanceof ApiError && err.status < 500) throw err;
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  throw new Error('Retry exhausted');
+}
+
 // Build query string from params object, skipping undefined/empty values
-const qs = (params: Record<string, string | number | undefined>) => {
+export const qs = (params: Record<string, string | number | undefined>) => {
   const s = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== '')
     .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)

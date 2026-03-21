@@ -1,13 +1,5 @@
-import { api } from './api';
+import { api, qs } from './api';
 import type { ReelTemplate } from '@/types/reelTemplates';
-
-const qs = (params: Record<string, string | number | undefined>) => {
-  const s = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
-    .join('&');
-  return s ? `?${s}` : '';
-};
 
 export const reelTemplatesApi = {
   browse: (cursor?: string, trending?: boolean) =>

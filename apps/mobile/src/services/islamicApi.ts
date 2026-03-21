@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, qs } from './api';
 import type {
   PrayerTimes,
   PrayerMethodInfo,
@@ -25,14 +25,6 @@ import type {
 } from '@/types/islamic';
 import type { PaginatedResponse } from '@/types';
 
-const qs = (params: Record<string, string | number | boolean | undefined>) => {
-  const s = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
-    .join('&');
-  return s ? `?${s}` : '';
-};
-
 export const islamicApi = {
   getPrayerTimes: (lat: number, lng: number, method?: string, date?: string) =>
     api.get<PrayerTimes>(`/islamic/prayer-times${qs({ lat, lng, method, date })}`),
@@ -50,7 +42,7 @@ export const islamicApi = {
     api.get<Mosque[]>(`/islamic/mosques${qs({ lat, lng, radius })}`),
 
   calculateZakat: (input: ZakatCalculationInput) =>
-    api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(input as unknown as Record<string, string | number | boolean | undefined>)}`),
+    api.get<ZakatCalculationResult>(`/islamic/zakat/calculate${qs(input as unknown as Record<string, string | number | undefined>)}`),
 
   getRamadanInfo: (year?: number, lat?: number, lng?: number) =>
     api.get<RamadanInfo>(`/islamic/ramadan${qs({ year, lat, lng })}`),

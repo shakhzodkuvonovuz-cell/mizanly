@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, qs } from './api';
 import type {
   AudioRoom,
   CreateAudioRoomDto,
@@ -6,14 +6,6 @@ import type {
   AudioRoomParticipant,
 } from '@/types/audioRooms';
 import type { PaginatedResponse } from '@/types';
-
-const qs = (params: Record<string, string | number | undefined>) => {
-  const s = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
-    .join('&');
-  return s ? `?${s}` : '';
-};
 
 export const audioRoomsApi = {
   create: (data: CreateAudioRoomDto) => api.post<AudioRoom>('/audio-rooms', data),

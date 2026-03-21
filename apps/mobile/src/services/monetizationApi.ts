@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, qs } from './api';
 import type {
   Tip,
   CreateTipDto,
@@ -11,14 +11,6 @@ import type {
 } from '@/types/monetization';
 import type { PaginatedResponse } from '@/types';
 import type { User } from '@/types';
-
-const qs = (params: Record<string, string | number | undefined>) => {
-  const s = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
-    .join('&');
-  return s ? `?${s}` : '';
-};
 
 export const monetizationApi = {
   // Tips

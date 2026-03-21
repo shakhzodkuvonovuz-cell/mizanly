@@ -1,12 +1,4 @@
-import { api } from './api';
-
-const qs = (params: Record<string, string | number | undefined>) => {
-  const s = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== '')
-    .map(([k, v]) => `${k}=${encodeURIComponent(v!)}`)
-    .join('&');
-  return s ? `?${s}` : '';
-};
+import { api, qs } from './api';
 
 export interface GiftCatalogItem {
   type: string;
@@ -38,7 +30,7 @@ export const giftsApi = {
   sendGift: (data: { receiverId: string; giftType: string; contentId?: string; contentType?: string }) =>
     api.post('/gifts/send', data),
   getCatalog: () => api.get<GiftCatalogItem[]>('/gifts/catalog'),
-  getHistory: (cursor?: string) => api.get<GiftHistoryItem[]>(`/gifts/history${qs({ cursor })}`),
+  getHistory: (cursor?: string) => api.get<{ data: GiftHistoryItem[]; meta: { cursor: string | null; hasMore: boolean } }>(`/gifts/history${qs({ cursor })}`),
   cashout: (data: { diamonds: number }) => api.post('/gifts/cashout', data),
   getReceived: (userId: string) => api.get<GiftHistoryItem[]>(`/gifts/received/${userId}`),
 };

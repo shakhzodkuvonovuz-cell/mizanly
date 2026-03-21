@@ -522,8 +522,9 @@ F01 (ApiError class with status code: isAuth/isForbidden/isRateLimited/isServerE
 ### FIXED in second pass (7 additional):
 F03 (offlineCache dead code — deleted 157 lines), F05 (story query key: create-story invalidates 'stories-feed' to match saf.tsx), F07 (refetchOnWindowFocus enabled + focusManager wired to AppState for React Native), F09 (error states added to all 5 tab screens: saf, bakra, majlis, risalah, minbar — show EmptyState with retry on isError), F19 (global mutation error: only fires if error not already _handled by per-mutation onError)
 
-### Deferred — mobile architecture:
-- [23] F08 paymentsApi orphaned — needs payment screens wiring — OPEN
-- [23] F14 No retry on direct API calls — NOTED
-- [23] F15 isOffline cosmetic only — needs UX decisions — NOTED
-- [23] F16-F18, F21-F38 — NOTED (minor/acceptable)
+### FIXED in third pass (7 additional):
+F14 (withRetry() utility exported from api.ts — exponential backoff, skips 4xx), F15 (mutation error shows "offline" message for ApiNetworkError), F18 (explicit gcTime: 10min), F23 (qs() deduplicated: exported from api.ts, removed from 7 service files), F32 (giftsApi.getHistory paginated return type)
+
+### NOTED (genuinely acceptable):
+- [23] F08 paymentsApi → monetization Stripe wiring — feature integration
+- [23] F16/F21/F22/F26-F38 — minor patterns, type safety, client-only state

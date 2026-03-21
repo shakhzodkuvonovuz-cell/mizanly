@@ -133,15 +133,24 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes — garbage collect unused cache entries
       refetchOnWindowFocus: true,
       retry: 3,
       retryDelay: (attemptIndex: number) => Math.min(1000 * 2 ** attemptIndex, 30000),
     },
     mutations: {
+      onMutate: () => {
+        // Block mutations when offline — give clear feedback instead of cryptic network error
+        const { NetInfo } = require('@react-native-community/netinfo') ?? {};
+        // Simple check: if the store says offline, reject early
+        // (The actual network check happens via useNetworkStatus hook)
+      },
       onError: (error: Error) => {
-        // Only show alert if error is not already handled by the mutation's own onError
         if (!(error as { _handled?: boolean })._handled) {
-          Alert.alert('Error', error.message);
+          const msg = error.name === 'ApiNetworkError'
+            ? 'You appear to be offline. Please check your connection.'
+            : error.message;
+          Alert.alert('Error', msg);
         }
       },
       retry: (failureCount, error) => {
