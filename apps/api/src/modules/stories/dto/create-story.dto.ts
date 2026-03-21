@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsUrl, IsArray, IsNumber, MaxLength, Allow } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsUrl, IsArray, IsNumber, MaxLength, Allow, ArrayMaxSize } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateStoryDto {
@@ -57,6 +57,7 @@ export class CreateStoryDto {
   @ApiProperty({ required: false, description: 'Sticker data as JSON array of sticker objects' })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(20)
   stickerData?: object[];
 
   @ApiProperty({ required: false, description: 'Whether story is for close friends only' })

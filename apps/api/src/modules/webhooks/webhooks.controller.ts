@@ -1,9 +1,17 @@
 import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Post, Delete, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { IsString, IsUrl, IsArray, ArrayMaxSize, MaxLength } from 'class-validator';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { WebhooksService } from './webhooks.service';
+
+class CreateWebhookBodyDto {
+  @IsString() @MaxLength(50) circleId: string;
+  @IsString() @MaxLength(100) name: string;
+  @IsUrl() url: string;
+  @IsArray() @IsString({ each: true }) @ArrayMaxSize(20) @MaxLength(50, { each: true }) events: string[];
+}
 
 @ApiTags('Webhooks')
 @Throttle({ default: { limit: 20, ttl: 60000 } })
@@ -17,7 +25,7 @@ export class WebhooksController {
   @ApiOperation({ summary: 'Create a webhook' })
   async create(
     @CurrentUser('id') userId: string,
-    @Body() body: { circleId: string; name: string; url: string; events: string[] },
+    @Body() body: CreateWebhookBodyDto,
   ) {
     return this.webhooks.create(userId, body);
   }

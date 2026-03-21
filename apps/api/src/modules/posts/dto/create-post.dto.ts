@@ -41,7 +41,7 @@ export class CreatePostDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   thumbnailUrl?: string;
 
   @ApiProperty({ required: false })

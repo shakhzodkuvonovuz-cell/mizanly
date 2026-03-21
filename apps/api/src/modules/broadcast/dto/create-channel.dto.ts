@@ -1,4 +1,4 @@
-import { IsString, IsOptional, MaxLength, MinLength, Matches } from 'class-validator';
+import { IsString, IsOptional, IsUrl, MaxLength, MinLength, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateBroadcastChannelDto {
@@ -22,7 +22,7 @@ export class CreateBroadcastChannelDto {
   description?: string;
 
   @ApiProperty({ required: false })
-  @IsString()
+  @IsUrl()
   @IsOptional()
   avatarUrl?: string;
 }

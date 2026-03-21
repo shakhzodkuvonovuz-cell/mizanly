@@ -20,6 +20,11 @@ import { ContactSyncDto } from './dto/contact-sync.dto';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { OptionalClerkAuthGuard } from '../../common/guards/optional-clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { IsBoolean } from 'class-validator';
+
+class NasheedModeDto {
+  @IsBoolean() nasheedMode: boolean;
+}
 
 @ApiTags('Users')
 @Controller('users')
@@ -246,7 +251,7 @@ export class UsersController {
   @ApiOperation({ summary: 'Toggle nasheed mode' })
   updateNasheedMode(
     @CurrentUser('id') userId: string,
-    @Body() body: { nasheedMode: boolean },
+    @Body() body: NasheedModeDto,
   ) {
     return this.usersService.updateNasheedMode(userId, body.nasheedMode);
   }

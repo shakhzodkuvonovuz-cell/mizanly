@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsEnum, IsDateString, IsBoolean, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsDateString, IsBoolean, IsUrl, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateLiveDto {
@@ -15,7 +15,7 @@ export class CreateLiveDto {
 
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
+  @IsUrl()
   thumbnailUrl?: string;
 
   @ApiProperty({ enum: ['VIDEO_STREAM', 'AUDIO_SPACE'] })

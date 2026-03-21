@@ -1,7 +1,7 @@
 import { Throttle } from '@nestjs/throttler';
 import { Controller, Post, Get, Delete, Body, Param, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsIn, Matches } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsIn, Matches, MaxLength } from 'class-validator';
 import { DevicesService } from './devices.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -10,6 +10,10 @@ class RegisterDeviceDto {
   @IsString() @IsNotEmpty() @Matches(/^ExponentPushToken\[.+\]$|^[a-zA-Z0-9:_-]{20,}$/, { message: 'Invalid push token format' }) pushToken: string;
   @IsString() @IsIn(['ios', 'android', 'web']) platform: string;
   @IsString() @IsOptional() deviceId?: string;
+}
+
+class LogoutSessionDto {
+  @IsString() @MaxLength(100) currentSessionId: string;
 }
 
 @ApiTags('Devices')
@@ -57,7 +61,7 @@ export class DevicesController {
   @ApiOperation({ summary: 'Log out all other device sessions' })
   logoutAllOtherSessions(
     @CurrentUser('id') userId: string,
-    @Body() body: { currentSessionId: string },
+    @Body() body: LogoutSessionDto,
   ) {
     return this.devicesService.logoutAllOtherSessions(userId, body.currentSessionId);
   }

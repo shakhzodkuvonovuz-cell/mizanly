@@ -8,9 +8,14 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
+import { IsString, MaxLength } from 'class-validator';
 import { CreatorService } from './creator.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+
+class AskAIDto {
+  @IsString() @MaxLength(1000) question: string;
+}
 
 @ApiTags('Creator Analytics')
 @Controller('creator')
@@ -83,7 +88,7 @@ export class CreatorController {
   @ApiOperation({ summary: 'AI analytics chat — ask about your performance (20/hour)' })
   askAI(
     @CurrentUser('id') userId: string,
-    @Body() body: { question: string },
+    @Body() body: AskAIDto,
   ) {
     return this.creatorService.askAI(userId, body.question);
   }
