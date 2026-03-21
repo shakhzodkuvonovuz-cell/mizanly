@@ -42,12 +42,28 @@ describe('SearchController', () => {
   afterEach(() => jest.clearAllMocks());
 
   describe('search', () => {
-    it('should call searchService.search with query, type, and cursor', async () => {
+    it('should call searchService.search with validated params', async () => {
       service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
 
       await controller.search('islam', 'posts', 'cursor-1');
 
-      expect(service.search).toHaveBeenCalledWith('islam', 'posts', 'cursor-1');
+      expect(service.search).toHaveBeenCalledWith('islam', 'posts', 'cursor-1', 20);
+    });
+
+    it('should cap limit at 50', async () => {
+      service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
+
+      await controller.search('islam', 'posts', undefined, '999');
+
+      expect(service.search).toHaveBeenCalledWith('islam', 'posts', undefined, 50);
+    });
+
+    it('should reject invalid type', async () => {
+      service.search.mockResolvedValue({ data: [], meta: { hasMore: false } } as any);
+
+      await controller.search('islam', 'invalid');
+
+      expect(service.search).toHaveBeenCalledWith('islam', undefined, undefined, 20);
     });
   });
 
@@ -83,10 +99,10 @@ describe('SearchController', () => {
   });
 
   describe('querySuggestions', () => {
-    it('should call searchService.getSuggestions with query and limit', async () => {
-      service.getSuggestions.mockResolvedValue(['islam', 'islamic art'] as any);
+    it('should call searchService.getSuggestions with capped limit', async () => {
+      service.getSuggestions.mockResolvedValue({ users: [], hashtags: [] } as any);
 
-      await controller.querySuggestions('isl', 5);
+      await controller.querySuggestions('isl', '5');
 
       expect(service.getSuggestions).toHaveBeenCalledWith('isl', 5);
     });

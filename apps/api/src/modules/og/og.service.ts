@@ -25,16 +25,16 @@ export class OgService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getPostOg(postId: string): Promise<string> {
-    const post = await this.prisma.post.findUnique({
-      where: { id: postId },
+    const post = await this.prisma.post.findFirst({
+      where: { id: postId, isRemoved: false, visibility: 'PUBLIC' },
       select: {
         id: true,
         content: true,
         mediaUrls: true,
-        user: { select: { username: true, displayName: true, avatarUrl: true } },
+        user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!post) throw new NotFoundException('Post not found');
+    if (!post || post.user.isBanned || post.user.isDeactivated) throw new NotFoundException('Post not found');
 
     const title = `${post.user.displayName || post.user.username} on ${APP_NAME}`;
     const description = post.content ? truncate(post.content, 200) : `Post by @${post.user.username}`;
@@ -45,16 +45,16 @@ export class OgService {
   }
 
   async getReelOg(reelId: string): Promise<string> {
-    const reel = await this.prisma.reel.findUnique({
-      where: { id: reelId },
+    const reel = await this.prisma.reel.findFirst({
+      where: { id: reelId, isRemoved: false, status: 'READY' },
       select: {
         id: true,
         caption: true,
         thumbnailUrl: true,
-        user: { select: { username: true, displayName: true, avatarUrl: true } },
+        user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!reel) throw new NotFoundException('Reel not found');
+    if (!reel || reel.user.isBanned || reel.user.isDeactivated) throw new NotFoundException('Reel not found');
 
     const title = `${reel.user.displayName || reel.user.username} — Reel on ${APP_NAME}`;
     const description = reel.caption ? truncate(reel.caption, 200) : `Watch this reel by @${reel.user.username}`;
@@ -65,8 +65,8 @@ export class OgService {
   }
 
   async getProfileOg(username: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+    const user = await this.prisma.user.findFirst({
+      where: { username, isBanned: false, isDeactivated: false, isDeleted: false },
       select: {
         id: true,
         username: true,
@@ -89,15 +89,15 @@ export class OgService {
   }
 
   async getThreadOg(threadId: string): Promise<string> {
-    const thread = await this.prisma.thread.findUnique({
-      where: { id: threadId },
+    const thread = await this.prisma.thread.findFirst({
+      where: { id: threadId, isRemoved: false, visibility: 'PUBLIC' },
       select: {
         id: true,
         content: true,
-        user: { select: { username: true, displayName: true, avatarUrl: true } },
+        user: { select: { username: true, displayName: true, avatarUrl: true, isBanned: true, isDeactivated: true } },
       },
     });
-    if (!thread) throw new NotFoundException('Thread not found');
+    if (!thread || thread.user.isBanned || thread.user.isDeactivated) throw new NotFoundException('Thread not found');
 
     const title = `${thread.user.displayName || thread.user.username} on ${APP_NAME}`;
     const description = thread.content ? truncate(thread.content, 200) : `Thread by @${thread.user.username}`;
@@ -111,18 +111,19 @@ export class OgService {
     // Fetch recent public content for sitemap
     const [users, posts, threads] = await Promise.all([
       this.prisma.user.findMany({
-        where: { isPrivate: false },
+        where: { isPrivate: false, isBanned: false, isDeactivated: false, isDeleted: false },
         select: { username: true, updatedAt: true },
         orderBy: { updatedAt: 'desc' },
         take: 500,
       }),
       this.prisma.post.findMany({
-        where: { isAltProfile: false },
+        where: { isAltProfile: false, isRemoved: false, visibility: 'PUBLIC' },
         select: { id: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
         take: 500,
       }),
       this.prisma.thread.findMany({
+        where: { isRemoved: false, visibility: 'PUBLIC' },
         select: { id: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
         take: 500,

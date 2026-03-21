@@ -213,6 +213,7 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        visibility: 'PUBLIC',
       },
       select: POST_SELECT,
       take: limit + 1,
@@ -247,6 +248,7 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        status: 'READY',
       },
       select: REEL_SELECT,
       take: limit + 1,
@@ -281,6 +283,7 @@ export class HashtagsService {
       where: {
         hashtags: { has: hashtagName },
         isRemoved: false,
+        visibility: 'PUBLIC',
       },
       select: THREAD_SELECT,
       take: limit + 1,
@@ -309,13 +312,19 @@ export class HashtagsService {
   }
 
   async decrementCount(name: string, field: 'postsCount' | 'reelsCount' | 'threadsCount' | 'videosCount') {
-    await this.prisma.hashtag.update({
-      where: { name },
-      data: { [field]: { decrement: 1 } },
-    }).catch(() => {
-      // Hashtag may not exist if counts got out of sync, ignore
+    try {
+      await this.prisma.hashtag.update({
+        where: { name },
+        data: { [field]: { decrement: 1 } },
+      });
+      // Ensure count doesn't go negative
+      await this.prisma.hashtag.updateMany({
+        where: { name, [field]: { lt: 0 } },
+        data: { [field]: 0 },
+      });
+    } catch {
       this.logger.warn(`Failed to decrement ${field} for hashtag ${name}`);
-    });
+    }
   }
 
   private async enrichPosts(posts: PostWithUser[], userId: string): Promise<EnrichedPost[]> {

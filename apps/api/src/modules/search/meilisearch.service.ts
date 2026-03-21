@@ -106,9 +106,13 @@ export class MeilisearchService implements OnModuleInit {
         }),
       });
 
-      if (!response.ok) return null;
+      if (!response.ok) {
+        this.logger.warn(`Meilisearch search failed for ${indexName}: ${response.status}`);
+        return null;
+      }
       return response.json();
-    } catch {
+    } catch (error) {
+      this.logger.error(`Meilisearch search error for ${indexName}`, error instanceof Error ? error.message : error);
       return null;
     }
   }
@@ -134,7 +138,7 @@ export class MeilisearchService implements OnModuleInit {
     if (!this.available) return;
 
     try {
-      await fetch(`${this.host}/indexes/${indexName}/documents/${documentId}`, {
+      await fetch(`${this.host}/indexes/${encodeURIComponent(indexName)}/documents/${encodeURIComponent(documentId)}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${this.apiKey}` },
       });

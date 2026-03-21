@@ -162,7 +162,9 @@ export class SearchService {
     if (query.length > 200) {
       throw new BadRequestException('Search query must be under 200 characters');
     }
-    const safeLimit = Math.min(Math.max(limit, 1), 50);
+    // Ensure limit is a number and capped (F01+F02: fix safeLimit not used + string type)
+    const numLimit = typeof limit === 'string' ? parseInt(limit as unknown as string, 10) || 20 : limit;
+    const safeLimit = Math.min(Math.max(numLimit, 1), 50);
 
     // Try Meilisearch first (faster, typo tolerant, Arabic-aware)
     if (this.meilisearch.isAvailable() && type && !cursor) {
@@ -172,9 +174,9 @@ export class SearchService {
       };
       const indexName = indexMap[type];
       if (indexName) {
-        const result = await this.meilisearch.search(indexName, query, { limit });
+        const result = await this.meilisearch.search(indexName, query, { limit: safeLimit });
         if (result && result.hits.length > 0) {
-          return { data: result.hits, meta: { hasMore: result.hits.length === limit, cursor: undefined } };
+          return { data: result.hits, meta: { hasMore: result.hits.length === safeLimit, cursor: undefined } };
         }
       }
       // Fall through to Prisma if Meilisearch returns no results
@@ -182,7 +184,7 @@ export class SearchService {
 
     // If type is specified and is 'posts', 'threads', 'reels', 'videos', or 'channels', return paginated response
     if (type === 'posts' || type === 'threads' || type === 'reels' || type === 'videos' || type === 'channels') {
-      const take = limit + 1; // Fetch one extra to check if there's more
+      const take = safeLimit + 1; // Fetch one extra to check if there's more
 
       if (type === 'posts') {
         const posts = await this.prisma.post.findMany({
@@ -197,8 +199,8 @@ export class SearchService {
           orderBy: { likesCount: 'desc' },
         });
 
-        const hasMore = posts.length > limit;
-        const items = hasMore ? posts.slice(0, limit) : posts;
+        const hasMore = posts.length > safeLimit;
+        const items = hasMore ? posts.slice(0, safeLimit) : posts;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -217,8 +219,8 @@ export class SearchService {
           orderBy: { likesCount: 'desc' },
         });
 
-        const hasMore = threads.length > limit;
-        const items = hasMore ? threads.slice(0, limit) : threads;
+        const hasMore = threads.length > safeLimit;
+        const items = hasMore ? threads.slice(0, safeLimit) : threads;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -231,6 +233,7 @@ export class SearchService {
               { description: { contains: query, mode: 'insensitive' } },
             ],
             status: 'PUBLISHED',
+            isRemoved: false,
           },
           select: VIDEO_SEARCH_SELECT,
           take,
@@ -238,8 +241,8 @@ export class SearchService {
           orderBy: { viewsCount: 'desc' },
         });
 
-        const hasMore = videos.length > limit;
-        const items = hasMore ? videos.slice(0, limit) : videos;
+        const hasMore = videos.length > safeLimit;
+        const items = hasMore ? videos.slice(0, safeLimit) : videos;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -259,8 +262,8 @@ export class SearchService {
           orderBy: { subscribersCount: 'desc' },
         });
 
-        const hasMore = channels.length > limit;
-        const items = hasMore ? channels.slice(0, limit) : channels;
+        const hasMore = channels.length > safeLimit;
+        const items = hasMore ? channels.slice(0, safeLimit) : channels;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -270,6 +273,7 @@ export class SearchService {
           where: {
             caption: { contains: query, mode: 'insensitive' },
             status: 'READY',
+            isRemoved: false,
           },
           select: REEL_SEARCH_SELECT,
           take,
@@ -277,8 +281,8 @@ export class SearchService {
           orderBy: { createdAt: 'desc' },
         });
 
-        const hasMore = reels.length > limit;
-        const items = hasMore ? reels.slice(0, limit) : reels;
+        const hasMore = reels.length > safeLimit;
+        const items = hasMore ? reels.slice(0, safeLimit) : reels;
         return {
           data: items,
           meta: { cursor: hasMore ? items[items.length - 1].id : null, hasMore },
@@ -298,9 +302,12 @@ export class SearchService {
             { username: { contains: query, mode: 'insensitive' } },
             { displayName: { contains: query, mode: 'insensitive' } },
           ],
+          isBanned: false,
+          isDeactivated: false,
+          isDeleted: false,
         },
         select: USER_SEARCH_SELECT,
-        take: isAggregate ? 5 : limit,
+        take: isAggregate ? 5 : safeLimit,
         orderBy: { followers: { _count: 'desc' } },
       });
     }
@@ -333,6 +340,7 @@ export class SearchService {
         where: {
           caption: { contains: query, mode: 'insensitive' },
           status: 'READY',
+          isRemoved: false,
         },
         select: REEL_SEARCH_SELECT,
         take: 5,
@@ -346,6 +354,7 @@ export class SearchService {
             { description: { contains: query, mode: 'insensitive' } },
           ],
           status: 'PUBLISHED',
+          isRemoved: false,
         },
         select: VIDEO_SEARCH_SELECT,
         take: 5,
@@ -369,7 +378,7 @@ export class SearchService {
     if (!type || type === 'tags') {
       results.hashtags = await this.prisma.hashtag.findMany({
         where: { name: { contains: query, mode: 'insensitive' } },
-        take: type ? limit : 10,
+        take: type ? safeLimit : 10,
         orderBy: { postsCount: 'desc' },
       });
     }
@@ -458,6 +467,7 @@ export class SearchService {
     const myFollowing = await this.prisma.follow.findMany({
       where: { followerId: userId },
       select: { followingId: true },
+      take: 5000,
     });
     const myFollowingIds = myFollowing.map((f) => f.followingId);
 
@@ -473,6 +483,8 @@ export class SearchService {
         id: { notIn: [...myFollowingIds, userId] },
         isPrivate: false,
         isDeactivated: false,
+        isBanned: false,
+        isDeleted: false,
         // If user has interests, filter by shared interests
         ...(interestCategories.length > 0 ? {
           interests: { some: { category: { in: interestCategories } } },
@@ -485,7 +497,8 @@ export class SearchService {
   }
 
   async searchPosts(query: string, userId?: string, cursor?: string, limit = 20) {
-    const take = limit + 1;
+    const safeLim = Math.min(Math.max(typeof limit === 'string' ? parseInt(limit as unknown as string, 10) : limit, 1), 50);
+    const take = safeLim + 1;
     const posts = await this.prisma.post.findMany({
       where: {
         content: { contains: query, mode: 'insensitive' },
@@ -503,7 +516,8 @@ export class SearchService {
   }
 
   async searchThreads(query: string, cursor?: string, limit = 20) {
-    const take = limit + 1;
+    const safeLim = Math.min(Math.max(typeof limit === 'string' ? parseInt(limit as unknown as string, 10) : limit, 1), 50);
+    const take = safeLim + 1;
     const threads = await this.prisma.thread.findMany({
       where: {
         content: { contains: query, mode: 'insensitive' },
@@ -522,7 +536,8 @@ export class SearchService {
   }
 
   async searchReels(query: string, cursor?: string, limit = 20) {
-    const take = limit + 1;
+    const safeLim = Math.min(Math.max(limit, 1), 50);
+    const take = safeLim + 1;
     const reels = await this.prisma.reel.findMany({
       where: {
         OR: [
@@ -530,6 +545,7 @@ export class SearchService {
           { hashtags: { has: query.toLowerCase() } },
         ],
         status: 'READY',
+        isRemoved: false,
       },
       select: REEL_SEARCH_SELECT,
       take,
@@ -560,6 +576,10 @@ export class SearchService {
   }
 
   async getSuggestions(query: string, limit = 10) {
+    if (!query || query.trim().length === 0) {
+      return { users: [], hashtags: [] };
+    }
+    const safeLimit = Math.min(Math.max(limit, 1), 20);
     const [users, hashtags] = await Promise.all([
       this.prisma.user.findMany({
         where: {
@@ -567,14 +587,17 @@ export class SearchService {
             { username: { startsWith: query, mode: 'insensitive' } },
             { displayName: { startsWith: query, mode: 'insensitive' } },
           ],
+          isBanned: false,
+          isDeactivated: false,
+          isDeleted: false,
         },
         select: USER_SEARCH_SELECT,
-        take: Math.ceil(limit / 2),
+        take: Math.ceil(safeLimit / 2),
         orderBy: { followers: { _count: 'desc' } },
       }),
       this.prisma.hashtag.findMany({
         where: { name: { startsWith: query, mode: 'insensitive' } },
-        take: Math.ceil(limit / 2),
+        take: Math.ceil(safeLimit / 2),
         orderBy: { postsCount: 'desc' },
       }),
     ]);

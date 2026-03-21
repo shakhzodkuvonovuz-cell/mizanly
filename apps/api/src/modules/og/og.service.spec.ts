@@ -17,29 +17,32 @@ describe('OgService', () => {
           provide: PrismaService,
           useValue: {
             post: {
-              findUnique: jest.fn().mockResolvedValue({
+              findFirst: jest.fn().mockResolvedValue({
                 id: 'p1', content: 'Test post content', mediaUrls: ['https://img.test/1.jpg'],
-                user: { username: 'testuser', displayName: 'Test User' },
+                user: { username: 'testuser', displayName: 'Test User', avatarUrl: null, isBanned: false, isDeactivated: false },
               }),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             reel: {
-              findUnique: jest.fn().mockResolvedValue({
+              findFirst: jest.fn().mockResolvedValue({
                 id: 'r1', caption: 'Test reel', thumbnailUrl: 'https://img.test/thumb.jpg',
-                user: { username: 'reeluser', displayName: 'Reel User' },
+                user: { username: 'reeluser', displayName: 'Reel User', avatarUrl: null, isBanned: false, isDeactivated: false },
               }),
             },
             thread: {
-              findUnique: jest.fn().mockResolvedValue({
+              findFirst: jest.fn().mockResolvedValue({
                 id: 't1', content: 'Test thread content',
-                user: { username: 'threaduser', displayName: 'Thread User' },
+                user: { username: 'threaduser', displayName: 'Thread User', avatarUrl: null, isBanned: false, isDeactivated: false },
               }),
+              findMany: jest.fn().mockResolvedValue([]),
             },
             user: {
-              findUnique: jest.fn().mockResolvedValue({
+              findFirst: jest.fn().mockResolvedValue({
                 id: 'u1', username: 'testuser', displayName: 'Test User',
                 bio: 'My bio', avatarUrl: 'https://img.test/avatar.jpg',
-                followersCount: 100,
+                _count: { followers: 100, posts: 50 },
               }),
+              findMany: jest.fn().mockResolvedValue([]),
             },
           },
         },
@@ -57,7 +60,7 @@ describe('OgService', () => {
   });
 
   it('should throw NotFoundException for missing post', async () => {
-    prisma.post.findUnique.mockResolvedValueOnce(null);
+    prisma.post.findFirst.mockResolvedValueOnce(null);
     await expect(service.getPostOg('invalid')).rejects.toThrow(NotFoundException);
   });
 
@@ -74,7 +77,7 @@ describe('OgService', () => {
   });
 
   it('should throw NotFoundException for missing user profile', async () => {
-    prisma.user.findUnique.mockResolvedValueOnce(null);
+    prisma.user.findFirst.mockResolvedValueOnce(null);
     await expect(service.getProfileOg('nobody')).rejects.toThrow(NotFoundException);
   });
 
@@ -88,14 +91,14 @@ describe('OgService', () => {
     });
 
     it('should throw NotFoundException for missing thread', async () => {
-      prisma.thread.findUnique.mockResolvedValueOnce(null);
+      prisma.thread.findFirst.mockResolvedValueOnce(null);
       await expect(service.getThreadOg('bad')).rejects.toThrow(NotFoundException);
     });
 
     it('should use username when displayName is empty', async () => {
-      prisma.thread.findUnique.mockResolvedValueOnce({
+      prisma.thread.findFirst.mockResolvedValueOnce({
         id: 't2', content: 'No display name',
-        user: { username: 'onlyuser', displayName: '', avatarUrl: null },
+        user: { username: 'onlyuser', displayName: '', avatarUrl: null, isBanned: false, isDeactivated: false },
       });
       const result = await service.getThreadOg('t2');
       expect(result).toContain('onlyuser');
@@ -104,7 +107,7 @@ describe('OgService', () => {
 
   describe('getReelOg — NotFoundException', () => {
     it('should throw NotFoundException for missing reel', async () => {
-      prisma.reel.findUnique.mockResolvedValueOnce(null);
+      prisma.reel.findFirst.mockResolvedValueOnce(null);
       await expect(service.getReelOg('missing')).rejects.toThrow(NotFoundException);
     });
   });
@@ -175,9 +178,9 @@ describe('OgService', () => {
 
   describe('getPostOg — fallback description', () => {
     it('should use fallback when post has no content', async () => {
-      prisma.post.findUnique.mockResolvedValueOnce({
+      prisma.post.findFirst.mockResolvedValueOnce({
         id: 'p2', content: '', mediaUrls: [],
-        user: { username: 'emptypost', displayName: 'Empty', avatarUrl: null },
+        user: { username: 'emptypost', displayName: 'Empty', avatarUrl: null, isBanned: false, isDeactivated: false },
       });
       const result = await service.getPostOg('p2');
       expect(result).toContain('Post by @emptypost');
@@ -186,7 +189,7 @@ describe('OgService', () => {
 
   describe('getProfileOg — fallback bio', () => {
     it('should use follower/post counts when no bio', async () => {
-      prisma.user.findUnique.mockResolvedValueOnce({
+      prisma.user.findFirst.mockResolvedValueOnce({
         id: 'u2', username: 'nobio', displayName: 'No Bio',
         bio: '', avatarUrl: null,
         _count: { followers: 50, posts: 10 },

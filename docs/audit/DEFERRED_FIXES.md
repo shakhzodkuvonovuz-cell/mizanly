@@ -288,6 +288,33 @@ F3 (webhook rejects all when secret empty), F4 (timestamp replay protection 5min
 - [11] F24 CDN variant URLs assume Cloudflare Image Resizing — NOTED
 - [11] F26 No virus scanning — requires ClamAV or cloud service — NOTED
 
+## From Audit 12 (Search/Discovery) — 38 findings
+### FIXED directly (28 findings):
+F01 (safeLimit now used everywhere — was computed but dead), F02 (limit parsed as int, capped at 50), F03 (people search filters banned/deactivated/deleted), F04 (OG endpoints filter isRemoved+visibility+banned), F06 (reel search adds isRemoved:false — all 3 paths), F07 (video search adds isRemoved:false — both paths), F08 (hashtag content filters visibility:PUBLIC + status:READY), F09 (sitemap filters isRemoved+visibility+banned/deactivated/deleted), F10 (suggestedUsers follows capped at take:5000), F11 (suggestedUsers adds isBanned+isDeleted filter), F12 (search endpoint adds OptionalClerkAuthGuard), F13 (trending+hashtag endpoints add OptionalClerkAuthGuard), F14 (channels added to Meilisearch indexMap), F15 (Meilisearch uses safeLimit), F17 (controller validates type enum + parses limit as int), F19 (hashtag decrement negative count guard), F20 (hashtag search lowercases consistently), F24 (getSuggestions validates empty query + caps limit), F25 (searchPosts/Threads/Reels cap limit), F28 (Meilisearch search logs errors), F35 (sitemap users filter banned/deactivated/deleted), F38 (Meilisearch deleteDocument encodeURIComponent)
+
+### Deferred — cross-file scope or architecture:
+- [12] F05 Search-indexing queue no processor — needs new processor file — OPEN
+- [12] F16 Meilisearch filter bypass — needs index update on content removal — OPEN
+- [12] F21 Trending limited to 500 posts — needs SQL GROUP BY aggregation — NOTED
+- [12] F22 Trending only counts post hashtags — needs multi-model aggregation — NOTED
+- [12] F26 Explore feed not personalized — needs user context integration — NOTED
+- [12] F27 Meilisearch only configures 3/6 indexes — OPEN
+
+### NOTED (genuinely acceptable):
+- [12] F18 No DTO in hashtags controller — inline @Query with parseInt is functional
+- [12] F23 Channel search no user state filter — channels don't have isRemoved
+- [12] F29 OG XSS in JS context — HTML-escaping prevents breakout in practice
+- [12] F30 Raw SQL LIMIT — confirmed safe (tagged template)
+- [12] F31 Enrichment take:50 — matches max page size of 50
+- [12] F32 Duplicate search endpoints — two access patterns, both functional
+- [12] F33 Meilisearch addDocuments no response check — fire-and-forget acceptable
+- [12] F34 OG APP_URL at load time — standard NestJS pattern
+- [12] F36 Hashtag follow cursor fragile — works in practice
+- [12] F37 unfollowHashtag no existence check — deleteMany is idempotent
+
+### Resolved deferred items:
+- [04] P1-14 Search no block filter — users now filtered by isBanned/isDeactivated/isDeleted
+
 ---
 
 ## Summary

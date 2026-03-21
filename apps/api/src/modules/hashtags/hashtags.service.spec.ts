@@ -135,6 +135,7 @@ describe('HashtagsService', () => {
         where: {
           hashtags: { has: 'test' },
           isRemoved: false,
+          visibility: 'PUBLIC',
         },
         select: expect.any(Object),
         take: 21,
@@ -162,6 +163,7 @@ describe('HashtagsService', () => {
         where: {
           hashtags: { has: 'test' },
           isRemoved: false,
+          status: 'READY',
         },
         select: expect.any(Object),
         take: 21,
@@ -183,6 +185,7 @@ describe('HashtagsService', () => {
         where: {
           hashtags: { has: 'test' },
           isRemoved: false,
+          visibility: 'PUBLIC',
         },
         select: expect.any(Object),
         take: 21,
