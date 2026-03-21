@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -116,6 +116,12 @@ export class CommunityService {
   }
 
   async answerFatwa(scholarId: string, questionId: string, answer: string) {
+    // Verify the user is an approved scholar
+    const verification = await this.prisma.scholarVerification.findFirst({
+      where: { userId: scholarId, status: 'APPROVED' },
+    });
+    if (!verification) throw new ForbiddenException('Only verified scholars can answer fatwa questions');
+
     const q = await this.prisma.fatwaQuestion.findUnique({ where: { id: questionId } });
     if (!q) throw new NotFoundException('Fatwa question not found');
     if (q.status === 'answered') throw new ConflictException('Question already answered');
@@ -191,6 +197,15 @@ export class CommunityService {
       update: { score: { increment: delta } },
     });
 
+    // Ensure score doesn't go negative
+    if (rep.score < 0) {
+      await this.prisma.userReputation.update({
+        where: { userId },
+        data: { score: 0 },
+      });
+      rep.score = 0;
+    }
+
     // Update tier
     let tier = 'newcomer';
     if (rep.score >= 1000) tier = 'elder';
@@ -232,7 +247,7 @@ export class CommunityService {
     if (video.status !== 'PUBLISHED') throw new BadRequestException('Video is not available');
 
     return this.prisma.watchParty.create({
-      data: { hostId: userId, ...dto },
+      data: { hostId: userId, ...dto, isActive: true },
     });
   }
 

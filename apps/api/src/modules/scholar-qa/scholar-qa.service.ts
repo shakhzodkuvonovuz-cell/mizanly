@@ -75,7 +75,10 @@ export class ScholarQAService {
     const question = await this.prisma.scholarQuestion.findUnique({ where: { id: questionId } });
     if (!question) throw new NotFoundException('Question not found');
 
-    // Simple increment (no duplicate check for simplicity — could add a vote model)
+    // Prevent self-voting
+    if (question.userId === userId) throw new BadRequestException('Cannot vote on your own question');
+
+    // Note: proper vote dedup needs a ScholarQuestionVote join table (deferred to schema file)
     return this.prisma.scholarQuestion.update({
       where: { id: questionId },
       data: { votes: { increment: 1 } },

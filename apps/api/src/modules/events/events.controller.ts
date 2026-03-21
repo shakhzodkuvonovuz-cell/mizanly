@@ -154,7 +154,7 @@ export class RsvpDto {
 }
 
 @ApiTags('Events')
-@Controller('api/v1/events')
+@Controller('events')
 export class EventsController {
   constructor(private service: EventsService) {}
 

@@ -16,7 +16,7 @@ describe('CommunitiesService', () => {
         {
           provide: PrismaService,
           useValue: {
-            circle: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), delete: jest.fn() },
+            circle: { create: jest.fn(), findMany: jest.fn(), findUnique: jest.fn(), update: jest.fn(), updateMany: jest.fn().mockResolvedValue({ count: 0 }), delete: jest.fn() },
             circleMember: { findUnique: jest.fn(), findMany: jest.fn(), create: jest.fn(), delete: jest.fn() },
             $transaction: jest.fn().mockResolvedValue([]),
           },

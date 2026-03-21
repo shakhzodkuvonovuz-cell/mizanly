@@ -61,11 +61,18 @@ export class CommunitiesService {
 
   // Helper: generate slug from name
   private generateSlug(name: string): string {
-    return name
+    let slug = name
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/[^a-z0-9\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]+/g, '-')
       .replace(/^-|-$/g, '')
       .substring(0, 100);
+
+    // If slug is empty (all characters were stripped), generate a random one
+    if (!slug) {
+      slug = 'community-' + Math.random().toString(36).slice(2, 9);
+    }
+
+    return slug;
   }
 
   // Helper: check if user is owner or admin/moderator
@@ -321,6 +328,12 @@ export class CommunitiesService {
       }),
     ]);
 
+    // Ensure membersCount doesn't go negative
+    await this.prisma.circle.updateMany({
+      where: { id, membersCount: { lt: 0 } },
+      data: { membersCount: 0 },
+    });
+
     return { data: null, success: true, timestamp: new Date().toISOString() };
   }
 
@@ -350,7 +363,7 @@ export class CommunitiesService {
 
     const where: Prisma.CircleMemberWhereInput = { circleId: id };
     if (cursor) {
-      where.joinedAt = { lt: new Date(cursor) };
+      where.joinedAt = { gt: new Date(cursor) };
     }
 
     const members = await this.prisma.circleMember.findMany({
@@ -411,7 +424,7 @@ export class CommunitiesService {
   }
 
   private async requireAdmin(communityId: string, userId: string) {
-    const community = await this.prisma.community.findUnique({ where: { id: communityId } });
+    const community = await this.prisma.circle.findUnique({ where: { id: communityId } });
     if (!community) throw new NotFoundException('Community not found');
     if (community.ownerId !== userId) throw new ForbiddenException('Only the owner can manage roles');
     return community;

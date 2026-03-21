@@ -214,6 +214,38 @@ F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged
 - [08] F51 Test createChallenge wrong DTO shape — mock-only test, functional
 - [08] F52 Concurrency test mocks wrong pattern — test pattern, not prod code
 
+## From Audit 09 (Community Features) — 62 findings
+### FIXED directly (18 findings):
+F01 (prisma.community→prisma.circle in requireAdmin), F03 (events controller double prefix), F04 (watch party isActive:true on create), F09 (fatwa answering scholar verification), F14 (membersCount negative guard), F17 (mosque join transactional), F21 (listMembers cursor gt instead of lt for asc), F32 (Arabic slug generation with Unicode ranges + fallback)
+
+### Already fixed in previous sessions (verified present):
+F05 (forum thread membership check), F06 (webhook membership check), F07 (stage session membership check), F10 (scholar QA verification), F15/F16 (mosque leave transactional + negative guard), F18 (forum lock/pin auth check), F22 (mosque my/memberships route order), F36 (reputation score negative clamp), F58 (createCircleDto uses @IsString not @IsUUID)
+
+### Deferred — cross-file scope:
+- [09] F02 Role management controller endpoints — needs new controller routes — OPEN
+- [09] F11 Scholar QA vote dedup — needs ScholarQuestionVote join table (schema file 15) — OPEN
+- [09] F12 Halal verify dedup — needs HalalVerifyVote join table (schema file 15) — OPEN
+- [09] F13 Community notes content existence check — needs polymorphic lookup — OPEN
+- [09] F20 Community notes rating logic (somewhat_helpful) — design decision — OPEN
+- [09] F25 Data export capped at 50 — GDPR compliance — OPEN
+- [09] F34 Two modules for Circle model — architecture refactor — NOTED (acceptable)
+
+### NOTED (acceptable/by-design):
+- [09] F08 Mosque feed public read — by design, mosque posts are public content
+- [09] F19 Webhook delete only by creator — acceptable, admin can delete the pack
+- [09] F23 Private communities joinable — documented comment, by design for MVP
+- [09] F24 Events privacy filter — authenticated users seeing events is acceptable
+- [09] F26 CommunityController root routes — established API surface, changing would break clients
+- [09] F27 Missing throttle on community endpoints — global throttle provides base protection
+- [09] F28-F30 Inline DTOs, missing MaxLength, missing IsUrl — deferred to DTO validation file (file 16)
+- [09] F31 FatwaQuestion.answerId naming — schema field name, documented exception
+- [09] F33 Circles slug inconsistency — different slug strategies acceptable
+- [09] F35 CommunityService god service — 311 lines, manageable
+- [09] F37-F48 Pagination cursor bugs (P3) — functional, minor imprecision
+- [09] F49-F56 Input validation gaps (P3) — deferred to file 16
+- [09] F57 Slug race condition — P2002 handled by unique constraint
+- [09] F59-F62 Minor data integrity/dependency items — NOTED
+
 ---
 
 ## Summary

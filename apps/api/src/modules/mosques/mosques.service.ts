@@ -80,14 +80,15 @@ export class MosquesService {
     });
     if (existing) throw new ConflictException('Already a member');
 
-    await this.prisma.mosqueMembership.create({
-      data: { mosqueId, userId, role: 'member' },
-    });
-
-    await this.prisma.mosqueCommunity.update({
-      where: { id: mosqueId },
-      data: { memberCount: { increment: 1 } },
-    });
+    await this.prisma.$transaction([
+      this.prisma.mosqueMembership.create({
+        data: { mosqueId, userId, role: 'member' },
+      }),
+      this.prisma.mosqueCommunity.update({
+        where: { id: mosqueId },
+        data: { memberCount: { increment: 1 } },
+      }),
+    ]);
 
     return { joined: true };
   }

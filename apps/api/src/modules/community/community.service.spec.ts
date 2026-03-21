@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../config/prisma.service';
 import { CommunityService } from './community.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -29,9 +29,12 @@ describe('CommunityService', () => {
             sharedCollection: { create: jest.fn(), findMany: jest.fn() },
             waqfFund: { create: jest.fn(), findMany: jest.fn() },
             user: { findUnique: jest.fn() },
-            post: { findMany: jest.fn() },
+            post: { findMany: jest.fn(), aggregate: jest.fn() },
             thread: { findMany: jest.fn() },
             message: { findMany: jest.fn() },
+            scholarVerification: { findFirst: jest.fn() },
+            reel: { aggregate: jest.fn() },
+            follow: { count: jest.fn() },
           },
         },
       ],
@@ -256,19 +259,27 @@ describe('CommunityService', () => {
   });
 
   describe('answerFatwa', () => {
-    it('should answer a pending fatwa question', async () => {
+    it('should answer a pending fatwa question for verified scholar', async () => {
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
       prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'pending' });
       prisma.fatwaQuestion.update.mockResolvedValue({ id: 'fq-1', status: 'answered' });
       const result = await service.answerFatwa('scholar-1', 'fq-1', 'It is permissible.');
       expect(result.status).toBe('answered');
     });
 
+    it('should throw ForbiddenException for non-verified scholar', async () => {
+      prisma.scholarVerification.findFirst.mockResolvedValue(null);
+      await expect(service.answerFatwa('fake-scholar', 'fq-1', 'answer')).rejects.toThrow(ForbiddenException);
+    });
+
     it('should throw NotFoundException for missing question', async () => {
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
       prisma.fatwaQuestion.findUnique.mockResolvedValue(null);
       await expect(service.answerFatwa('scholar-1', 'fq-1', 'answer')).rejects.toThrow(NotFoundException);
     });
 
     it('should throw ConflictException if already answered', async () => {
+      prisma.scholarVerification.findFirst.mockResolvedValue({ userId: 'scholar-1', status: 'APPROVED' });
       prisma.fatwaQuestion.findUnique.mockResolvedValue({ id: 'fq-1', status: 'answered' });
       await expect(service.answerFatwa('scholar-1', 'fq-1', 'answer')).rejects.toThrow(ConflictException);
     });
