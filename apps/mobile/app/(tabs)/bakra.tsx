@@ -90,6 +90,7 @@ interface ReelItemProps {
   item: Reel;
   index: number;
   isActive: boolean;
+  currentUserId?: string;
   onLike: (reel: Reel) => void;
   onBookmark: (reel: Reel) => void;
   onShare: (reel: Reel) => void;
@@ -98,6 +99,8 @@ interface ReelItemProps {
   onReport: (reel: Reel) => void;
   onNotInterested: (reel: Reel) => void;
   onCopyLink: (reel: Reel) => void;
+  onFollow: (userId: string) => void;
+  onNavigate: (path: string) => void;
   setVideoRef: (id: string, ref: Video) => void;
   doubleTapGesture: TapGesture;
   heartTrigger: number;
@@ -107,6 +110,7 @@ const ReelItem = memo(function ReelItem({
   item,
   index,
   isActive,
+  currentUserId,
   onLike,
   onBookmark,
   onShare,
@@ -115,25 +119,18 @@ const ReelItem = memo(function ReelItem({
   onReport,
   onNotInterested,
   onCopyLink,
+  onFollow,
+  onNavigate,
   setVideoRef,
   doubleTapGesture,
   heartTrigger,
 }: ReelItemProps) {
   const { t } = useTranslation();
   const localVideoRef = useRef<Video | null>(null);
-  const { user } = useUser();
   const [captionExpanded, setCaptionExpanded] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [progress, setProgress] = useState(0);
-  const queryClient = useQueryClient();
   const haptic = useHaptic();
-  const router = useRouter();
-  const followMutation = useMutation({
-    mutationFn: (userId: string) => followsApi.follow(userId),
-    onSuccess: (_, userId) => {
-      queryClient.invalidateQueries({ queryKey: ['reels-feed'] });
-    },
-  });
 
   const spin = useSharedValue(0);
 
@@ -201,38 +198,24 @@ const ReelItem = memo(function ReelItem({
         />
 
         {/* Audio info bar */}
-        <View style={{
-          position: 'absolute', bottom: Platform.OS === 'ios' ? 90 : 70, left: 0, right: 60,
-          flexDirection: 'row', alignItems: 'center',
-          paddingHorizontal: spacing.base,
-        }}>
+        <View style={styles.audioInfoBar}>
           <Icon name="volume-x" size="xs" color="#fff" />
-          <Animated.View style={{ flex: 1, marginLeft: spacing.xs, overflow: 'hidden' }}>
-            <Text numberOfLines={1} style={{ color: '#fff', fontSize: fontSize.xs }}>
+          <Animated.View style={styles.audioInfoContent}>
+            <Text numberOfLines={1} style={styles.audioTitle}>
               {item.audioTitle || t('bakra.originalAudio')} — {item.audioArtist || item.user?.displayName || t('bakra.unknown')}
             </Text>
           </Animated.View>
           <Pressable
             onPress={() => {
               if (item.audioTrackId) {
-                router.push(`/(screens)/sound/${item.audioTrackId}`);
+                onNavigate(`/(screens)/sound/${item.audioTrackId}`);
               }
             }}
-            style={{
-              width: 32, height: 32, borderRadius: radius.full,
-              borderWidth: 2, borderColor: '#fff',
-              overflow: 'hidden', marginLeft: spacing.sm,
-              backgroundColor: '#1C1C1E', // Vinyl color
-              shadowColor: colors.emerald,
-              shadowOpacity: 0.3,
-              shadowRadius: 6,
-              shadowOffset: { width: 0, height: 0 },
-              elevation: 4,
-            }}
+            style={styles.audioDisc}
           >
-            <Animated.View style={[{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }, spinStyle]}>
+            <Animated.View style={[styles.audioDiscInner, spinStyle]}>
               {item.audioCoverUrl ? (
-                <Image source={{ uri: item.audioCoverUrl }} style={{ width: 14, height: 14, borderRadius: radius.full }} />
+                <Image source={{ uri: item.audioCoverUrl }} style={styles.audioDiscImage} />
               ) : (
                 <Icon name="music" size={12} color="#fff" />
               )}
@@ -242,14 +225,9 @@ const ReelItem = memo(function ReelItem({
 
         {/* Trending sound indicator */}
         {item.audioTrack?.isTrending && (
-          <View style={{
-            position: 'absolute', bottom: Platform.OS === 'ios' ? 110 : 90, left: spacing.base,
-            flexDirection: 'row', alignItems: 'center',
-            backgroundColor: 'rgba(200,150,62,0.85)', borderRadius: radius.full,
-            paddingHorizontal: spacing.sm, paddingVertical: 2,
-          }}>
+          <View style={styles.trendingBadge}>
             <Icon name="trending-up" size={10} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', marginLeft: 2 }}>{t('bakra.trending')}</Text>
+            <Text style={styles.trendingBadgeText}>{t('bakra.trending')}</Text>
           </View>
         )}
 
@@ -261,7 +239,7 @@ const ReelItem = memo(function ReelItem({
             accessibilityLabel={t('accessibility.viewProfile', { username: item.user.username })}
             accessibilityRole="button"
           >
-            <View style={{ position: 'relative' }}>
+            <View style={styles.avatarContainer}>
               <Avatar
                 uri={item.user.avatarUrl}
                 name={item.user.username}
@@ -269,32 +247,22 @@ const ReelItem = memo(function ReelItem({
                 showRing={false}
               />
               {/* Follow button on creator avatar */}
-              {item.user.id !== user?.id && (
+              {item.user.id !== currentUserId && (
                 <Pressable
                   onPress={() => {
                     if (!item.user?.isFollowing) {
-                      followMutation.mutate(item.user.id);
+                      onFollow(item.user.id);
                       haptic.medium();
                     }
                   }}
                   hitSlop={12}
                   accessibilityLabel={item.user?.isFollowing ? t('common.following') : t('common.follow')}
                   accessibilityRole="button"
-                  style={{
-                    position: 'absolute',
-                    bottom: -6, alignSelf: 'center',
-                    width: 34, height: 34, borderRadius: radius.full,
-                    overflow: 'hidden',
-                    borderWidth: 1.5, borderColor: colors.dark.bg,
-                  }}
+                  style={styles.followButtonOverlay}
                 >
                   {item.user?.isFollowing ? (
                     <View
-                      style={{
-                        width: 34, height: 34,
-                        justifyContent: 'center', alignItems: 'center',
-                        backgroundColor: colors.emerald,
-                      }}
+                      style={styles.followIconContainerFollowing}
                     >
                       <Icon name="check" size={14} color="#fff" />
                     </View>
@@ -303,10 +271,7 @@ const ReelItem = memo(function ReelItem({
                       colors={[colors.emerald, '#05593A']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
-                      style={{
-                        width: 34, height: 34,
-                        justifyContent: 'center', alignItems: 'center',
-                      }}
+                      style={styles.followIconContainer}
                     >
                       <Icon name="plus" size={16} color="#fff" />
                     </LinearGradient>
@@ -329,7 +294,7 @@ const ReelItem = memo(function ReelItem({
               {!captionExpanded && (
                 <Text
                   onPress={() => setCaptionExpanded(true)}
-                  style={{ color: colors.text.secondary, fontSize: fontSize.sm }}
+                  style={styles.captionMore}
                 >
                   {t('common.more')}
                 </Text>
@@ -380,16 +345,11 @@ const ReelItem = memo(function ReelItem({
           <Pressable
             onPress={() => {
               haptic.light();
-              router.push(`/(screens)/create-reel?duetWith=${item.id}`);
+              onNavigate(`/(screens)/create-reel?duetWith=${item.id}`);
             }}
-            style={{ alignItems: 'center', marginTop: spacing.md }}
+            style={styles.duetStitchButton}
           >
-            <View style={{
-              width: 36, height: 36, borderRadius: radius.full,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
-              justifyContent: 'center', alignItems: 'center',
-            }}>
+            <View style={styles.duetStitchIcon}>
               <Icon name="layers" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
             <Text style={styles.actionCountDuetStitch}>{t('bakra.duet')}</Text>
@@ -399,16 +359,11 @@ const ReelItem = memo(function ReelItem({
           <Pressable
             onPress={() => {
               haptic.light();
-              router.push(`/(screens)/create-reel?stitchFrom=${item.id}`);
+              onNavigate(`/(screens)/create-reel?stitchFrom=${item.id}`);
             }}
-            style={{ alignItems: 'center', marginTop: spacing.md }}
+            style={styles.duetStitchButton}
           >
-            <View style={{
-              width: 36, height: 36, borderRadius: radius.full,
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              borderWidth: 0.5, borderColor: 'rgba(255,255,255,0.2)',
-              justifyContent: 'center', alignItems: 'center',
-            }}>
+            <View style={styles.duetStitchIcon}>
               <Icon name="slash" size="sm" color="#fff" style={styles.iconShadow} />
             </View>
             <Text style={styles.actionCountDuetStitch}>{t('bakra.stitch')}</Text>
@@ -649,6 +604,16 @@ export default function BakraScreen() {
     Alert.alert(t('bakra.linkCopiedAlert.title'), t('bakra.linkCopiedAlert.message'));
   };
 
+  const handleFollow = useCallback((userId: string) => {
+    followsApi.follow(userId).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['reels-feed'] });
+    }).catch(() => {});
+  }, [queryClient]);
+
+  const handleNavigate = useCallback((path: string) => {
+    router.push(path as never);
+  }, [router]);
+
   const doubleTapGesture = useMemo(() => Gesture.Tap()
     .numberOfTaps(2)
     .onEnd(() => {
@@ -665,6 +630,7 @@ export default function BakraScreen() {
       item={item}
       index={index}
       isActive={index === currentIndex}
+      currentUserId={user?.id}
       onLike={handleLike}
       onBookmark={handleBookmark}
       onShare={handleShare}
@@ -673,11 +639,13 @@ export default function BakraScreen() {
       onReport={handleReport}
       onNotInterested={handleNotInterested}
       onCopyLink={handleCopyLink}
+      onFollow={handleFollow}
+      onNavigate={handleNavigate}
       setVideoRef={setVideoRef}
       doubleTapGesture={doubleTapGesture}
       heartTrigger={heartTrigger}
     />
-  ), [currentIndex, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, setVideoRef, doubleTapGesture, heartTrigger]);
+  ), [currentIndex, user?.id, handleLike, handleBookmark, handleShare, handleComment, handleProfilePress, handleReport, handleNotInterested, handleCopyLink, handleFollow, handleNavigate, setVideoRef, doubleTapGesture, heartTrigger]);
 
   const keyExtractor = useCallback((item: Reel) => item.id, []);
   // FlashList uses estimatedItemSize instead of getItemLayout
@@ -965,5 +933,111 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 11,
     fontWeight: '600',
+  },
+  audioInfoBar: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 90 : 70,
+    left: 0,
+    right: 60,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.base,
+  },
+  audioInfoContent: {
+    flex: 1,
+    marginLeft: spacing.xs,
+    overflow: 'hidden',
+  },
+  audioTitle: {
+    color: '#fff',
+    fontSize: fontSize.xs,
+  },
+  audioDisc: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    borderWidth: 2,
+    borderColor: '#fff',
+    overflow: 'hidden',
+    marginLeft: spacing.sm,
+    backgroundColor: '#1C1C1E',
+    shadowColor: colors.emerald,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 4,
+  },
+  audioDiscInner: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  audioDiscImage: {
+    width: 14,
+    height: 14,
+    borderRadius: radius.full,
+  },
+  trendingBadge: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 110 : 90,
+    left: spacing.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(200,150,62,0.85)',
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  trendingBadgeText: {
+    color: '#fff',
+    fontSize: 9,
+    fontWeight: '700',
+    marginLeft: 2,
+  },
+  avatarContainer: {
+    position: 'relative',
+  },
+  followButtonOverlay: {
+    position: 'absolute',
+    bottom: -6,
+    alignSelf: 'center',
+    width: 34,
+    height: 34,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: colors.dark.bg,
+  },
+  followIconContainer: {
+    width: 34,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  followIconContainerFollowing: {
+    width: 34,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.emerald,
+  },
+  captionMore: {
+    color: colors.text.secondary,
+    fontSize: fontSize.sm,
+  },
+  duetStitchButton: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+  },
+  duetStitchIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
