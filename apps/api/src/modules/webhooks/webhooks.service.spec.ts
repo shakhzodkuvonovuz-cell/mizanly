@@ -179,5 +179,52 @@ describe('WebhooksService', () => {
 
       global.fetch = originalFetch;
     });
+
+    it('should throw NotFoundException when user does not own webhook', async () => {
+      prisma.webhook.findUnique.mockResolvedValue({ id: 'wh-1', url: 'https://example.com/hook', secret: 'sec', createdById: 'other-user' });
+      await expect(service.test('wh-1', 'u1')).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('SSRF prevention', () => {
+    it('should reject HTTP URLs (non-HTTPS)', async () => {
+      await expect(
+        service.create('u1', { circleId: 'c1', name: 'Bad Hook', url: 'http://example.com/hook', events: ['post.created'] }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject localhost URLs', async () => {
+      await expect(
+        service.create('u1', { circleId: 'c1', name: 'Bad Hook', url: 'https://localhost:3000/admin', events: ['post.created'] }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject private IP URLs', async () => {
+      await expect(
+        service.create('u1', { circleId: 'c1', name: 'Bad Hook', url: 'https://192.168.1.1/hook', events: ['post.created'] }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject cloud metadata URLs', async () => {
+      await expect(
+        service.create('u1', { circleId: 'c1', name: 'Bad Hook', url: 'https://169.254.169.254/latest/meta-data/', events: ['post.created'] }),
+      ).rejects.toThrow();
+    });
+
+    it('should reject internal network URLs', async () => {
+      await expect(
+        service.deliver('https://10.0.0.1/internal', 'secret', { event: 'test' }),
+      ).rejects.toThrow();
+    });
+
+    it('should allow valid HTTPS URLs', async () => {
+      const originalFetch = global.fetch;
+      global.fetch = jest.fn().mockResolvedValue({ ok: true, status: 200 }) as any;
+
+      const result = await service.deliver('https://api.example.com/webhook', 'secret', { event: 'test' });
+      expect(result.success).toBe(true);
+
+      global.fetch = originalFetch;
+    });
   });
 });

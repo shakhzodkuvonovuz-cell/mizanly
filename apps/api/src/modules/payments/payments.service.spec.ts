@@ -193,4 +193,77 @@ describe('PaymentsService', () => {
       ).resolves.not.toThrow();
     });
   });
+
+  describe('createSubscription — pending status', () => {
+    it('should create subscription with pending status (not active)', async () => {
+      redis.get.mockResolvedValue('cus_cached');
+      prisma.membershipTier.findUnique.mockResolvedValue({ id: 'tier1', price: 10, currency: 'USD', isActive: true, userId: 'creator' });
+      prisma.membershipSubscription.findUnique.mockResolvedValue(null);
+      prisma.membershipSubscription.create.mockResolvedValue({ id: 'sub-db-1' });
+      redis.setex.mockResolvedValue('OK');
+      await service.createSubscription('u1', 'tier1', 'pm_test');
+      expect(prisma.membershipSubscription.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'pending' }) }),
+      );
+    });
+  });
+
+  describe('cancelSubscription — cancel_pending on Stripe failure', () => {
+    it('should return cancel_pending when Stripe cancel fails', async () => {
+      redis.get.mockResolvedValue('sub-db-1'); // Redis mapping exists
+      prisma.membershipSubscription.findFirst.mockResolvedValue({ id: 'sub-db-1', userId: 'u1' });
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      redis.del.mockResolvedValue(1);
+      // Mock Stripe cancel failure
+      mockStripeInstance.subscriptions.cancel.mockRejectedValueOnce(new Error('Stripe error'));
+      const result = await service.cancelSubscription('u1', 'sub_failing');
+      expect(result.message).toContain('pending');
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'cancel_pending' }) }),
+      );
+    });
+  });
+
+  describe('attachPaymentMethod — error handling', () => {
+    it('should throw BadRequestException when Stripe fails', async () => {
+      redis.get.mockResolvedValue('cus_cached');
+      mockStripeInstance.paymentMethods.attach.mockRejectedValueOnce(new Error('Card declined'));
+      await expect(service.attachPaymentMethod('u1', 'pm_bad')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('listPaymentMethods — error handling', () => {
+    it('should throw BadRequestException when Stripe API fails', async () => {
+      redis.get.mockResolvedValue('cus_cached');
+      mockStripeInstance.paymentMethods.list.mockRejectedValueOnce(new Error('API error'));
+      await expect(service.listPaymentMethods('u1')).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('handlePaymentIntentSucceeded — DB fallback', () => {
+    it('should fall back to DB when Redis mapping missing', async () => {
+      redis.get.mockResolvedValue(null);
+      prisma.tip.findFirst = jest.fn().mockResolvedValue({ id: 'tip-fallback' });
+      prisma.tip.update.mockResolvedValue({});
+      redis.del.mockResolvedValue(1);
+      await service.handlePaymentIntentSucceeded({
+        id: 'pi_test', metadata: { senderId: 'u1' },
+      } as any);
+      expect(prisma.tip.update).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { id: 'tip-fallback' } }),
+      );
+    });
+  });
+
+  describe('handleInvoicePaid — try/catch on retrieve', () => {
+    it('should still mark active when Stripe retrieve fails', async () => {
+      redis.get.mockResolvedValue('sub-db-1');
+      mockStripeInstance.subscriptions.retrieve.mockRejectedValueOnce(new Error('Not found'));
+      prisma.membershipSubscription.update.mockResolvedValue({});
+      await service.handleInvoicePaid({ subscription: 'sub_test' } as any);
+      expect(prisma.membershipSubscription.update).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'active' }) }),
+      );
+    });
+  });
 });
