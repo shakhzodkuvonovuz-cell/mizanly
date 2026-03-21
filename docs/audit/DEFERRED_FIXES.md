@@ -429,6 +429,33 @@ F5 remaining (call_answer/reject/end rate limited, leave_quran_room, quran_verse
 - **OPEN**: Must be fixed — either in its owning audit file or in a dedicated sweep
 - **NOTED**: Acknowledged, acceptable risk at current stage, or by-design behavior
 
+## From Audit 20 (Environment/Config) — 36 findings (57 with sub-items)
+### Already fixed in previous files:
+F1 (R2 env var names — upload service reads BOTH naming conventions, file 11), F2 (health CF_ACCOUNT_ID → CF_STREAM_ACCOUNT_ID, file 07), F11 (stream webhook rejects when secret empty, file 11), F32 (stripe-connect coins before payment, file 17)
+
+### FIXED directly (22 findings):
+F3 (Redis error logging — errors+connection failures now logged instead of swallowed; proxy expanded to cover ALL Redis commands: hgetall/hset/hdel/pipeline/lpush/sadd/srem/scard/expire/mget/incrby/etc.), F9 (stripe webhook controller process.env → ConfigService for both STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET), F10 (Redis graceful shutdown provider added), F12 (7 missing env vars added to .env.example: OPENAI_API_KEY, GEMINI_API_KEY, APP_URL, GOLD_PRICE_PER_GRAM, SILVER_PRICE_PER_GRAM), F13 (phantom CF_IMAGES vars removed from .env.example), F15 (validateEnv expanded: R2 vars, CF_STREAM vars, MEILISEARCH_HOST, OPENAI_API_KEY, GEMINI_API_KEY, CORS_ORIGINS all checked at startup), F17 (og.service.ts: top-level process.env.APP_URL → ConfigService injected at constructor time), F18 (islamic.service.ts: process.env.GOLD/SILVER_PRICE → ConfigService), F19 (health.controller.ts: 6 process.env reads → ConfigService: R2_PUBLIC_URL, CF_STREAM_API_TOKEN, CF_STREAM_ACCOUNT_ID), F21 (Swagger exposure: changed from !=='production' to === 'development' — staging/test/etc. won't expose docs), F22 (Redis proxy expanded — all commonly used commands covered including hgetall, pipeline, sadd, srem, scard, expire, etc.), F23 (CORS origins trimmed — split+map(trim)+filter), F29 (duplicate slow-request logging removed from ResponseTimeMiddleware — only sets header now, RequestLoggerMiddleware handles warnings at 500ms)
+
+### Deferred — architecture/infrastructure:
+- [20] F4 Credentials in .env — .gitignored, not committed. Rotate test keys before production — NOTED
+- [20] F5 Duplicate Sentry — needs consolidation decision — OPEN
+- [20] F6 Socket.io Redis adapter dead code — needs decision (wire up or remove) — OPEN
+- [20] F7 Chat gateway CORS decorator timing — works in practice with dotenv loaded before NestJS — NOTED
+- [20] F8 enableImplicitConversion — standard NestJS pattern, removing could break existing clients — NOTED
+- [20] F14 Bucket name mismatch (.env vs .env.example) — documentation only, .env not committed — NOTED
+- [20] F16 ConfigModule no validation schema — enhancement, current validateEnv() covers critical vars — NOTED
+- [20] F20 CORS_ORIGINS not validated as URLs — trimming added, URL validation would be over-engineering — NOTED
+
+### NOTED (minor/acceptable):
+- [20] F24 Helmet CSP disabled — correct for mobile API
+- [20] F25 Request body 1MB limit — sufficient for all current endpoints
+- [20] F26 BullMQ url vs parsed connection — works with Upstash rediss:// in practice
+- [20] F27 PrismaService catches connection error — acceptable, first-query retry is standard
+- [20] F28 Permissions-Policy — mobile API only, no web client
+- [20] F30 Pino + NestJS logger — dual logging is intentional (structured HTTP + readable service logs)
+- [20] F31 ConfigService type safety — TypeScript-only, would need major refactor
+- [20] F33 CORS fallback localhost — correct for development, production must set CORS_ORIGINS
+
 ## From Audit 19 (Queue/Job Processing) — 28 findings
 ### FIXED directly (18 findings):
 C1 (SearchIndexingProcessor created — processes index/update/delete jobs via MeilisearchService, registered in QueueModule), C2 (AI moderation report: fixed schema fields — reportedPostId/reportedCommentId instead of postId/threadId/reelId, added reporterId='system', reason='HATE_SPEECH' instead of invalid 'AI_FLAGGED', removed `as never` casts, looks up content author for reportedUserId), C3 (dead code: removed AsyncJobService import+injection from 5 services — posts, threads, reels, videos, follows; kept in health controller where actually used), C5 (webhook processor SSRF: validateUrl blocks non-HTTPS + private IPs), C6 (media processor SSRF: validateMediaUrl on both processImageResize and processBlurHash), M1 (webhook HMAC: timestamp included in signed payload — `${timestamp}.${body}` instead of body only), M2 (no-op queue stub: logs warning on creation + debug on each dropped job), m3 (job data validation: moderation + webhook processors validate required fields), m4 (getStats error logging), m5 (removed unused QueueEvents import)

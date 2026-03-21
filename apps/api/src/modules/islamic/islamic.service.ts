@@ -1,4 +1,5 @@
 import { Injectable, Inject, Logger, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import Redis from 'ioredis';
 import { PrismaService } from '../../config/prisma.service';
@@ -153,6 +154,7 @@ export class IslamicService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('REDIS') private readonly redis: Redis,
+    private readonly config: ConfigService,
   ) {}
 
   private readonly hadiths: Hadith[] = hadiths;
@@ -419,9 +421,9 @@ export class IslamicService {
       throw new BadRequestException('All values must be non-negative');
     }
 
-    // Configurable via env vars, fallback to approximate market values
-    const goldPricePerGram = parseFloat(process.env.GOLD_PRICE_PER_GRAM || '92');
-    const silverPricePerGram = parseFloat(process.env.SILVER_PRICE_PER_GRAM || '1.05');
+    // Configurable via env/config, fallback to approximate market values
+    const goldPricePerGram = parseFloat(this.config.get<string>('GOLD_PRICE_PER_GRAM') || '92');
+    const silverPricePerGram = parseFloat(this.config.get<string>('SILVER_PRICE_PER_GRAM') || '1.05');
 
     const goldValue = params.gold * goldPricePerGram;
     const silverValue = params.silver * silverPricePerGram;

@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
 
 const APP_NAME = 'Mizanly';
-const APP_URL = process.env.APP_URL || 'https://mizanly.com';
 const APP_STORE_URL = 'https://apps.apple.com/app/mizanly';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.mizanly.app';
 
@@ -22,7 +22,14 @@ function truncate(text: string, maxLen: number): string {
 
 @Injectable()
 export class OgService {
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly appUrl: string;
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {
+    this.appUrl = this.config.get<string>('APP_URL') || 'https://mizanly.com';
+  }
 
   async getPostOg(postId: string): Promise<string> {
     const post = await this.prisma.post.findFirst({
@@ -39,7 +46,7 @@ export class OgService {
     const title = `${post.user.displayName || post.user.username} on ${APP_NAME}`;
     const description = post.content ? truncate(post.content, 200) : `Post by @${post.user.username}`;
     const imageUrl = post.mediaUrls?.[0] || post.user.avatarUrl || '';
-    const url = `${APP_URL}/post/${post.id}`;
+    const url = `${this.appUrl}/post/${post.id}`;
 
     return this.renderHtml({ title, description, imageUrl, url, type: 'article' });
   }
@@ -59,7 +66,7 @@ export class OgService {
     const title = `${reel.user.displayName || reel.user.username} — Reel on ${APP_NAME}`;
     const description = reel.caption ? truncate(reel.caption, 200) : `Watch this reel by @${reel.user.username}`;
     const imageUrl = reel.thumbnailUrl || reel.user.avatarUrl || '';
-    const url = `${APP_URL}/reel/${reel.id}`;
+    const url = `${this.appUrl}/reel/${reel.id}`;
 
     return this.renderHtml({ title, description, imageUrl, url, type: 'video.other' });
   }
@@ -83,7 +90,7 @@ export class OgService {
       ? truncate(user.bio, 200)
       : `${user._count.posts} posts · ${user._count.followers} followers`;
     const imageUrl = user.avatarUrl || '';
-    const url = `${APP_URL}/profile/${user.username}`;
+    const url = `${this.appUrl}/profile/${user.username}`;
 
     return this.renderHtml({ title, description, imageUrl, url, type: 'profile' });
   }
@@ -102,7 +109,7 @@ export class OgService {
     const title = `${thread.user.displayName || thread.user.username} on ${APP_NAME}`;
     const description = thread.content ? truncate(thread.content, 200) : `Thread by @${thread.user.username}`;
     const imageUrl = thread.user.avatarUrl || '';
-    const url = `${APP_URL}/thread/${thread.id}`;
+    const url = `${this.appUrl}/thread/${thread.id}`;
 
     return this.renderHtml({ title, description, imageUrl, url, type: 'article' });
   }
@@ -132,27 +139,27 @@ export class OgService {
 
     const urls: string[] = [
       // Landing page
-      `<url><loc>${APP_URL}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
+      `<url><loc>${this.appUrl}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>`,
     ];
 
     // Profile URLs
     for (const u of users) {
       urls.push(
-        `<url><loc>${APP_URL}/profile/${escapeHtml(u.username)}</loc><lastmod>${u.updatedAt.toISOString().split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
+        `<url><loc>${this.appUrl}/profile/${escapeHtml(u.username)}</loc><lastmod>${u.updatedAt.toISOString().split('T')[0]}</lastmod><changefreq>weekly</changefreq><priority>0.8</priority></url>`,
       );
     }
 
     // Post URLs
     for (const p of posts) {
       urls.push(
-        `<url><loc>${APP_URL}/post/${p.id}</loc><lastmod>${p.createdAt.toISOString().split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`,
+        `<url><loc>${this.appUrl}/post/${p.id}</loc><lastmod>${p.createdAt.toISOString().split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`,
       );
     }
 
     // Thread URLs
     for (const t of threads) {
       urls.push(
-        `<url><loc>${APP_URL}/thread/${t.id}</loc><lastmod>${t.createdAt.toISOString().split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`,
+        `<url><loc>${this.appUrl}/thread/${t.id}</loc><lastmod>${t.createdAt.toISOString().split('T')[0]}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`,
       );
     }
 
@@ -168,7 +175,7 @@ Allow: /
 Disallow: /api/
 Disallow: /admin/
 
-Sitemap: ${APP_URL}/sitemap.xml
+Sitemap: ${this.appUrl}/sitemap.xml
 `;
   }
 
@@ -183,7 +190,7 @@ Sitemap: ${APP_URL}/sitemap.xml
   <meta property="og:title" content="${APP_NAME} — The Social Platform for the Global Muslim Ummah" />
   <meta property="og:description" content="Connect, share, and grow with the global Muslim community." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="${APP_URL}" />
+  <meta property="og:url" content="${this.appUrl}" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="theme-color" content="#0A7B4F" />
   <style>
@@ -236,7 +243,7 @@ Sitemap: ${APP_URL}/sitemap.xml
   <footer>
     <p>&copy; ${new Date().getFullYear()} ${APP_NAME}. All rights reserved.</p>
     <p style="margin-top: 0.5rem;">
-      <a href="${APP_URL}/privacy">Privacy Policy</a> · <a href="${APP_URL}/terms">Terms of Service</a>
+      <a href="${this.appUrl}/privacy">Privacy Policy</a> · <a href="${this.appUrl}/terms">Terms of Service</a>
     </p>
   </footer>
 </body>

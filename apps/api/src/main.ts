@@ -16,11 +16,21 @@ function validateEnv() {
     ['CLERK_SECRET_KEY', 'Clerk authentication'],
   ];
   const recommended: [string, string][] = [
-    ['REDIS_URL', 'Redis (caching, rate limiting, presence)'],
+    ['REDIS_URL', 'Redis (caching, rate limiting, presence, queues)'],
     ['CLERK_PUBLISHABLE_KEY', 'Clerk frontend key'],
     ['STRIPE_SECRET_KEY', 'Stripe payments'],
     ['ANTHROPIC_API_KEY', 'AI features (Claude)'],
     ['SENTRY_DSN', 'Error monitoring'],
+    ['R2_ACCOUNT_ID', 'Cloudflare R2 (file uploads)'],
+    ['R2_ACCESS_KEY_ID', 'Cloudflare R2 access key'],
+    ['R2_SECRET_ACCESS_KEY', 'Cloudflare R2 secret key'],
+    ['R2_PUBLIC_URL', 'Cloudflare R2 public URL'],
+    ['CF_STREAM_ACCOUNT_ID', 'Cloudflare Stream (video hosting)'],
+    ['CF_STREAM_API_TOKEN', 'Cloudflare Stream API token'],
+    ['MEILISEARCH_HOST', 'Meilisearch (full-text search)'],
+    ['OPENAI_API_KEY', 'OpenAI Whisper (voice transcription)'],
+    ['GEMINI_API_KEY', 'Gemini (embeddings/recommendations)'],
+    ['CORS_ORIGINS', 'CORS allowed origins'],
   ];
 
   let fatal = false;
@@ -61,7 +71,7 @@ async function bootstrap() {
 
   // CORS — production origins set via CORS_ORIGINS env var
   app.enableCors({
-    origin: process.env.CORS_ORIGINS?.split(',').filter(Boolean) || ['http://localhost:8081', 'http://localhost:8082'],
+    origin: process.env.CORS_ORIGINS?.split(',').map(o => o.trim()).filter(Boolean) || ['http://localhost:8081', 'http://localhost:8082'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
@@ -95,8 +105,8 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger
-  if (process.env.NODE_ENV !== 'production') {
+  // Swagger — only enabled in development (explicitly check for 'development' or undefined)
+  if (!process.env.NODE_ENV || process.env.NODE_ENV === 'development') {
     const config = new DocumentBuilder()
       .setTitle('Mizanly API')
       .setDescription(

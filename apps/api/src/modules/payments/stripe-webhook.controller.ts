@@ -8,6 +8,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { Request } from 'express';
@@ -24,11 +25,17 @@ interface RawBodyRequest extends Request {
 export class StripeWebhookController {
   private readonly logger = new Logger(StripeWebhookController.name);
   private stripe: Stripe;
+  private readonly webhookSecret: string;
 
-  constructor(private paymentsService: PaymentsService) {
-    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  constructor(
+    private paymentsService: PaymentsService,
+    private config: ConfigService,
+  ) {
+    const secretKey = this.config.get<string>('STRIPE_SECRET_KEY') || '';
+    this.stripe = new Stripe(secretKey, {
       apiVersion: '2026-02-25.clover',
     });
+    this.webhookSecret = this.config.get<string>('STRIPE_WEBHOOK_SECRET') || '';
   }
 
   @Post('stripe')
@@ -43,15 +50,14 @@ export class StripeWebhookController {
       throw new BadRequestException('Raw body not available');
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    if (!webhookSecret) {
+    if (!this.webhookSecret) {
       this.logger.error('STRIPE_WEBHOOK_SECRET not configured');
       throw new BadRequestException('Webhook secret not configured');
     }
 
     let event: Stripe.Event;
     try {
-      event = this.stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      event = this.stripe.webhooks.constructEvent(rawBody, signature, this.webhookSecret);
     } catch (err: unknown) {
       this.logger.warn('Invalid Stripe webhook signature', err instanceof Error ? err.message : 'Unknown error');
       throw new BadRequestException('Invalid webhook signature');

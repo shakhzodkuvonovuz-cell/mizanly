@@ -1,5 +1,6 @@
 import { Throttle } from '@nestjs/throttler';
 import { Controller, Get, Inject, UseGuards, HttpCode, HttpStatus, ServiceUnavailableException, ForbiddenException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { PrismaService } from '../../config/prisma.service';
 import Redis from 'ioredis';
@@ -13,13 +14,22 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Throttle({ default: { limit: 60, ttl: 60000 } })
 @Controller('health')
 export class HealthController {
+  private readonly r2PublicUrl: string;
+  private readonly cfStreamToken: string;
+  private readonly cfStreamAccountId: string;
+
   constructor(
     private prisma: PrismaService,
     @Inject('REDIS') private redis: Redis,
     private jobs: AsyncJobService,
     private queueService: QueueService,
     private flags: FeatureFlagsService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.r2PublicUrl = this.configService.get<string>('R2_PUBLIC_URL') || 'https://media.mizanly.app';
+    this.cfStreamToken = this.configService.get<string>('CF_STREAM_API_TOKEN') || '';
+    this.cfStreamAccountId = this.configService.get<string>('CF_STREAM_ACCOUNT_ID') || '';
+  }
 
   @Get()
   @ApiOperation({ summary: 'Health check dashboard — DB, Redis, R2, Stream status' })
@@ -28,13 +38,13 @@ export class HealthController {
       this.prisma.$queryRaw`SELECT 1`.then(() => true).catch(() => false),
       this.redis.ping().then(() => true).catch(() => false),
       // R2 health: check if public URL is reachable
-      fetch(`${process.env.R2_PUBLIC_URL || 'https://media.mizanly.app'}/`, { method: 'HEAD', signal: AbortSignal.timeout(3000) })
+      fetch(`${this.r2PublicUrl}/`, { method: 'HEAD', signal: AbortSignal.timeout(3000) })
         .then(r => r.status < 500).catch(() => false),
       // Cloudflare Stream health: check API
-      process.env.CF_STREAM_API_TOKEN
-        ? fetch('https://api.cloudflare.com/client/v4/accounts/' + (process.env.CF_STREAM_ACCOUNT_ID || '') + '/stream', {
+      this.cfStreamToken
+        ? fetch(`https://api.cloudflare.com/client/v4/accounts/${this.cfStreamAccountId}/stream`, {
             method: 'GET',
-            headers: { Authorization: `Bearer ${process.env.CF_STREAM_API_TOKEN}` },
+            headers: { Authorization: `Bearer ${this.cfStreamToken}` },
             signal: AbortSignal.timeout(3000),
           }).then(r => r.ok).catch(() => false)
         : Promise.resolve(null), // Not configured

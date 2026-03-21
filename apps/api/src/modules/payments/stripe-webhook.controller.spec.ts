@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { StripeWebhookController } from './stripe-webhook.controller';
 import { PaymentsService } from './payments.service';
 import { globalMockProviders } from '../../common/test/mock-providers';
@@ -50,10 +51,18 @@ describe('StripeWebhookController', () => {
   });
 
   it('should throw BadRequestException when webhook secret is not configured', async () => {
-    delete process.env.STRIPE_WEBHOOK_SECRET;
+    // Create a controller with no webhook secret configured
+    const module2 = await Test.createTestingModule({
+      controllers: [StripeWebhookController],
+      providers: [
+        { provide: PaymentsService, useValue: service },
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue(null) } },
+      ],
+    }).compile();
+    const ctrl2 = module2.get(StripeWebhookController);
     const req = { rawBody: Buffer.from('body') } as any;
 
-    await expect(controller.handleStripeWebhook(req, 'sig')).rejects.toThrow(BadRequestException);
+    await expect(ctrl2.handleStripeWebhook(req, 'sig')).rejects.toThrow(BadRequestException);
   });
 
   it('should throw BadRequestException on invalid signature', async () => {

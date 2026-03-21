@@ -199,4 +199,33 @@ describe('OgService', () => {
       expect(result).toContain('50 followers');
     });
   });
+
+  describe('ConfigService usage', () => {
+    it('should use APP_URL from ConfigService (defaults to mizanly.com)', async () => {
+      const result = await service.getPostOg('p1');
+      expect(result).toContain('mizanly.com');
+    });
+
+    it('should use custom APP_URL when configured', async () => {
+      const { ConfigService } = require('@nestjs/config');
+      const module2: TestingModule = await Test.createTestingModule({
+        providers: [
+          OgService,
+          {
+            provide: ConfigService,
+            useValue: { get: jest.fn().mockImplementation((k: string) => k === 'APP_URL' ? 'https://staging.mizanly.app' : null) },
+          },
+          {
+            provide: PrismaService,
+            useValue: {
+              post: { findFirst: jest.fn().mockResolvedValue({ id: 'p1', content: 'Test', mediaUrls: [], user: { username: 'u', displayName: 'U', avatarUrl: null, isBanned: false, isDeactivated: false } }) },
+            },
+          },
+        ],
+      }).compile();
+      const svc2 = module2.get(OgService);
+      const result = await svc2.getPostOg('p1');
+      expect(result).toContain('staging.mizanly.app');
+    });
+  });
 });
