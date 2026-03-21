@@ -31,14 +31,14 @@ Brand: Emerald #0A7B4F + Gold #C8963E | Dark-mode primary | Arabic RTL support
 ---
 
 ## Status: Post-Test Expansion (as of 2026-03-21)
-All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batches + comprehensive 60-dimension audit + 13-pass deep gap analysis (418 findings) + test expansion. 208 screens, 82 controllers, 79 backend modules, 187 Prisma models (447 relations), 171 test files (2,748 tests, 100% pass), 276K lines of code, 692 commits in 18 days.
+All 5 spaces built + Telegram + Discord + WeChat feature parity + 4 feature batches + comprehensive 60-dimension audit + 13-pass deep gap analysis (418 findings) + test expansion + **72-agent deep audit remediation (files 01-16 complete)**. 208 screens, 82 controllers, 79 backend modules, 187 Prisma models, 259 test suites (3,800 tests, 100% pass), 280K+ lines of code.
 Backend: NestJS with 79 modules (87 services, 82 controllers, 171 test files). Core: Redis, BullMQ job queues (6 queues, 5 processors), rate limiting (all 82 controllers), Stripe (Decimal money fields), Cloudflare Stream, Email (Resend), Meilisearch. AI: Claude API (text moderation + image moderation via Vision) + Whisper transcription + Gemini embeddings. Commerce: marketplace, Zakat (multi-asset, Decimal precision, configurable gold/silver prices via env), Waqf, virtual currency (coins/gifts/diamonds). Gamification: streaks, XP/levels, achievements, challenges, series, daily Islamic tasks (morning briefing). Telegram: saved messages, chat folders, slow mode, admin log, group topics, custom emoji. Discord: forum threads, webhooks, stage sessions, persistent voice channels, granular role permissions. Community: local boards, mentorship, study circles, fatwa Q&A, volunteering, events, voice posts, watch parties, community notes, mosque social graph.
 **Batch 4 fixes:** Real prayer times (Aladhan API + local solar calculator fallback), Quran text API (Quran.com v4, 114 surahs, verse search, random ayah), real image moderation (Claude Vision SAFE/WARNING/BLOCK), 50+ FK relations wired with onDelete rules, mosque finder (Haversine DB query + OSM Overpass fallback), Ramadan from Hijri calendar, charity amounts Decimal, configurable Zakat prices, privacy policy + ToS endpoints, TURN/STUN config, 12 memoized UI components.
 **Test expansion:** Batch 1 added 548 service tests (happy+error+auth per method). Batch 2 (running) adding 63 controller specs + 27 service expansions + gateway + integration tests. Batch 3 planned for edge cases, authorization matrix, error recovery, concurrency, abuse vectors.
 Mobile: 208 screens, 35 UI components, 23 hooks, 19 API services. i18n: 8 languages (en + ar + tr + ur + bn + fr + id + ms) at 2,740 keys each. All screens reachable via navigation (0 orphans). ScreenErrorBoundary on all screens. Create sheet: 7 options. Settings: 11 sections. Conversation info: 11 options.
 Islamic: prayer times (Aladhan API, 8 calc methods, 6 adhan reciters, local solar fallback), Quran (Quran.com API, 114 surahs, 4 reciters, reading plans, tafsir, rooms, verse search), hadith (200+), dhikr counter + challenges, zakat calculator (configurable prices), mosque finder (Haversine + OSM) + social graph, Hajj companion, Ramadan mode, Eid cards, nasheed mode, scholar verification + live Q&A, fatwa Q&A, halal restaurant finder, dua collection (100+), fasting tracker, 99 Names of Allah, hifz tracker, daily morning briefing, Islamic calendar theming (5 overlays auto-activated by Hijri date).
-**Known gaps:** 418 findings documented in `docs/audit/` and memory files. Key blockers: Apple IAP not installed (App Store rejection), google-services.json missing (Android push), SQL injection in embeddings, video upload not wired from mobile, payments API unused on mobile. Full gap list in memory file `project_complete_gaps_audit_march21.md`.
-**Next: test batch 3 (edge cases + auth matrix + abuse vectors), then production deployment.**
+**Known gaps:** 418 findings originally documented. **Key blockers resolved in audit remediation:** SQL injection in embeddings (FIXED file 07), moderation fail-open (FIXED file 10), banned users bypassing auth (FIXED file 03/13), admin report resolution no-ops (FIXED file 13), cascade deletes on financial records (FIXED file 15). **Remaining blockers:** Apple IAP not installed (App Store rejection), google-services.json missing (Android push), video upload not wired from mobile, R2 credentials not filled in, payments API unused on mobile.
+**Current work: 72-agent deep audit remediation — files 01-16 complete, file 17 next. 3,800 tests passing.**
 
 ## Key Documentation Files
 
@@ -176,10 +176,56 @@ All Tier 1, Tier 2, and most Tier 3 items from original gap list are now impleme
 - ~~Optimistic updates~~ — ✅ Bakra like/bookmark instantly update cache
 - ~~Touch targets~~ — ✅ Bakra follow button: hitSlop={12} for 44pt compliance
 - ~~Accessibility~~ — ✅ Image labels added to key screens
-- ~~Prisma onDelete rules~~ — ✅ Batch 85 (32 relations fixed, 0 remaining)
+- ~~Prisma onDelete rules~~ — ✅ Batch 85 (32 fixed) + Audit file 15 (12+ financial records changed from Cascade→SetNull: Message.sender, Tip, GiftRecord, Order, ZakatDonation, CharityDonation, TreasuryContribution, CreatorEarning, ModerationLog, Report.reporter/reportedUser, BroadcastMessage.sender)
 - ~~Dead-code take:50 patterns~~ — ✅ Batch 85 (8 removed)
 - ~~ScreenErrorBoundary coverage~~ — ✅ Batch 85 (196/196 screens)
 - Remaining: 43 inline renderItems in utility screens (negligible impact)
+
+### 72-Agent Deep Audit Remediation (files 01-16 complete)
+**Security fixes:**
+- SQL injection in embeddings service — validated against enum whitelist (file 07)
+- ClerkAuthGuard now checks isBanned/isDeactivated/isDeleted + auto-unbans expired temp bans (files 03/13)
+- All moderation fallbacks changed from fail-open (safe:true) to fail-closed (WARNING/safe:false) (file 10)
+- SVG XSS sanitization in sticker generation (file 08)
+- Push token hijacking prevented — format validation + deactivate on reassignment (file 14)
+- Path traversal in file delete endpoint blocked (file 11)
+- SSRF prevention in Stream uploadFromUrl — R2 domain validation + private IP blocklist (file 11)
+- Webhook signature replay protection — 5-minute timestamp check (file 11)
+- Webhook rejects all requests when secret not configured (file 11)
+
+**Data integrity fixes:**
+- Block/mute filtering on ALL feed endpoints — personalized, trending, featured, suggested users, frequent creators (file 07)
+- 12 financial record cascade deletes changed to SetNull — tips, gifts, orders, donations preserved on user delete (file 15)
+- FeedInteraction @@unique([userId, postId]) constraint added (file 15)
+- 20+ database indexes added (notifications, reports, moderation logs, calls, events) (file 15)
+- Rating fields changed from Float to Decimal(3,2) — Product, HalalBusiness, HalalRestaurant (file 15)
+- Hashtag counter negative guard (file 12)
+
+**Feature fixes:**
+- Admin resolveReport now ACTUALLY removes content and bans users (was no-op) (file 13)
+- Per-type notification settings (notifyLikes/Comments/Follows etc.) now enforced (was placebo) (file 14)
+- Reel like/comment push notifications now work (was silently dropped) (file 14)
+- 7 push notification data types corrected (were all 'like') (file 14)
+- Appeal resolution workflow added — admin can review and accept/reject appeals (file 13)
+- Personalized feed hydrated with content data (was returning only IDs) (file 07)
+- MINBAR (video) space added to personalized feed pipeline (file 07)
+- Video publishedAt set on stream ready, not on creation (file 11)
+- Community notes content existence verification before creation (file 09)
+- Word filter placeholder patterns replaced with real hate speech detection (file 10)
+
+**Validation hardening (100+ DTO fixes, file 16):**
+- 10+ inline `@Body() body: { ... }` types replaced with validated DTO classes
+- @IsUrl() added to 15+ URL fields across DTOs (SSRF prevention)
+- @Min/@Max bounds on all duration, amount, dimension fields
+- @MaxLength on 30+ unbounded string fields
+- @ArrayMaxSize on 10+ unbounded arrays
+- @IsIn/@IsEnum on 10+ freeform string fields (categories, types, statuses)
+- @IsDateString on 6+ date string fields
+
+**Route fixes:**
+- 4 double-prefix controllers fixed (events, retention, reports, embeddings)
+- Route shadowing fixed (series/continue-watching, mosque my/memberships)
+- Trending feed pagination changed to offset-based (was producing duplicates)
 
 ---
 
@@ -224,7 +270,7 @@ mizanly/
 ├── apps/
 │   ├── api/                     # NestJS 10 backend
 │   │   ├── src/modules/         # 79 feature modules
-│   │   ├── src/common/          # ClerkAuthGuard, OptionalClerkAuthGuard, decorators, sentry, queue, email
+│   │   ├── src/common/          # ClerkAuthGuard (checks isBanned/isDeactivated/isDeleted + auto-unban expired), OptionalClerkAuthGuard, decorators, sentry, queue, email
 │   │   ├── src/gateways/        # Socket.io /chat namespace (chat, calls, Quran rooms)
 │   │   └── prisma/schema.prisma # 187 models, 3,859 lines
 │   └── mobile/                  # React Native Expo SDK 52
@@ -281,10 +327,12 @@ mizanly/
 
 **Summary: 4 of 14 services work. R2 empty = no media uploads. Stream empty = no video. Gemini missing = no recommendations.**
 
-**ENV VAR NAME MISMATCH WARNING:** `.env.example` uses different names than actual `.env` and code:
-- `.env` has `CLOUDFLARE_ACCOUNT_ID` but code reads `R2_ACCOUNT_ID` and `CF_STREAM_ACCOUNT_ID`
-- `.env` has `CLOUDFLARE_R2_ACCESS_KEY` but code reads `R2_ACCESS_KEY_ID`
-- Must reconcile before filling in values — check `upload.service.ts` and `stream.service.ts` for actual var names
+**ENV VAR NAME MISMATCH — PARTIALLY RESOLVED:** Upload service now reads BOTH naming conventions with fallback:
+- Code reads `R2_ACCOUNT_ID` first, falls back to `CLOUDFLARE_ACCOUNT_ID`
+- Code reads `R2_ACCESS_KEY_ID` first, falls back to `CLOUDFLARE_R2_ACCESS_KEY`
+- Stream service reads `CF_STREAM_ACCOUNT_ID` and `CF_STREAM_API_TOKEN` (set these exact names)
+- `.env.example` now includes `CF_STREAM_WEBHOOK_SECRET` (added in audit file 11)
+- Upload/stream services now log warnings if credentials are missing on startup
 
 ---
 
@@ -354,7 +402,7 @@ animation.spring: bouncy(D10 S400) / snappy(D12 S300) / responsive(D15 S150) / g
 - Base: `/api/v1/` | Auth: `Authorization: Bearer <clerk_jwt>`
 - Pagination: `?cursor=<id>` → `{ data: T[], meta: { cursor?, hasMore } }`
 - `OptionalClerkAuthGuard` for public+personalized routes (attaches user without 401)
-- Global throttle: 100 req/min | `check-username`: 20/min
+- Global throttle: 100 req/min | Most endpoints now have specific `@Throttle` decorators (5-60/min depending on cost). AI moderation: 5/min. Feed: 30/min. Sticker gen: 10/day.
 - All responses: `{ data: T, success: true, timestamp }` via TransformInterceptor
 
 ## Socket.io — `/chat` namespace
@@ -375,7 +423,7 @@ socket.on('user_typing', ({ userId, isTyping }) => ...)
 - Thread: `isChainHead` (NOT replyToId) | replies → separate `ThreadReply` model
 - Story: `mediaType` (NOT type) | `viewsCount` (NOT viewCount)
 - Conversation: `isGroup: boolean` + `groupName?` — NO `type` or `name` fields
-- Message: `messageType` (NOT type) | `senderId` (NOT from)
+- Message: `messageType` (NOT type) | `senderId` (NOT from) — **now optional** (SetNull on user delete, displays as "[Deleted User]")
 - Notification: `userId` (NOT recipientId) | `isRead` (NOT read) | individual FK fields
 - User: `coverUrl` (NOT coverPhotoUrl) | `website` (NOT websiteUrl)
 - Follow: composite PK [followerId, followingId]

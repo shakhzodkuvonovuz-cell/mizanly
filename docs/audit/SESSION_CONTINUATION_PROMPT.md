@@ -20,17 +20,29 @@ You are continuing a massive audit remediation project for Mizanly, a 276K LOC M
 - **05-content-creation.md** — 94 findings, 82 fixed. Reel moderation field fixed (description→caption), video/channel soft delete, story auth+expiry+privacy, ForYou pagination fixed (offset-based), feed dismissal filtering, duplicate report prevention, hashtag counter decrement, block check on getById for all content types, editedAt tracking, rate limits on view endpoints, reel edit endpoint added, thread edit added, video comment delete added, XP for stories/channels/thread replies.
 - **06-messaging-realtime.md** — 78 findings, 55 fixed. MESSAGE_SELECT expanded (isSpoiler, isViewOnce, etc), view-once forward blocked, lock code hashed with scrypt, WebSocket DTO updated, slow mode enforcement, disappearing message expiresAt, online/offline scoped to conversations, forum lock/pin auth, call block check, group creation block check, addGroupMembers validation, all inline DTOs replaced, promote restricted to owner, circle membership checks on discord features.
 
-### Next file to work on: **07-feed-algorithm.md** (54 findings)
+### Files completed (01-16):
+- **07-feed-algorithm.md** — 54 findings, 51 fixed. SQL injection, block/mute filtering on all feeds, admin guards, pagination, memory leak caps, MINBAR support, feed hydration, Ramadan future-proofing.
+- **08-gamification.md** — 52 findings, 44 fixed. Runtime crashes (prisma.streak), SVG XSS, route shadowing, XP farming prevention, level thresholds extended to 50.
+- **09-community-features.md** — 62 findings, 33 fixed. Runtime crash (prisma.community), events prefix, watch party activation, fatwa scholar verification, slug generation for Arabic.
+- **10-ai-services.md** — 38 findings, 26 fixed. Fail-closed moderation, word filter real patterns, DTO validation, embedding vector NaN filtering.
+- **11-media-pipeline.md** — 28 findings, 25 fixed. Webhook security, path traversal, SSRF, EXIF stripping, video publishedAt timing.
+- **12-search-discovery.md** — 38 findings, 28 fixed. Unbounded queries, content leaks (removed/private/banned), auth guards, limit caps.
+- **13-admin-moderation.md** — 42 findings, 31 fixed. Report resolution actually works, temp ban auto-unban, appeal workflow, admin protection.
+- **14-notifications.md** — 31 findings, 21 fixed. Settings enforcement, push token security, data types, unread-counts endpoint.
+- **15-prisma-schema.md** — 92 findings, 54 fixed. Cascade→SetNull on financial records, 20+ indexes, FeedInteraction unique, rating types.
+- **16-dto-validation.md** — 142 findings, 106 fixed. Inline types→DTOs, @IsUrl, @Min/@Max, @MaxLength, @ArrayMaxSize, @IsIn.
 
-### Current test state: 3,759 tests, 0 failures
+### Next file to work on: **17-error-handling.md**
+
+### Current test state: 3,800 tests, 0 failures
 
 ## Critical files to read BEFORE starting
 
 ### 1. DEFERRED_FIXES.md (READ FIRST)
-`docs/audit/DEFERRED_FIXES.md` — Master tracker of ALL deferred items from files 01-06. Before starting file 07, check this file for any OPEN items that belong to file 07's scope (feed, algorithm, recommendations, trending, embeddings). Fix those alongside file 07's own findings.
+`docs/audit/DEFERRED_FIXES.md` — Master tracker of ALL deferred items from files 01-16. Before starting file 17, check this file for any OPEN items that belong to file 17's scope. Fix those alongside file 17's own findings.
 
 ### 2. The audit file itself
-`docs/audit/agents/07-feed-algorithm.md` — Read the ENTIRE file before writing any code. Contains all 54 findings with file paths, line numbers, severity, code snippets.
+Read the ENTIRE audit file before writing any code.
 
 ### 3. CLAUDE.md
 `CLAUDE.md` — Full project guide. Architecture, schema field names, design tokens, component reference, API patterns, absolute rules.
