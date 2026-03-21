@@ -94,3 +94,27 @@ export function formatCurrency(amount: number, currency = 'USD'): string {
     return `$${amount.toFixed(2)}`;
   }
 }
+
+/**
+ * Get the date-fns locale for the current language.
+ * Lazy-loads the locale module to avoid bundling all locales.
+ */
+export function getDateFnsLocale(): Locale | undefined {
+  const lang = i18next.language || 'en';
+  // date-fns locale objects — dynamically required to avoid bundle bloat
+  // These are lightweight (2-5KB each)
+  const localeMap: Record<string, () => Locale> = {
+    ar: () => require('date-fns/locale/ar').default ?? require('date-fns/locale/ar'),
+    tr: () => require('date-fns/locale/tr').default ?? require('date-fns/locale/tr'),
+    fr: () => require('date-fns/locale/fr').default ?? require('date-fns/locale/fr'),
+    id: () => require('date-fns/locale/id').default ?? require('date-fns/locale/id'),
+    ms: () => require('date-fns/locale/ms').default ?? require('date-fns/locale/ms'),
+    bn: () => require('date-fns/locale/bn').default ?? require('date-fns/locale/bn'),
+  };
+  // Urdu falls back to Arabic for date formatting (closest available)
+  if (lang === 'ur') return localeMap.ar?.();
+  try { return localeMap[lang]?.(); } catch { return undefined; }
+}
+
+// Re-export Locale type for consumers
+type Locale = import('date-fns').Locale;

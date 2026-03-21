@@ -22,6 +22,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, channelPostsApi } from '@/services/api';
 import type { ChannelPost, Channel, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import * as Clipboard from 'expo-clipboard';
 import * as ImagePicker from 'expo-image-picker';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -84,7 +85,7 @@ function CommunityPostItem({ post, isOwnChannel, onLike, onLongPress, index }: {
               {post.user.displayName}
             </Text>
             <Text style={styles.postTime}>
-              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
             </Text>
           </View>
         </Pressable>

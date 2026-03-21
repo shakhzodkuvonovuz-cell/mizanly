@@ -10,6 +10,7 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 // GlassHeader handles safe area insets internally
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Video, ResizeMode } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -53,7 +54,7 @@ function CommentRow({
   const { t } = useTranslation();
   const [localLiked, setLocalLiked] = useState((comment as Comment & { isLiked?: boolean }).isLiked ?? false);
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
-  const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const isOwn = !!viewerId && comment.user.id === viewerId;
 
   // Note: Reel comment liking not implemented in API yet

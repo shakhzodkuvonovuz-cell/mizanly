@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode, AVPlaybackStatus } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -480,7 +481,7 @@ export default function VideoDetailScreen() {
         <Text style={styles.commentText}>{item.content}</Text>
         <View style={styles.commentFooter}>
           <Text style={styles.commentTime}>
-            {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+            {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
           <Pressable 
             onPress={() => setReplyToId(item.id)}
@@ -658,7 +659,7 @@ export default function VideoDetailScreen() {
               <View style={styles.statItem}>
                 <Icon name="clock" size="xs" color={colors.text.secondary} />
                 <Text style={styles.videoStatText}>
-                  {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+                  {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                 </Text>
               </View>
               <Text style={styles.statDivider}>•</Text>

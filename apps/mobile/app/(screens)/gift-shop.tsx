@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Icon, type IconName } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { GradientButton } from '@/components/ui/GradientButton';
@@ -231,7 +232,7 @@ function GiftShopContent() {
           {item.coins} {t('giftShop.coins', 'Coins')}
         </Text>
         <Text style={styles.historyTime}>
-          {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+          {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
         </Text>
       </View>
     </Animated.View>

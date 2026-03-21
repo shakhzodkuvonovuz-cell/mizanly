@@ -25,6 +25,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { channelsApi, videosApi, playlistsApi } from '@/services/api';
 import type { Video, Playlist } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
 const BANNER_HEIGHT = Dimensions.get('window').width / 2.5; // 2.5:1 ratio for cinematic look
@@ -87,7 +88,7 @@ function VideoCard({ video }: { video: Video }) {
           <Text style={styles.videoTitle} numberOfLines={2}>{video.title}</Text>
           <Text style={styles.videoCardChannelName} numberOfLines={1}>{video.channel.name}</Text>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
         <Pressable style={styles.moreButton} hitSlop={8}>
@@ -556,7 +557,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
                 <View style={styles.aboutMeta}>
                   <Text style={styles.aboutMetaLabel}>{t('channel.joined')}</Text>
                   <Text style={styles.aboutMetaValue}>
-                    {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true })}
+                    {formatDistanceToNowStrict(new Date(channel.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                   </Text>
                 </View>
                 <View style={styles.aboutMeta}>

@@ -9,6 +9,7 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Image } from 'expo-image';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
@@ -40,7 +41,7 @@ function ReplyRow({
   onDeleted: () => void;
 }) {
   const { t, isRTL } = useTranslation();
-  const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(reply.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const hasReplies = (reply._count?.replies ?? 0) > 0;
   const [liked, setLiked] = useState(reply.isLiked ?? false);
   const [likeCount, setLikeCount] = useState(reply.likesCount);

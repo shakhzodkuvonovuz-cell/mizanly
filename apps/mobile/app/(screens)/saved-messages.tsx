@@ -9,6 +9,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { GlassHeader } from '@/components/ui/GlassHeader';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -81,7 +82,7 @@ export default function SavedMessagesScreen() {
     const isPinned = item.isPinned as boolean;
     const hasMedia = !!(item.mediaUrl as string);
     const isForwarded = !!(item.forwardedFromType as string);
-    const timeAgo = formatDistanceToNowStrict(new Date(item.createdAt as string), { addSuffix: true });
+    const timeAgo = formatDistanceToNowStrict(new Date(item.createdAt as string), { addSuffix: true, locale: getDateFnsLocale() });
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 40).duration(250)} exiting={SlideOutRight.duration(200)}>

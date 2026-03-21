@@ -10,6 +10,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
 import { Video, ResizeMode } from 'expo-av';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -514,7 +515,7 @@ export default function LiveViewerScreen() {
               </Text>
               <Text style={styles.liveStatsDot}>•</Text>
               <Text style={styles.liveStatsText}>
-                {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true })}
+                {formatDistanceToNowStrict(new Date(live.startedAt || live.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
               </Text>
             </View>
 

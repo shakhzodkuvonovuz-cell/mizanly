@@ -572,12 +572,9 @@ F41 (paymentsApi wired into send-tip — creates PaymentIntent via Stripe), F42 
 ### FIXED directly (38 findings):
 F1 (isRTL includes Urdu: ar || ur), F2 (changeLanguage type: all 8 languages + SupportedLanguage export), F5 (localeFormat.ts wired: formatCompactNumber replaces K/M in account-switcher, analytics, communities), F7 (forceRTLLayout called on init based on language), F8 (ALL 17 Alert.alert hardcoded strings → t() across 10 files), F9 (ALL 6 inline strings fixed: views, uses, $, KB), F10 (ThreadCard pluralization: vote/votes → pollVotes_one/pollVotes_other), F12 (59 dead prayerCalendar* keys removed from all 8 languages), F13 (3 compact number formatters replaced with locale-aware formatCompactNumber)
 
-### NOTED (translation completeness — user responsibility per feedback_islamic_data_manual):
-- [26] F3 5 languages 85%+ untranslated — requires human translator, NOT AI-generated
-- [26] F4 Arabic 518 untranslated keys — user will curate manually
-- [26] F6 date-fns locale — needs per-file locale import (23 files), lower priority
-- [26] F11 Only 1 pluralization key pair — needs systematic plural key audit
-- [26] F14 English flash on language switch — async loading, acceptable
-- [26] F15 English fallback in t() — valid i18next pattern
-- [26] F16/F17 Loading indicator + key bloat — low priority
-- [26] F18 Arabic settings section — part of F4
+### FIXED in third pass (2 additional):
+F6 (date-fns locale: getDateFnsLocale() utility created in localeFormat.ts + wired into ALL 22 files with 24 formatDistanceToNow calls — supports ar/tr/fr/id/ms/bn with ur→ar fallback), F11 (poll pluralization: pollVotes_one/pollVotes_other added to all 8 languages)
+
+### NOTED (translation completeness — user responsibility):
+- [26] F3/F4/F18 Translation completeness — requires human translator
+- [26] F14/F15/F16/F17 — async loading, fallback strings, key bloat — low priority

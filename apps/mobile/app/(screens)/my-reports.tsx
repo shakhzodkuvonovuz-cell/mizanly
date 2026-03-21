@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict, format } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -97,7 +98,7 @@ export default function MyReportsScreen() {
           </View>
           <Text style={styles.target} numberOfLines={1}>{getTargetText(item)}</Text>
           <Text style={styles.date}>
-            {format(new Date(item.createdAt), 'MMM d, yyyy')} • {formatDistanceToNowStrict(new Date(item.createdAt))} ago
+            {format(new Date(item.createdAt), 'MMM d, yyyy')} • {formatDistanceToNowStrict(new Date(item.createdAt), { locale: getDateFnsLocale() })} ago
           </Text>
         </LinearGradient>
       </Animated.View>

@@ -16,6 +16,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useUser } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { GlassHeader } from '@/components/ui/GlassHeader';
@@ -56,7 +57,7 @@ function CommentRow({
   const [localLikes, setLocalLikes] = useState(comment.likesCount);
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(comment.content);
-  const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(comment.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
   const isOwn = !!viewerId && comment.user.id === viewerId;
   const isPostAuthor = !!viewerId && !!postAuthorId && postAuthorId === viewerId;
   const canDelete = isOwn || isPostAuthor;

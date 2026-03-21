@@ -41,6 +41,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useVideoPreloader } from '@/hooks/useVideoPreloader';
 import type { Reel } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const VIDEO_HEIGHT = SCREEN_H;
@@ -315,7 +316,7 @@ const ReelItem = memo(function ReelItem({
             <View style={styles.userText}>
               <Text style={styles.username}>{item.user.username}</Text>
               <Text style={styles.time}>
-                {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+                {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
               </Text>
             </View>
           </Pressable>

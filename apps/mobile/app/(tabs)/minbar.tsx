@@ -22,6 +22,7 @@ import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 import Animated from 'react-native-reanimated';
 import type { Video, VideoCategory } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
 
@@ -139,7 +140,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             </Text>
           </View>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
           </Text>
         </View>
         <Pressable

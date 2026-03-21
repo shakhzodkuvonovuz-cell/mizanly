@@ -4,6 +4,7 @@ import { View, Text, StyleSheet, Alert, Share , Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue,
@@ -166,7 +167,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
     // Optionally show a toast? Not needed.
   };
 
-  const timeAgo = formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(thread.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
 
   if (dismissed) return null;
 
@@ -302,7 +303,7 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
               <Text style={styles.pollMeta}>
                 {t('majlis.pollVotes', { count: localPoll.totalVotes })}
                 {localPoll.endsAt
-                  ? ` · ${t('majlis.pollEnds')} ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true })}`
+                  ? ` · ${t('majlis.pollEnds')} ${formatDistanceToNowStrict(new Date(localPoll.endsAt), { addSuffix: true, locale: getDateFnsLocale() })}`
                   : ''}
               </Text>
             </View>

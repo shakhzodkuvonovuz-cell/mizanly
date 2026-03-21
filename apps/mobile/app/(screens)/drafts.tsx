@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, Pressable, RefreshControl, Alert } fr
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Icon } from '@/components/ui/Icon';
@@ -73,7 +74,7 @@ export default function DraftsScreen() {
   const renderDraft = ({ item, index }: { item: DraftItem; index: number }) => {
     const data = item.data as Record<string, string>;
     const preview = data.content ?? data.caption ?? data.title ?? t('screens.drafts.untitledDraft');
-    const time = formatDistanceToNowStrict(new Date(item.updatedAt), { addSuffix: true });
+    const time = formatDistanceToNowStrict(new Date(item.updatedAt), { addSuffix: true, locale: getDateFnsLocale() });
 
     return (
       <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>

@@ -13,6 +13,7 @@ import Animated, {
 import { useRouter } from 'expo-router';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Avatar } from '@/components/ui/Avatar';
 import { RichText } from '@/components/ui/RichText';
 import { Icon } from '@/components/ui/Icon';
@@ -203,7 +204,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
     opacity: overlayHeartOpacity.value,
   }));
 
-  const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(post.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
 
   if (dismissed) return null;
 

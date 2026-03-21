@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Swipeable } from 'react-native-gesture-handler';
 import { useUser, useAuth } from '@clerk/clerk-expo';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { io, Socket } from 'socket.io-client';
 import Animated, {
   useAnimatedStyle,
@@ -102,7 +103,7 @@ const ConversationRow = memo(function ConversationRow({
   const name = conversationName(item, userId);
   const avi = conversationAvatar(item, userId);
   const time = item.lastMessageAt
-    ? formatDistanceToNowStrict(new Date(item.lastMessageAt), { addSuffix: false })
+    ? formatDistanceToNowStrict(new Date(item.lastMessageAt), { addSuffix: false, locale: getDateFnsLocale() })
     : '';
   const hasUnread = (item.unreadCount ?? 0) > 0;
   const otherMember = item.members.find(m => m.user.id !== userId);

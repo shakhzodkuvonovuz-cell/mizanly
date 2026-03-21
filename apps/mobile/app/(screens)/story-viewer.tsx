@@ -29,6 +29,7 @@ import { storiesApi, messagesApi } from '@/services/api';
 import { PollSticker, QuizSticker, QuestionSticker, CountdownSticker, SliderSticker } from '@/components/story';
 import type { StoryGroup } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useTranslation } from '@/hooks/useTranslation';
 import { ScreenErrorBoundary } from '@/components/ui/ScreenErrorBoundary';
@@ -360,7 +361,7 @@ function EmojiReactionButton({ emoji, onPress }: { emoji: string; onPress: () =>
   };
 
   const timeAgo = story?.createdAt
-    ? formatDistanceToNowStrict(new Date(story.createdAt), { addSuffix: true })
+    ? formatDistanceToNowStrict(new Date(story.createdAt), { addSuffix: true, locale: getDateFnsLocale() })
     : '';
 
   return (

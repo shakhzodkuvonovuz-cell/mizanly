@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -217,7 +218,7 @@ function NotificationRow({ notification, index }: { notification: AggregatedNoti
     if (target) router.push(target as never);
   };
 
-  const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true });
+  const timeAgo = formatDistanceToNowStrict(new Date(notification.createdAt), { addSuffix: true, locale: getDateFnsLocale() });
 
   // Check if this is an aggregated like notification
   const isAggregated = notification._aggregatedCount && notification._aggregatedCount > 1;

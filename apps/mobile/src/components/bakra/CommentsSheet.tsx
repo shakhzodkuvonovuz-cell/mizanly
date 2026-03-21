@@ -17,6 +17,7 @@ import { colors, spacing, fontSize, radius } from '@/theme';
 import { reelsApi, api } from '@/services/api';
 import type { Reel, Comment } from '@/types';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useHaptic } from '@/hooks/useHaptic';
 import { useAnimatedPress } from '@/hooks/useAnimatedPress';
 
@@ -124,7 +125,7 @@ export function CommentsSheet({ reel, visible, onClose }: CommentsSheetProps) {
               )}
             </View>
             <Text style={styles.commentTime}>
-              {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+              {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
             </Text>
           </View>
           <Text style={styles.commentText}>{item.content}</Text>

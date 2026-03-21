@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { useUser } from '@clerk/clerk-expo';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -111,7 +112,7 @@ export default function CallHistoryScreen() {
                 <Text style={[styles.statusText, isMissed && styles.missedText]}>{statusText}</Text>
                 <Text style={styles.dot}>•</Text>
                 <Text style={styles.time} numberOfLines={1}>
-                  {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true })}
+                  {formatDistanceToNowStrict(new Date(item.createdAt), { addSuffix: true, locale: getDateFnsLocale() })}
                 </Text>
               </View>
             </View>

@@ -26,6 +26,7 @@ import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tansta
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { format, isToday, isYesterday, isSameDay, differenceInMinutes, formatDistanceToNowStrict } from 'date-fns';
+import { getDateFnsLocale } from '@/utils/localeFormat';
 import { Avatar } from '@/components/ui/Avatar';
 import { Icon } from '@/components/ui/Icon';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -613,7 +614,7 @@ function MessageBubble({
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <Icon name="clock" size={10} color={colors.text.tertiary} />
               <Text style={{ color: colors.text.tertiary, fontSize: 10, marginLeft: 2 }}>
-                {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false })}
+                {formatDistanceToNowStrict(new Date(message.expiresAt), { addSuffix: false, locale: getDateFnsLocale() })}
               </Text>
             </View>
           )}
