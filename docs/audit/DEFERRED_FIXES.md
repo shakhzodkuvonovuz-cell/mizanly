@@ -152,26 +152,23 @@ F01-F08 (P0s), F10-F18, F20-F25, F28-F34, F36-F43, F47-F53, F56-F57, F59-F60, F6
 - [06] F63-F66, F68-F69, F72, F74-F75 — P3 minor items
 
 ## From Audit 07 (Feed/Algorithm/Recommendations) — 54 findings
-### FIXED directly (43 findings):
-F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F-004 (trending block/mute), F-005 (featured block/mute), F-006 (admin guard featurePost), F-007 (misplaced take:50), F-008 (trending pagination offset-based), F-010 (session memory leak cap), F-011 (viewedIds cap 1000), F-013 (double prefix embeddings), F-014 (admin guard backfill), F-015 (bidirectional blocks recommendations), F-016 (limit cap feed endpoints), F-017 (limit cap recommendations), F-018 (session signal DTO), F-020 (diversity backfill), F-022 (Ramadan future years), F-024 (lat/lng validation), F-025 (logInteraction only update defined fields), F-026 (logInteraction race condition note), F-029 (buildContentFilterWhere documented — dead code), F-032 (suggested users block/mute), F-033 (frequent creators block/mute), F-034 (all 29 Islamic hashtags), F-035 (bidirectional blocks consistency), F-037 (space DTO normalize uppercase), F-039 (space query param validation), F-040 (search char filter > 1 for Arabic), F-043 (re-throw critical errors), F-044 (suggestedThreads endpoint), F-045 (FeaturePostDto), F-046 (contentType validation), F-047 (scheduledAt in featured), F-049 (viewedIds pagination), F-051 (Fisher-Yates shuffle), F-054 (throttle all endpoints)
+### FIXED directly (48 findings):
+F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F-004 (trending block/mute), F-005 (featured block/mute), F-006 (admin guard featurePost), F-007 (misplaced take:50), F-008 (trending pagination offset-based), F-009 (trending fetch capped to 100), F-010 (session memory leak cap), F-011 (viewedIds cap 1000), F-013 (double prefix embeddings), F-014 (admin guard backfill), F-015 (bidirectional blocks recommendations), F-016 (limit cap feed endpoints), F-017 (limit cap recommendations), F-018 (session signal DTO), F-019 (personalized feed hydration), F-020 (diversity backfill), F-022 (Ramadan future years), F-024 (lat/lng validation), F-025 (logInteraction only update defined fields), F-026 (logInteraction race condition note), F-029 (buildContentFilterWhere wired into trending), F-031 (suggestedPeople take:200), F-032 (suggested users block/mute), F-033 (frequent creators block/mute), F-034 (all 29 Islamic hashtags), F-035 (bidirectional blocks consistency), F-037 (space DTO normalize uppercase), F-039 (space query param validation), F-040 (search char filter > 1 for Arabic), F-043 (re-throw critical errors), F-044 (suggestedThreads endpoint), F-045 (FeaturePostDto), F-046 (contentType validation), F-047 (scheduledAt in featured), F-049 (viewedIds pagination), F-051 (Fisher-Yates shuffle), F-054 (throttle all endpoints)
 
 ### Deferred — cross-file scope:
 - [07] F-027 FeedInteraction @@unique([userId, postId]) — needs schema migration — fix in file 15 — OPEN
 - [07] F-050 Embedding table no FK — orphaned rows, needs cleanup job or schema migration — fix in file 15 — OPEN
 
-### NOTED (acceptable/by-design/architecture):
-- [07] F-009 Trending fetches 200 rows — acceptable for scoring pipeline, offset pagination now prevents duplicates
-- [07] F-012 Nearby feed ignores coordinates — documented limitation (no lat/lng on Post model), needs PostGIS or geo columns
-- [07] F-019 Personalized feed returns IDs only — architecture decision, client can hydrate
+### NOTED (genuinely acceptable/by-design/needs external dependency):
+- [07] F-012 Nearby feed ignores coordinates — needs lat/lng on Post model (schema change)
 - [07] F-021 Diversity logic duplicated — minor DRY issue, each has slight differences
 - [07] F-023 Friday boost is correct (dayOfWeek=5=Friday)
-- [07] F-028 getUserInterests dead method — returns space-level scores, kept for future use
-- [07] F-030 getFrequentCreatorIds N+1 query — acceptable for take:500 at current scale
-- [07] F-031 suggestedPeople take:50 truncation — acceptable for friends-of-friends at current scale
+- [07] F-028 getUserInterests — returns space-level scores, kept for future use
+- [07] F-030 getFrequentCreatorIds — Prisma handles as single JOIN, not N+1
 - [07] F-036 IVFFlat index — requires REINDEX after data load, documented
 - [07] F-038 MINBAR in DTO but not in personalized feed — logged for MINBAR interactions, personalization pending video feed
-- [07] F-041 getUserInterestVector postId only — FeedInteraction FK is postId, content-type aware lookup needs schema change
-- [07] F-042 Sequential queries in personalized feed — already parallelized getContentMetadata + getAuthorMap with Promise.all
+- [07] F-041 getUserInterestVector postId only — needs schema change for content-type FK
+- [07] F-042 Sequential queries — already parallelized with Promise.all
 - [07] F-048 Prayer time server timezone — noted, would need user timezone param for per-user accuracy
 - [07] F-052 Transparency explanations shallow — feature enhancement, current generic reasons work
 - [07] F-053 Test coverage gaps — FIXED: added 12+ new tests for block/mute filtering, admin guard, limit caps
@@ -182,8 +179,8 @@ F-001, F-002 (SQL injection validation), F-003 (personalized feed block/mute), F
 - [04] P0-4 FeedService trending/featured no blocks — RESOLVED in F-004, F-005
 
 ## From Audit 08 (Gamification/Retention) — 52 findings
-### FIXED directly (35 findings):
-F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged), F3 (XP farming: ??/positive validation + throttle), F4 (SVG XSS sanitization), F5 (fallback SVG XML-escape), F6 (route shadow: continue-watching before :id), F7 (duplicate updateProgress renamed), F8+F9 (sticker pack auth: userId on create/delete), F10 (challenge progress: validation via DTO), F11 (leaderboard limit cap 100), F12 (challengeType @IsIn), F13 (startDate/endDate @IsDateString), F14 (URL fields @IsUrl), F15 (retention session-depth DTO), F16 (series progress DTO), F17 (unfollowSeries P2025 catch + negative count guard), F18 (blocked terms — extended, see NOTED), F19 (falsy XP ?? instead of ||), F20 (negative XP rejected), F29 (controller empty prefix — kept, routes at root level by design), F30 (retention double prefix → 'retention'), F33 (weekly summary isRemoved:false filter), F37 (XP history limit cap), F41 (series category @MaxLength), F42 (accentColor @Matches hex), F43 (createChallenge explicit fields — via DTO tightening), F46 (sticker URL @MaxLength), F47 (sticker array @ArrayMaxSize 100), F50 (throttle on sticker pack create)
+### FIXED directly (40 findings):
+F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged), F3 (XP farming: ??/positive validation + throttle), F4 (SVG XSS sanitization), F5 (fallback SVG XML-escape), F6 (route shadow: continue-watching before :id), F7 (duplicate updateProgress renamed), F8+F9 (sticker pack auth: userId on create/delete), F10 (challenge progress: validation via DTO), F11 (leaderboard limit cap 100), F12 (challengeType @IsIn), F13 (startDate/endDate @IsDateString), F14 (URL fields @IsUrl), F15 (retention session-depth DTO), F16 (series progress DTO), F17 (unfollowSeries P2025 catch + negative count guard), F18 (blocked terms extended to 33), F19 (falsy XP ?? instead of ||), F20 (negative XP rejected), F28 (helpers leaderboard filter deleted users), F29 (controller empty prefix — kept, routes at root level by design), F30 (retention double prefix → 'retention'), F33 (weekly summary isRemoved:false filter), F34 (notification TTL only set on first incr), F37 (XP history createdAt cursor + limit cap), F38 (level thresholds extended to 50), F41 (series category @MaxLength), F42 (accentColor @Matches hex), F43 (createChallenge explicit fields — via DTO tightening), F46 (sticker URL @MaxLength), F47 (sticker array @ArrayMaxSize 100), F50 (throttle on sticker pack create)
 
 ### Deferred — cross-file scope:
 - [08] F10 Challenge accepts absolute progress — would need server-side action tracking for verification — OPEN (accepted risk with DTO Max(10000))
@@ -215,8 +212,8 @@ F1 (prisma.streak→userStreak + field names), F2 (duplicate lastActiveAt merged
 - [08] F52 Concurrency test mocks wrong pattern — test pattern, not prod code
 
 ## From Audit 09 (Community Features) — 62 findings
-### FIXED directly (18 findings):
-F01 (prisma.community→prisma.circle in requireAdmin), F03 (events controller double prefix), F04 (watch party isActive:true on create), F09 (fatwa answering scholar verification), F14 (membersCount negative guard), F17 (mosque join transactional), F21 (listMembers cursor gt instead of lt for asc), F32 (Arabic slug generation with Unicode ranges + fallback)
+### FIXED directly (28 findings):
+F01 (prisma.community→prisma.circle in requireAdmin), F03 (events controller double prefix), F04 (watch party isActive:true on create), F09 (fatwa answering scholar verification), F14 (membersCount negative guard), F17 (mosque join transactional), F20 (community notes somewhat_helpful neutral), F21 (listMembers cursor gt instead of lt for asc), F24 (events privacy default public), F32 (Arabic slug generation with Unicode ranges + fallback), F45/F46 (mosque getFeed/getMembers hasMore fix + ascending cursor fix), F47/F48 (halal findNearby/getReviews hasMore fix), F49/F50 (halal lat/lng/radius validation + parseFloat), F57 (slug P2002 race condition catch), F60 (self-rating prevention on community notes)
 
 ### Already fixed in previous sessions (verified present):
 F05 (forum thread membership check), F06 (webhook membership check), F07 (stage session membership check), F10 (scholar QA verification), F15/F16 (mosque leave transactional + negative guard), F18 (forum lock/pin auth check), F22 (mosque my/memberships route order), F36 (reputation score negative clamp), F58 (createCircleDto uses @IsString not @IsUUID)
@@ -230,21 +227,21 @@ F05 (forum thread membership check), F06 (webhook membership check), F07 (stage 
 - [09] F25 Data export capped at 50 — GDPR compliance — OPEN
 - [09] F34 Two modules for Circle model — architecture refactor — NOTED (acceptable)
 
-### NOTED (acceptable/by-design):
+### NOTED (genuinely acceptable/by-design/needs external dependency):
 - [09] F08 Mosque feed public read — by design, mosque posts are public content
-- [09] F19 Webhook delete only by creator — acceptable, admin can delete the pack
-- [09] F23 Private communities joinable — documented comment, by design for MVP
-- [09] F24 Events privacy filter — authenticated users seeing events is acceptable
-- [09] F26 CommunityController root routes — established API surface, changing would break clients
+- [09] F19 Webhook delete only by creator — acceptable, admin override via pack deletion
+- [09] F23 Private communities joinable — documented, by design for MVP
+- [09] F26 CommunityController root routes — established API surface
 - [09] F27 Missing throttle on community endpoints — global throttle provides base protection
-- [09] F28-F30 Inline DTOs, missing MaxLength, missing IsUrl — deferred to DTO validation file (file 16)
-- [09] F31 FatwaQuestion.answerId naming — schema field name, documented exception
-- [09] F33 Circles slug inconsistency — different slug strategies acceptable
+- [09] F28-F30 Inline DTOs, missing MaxLength, missing IsUrl — deferred to file 16
+- [09] F31 FatwaQuestion.answerId naming — schema field name, documented
+- [09] F33 Circles slug inconsistency — different strategies acceptable
 - [09] F35 CommunityService god service — 311 lines, manageable
-- [09] F37-F48 Pagination cursor bugs (P3) — functional, minor imprecision
-- [09] F49-F56 Input validation gaps (P3) — deferred to file 16
-- [09] F57 Slug race condition — P2002 handled by unique constraint
-- [09] F59-F62 Minor data integrity/dependency items — NOTED
+- [09] F37-F44 Remaining pagination cursor bugs — community service id cursors, functional
+- [09] F51-F56 Input validation gaps — deferred to file 16
+- [09] F59 Circle memberIds existence — FK catches invalid IDs
+- [09] F61 Module imports — PrismaModule is global
+- [09] F62 Events cursor skip:1 — standard Prisma pattern
 
 ---
 
