@@ -2,6 +2,7 @@ import {
   Injectable,
   Logger,
   InternalServerErrorException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../config/prisma.service';
@@ -43,6 +44,9 @@ export class StreamService {
     this.accountId = this.config.get('CF_STREAM_ACCOUNT_ID') ?? '';
     this.apiToken = this.config.get('CF_STREAM_API_TOKEN') ?? '';
     this.baseUrl = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/stream`;
+    if (!this.accountId || !this.apiToken) {
+      this.logger.warn('CF_STREAM_ACCOUNT_ID or CF_STREAM_API_TOKEN not configured — video streaming will fail');
+    }
   }
 
   private headers(): Record<string, string> {
@@ -56,6 +60,17 @@ export class StreamService {
     r2PublicUrl: string,
     meta: UploadMeta,
   ): Promise<string> {
+    // Validate URL to prevent SSRF — only allow R2 public URLs or https URLs
+    const r2PublicDomain = this.config.get('R2_PUBLIC_URL') || '';
+    if (r2PublicDomain && !r2PublicUrl.startsWith(r2PublicDomain)) {
+      throw new BadRequestException('Video URL must be from the application storage');
+    }
+    // Block private/internal URLs
+    const blockedPatterns = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1'];
+    if (blockedPatterns.some(p => r2PublicUrl.includes(p))) {
+      throw new BadRequestException('Invalid video URL');
+    }
+
     const response = await fetch(`${this.baseUrl}/copy`, {
       method: 'POST',
       headers: this.headers(),
@@ -162,7 +177,7 @@ export class StreamService {
     if (video) {
       await this.prisma.video.update({
         where: { id: video.id },
-        data: { status: 'DRAFT' },
+        data: { status: 'FAILED' },
       });
       return;
     }

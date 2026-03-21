@@ -95,7 +95,12 @@ export function getResponsiveImageUrls(originalUrl: string): {
 }
 
 function isImageUrl(url: string): boolean {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp', '.tiff'];
-  const lower = url.toLowerCase();
-  return imageExtensions.some(ext => lower.includes(ext));
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif'];
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return imageExtensions.some(ext => pathname.endsWith(ext));
+  } catch {
+    const lower = url.toLowerCase();
+    return imageExtensions.some(ext => lower.endsWith(ext));
+  }
 }

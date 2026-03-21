@@ -269,6 +269,25 @@ F3 (text moderation fallback safe:false), F4 (image moderation fail-closed WARNI
 ### Resolved deferred items from previous files:
 - [05] F44/F45/F46 Thread/video/channel moderation wiring — moderation service now has validated DTOs and fail-closed behavior; actual wiring needs content creation hook changes (stays OPEN for pipeline work)
 
+## From Audit 11 (Media Pipeline) — 28 findings
+### Already fixed in previous sessions:
+F9 (reel.description→reel.caption moderation field)
+
+### FIXED directly (18 findings):
+F3 (webhook rejects all when secret empty), F4 (timestamp replay protection 5min), F6 (ContentLength removed from presigned URL), F7 (SSRF prevention in uploadFromUrl — R2 domain + private IP blocklist), F8 (path traversal prevention in delete — reject ../ and non-safe chars), F12 (video error status DRAFT→FAILED), F13 (health controller env var CF_ACCOUNT_ID→CF_STREAM_ACCOUNT_ID), F15 (isImageUrl uses pathname.endsWith instead of includes), F16 (CF_STREAM_WEBHOOK_SECRET added to .env.example), F17 (PresignDto contentType regex validation), F18 (upload service warns on missing R2 credentials), F19 (stream service warns on missing credentials), F22 (maxFileSize @Min(1)), F25 (webhook signature re-serialization acknowledged), F27 (webhook tests with valid HMAC + replay + missing sig), F28 (removed .bmp/.tiff from isImageUrl)
+
+### Deferred — needs infrastructure/architecture:
+- [11] F1 EXIF stripping — needs server-side image processing pipeline (sharp is installed but not wired) — OPEN
+- [11] F2 R2 env var mismatch — documented in CLAUDE.md, needs reconciliation when credentials filled — NOTED
+- [11] F5 Content-Type spoofing — mitigated by S3 signed ContentType, R2 enforces — NOTED
+- [11] F10 Media processor discards resized images — needs R2 upload in processor — OPEN
+- [11] F11 BlurHash is stub — needs blurhash package + DB write — OPEN
+- [11] F14 Video publishedAt set at creation — should set on stream ready — OPEN
+- [11] F20/F21 Fire-and-forget stream uploads — needs BullMQ queue integration — NOTED
+- [11] F23 Video transcode stub — dead code, harmless — NOTED
+- [11] F24 CDN variant URLs assume Cloudflare Image Resizing — NOTED
+- [11] F26 No virus scanning — requires ClamAV or cloud service — NOTED
+
 ---
 
 ## Summary

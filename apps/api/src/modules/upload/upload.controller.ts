@@ -6,16 +6,18 @@ import {
   Param,
   UseGuards,
   ForbiddenException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { IsString, IsIn, IsOptional, IsNumber, Max } from 'class-validator';
+import { IsString, IsIn, IsOptional, IsNumber, Max, Min, Matches } from 'class-validator';
 import { UploadService } from './upload.service';
 import { ClerkAuthGuard } from '../../common/guards/clerk-auth.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 class PresignDto {
   @IsString()
+  @Matches(/^(image|video|audio)\/[a-z0-9+.-]+$/, { message: 'contentType must be a valid MIME type' })
   contentType: string;
 
   @IsIn(['avatars', 'covers', 'posts', 'stories', 'messages', 'reels', 'videos', 'thumbnails', 'misc'])
@@ -23,6 +25,7 @@ class PresignDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(1)
   @Max(104857600) // 100 MB
   maxFileSize?: number;
 }
@@ -50,6 +53,10 @@ export class UploadController {
     @Param('key') key: string,
     @CurrentUser('id') userId: string,
   ) {
+    // Reject path traversal attempts
+    if (key.includes('..') || key.includes('//') || !/^[a-zA-Z0-9\/_.-]+$/.test(key)) {
+      throw new BadRequestException('Invalid file key');
+    }
     // Keys are structured as "{folder}/{userId}/{uuid}.{ext}" — enforce ownership
     const segments = key.split('/');
     const keyOwnerId = segments.length >= 2 ? segments[1] : null;

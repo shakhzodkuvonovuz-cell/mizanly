@@ -32,7 +32,7 @@ export class HealthController {
         .then(r => r.status < 500).catch(() => false),
       // Cloudflare Stream health: check API
       process.env.CF_STREAM_API_TOKEN
-        ? fetch('https://api.cloudflare.com/client/v4/accounts/' + (process.env.CF_ACCOUNT_ID || '') + '/stream', {
+        ? fetch('https://api.cloudflare.com/client/v4/accounts/' + (process.env.CF_STREAM_ACCOUNT_ID || '') + '/stream', {
             method: 'GET',
             headers: { Authorization: `Bearer ${process.env.CF_STREAM_API_TOKEN}` },
             signal: AbortSignal.timeout(3000),

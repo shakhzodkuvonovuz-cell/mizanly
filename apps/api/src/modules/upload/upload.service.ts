@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -43,13 +43,23 @@ export class UploadService {
   private bucket: string;
   private publicUrl: string;
 
+  private readonly logger = new Logger(UploadService.name);
+
   constructor(private config: ConfigService) {
+    const accountId = this.config.get('R2_ACCOUNT_ID');
+    const accessKeyId = this.config.get('R2_ACCESS_KEY_ID');
+    const secretAccessKey = this.config.get('R2_SECRET_ACCESS_KEY');
+
+    if (!accountId || !accessKeyId || !secretAccessKey) {
+      this.logger.warn('R2 credentials not configured — file uploads will fail. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY');
+    }
+
     this.s3 = new S3Client({
       region: 'auto',
-      endpoint: `https://${this.config.get('R2_ACCOUNT_ID')}.r2.cloudflarestorage.com`,
+      endpoint: `https://${accountId || ''}.r2.cloudflarestorage.com`,
       credentials: {
-        accessKeyId: this.config.get('R2_ACCESS_KEY_ID') ?? '',
-        secretAccessKey: this.config.get('R2_SECRET_ACCESS_KEY') ?? '',
+        accessKeyId: accessKeyId ?? '',
+        secretAccessKey: secretAccessKey ?? '',
       },
     });
     this.bucket = this.config.get('R2_BUCKET_NAME') ?? 'mizanly-media';
@@ -89,7 +99,6 @@ export class UploadService {
       Bucket: this.bucket,
       Key: key,
       ContentType: contentType,
-      ContentLength: effectiveMaxSize,
       CacheControl: 'public, max-age=31536000, immutable',
     });
 

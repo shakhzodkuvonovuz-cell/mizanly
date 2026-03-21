@@ -39,13 +39,15 @@ export class StreamController {
     },
     @Headers('webhook-signature') signature?: string,
   ) {
-    // If a webhook secret is configured, always require and verify the signature
-    if (this.webhookSecret) {
-      if (!signature) {
-        throw new UnauthorizedException('Missing webhook signature');
-      }
-      this.verifySignature(JSON.stringify(body), signature);
+    // Always require webhook signature verification
+    if (!this.webhookSecret) {
+      this.logger.error('CF_STREAM_WEBHOOK_SECRET not configured — rejecting all webhooks');
+      throw new UnauthorizedException('Webhook secret not configured');
     }
+    if (!signature) {
+      throw new UnauthorizedException('Missing webhook signature');
+    }
+    this.verifySignature(JSON.stringify(body), signature);
 
     const streamId = body.uid;
     if (!streamId) {
@@ -76,6 +78,12 @@ export class StreamController {
 
     const timestamp = timePart.replace('time=', '');
     const expectedSig = sigPart.replace('sig1=', '');
+
+    // Reject signatures older than 5 minutes (replay protection)
+    const signatureAge = Math.abs(Date.now() / 1000 - parseInt(timestamp, 10));
+    if (isNaN(signatureAge) || signatureAge > 300) {
+      throw new UnauthorizedException('Webhook signature expired');
+    }
 
     const signaturePayload = `${timestamp}.${payload}`;
     const computed = createHmac('sha256', this.webhookSecret)
