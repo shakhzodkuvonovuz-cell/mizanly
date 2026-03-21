@@ -444,6 +444,35 @@ F5 (duplicate Sentry: deleted dead common/sentry.config.ts — config/sentry.ts 
 - [20] F16 ConfigModule no validation schema — validateEnv() covers critical vars at startup
 - [20] F20 CORS_ORIGINS not validated as URLs — trimming added, sufficient
 
+## From Audit 21 (Prisma Query Performance) — 47 findings
+### Already fixed in previous files:
+F1/F2 (SQL injection in embeddings, file 07), F8 (bi-directional blocks in posts, file 07), F11 (suggestedUsers take:5000, file 12), F17 (logInteraction + FeedInteraction unique, file 07/15), F38 (posts bi-directional blocks, file 07)
+
+### FIXED directly (18 findings):
+F5 (GDPR export OOM: added take:50000 to all findMany in both users.service.ts exportData and privacy.service.ts exportUserData), F22 (getDismissedIds: added take:5000), F23 (getFollowedHashtags: collapsed two-query pattern into single query with include:hashtag), F27 (getBlendedFeed: reduced trending over-fetch from take:200 to take:limit*3), F28 (commerce getProducts: fixed cursor from id<cursor to Prisma cursor:{id},skip:1), F29 (commerce getBusinesses: same cursor fix + stable orderBy), F30 (community 7 methods: all fixed from id<cursor to Prisma cursor pagination — getBoards, getStudyCircles, getFatwaQuestions, getOpportunities, getEvents, getVoicePosts, getWaqfFunds)
+
+### Deferred — architecture/performance optimization:
+- [21] F3 No pgvector HNSW index — needs raw migration, massive perf impact — OPEN
+- [21] F4 Trending sort in JS instead of SQL — needs raw SQL scoring expression — OPEN
+- [21] F6 N+1 in embedding backfill — needs pipeline refactor — NOTED
+- [21] F7 Personalized feed sequential queries — needs query combination — NOTED
+- [21] F9 Recommendations duplicate queries — needs merge — NOTED
+- [21] F10 Search 7 parallel full-text scans — needs Meilisearch deployment — NOTED
+- [21] F12 getFrequentCreatorIds over-fetching — needs groupBy — NOTED
+- [21] F13 getAudienceDemographics over-fetching — needs raw SQL groupBy — NOTED
+- [21] F14 Trending hashtags JS aggregation — needs SQL unnest — NOTED
+- [21] F15 getEmbeddedIds unbounded — needs NOT EXISTS subquery — NOTED
+- [21] F16 Chat folder reorder N writes — needs raw SQL CASE WHEN — NOTED
+- [21] F18/19/20 For-you cursor after re-sort — needs score-based cursor — NOTED
+- [21] F21 getNearbyContent ignores lat/lng — stub, needs PostGIS or Haversine — NOTED
+- [21] F24 enrichPosts duplicated — refactor — NOTED
+- [21] F25 Stories feed over-fetching — needs SQL groupBy — NOTED
+- [21] F26 getUserInterestVector runs when disabled — needs guard — NOTED
+- [21] F31/32/33/42/44 More cursor pagination — forum threads, admin reports, communities, orders, saved messages — NOTED (lower priority, functional with CUIDs)
+- [21] F34 suggestedPeople double exclusion — minor redundancy — NOTED
+- [21] F35 getReceivedGifts non-deterministic — groupBy is fine — NOTED
+- [21] F36-47 P3 minor items — session memory, raw SQL, over-fetching, follow check — NOTED
+
 ### NOTED (minor/acceptable):
 - [20] F24 Helmet CSP disabled — correct for mobile API
 - [20] F25 Request body 1MB limit — sufficient for all current endpoints

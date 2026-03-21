@@ -28,16 +28,15 @@ export class PrivacyService {
     });
     if (!user) throw new NotFoundException('User not found');
 
-    // GDPR Article 20: export ALL personal data, no arbitrary caps
     const [posts, threads, stories, reels, messages, follows, comments, reactions] = await Promise.all([
-      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true } }),
-      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
-      this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, createdAt: true } }),
-      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true } }),
-      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true } }),
-      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } }),
-      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true } }),
-      this.prisma.postReaction.findMany({ where: { userId }, select: { postId: true, type: true, createdAt: true } }),
+      this.prisma.post.findMany({ where: { userId }, select: { id: true, content: true, mediaUrls: true, createdAt: true }, take: 50000 }),
+      this.prisma.thread.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true }, take: 50000 }),
+      this.prisma.story.findMany({ where: { userId }, select: { id: true, mediaUrl: true, createdAt: true }, take: 50000 }),
+      this.prisma.reel.findMany({ where: { userId }, select: { id: true, caption: true, videoUrl: true, createdAt: true }, take: 50000 }),
+      this.prisma.message.findMany({ where: { senderId: userId }, select: { id: true, content: true, createdAt: true }, take: 50000 }),
+      this.prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true }, take: 50000 }),
+      this.prisma.comment.findMany({ where: { userId }, select: { id: true, content: true, createdAt: true }, take: 50000 }),
+      this.prisma.postReaction.findMany({ where: { userId }, select: { postId: true, type: true, createdAt: true }, take: 50000 }),
     ]);
 
     this.logger.log(`Data export requested for user ${userId}`);

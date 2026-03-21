@@ -391,17 +391,12 @@ export class HashtagsService {
       take: limit + 1,
       ...(cursor ? { cursor: { userId_hashtagId: { userId, hashtagId: cursor } }, skip: 1 } : {}),
       orderBy: { createdAt: 'desc' },
+      include: { hashtag: { select: { id: true, name: true, postsCount: true } } },
     });
     const hasMore = follows.length > limit;
     const data = hasMore ? follows.slice(0, limit) : follows;
-    const hashtagIds = data.map(f => f.hashtagId);
-    const hashtags = await this.prisma.hashtag.findMany({
-      where: { id: { in: hashtagIds } },
-      select: { id: true, name: true, postsCount: true },
-      take: 50,
-    });
     return {
-      data: hashtags,
+      data: data.map(f => f.hashtag),
       meta: { cursor: hasMore ? data[data.length - 1].hashtagId : null, hasMore },
     };
   }

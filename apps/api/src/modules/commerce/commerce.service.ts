@@ -28,12 +28,12 @@ export class CommerceService {
     const where: Record<string, unknown> = { status: 'active' };
     if (category) where.category = category;
     if (search) where.title = { contains: search, mode: 'insensitive' };
-    if (cursor) where.id = { lt: cursor };
 
     const products = await this.prisma.product.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { seller: { select: USER_SELECT } },
     });
 
@@ -187,12 +187,12 @@ export class CommerceService {
   async getBusinesses(cursor?: string, limit = 20, category?: string, lat?: number, lng?: number) {
     const where: Record<string, unknown> = {};
     if (category) where.category = category;
-    if (cursor) where.id = { lt: cursor };
 
     const businesses = await this.prisma.halalBusiness.findMany({
       where,
-      orderBy: { rating: 'desc' },
+      orderBy: { createdAt: 'desc' },
       take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { owner: { select: USER_SELECT } },
     });
 

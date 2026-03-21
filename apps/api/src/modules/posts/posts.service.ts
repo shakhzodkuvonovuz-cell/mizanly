@@ -296,7 +296,7 @@ export class PostsService {
         ...(excludedIds.length ? { userId: { notIn: excludedIds } } : {}),
       },
       select: POST_SELECT,
-      take: 200,
+      take: limit * 3,
       orderBy: { createdAt: 'desc' },
     });
 

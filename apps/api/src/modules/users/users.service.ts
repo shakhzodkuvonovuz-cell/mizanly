@@ -122,50 +122,59 @@ export class UsersService {
           createdAt: true, lastSeenAt: true,
         },
       }),
-      // GDPR requires ALL data — no take limits on data export
       this.prisma.post.findMany({
         where: { userId, isRemoved: false },
         select: { id: true, content: true, mediaUrls: true, postType: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
+        take: 50000,
       }),
       this.prisma.comment.findMany({
         where: { userId, isRemoved: false },
         select: { id: true, content: true, postId: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
+        take: 50000,
       }),
       this.prisma.message.findMany({
         where: { senderId: userId },
         select: { id: true, content: true, conversationId: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
+        take: 50000,
       }),
       this.prisma.follow.findMany({
         where: { followingId: userId },
         select: { followerId: true, createdAt: true },
+        take: 50000,
       }),
       this.prisma.follow.findMany({
         where: { followerId: userId },
         select: { followingId: true, createdAt: true },
+        take: 50000,
       }),
       this.prisma.postReaction.findMany({
         where: { userId },
         select: { postId: true, reaction: true, createdAt: true },
+        take: 50000,
       }),
       this.prisma.savedPost.findMany({
         where: { userId },
         select: { postId: true, createdAt: true },
+        take: 50000,
       }),
       // Additional content types for complete GDPR export
       this.prisma.thread.findMany({
         where: { userId },
         select: { id: true, content: true, mediaUrls: true, createdAt: true },
+        take: 50000,
       }),
       this.prisma.reel.findMany({
         where: { userId },
         select: { id: true, caption: true, videoUrl: true, createdAt: true },
+        take: 50000,
       }),
       this.prisma.video.findMany({
         where: { userId },
         select: { id: true, title: true, description: true, thumbnailUrl: true, createdAt: true },
+        take: 50000,
       }),
     ]);
 

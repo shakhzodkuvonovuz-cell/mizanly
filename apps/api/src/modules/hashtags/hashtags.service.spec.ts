@@ -245,8 +245,9 @@ describe('HashtagsService', () => {
 
   describe('getFollowedHashtags', () => {
     it('should return followed hashtags with pagination', async () => {
-      prisma.hashtagFollow.findMany.mockResolvedValue([{ hashtagId: 'h1' }]);
-      prisma.hashtag.findMany.mockResolvedValue([{ id: 'h1', name: 'islam', postsCount: 100 }]);
+      prisma.hashtagFollow.findMany.mockResolvedValue([
+        { hashtagId: 'h1', hashtag: { id: 'h1', name: 'islam', postsCount: 100 } },
+      ]);
       const result = await service.getFollowedHashtags('user-1');
       expect(result.data).toHaveLength(1);
       expect(result.data[0].name).toBe('islam');
@@ -254,7 +255,6 @@ describe('HashtagsService', () => {
 
     it('should return empty when user follows no hashtags', async () => {
       prisma.hashtagFollow.findMany.mockResolvedValue([]);
-      prisma.hashtag.findMany.mockResolvedValue([]);
       const result = await service.getFollowedHashtags('user-1');
       expect(result.data).toHaveLength(0);
     });

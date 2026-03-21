@@ -18,10 +18,10 @@ export class CommunityService {
     const where: Record<string, unknown> = {};
     if (city) where.city = city;
     if (country) where.country = country;
-    if (cursor) where.id = { lt: cursor };
 
     const boards = await this.prisma.localBoard.findMany({
       where, orderBy: { membersCount: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { creator: { select: USER_SELECT } },
     });
     const hasMore = boards.length > limit;
@@ -81,10 +81,10 @@ export class CommunityService {
   async getStudyCircles(topic?: string, cursor?: string, limit = 20) {
     const where: Record<string, unknown> = { isActive: true };
     if (topic) where.topic = topic;
-    if (cursor) where.id = { lt: cursor };
 
     const circles = await this.prisma.studyCircle.findMany({
       where, orderBy: { membersCount: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { leader: { select: USER_SELECT } },
     });
     const hasMore = circles.length > limit;
@@ -104,10 +104,10 @@ export class CommunityService {
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
     if (madhab) where.madhab = madhab;
-    if (cursor) where.id = { lt: cursor };
 
     const questions = await this.prisma.fatwaQuestion.findMany({
       where, orderBy: { createdAt: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { asker: { select: USER_SELECT } },
     });
     const hasMore = questions.length > limit;
@@ -145,10 +145,10 @@ export class CommunityService {
   async getOpportunities(category?: string, cursor?: string, limit = 20) {
     const where: Record<string, unknown> = { isActive: true };
     if (category) where.category = category;
-    if (cursor) where.id = { lt: cursor };
 
     const opps = await this.prisma.volunteerOpportunity.findMany({
       where, orderBy: { createdAt: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { organizer: { select: USER_SELECT } },
     });
     const hasMore = opps.length > limit;
@@ -171,10 +171,10 @@ export class CommunityService {
   async getEvents(eventType?: string, cursor?: string, limit = 20) {
     const where: Record<string, unknown> = { startDate: { gte: new Date() } };
     if (eventType) where.eventType = eventType;
-    if (cursor) where.id = { lt: cursor };
 
     const events = await this.prisma.islamicEvent.findMany({
       where, orderBy: { startDate: 'asc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { organizer: { select: USER_SELECT } },
     });
     const hasMore = events.length > limit;
@@ -227,10 +227,10 @@ export class CommunityService {
 
   async getVoicePosts(cursor?: string, limit = 20) {
     const where: Record<string, unknown> = {};
-    if (cursor) where.id = { lt: cursor };
 
     const posts = await this.prisma.voicePost.findMany({
       where, orderBy: { createdAt: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { user: { select: USER_SELECT } },
     });
     const hasMore = posts.length > limit;
@@ -286,10 +286,10 @@ export class CommunityService {
 
   async getWaqfFunds(cursor?: string, limit = 20) {
     const where: Record<string, unknown> = { isActive: true };
-    if (cursor) where.id = { lt: cursor };
 
     const funds = await this.prisma.waqfFund.findMany({
       where, orderBy: { raisedAmount: 'desc' }, take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
       include: { creator: { select: USER_SELECT } },
     });
     const hasMore = funds.length > limit;
