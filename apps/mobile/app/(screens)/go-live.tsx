@@ -70,7 +70,7 @@ export default function GoLiveScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Failed to start live stream. Please try again.');
+      Alert.alert(t('common.error'), err.message || t('live.failedToStartStream'));
     },
   });
 
@@ -103,7 +103,7 @@ export default function GoLiveScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Failed to start rehearsal.');
+      Alert.alert(t('common.error'), err.message || t('live.failedToStartRehearsal'));
     },
   });
 
@@ -185,7 +185,7 @@ export default function GoLiveScreen() {
               colors={['rgba(45,53,72,0.4)', 'rgba(28,35,51,0.2)']}
               style={styles.inputCard}
             >
-              <Text style={styles.inputLabel}>Stream Type</Text>
+              <Text style={styles.inputLabel}>{t('live.streamType')}</Text>
               <Pressable
                 accessibilityRole="button"
                 style={styles.typeSelector}
@@ -213,7 +213,7 @@ export default function GoLiveScreen() {
                 <View>
                   <Text style={styles.inputLabel}>{t('live.scheduleForLater')}</Text>
                   <Text style={styles.scheduleSubtitle}>
-                    Start your stream at a specific time
+                    {t('live.scheduleSubtitle')}
                   </Text>
                 </View>
                 <Switch
@@ -293,12 +293,12 @@ export default function GoLiveScreen() {
           {/* In a real app, you would use DateTimePicker component */}
           <View style={styles.datePickerPlaceholder}>
             <Text style={styles.datePickerText}>
-              Date/time picker would appear here
+              {t('live.datePickerPlaceholder')}
             </Text>
             <Text style={styles.datePickerHint}>
-              For simplicity, we'll schedule for 30 minutes from now.
+              {t('live.datePickerHint')}
             </Text>
-            <GradientButton label="Confirm" onPress={() => handleDateSelect(tempDate)} />
+            <GradientButton label={t('common.confirm')} onPress={() => handleDateSelect(tempDate)} />
           </View>
         </BottomSheet>
 
@@ -306,7 +306,7 @@ export default function GoLiveScreen() {
         {uploading && (
           <View style={styles.uploadOverlay}>
             <Skeleton.Circle size={64} />
-            <Text style={styles.uploadText}>Preparing live stream…</Text>
+            <Text style={styles.uploadText}>{t('live.preparingStream')}</Text>
           </View>
         )}
       </SafeAreaView>

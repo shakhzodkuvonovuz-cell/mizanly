@@ -177,7 +177,13 @@
     "shareAsStory": "Share as Story",
     "notInterested": "Not interested",
     "collections": "Collections",
-    "folders": "Folders"
+    "folders": "Folders",
+    "cannotBeUndone": "Cette action est irréversible.",
+    "reportReason": "Pourquoi signalez-vous ceci ?",
+    "linkCopied": "Lien copié dans le presse-papiers",
+    "spam": "Spam",
+    "inappropriate": "Inapproprié",
+    "misinformation": "Désinformation"
   },
   "tabs": {
     "saf": "Saf",
@@ -322,7 +328,10 @@
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
     "whyShowing": "Why am I seeing this?",
-    "brandedContent": "Branded Content"
+    "brandedContent": "Branded Content",
+    "deletePostTitle": "Supprimer la publication ?",
+    "reportPostTitle": "Signaler la publication",
+    "couldNotShareAsStory": "Impossible de partager en story. Veuillez réessayer."
   },
   "islamic": {
     "prayerTimes": "Horaires de prière",
@@ -371,66 +380,7 @@
     "prayerNotifications": "Prayer Notifications",
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
-    "prayerLocation": "Prayer Location",
-    "prayerCalendar": "Prayer Calendar",
-    "prayerCalendarExport": "Export Prayer Calendar",
-    "prayerCalendarImport": "Import Prayer Calendar",
-    "prayerCalendarSync": "Sync Prayer Calendar",
-    "prayerCalendarShare": "Share Prayer Calendar",
-    "prayerCalendarPrint": "Print Prayer Calendar",
-    "prayerCalendarDownload": "Download Prayer Calendar",
-    "prayerCalendarUpload": "Upload Prayer Calendar",
-    "prayerCalendarDelete": "Delete Prayer Calendar",
-    "prayerCalendarEdit": "Edit Prayer Calendar",
-    "prayerCalendarView": "View Prayer Calendar",
-    "prayerCalendarList": "List Prayer Calendars",
-    "prayerCalendarCreate": "Create Prayer Calendar",
-    "prayerCalendarUpdate": "Update Prayer Calendar",
-    "prayerCalendarRemove": "Remove Prayer Calendar",
-    "prayerCalendarArchive": "Archive Prayer Calendar",
-    "prayerCalendarRestore": "Restore Prayer Calendar",
-    "prayerCalendarDuplicate": "Duplicate Prayer Calendar",
-    "prayerCalendarRename": "Rename Prayer Calendar",
-    "prayerCalendarMove": "Move Prayer Calendar",
-    "prayerCalendarCopy": "Copy Prayer Calendar",
-    "prayerCalendarPaste": "Paste Prayer Calendar",
-    "prayerCalendarCut": "Cut Prayer Calendar",
-    "prayerCalendarSelect": "Select Prayer Calendar",
-    "prayerCalendarDeselect": "Deselect Prayer Calendar",
-    "prayerCalendarSelectAll": "Select All Prayer Calendars",
-    "prayerCalendarDeselectAll": "Deselect All Prayer Calendars",
-    "prayerCalendarInvertSelection": "Invert Selection",
-    "prayerCalendarClearSelection": "Clear Selection",
-    "prayerCalendarSelectNone": "Select None",
-    "prayerCalendarSelectMultiple": "Select Multiple",
-    "prayerCalendarSelectSingle": "Select Single",
-    "prayerCalendarSelectRange": "Select Range",
-    "prayerCalendarSelectRandom": "Select Random",
-    "prayerCalendarSelectPrevious": "Select Previous",
-    "prayerCalendarSelectNext": "Select Next",
-    "prayerCalendarSelectFirst": "Select First",
-    "prayerCalendarSelectLast": "Select Last",
-    "prayerCalendarSelectMiddle": "Select Middle",
-    "prayerCalendarSelectCenter": "Select Center",
-    "prayerCalendarSelectEdge": "Select Edge",
-    "prayerCalendarSelectCorner": "Select Corner",
-    "prayerCalendarSelectAllCorners": "Select All Corners",
-    "prayerCalendarSelectAllEdges": "Select All Edges",
-    "prayerCalendarSelectAllCenters": "Select All Centers",
-    "prayerCalendarSelectAllMiddles": "Select All Middles",
-    "prayerCalendarSelectAllFirsts": "Select All Firsts",
-    "prayerCalendarSelectAllLasts": "Select All Lasts",
-    "prayerCalendarSelectAllPrevious": "Select All Previous",
-    "prayerCalendarSelectAllNext": "Select All Next",
-    "prayerCalendarSelectAllRandom": "Select All Random",
-    "prayerCalendarSelectAllRange": "Select All Range",
-    "prayerCalendarSelectAllMultiple": "Select All Multiple",
-    "prayerCalendarSelectAllSingle": "Select All Single",
-    "prayerCalendarSelectAllNone": "Select All None",
-    "prayerCalendarSelectAllInvert": "Select All Invert",
-    "prayerCalendarSelectAllClear": "Select All Clear",
-    "prayerCalendarSelectAllDeselect": "Select All Deselect",
-    "prayerCalendarSelectAllSelect": "Select All Select"
+    "prayerLocation": "Prayer Location"
   },
   "auth": {
     "signIn": "Sign In",
@@ -454,9 +404,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "Vous avez d\u00e9j\u00e0 un compte ?",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "dontHaveAccount": "Pas encore de compte ?",
-    "createAccount": "Cr\u00e9er un compte",
+    "createAccount": "Créer un compte",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -700,7 +650,9 @@
       "subtitle": "Follow people or explore trending topics",
       "actionLabel": "Start a Thread"
     },
-    "video": "Video"
+    "video": "Video",
+    "deleteThreadTitle": "Supprimer le fil ?",
+    "reportThreadTitle": "Signaler le fil"
   },
   "risalah": {
     "messages": "Messages",
@@ -958,7 +910,9 @@
     "streamDescPlaceholder": "Tell viewers what your stream is about",
     "playlistEmpty": "Videos added to this playlist will appear here",
     "skipBack": "Skip back 10 seconds",
-    "skipForward": "Skip forward 10 seconds"
+    "skipForward": "Skip forward 10 seconds",
+    "missingChannel": "Chaîne manquante",
+    "pleaseSelectChannel": "Veuillez sélectionner une chaîne."
   },
   "profile": {
     "followers": "Followers",
@@ -1453,7 +1407,8 @@
     "linkTitlePlaceholder": "Link title",
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
-    "urlPlaceholder": "URL (https://...)"
+    "urlPlaceholder": "URL (https://...)",
+    "couldNotSave": "Impossible de sauvegarder le profil"
   },
   "screens": {
     "followers": {
@@ -1769,7 +1724,8 @@
       "emptyTitle": "No playlists yet",
       "emptySubtitle": "Create a playlist to save videos",
       "errorTitle": "Could not load playlists",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "updateError": "Impossible de mettre à jour la playlist"
     },
     "schedule-live": {
       "title": "Schedule Live",
@@ -2029,7 +1985,8 @@
     "noDonations": "No donations yet",
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
-    "createCampaign": "Create Campaign"
+    "createCampaign": "Create Campaign",
+    "currencyAmount": "{{amount}} $"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -2790,7 +2747,21 @@
     "subscribeToWatch": "S'abonner pour regarder",
     "subscribersOnlyStream": "Ce stream est réservé aux abonnés",
     "switchToPublic": "Passer en public",
-    "switchToSubscribers": "Passer aux abonnés uniquement"
+    "switchToSubscribers": "Passer aux abonnés uniquement",
+    "goLive": "Passer en direct",
+    "starting": "Démarrage...",
+    "videoStream": "Diffusion vidéo",
+    "audioSpace": "Espace audio",
+    "selectStreamType": "Sélectionner le type",
+    "scheduleForLater": "Planifier pour plus tard",
+    "scheduleTime": "Heure planifiée",
+    "streamType": "Type de diffusion",
+    "scheduleSubtitle": "Démarrez votre diffusion à une heure précise",
+    "failedToStartStream": "Impossible de démarrer la diffusion. Veuillez réessayer.",
+    "failedToStartRehearsal": "Impossible de démarrer la répétition.",
+    "datePickerPlaceholder": "Le sélecteur de date/heure apparaîtra ici",
+    "datePickerHint": "Pour simplifier, la planification sera dans 30 minutes.",
+    "preparingStream": "Préparation de la diffusion..."
   },
   "seriesEnhanced": {
     "episodes": "Épisodes",
@@ -3067,5 +3038,55 @@
     "submitReflection": "Soumettre la Réflexion",
     "allComplete": "Toutes les Tâches Terminées !",
     "loadError": "Impossible de charger le briefing"
+  },
+  "audioLibrary": {
+    "title": "Bibliothèque audio",
+    "searchPlaceholder": "Rechercher des sons...",
+    "useThisSound": "Utiliser ce son",
+    "emptyState": {
+      "title": "Aucun son trouvé",
+      "subtitle": "Essayez une autre recherche ou catégorie"
+    },
+    "category": {
+      "favorites": "Favoris",
+      "trending": "Tendances",
+      "islamic": "Islamique",
+      "nasheeds": "Nasheeds",
+      "lo-fi": "Lo-fi",
+      "acoustic": "Acoustique",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "Qiraat"
+    },
+    "uses": "utilisations"
+  },
+  "conversationMedia": {
+    "title": "Médias partagés",
+    "tab": {
+      "media": "Médias",
+      "links": "Liens",
+      "docs": "Documents"
+    },
+    "emptyState": {
+      "noMedia": "Aucun média partagé",
+      "noLinks": "Aucun lien partagé",
+      "noDocs": "Aucun document partagé",
+      "mediaSubtitle": "Les photos et vidéos partagées apparaîtront ici",
+      "linksSubtitle": "Les liens partagés apparaîtront ici",
+      "docsSubtitle": "Les documents partagés apparaîtront ici"
+    },
+    "error": {
+      "loadMedia": "Impossible de charger les médias",
+      "pullToRefresh": "Tirez pour actualiser"
+    },
+    "accessibility": {
+      "viewImage": "Voir l'image",
+      "playVideo": "Lire la vidéo",
+      "imageShared": "Image partagée",
+      "videoThumbnail": "Miniature vidéo",
+      "openLink": "Ouvrir le lien",
+      "openDocument": "Ouvrir le document"
+    },
+    "fileSizeKB": "{{size}} Ko"
   }
 }

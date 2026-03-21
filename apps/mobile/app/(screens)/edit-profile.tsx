@@ -78,13 +78,13 @@ export default function EditProfileScreen() {
       setShowAddLink(false);
       queryClient.invalidateQueries({ queryKey: ['profile-links'] });
     },
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const deleteLinkMutation = useMutation({
     mutationFn: (id: string) => profileLinksApi.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile-links'] }),
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   // Seed form from loaded profile
@@ -165,7 +165,7 @@ export default function EditProfileScreen() {
     },
     onError: (err: Error) => {
       setUploading(false);
-      Alert.alert('Error', err.message || 'Could not save profile');
+      Alert.alert(t('common.error'), err.message || t('editProfile.couldNotSave'));
     },
   });
 

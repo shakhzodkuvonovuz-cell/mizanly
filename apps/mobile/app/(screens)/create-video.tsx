@@ -299,7 +299,7 @@ export default function CreateVideoScreen() {
       return;
     }
     if (!selectedChannelId) {
-      Alert.alert('Missing channel', 'Please select a channel.');
+      Alert.alert(t('minbar.missingChannel'), t('minbar.pleaseSelectChannel'));
       return;
     }
     uploadMutation.mutate();

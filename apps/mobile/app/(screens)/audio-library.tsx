@@ -113,6 +113,7 @@ function AudioCard({
   onToggleFavorite: () => void;
   index: number;
 }) {
+  const { t } = useTranslation();
   return (
     <Animated.View entering={FadeInUp.delay(index * 50).duration(400)}>
       <LinearGradient
@@ -140,7 +141,7 @@ function AudioCard({
           <Text style={styles.trackArtist} numberOfLines={1}>{track.artist}</Text>
           <View style={styles.trackMeta}>
             <Text style={styles.trackDuration}>{track.duration}</Text>
-            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} uses</Text>
+            <Text style={styles.trackUses}>{track.useCount.toLocaleString()} {t('audioLibrary.uses')}</Text>
           </View>
         </View>
 

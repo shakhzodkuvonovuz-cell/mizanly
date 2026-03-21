@@ -177,7 +177,13 @@
     "shareAsStory": "Share as Story",
     "notInterested": "Not interested",
     "collections": "Collections",
-    "folders": "Folders"
+    "folders": "Folders",
+    "cannotBeUndone": "Tindakan ini tidak dapat dibatalkan.",
+    "reportReason": "Mengapa Anda melaporkan ini?",
+    "linkCopied": "Tautan disalin ke papan klip",
+    "spam": "Spam",
+    "inappropriate": "Tidak pantas",
+    "misinformation": "Informasi salah"
   },
   "tabs": {
     "saf": "Saf",
@@ -322,7 +328,10 @@
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
     "whyShowing": "Why am I seeing this?",
-    "brandedContent": "Branded Content"
+    "brandedContent": "Branded Content",
+    "deletePostTitle": "Hapus postingan?",
+    "reportPostTitle": "Laporkan postingan",
+    "couldNotShareAsStory": "Tidak dapat dibagikan sebagai cerita. Silakan coba lagi."
   },
   "islamic": {
     "prayerTimes": "Waktu Shalat",
@@ -371,66 +380,7 @@
     "prayerNotifications": "Prayer Notifications",
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
-    "prayerLocation": "Prayer Location",
-    "prayerCalendar": "Prayer Calendar",
-    "prayerCalendarExport": "Export Prayer Calendar",
-    "prayerCalendarImport": "Import Prayer Calendar",
-    "prayerCalendarSync": "Sync Prayer Calendar",
-    "prayerCalendarShare": "Share Prayer Calendar",
-    "prayerCalendarPrint": "Print Prayer Calendar",
-    "prayerCalendarDownload": "Download Prayer Calendar",
-    "prayerCalendarUpload": "Upload Prayer Calendar",
-    "prayerCalendarDelete": "Delete Prayer Calendar",
-    "prayerCalendarEdit": "Edit Prayer Calendar",
-    "prayerCalendarView": "View Prayer Calendar",
-    "prayerCalendarList": "List Prayer Calendars",
-    "prayerCalendarCreate": "Create Prayer Calendar",
-    "prayerCalendarUpdate": "Update Prayer Calendar",
-    "prayerCalendarRemove": "Remove Prayer Calendar",
-    "prayerCalendarArchive": "Archive Prayer Calendar",
-    "prayerCalendarRestore": "Restore Prayer Calendar",
-    "prayerCalendarDuplicate": "Duplicate Prayer Calendar",
-    "prayerCalendarRename": "Rename Prayer Calendar",
-    "prayerCalendarMove": "Move Prayer Calendar",
-    "prayerCalendarCopy": "Copy Prayer Calendar",
-    "prayerCalendarPaste": "Paste Prayer Calendar",
-    "prayerCalendarCut": "Cut Prayer Calendar",
-    "prayerCalendarSelect": "Select Prayer Calendar",
-    "prayerCalendarDeselect": "Deselect Prayer Calendar",
-    "prayerCalendarSelectAll": "Select All Prayer Calendars",
-    "prayerCalendarDeselectAll": "Deselect All Prayer Calendars",
-    "prayerCalendarInvertSelection": "Invert Selection",
-    "prayerCalendarClearSelection": "Clear Selection",
-    "prayerCalendarSelectNone": "Select None",
-    "prayerCalendarSelectMultiple": "Select Multiple",
-    "prayerCalendarSelectSingle": "Select Single",
-    "prayerCalendarSelectRange": "Select Range",
-    "prayerCalendarSelectRandom": "Select Random",
-    "prayerCalendarSelectPrevious": "Select Previous",
-    "prayerCalendarSelectNext": "Select Next",
-    "prayerCalendarSelectFirst": "Select First",
-    "prayerCalendarSelectLast": "Select Last",
-    "prayerCalendarSelectMiddle": "Select Middle",
-    "prayerCalendarSelectCenter": "Select Center",
-    "prayerCalendarSelectEdge": "Select Edge",
-    "prayerCalendarSelectCorner": "Select Corner",
-    "prayerCalendarSelectAllCorners": "Select All Corners",
-    "prayerCalendarSelectAllEdges": "Select All Edges",
-    "prayerCalendarSelectAllCenters": "Select All Centers",
-    "prayerCalendarSelectAllMiddles": "Select All Middles",
-    "prayerCalendarSelectAllFirsts": "Select All Firsts",
-    "prayerCalendarSelectAllLasts": "Select All Lasts",
-    "prayerCalendarSelectAllPrevious": "Select All Previous",
-    "prayerCalendarSelectAllNext": "Select All Next",
-    "prayerCalendarSelectAllRandom": "Select All Random",
-    "prayerCalendarSelectAllRange": "Select All Range",
-    "prayerCalendarSelectAllMultiple": "Select All Multiple",
-    "prayerCalendarSelectAllSingle": "Select All Single",
-    "prayerCalendarSelectAllNone": "Select All None",
-    "prayerCalendarSelectAllInvert": "Select All Invert",
-    "prayerCalendarSelectAllClear": "Select All Clear",
-    "prayerCalendarSelectAllDeselect": "Select All Deselect",
-    "prayerCalendarSelectAllSelect": "Select All Select"
+    "prayerLocation": "Prayer Location"
   },
   "auth": {
     "signIn": "Sign In",
@@ -700,7 +650,9 @@
       "subtitle": "Follow people or explore trending topics",
       "actionLabel": "Start a Thread"
     },
-    "video": "Video"
+    "video": "Video",
+    "deleteThreadTitle": "Hapus utas?",
+    "reportThreadTitle": "Laporkan utas"
   },
   "risalah": {
     "messages": "Messages",
@@ -958,7 +910,9 @@
     "streamDescPlaceholder": "Tell viewers what your stream is about",
     "playlistEmpty": "Videos added to this playlist will appear here",
     "skipBack": "Skip back 10 seconds",
-    "skipForward": "Skip forward 10 seconds"
+    "skipForward": "Skip forward 10 seconds",
+    "missingChannel": "Saluran tidak ada",
+    "pleaseSelectChannel": "Silakan pilih saluran."
   },
   "profile": {
     "followers": "Followers",
@@ -1453,7 +1407,8 @@
     "linkTitlePlaceholder": "Link title",
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
-    "urlPlaceholder": "URL (https://...)"
+    "urlPlaceholder": "URL (https://...)",
+    "couldNotSave": "Tidak dapat menyimpan profil"
   },
   "screens": {
     "followers": {
@@ -1769,7 +1724,8 @@
       "emptyTitle": "No playlists yet",
       "emptySubtitle": "Create a playlist to save videos",
       "errorTitle": "Could not load playlists",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "updateError": "Tidak dapat memperbarui playlist"
     },
     "schedule-live": {
       "title": "Schedule Live",
@@ -2029,7 +1985,8 @@
     "noDonations": "No donations yet",
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
-    "createCampaign": "Create Campaign"
+    "createCampaign": "Create Campaign",
+    "currencyAmount": "${{amount}}"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -2790,7 +2747,21 @@
     "subscribeToWatch": "Berlangganan untuk Menonton",
     "subscribersOnlyStream": "Ini adalah stream khusus pelanggan",
     "switchToPublic": "Ubah ke Publik",
-    "switchToSubscribers": "Ubah ke Khusus Pelanggan"
+    "switchToSubscribers": "Ubah ke Khusus Pelanggan",
+    "goLive": "Siaran Langsung",
+    "starting": "Memulai...",
+    "videoStream": "Siaran Video",
+    "audioSpace": "Ruang Audio",
+    "selectStreamType": "Pilih Jenis Siaran",
+    "scheduleForLater": "Jadwalkan Nanti",
+    "scheduleTime": "Waktu Jadwal",
+    "streamType": "Jenis Siaran",
+    "scheduleSubtitle": "Mulai siaran Anda pada waktu tertentu",
+    "failedToStartStream": "Gagal memulai siaran langsung. Silakan coba lagi.",
+    "failedToStartRehearsal": "Gagal memulai latihan.",
+    "datePickerPlaceholder": "Pemilih tanggal/waktu akan muncul di sini",
+    "datePickerHint": "Untuk kemudahan, kami akan menjadwalkan 30 menit dari sekarang.",
+    "preparingStream": "Menyiapkan siaran langsung..."
   },
   "seriesEnhanced": {
     "episodes": "Episode",
@@ -3067,5 +3038,55 @@
     "submitReflection": "Kirim Refleksi",
     "allComplete": "Semua Tugas Selesai!",
     "loadError": "Tidak dapat memuat briefing"
+  },
+  "audioLibrary": {
+    "title": "Perpustakaan Audio",
+    "searchPlaceholder": "Cari suara...",
+    "useThisSound": "Gunakan suara ini",
+    "emptyState": {
+      "title": "Suara tidak ditemukan",
+      "subtitle": "Coba pencarian atau kategori lain"
+    },
+    "category": {
+      "favorites": "Favorit",
+      "trending": "Tren",
+      "islamic": "Islami",
+      "nasheeds": "Nasyid",
+      "lo-fi": "Lo-fi",
+      "acoustic": "Akustik",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "Qiraah"
+    },
+    "uses": "penggunaan"
+  },
+  "conversationMedia": {
+    "title": "Media Bersama",
+    "tab": {
+      "media": "Media",
+      "links": "Tautan",
+      "docs": "Dokumen"
+    },
+    "emptyState": {
+      "noMedia": "Tidak ada media bersama",
+      "noLinks": "Tidak ada tautan bersama",
+      "noDocs": "Tidak ada dokumen bersama",
+      "mediaSubtitle": "Foto dan video yang dibagikan dalam percakapan ini akan muncul di sini",
+      "linksSubtitle": "Tautan yang dibagikan dalam percakapan ini akan muncul di sini",
+      "docsSubtitle": "Dokumen yang dibagikan dalam percakapan ini akan muncul di sini"
+    },
+    "error": {
+      "loadMedia": "Tidak dapat memuat media",
+      "pullToRefresh": "Tarik untuk menyegarkan"
+    },
+    "accessibility": {
+      "viewImage": "Lihat gambar",
+      "playVideo": "Putar video",
+      "imageShared": "Gambar bersama",
+      "videoThumbnail": "Thumbnail video",
+      "openLink": "Buka tautan",
+      "openDocument": "Buka dokumen"
+    },
+    "fileSizeKB": "{{size}} KB"
   }
 }

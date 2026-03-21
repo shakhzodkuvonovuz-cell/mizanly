@@ -103,7 +103,7 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
       haptic.success();
     },
     onError: () => {
-      Alert.alert('Error', 'Could not share as story. Please try again.');
+      Alert.alert(tr('common.error'), tr('saf.couldNotShareAsStory'));
     },
   });
 
@@ -126,19 +126,19 @@ export const PostCard = memo(function PostCard({ post, viewerId, isOwn, isFreque
 
   const handleDelete = () => {
     setShowMenu(false);
-    Alert.alert('Delete post?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    Alert.alert(tr('saf.deletePostTitle'), tr('common.cannotBeUndone'), [
+      { text: tr('common.cancel'), style: 'cancel' },
+      { text: tr('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   };
 
   const handleReport = () => {
     setShowMenu(false);
-    Alert.alert('Report post', 'Why are you reporting this?', [
-      { text: 'Spam', onPress: () => postsApi.report(post.id, 'SPAM').catch(() => {}) },
-      { text: 'Inappropriate', onPress: () => postsApi.report(post.id, 'INAPPROPRIATE').catch(() => {}) },
-      { text: 'Misinformation', onPress: () => postsApi.report(post.id, 'MISINFORMATION').catch(() => {}) },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(tr('saf.reportPostTitle'), tr('common.reportReason'), [
+      { text: tr('common.spam'), onPress: () => postsApi.report(post.id, 'SPAM').catch(() => {}) },
+      { text: tr('common.inappropriate'), onPress: () => postsApi.report(post.id, 'INAPPROPRIATE').catch(() => {}) },
+      { text: tr('common.misinformation'), onPress: () => postsApi.report(post.id, 'MISINFORMATION').catch(() => {}) },
+      { text: tr('common.cancel'), style: 'cancel' },
     ]);
   };
 

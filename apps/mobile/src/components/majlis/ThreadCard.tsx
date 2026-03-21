@@ -143,19 +143,19 @@ export const ThreadCard = memo(function ThreadCard({ thread, viewerId, isOwn }: 
 
   const handleDelete = () => {
     setShowMenu(false);
-    Alert.alert('Delete thread?', 'This cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate() },
+    Alert.alert(t('majlis.deleteThreadTitle'), t('common.cannotBeUndone'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.delete'), style: 'destructive', onPress: () => deleteMutation.mutate() },
     ]);
   };
 
   const handleReport = () => {
     setShowMenu(false);
-    Alert.alert('Report thread', 'Why are you reporting this?', [
-      { text: 'Spam', onPress: () => threadsApi.report(thread.id, 'SPAM').catch(() => {}) },
-      { text: 'Inappropriate', onPress: () => threadsApi.report(thread.id, 'INAPPROPRIATE').catch(() => {}) },
-      { text: 'Misinformation', onPress: () => threadsApi.report(thread.id, 'MISINFORMATION').catch(() => {}) },
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('majlis.reportThreadTitle'), t('common.reportReason'), [
+      { text: t('common.spam'), onPress: () => threadsApi.report(thread.id, 'SPAM').catch(() => {}) },
+      { text: t('common.inappropriate'), onPress: () => threadsApi.report(thread.id, 'INAPPROPRIATE').catch(() => {}) },
+      { text: t('common.misinformation'), onPress: () => threadsApi.report(thread.id, 'MISINFORMATION').catch(() => {}) },
+      { text: t('common.cancel'), style: 'cancel' },
     ]);
   };
 

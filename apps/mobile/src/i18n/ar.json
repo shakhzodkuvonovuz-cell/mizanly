@@ -177,7 +177,13 @@
     "min": "الحد الأدنى",
     "max": "الحد الأقصى",
     "home": "الرئيسية",
-    "mayBeDeleted": "ربما تم حذف هذا العنصر."
+    "mayBeDeleted": "ربما تم حذف هذا العنصر.",
+    "cannotBeUndone": "لا يمكن التراجع عن هذا.",
+    "reportReason": "لماذا تبلّغ عن هذا؟",
+    "linkCopied": "تم نسخ الرابط إلى الحافظة",
+    "spam": "رسائل مزعجة",
+    "inappropriate": "غير لائق",
+    "misinformation": "معلومات مضللة"
   },
   "auth": {
     "signIn": "تسجيل الدخول",
@@ -386,7 +392,10 @@
     "boostPost": "ترويج المنشور",
     "postInsights": "إحصائيات المنشور",
     "whyShowing": "لماذا أرى هذا؟",
-    "brandedContent": "محتوى ممول"
+    "brandedContent": "محتوى ممول",
+    "deletePostTitle": "حذف المنشور؟",
+    "reportPostTitle": "الإبلاغ عن المنشور",
+    "couldNotShareAsStory": "تعذرت المشاركة كقصة. يرجى المحاولة مرة أخرى."
   },
   "bakra": {
     "forYou": "لك",
@@ -591,7 +600,9 @@
     "loadContentError": "تعذر تحميل هذا الموضوع",
     "deleteReplyTitle": "حذف الرد؟",
     "deleteReplyMessage": "سيتم حذف هذا الرد نهائياً.",
-    "caughtUp": "أنت على اطلاع بكل جديد"
+    "caughtUp": "أنت على اطلاع بكل جديد",
+    "deleteThreadTitle": "حذف الموضوع؟",
+    "reportThreadTitle": "الإبلاغ عن الموضوع"
   },
   "risalah": {
     "messages": "الرسائل",
@@ -849,7 +860,9 @@
     "streamDescPlaceholder": "أخبر المشاهدين عن موضوع بثك",
     "playlistEmpty": "ستظهر الفيديوهات المضافة إلى هذه القائمة هنا",
     "skipBack": "الرجوع ١٠ ثوانٍ",
-    "skipForward": "التقديم ١٠ ثوانٍ"
+    "skipForward": "التقديم ١٠ ثوانٍ",
+    "missingChannel": "القناة مفقودة",
+    "pleaseSelectChannel": "يرجى اختيار قناة."
   },
   "profile": {
     "followers": "المتابِعون",
@@ -977,65 +990,6 @@
     "prayerMethod": "طريقة حساب الصلاة",
     "prayerAdjustments": "تعديلات الصلاة",
     "prayerLocation": "موقع الصلاة",
-    "prayerCalendar": "تقويم الصلاة",
-    "prayerCalendarExport": "Export Prayer Calendar",
-    "prayerCalendarImport": "Import Prayer Calendar",
-    "prayerCalendarSync": "Sync Prayer Calendar",
-    "prayerCalendarShare": "Share Prayer Calendar",
-    "prayerCalendarPrint": "Print Prayer Calendar",
-    "prayerCalendarDownload": "Download Prayer Calendar",
-    "prayerCalendarUpload": "Upload Prayer Calendar",
-    "prayerCalendarDelete": "Delete Prayer Calendar",
-    "prayerCalendarEdit": "Edit Prayer Calendar",
-    "prayerCalendarView": "View Prayer Calendar",
-    "prayerCalendarList": "List Prayer Calendars",
-    "prayerCalendarCreate": "Create Prayer Calendar",
-    "prayerCalendarUpdate": "Update Prayer Calendar",
-    "prayerCalendarRemove": "Remove Prayer Calendar",
-    "prayerCalendarArchive": "Archive Prayer Calendar",
-    "prayerCalendarRestore": "Restore Prayer Calendar",
-    "prayerCalendarDuplicate": "Duplicate Prayer Calendar",
-    "prayerCalendarRename": "Rename Prayer Calendar",
-    "prayerCalendarMove": "Move Prayer Calendar",
-    "prayerCalendarCopy": "Copy Prayer Calendar",
-    "prayerCalendarPaste": "Paste Prayer Calendar",
-    "prayerCalendarCut": "Cut Prayer Calendar",
-    "prayerCalendarSelect": "Select Prayer Calendar",
-    "prayerCalendarDeselect": "Deselect Prayer Calendar",
-    "prayerCalendarSelectAll": "Select All Prayer Calendars",
-    "prayerCalendarDeselectAll": "Deselect All Prayer Calendars",
-    "prayerCalendarInvertSelection": "Invert Selection",
-    "prayerCalendarClearSelection": "Clear Selection",
-    "prayerCalendarSelectNone": "Select None",
-    "prayerCalendarSelectMultiple": "Select Multiple",
-    "prayerCalendarSelectSingle": "Select Single",
-    "prayerCalendarSelectRange": "Select Range",
-    "prayerCalendarSelectRandom": "Select Random",
-    "prayerCalendarSelectPrevious": "Select Previous",
-    "prayerCalendarSelectNext": "Select Next",
-    "prayerCalendarSelectFirst": "Select First",
-    "prayerCalendarSelectLast": "Select Last",
-    "prayerCalendarSelectMiddle": "Select Middle",
-    "prayerCalendarSelectCenter": "Select Center",
-    "prayerCalendarSelectEdge": "Select Edge",
-    "prayerCalendarSelectCorner": "Select Corner",
-    "prayerCalendarSelectAllCorners": "Select All Corners",
-    "prayerCalendarSelectAllEdges": "Select All Edges",
-    "prayerCalendarSelectAllCenters": "Select All Centers",
-    "prayerCalendarSelectAllMiddles": "Select All Middles",
-    "prayerCalendarSelectAllFirsts": "Select All Firsts",
-    "prayerCalendarSelectAllLasts": "Select All Lasts",
-    "prayerCalendarSelectAllPrevious": "Select All Previous",
-    "prayerCalendarSelectAllNext": "Select All Next",
-    "prayerCalendarSelectAllRandom": "Select All Random",
-    "prayerCalendarSelectAllRange": "Select All Range",
-    "prayerCalendarSelectAllMultiple": "Select All Multiple",
-    "prayerCalendarSelectAllSingle": "Select All Single",
-    "prayerCalendarSelectAllNone": "Select All None",
-    "prayerCalendarSelectAllInvert": "Select All Invert",
-    "prayerCalendarSelectAllClear": "Select All Clear",
-    "prayerCalendarSelectAllDeselect": "Select All Deselect",
-    "prayerCalendarSelectAllSelect": "Select All Select",
     "searchUsers": "البحث عن مستخدمين...",
     "searchLocations": "البحث عن مواقع..."
   },
@@ -1600,7 +1554,8 @@
       "emptyTitle": "لا توجد قوائم تشغيل بعد",
       "emptySubtitle": "أنشئ قائمة تشغيل لحفظ الفيديوهات",
       "errorTitle": "تعذر تحميل قوائم التشغيل",
-      "errorSubtitle": "اسحب للتحديث"
+      "errorSubtitle": "اسحب للتحديث",
+      "updateError": "تعذر تحديث قائمة التشغيل"
     },
     "schedule-live": {
       "title": "جدولة بث مباشر",
@@ -1860,7 +1815,8 @@
     "dailyHadith": "حديث اليوم",
     "nearbyMosques": "المساجد القريبة",
     "locationCoords": "خط العرض: {{lat}}، خط الطول: {{lng}}",
-    "detectingLocation": "جارٍ تحديد الموقع..."
+    "detectingLocation": "جارٍ تحديد الموقع...",
+    "currencyAmount": "{{amount}}$"
   },
   "tafsir": {
     "title": "تفسير",
@@ -2698,7 +2654,8 @@
     "linkTitlePlaceholder": "عنوان الرابط",
     "loadErrorTitle": "تعذر تحميل الملف الشخصي",
     "loadErrorSubtitle": "يرجى المحاولة لاحقاً",
-    "urlPlaceholder": "الرابط (https://...)"
+    "urlPlaceholder": "الرابط (https://...)",
+    "couldNotSave": "تعذر حفظ الملف الشخصي"
   },
   "feed": {
     "trending": "الأكثر رواجاً",
@@ -2789,7 +2746,21 @@
     "subscribeToWatch": "اشترك للمشاهدة",
     "subscribersOnlyStream": "هذا بث للمشتركين فقط",
     "switchToPublic": "تحويل للعام",
-    "switchToSubscribers": "تحويل للمشتركين فقط"
+    "switchToSubscribers": "تحويل للمشتركين فقط",
+    "goLive": "بث مباشر",
+    "starting": "جارٍ البدء...",
+    "videoStream": "بث فيديو",
+    "audioSpace": "مساحة صوتية",
+    "selectStreamType": "اختر نوع البث",
+    "scheduleForLater": "جدولة لوقت لاحق",
+    "scheduleTime": "وقت الجدولة",
+    "streamType": "نوع البث",
+    "scheduleSubtitle": "ابدأ بثك في وقت محدد",
+    "failedToStartStream": "فشل بدء البث المباشر. يرجى المحاولة مرة أخرى.",
+    "failedToStartRehearsal": "فشل بدء التمرين.",
+    "datePickerPlaceholder": "منتقي التاريخ/الوقت سيظهر هنا",
+    "datePickerHint": "للتبسيط، سنقوم بالجدولة بعد 30 دقيقة من الآن.",
+    "preparingStream": "جارٍ تحضير البث المباشر..."
   },
   "seriesEnhanced": {
     "episodes": "الحلقات",
@@ -3072,5 +3043,55 @@
     "submitReflection": "إرسال التأمل",
     "allComplete": "جميع المهام مكتملة!",
     "loadError": "تعذر تحميل الموجز"
+  },
+  "audioLibrary": {
+    "title": "مكتبة الصوت",
+    "searchPlaceholder": "البحث عن أصوات...",
+    "useThisSound": "استخدم هذا الصوت",
+    "emptyState": {
+      "title": "لا توجد أصوات",
+      "subtitle": "جرب بحثاً أو فئة مختلفة"
+    },
+    "category": {
+      "favorites": "المفضلة",
+      "trending": "الرائجة",
+      "islamic": "إسلامي",
+      "nasheeds": "أناشيد",
+      "lo-fi": "Lo-fi",
+      "acoustic": "أكوستيك",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "قراءات"
+    },
+    "uses": "استخدام"
+  },
+  "conversationMedia": {
+    "title": "الوسائط المشتركة",
+    "tab": {
+      "media": "الوسائط",
+      "links": "الروابط",
+      "docs": "المستندات"
+    },
+    "emptyState": {
+      "noMedia": "لا توجد وسائط مشتركة",
+      "noLinks": "لا توجد روابط مشتركة",
+      "noDocs": "لا توجد مستندات مشتركة",
+      "mediaSubtitle": "ستظهر الصور والفيديوهات المشتركة في هذه المحادثة هنا",
+      "linksSubtitle": "ستظهر الروابط المشتركة في هذه المحادثة هنا",
+      "docsSubtitle": "ستظهر المستندات المشتركة في هذه المحادثة هنا"
+    },
+    "error": {
+      "loadMedia": "تعذر تحميل الوسائط",
+      "pullToRefresh": "اسحب للتحديث"
+    },
+    "accessibility": {
+      "viewImage": "عرض الصورة",
+      "playVideo": "تشغيل الفيديو",
+      "imageShared": "صورة مشتركة",
+      "videoThumbnail": "صورة مصغرة للفيديو",
+      "openLink": "فتح الرابط",
+      "openDocument": "فتح المستند"
+    },
+    "fileSizeKB": "{{size}} كيلوبايت"
   }
 }

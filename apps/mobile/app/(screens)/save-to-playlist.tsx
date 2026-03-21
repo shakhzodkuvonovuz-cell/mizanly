@@ -107,7 +107,7 @@ export default function SaveToPlaylistScreen() {
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       const message = err?.response?.data?.message || err.message || 'Unknown error';
-      Alert.alert('Error', `Could not update playlist: ${message}`);
+      Alert.alert(t('common.error'), `${t('screens.save-to-playlist.updateError')}: ${message}`);
     } finally {
       setLoadingPlaylistIds(prev => {
         const next = new Set(prev);

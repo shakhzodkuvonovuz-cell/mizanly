@@ -177,7 +177,13 @@
     "shareAsStory": "Share as Story",
     "notInterested": "Not interested",
     "collections": "Collections",
-    "folders": "Folders"
+    "folders": "Folders",
+    "cannotBeUndone": "এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "reportReason": "আপনি কেন রিপোর্ট করছেন?",
+    "linkCopied": "লিঙ্ক ক্লিপবোর্ডে কপি হয়েছে",
+    "spam": "স্প্যাম",
+    "inappropriate": "অনুপযুক্ত",
+    "misinformation": "ভুল তথ্য"
   },
   "tabs": {
     "saf": "সাফ",
@@ -269,66 +275,7 @@
     "prayerNotifications": "Prayer Notifications",
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
-    "prayerLocation": "Prayer Location",
-    "prayerCalendar": "Prayer Calendar",
-    "prayerCalendarExport": "Export Prayer Calendar",
-    "prayerCalendarImport": "Import Prayer Calendar",
-    "prayerCalendarSync": "Sync Prayer Calendar",
-    "prayerCalendarShare": "Share Prayer Calendar",
-    "prayerCalendarPrint": "Print Prayer Calendar",
-    "prayerCalendarDownload": "Download Prayer Calendar",
-    "prayerCalendarUpload": "Upload Prayer Calendar",
-    "prayerCalendarDelete": "Delete Prayer Calendar",
-    "prayerCalendarEdit": "Edit Prayer Calendar",
-    "prayerCalendarView": "View Prayer Calendar",
-    "prayerCalendarList": "List Prayer Calendars",
-    "prayerCalendarCreate": "Create Prayer Calendar",
-    "prayerCalendarUpdate": "Update Prayer Calendar",
-    "prayerCalendarRemove": "Remove Prayer Calendar",
-    "prayerCalendarArchive": "Archive Prayer Calendar",
-    "prayerCalendarRestore": "Restore Prayer Calendar",
-    "prayerCalendarDuplicate": "Duplicate Prayer Calendar",
-    "prayerCalendarRename": "Rename Prayer Calendar",
-    "prayerCalendarMove": "Move Prayer Calendar",
-    "prayerCalendarCopy": "Copy Prayer Calendar",
-    "prayerCalendarPaste": "Paste Prayer Calendar",
-    "prayerCalendarCut": "Cut Prayer Calendar",
-    "prayerCalendarSelect": "Select Prayer Calendar",
-    "prayerCalendarDeselect": "Deselect Prayer Calendar",
-    "prayerCalendarSelectAll": "Select All Prayer Calendars",
-    "prayerCalendarDeselectAll": "Deselect All Prayer Calendars",
-    "prayerCalendarInvertSelection": "Invert Selection",
-    "prayerCalendarClearSelection": "Clear Selection",
-    "prayerCalendarSelectNone": "Select None",
-    "prayerCalendarSelectMultiple": "Select Multiple",
-    "prayerCalendarSelectSingle": "Select Single",
-    "prayerCalendarSelectRange": "Select Range",
-    "prayerCalendarSelectRandom": "Select Random",
-    "prayerCalendarSelectPrevious": "Select Previous",
-    "prayerCalendarSelectNext": "Select Next",
-    "prayerCalendarSelectFirst": "Select First",
-    "prayerCalendarSelectLast": "Select Last",
-    "prayerCalendarSelectMiddle": "Select Middle",
-    "prayerCalendarSelectCenter": "Select Center",
-    "prayerCalendarSelectEdge": "Select Edge",
-    "prayerCalendarSelectCorner": "Select Corner",
-    "prayerCalendarSelectAllCorners": "Select All Corners",
-    "prayerCalendarSelectAllEdges": "Select All Edges",
-    "prayerCalendarSelectAllCenters": "Select All Centers",
-    "prayerCalendarSelectAllMiddles": "Select All Middles",
-    "prayerCalendarSelectAllFirsts": "Select All Firsts",
-    "prayerCalendarSelectAllLasts": "Select All Lasts",
-    "prayerCalendarSelectAllPrevious": "Select All Previous",
-    "prayerCalendarSelectAllNext": "Select All Next",
-    "prayerCalendarSelectAllRandom": "Select All Random",
-    "prayerCalendarSelectAllRange": "Select All Range",
-    "prayerCalendarSelectAllMultiple": "Select All Multiple",
-    "prayerCalendarSelectAllSingle": "Select All Single",
-    "prayerCalendarSelectAllNone": "Select All None",
-    "prayerCalendarSelectAllInvert": "Select All Invert",
-    "prayerCalendarSelectAllClear": "Select All Clear",
-    "prayerCalendarSelectAllDeselect": "Select All Deselect",
-    "prayerCalendarSelectAllSelect": "Select All Select"
+    "prayerLocation": "Prayer Location"
   },
   "auth": {
     "signIn": "Sign In",
@@ -494,7 +441,10 @@
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
     "whyShowing": "Why am I seeing this?",
-    "brandedContent": "Branded Content"
+    "brandedContent": "Branded Content",
+    "deletePostTitle": "পোস্ট মুছবেন?",
+    "reportPostTitle": "পোস্ট রিপোর্ট করুন",
+    "couldNotShareAsStory": "স্টোরি হিসেবে শেয়ার করা যায়নি। আবার চেষ্টা করুন।"
   },
   "bakra": {
     "forYou": "For You",
@@ -699,7 +649,9 @@
       "subtitle": "Follow people or explore trending topics",
       "actionLabel": "Start a Thread"
     },
-    "video": "Video"
+    "video": "Video",
+    "deleteThreadTitle": "থ্রেড মুছবেন?",
+    "reportThreadTitle": "থ্রেড রিপোর্ট করুন"
   },
   "risalah": {
     "messages": "Messages",
@@ -957,7 +909,9 @@
     "streamDescPlaceholder": "Tell viewers what your stream is about",
     "playlistEmpty": "Videos added to this playlist will appear here",
     "skipBack": "Skip back 10 seconds",
-    "skipForward": "Skip forward 10 seconds"
+    "skipForward": "Skip forward 10 seconds",
+    "missingChannel": "চ্যানেল নেই",
+    "pleaseSelectChannel": "অনুগ্রহ করে একটি চ্যানেল নির্বাচন করুন।"
   },
   "profile": {
     "followers": "Followers",
@@ -1452,7 +1406,8 @@
     "linkTitlePlaceholder": "Link title",
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
-    "urlPlaceholder": "URL (https://...)"
+    "urlPlaceholder": "URL (https://...)",
+    "couldNotSave": "প্রোফাইল সংরক্ষণ করা যায়নি"
   },
   "screens": {
     "followers": {
@@ -1768,7 +1723,8 @@
       "emptyTitle": "No playlists yet",
       "emptySubtitle": "Create a playlist to save videos",
       "errorTitle": "Could not load playlists",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "updateError": "প্লেলিস্ট আপডেট করা যায়নি"
     },
     "schedule-live": {
       "title": "Schedule Live",
@@ -2028,7 +1984,8 @@
     "noDonations": "No donations yet",
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
-    "createCampaign": "Create Campaign"
+    "createCampaign": "Create Campaign",
+    "currencyAmount": "${{amount}}"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -2789,7 +2746,21 @@
     "subscribeToWatch": "দেখতে সাবস্ক্রাইব করুন",
     "subscribersOnlyStream": "এটি শুধুমাত্র গ্রাহকদের জন্য স্ট্রিম",
     "switchToPublic": "সর্বজনীন করুন",
-    "switchToSubscribers": "শুধু গ্রাহকদের জন্য করুন"
+    "switchToSubscribers": "শুধু গ্রাহকদের জন্য করুন",
+    "goLive": "লাইভ শুরু করুন",
+    "starting": "শুরু হচ্ছে...",
+    "videoStream": "ভিডিও স্ট্রিম",
+    "audioSpace": "অডিও স্পেস",
+    "selectStreamType": "স্ট্রিম ধরন নির্বাচন করুন",
+    "scheduleForLater": "পরে সময়সূচী করুন",
+    "scheduleTime": "সময়সূচী",
+    "streamType": "স্ট্রিম ধরন",
+    "scheduleSubtitle": "নির্দিষ্ট সময়ে আপনার স্ট্রিম শুরু করুন",
+    "failedToStartStream": "লাইভ স্ট্রিম শুরু করতে ব্যর্থ। অনুগ্রহ করে আবার চেষ্টা করুন।",
+    "failedToStartRehearsal": "রিহার্সাল শুরু করতে ব্যর্থ।",
+    "datePickerPlaceholder": "তারিখ/সময় পিকার এখানে দেখা যাবে",
+    "datePickerHint": "সরলতার জন্য, এখন থেকে ৩০ মিনিট পরে সময়সূচী করা হবে।",
+    "preparingStream": "লাইভ স্ট্রিম প্রস্তুত হচ্ছে..."
   },
   "seriesEnhanced": {
     "episodes": "পর্বসমূহ",
@@ -3066,5 +3037,55 @@
     "submitReflection": "চিন্তা জমা দিন",
     "allComplete": "সব কাজ সম্পন্ন!",
     "loadError": "ব্রিফিং লোড হয়নি"
+  },
+  "audioLibrary": {
+    "title": "অডিও লাইব্রেরি",
+    "searchPlaceholder": "শব্দ খুঁজুন...",
+    "useThisSound": "এই শব্দ ব্যবহার করুন",
+    "emptyState": {
+      "title": "কোনো শব্দ পাওয়া যায়নি",
+      "subtitle": "ভিন্ন অনুসন্ধান বা বিভাগ চেষ্টা করুন"
+    },
+    "category": {
+      "favorites": "পছন্দের",
+      "trending": "ট্রেন্ডিং",
+      "islamic": "ইসলামিক",
+      "nasheeds": "নাশীদ",
+      "lo-fi": "Lo-fi",
+      "acoustic": "অ্যাকুস্টিক",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "কিরাত"
+    },
+    "uses": "ব্যবহার"
+  },
+  "conversationMedia": {
+    "title": "শেয়ার করা মিডিয়া",
+    "tab": {
+      "media": "মিডিয়া",
+      "links": "লিংক",
+      "docs": "ডকুমেন্ট"
+    },
+    "emptyState": {
+      "noMedia": "কোনো শেয়ার করা মিডিয়া নেই",
+      "noLinks": "কোনো শেয়ার করা লিংক নেই",
+      "noDocs": "কোনো শেয়ার করা ডকুমেন্ট নেই",
+      "mediaSubtitle": "এই কথোপকথনে শেয়ার করা ছবি ও ভিডিও এখানে দেখা যাবে",
+      "linksSubtitle": "এই কথোপকথনে শেয়ার করা লিংক এখানে দেখা যাবে",
+      "docsSubtitle": "এই কথোপকথনে শেয়ার করা ডকুমেন্ট এখানে দেখা যাবে"
+    },
+    "error": {
+      "loadMedia": "মিডিয়া লোড করা যায়নি",
+      "pullToRefresh": "রিফ্রেশ করতে টানুন"
+    },
+    "accessibility": {
+      "viewImage": "ছবি দেখুন",
+      "playVideo": "ভিডিও চালান",
+      "imageShared": "শেয়ার করা ছবি",
+      "videoThumbnail": "ভিডিও থাম্বনেইল",
+      "openLink": "লিংক খুলুন",
+      "openDocument": "ডকুমেন্ট খুলুন"
+    },
+    "fileSizeKB": "{{size}} KB"
   }
 }

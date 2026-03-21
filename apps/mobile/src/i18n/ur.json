@@ -177,7 +177,13 @@
     "shareAsStory": "Share as Story",
     "notInterested": "Not interested",
     "collections": "Collections",
-    "folders": "Folders"
+    "folders": "Folders",
+    "cannotBeUndone": "یہ واپس نہیں ہو سکتا۔",
+    "reportReason": "آپ اس کی رپورٹ کیوں کر رہے ہیں؟",
+    "linkCopied": "لنک کلپ بورڈ پر کاپی ہو گیا",
+    "spam": "اسپام",
+    "inappropriate": "نامناسب",
+    "misinformation": "غلط معلومات"
   },
   "tabs": {
     "saf": "صف",
@@ -322,7 +328,10 @@
     "boostPost": "Boost Post",
     "postInsights": "Post Insights",
     "whyShowing": "Why am I seeing this?",
-    "brandedContent": "Branded Content"
+    "brandedContent": "Branded Content",
+    "deletePostTitle": "پوسٹ حذف کریں؟",
+    "reportPostTitle": "پوسٹ کی رپورٹ کریں",
+    "couldNotShareAsStory": "کہانی کے طور پر شیئر نہیں ہو سکا۔ دوبارہ کوشش کریں۔"
   },
   "bakra": {
     "duet": "ڈوئٹ",
@@ -527,7 +536,9 @@
       "subtitle": "Follow people or explore trending topics",
       "actionLabel": "Start a Thread"
     },
-    "video": "Video"
+    "video": "Video",
+    "deleteThreadTitle": "تھریڈ حذف کریں؟",
+    "reportThreadTitle": "تھریڈ کی رپورٹ کریں"
   },
   "risalah": {
     "chats": "گفتگو",
@@ -785,7 +796,9 @@
     "streamDescPlaceholder": "Tell viewers what your stream is about",
     "playlistEmpty": "Videos added to this playlist will appear here",
     "skipBack": "Skip back 10 seconds",
-    "skipForward": "Skip forward 10 seconds"
+    "skipForward": "Skip forward 10 seconds",
+    "missingChannel": "چینل نہیں ملا",
+    "pleaseSelectChannel": "براہ کرم ایک چینل منتخب کریں۔"
   },
   "islamic": {
     "prayerTimes": "نماز کے اوقات",
@@ -834,66 +847,7 @@
     "prayerNotifications": "Prayer Notifications",
     "prayerMethod": "Prayer Calculation Method",
     "prayerAdjustments": "Prayer Adjustments",
-    "prayerLocation": "Prayer Location",
-    "prayerCalendar": "Prayer Calendar",
-    "prayerCalendarExport": "Export Prayer Calendar",
-    "prayerCalendarImport": "Import Prayer Calendar",
-    "prayerCalendarSync": "Sync Prayer Calendar",
-    "prayerCalendarShare": "Share Prayer Calendar",
-    "prayerCalendarPrint": "Print Prayer Calendar",
-    "prayerCalendarDownload": "Download Prayer Calendar",
-    "prayerCalendarUpload": "Upload Prayer Calendar",
-    "prayerCalendarDelete": "Delete Prayer Calendar",
-    "prayerCalendarEdit": "Edit Prayer Calendar",
-    "prayerCalendarView": "View Prayer Calendar",
-    "prayerCalendarList": "List Prayer Calendars",
-    "prayerCalendarCreate": "Create Prayer Calendar",
-    "prayerCalendarUpdate": "Update Prayer Calendar",
-    "prayerCalendarRemove": "Remove Prayer Calendar",
-    "prayerCalendarArchive": "Archive Prayer Calendar",
-    "prayerCalendarRestore": "Restore Prayer Calendar",
-    "prayerCalendarDuplicate": "Duplicate Prayer Calendar",
-    "prayerCalendarRename": "Rename Prayer Calendar",
-    "prayerCalendarMove": "Move Prayer Calendar",
-    "prayerCalendarCopy": "Copy Prayer Calendar",
-    "prayerCalendarPaste": "Paste Prayer Calendar",
-    "prayerCalendarCut": "Cut Prayer Calendar",
-    "prayerCalendarSelect": "Select Prayer Calendar",
-    "prayerCalendarDeselect": "Deselect Prayer Calendar",
-    "prayerCalendarSelectAll": "Select All Prayer Calendars",
-    "prayerCalendarDeselectAll": "Deselect All Prayer Calendars",
-    "prayerCalendarInvertSelection": "Invert Selection",
-    "prayerCalendarClearSelection": "Clear Selection",
-    "prayerCalendarSelectNone": "Select None",
-    "prayerCalendarSelectMultiple": "Select Multiple",
-    "prayerCalendarSelectSingle": "Select Single",
-    "prayerCalendarSelectRange": "Select Range",
-    "prayerCalendarSelectRandom": "Select Random",
-    "prayerCalendarSelectPrevious": "Select Previous",
-    "prayerCalendarSelectNext": "Select Next",
-    "prayerCalendarSelectFirst": "Select First",
-    "prayerCalendarSelectLast": "Select Last",
-    "prayerCalendarSelectMiddle": "Select Middle",
-    "prayerCalendarSelectCenter": "Select Center",
-    "prayerCalendarSelectEdge": "Select Edge",
-    "prayerCalendarSelectCorner": "Select Corner",
-    "prayerCalendarSelectAllCorners": "Select All Corners",
-    "prayerCalendarSelectAllEdges": "Select All Edges",
-    "prayerCalendarSelectAllCenters": "Select All Centers",
-    "prayerCalendarSelectAllMiddles": "Select All Middles",
-    "prayerCalendarSelectAllFirsts": "Select All Firsts",
-    "prayerCalendarSelectAllLasts": "Select All Lasts",
-    "prayerCalendarSelectAllPrevious": "Select All Previous",
-    "prayerCalendarSelectAllNext": "Select All Next",
-    "prayerCalendarSelectAllRandom": "Select All Random",
-    "prayerCalendarSelectAllRange": "Select All Range",
-    "prayerCalendarSelectAllMultiple": "Select All Multiple",
-    "prayerCalendarSelectAllSingle": "Select All Single",
-    "prayerCalendarSelectAllNone": "Select All None",
-    "prayerCalendarSelectAllInvert": "Select All Invert",
-    "prayerCalendarSelectAllClear": "Select All Clear",
-    "prayerCalendarSelectAllDeselect": "Select All Deselect",
-    "prayerCalendarSelectAllSelect": "Select All Select"
+    "prayerLocation": "Prayer Location"
   },
   "auth": {
     "signIn": "Sign In",
@@ -917,9 +871,9 @@
     "female": "Female",
     "other": "Other",
     "preferNotToSay": "Prefer not to say",
-    "alreadyHaveAccount": "\u067e\u06c1\u0644\u06d2 \u0633\u06d2 \u0627\u06a9\u0627\u0624\u0646\u0679 \u06c1\u06d2\u061f",
-    "dontHaveAccount": "\u0627\u06a9\u0627\u0624\u0646\u0679 \u0646\u06c1\u06cc\u06ba \u06c1\u06d2\u061f",
-    "createAccount": "\u0627\u06a9\u0627\u0624\u0646\u0679 \u0628\u0646\u0627\u0626\u06cc\u06ba",
+    "alreadyHaveAccount": "پہلے سے اکاؤنٹ ہے؟",
+    "dontHaveAccount": "اکاؤنٹ نہیں ہے؟",
+    "createAccount": "اکاؤنٹ بنائیں",
     "loginInstead": "Login instead",
     "signInWith": "Sign in with",
     "signUpWith": "Sign up with",
@@ -1453,7 +1407,8 @@
     "linkTitlePlaceholder": "Link title",
     "loadErrorTitle": "Could not load profile",
     "loadErrorSubtitle": "Please try again later",
-    "urlPlaceholder": "URL (https://...)"
+    "urlPlaceholder": "URL (https://...)",
+    "couldNotSave": "پروفائل محفوظ نہیں ہو سکا"
   },
   "screens": {
     "followers": {
@@ -1769,7 +1724,8 @@
       "emptyTitle": "No playlists yet",
       "emptySubtitle": "Create a playlist to save videos",
       "errorTitle": "Could not load playlists",
-      "errorSubtitle": "Pull to refresh"
+      "errorSubtitle": "Pull to refresh",
+      "updateError": "پلے لسٹ اپ ڈیٹ نہیں ہو سکی"
     },
     "schedule-live": {
       "title": "Schedule Live",
@@ -2029,7 +1985,8 @@
     "noDonations": "No donations yet",
     "success": "JazakAllahu Khairan",
     "successMessage": "Your donation has been received",
-    "createCampaign": "Create Campaign"
+    "createCampaign": "Create Campaign",
+    "currencyAmount": "${{amount}}"
   },
   "tafsir": {
     "title": "Tafsir",
@@ -2790,7 +2747,21 @@
     "subscribeToWatch": "دیکھنے کے لیے سبسکرائب کریں",
     "subscribersOnlyStream": "یہ صرف سبسکرائبرز کا سٹریم ہے",
     "switchToPublic": "عوامی میں تبدیل کریں",
-    "switchToSubscribers": "صرف سبسکرائبرز میں تبدیل کریں"
+    "switchToSubscribers": "صرف سبسکرائبرز میں تبدیل کریں",
+    "goLive": "لائیو شروع کریں",
+    "starting": "شروع ہو رہا ہے...",
+    "videoStream": "ویڈیو اسٹریم",
+    "audioSpace": "آڈیو اسپیس",
+    "selectStreamType": "اسٹریم کی قسم منتخب کریں",
+    "scheduleForLater": "بعد کے لیے شیڈول کریں",
+    "scheduleTime": "شیڈول کا وقت",
+    "streamType": "اسٹریم کی قسم",
+    "scheduleSubtitle": "اپنا اسٹریم مخصوص وقت پر شروع کریں",
+    "failedToStartStream": "لائیو اسٹریم شروع کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں۔",
+    "failedToStartRehearsal": "ریہرسل شروع کرنے میں ناکامی۔",
+    "datePickerPlaceholder": "تاریخ/وقت منتخب کنندہ یہاں ظاہر ہوگا",
+    "datePickerHint": "آسانی کے لیے، ابھی سے 30 منٹ بعد کا شیڈول ہوگا۔",
+    "preparingStream": "لائیو اسٹریم تیار ہو رہا ہے..."
   },
   "seriesEnhanced": {
     "episodes": "اقساط",
@@ -3073,5 +3044,55 @@
     "submitReflection": "تأمل جمع کریں",
     "allComplete": "تمام ٹاسک مکمل!",
     "loadError": "بریفنگ لوڈ نہیں ہو سکی"
+  },
+  "audioLibrary": {
+    "title": "آڈیو لائبریری",
+    "searchPlaceholder": "آوازیں تلاش کریں...",
+    "useThisSound": "یہ آواز استعمال کریں",
+    "emptyState": {
+      "title": "کوئی آواز نہیں ملی",
+      "subtitle": "مختلف تلاش یا زمرہ آزمائیں"
+    },
+    "category": {
+      "favorites": "پسندیدہ",
+      "trending": "مقبول",
+      "islamic": "اسلامی",
+      "nasheeds": "نشید",
+      "lo-fi": "Lo-fi",
+      "acoustic": "اکوسٹک",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "قراءت"
+    },
+    "uses": "استعمالات"
+  },
+  "conversationMedia": {
+    "title": "مشترکہ میڈیا",
+    "tab": {
+      "media": "میڈیا",
+      "links": "روابط",
+      "docs": "دستاویزات"
+    },
+    "emptyState": {
+      "noMedia": "کوئی مشترکہ میڈیا نہیں",
+      "noLinks": "کوئی مشترکہ روابط نہیں",
+      "noDocs": "کوئی مشترکہ دستاویزات نہیں",
+      "mediaSubtitle": "اس بات چیت میں شیئر کی گئی تصاویر اور ویڈیوز یہاں ظاہر ہوں گی",
+      "linksSubtitle": "اس بات چیت میں شیئر کیے گئے روابط یہاں ظاہر ہوں گے",
+      "docsSubtitle": "اس بات چیت میں شیئر کی گئی دستاویزات یہاں ظاہر ہوں گی"
+    },
+    "error": {
+      "loadMedia": "میڈیا لوڈ نہیں ہو سکا",
+      "pullToRefresh": "ریفریش کے لیے نیچے کھینچیں"
+    },
+    "accessibility": {
+      "viewImage": "تصویر دیکھیں",
+      "playVideo": "ویڈیو چلائیں",
+      "imageShared": "مشترکہ تصویر",
+      "videoThumbnail": "ویڈیو تھمب نیل",
+      "openLink": "لنک کھولیں",
+      "openDocument": "دستاویز کھولیں"
+    },
+    "fileSizeKB": "{{size}} KB"
   }
 }

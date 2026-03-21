@@ -262,7 +262,7 @@ const playlists: Playlist[] = playlistsQuery.data?.pages.flatMap((p) => p.data) 
   const handleCopyLink = async () => {
     haptic.light();
     await Clipboard.setStringAsync(`mizanly://channel/${channel?.handle ?? handle}`);
-    Alert.alert('Copied', 'Channel link copied to clipboard');
+    Alert.alert(t('common.copied'), t('common.linkCopied'));
   };
 
   const handleNativeShare = async () => {

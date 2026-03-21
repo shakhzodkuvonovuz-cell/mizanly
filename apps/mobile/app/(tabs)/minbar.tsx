@@ -74,6 +74,7 @@ interface VideoWithProgress extends Video {
 }
 
 const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMorePress }: VideoCardProps) {
+  const { t } = useTranslation();
   const video = item as VideoWithProgress;
   const durationMinutes = Math.floor(video.duration / 60);
   const durationSeconds = Math.floor(video.duration % 60);
@@ -138,7 +139,7 @@ const VideoCard = memo(function VideoCard({ item, onPress, onChannelPress, onMor
             </Text>
           </View>
           <Text style={styles.videoStats} numberOfLines={1}>
-            {video.viewsCount.toLocaleString()} views • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
+            {video.viewsCount.toLocaleString()} {t('minbar.viewCount')} • {formatDistanceToNowStrict(new Date(video.publishedAt || video.createdAt), { addSuffix: true })}
           </Text>
         </View>
         <Pressable

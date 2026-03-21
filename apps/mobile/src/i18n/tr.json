@@ -177,7 +177,13 @@
     "shareAsStory": "Hikaye olarak paylaş",
     "notInterested": "İlgilenmiyorum",
     "collections": "Koleksiyonlar",
-    "folders": "Klasörler"
+    "folders": "Klasörler",
+    "cannotBeUndone": "Bu işlem geri alınamaz.",
+    "reportReason": "Neden bildiriyorsunuz?",
+    "linkCopied": "Bağlantı panoya kopyalandı",
+    "spam": "Spam",
+    "inappropriate": "Uygunsuz",
+    "misinformation": "Yanlış bilgi"
   },
   "auth": {
     "signIn": "Giriş Yap",
@@ -386,7 +392,10 @@
     "boostPost": "Gönderiyi Öne Çıkar",
     "postInsights": "Gönderi İstatistikleri",
     "whyShowing": "Bunu neden görüyorum?",
-    "brandedContent": "Markalı İçerik"
+    "brandedContent": "Markalı İçerik",
+    "deletePostTitle": "Gönderi silinsin mi?",
+    "reportPostTitle": "Gönderiyi bildir",
+    "couldNotShareAsStory": "Hikaye olarak paylaşılamadı. Lütfen tekrar deneyin."
   },
   "bakra": {
     "forYou": "Senin İçin",
@@ -591,7 +600,9 @@
       "subtitle": "İnsanları takip edin veya gündem konularını keşfedin",
       "actionLabel": "Konu Başlat"
     },
-    "video": "Video"
+    "video": "Video",
+    "deleteThreadTitle": "Konu silinsin mi?",
+    "reportThreadTitle": "Konuyu bildir"
   },
   "risalah": {
     "messages": "Mesajlar",
@@ -849,7 +860,9 @@
     "streamDescPlaceholder": "İzleyicilere yayınınızın ne hakkında olduğunu söyleyin",
     "playlistEmpty": "Bu oynatma listesine eklenen videolar burada görünecek",
     "skipBack": "10 saniye geri sar",
-    "skipForward": "10 saniye ileri sar"
+    "skipForward": "10 saniye ileri sar",
+    "missingChannel": "Kanal eksik",
+    "pleaseSelectChannel": "Lütfen bir kanal seçin."
   },
   "profile": {
     "followers": "Takipçiler",
@@ -978,66 +991,7 @@
     "prayerNotifications": "Namaz Bildirimleri",
     "prayerMethod": "Hesaplama Yöntemi",
     "prayerAdjustments": "Namaz Düzeltmeleri",
-    "prayerLocation": "Namaz Konumu",
-    "prayerCalendar": "Namaz Takvimi",
-    "prayerCalendarExport": "Namaz Takvimini Dışa Aktar",
-    "prayerCalendarImport": "Namaz Takvimini İçe Aktar",
-    "prayerCalendarSync": "Namaz Takvimini Senkronize Et",
-    "prayerCalendarShare": "Namaz Takvimini Paylaş",
-    "prayerCalendarPrint": "Namaz Takvimini Yazdır",
-    "prayerCalendarDownload": "Namaz Takvimini İndir",
-    "prayerCalendarUpload": "Namaz Takvimini Yükle",
-    "prayerCalendarDelete": "Namaz Takvimini Sil",
-    "prayerCalendarEdit": "Namaz Takvimini Düzenle",
-    "prayerCalendarView": "Namaz Takvimini Gör",
-    "prayerCalendarList": "Namaz Takvimlerini Listele",
-    "prayerCalendarCreate": "Namaz Takvimi Oluştur",
-    "prayerCalendarUpdate": "Namaz Takvimini Güncelle",
-    "prayerCalendarRemove": "Namaz Takvimini Kaldır",
-    "prayerCalendarArchive": "Namaz Takvimini Arşivle",
-    "prayerCalendarRestore": "Namaz Takvimini Geri Yükle",
-    "prayerCalendarDuplicate": "Namaz Takvimini Çoğalt",
-    "prayerCalendarRename": "Namaz Takvimini Yeniden Adlandır",
-    "prayerCalendarMove": "Namaz Takvimini Taşı",
-    "prayerCalendarCopy": "Namaz Takvimini Kopyala",
-    "prayerCalendarPaste": "Namaz Takvimini Yapıştır",
-    "prayerCalendarCut": "Namaz Takvimini Kes",
-    "prayerCalendarSelect": "Namaz Takvimi Seç",
-    "prayerCalendarDeselect": "Namaz Takvimi Seçimini Kaldır",
-    "prayerCalendarSelectAll": "Tüm Namaz Takvimlerini Seç",
-    "prayerCalendarDeselectAll": "Tüm Namaz Takvimlerinin Seçimini Kaldır",
-    "prayerCalendarInvertSelection": "Seçimi Ters Çevir",
-    "prayerCalendarClearSelection": "Seçimi Temizle",
-    "prayerCalendarSelectNone": "Hiçbirini Seç",
-    "prayerCalendarSelectMultiple": "Birden Fazla Seç",
-    "prayerCalendarSelectSingle": "Tekli Seç",
-    "prayerCalendarSelectRange": "Aralık Seç",
-    "prayerCalendarSelectRandom": "Rastgele Seç",
-    "prayerCalendarSelectPrevious": "Öncekini Seç",
-    "prayerCalendarSelectNext": "Sonrakini Seç",
-    "prayerCalendarSelectFirst": "İlkini Seç",
-    "prayerCalendarSelectLast": "Sonuncuyu Seç",
-    "prayerCalendarSelectMiddle": "Ortadakini Seç",
-    "prayerCalendarSelectCenter": "Merkezdekini Seç",
-    "prayerCalendarSelectEdge": "Kenardakini Seç",
-    "prayerCalendarSelectCorner": "Köşedekini Seç",
-    "prayerCalendarSelectAllCorners": "Tüm Köşeleri Seç",
-    "prayerCalendarSelectAllEdges": "Tüm Kenarları Seç",
-    "prayerCalendarSelectAllCenters": "Tüm Merkezleri Seç",
-    "prayerCalendarSelectAllMiddles": "Tüm Ortaları Seç",
-    "prayerCalendarSelectAllFirsts": "Tüm İlkleri Seç",
-    "prayerCalendarSelectAllLasts": "Tüm Sonuncuları Seç",
-    "prayerCalendarSelectAllPrevious": "Tüm Öncekileri Seç",
-    "prayerCalendarSelectAllNext": "Tüm Sonrakileri Seç",
-    "prayerCalendarSelectAllRandom": "Tüm Rastgeleri Seç",
-    "prayerCalendarSelectAllRange": "Tüm Aralıkları Seç",
-    "prayerCalendarSelectAllMultiple": "Tüm Çokluları Seç",
-    "prayerCalendarSelectAllSingle": "Tüm Tekilleri Seç",
-    "prayerCalendarSelectAllNone": "Hiçbirini Seçme",
-    "prayerCalendarSelectAllInvert": "Seçimi Ters Çevir",
-    "prayerCalendarSelectAllClear": "Tüm Seçimi Temizle",
-    "prayerCalendarSelectAllDeselect": "Tümünün Seçimini Kaldır",
-    "prayerCalendarSelectAllSelect": "Tümünü Seç"
+    "prayerLocation": "Namaz Konumu"
   },
   "prayerNotifications": {
     "settings": "Namaz Bildirimleri Ayarları",
@@ -1452,7 +1406,8 @@
     "linkTitlePlaceholder": "Bağlantı başlığı",
     "loadErrorTitle": "Profil yüklenemedi",
     "loadErrorSubtitle": "Lütfen daha sonra tekrar deneyin",
-    "urlPlaceholder": "URL (https://...)"
+    "urlPlaceholder": "URL (https://...)",
+    "couldNotSave": "Profil kaydedilemedi"
   },
   "screens": {
     "followers": {
@@ -1768,7 +1723,8 @@
       "emptyTitle": "Henüz oynatma listesi yok",
       "emptySubtitle": "Videoları kaydetmek için oynatma listesi oluşturun",
       "errorTitle": "Oynatma listeleri yüklenemedi",
-      "errorSubtitle": "Yenilemek için çekin"
+      "errorSubtitle": "Yenilemek için çekin",
+      "updateError": "Çalma listesi güncellenemedi"
     },
     "schedule-live": {
       "title": "Canlı Yayın Planla",
@@ -2028,7 +1984,8 @@
     "noDonations": "Henüz bağış yok",
     "success": "JazakAllahu Khairan",
     "successMessage": "Bağışınız alındı",
-    "createCampaign": "Kampanya Oluştur"
+    "createCampaign": "Kampanya Oluştur",
+    "currencyAmount": "${{amount}}"
   },
   "tafsir": {
     "title": "Tefsir",
@@ -2789,7 +2746,21 @@
     "subscribeToWatch": "İzlemek İçin Abone Ol",
     "subscribersOnlyStream": "Bu abonelere özel bir yayın",
     "switchToPublic": "Halka Aç",
-    "switchToSubscribers": "Abonelere Özel Yap"
+    "switchToSubscribers": "Abonelere Özel Yap",
+    "goLive": "Canlı Yayın",
+    "starting": "Başlatılıyor...",
+    "videoStream": "Video Yayını",
+    "audioSpace": "Sesli Alan",
+    "selectStreamType": "Yayın Türünü Seçin",
+    "scheduleForLater": "Sonraya Planla",
+    "scheduleTime": "Planlama Zamanı",
+    "streamType": "Yayın Türü",
+    "scheduleSubtitle": "Yayınınızı belirli bir zamanda başlatın",
+    "failedToStartStream": "Canlı yayın başlatılamadı. Lütfen tekrar deneyin.",
+    "failedToStartRehearsal": "Prova başlatılamadı.",
+    "datePickerPlaceholder": "Tarih/saat seçici burada görünecek",
+    "datePickerHint": "Basitlik için, şu andan itibaren 30 dakika sonrası planlanacak.",
+    "preparingStream": "Canlı yayın hazırlanıyor..."
   },
   "seriesEnhanced": {
     "episodes": "Bölümler",
@@ -3072,5 +3043,55 @@
     "submitReflection": "Tefekkürü Gönder",
     "allComplete": "Tüm Görevler Tamamlandı!",
     "loadError": "Brifing yüklenemedi"
+  },
+  "audioLibrary": {
+    "title": "Ses Kütüphanesi",
+    "searchPlaceholder": "Ses ara...",
+    "useThisSound": "Bu sesi kullan",
+    "emptyState": {
+      "title": "Ses bulunamadı",
+      "subtitle": "Farklı bir arama veya kategori deneyin"
+    },
+    "category": {
+      "favorites": "Favoriler",
+      "trending": "Popüler",
+      "islamic": "İslami",
+      "nasheeds": "İlahiler",
+      "lo-fi": "Lo-fi",
+      "acoustic": "Akustik",
+      "hip hop": "Hip Hop",
+      "pop": "Pop",
+      "qiraat": "Kıraat"
+    },
+    "uses": "kullanım"
+  },
+  "conversationMedia": {
+    "title": "Paylaşılan Medya",
+    "tab": {
+      "media": "Medya",
+      "links": "Bağlantılar",
+      "docs": "Belgeler"
+    },
+    "emptyState": {
+      "noMedia": "Paylaşılan medya yok",
+      "noLinks": "Paylaşılan bağlantı yok",
+      "noDocs": "Paylaşılan belge yok",
+      "mediaSubtitle": "Bu sohbette paylaşılan fotoğraf ve videolar burada görünecek",
+      "linksSubtitle": "Bu sohbette paylaşılan bağlantılar burada görünecek",
+      "docsSubtitle": "Bu sohbette paylaşılan belgeler burada görünecek"
+    },
+    "error": {
+      "loadMedia": "Medya yüklenemedi",
+      "pullToRefresh": "Yenilemek için çekin"
+    },
+    "accessibility": {
+      "viewImage": "Resmi görüntüle",
+      "playVideo": "Videoyu oynat",
+      "imageShared": "Paylaşılan resim",
+      "videoThumbnail": "Video küçük resmi",
+      "openLink": "Bağlantıyı aç",
+      "openDocument": "Belgeyi aç"
+    },
+    "fileSizeKB": "{{size}} KB"
   }
 }

@@ -61,7 +61,7 @@ function CampaignScreenContent() {
     : 0;
 
   const formatAmount = (cents: number): string => {
-    return `$${(cents / 100).toFixed(0)}`;
+    return t('charity.currencyAmount', { amount: (cents / 100).toFixed(0) });
   };
 
   if (campaignQuery.isLoading) {

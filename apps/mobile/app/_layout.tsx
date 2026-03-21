@@ -31,9 +31,15 @@ import { colors } from '@/theme';
 import { useIslamicTheme, useIsEidToday } from '@/hooks/useIslamicTheme';
 import { initSentry, setSentryUser } from '@/config/sentry';
 
-// Allow the OS to flip layouts to RTL for Arabic and other RTL languages.
-// Most React Native flex layouts auto-mirror when this is enabled.
+// Allow the OS to flip layouts to RTL for Arabic and Urdu.
 I18nManager.allowRTL(true);
+// Force RTL based on stored/detected language
+import i18next from '@/i18n';
+const rtlLangs = ['ar', 'ur'];
+const needsRTL = rtlLangs.includes(i18next.language);
+if (I18nManager.isRTL !== needsRTL) {
+  I18nManager.forceRTL(needsRTL);
+}
 
 // Cap font scaling at 1.5x to prevent extreme scaling that breaks layout.
 // Users who need larger text get 50% larger while layouts remain intact.

@@ -67,7 +67,7 @@ function CommentRow({
   const deleteMutation = useMutation({
     mutationFn: () => reelsApi.deleteComment(reelId, comment.id),
     onSuccess: onDeleted,
-    onError: (err: Error) => Alert.alert('Error', err.message),
+    onError: (err: Error) => Alert.alert(t('common.error'), err.message),
   });
 
   const handleDelete = () => {

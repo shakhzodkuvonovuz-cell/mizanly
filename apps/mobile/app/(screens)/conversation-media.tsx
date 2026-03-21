@@ -286,7 +286,7 @@ export default function ConversationMediaScreen() {
           </Text>
           {item.fileSize && (
             <Text style={styles.docSize}>
-              {(item.fileSize / 1024).toFixed(1)} KB
+              {t('conversationMedia.fileSizeKB', { size: (item.fileSize / 1024).toFixed(1) })}
             </Text>
           )}
           <Text style={styles.docDate}>
