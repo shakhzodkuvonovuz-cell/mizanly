@@ -428,3 +428,29 @@ F5 remaining (call_answer/reject/end rate limited, leave_quran_room, quran_verse
 ## Summary
 - **OPEN**: Must be fixed — either in its owning audit file or in a dedicated sweep
 - **NOTED**: Acknowledged, acceptable risk at current stage, or by-design behavior
+
+## From Audit 19 (Queue/Job Processing) — 28 findings
+### FIXED directly (18 findings):
+C1 (SearchIndexingProcessor created — processes index/update/delete jobs via MeilisearchService, registered in QueueModule), C2 (AI moderation report: fixed schema fields — reportedPostId/reportedCommentId instead of postId/threadId/reelId, added reporterId='system', reason='HATE_SPEECH' instead of invalid 'AI_FLAGGED', removed `as never` casts, looks up content author for reportedUserId), C3 (dead code: removed AsyncJobService import+injection from 5 services — posts, threads, reels, videos, follows; kept in health controller where actually used), C5 (webhook processor SSRF: validateUrl blocks non-HTTPS + private IPs), C6 (media processor SSRF: validateMediaUrl on both processImageResize and processBlurHash), M1 (webhook HMAC: timestamp included in signed payload — `${timestamp}.${body}` instead of body only), M2 (no-op queue stub: logs warning on creation + debug on each dropped job), m3 (job data validation: moderation + webhook processors validate required fields), m4 (getStats error logging), m5 (removed unused QueueEvents import)
+
+### Deferred — architecture/infrastructure:
+- [19] C4 No scheduled content publisher — needs @nestjs/schedule or BullMQ repeatable job — OPEN
+- [19] M3 Custom backoff type — works because Workers define backoffStrategy, fragile but functional — NOTED
+- [19] M4 Caption generation stub — placeholder, needs AI image analysis — NOTED
+- [19] M5 Engagement tracking stub — handled in real-time by AnalyticsService — NOTED
+- [19] M6 5 unused QueueService methods — infrastructure ready but not wired to callers — NOTED
+- [19] M7 Image resize doesn't upload — needs programmatic R2 upload — NOTED
+- [19] M8 BlurHash doesn't store — ALREADY FIXED (writes to post/reel.blurhash in file 11)
+- [19] M9 Video transcode stub — Cloudflare Stream handles this — NOTED
+- [19] M10 JobQueueService infinite re-queue — dead code, never imported — NOTED
+- [19] M11 AsyncJobService — removed from 5 services, only health uses it — FIXED
+- [19] M12 No dead letter queue — OPEN (needs BullMQ event-based DLQ)
+
+### NOTED (minor/acceptable):
+- [19] m1 Zero test coverage for processors — infrastructure tests deferred
+- [19] m2 ReportsModule imports @Global QueueModule — harmless
+- [19] m6 Scheduling type param — validated in service already
+- [19] m7 Dynamic sharp import — Node.js caches, negligible overhead
+- [19] m8 Webhook concurrency 10 — acceptable for low-volume platform
+- [19] m9 JobQueueService polls on construction — dead code
+- [19] m10 Scheduling getScheduled query formatting — works correctly

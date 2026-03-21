@@ -16,7 +16,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { StreamService } from '../stream/stream.service';
 import { sanitizeText } from '@/common/utils/sanitize';
 import { GamificationService } from '../gamification/gamification.service';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 
 const VIDEO_SELECT = {
@@ -76,7 +75,6 @@ export class VideosService {
     private notifications: NotificationsService,
     private stream: StreamService,
     private gamification: GamificationService,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
   ) {}
 

@@ -9,7 +9,6 @@ import { PrismaService } from '../../config/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PushTriggerService } from '../notifications/push-trigger.service';
 import { Prisma, Notification } from '@prisma/client';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
@@ -20,7 +19,6 @@ export class FollowsService {
     private prisma: PrismaService,
     private notifications: NotificationsService,
     private pushTrigger: PushTriggerService,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}

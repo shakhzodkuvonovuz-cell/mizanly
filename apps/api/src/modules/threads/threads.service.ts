@@ -14,7 +14,6 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, ThreadVisibility, ReportReason } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 
 const THREAD_SELECT = {
@@ -98,7 +97,6 @@ export class ThreadsService {
     private notifications: NotificationsService,
     private gamification: GamificationService,
     private ai: AiService,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
   ) {}
 

@@ -16,7 +16,6 @@ import { sanitizeText } from '@/common/utils/sanitize';
 import { extractHashtags } from '@/common/utils/hashtag';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 
 const REEL_SELECT = {
@@ -67,7 +66,6 @@ export class ReelsService {
     private stream: StreamService,
     private gamification: GamificationService,
     private ai: AiService,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
   ) {}
 

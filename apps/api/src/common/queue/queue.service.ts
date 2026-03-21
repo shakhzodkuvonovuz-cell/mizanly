@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, Inject } from '@nestjs/common';
-import { Queue, QueueEvents } from 'bullmq';
+import { Queue } from 'bullmq';
 
 /**
  * QueueService — high-level API for enqueuing jobs across all BullMQ queues.
@@ -175,7 +175,8 @@ export class QueueService implements OnModuleDestroy {
           queue.getDelayedCount(),
         ]);
         stats[name] = { waiting, active, completed, failed, delayed };
-      } catch {
+      } catch (err) {
+        this.logger.warn(`Failed to get stats for queue '${name}': ${err instanceof Error ? err.message : err}`);
         stats[name] = { waiting: 0, active: 0, completed: 0, failed: 0, delayed: 0 };
       }
     }

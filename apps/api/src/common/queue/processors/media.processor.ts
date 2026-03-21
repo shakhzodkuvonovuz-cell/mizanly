@@ -77,8 +77,20 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private validateMediaUrl(url: string): void {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') throw new Error('Only HTTPS allowed');
+      const blocked = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
+      if (blocked.some(p => parsed.hostname.includes(p))) throw new Error('Internal URLs blocked');
+    } catch (err) {
+      throw new Error(`Invalid media URL: ${err instanceof Error ? err.message : 'malformed'}`);
+    }
+  }
+
   private async processImageResize(job: Job<MediaJobData>): Promise<void> {
     const { mediaUrl, mediaKey } = job.data;
+    this.validateMediaUrl(mediaUrl);
     this.logger.debug(`Processing image (EXIF strip + resize) for ${mediaKey}`);
 
     try {
@@ -123,6 +135,7 @@ export class MediaProcessor implements OnModuleInit, OnModuleDestroy {
 
   private async processBlurHash(job: Job<MediaJobData>): Promise<void> {
     const { mediaUrl, mediaKey, contentType, contentId } = job.data;
+    this.validateMediaUrl(mediaUrl);
     this.logger.debug(`Generating blur placeholder for ${mediaKey}`);
 
     try {

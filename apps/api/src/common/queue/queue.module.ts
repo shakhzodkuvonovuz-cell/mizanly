@@ -7,9 +7,11 @@ import { MediaProcessor } from './processors/media.processor';
 import { WebhookProcessor } from './processors/webhook.processor';
 import { AnalyticsProcessor } from './processors/analytics.processor';
 import { AiTasksProcessor } from './processors/ai-tasks.processor';
+import { SearchIndexingProcessor } from './processors/search-indexing.processor';
 import { NotificationsModule } from '../../modules/notifications/notifications.module';
 import { GamificationModule } from '../../modules/gamification/gamification.module';
 import { AiModule } from '../../modules/ai/ai.module';
+import { SearchModule } from '../../modules/search/search.module';
 
 /**
  * QueueModule — global BullMQ queue infrastructure.
@@ -41,8 +43,13 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
     const redisUrl = config.get<string>('REDIS_URL');
     if (!redisUrl) {
       // Return a no-op queue stub when Redis is unavailable (dev without Redis)
+      const logger = new (require('@nestjs/common').Logger)(`Queue:${name}`);
+      logger.warn(`Queue '${name}' running in no-op mode — REDIS_URL not set. Jobs will be silently dropped.`);
       return {
-        add: async (): Promise<{ id: string }> => ({ id: `noop_${Date.now()}` }),
+        add: async (_jobName: string, data: unknown): Promise<{ id: string }> => {
+          logger.debug(`Job dropped (no-op): ${_jobName}`);
+          return { id: `noop_${Date.now()}` };
+        },
         close: async (): Promise<void> => {},
         getWaitingCount: async (): Promise<number> => 0,
         getActiveCount: async (): Promise<number> => 0,
@@ -69,6 +76,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
     NotificationsModule,
     GamificationModule,
     AiModule,
+    SearchModule,
   ],
   providers: [
     ...queueProviders,
@@ -78,6 +86,7 @@ const queueProviders = QUEUE_DEFINITIONS.map(({ name, token }) => ({
     WebhookProcessor,
     AnalyticsProcessor,
     AiTasksProcessor,
+    SearchIndexingProcessor,
   ],
   exports: [QueueService],
 })

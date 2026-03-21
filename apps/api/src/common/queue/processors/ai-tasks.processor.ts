@@ -83,6 +83,10 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
 
   private async processModeration(job: Job<ModerationJobData>): Promise<void> {
     const { content, contentType, contentId } = job.data;
+    if (!content || !contentType || !contentId) {
+      this.logger.warn(`Invalid moderation job ${job.id}: missing required fields`);
+      return;
+    }
 
     const result = await this.ai.moderateContent(content, contentType);
 
@@ -91,21 +95,36 @@ export class AiTasksProcessor implements OnModuleInit, OnModuleDestroy {
         `Content flagged by AI moderation: ${contentType}/${contentId} — flags: ${result.flags.join(', ')}`,
       );
 
-      // Create a moderation report for manual review
+      // Create a moderation report for manual review using correct schema fields
       try {
+        // Look up the content author to set as reportedUserId
+        let reportedUserId: string | undefined;
+        if (contentType === 'post') {
+          const post = await this.prisma.post.findUnique({ where: { id: contentId }, select: { userId: true } });
+          reportedUserId = post?.userId;
+        } else if (contentType === 'thread') {
+          const thread = await this.prisma.thread.findUnique({ where: { id: contentId }, select: { userId: true } });
+          reportedUserId = thread?.userId;
+        } else if (contentType === 'reel') {
+          const reel = await this.prisma.reel.findUnique({ where: { id: contentId }, select: { userId: true } });
+          reportedUserId = reel?.userId;
+        } else if (contentType === 'comment') {
+          const comment = await this.prisma.comment.findUnique({ where: { id: contentId }, select: { userId: true } });
+          reportedUserId = comment?.userId;
+        }
+
         await this.prisma.report.create({
           data: {
-            reason: 'AI_FLAGGED' as never,
-            description: `AI moderation flagged: ${result.flags.join(', ')} (confidence: ${result.confidence})`,
-            status: 'PENDING',
-            ...(contentType === 'post' ? { postId: contentId } : {}),
-            ...(contentType === 'thread' ? { threadId: contentId } : {}),
-            ...(contentType === 'reel' ? { reelId: contentId } : {}),
-          } as never,
+            reporterId: 'system',
+            reason: 'HATE_SPEECH',
+            description: `AI auto-flagged (${contentType}): ${result.flags.join(', ')} (confidence: ${result.confidence})`,
+            ...(contentType === 'post' ? { reportedPostId: contentId } : {}),
+            ...(contentType === 'comment' ? { reportedCommentId: contentId } : {}),
+            ...(reportedUserId ? { reportedUserId } : {}),
+          },
         });
       } catch (err) {
-        // Report creation may fail if model doesn't match — log and continue
-        this.logger.warn(`Could not auto-create moderation report: ${err instanceof Error ? err.message : err}`);
+        this.logger.error(`Failed to create AI moderation report for ${contentType}/${contentId}: ${err instanceof Error ? err.message : err}`);
       }
     }
 

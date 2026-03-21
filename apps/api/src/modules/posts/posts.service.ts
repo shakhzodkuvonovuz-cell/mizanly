@@ -18,7 +18,6 @@ import { extractHashtags } from '@/common/utils/hashtag';
 import { Prisma, PostType, PostVisibility, ReactionType, ReportReason, ContentSpace } from '@prisma/client';
 import { GamificationService } from '../gamification/gamification.service';
 import { AiService } from '../ai/ai.service';
-import { AsyncJobService } from '../../common/services/async-jobs.service';
 import { QueueService } from '../../common/queue/queue.service';
 import { AnalyticsService } from '../../common/services/analytics.service';
 
@@ -67,7 +66,6 @@ export class PostsService {
     @Inject('REDIS') private redis: Redis,
     private gamification: GamificationService,
     private ai: AiService,
-    private jobs: AsyncJobService,
     private queueService: QueueService,
     private analytics: AnalyticsService,
   ) {}

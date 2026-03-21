@@ -71,12 +71,30 @@ export class WebhookProcessor implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  private validateUrl(url: string): void {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') throw new Error('Only HTTPS allowed');
+      const blocked = ['localhost', '127.0.0.1', '169.254.', '10.', '192.168.', '172.16.', '::1', '0.0.0.0'];
+      if (blocked.some(p => parsed.hostname.includes(p))) throw new Error('Internal URLs blocked');
+    } catch (err) {
+      throw new Error(`Invalid webhook URL: ${err instanceof Error ? err.message : 'malformed'}`);
+    }
+  }
+
   private async deliverWebhook(job: Job<WebhookJobData>): Promise<void> {
     const { url, secret, event, payload, webhookId } = job.data;
+    if (!url || !secret || !event) {
+      this.logger.warn(`Invalid webhook job ${job.id}: missing required fields`);
+      return;
+    }
+
+    this.validateUrl(url);
 
     const body = JSON.stringify(payload);
-    const signature = createHmac('sha256', secret).update(body).digest('hex');
     const timestamp = Math.floor(Date.now() / 1000).toString();
+    // Include timestamp in HMAC to prevent replay attacks
+    const signature = createHmac('sha256', secret).update(`${timestamp}.${body}`).digest('hex');
 
     const response = await fetch(url, {
       method: 'POST',
