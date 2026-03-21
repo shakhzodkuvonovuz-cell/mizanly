@@ -1140,7 +1140,7 @@ model ConversationMember {
 model Message {
   id              String            @id @default(cuid())
   conversationId  String
-  senderId        String
+  senderId        String?
   content         String?           @db.VarChar(5000)
   messageType     MessageType       @default(TEXT)
   mediaUrl        String?
@@ -1175,7 +1175,7 @@ model Message {
   encNonce        String?
   createdAt       DateTime          @default(now())
   conversation    Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender          User              @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  sender          User?             @relation(fields: [senderId], references: [id], onDelete: SetNull)
   moderationLogs  ModerationLog[]   @relation("ModMessageTarget")
   reactions        MessageReaction[]
   reportedReports  Report[]           @relation("reportedMessages")
@@ -1415,6 +1415,11 @@ model Notification {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, isRead])
+  @@index([actorId])
+  @@index([postId])
+  @@index([reelId])
+  @@index([threadId])
+  @@index([videoId])
   @@map("notifications")
 }
 
@@ -1449,12 +1454,13 @@ model Report {
 
   @@index([status, createdAt])
   @@index([reportedUserId])
+  @@index([reporterId])
   @@map("reports")
 }
 
 model ModerationLog {
   id              String           @id @default(cuid())
-  moderatorId     String
+  moderatorId     String?
   targetUserId    String?
   targetPostId    String?
   targetCommentId String?
@@ -1468,7 +1474,7 @@ model ModerationLog {
   appealResolved  Boolean?
   appealResult    String?
   createdAt       DateTime         @default(now())
-  moderator       User             @relation("Moderator", fields: [moderatorId], references: [id], onDelete: Cascade)
+  moderator       User?            @relation("Moderator", fields: [moderatorId], references: [id], onDelete: SetNull)
   targetUser      User?            @relation("ModTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
   targetPost      Post?            @relation("ModPostTarget", fields: [targetPostId], references: [id], onDelete: SetNull)
   targetComment   Comment?         @relation("ModCommentTarget", fields: [targetCommentId], references: [id], onDelete: SetNull)
@@ -1476,6 +1482,8 @@ model ModerationLog {
   report          Report?          @relation(fields: [reportId], references: [id], onDelete: SetNull)
 
   @@index([targetUserId, createdAt(sort: Desc)])
+  @@index([reportId])
+  @@index([moderatorId])
   @@map("moderation_log")
 }
 
@@ -1546,6 +1554,7 @@ model FeedInteraction {
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   post           Post         @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, postId])
   @@index([userId, createdAt(sort: Desc)])
   @@index([postId])
   @@index([space, userId])
@@ -2127,10 +2136,10 @@ model EventRSVP {
 
 model Tip {
   id          String   @id @default(cuid())
-  senderId    String
-  receiverId  String
-  sender      User     @relation("TipSender", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver    User     @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+  senderId    String?
+  receiverId  String?
+  sender      User?    @relation("TipSender", fields: [senderId], references: [id], onDelete: SetNull)
+  receiver    User?    @relation("TipReceiver", fields: [receiverId], references: [id], onDelete: SetNull)
   amount      Decimal  @db.Decimal(12, 2)
   currency    String   @default("USD") @db.VarChar(3)
   message     String?  @db.VarChar(500)
@@ -2382,10 +2391,10 @@ model CoinTransaction {
 
 model GiftRecord {
   id          String   @id @default(cuid())
-  senderId    String
-  sender      User     @relation("giftsSent", fields: [senderId], references: [id], onDelete: Cascade)
-  receiverId  String
-  receiver    User     @relation("giftsReceived", fields: [receiverId], references: [id], onDelete: Cascade)
+  senderId    String?
+  sender      User?    @relation("giftsSent", fields: [senderId], references: [id], onDelete: SetNull)
+  receiverId  String?
+  receiver    User?    @relation("giftsReceived", fields: [receiverId], references: [id], onDelete: SetNull)
   giftType    String   @db.VarChar(50)
   coinCost    Int
   contentId   String?
@@ -2520,8 +2529,8 @@ model DhikrChallengeParticipant {
 
 model CharityDonation {
   id              String           @id @default(uuid())
-  userId          String
-  user            User             @relation("charityDonations", fields: [userId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?            @relation("charityDonations", fields: [userId], references: [id], onDelete: SetNull)
   recipientUserId String?
   recipientUser   User?            @relation("charityDonationsReceived", fields: [recipientUserId], references: [id], onDelete: SetNull)
   campaignId      String?
@@ -3112,7 +3121,7 @@ model ProductReview {
 
 model Order {
   id              String   @id @default(uuid())
-  buyerId         String
+  buyerId         String?
   productId       String
   quantity        Int      @default(1)
   totalAmount     Decimal  @db.Decimal(12, 2)
@@ -3123,7 +3132,7 @@ model Order {
   shippingAddress String?  @db.VarChar(500)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  buyer           User     @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyer           User?    @relation("OrderBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
   product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@index([buyerId])
@@ -3211,14 +3220,14 @@ model ZakatFund {
 model ZakatDonation {
   id              String    @id @default(uuid())
   fundId          String
-  donorId         String
+  donorId         String?
   amount          Decimal   @db.Decimal(12, 2)
   currency        String    @default("USD")
   isAnonymous     Boolean   @default(false)
   stripePaymentId String?
   createdAt       DateTime  @default(now())
   fund            ZakatFund @relation(fields: [fundId], references: [id], onDelete: Cascade)
-  donor           User      @relation("ZakatDonor", fields: [donorId], references: [id], onDelete: Cascade)
+  donor           User?     @relation("ZakatDonor", fields: [donorId], references: [id], onDelete: SetNull)
 
   @@index([fundId])
   @@index([donorId])
@@ -3249,11 +3258,11 @@ model CommunityTreasury {
 model TreasuryContribution {
   id         String            @id @default(uuid())
   treasuryId String
-  userId     String
+  userId     String?
   amount     Decimal           @db.Decimal(12, 2)
   createdAt  DateTime          @default(now())
   treasury   CommunityTreasury @relation(fields: [treasuryId], references: [id], onDelete: Cascade)
-  user       User              @relation("TreasuryContributor", fields: [userId], references: [id], onDelete: Cascade)
+  user       User?             @relation("TreasuryContributor", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([treasuryId])
   @@index([userId])
@@ -3683,14 +3692,14 @@ model Embedding {
 
 model CreatorEarning {
   id        String   @id @default(uuid())
-  userId    String
+  userId    String?
   amount    Decimal  @db.Decimal(12, 2)
   currency  String   @default("USD") @db.VarChar(3)
   type      String   @db.VarChar(50) // cashout | tip | gift | subscription
   diamonds  Int      @default(0)
   year      Int
   createdAt DateTime @default(now())
-  user      User     @relation("CreatorEarnings", fields: [userId], references: [id], onDelete: Cascade)
+  user      User?    @relation("CreatorEarnings", fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId, year])
   @@map("creator_earnings")

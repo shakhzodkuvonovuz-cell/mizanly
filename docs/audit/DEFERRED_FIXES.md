@@ -361,6 +361,23 @@ C-01 (per-type notification settings checked before creation), C-04 (push token 
 - [14] M-12/M-14 Architecture/cleanup items
 - [14] m-01 to m-09 Minor items
 
+## From Audit 15 (Prisma Schema) — 92 findings
+### Already fixed in previous sessions:
+P0-GHOST-01 (prisma.community→circle, file 09), P0-GHOST-02 (prisma.streak→userStreak, file 08)
+
+### FIXED directly (30 findings):
+P0-CASCADE-01 (Message.sender→SetNull), P0-CASCADE-02 (Tip.sender/receiver→SetNull), P0-CASCADE-03 (GiftRecord.sender/receiver→SetNull), P0-CASCADE-04 (Order.buyer→SetNull), P0-CASCADE-05 (ZakatDonation.donor→SetNull), P0-CASCADE-06 (CharityDonation.user→SetNull), P0-CASCADE-07 (TreasuryContribution.user→SetNull), P1-CASCADE-08 (CreatorEarning.user→SetNull), P1-CASCADE-09 (ModerationLog.moderator→SetNull), P1-INDEX-01 (Notification.actorId index), P1-INDEX-02 (Notification postId/reelId/threadId/videoId indexes), P1-INDEX-03/P1-UNIQUE-01 (FeedInteraction @@unique([userId,postId])), P1-INDEX-04 (Report.reporterId index), P1-INDEX-05 (ModerationLog.reportId+moderatorId indexes)
+
+### Deferred — requires major migration or architecture:
+- [15] P1-CASCADE-10/11 Report reporter/reportedUser → SetNull — needs reporterId optional + code updates — OPEN
+- [15] P1-DANGLING-01 to 08 — dangling FKs need relation wiring — OPEN
+- [15] P1-FKARRAY-01 to 03 — String[] FK arrays need join tables — OPEN
+- [15] P1-INDEX-06 to 08 — CallSession/Embedding indexes — OPEN
+- [15] P1-MONEY-01 to 04 — Float→Decimal, dual balance — OPEN
+- [15] P1-DESIGN-01 to 04 — Notification god table, plaintext 2FA — OPEN
+- [15] P2-* (39 findings) — Missing indexes, enums, design patterns — OPEN (batch)
+- [15] P3-* (12 findings) — Redundant indexes, minor — NOTED
+
 ---
 
 ## Summary
