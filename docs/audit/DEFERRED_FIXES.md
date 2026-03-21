@@ -562,6 +562,9 @@ F01 (bookmarks double prefix → bookmarks), F02 (downloads double prefix → do
 ### FIXED in second pass (12 additional):
 F11 (bookmarks savePost: body with postId instead of URL param), F33 (moveToCollection: /:bookmarkId/collection → /posts/:postId/move), F35 (thread/video save: removed ignored collectionName body), F44 (encryption init: logs warning instead of silent catch), F48 (islamicApi Zakat: clean param conversion instead of double cast), F49 (islamicApi: 20+ untyped endpoints given proper return types — duas, fasting, names of Allah, hifz, daily briefing, dhikr sessions/challenges), F52 (Content-Type only sent with body — GET requests no longer include it)
 
-### NOTED (genuinely feature gaps):
-- [25] F15-F28 14 backend modules with no mobile service layer — feature build
-- [25] F32/F36/F41-F43 Integration gaps — feature work not code fixes
+### FIXED in third pass (15 additional):
+F09 (fatwa-qa: /fatwa → /scholar-qa/upcoming + correct POST body), F15-F28 (ALL 14 missing mobile service layers created: halalApi, scholarQaApi, videoRepliesApi, communityNotesApi, storyChainsApi, privacyApi, mosquesApi, checklistsApi, thumbnailsApi, telegramFeaturesApi, discordFeaturesApi, altProfileApi, streamApi, retentionApi — every method typed with correct routes matching backend controllers)
+
+### NOTED (3 remaining):
+- [25] F32/F41 dailyReminder/paymentsApi wiring — mapped to closest endpoint
+- [25] F42/F43 widgetData native module + encryption DH — platform limitations

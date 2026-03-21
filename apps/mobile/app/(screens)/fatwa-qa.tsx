@@ -43,7 +43,7 @@ export default function FatwaQAScreen() {
       const params = new URLSearchParams();
       if (pageParam) params.set('cursor', pageParam as string);
       if (selectedMadhab !== 'any') params.set('madhab', selectedMadhab);
-      return api.get<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/fatwa?${params}`);
+      return api.get<{ data?: Array<Record<string, unknown>>; meta?: { cursor: string | null; hasMore: boolean } }>(`/scholar-qa/upcoming?${params}`);
     },
     getNextPageParam: (lastPage) =>
       lastPage?.meta?.hasMore ? lastPage.meta.cursor : undefined,
@@ -52,7 +52,7 @@ export default function FatwaQAScreen() {
   });
 
   const askMutation = useMutation({
-    mutationFn: () => api.post<Record<string, unknown>>('/fatwa', { question, madhab: askMadhab !== 'any' ? askMadhab : undefined }),
+    mutationFn: () => api.post<Record<string, unknown>>('/scholar-qa', { title: question, category: askMadhab !== 'any' ? askMadhab : 'fiqh', scheduledAt: new Date().toISOString() }),
     onSuccess: () => {
       setQuestion('');
       setActiveTab('browse');
