@@ -128,7 +128,6 @@ export class VideosService {
           tags: dto.tags || [],
           normalizeAudio: dto.normalizeAudio ?? false,
           status: VideoStatus.PROCESSING,
-          publishedAt: new Date(),
         },
         select: VIDEO_SELECT,
       }),

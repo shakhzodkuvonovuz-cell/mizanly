@@ -146,6 +146,7 @@ export class StreamService {
           dashUrl: playback.dashUrl,
           qualities: playback.qualities,
           status: 'PUBLISHED',
+          publishedAt: new Date(),
         },
       });
       this.logger.log(`Video ${video.id} ready for streaming`);

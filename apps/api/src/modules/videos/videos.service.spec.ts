@@ -186,7 +186,6 @@ describe('VideosService', () => {
           tags: dto.tags || [],
           normalizeAudio: false,
           status: VideoStatus.PROCESSING,
-          publishedAt: expect.any(Date),
         },
         select: expect.any(Object),
       });

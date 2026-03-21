@@ -85,6 +85,12 @@ export function getResponsiveImageUrls(originalUrl: string): {
   large: string;
   original: string;
 } {
+  // Only generate CDN variants if Cloudflare Image Resizing is available
+  // (requires paid plan on the serving domain). Fall back to original URL.
+  const cfEnabled = process.env.CF_IMAGE_RESIZING_ENABLED === 'true';
+  if (!cfEnabled) {
+    return { thumbnail: originalUrl, small: originalUrl, medium: originalUrl, large: originalUrl, original: originalUrl };
+  }
   return {
     thumbnail: getImageUrl(originalUrl, IMAGE_PRESETS.thumbnail),
     small: getImageUrl(originalUrl, { width: 400, quality: 80, format: 'webp' }),

@@ -46,9 +46,10 @@ export class UploadService {
   private readonly logger = new Logger(UploadService.name);
 
   constructor(private config: ConfigService) {
-    const accountId = this.config.get('R2_ACCOUNT_ID');
-    const accessKeyId = this.config.get('R2_ACCESS_KEY_ID');
-    const secretAccessKey = this.config.get('R2_SECRET_ACCESS_KEY');
+    // Support both env var naming conventions (R2_* and CLOUDFLARE_*)
+    const accountId = this.config.get('R2_ACCOUNT_ID') || this.config.get('CLOUDFLARE_ACCOUNT_ID');
+    const accessKeyId = this.config.get('R2_ACCESS_KEY_ID') || this.config.get('CLOUDFLARE_R2_ACCESS_KEY');
+    const secretAccessKey = this.config.get('R2_SECRET_ACCESS_KEY') || this.config.get('CLOUDFLARE_R2_SECRET_KEY');
 
     if (!accountId || !accessKeyId || !secretAccessKey) {
       this.logger.warn('R2 credentials not configured — file uploads will fail. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY');
